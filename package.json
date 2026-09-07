@@ -3,29 +3,23 @@
   "version": "0.3.0",
   "private": true,
   "scripts": {
-    "dev": "next dev",
-    "build": "next build",
-    "start": "next start",
+    "dev": "node scripts/web.mjs dev",
+    "build": "npm run codegen && node scripts/web.mjs build",
+    "start": "node scripts/web.mjs start",
     "lint": "eslint .",
-    "typecheck": "tsc --noEmit",
-    "validate:cards": "tsx scripts/validate-card-data.ts",
-    "mongo:indexes": "tsx scripts/create-mongo-indexes.ts",
+    "typecheck": "npm run codegen && tsc --noEmit && tsc --noEmit -p apps/web/tsconfig.json",
+    "validate:cards": "node --import tsx scripts/validate-card-data.ts",
+    "mongo:indexes": "node --import tsx scripts/create-mongo-indexes.ts",
     "infra:up": "docker compose up -d --wait",
-    "infra:down": "docker compose down"
+    "infra:down": "docker compose down",
+    "test": "node --import tsx --test tests/*.test.ts",
+    "test:integration": "node --import tsx --test tests/integration/*.test.ts",
+    "codegen": "graphql-codegen --config codegen.ts",
+    "db:migrate": "node --import tsx scripts/migrate-postgres.ts",
+    "mongo:seed": "node --import tsx scripts/seed-mongo.ts",
+    "training:demo": "node --import tsx scripts/training-demo.ts"
   },
   "dependencies": {
-    "@apollo/client": "latest",
-    "@apollo/client-integration-nextjs": "latest",
-    "@apollo/server": "^5.0.0",
-    "@as-integrations/next": "^4.1.0",
-    "graphql": "^16.11.0",
-    "graphql-tag": "^2.12.6",
-    "mongodb": "^7.6.0",
-    "next": "16.3.4",
-    "pg": "^8.23.0",
-    "react": "^19.2.0",
-    "react-dom": "^19.2.0",
-    "rxjs": "^7.8.2",
     "@next/env": "16.3.4"
   },
   "devDependencies": {
@@ -36,6 +30,18 @@
     "eslint": "^9.0.0",
     "eslint-config-next": "16.3.4",
     "tsx": "^4.20.0",
-    "typescript": "^5.9.0"
+    "typescript": "^5.9.0",
+    "@graphql-codegen/cli": "^6.0.0",
+    "@graphql-codegen/typescript": "^5.0.0",
+    "@graphql-codegen/typescript-resolvers": "^5.0.0",
+    "@graphql-codegen/typescript-operations": "^5.0.0",
+    "@graphql-codegen/typed-document-node": "^6.0.0"
+  },
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
+  "engines": {
+    "node": ">=22 <23"
   }
 }

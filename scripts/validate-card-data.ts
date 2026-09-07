@@ -1,4 +1,4 @@
-import { cards } from "../src/data/cards";
+import { cards } from "@tcg/domain/fixtures";
 
 const seenIds = new Set<string>();
 const seenNumbers = new Set<string>();

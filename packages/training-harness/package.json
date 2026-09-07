@@ -1,0 +1,13 @@
+{
+  "name": "@tcg/training-harness",
+  "version": "0.3.0",
+  "private": true,
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "dependencies": {
+    "@tcg/domain": "*",
+    "@tcg/engine": "*",
+    "zod": "^4.0.0"
+  }
+}

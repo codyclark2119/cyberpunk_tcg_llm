@@ -1,0 +1,17 @@
+{
+  "name": "@tcg/graphql",
+  "version": "0.3.0",
+  "private": true,
+  "exports": {
+    ".": "./src/index.ts",
+    "./client": "./src/generated/client.ts"
+  },
+  "dependencies": {
+    "@tcg/domain": "*",
+    "@apollo/server": "^5.0.0",
+    "graphql": "^16.11.0",
+    "graphql-tag": "^2.12.6",
+    "@graphql-typed-document-node/core": "^3.2.0",
+    "zod": "^4.0.0"
+  }
+}

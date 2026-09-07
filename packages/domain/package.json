@@ -1,0 +1,12 @@
+{
+  "name": "@tcg/domain",
+  "version": "0.3.0",
+  "private": true,
+  "exports": {
+    ".": "./src/index.ts",
+    "./*": "./src/*.ts"
+  },
+  "dependencies": {
+    "zod": "^4.0.0"
+  }
+}
