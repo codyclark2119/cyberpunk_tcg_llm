@@ -964,6 +964,66 @@
           ],
           "additionalProperties": false
         },
+        "fightPreventions": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "kind": {
+                "type": "string",
+                "const": "PREVENT_NEXT_RIVAL_FIGHT_DEFEAT"
+              },
+              "id": {
+                "type": "string",
+                "pattern": "^[a-f0-9]{64}$"
+              },
+              "sourceId": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 200,
+                "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$"
+              },
+              "controllerId": {
+                "type": "string",
+                "format": "uuid",
+                "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+              },
+              "createdTurn": {
+                "type": "integer",
+                "exclusiveMinimum": 0,
+                "maximum": 9007199254740991
+              },
+              "expires": {
+                "type": "object",
+                "properties": {
+                  "kind": {
+                    "type": "string",
+                    "const": "END_OF_TURN"
+                  },
+                  "turn": {
+                    "type": "integer",
+                    "exclusiveMinimum": 0,
+                    "maximum": 9007199254740991
+                  }
+                },
+                "required": [
+                  "kind",
+                  "turn"
+                ],
+                "additionalProperties": false
+              }
+            },
+            "required": [
+              "kind",
+              "id",
+              "sourceId",
+              "controllerId",
+              "createdTurn",
+              "expires"
+            ],
+            "additionalProperties": false
+          }
+        },
         "temporaryModifiers": {
           "type": "array",
           "items": {
@@ -1091,6 +1151,63 @@
             "defeatContinuation": {
               "type": "object",
               "properties": {
+                "appliedPrevention": {
+                  "type": "object",
+                  "properties": {
+                    "kind": {
+                      "type": "string",
+                      "const": "PREVENT_NEXT_RIVAL_FIGHT_DEFEAT"
+                    },
+                    "id": {
+                      "type": "string",
+                      "pattern": "^[a-f0-9]{64}$"
+                    },
+                    "sourceId": {
+                      "type": "string",
+                      "minLength": 1,
+                      "maxLength": 200,
+                      "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$"
+                    },
+                    "controllerId": {
+                      "type": "string",
+                      "format": "uuid",
+                      "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+                    },
+                    "createdTurn": {
+                      "type": "integer",
+                      "exclusiveMinimum": 0,
+                      "maximum": 9007199254740991
+                    },
+                    "expires": {
+                      "type": "object",
+                      "properties": {
+                        "kind": {
+                          "type": "string",
+                          "const": "END_OF_TURN"
+                        },
+                        "turn": {
+                          "type": "integer",
+                          "exclusiveMinimum": 0,
+                          "maximum": 9007199254740991
+                        }
+                      },
+                      "required": [
+                        "kind",
+                        "turn"
+                      ],
+                      "additionalProperties": false
+                    }
+                  },
+                  "required": [
+                    "kind",
+                    "id",
+                    "sourceId",
+                    "controllerId",
+                    "createdTurn",
+                    "expires"
+                  ],
+                  "additionalProperties": false
+                },
                 "defeats": {
                   "minItems": 1,
                   "type": "array",
@@ -1355,6 +1472,19 @@
                           "properties": {
                             "kind": {
                               "type": "string",
+                              "const": "CREATE_NEXT_RIVAL_FIGHT_PREVENTION"
+                            }
+                          },
+                          "required": [
+                            "kind"
+                          ],
+                          "additionalProperties": false
+                        },
+                        {
+                          "type": "object",
+                          "properties": {
+                            "kind": {
+                              "type": "string",
                               "const": "POWER_UNTIL_END_OF_TURN"
                             },
                             "target": {
@@ -1432,6 +1562,19 @@
                             },
                             "condition": {
                               "oneOf": [
+                                {
+                                  "type": "object",
+                                  "properties": {
+                                    "kind": {
+                                      "type": "string",
+                                      "const": "STREET_CRED_LESS_THAN_RIVAL"
+                                    }
+                                  },
+                                  "required": [
+                                    "kind"
+                                  ],
+                                  "additionalProperties": false
+                                },
                                 {
                                   "type": "object",
                                   "properties": {
@@ -2465,6 +2608,19 @@
                         "properties": {
                           "kind": {
                             "type": "string",
+                            "const": "CREATE_NEXT_RIVAL_FIGHT_PREVENTION"
+                          }
+                        },
+                        "required": [
+                          "kind"
+                        ],
+                        "additionalProperties": false
+                      },
+                      {
+                        "type": "object",
+                        "properties": {
+                          "kind": {
+                            "type": "string",
                             "const": "POWER_UNTIL_END_OF_TURN"
                           },
                           "target": {
@@ -2542,6 +2698,19 @@
                           },
                           "condition": {
                             "oneOf": [
+                              {
+                                "type": "object",
+                                "properties": {
+                                  "kind": {
+                                    "type": "string",
+                                    "const": "STREET_CRED_LESS_THAN_RIVAL"
+                                  }
+                                },
+                                "required": [
+                                  "kind"
+                                ],
+                                "additionalProperties": false
+                              },
                               {
                                 "type": "object",
                                 "properties": {
@@ -3571,6 +3740,19 @@
                         "properties": {
                           "kind": {
                             "type": "string",
+                            "const": "CREATE_NEXT_RIVAL_FIGHT_PREVENTION"
+                          }
+                        },
+                        "required": [
+                          "kind"
+                        ],
+                        "additionalProperties": false
+                      },
+                      {
+                        "type": "object",
+                        "properties": {
+                          "kind": {
+                            "type": "string",
                             "const": "POWER_UNTIL_END_OF_TURN"
                           },
                           "target": {
@@ -3648,6 +3830,19 @@
                           },
                           "condition": {
                             "oneOf": [
+                              {
+                                "type": "object",
+                                "properties": {
+                                  "kind": {
+                                    "type": "string",
+                                    "const": "STREET_CRED_LESS_THAN_RIVAL"
+                                  }
+                                },
+                                "required": [
+                                  "kind"
+                                ],
+                                "additionalProperties": false
+                              },
                               {
                                 "type": "object",
                                 "properties": {
@@ -5181,6 +5376,48 @@
           ],
           "additionalProperties": false
         },
+        "fightPreventions": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "string"
+              },
+              "kind": {
+                "type": "string",
+                "const": "PREVENT_NEXT_RIVAL_FIGHT_DEFEAT"
+              },
+              "sourceId": {
+                "type": "string"
+              },
+              "controllerSeat": {
+                "type": "integer",
+                "minimum": -9007199254740991,
+                "maximum": 9007199254740991
+              },
+              "createdTurn": {
+                "type": "integer",
+                "minimum": -9007199254740991,
+                "maximum": 9007199254740991
+              },
+              "expiresTurn": {
+                "type": "integer",
+                "minimum": -9007199254740991,
+                "maximum": 9007199254740991
+              }
+            },
+            "required": [
+              "id",
+              "kind",
+              "sourceId",
+              "controllerSeat",
+              "createdTurn",
+              "expiresTurn"
+            ],
+            "additionalProperties": false
+          }
+        },
         "temporaryModifiers": {
           "type": "array",
           "items": {
@@ -5348,6 +5585,16 @@
                 "items": {
                   "type": "object",
                   "properties": {
+                    "restrictions": {
+                      "type": "array",
+                      "items": {
+                        "type": "string",
+                        "enum": [
+                          "CANNOT_ATTACK",
+                          "CANNOT_BE_BLOCKED"
+                        ]
+                      }
+                    },
                     "publicId": {
                       "type": "string"
                     },

@@ -1,10 +1,10 @@
 # First demo match: execution coverage roadmap
 
-These are the user-supplied physical reference lists, preserved exactly: **27 main cards + 3 Legends = 30 total per deck**. Merc Psycho Squad is **3 copies**. This document does not create a runnable demo match or change constructed deck validation (40–50 main cards under the currently reviewed official constructed implementation). A future demo format needs its own source review.
+These are the user-supplied physical reference lists, preserved exactly: **27 main cards + 3 Legends = 30 total per deck**. Merc Psycho Squad is **3 copies**. Official constructed remains **40–50 main cards**. No starter padding, format exception, DEMO_STARTER policy or runnable demo match is introduced.
 
-“Normalized?” below means a reviewed executable application revision, not the harness's display/text normalization. All 29 distinct cards have local raw captures and demo printing metadata; only six have executable application revisions within these two lists. Application CardIds are stable slugs, never demo collector numbers. The current replay bundles are implementation-reviewed synthetic support decks, not human-certified gold data.
+All **29 distinct cards** have local raw captures and demo printing metadata. “Executable revision” means an implementation-reviewed application revision, distinct from the harness's display/text normalization. CardIds are stable slugs, never demo collector numbers. Replays use constructed-size synthetic support decks and are not human-certified gold data.
 
-| Card | Deck | Copies | Captured? | Normalized? | Execution scope | Supported now? | Blocking subsystem |
+| Card | Deck | Copies | Captured? | Executable revision | Execution scope | Supported now? | Remaining blocker(s) / scope |
 |---|---|---:|---|---|---|---|---|
 | Goro Takemura — Hands Unclean | Arasaka | 1 | Yes; demo 008 | No executable revision | Unreviewed | No | Go Solo/field Legend admission; printed Blocker on Legend |
 | Yorinobu Arasaka — Embracing Destruction | Arasaka | 1 | Yes; demo 001 | No executable revision | Unreviewed | No | First attack per turn, trait trigger, discard |
@@ -15,8 +15,8 @@ These are the user-supplied physical reference lists, preserved exactly: **27 ma
 | Satori — Sword of Saburo | Arasaka | 3 | Yes; demo 005 | No executable revision | Unreviewed | No | Inherited fight-win trigger |
 | Industrial Assembly | Arasaka | 3 | Yes; demo 006 | No executable revision | Unreviewed | No | Increase Gig up to 4 and conditional draw review |
 | Over the Edge | Arasaka | 2 | Yes; demo 007 | No executable revision | Unreviewed | No | D20 value target filter and defeat |
-| Corpo Security | Arasaka | 3 | Yes; demo 010 | No executable revision | Unreviewed | No | Cannot-attack restriction plus separate Blocker shape review |
-| Emergency Atlus | Arasaka | 3 | Yes; demo 011 | No executable revision | Unreviewed | No | Explicit full Unit shape review/admission still required; generic fight now available |
+| Corpo Security | Arasaka | 3 | Yes; demo 010 | Yes; application revision 1 | COMBAT_RESTRICTIONS_V1 | Scoped only | Complete cannot-attack + Blocker shape supported; independent Blocker legality |
+| Emergency Atlus | Arasaka | 3 | Yes; demo 011 | Yes; application revision 1 | COMBAT_RESTRICTIONS_V1 | Scoped only | Complete ordinary Unit shape supported; no executable text omitted |
 | Field Operator | Arasaka | 3 | Yes; demo 012 | No executable revision | Unreviewed | No | Even Street Cred condition on play |
 | Goro Takemura — Losing His Way | Arasaka | 1 | Yes; demo 013 | No executable revision | Unreviewed | No | All Legends revealed condition, +5 turn modifier on attack |
 | Corporate Surveillance | Arasaka | 3 | Yes; demo 014 | No executable revision | Unreviewed | No | Cost-filtered rival Unit spending |
@@ -31,17 +31,33 @@ These are the user-supplied physical reference lists, preserved exactly: **27 ma
 | Afterparty at Lizzie's | Mercs | 2 | Yes; demo 006 | Yes; application revision 1 | NONCOMBAT_PLAY_V1 | Scoped only | Supported captured function; full demo match still requires remaining deck mechanics and separate demo-format review |
 | Delamain Cab | Mercs | 3 | Yes; demo 009 | No executable revision | Unreviewed | No | Steal history and end-turn Eddie ready |
 | Evelyn Parker — Scheming Siren | Mercs | 3 | Yes; demo 010 | No executable revision | Unreviewed | No | Ordered attack draw/conditional discard |
-| MT0D12 Flathead | Mercs | 1 | Yes; demo 011 | No executable revision | Unreviewed | No | Conditional cannot-be-blocked restriction |
-| Psycho Squad | Mercs | 3 | Yes; demo 012 | No executable revision | Unreviewed | No | Explicit full Unit shape review/admission still required; generic fight now available |
+| MT0D12 Flathead | Mercs | 1 | Yes; demo 011 | Yes; application revision 1 | COMBAT_RESTRICTIONS_V1 | Scoped only | Current Street Cred restriction supported; CALL/Quick/PASS remain legal |
+| Psycho Squad | Mercs | 3 | Yes; demo 012 | Yes; application revision 1 | COMBAT_RESTRICTIONS_V1 | Scoped only | Complete ordinary Unit shape supported; three physical copies unchanged |
 | Floor It | Mercs | 3 | Yes; demo 014 | Yes; application revision 1 | COMBAT_REACT_V1 | Scoped only | Supported captured function; full demo match still requires remaining deck mechanics and separate demo-format review |
-| Reboot Optics | Mercs | 2 | Yes; demo 015 | No executable revision | Unreviewed | No | Next-fight replacement/prevention and turn expiration |
+| Reboot Optics | Mercs | 2 | Yes; demo 015 | Yes; application revision 1 | COMBAT_RESTRICTIONS_V1 | Scoped only | Single outstanding next-fight defeat prevention supported; overlapping copies explicitly unsupported pending interaction review |
 
-Floor It and Secondhand Bombus were selected for the prior React milestone because their entire captured text fits the bounded React implementation. Reboot Optics requires next-fight prevention, which remains a separate review after this baseline combat resolution. Corpo Security adds a cannot-attack restriction; Mandibular Upgrade adds inherited Gear keywords. Their shared words do not automatically grant execution support.
+## Measured coverage after combat restrictions
 
-Raw sources: `cyberpunk_llm/data/raw/cards/<CardId>.json`. New reviewed snapshots and printing UUIDs: [react-card-sources.v1.json](../tests/fixtures/react-card-sources.v1.json). Current per-card certification: [executable-card-coverage.md](executable-card-coverage.md).
+| Metric | Before | After |
+|---|---:|---:|
+| Distinct reference cards | 29 | 29 |
+| Reviewed executable distinct cards, within stated scopes | 6 | 11 |
+| Without reviewed executable revisions | 23 | 18 |
+| Remaining cards with identified subsystem/admission blockers | 23 | 18 |
+| Arasaka supported distinct cards / 14 | 2 | 4 |
+| Arasaka executable physical copies / 30 | 5 | 11 |
+| Mercs supported distinct cards / 15 | 4 | 7 |
+| Mercs executable physical copies / 30 | 8 | 14 |
+| Both decks executable physical copies / 60 | 13 | 25 |
 
-The combat-resolution milestone adds no card revisions or demo legality exceptions. Swordwise, Mantis, Bombus and Floor It now participate in completed bounded combat. Negative power references count as zero; Bombus cannot defeat with zero power or steal Gigs. Floor It survives public Trash movement until turn end, but hidden-area entry removes it. Gear follows a defeated host through shared movement, with owner-selected Trash order.
+Counts are calculated from the 29 rows above. “Unreviewed” and “blocked” overlap: the same 18 remaining cards lack an executable revision and have a known blocker recorded; these are not disjoint populations. Copy coverage is not distinct-card coverage or deck readiness. Reboot coverage is scoped to one outstanding effect, so its two physical copies are individually executable but their overlapping use is not yet supported.
 
-Emergency Atlus and Psycho Squad remain unadmitted despite the new generic fight system. Minotaur and Over the Edge may eventually reuse the semantic defeat primitive, but their targeting, conditions and complete printed shapes remain unimplemented. No Go Solo, Reboot Optics, fight-win/DEFEATED triggers or restriction cards were admitted. The next milestone should review replacement/prevention and simple combat restrictions, then close explicit card-shape gaps. A separate source-reviewed demo policy is still required before running the exact 27 + 3 lists; no DEMO_STARTER policy exists yet.
+Corpo Security, MT0D12 Flathead, Reboot Optics, Psycho Squad and Emergency Atlus are the only new real-card admissions. Source text, all printing UUIDs, raw/canonical/normalized hashes and pinned errata are recorded in [combat-restrictions-card-sources.v1.json](../tests/fixtures/combat-restrictions-card-sources.v1.json), [combat-restrictions-fixture.ts](../tests/combat-restrictions-fixture.ts) and [executable-card-coverage.md](executable-card-coverage.md). The earlier six revisions are unchanged. The raw sources remain `cyberpunk_llm/data/raw/cards/<CardId>.json`; the 151-card corpus was not refreshed.
 
-See [combat-resolution-report.md](combat-resolution-report.md) and [combat-resolution-rules.v1.json](../tests/fixtures/combat-resolution-rules.v1.json).
+## Exact deck readiness
+
+**Can the exact Arasaka list initialize? No. Can the exact Merc list initialize? No. Can they play a complete deterministic match? No.** Both have 27 main cards, below the reviewed constructed minimum. Arasaka also lacks 10 distinct executable cards (19 copies); Mercs lacks 8 (16 copies), with the exact blockers in the table. No local complete demo-format rule capture was found: printing/deck metadata does not establish size, RAM/copy/setup/win-condition exceptions. The generic reference to a Gameplay Guide is not that guide. A separate source review remains necessary.
+
+The next mechanic cluster should be fight-result/Defeated triggers and their timing/ordering, including Satori and the relevant Dexter/Jackie behavior. Keep inherited Gear keywords (Mandibular Upgrade), Go Solo/field Legends, steal-history effects and more general replacement chains as separate reviewed work. Minotaur/Over the Edge can reuse semantic defeat only after full targeting/condition/cost review. No remaining card is admitted merely because a shared primitive exists.
+
+See [combat-restrictions-report.md](combat-restrictions-report.md) for the implementation, exact gates and ambiguities. [combat-resolution-report.md](combat-resolution-report.md) records the preceding milestone; its six-card coverage is historical.

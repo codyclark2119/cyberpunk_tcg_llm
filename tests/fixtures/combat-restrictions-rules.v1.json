@@ -1,0 +1,580 @@
+{
+  "source": "Pinned local comprehensive rules; implementation review, not human-certified gold",
+  "sha256": "054d2d2a4664e5b560304e0962e71b195467ad097cc4c62b2698fc57467a28dd",
+  "processedSha256": "1f299c9cbe2657c9d088ae4b3a812b85e46c3fd2659579229635959c59a20e19",
+  "errataSha256": "1203a6c268c94d9d670a9cc145f739957fd018fa23eab86628bac94984ce1d75",
+  "processedErrataSha256": "16304146074363480e2c22639c9799b9d4302118c669e85e9f475b4a1bf6a340",
+  "rules": [
+    {
+      "id": "1.7",
+      "text": "1.7. Every game piece has an owner. Every game piece in play also has a controller."
+    },
+    {
+      "id": "1.7.1",
+      "text": "1.7.1. You “own” the pieces you bring to the game (your deck, side deck, Gig dice, etc.). You’re the “owner” of these pieces."
+    },
+    {
+      "id": "1.7.2",
+      "text": "1.7.2. You “control” the pieces currently in your friendly Gig area, field, Legends area, and Eddies area. You’re the “controller” of these pieces, even if you’re not the owner."
+    },
+    {
+      "id": "1.7.2.1",
+      "text": "1.7.2.1. Pieces you control are considered “friendly” pieces."
+    },
+    {
+      "id": "1.7.2.2",
+      "text": "1.7.2.2. Pieces your Rival controls are considered “rival” pieces."
+    },
+    {
+      "id": "1.7.3",
+      "text": "1.7.3. Game pieces can change controllers, but can never change owners."
+    },
+    {
+      "id": "1.7.3.1",
+      "text": "1.7.3.1. When you take control of a Rival’s game piece, follow the rules in Respect Your Rival."
+    },
+    {
+      "id": "1.7.3.2",
+      "text": "1.7.3.2. At the end of the game, return all game pieces to their respective owners."
+    },
+    {
+      "id": "2.6",
+      "text": "2.6. If an effect on a card allows or requires you to do something but another effect prevents it, the preventing effect always takes precedence.\n\n> **EXAMPLE:** A Rival plays a Unit with [ADRENALINE], which allows it to attack the turn it’s played. But a friendly Unit’s card text reads “Rival Units can't attack the turn they're played.” The preventing of the attack takes precedence, so the rival Unit can’t attack this turn."
+    },
+    {
+      "id": "2.10",
+      "text": "2.10. A game value can be a negative number."
+    },
+    {
+      "id": "2.10.1",
+      "text": "2.10.1. When a game value is a negative number, it is treated as 0 for all references and comparisons of values.\n\n> **EXAMPLE:** A Unit has 2 power. An effect reduces its power by 3. The Unit has -1 power, but is treated as having 0 power when attacking, fighting, or when a card effect references its power. If it then gains +2 power, that Unit has 1 power. The order of these effects being applied does not alter this outcome."
+    },
+    {
+      "id": "2.10.2",
+      "text": "2.10.2. A value of null ( - ) is not treated as a number. It does not count as 0, and it is not even or odd."
+    },
+    {
+      "id": "3.18",
+      "text": "3.18. ### Textbox"
+    },
+    {
+      "id": "3.18.1",
+      "text": "3.18.1. A card’s textbox contains its card text."
+    },
+    {
+      "id": "3.18.1.1",
+      "text": "3.18.1.1. A card may have multiple textboxes."
+    },
+    {
+      "id": "3.18.1.2",
+      "text": "3.18.1.2. “Card text” may include effect text, reminder text, and flavor text, differentiated by formatting and treatment."
+    },
+    {
+      "id": "3.18.1.2.1",
+      "text": "3.18.1.2.1. “Effect text” is any text on a card that dictates a game effect."
+    },
+    {
+      "id": "3.18.1.2.1.1",
+      "text": "3.18.1.2.1.1. Effect text may use symbols or keywords as shorthand for longer effects, conditions, or concepts. See TERMS."
+    },
+    {
+      "id": "3.18.1.2.2",
+      "text": "3.18.1.2.2. “Reminder text” reminds you of relevant rules, keyword definitions, or other implied effects."
+    },
+    {
+      "id": "3.18.1.2.2.1",
+      "text": "3.18.1.2.2.1. Reminder text is not effect text, and does not influence gameplay."
+    },
+    {
+      "id": "3.18.1.2.2.2",
+      "text": "3.18.1.2.2.2. Reminder text is always italicized and parenthetical."
+    },
+    {
+      "id": "3.18.1.2.3",
+      "text": "3.18.1.2.3. “Flavor text” is non-gameplay text that adds lore to a card."
+    },
+    {
+      "id": "3.18.1.2.3.1",
+      "text": "3.18.1.2.3.1. Flavor text is always italicized."
+    },
+    {
+      "id": "3.18.2",
+      "text": "3.18.2. Card text addresses the player who played the card. When an effect says “you,” it’s referring to the player controlling the card."
+    },
+    {
+      "id": "3.18.3",
+      "text": "3.18.3. While a Gear is equipped to a Unit or Legend, that Unit or Legend inherits any text in the Gear’s bottom textbox. See CARD TYPES > Gears."
+    },
+    {
+      "id": "4.6",
+      "text": "4.6. To play a Unit, reveal the card to your Rival, pay its cost, and place it ready in the field area."
+    },
+    {
+      "id": "4.14",
+      "text": "4.14. To play a Program, reveal the card to your Rival, pay its cost, resolve its effect(s), and immediately move it to your trash."
+    },
+    {
+      "id": "4.14.1",
+      "text": "4.14.1. When you reveal a played Program, place it on the table to allow your Rival to read and understand its effects before you resolve it."
+    },
+    {
+      "id": "4.14.2",
+      "text": "4.14.2. After you pay a Program’s cost, the card is considered outside of your hand, field, trash, or any other game area until you finish resolving its effects (though it’s not considered “Removed from Play”). After you resolve the program, it enters your trash."
+    },
+    {
+      "id": "5.3",
+      "text": "5.3. A game area may be “public” or “hidden.”"
+    },
+    {
+      "id": "5.3.1",
+      "text": "5.3.1. If a game area is public, these rules apply."
+    },
+    {
+      "id": "5.3.1.1",
+      "text": "5.3.1.1. Face-up cards in a public area are known to all players. You can look at information on all face-up cards at any time."
+    },
+    {
+      "id": "5.3.1.2",
+      "text": "5.3.1.2. Face-down cards in a public area aren’t publicly known. You can’t look at them unless directed by an effect."
+    },
+    {
+      "id": "5.3.2",
+      "text": "5.3.2. If a game area is hidden, these rules apply."
+    },
+    {
+      "id": "5.3.2.1",
+      "text": "5.3.2.1. Cards in a hidden area aren’t publicly known. You can’t look at them unless directed by an effect."
+    },
+    {
+      "id": "5.3.2.2",
+      "text": "5.3.2.2. If a card enters a hidden area, ignore any information on the card and remove any existing modifiers attached to it."
+    },
+    {
+      "id": "5.3.2.3",
+      "text": "5.3.2.3. If an effect requires you to reveal and move a card from a hidden area, you must reveal the card before moving it to another area."
+    },
+    {
+      "id": "5.3.2.4",
+      "text": "5.3.2.4. When you search for a card in a hidden area, you do not have to reveal any information about your findings if you fail to find a valid target. See Search."
+    },
+    {
+      "id": "5.3.2.4.1",
+      "text": "5.3.2.4.1. If an effect requires a player to choose from a hidden area using information that is not public, that player may choose to fail to find a target."
+    },
+    {
+      "id": "5.3.2.5",
+      "text": "5.3.2.5. If an effect requires you to choose from a hidden area without requiring a qualifying card information, you must choose a legal target. You are not required to reveal it."
+    },
+    {
+      "id": "5.3.2.6",
+      "text": "5.3.2.6. If an effect instructs you to look at or search cards in a hidden area and does not say what to do with cards not chosen, return those cards to their original area in their original order and state."
+    },
+    {
+      "id": "5.11",
+      "text": "5.11. ### Friendly Gig Area"
+    },
+    {
+      "id": "5.11.1",
+      "text": "5.11.1. The friendly Gig area is also referred to as just “your Gig area” (and variations thereof)."
+    },
+    {
+      "id": "5.11.2",
+      "text": "5.11.2. Your friendly Gig area is a public area. Both players may freely view the Gig die in this area."
+    },
+    {
+      "id": "5.11.3",
+      "text": "5.11.3. The Gigs in the friendly Gig area are under your control, and are friendly Gigs. Their values count towards your Street Cred. See GIGS."
+    },
+    {
+      "id": "5.11.4",
+      "text": "5.11.4. If there are no Gigs in your Gig area you have Null street cred."
+    },
+    {
+      "id": "5.11.4.1",
+      "text": "5.11.4.1. When your street cred is Null it does not count towards even or odd values."
+    },
+    {
+      "id": "5.11.4.2",
+      "text": "5.11.4.2. When compared to 0, Null is the smaller number."
+    },
+    {
+      "id": "7.3",
+      "text": "7.3. A legal deck of *Cyberpunk TCG* cards contains 3 Legend cards and a “main deck” of 40-50 non-Legend cards."
+    },
+    {
+      "id": "7.3.1",
+      "text": "7.3.1. You cannot use multiple Legends with the same name. See Name.\n\n> **EXAMPLE:** The Legends “V: Corporate Exile” and “V: Streetkid” are both named “V,” so you can’t use both of them in the same deck."
+    },
+    {
+      "id": "7.3.2",
+      "text": "7.3.2. Your main deck must contain no fewer than 40 and no more than 50 cards."
+    },
+    {
+      "id": "7.3.3",
+      "text": "7.3.3. Your main deck cannot include more than three (3) copies of a card with an identical name and subtitle combination (even if they have different card numbers)."
+    },
+    {
+      "id": "7.3.4",
+      "text": "7.3.4. Your main deck may only include cards within its RAM Limits. See RAM & Color."
+    },
+    {
+      "id": "7.3.5",
+      "text": "7.3.5. If a card’s effect includes a restriction or exception to these deck requirements, your deck must adhere to that effect."
+    },
+    {
+      "id": "7.3.6",
+      "text": "7.3.6. All cards must be legal according to the current regulations for the game format."
+    },
+    {
+      "id": "7.3.7",
+      "text": "7.3.7. Card sleeves must follow current regulations for the game format."
+    },
+    {
+      "id": "8.16",
+      "text": "8.16. When your turn ends, you must resolve any end of turn effects in this order."
+    },
+    {
+      "id": "8.16.1",
+      "text": "8.16.1. Resolve effects that occur “at the end of your turn,” “at the end of each turn,” and variations thereof."
+    },
+    {
+      "id": "8.16.2",
+      "text": "8.16.2. Remove effects that last “this turn” and variations thereof."
+    },
+    {
+      "id": "9.3",
+      "text": "9.3. To attack, you must declare the attack by completing these steps in order."
+    },
+    {
+      "id": "9.3.1",
+      "text": "9.3.1. Choose a friendly ready Unit in the field area that can attack."
+    },
+    {
+      "id": "9.3.1.1",
+      "text": "9.3.1.1. Lagging Units can’t attack. See Lag."
+    },
+    {
+      "id": "9.3.2",
+      "text": "9.3.2. Choose a valid attack target for that Unit."
+    },
+    {
+      "id": "9.3.2.1",
+      "text": "9.3.2.1. A spent rival Unit is a valid attack target."
+    },
+    {
+      "id": "9.3.2.2",
+      "text": "9.3.2.2. A rival Gig area containing one or more Gigs is a valid attack target. (An empty Gig area is not a valid attack target.)"
+    },
+    {
+      "id": "9.3.2.3",
+      "text": "9.3.2.3. Card effects may add to, remove, or restrict a Unit’s valid attack targets."
+    },
+    {
+      "id": "9.3.2.3.1",
+      "text": "9.3.2.3.1. An effect that allows a Unit to attack only grants the specific permission described by that effect and does not remove other attack restrictions."
+    },
+    {
+      "id": "9.3.2.4",
+      "text": "9.3.2.4. If there are no valid targets, you cannot attack."
+    },
+    {
+      "id": "9.3.3",
+      "text": "9.3.3. Spend the friendly Unit."
+    },
+    {
+      "id": "9.3.4",
+      "text": "9.3.4. Communicate the attack and the attack target to your Rival."
+    },
+    {
+      "id": "9.7",
+      "text": "9.7. During the “React Step” of an attack, the defending player has an opportunity to react. They may take as many reactions as they want, in any order they choose."
+    },
+    {
+      "id": "9.7.1",
+      "text": "9.7.1. You may only take reactions during the React Step of an attack, and only if you are the defending player."
+    },
+    {
+      "id": "9.9",
+      "text": "9.9. You may activate the [BLOCKER] effect on a ready Unit as a reaction."
+    },
+    {
+      "id": "9.9.1",
+      "text": "9.9.1. When a Unit uses [BLOCKER], it becomes the defending Unit, fully replacing the previous attack target."
+    },
+    {
+      "id": "9.12",
+      "text": "9.12. At any point during the React Step, while not taking a reaction and while there are no effects pending resolution, the defending player may choose to end the React Step."
+    },
+    {
+      "id": "9.14",
+      "text": "9.14. When the React Step ends, the attack continues. If the attack target is a Unit, proceed to the Fight Step. If the attack target is a Gig area, proceed to the Steal Step."
+    },
+    {
+      "id": "9.16",
+      "text": "9.16. During the “Fight Step” of an attack, the attacking Unit and the defending Unit fight."
+    },
+    {
+      "id": "9.16.1",
+      "text": "9.16.1. At the start of the Fight Step, apply effects that last “while fighting” and variations thereof."
+    },
+    {
+      "id": "9.17",
+      "text": "9.17. A “fight” is a game process in which two opposing Units compare power to determine at least one loser and potentially one winner."
+    },
+    {
+      "id": "9.17.1",
+      "text": "9.17.1. A Unit wins a fight when it has a higher power than the opposing Unit."
+    },
+    {
+      "id": "9.17.1.1",
+      "text": "9.17.1.1. When a Unit wins a fight, the opposing Unit always loses, regardless of power."
+    },
+    {
+      "id": "9.17.2",
+      "text": "9.17.2. A Unit loses a fight when it has equal or lower power than the opposing Unit."
+    },
+    {
+      "id": "9.17.3",
+      "text": "9.17.3. If both Units in a fight have the same power, neither Unit wins and both Units lose the fight."
+    },
+    {
+      "id": "9.17.4",
+      "text": "9.17.4. If a card effect says that a Unit wins or loses a fight, it supersedes any win or loss status determined by power comparison."
+    },
+    {
+      "id": "9.18",
+      "text": "9.18. When you determine the loser(s), any effects triggered by the fight (i.e. “when this Unit fights,” “when this Unit loses a fight,” etc.) become pending. Both players must resolve all pending effects before they may defeat the loser(s)."
+    },
+    {
+      "id": "9.19",
+      "text": "9.19. After resolving all effects triggered by the fight, resolve the fight’s result."
+    },
+    {
+      "id": "9.19.1",
+      "text": "9.19.1. When a Unit loses a fight, the opposing Unit defeats it as a result."
+    },
+    {
+      "id": "9.19.1.1",
+      "text": "9.19.1.1. When a Unit is defeated, its owner moves it to their trash."
+    },
+    {
+      "id": "9.19.2",
+      "text": "9.19.2. A Unit with 0 power cannot defeat a Unit as the result of a fight."
+    },
+    {
+      "id": "9.19.3",
+      "text": "9.19.3. If an effect prevents a Unit from being defeated in a fight, it is still a loser that has lost the fight, it only ignores the resulting defeat."
+    },
+    {
+      "id": "9.29",
+      "text": "9.29. After an attack ends and all effects and pending effects for the current timing window have resolved, remove effects that last “while attacking,” “while stealing,” “while fighting” and variations thereof. The turn player’s Main Phase continues."
+    },
+    {
+      "id": "10.4",
+      "text": "10.4. There are four types of effects: triggered effects, activated effects, permanent effects, and replacement effects."
+    },
+    {
+      "id": "10.4.1",
+      "text": "10.4.1. A “triggered effect” becomes pending when its trigger condition is met."
+    },
+    {
+      "id": "10.4.2",
+      "text": "10.4.2. You may use an “activated effect” at your discretion during your Main Phase."
+    },
+    {
+      "id": "10.4.3",
+      "text": "10.4.3. A “persistent effect” continuously applies while its conditions (if any) are met."
+    },
+    {
+      "id": "10.4.4",
+      "text": "10.4.4. A “replacement effect” replaces one game action or process with another."
+    },
+    {
+      "id": "10.6",
+      "text": "10.6. An effect is “invalid” if it cannot apply according to its text, the game rules, or the current game state."
+    },
+    {
+      "id": "10.6.1",
+      "text": "10.6.1. If all of an effect is invalid, ignore that effect."
+    },
+    {
+      "id": "10.6.2",
+      "text": "10.6.2. If part of an effect is invalid, ignore the invalid part and resolve as much of the remaining effect as possible."
+    },
+    {
+      "id": "10.6.3",
+      "text": "10.6.3. Even if an effect is invalid, it is still considered an effect on the card."
+    },
+    {
+      "id": "10.21",
+      "text": "10.21. Once an activated effect is activated, it resolves even if its source leaves the area it was in."
+    },
+    {
+      "id": "10.22",
+      "text": "10.22. A persistent effect continuously applies while it is active."
+    },
+    {
+      "id": "10.22.1",
+      "text": "10.22.1. A persistent effect is not activated."
+    },
+    {
+      "id": "10.22.2",
+      "text": "10.22.2. A persistent effect never becomes pending."
+    },
+    {
+      "id": "10.22.3",
+      "text": "10.22.3. A persistent effect applies only while its source is in the area where that effect is active."
+    },
+    {
+      "id": "10.23",
+      "text": "10.23. If a persistent effect has a duration, it applies only for that duration.\n\n> **EXAMPLE:** A Unit's effect text reads \"Other friendly Units have +2 power while attacking.” The Unit only gains +2 from the moment the Unit attacks until the attack ends."
+    },
+    {
+      "id": "10.23.1",
+      "text": "10.23.1. When a persistent effect’s duration ends, that effect stops applying immediately once there are no other pending effects."
+    },
+    {
+      "id": "10.24",
+      "text": "10.24. A replacement effect replaces one action or process with another. (They often use “would” and “instead.”)\n\n> **EXAMPLE:** A friendly Unit inherits the effect text from a Gear that reads \"If this Unit would be defeated, defeat its \"DEADMAN TRANSMITTER\" instead.” The effect “defeat [this Unit’s] \"DEADMAN TRANSMITTER\"” replaces the game process of defeating the Unit."
+    },
+    {
+      "id": "10.25",
+      "text": "10.25. A replacement effect applies before (and instead of) the action or process it replaces. The replaced action or process does not occur at all."
+    },
+    {
+      "id": "10.26",
+      "text": "10.26. If a replacement effect is optional, the player who controls that replacement effect may choose not to apply it."
+    },
+    {
+      "id": "10.27",
+      "text": "10.27. If it’s not possible to perform the replacement, that replacement effect cannot be applied."
+    },
+    {
+      "id": "10.28",
+      "text": "10.28. If one or more replacement effects could apply to the same action or process, apply mandatory replacement effects before optional replacement effects."
+    },
+    {
+      "id": "10.28.1",
+      "text": "10.28.1. If multiple mandatory replacement effects could apply to the same action or process, the affected player (or the controller of the affected card) chooses which one to apply."
+    },
+    {
+      "id": "10.28.2",
+      "text": "10.28.2. If multiple optional replacement effects are chosen to apply to the same action or process, the affected player (or the controller of the affected card) chooses which one to apply."
+    },
+    {
+      "id": "10.29",
+      "text": "10.29. After a replacement effect is applied, check whether any other replacement effects can still apply to the new action or process."
+    },
+    {
+      "id": "10.29.1",
+      "text": "10.29.1. Once a replacement effect has been applied to an action or process, that same replacement effect cannot apply to that same action or process again."
+    },
+    {
+      "id": "10.30",
+      "text": "10.30. A replacement effect from a game mechanic supersedes mandatory replacement effects."
+    },
+    {
+      "id": "10.31",
+      "text": "10.31. If an effect instructs a player to choose, select, or otherwise make a choice, that choice is made when the effect instructs the player to make that choice."
+    },
+    {
+      "id": "10.31.1",
+      "text": "10.31.1. If an effect requires a choice and no legal choice can be made, that choice is not made."
+    },
+    {
+      "id": "10.31.2",
+      "text": "10.31.2. If an effect requires you to choose a specific number of targets, you must choose that number of targets. If you can’t, choose as many valid targets as possible up to that number instead."
+    },
+    {
+      "id": "10.31.3",
+      "text": "10.31.3. If an effect requires a player to choose a number, that player must choose a non-negative whole number."
+    },
+    {
+      "id": "11.2",
+      "text": "11.2. ### [Star] Street Cred"
+    },
+    {
+      "id": "11.2.1",
+      "text": "11.2.1. Your “Street Cred” is the sum of all Gig dice values in the friendly Gig area."
+    },
+    {
+      "id": "11.2.2",
+      "text": "11.2.2. The [Star] symbol is shorthand for Street Cred."
+    },
+    {
+      "id": "11.2.3",
+      "text": "11.2.3. When you have no Gigs in your Gig area you have Null ( - ) Street Cred. Null does not count as having 0."
+    },
+    {
+      "id": "11.3",
+      "text": "11.3. ### Lag"
+    },
+    {
+      "id": "11.3.1",
+      "text": "11.3.1. Lag is a condition applied to Units when they enter the field. Units with Lag are also called “lagging.”"
+    },
+    {
+      "id": "11.3.1.1",
+      "text": "11.3.1.1. Lagging Units can’t attack."
+    },
+    {
+      "id": "11.3.1.2",
+      "text": "11.3.1.2. Lagging Units can’t activate [Spend Icon] effects."
+    },
+    {
+      "id": "11.3.2",
+      "text": "11.3.2. At the end of each turn, all Units lose the “Lag” condition."
+    },
+    {
+      "id": "11.24",
+      "text": "11.24. ### [BLOCKER]"
+    },
+    {
+      "id": "11.24.1",
+      "text": "11.24.1. The [BLOCKER] keyword is shorthand for “When a rival Unit attacks, you may spend this Unit to redirect the attack to it instead.“"
+    },
+    {
+      "id": "11.24.2",
+      "text": "11.24.2. Activate [BLOCKER] as a reaction during the React Step of your Rival’s attack action."
+    },
+    {
+      "id": "11.24.3",
+      "text": "11.24.3. When a Unit uses [BLOCKER], it becomes the target of the attacking Unit’s current attack."
+    },
+    {
+      "id": "11.26",
+      "text": "11.26. ### [QUICK]"
+    },
+    {
+      "id": "11.26.1",
+      "text": "11.26.1. The [QUICK] keyword is shorthand for “You may also activate this effect (or play this Program) as a reaction to a rival Unit’s attack.”"
+    },
+    {
+      "id": "11.26.1.1",
+      "text": "11.26.1.1. A card with the [QUICK] keyword alongside no other effect text means the card can be played during the React Step by paying its cost."
+    },
+    {
+      "id": "11.26.1.2",
+      "text": "11.26.1.2. A card with the [QUICK] keyword alongside other effect text means “While this card is face-up on the field, you can use this effect during the React Step by paying its cost.”"
+    },
+    {
+      "id": "11.26.2",
+      "text": "11.26.2. You may activate a [QUICK] effect as an action during your Main Phase or as a reaction during the React Step of your Rival’s attack action."
+    },
+    {
+      "id": "11.26.3",
+      "text": "11.26.3. You must still pay any associated costs no matter when you play the effect."
+    }
+  ],
+  "decisions": {
+    "reboot": "Quick Program cost 2. Creates mandatory next-rival-fight defeat prevention this turn, not replacement of the fight or power. Text names no selected Unit: no targeting decision. Friendly/rival relative to effect controller, applies on offense or defense using current fight participants after Blocker.",
+    "fight": "9.19.3 preserves fight winner/losers; filter the rival-caused friendly defeat before semantic defeat. Emit no CARD_DEFEATED for the protected Unit.",
+    "consumption": "Card says next time a rival Unit fights, not next time it would defeat: consume on next actual qualifying Unit fight even if no defeat needed (friendly wins or zero-power tie). Gig-area resolution/attack invalidation is not a fight and does not consume. Unused effect expires 8.16.2.",
+    "source": "10.21 activated Program effect resolves independently of its source, ordinary 4.14 Program goes to Trash. No target-bound modifier; target hidden-area reset does not apply. Source identity/history retained, source movement alone does not cancel scheduled prevention.",
+    "overlap": "No specific Reboot ruling or next-time consumption/overlap rule in local capture. 10.28/10.29 specify replacement ordering but do not settle stacking these fight-triggered preventions. Only one outstanding next-fight prevention globally is supported; second creation and multi-effect states explicitly unsupported. This is an execution boundary, not an invented game rule.",
+    "restrictions": "Corpo static CANNOT_ATTACK does not prohibit its separate BLOCKER ability. Flathead static conditional CANNOT_BE_BLOCKED if controller Street Cred < rival; continuous 10.4.3/10.22 queried at each Blocker enumeration, not cached at declaration. CALL/Quick/PASS unaffected.",
+    "streetCred": "Use current rolled controlled Gig values. Empty area is Null (5.11.4), ordered below numeric zero (5.11.4.2); two Null values do not satisfy less-than. Existing numeric observation approximation is not changed.",
+    "vanilla": "Psycho Squad has only explicit [Flavour] prose; Emergency Atlus only quoted narrative about policyholders, no executable game instruction. Manual source review preserves full raw text; 3.18.1.2.3 classifies flavor as non-gameplay. No runtime text parsing or bulk admission.",
+    "format": "No local complete starter/demo rules found; source metadata lists printings, not format exceptions. Keep 40–50 main constructed, exact 27+3 teaching lists, no DEMO_STARTER."
+  }
+}

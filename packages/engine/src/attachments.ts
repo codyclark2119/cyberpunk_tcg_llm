@@ -6,7 +6,7 @@ function revision(state: GameState, id: CardInstanceId, context: EngineContext) 
     return context.content.cards.find(r => r.id === c?.cardId && r.revision === c?.revision);
 }
 export function supportsGear(card: DeepReadonly<CardRevisionSnapshot> | undefined, context: EngineContext) {
-    if (!gearEnabled(context) || !card || card.type !== "GEAR" || card.execution?.scope !== "NONCOMBAT_PLAY_V1" || card.execution.status !== "SUPPORTED" || card.printedCost.kind !== "EDDIES" || card.printedCost.amount > 1000 || card.power === undefined || card.mechanics.equip?.kind !== "FRIENDLY_UNIT_OR_FACE_UP_LEGEND" || card.mechanics.abilities.length || card.mechanics.keywords.length || card.mechanics.modifiers.length !== 1 || card.mechanics.modifiers[0].kind !== "GRANT_PRINTED_POWER_TO_HOST")
+    if (!gearEnabled(context) || !card || card.type !== "GEAR" || card.execution?.scope !== "NONCOMBAT_PLAY_V1" || card.execution.status !== "SUPPORTED" || card.printedCost.kind !== "EDDIES" || card.printedCost.amount > 1000 || card.power === undefined || card.mechanics.restrictions?.length || card.mechanics.equip?.kind !== "FRIENDLY_UNIT_OR_FACE_UP_LEGEND" || card.mechanics.abilities.length || card.mechanics.keywords.length || card.mechanics.modifiers.length !== 1 || card.mechanics.modifiers[0].kind !== "GRANT_PRINTED_POWER_TO_HOST")
         return failure("UNSUPPORTED_GEAR", "Reviewed simple Gear shape, equip rule and printed-power inheritance required; extra abilities are not certified");
     return success(null);
 }

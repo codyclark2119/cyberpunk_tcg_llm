@@ -1,3 +1,5 @@
+import { getAttackRestrictions, canBeBlocked } from "./combat-permissions";
+import { applicableFightPreventions } from "./fight-prevention";
 import { getGigStealAllowance } from "./combat-resolution-policy";
 import { listStealableGigs } from "./combat-outcome-queries";
 import { isReactDecision } from "./react-support";
@@ -45,6 +47,9 @@ export class RulesView {
     listStealableGigs(defender: PlayerId) { return listStealableGigs(this.state, defender); }
     getControlledGigCount(id: PlayerId) { return this.getControlledGigs(id).length; }
     getFightDefender() { const target = this.getCombatTarget(); return target?.kind === "CARD" ? this.getCard(target.cardInstanceId) : null; }
+    getAttackRestrictions(id: CardInstanceId) { return getAttackRestrictions(this.state, id, this.context); }
+    canBeBlocked(id: CardInstanceId) { return canBeBlocked(this.state, id, this.context); }
+    getApplicableFightPreventions() { return applicableFightPreventions(this.state); }
     getCombatTarget() { const c = this.state.timing.combat; return "target" in c ? c.target : null; }
     getAttachedGear(hostId: CardInstanceId) { return attachedGear(this.state, hostId, this.context); }
     getEquippedGearCount(hostId: CardInstanceId) { return this.getAttachedGear(hostId).length; }

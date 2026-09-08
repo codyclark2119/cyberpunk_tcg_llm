@@ -59,11 +59,11 @@ export function createGameWithEvents(input: z.input<typeof CreateGameInputSchema
             if (!supported.ok)
                 return supported;
         }
-        else if (content.execution?.scope === "NONCOMBAT_PLAY_V1" || content.execution?.scope === "COMBAT_ATTACK_V1" || content.execution?.scope === "COMBAT_REACT_V1") {
+        else if (content.execution?.scope === "NONCOMBAT_PLAY_V1" || content.execution?.scope === "COMBAT_ATTACK_V1" || content.execution?.scope === "COMBAT_REACT_V1" || content.execution?.scope === "COMBAT_RESTRICTIONS_V1") {
             const supported = supportsPlay(content, context);
             if (!supported.ok) return supported;
         }
-        else if (content.mechanics.equip || content.mechanics.abilities.length || content.mechanics.modifiers.length)
+        else if (content.mechanics.restrictions?.length || content.mechanics.equip || content.mechanics.abilities.length || content.mechanics.modifiers.length)
             return failure("UNSUPPORTED_CARD_EFFECT", "Turn slice requires cards without unsupported automatic effects");
     }
     if (engineSetup) {

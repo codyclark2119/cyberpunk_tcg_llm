@@ -7,6 +7,17 @@ export function testCondition(state: GameState, actor: PlayerId, condition: Cond
     const gigs = Object.values(state.objects.gigs).filter(g => g.controllerId === actor && g.location.zone === "GIGS" && g.roll.kind === "ROLLED");
     const values = gigs.flatMap(g => g.roll.kind === "ROLLED" ? [g.roll.currentValue] : []);
     switch (condition.kind) {
+        case "STREET_CRED_LESS_THAN_RIVAL": {
+            // 5.11.4: Null is below numeric values; two Null areas are not less than each other.
+            const own = values.length ? values.reduce((a, b) => a + b, 0) : null;
+            return state.match.playerOrder.some(id => {
+                if (id === actor) return false;
+                const rival = Object.values(state.objects.gigs).filter(g => g.controllerId === id && g.location.zone === "GIGS" && g.roll.kind === "ROLLED");
+                if (!rival.length) return false;
+                const sum = rival.reduce((n, g) => n + (g.roll.kind === "ROLLED" ? g.roll.currentValue : 0), 0);
+                return own === null || own < sum;
+            });
+        }
         case "SOURCE_POWER_AT_LEAST": { const power = context && sourceId ? effectivePower(state, sourceId, context) : null; return power !== null && (context && combatResolutionEnabled(context) ? referencedPower(power) : power) >= condition.minimum; }
         case "GIG_COUNT": return gigs.length >= condition.minimum;
         case "DISTINCT_GIG_DIE_TYPES": return new Set(gigs.map(g => g.dieType)).size >= condition.minimum;

@@ -1,3 +1,4 @@
+import { createsFightPrevention, supportsRestrictedPlay } from "./restriction-support";
 import { isReactDecision, supportsReactPlay } from "./react-support";
 import { supportsAttackPlay } from "./attack-support";
 import { supportsGear, legalEquipHosts } from "./attachments";
@@ -12,6 +13,8 @@ export function revisionOf(state: GameState, id: CardInstanceId, context: Engine
 }
 /** Admission certifies only these reviewed shapes, never catalog legality or arbitrary metadata. */
 export function supportsPlay(card: DeepReadonly<CardRevisionSnapshot> | undefined, context: EngineContext) {
+    if (playEnabled(context) && card?.execution?.scope === "COMBAT_RESTRICTIONS_V1") return supportsRestrictedPlay(card, context);
+    if (card?.mechanics.restrictions?.length) return failure("UNSUPPORTED_CARD_RESTRICTIONS", "Printed restrictions require their complete reviewed execution scope");
     if (playEnabled(context) && card?.execution?.scope === "COMBAT_REACT_V1") return supportsReactPlay(card, context);
     if (playEnabled(context) && card?.execution?.scope === "COMBAT_ATTACK_V1") return supportsAttackPlay(card, context);
     if (playEnabled(context) && card?.type === "GEAR") return supportsGear(card, context);
@@ -31,7 +34,7 @@ export function supportsPlay(card: DeepReadonly<CardRevisionSnapshot> | undefine
 function main(state: GameState, actor: PlayerId) { return state.timing.activePlayer === actor && state.timing.actingPlayer === actor && state.timing.window === "MAIN" && state.resolution.stage === "DECISION" && state.timing.combat.stage === "NONE" && !state.match.outcome; }
 export function canPlay(state: GameState, actor: PlayerId, id: CardInstanceId, context: EngineContext) {
     const c = state.objects.cards[id], r = revisionOf(state, id, context);
-    return Boolean((main(state, actor) || (isReactDecision(state, actor, context) && r?.type === "PROGRAM" && r.mechanics.keywords.includes("QUICK"))) && c?.zone.zone === "HAND" && c.zone.playerId === actor && c.controllerId === actor && supportsPlay(r, context).ok && (r?.type !== "GEAR" || legalEquipHosts(state, id, context).length > 0) && r?.printedCost.kind === "EDDIES" && (r.printedCost.amount === 0 || paymentCandidates(state, actor, context, r.printedCost.amount, []).length));
+    return Boolean((main(state, actor) || (isReactDecision(state, actor, context) && r?.type === "PROGRAM" && r.mechanics.keywords.includes("QUICK"))) && c?.zone.zone === "HAND" && c.zone.playerId === actor && c.controllerId === actor && supportsPlay(r, context).ok && !(createsFightPrevention(r) && state.fightPreventions?.length) && (r?.type !== "GEAR" || legalEquipHosts(state, id, context).length > 0) && r?.printedCost.kind === "EDDIES" && (r.printedCost.amount === 0 || paymentCandidates(state, actor, context, r.printedCost.amount, []).length));
 }
 export function canActivate(state: GameState, actor: PlayerId, id: CardInstanceId, abilityId: string, context: EngineContext) {
     const c = state.objects.cards[id], r = revisionOf(state, id, context), a = r?.mechanics.abilities.find(a => a.id === abilityId);

@@ -1,12 +1,13 @@
 import { canonicalSerialize, type AttackTarget, type CardInstanceId, type GameState, type PlayerId } from "@tcg/domain";
 import type { EngineContext } from "./state";
+import { getAttackRestrictions } from "./combat-permissions";
 import { combatEnabled } from "./attack-support";
 import { cardRevision, effectiveCardTypes } from "./characteristics";
 import { supportsPlay } from "./play-support";
 export function isUnitForGameplay(state: GameState, id: CardInstanceId, context: EngineContext) { return effectiveCardTypes(state, id, context).includes("UNIT"); }
 export function attackSourceValid(state: GameState, actor: PlayerId, id: CardInstanceId, context: EngineContext) {
     const c = state.objects.cards[id];
-    return Boolean(combatEnabled(context) && c && c.controllerId === actor && c.zone.playerId === actor && c.zone.zone === "BATTLEFIELD" && c.face === "UP" && isUnitForGameplay(state, id, context) && supportsPlay(cardRevision(state, id, context), context).ok && !c.statuses.includes("LAG"));
+    return Boolean(combatEnabled(context) && c && c.controllerId === actor && c.zone.playerId === actor && c.zone.zone === "BATTLEFIELD" && c.face === "UP" && isUnitForGameplay(state, id, context) && supportsPlay(cardRevision(state, id, context), context).ok && !c.statuses.includes("LAG") && !getAttackRestrictions(state, id, context).length);
 }
 /** 9.3.2: target the nonempty area, never a die to steal. No readiness requirement on the attacker here. */
 export function listAttackTargets(state: GameState, attackerId: CardInstanceId, actor: PlayerId, context: EngineContext): AttackTarget[] {

@@ -1,3 +1,4 @@
+import { validateFightPreventions } from "./fight-prevention";
 import { validateActionReturn } from "./action-return";
 import { validateTemporaryPower } from "./temporary-power";
 import { supportsCall } from "./effect-support";
@@ -110,6 +111,8 @@ export function validateState(input: unknown, context: EngineContext): Result<Ga
     if (!returning.ok) return returning;
     const temporary = validateTemporaryPower(s, context);
     if (!temporary.ok) return temporary;
+    const prevention = validateFightPreventions(s, context);
+    if (!prevention.ok) return prevention;
     const combat = validateCombatState(s, context);
     if (!combat.ok) return combat;
     const slice = b.ruleset.gameplay?.turnSlice;

@@ -1,3 +1,4 @@
+import { applyFightPreventions } from "./fight-prevention";
 import { failure, success } from "@tcg/domain";
 import type { TurnMutation } from "./turn";
 import { RulesView } from "./view";
@@ -93,8 +94,9 @@ export function resolveCombat(m: TurnMutation) {
         const result = evaluateFight(m.state, m.context, id => view.getEffectivePower(id));
         m.emit(result.event);
         // No admitted fight-result triggers (9.18). Never cache power/outcome into GameState.
-        if (!result.defeats.length) return finishCombat(m);
-        m.state.resolution.defeatContinuation = { defeats: result.defeats, orders: result.defeats.map(d => ({ targetId: d.targetId, cardIds: [] })) };
+        const outcome = applyFightPreventions(m, result.defeats);
+        if (!outcome.defeats.length) return finishCombat(m);
+        m.state.resolution.defeatContinuation = { ...outcome, orders: outcome.defeats.map(d => ({ targetId: d.targetId, cardIds: [] })) };
         return advanceDefeats(m);
     }
     const power = view.getEffectivePower(c.attackerId);

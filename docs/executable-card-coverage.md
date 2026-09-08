@@ -198,3 +198,44 @@ Floor It's physical target retains its modifier in public Trash/Removed until tu
 A final GIG_AREA target uses reviewed ruleset policy: nonpositive power steals zero; positive power allows `floor(power / 10 + 1)`. Select as many as possible, one actual Gig at a time when alternatives exist; forced all-available selection is automatic. All selected instances move together, retaining owner, die and both values. Street Cred is derived again. A Blocker-replaced target fights that Unit and never steals from the old Gig area.
 
 See [combat-resolution-report.md](combat-resolution-report.md) for the complete rules, automatic/choice boundaries, source hashes, nine replay families, tests and limits. Official constructed remains 40–50 main cards. The 27-main + 3-Legend demo lists are unchanged execution roadmaps, not executable constructed decks; no DEMO_STARTER policy was added.
+
+
+## COMBAT_RESTRICTIONS_V1: prevention, combat permissions and ordinary Units
+
+Exactly five new immutable revision-1 cards are admitted as `COMBAT_RESTRICTIONS_V1 / SUPPORTED`, requiring the complete combat policy. Earlier sections describe historical policy boundaries. No existing revision changed; no FULL_GAME or bulk corpus certification is implied. [combat-restrictions-fixture.ts](../tests/combat-restrictions-fixture.ts) contains handwritten normalization. [combat-restrictions-card-sources.v1.json](../tests/fixtures/combat-restrictions-card-sources.v1.json) preserves every raw field and all 23 printing UUIDs.
+
+| CardId / revision 1 | Type / RAM / Eddie cost / power / sellable | Complete captured text |
+|---|---|---|
+| `reboot-optics` | Program / Blue 2 / 2 / Null / True | `{Quick} The next time a rival Unit fights this turn, it doesn't defeat the opposing friendly Unit.` |
+| `corpo-security` | Unit / Green 1 / 2 / 2 / False | `This Unit can't attack.<br>{Blocker} (You may spend this Unit to redirect a rival Unit's attack to it instead.)` |
+| `mt0d12-flathead` | Unit / Blue 3 / 5 / 7 / True | `If you have less ☆ (Street Cred) than a Rival, this Unit can't be blocked.` |
+| `psycho-squad` | Unit / Blue 1 / 4 / 6 / False | `[Flavour] Their protocol stops at “shoot first.”` |
+| `emergency-atlus` | Unit / Green 1 / 3 / 4 / False | `"Grab the policyholder, leave the rest for the city meatwagon."` |
+
+Reboot reuses ordinary MAIN/defender-React Program play, cost-2 payment and RESOLVING_PROGRAM → TRASH. It creates mandatory non-targeted next-fight defeat prevention. The next actual rival/friendly Unit fight consumes it, even when no defeat needs preventing. Current participants after Blocker determine applicability. Power, FIGHT_STARTED, FIGHT_RESULT and winner/loser remain unchanged; only the rival-caused friendly defeat is filtered before the shared semantic defeat/movement stage. Gig attacks do not consume it, unused effects expire at turn end, and source movement does not cancel the independent Program effect (10.21). No extra optional-use choice is invented.
+
+One outstanding prevention globally is supported. Second creation and ambiguous multi-effect states explicitly return `UNSUPPORTED_MULTIPLE_FIGHT_PREVENTIONS`; this is a scope boundary, not a game rule or array-order decision. Active records carry deterministic identity, source, controller and current turn duration. A consumed proof remains only while needed to validate filtered defeat during an owner Trash-order continuation; cleanup removes it.
+
+Corpo's unconditional CANNOT_ATTACK is derived; its separate BLOCKER reuses the existing handler, including blocking with Lag. Flathead derives CANNOT_BE_BLOCKED when its controller's current Street Cred is strictly below a rival's. Equality permits blocking; only its own attack is affected. CALL/Quick/PASS remain legal. Current admitted reactions do not alter Street Cred, but the condition queries current state after every completed reaction. Empty-area Null compares below numeric values; two Nulls are not less than each other. The older zero-valued Street Cred observation approximation is unchanged.
+
+Psycho Squad's explicit `[Flavour]` and Emergency Atlus's quoted narrative contain no executable instruction. Both use one reusable reviewed ordinary-Unit shape: numeric cost/power, no abilities, keywords, restrictions, equip clause or modifiers. Normal play/payment/Lag, later attacks, spent targeting and fight/defeat use the shared engine. Emergency's API text does not preserve visual italics: this is a captured-text/metadata implementation review, not publisher-image or human-gold certification. Future real cards still require explicit reviewed revisions; empty-looking text never triggers automatic admission.
+
+| CardId | Raw-byte SHA-256 | Canonical sourceHash | Normalized revision hash |
+|---|---|---|---|
+| `reboot-optics` | `5e75a4492e9c5375c7dd24bfa5de6dbe9046d0ed50bacbf93a3525466362c9b9` | `26beb709278092f79d4809e436f1db5ff74c754872bd74605106faef399044ac` | `dbc84769ae27e11b67d34f83ed7d1be60b96d794289f65544b624265b86e1243` |
+| `corpo-security` | `ca00222ae8b1b4c6edd7a4238b90e0a7414d678f83da652087cf2477eefe4afd` | `4ad43c7f2fc8f902b014a9f3d9c37962c1289bca43e8af7deb9dd6cae9e44eaf` | `949cb395f736e8e6a27cb07a725a2420df9123554f1b3ddc20810533491e5fee` |
+| `mt0d12-flathead` | `25f9729e49b6c4b502f295c8251260b36b9f3cfab5452a7eab04b0383b46d80b` | `3be73028c2647e5c2eec3ca45115901fad377e94cd65880c7e7e530a5d49be23` | `06a6a78f8973b177ba8da90b68b7ec10de8fa40cd4349be58ee9dd4c5a2be8e4` |
+| `psycho-squad` | `b684eb207662916924ab8d910582f3eb94d683c812dace6546507e2cec6df4dc` | `318d221ca664064605dac5fc2f9508f6d11f9fbe19c0345344b9ddc3da2ff387` | `d45245c914161e18a056d95fbe5a3d19075055b3d9b78600d2f555d641e09b7c` |
+| `emergency-atlus` | `a521b700a916562d392a9343055a1cdc8d6c5ac163c1e0c53a539183426611d6` | `25b38856b8c1356339600969c350d0cd7353d2e78575cacdac455cfcba1d053f` | `7c821e3255667936e4f176df5390b3c3edd231fac89f4ccaa78babd5dc1fa956` |
+
+| CardId | Primary printing UUID / collector number | Demo printing UUID / collector number | Captured printings |
+|---|---|---|---:|
+| `reboot-optics` | `fb096d3f-48eb-47c0-a065-81b39691e12f` / 136 | `7a8acee6-f460-4d2d-aaa3-3d057ef7c36c` / 015 | 5 |
+| `corpo-security` | `80dcc139-d31d-4b89-86ff-cdbdd2664953` / 076 | `c165a5eb-3338-4a80-8fb9-b7e39b412e5b` / 010 | 5 |
+| `mt0d12-flathead` | `5f0d9dac-2547-4ecb-896e-0c603968422a` / 015 | `f7742fc7-0abe-45ee-a6ce-22caf159e06d` / 011 | 3 |
+| `psycho-squad` | `d7e0e2e5-6e22-4b45-9e91-50936773e2e1` / 124 | `c45d93f9-bc2d-4e35-9d77-ba62d9d4e4d9` / 012 | 5 |
+| `emergency-atlus` | `9c18b6ae-765d-4244-8de4-e382c4767de1` / 077 | `45dd3b11-7bd8-4239-a404-ab0c9b24fcdb` / 011 | 5 |
+
+Pinned raw errata SHA-256: `1203a6c268c94d9d670a9cc145f739957fd018fa23eab86628bac94984ce1d75`; processed errata SHA-256: `16304146074363480e2c22639c9799b9d4302118c669e85e9f475b4a1bf6a340`. All four local records were reviewed; none matches these five cards. The source fixture stores full raw record objects and original byte hashes. Content manifests pin normalized revision hashes. Runtime reads typed mechanics only.
+
+[combat-restrictions-rules.v1.json](../tests/fixtures/combat-restrictions-rules.v1.json) pins 140 exact rules and interpretation decisions. [combat-restrictions.test.ts](../tests/combat-restrictions.test.ts) covers complete-shape rejection, lifetime, combat, visibility and ordering. Three new legal replay families plus an expiration branch pass through PostgreSQL; Python traverses all 12 goldens by actionId without rules duplication. The [demo roadmap](demo-deck-coverage-roadmap.md) is 11/29 distinct cards, still insufficient for either exact starter. See [combat-restrictions-report.md](combat-restrictions-report.md) for runtime pins, commands and limits.

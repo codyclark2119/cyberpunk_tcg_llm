@@ -14,6 +14,7 @@ export const TargetSelectorSchema = z.discriminatedUnion("kind", [
     z.strictObject({ kind: z.literal("GIGS"), relation: z.enum(["CONTROLLED", "RIVAL", "ANY"]) })
 ]);
 export const ConditionSchema = z.discriminatedUnion("kind", [
+    z.strictObject({ kind: z.literal("STREET_CRED_LESS_THAN_RIVAL") }),
     z.strictObject({ kind: z.literal("SOURCE_POWER_AT_LEAST"), minimum: z.number().int().nonnegative() }),
     z.strictObject({ kind: z.literal("GIG_VALUE_AT_LEAST"), minimum: z.number().int().nonnegative() }),
     z.strictObject({ kind: z.literal("GIG_COUNT"), minimum: z.number().int().nonnegative() }),
@@ -22,6 +23,11 @@ export const ConditionSchema = z.discriminatedUnion("kind", [
     z.strictObject({ kind: z.literal("STREET_CRED"), minimum: z.number().int().nonnegative() }),
     z.strictObject({ kind: z.literal("GIG_VALUE"), value: z.number().int() })
 ]);
+export const CombatRestrictionSchema = z.discriminatedUnion("kind", [
+    z.strictObject({ kind: z.literal("CANNOT_ATTACK") }),
+    z.strictObject({ kind: z.literal("CANNOT_BE_BLOCKED"), condition: z.strictObject({ kind: z.literal("STREET_CRED_LESS_THAN_RIVAL") }) })
+]);
+export type CombatRestriction = z.infer<typeof CombatRestrictionSchema>;
 export const CostSchema = z.discriminatedUnion("kind", [
     z.strictObject({ kind: z.literal("EDDIES"), amount: z.number().int().nonnegative() }),
     z.strictObject({ kind: z.literal("DASH") }), z.strictObject({ kind: z.literal("NONE") })
@@ -49,6 +55,7 @@ export const PendingChoiceSchema = z.strictObject({
     ordered: z.boolean(), continuationId: z.string().min(1)
 }).refine(c => c.min <= c.max && c.max <= c.options.length, "Invalid choice bounds");
 export const EffectSchema = z.discriminatedUnion("kind", [
+    z.strictObject({ kind: z.literal("CREATE_NEXT_RIVAL_FIGHT_PREVENTION") }),
     z.strictObject({ kind: z.literal("POWER_UNTIL_END_OF_TURN"), target: z.strictObject({ kind: z.literal("RIVAL_UNIT") }), amount: z.literal(-1) }),
     z.strictObject({ kind: z.literal("ADJUST_GIG_UP_TO"), target: z.strictObject({ kind: z.literal("GIGS"), relation: z.literal("ANY") }), maximum: z.literal(1) }),
     z.strictObject({ kind: z.literal("CONDITIONAL_DRAW"), timing: z.literal("RESOLUTION"), condition: ConditionSchema, count: z.number().int().positive() }),

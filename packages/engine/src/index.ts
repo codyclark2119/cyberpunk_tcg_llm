@@ -1,3 +1,6 @@
+import { expireFightPreventions } from "./fight-prevention";
+import { createsFightPrevention } from "./restriction-support";
+import { cardRevision } from "./characteristics";
 import { combatResolutionEnabled } from "./combat-resolution-policy";
 import { continueGigSteal, continueDefeatOrder, resolveCombat } from "./combat-resolution";
 import { transferGigs } from "./gig-transfer";
@@ -134,6 +137,7 @@ export function validateAction(state: GameState, input: GameAction, context: Eng
     if (!checked.ok) return checked;
     if (state.timing.combat.stage === "COMBAT_RESOLUTION_PENDING") return failure(combatResolutionEnabled(context) ? "AUTOMATIC_COMBAT_RESOLUTION_REQUIRED" : "UNSUPPORTED_COMBAT_RESOLUTION", "PASS_REACT resolves combat automatically; use advanceResolutionWithEvents to resume a trusted pending boundary without dropping its event batch. Earlier policy pins stop here");
     if (state.timing.combat.stage === "RIVAL_REACT" && !reactEnabled(context)) return failure("UNSUPPORTED_RIVAL_REACT", "Attack initiation is complete; defender reactions are not implemented and cannot be auto-passed");
+    if (action.data.action.kind === "PLAY_CARD" && state.fightPreventions?.length && createsFightPrevention(cardRevision(state, action.data.action.cardInstanceId, context))) return failure("UNSUPPORTED_MULTIPLE_FIGHT_PREVENTIONS", "Overlapping next-fight preventions need a separate review; no second outstanding effect is currently executable");
     const legal = listLegalActions(state, action.data.actorId, context);
     if (!legal.ok)
         return legal;
@@ -250,6 +254,7 @@ export function applyAction(state: GameState, action: GameAction, context: Engin
                             mutation.emit({ kind: "LAG_REMOVED", cardInstanceId: card.id });
                         }
                 expireTemporaryPower(mutation);
+                expireFightPreventions(mutation);
                 mutation.emit({ kind: "TURN_ENDED", playerId: actor, turn: s.timing.turn });
                 s.timing.activePlayer = s.match.playerOrder[(s.players[actor].seat + 1) % s.match.playerOrder.length];
                 s.timing.turn++;

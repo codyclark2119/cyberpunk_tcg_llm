@@ -1,3 +1,4 @@
+import { restrictionsEnabled } from "./restriction-support";
 import { validateCombatOutcome } from "./combat-outcome-state";
 import { combatResolutionEnabled } from "./combat-resolution-policy";
 import { reactEnabled } from "./react-support";
@@ -16,6 +17,7 @@ export function validateCombatState(state: GameState, context: EngineContext) {
     const c = state.timing.combat, r = state.resolution;
     if (reactEnabled(context) && !combatEnabled(context)) return failure("UNSUPPORTED_REACT_POLICY", "React requires reviewed attack initiation");
     if (combatEnabled(context) && (!gearEnabled(context) || !playEnabled(context) || context.content.ruleset.gameplay?.turnSlice?.callEffects !== "REVIEWED_CALL_V1")) return failure("UNSUPPORTED_COMBAT_POLICY", "Reviewed attack initiation requires the reviewed play, Gear and CALL policies");
+    if (restrictionsEnabled(context) && !combatResolutionEnabled(context)) return failure("UNSUPPORTED_RESTRICTIONS_POLICY", "Restrictions/prevention require reviewed complete combat resolution");
     if (combatResolutionEnabled(context) && !reactEnabled(context)) return failure("UNSUPPORTED_COMBAT_RESOLUTION_POLICY", "Combat resolution requires reviewed React");
     const outcome = validateCombatOutcome(state, context);
     if (!outcome.ok) return outcome;
