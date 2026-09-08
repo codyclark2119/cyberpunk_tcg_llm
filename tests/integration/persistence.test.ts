@@ -1,3 +1,5 @@
+import { resolutionContext } from "../combat-resolution-fixture";
+import { fightReplay, gigStealReplay } from "../combat-resolution-replay";
 import { reactContext, reactInput } from "../react-fixture";
 import { reactReplay } from "../react-replay";
 import { noncombatContext, noncombatInput } from "../noncombat-fixture";
@@ -243,6 +245,34 @@ test("Postgres ledger: running, conflict, replay, transactional rollback and sta
         assert.equal(reactEvents.at(-1)?.payload.kind, "COMBAT_RESOLUTION_PENDING");
         assert.ok(reactEvents.some(e => e.payload.kind === "BLOCKER_DECLARED"));
         assert.deepEqual(unwrap(listLegalActions(reactState, otherActor, reactCtx)), []);
+        // Complete both combat branches through the same durable state + event transaction.
+        for (const trace of [fightReplay(), gigStealReplay()]) {
+            const ctx = resolutionContext();
+            const initial = unwrap(createGameWithEvents({ ...trace.initialization, matchId: randomUUID(), players: [actor, otherActor] }, ctx));
+            assert.equal((await match.create(initial.state, initial.events)).ok, true);
+            let state = initial.state;
+            const events = [...initial.events];
+            for (const step of trace.steps) {
+                const transition = unwrap(applyAction(state, { actorId: state.timing.actingPlayer, action: step.action.action }, ctx));
+                assert.equal((await match.save(transition.state, state.match.version, transition.events)).ok, true);
+                state = transition.state; events.push(...transition.events);
+                const stored = await match.find(state.match.id);
+                assert.deepEqual(stored, state); assert.ok(stored);
+                assert.equal(hashReplayState(stored), hashReplayState(state)); assert.equal(hashPosition(stored), step.positionHash);
+                assert.deepEqual(await match.history(state.match.id), events);
+            }
+            assert.equal(state.timing.combat.stage, "NONE"); assert.equal(state.timing.window, "MAIN");
+            assert.deepEqual(events.map(e => e.sequence), Array.from({ length: events.length }, (_, i) => i + 1));
+            assert.deepEqual(state.temporaryModifiers, trace.finalState.temporaryModifiers);
+            for (const seat of [0, 1]) {
+                const currentView = new RulesView(state, ctx), expectedView = new RulesView(trace.finalState, ctx);
+                assert.equal(currentView.getStreetCred(state.match.playerOrder[seat]), expectedView.getStreetCred(trace.finalState.match.playerOrder[seat]));
+            }
+            if (trace.steps.some(s => s.events.some(e => e.payload.kind === "CARD_DEFEATED"))) {
+                assert.ok(events.some(e => e.payload.kind === "CARD_DEFEATED"));
+                assert.deepEqual(state.objects.cards[trace.attackerId].attachments, trace.finalState.objects.cards[trace.attackerId].attachments);
+            } else assert.ok(events.some(e => e.payload.kind === "GIG_STOLEN"));
+        }
         // Inject an event insert failure AFTER the state UPDATE to verify transaction rollback.
         await pool.query("CREATE FUNCTION reject_test_event() RETURNS trigger LANGUAGE plpgsql AS $$ BEGIN RAISE EXCEPTION 'event insert failure'; END $$");
         await pool.query("CREATE TRIGGER reject_test_event BEFORE INSERT ON match_events FOR EACH ROW EXECUTE FUNCTION reject_test_event()");

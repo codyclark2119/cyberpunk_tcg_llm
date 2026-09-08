@@ -3,6 +3,8 @@ import type { EngineContext } from "./state";
 import { validateState } from "./state";
 import { TurnMutation } from "./turn";
 import { attachmentHost, gearEnabled, legalEquipHosts } from "./attachments";
+import { expirePowerOnHiddenEntry } from "./temporary-power";
+import { combatResolutionEnabled } from "./combat-resolution-policy";
 type Destination = "HAND" | "TRASH" | "REMOVED";
 function revision(m: TurnMutation, id: CardInstanceId) {
     const c = m.state.objects.cards[id];
@@ -10,6 +12,7 @@ function revision(m: TurnMutation, id: CardInstanceId) {
 }
 /** Private transport of a physical card. Callers must complete the associated attachment rule processing. */
 export function moveCardLocation(m: TurnMutation, id: CardInstanceId, zone: "BATTLEFIELD" | "LEGENDS" | "RESOLVING_PROGRAM" | Destination) {
+    if (zone === "HAND") expirePowerOnHiddenEntry(m, id);
     const card = m.state.objects.cards[id], from = { ...card.zone };
     const refs = m.state.players[from.playerId].zones[from.zone]!;
     refs.splice(refs.indexOf(id), 1);
@@ -36,7 +39,7 @@ function detach(m: TurnMutation, gearId: CardInstanceId, hostId: CardInstanceId,
     m.emit({ kind: "GEAR_DETACHED", gearInstanceId: gearId, hostInstanceId: hostId, reason });
 }
 /** Verified departure processing, shared by future trusted handlers. No repair of arbitrary invalid states. */
-function processDeparture(m: TurnMutation, id: CardInstanceId, destination: Destination, order?: readonly CardInstanceId[]): Result<null> {
+export function processDeparture(m: TurnMutation, id: CardInstanceId, destination: Destination, order?: readonly CardInstanceId[]): Result<null> {
     const source = m.state.objects.cards[id], host = attachmentHost(m.state, id), gearIds = [...source.attachments].sort();
     const batch = [id, ...gearIds];
     if (destination === "TRASH" && batch.length > 1 && !order) return failure("TRASH_ORDER_REQUIRED", "5.9.4.1: controlling operation must supply the owner's order for simultaneous trash entries");
@@ -62,7 +65,7 @@ export function moveCardForEffect(state: GameState, id: CardInstanceId, destinat
         return failure("UNSUPPORTED_CARD_MOVEMENT", "Trusted departure requires the reviewed Gear policy and stable noncombat MAIN");
     const card = state.objects.cards[id];
     if (!card || !["BATTLEFIELD", "LEGENDS"].includes(card.zone.zone) || !["HAND", "TRASH", "REMOVED"].includes(destination)) return failure("UNSUPPORTED_CARD_MOVEMENT", "Only departures from active host/Gear areas are implemented");
-    if (state.temporaryModifiers?.some(x => x.targetId === id)) return failure("UNSUPPORTED_MODIFIER_ZONE_CHANGE", "Temporary power across target zone changes needs a separately reviewed lifecycle policy");
+    if (!combatResolutionEnabled(context) && state.temporaryModifiers?.some(x => x.targetId === id)) return failure("UNSUPPORTED_MODIFIER_ZONE_CHANGE", "Temporary power across target zone changes needs a separately reviewed lifecycle policy");
     const m = new TurnMutation(valid.value, context), moved = processDeparture(m, id, destination, trashOrder);
     return moved.ok ? m.result() : moved;
 }

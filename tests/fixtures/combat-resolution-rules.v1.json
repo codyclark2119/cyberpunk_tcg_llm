@@ -1,0 +1,493 @@
+{
+  "source": "Pinned local comprehensive rules; implementation review, not human-certified gold",
+  "sha256": "054d2d2a4664e5b560304e0962e71b195467ad097cc4c62b2698fc57467a28dd",
+  "processedSha256": "1f299c9cbe2657c9d088ae4b3a812b85e46c3fd2659579229635959c59a20e19",
+  "errataSha256": "1203a6c268c94d9d670a9cc145f739957fd018fa23eab86628bac94984ce1d75",
+  "processedErrataSha256": "16304146074363480e2c22639c9799b9d4302118c669e85e9f475b4a1bf6a340",
+  "rules": [
+    {
+      "id": "1.7",
+      "text": "1.7. Every game piece has an owner. Every game piece in play also has a controller."
+    },
+    {
+      "id": "1.7.1",
+      "text": "1.7.1. You “own” the pieces you bring to the game (your deck, side deck, Gig dice, etc.). You’re the “owner” of these pieces."
+    },
+    {
+      "id": "1.7.2",
+      "text": "1.7.2. You “control” the pieces currently in your friendly Gig area, field, Legends area, and Eddies area. You’re the “controller” of these pieces, even if you’re not the owner."
+    },
+    {
+      "id": "1.7.2.1",
+      "text": "1.7.2.1. Pieces you control are considered “friendly” pieces."
+    },
+    {
+      "id": "1.7.2.2",
+      "text": "1.7.2.2. Pieces your Rival controls are considered “rival” pieces."
+    },
+    {
+      "id": "1.7.3",
+      "text": "1.7.3. Game pieces can change controllers, but can never change owners."
+    },
+    {
+      "id": "1.7.3.1",
+      "text": "1.7.3.1. When you take control of a Rival’s game piece, follow the rules in Respect Your Rival."
+    },
+    {
+      "id": "1.7.3.2",
+      "text": "1.7.3.2. At the end of the game, return all game pieces to their respective owners."
+    },
+    {
+      "id": "2.10",
+      "text": "2.10. A game value can be a negative number."
+    },
+    {
+      "id": "2.10.1",
+      "text": "2.10.1. When a game value is a negative number, it is treated as 0 for all references and comparisons of values.\n\n> **EXAMPLE:** A Unit has 2 power. An effect reduces its power by 3. The Unit has -1 power, but is treated as having 0 power when attacking, fighting, or when a card effect references its power. If it then gains +2 power, that Unit has 1 power. The order of these effects being applied does not alter this outcome."
+    },
+    {
+      "id": "2.10.2",
+      "text": "2.10.2. A value of null ( - ) is not treated as a number. It does not count as 0, and it is not even or odd."
+    },
+    {
+      "id": "3.17",
+      "text": "3.17. ### Power"
+    },
+    {
+      "id": "3.17.1",
+      "text": "3.17.1. A card’s “power” determines its success in stealing and fighting. See ATTACK, FIGHT, AND STEAL."
+    },
+    {
+      "id": "3.17.2",
+      "text": "3.17.2. A Unit or Legend’s power is equal to the power printed on the card plus the power of its equipped Gear and any current effect modifiers."
+    },
+    {
+      "id": "3.17.3",
+      "text": "3.17.3. A Gear’s power modifies the Unit or Legend it is equipped to."
+    },
+    {
+      "id": "3.17.3.1",
+      "text": "3.17.3.1. Units and Legends inherit power from Gears equipped to them."
+    },
+    {
+      "id": "3.17.3.2",
+      "text": "3.17.3.2. A Gear’s power is equal to the power printed on the card."
+    },
+    {
+      "id": "3.17.3.3",
+      "text": "3.17.3.3. A Gear’s power is not modified by card effects, unless the effect specifically targets the Gear."
+    },
+    {
+      "id": "3.17.4",
+      "text": "3.17.4. “Base power” refers to the printed power on a Legend, Unit, or Gear, separate from any applied or inherited modifiers."
+    },
+    {
+      "id": "4.4",
+      "text": "4.4. A Legend is only valid in the Legends area or field area. All other areas (trash, hand, deck, etc.) are invalid areas."
+    },
+    {
+      "id": "4.4.1",
+      "text": "4.4.1. If a Legend moves to an invalid area, remove it from the game."
+    },
+    {
+      "id": "4.4.2",
+      "text": "4.4.2. If a Legend moves to an invalid area, any effects that trigger from the card entering the area enter pending. Remove the Legend from the game before you resolve them. See GAME AREAS > Removed from Game."
+    },
+    {
+      "id": "4.12",
+      "text": "4.12. When a Legend or Unit moves to a different area (field, trash, hand, etc.), all of its equipped Gear moves with it."
+    },
+    {
+      "id": "4.12.1",
+      "text": "4.12.1. When a Gear moves with a Unit or Legend to an area outside of the field or Legends area, the Gear isn’t equipped to the Unit or Legend in that area.\n\n> **EXAMPLE:** An equipped Unit has the effect “At the end of your turn, return this Unit to its owner's hand.” When you move the Unit to your hand, you also move its equipped Gear to your hand. Once the cards are in your hand, the Gear is no longer equipped to the Unit. So, if you play the Unit from your hand next turn, the Gear does not move with it."
+    },
+    {
+      "id": "4.12.2",
+      "text": "4.12.2. If an equipped Legend moves to an area outside of the Field or Legends area, the Gear follows the Legend to the new area. The Gear is no longer equipped in the new area, so it stays there when you remove the Legend from play."
+    },
+    {
+      "id": "4.12.3",
+      "text": "4.12.3. When you bottom-deck an equipped Unit, place the cards at the bottom of your deck in a random order. Randomize them amongst any other cards bottom-decked at the same time. See Bottom-deck."
+    },
+    {
+      "id": "5.3",
+      "text": "5.3. A game area may be “public” or “hidden.”"
+    },
+    {
+      "id": "5.3.1",
+      "text": "5.3.1. If a game area is public, these rules apply."
+    },
+    {
+      "id": "5.3.1.1",
+      "text": "5.3.1.1. Face-up cards in a public area are known to all players. You can look at information on all face-up cards at any time."
+    },
+    {
+      "id": "5.3.1.2",
+      "text": "5.3.1.2. Face-down cards in a public area aren’t publicly known. You can’t look at them unless directed by an effect."
+    },
+    {
+      "id": "5.3.2",
+      "text": "5.3.2. If a game area is hidden, these rules apply."
+    },
+    {
+      "id": "5.3.2.1",
+      "text": "5.3.2.1. Cards in a hidden area aren’t publicly known. You can’t look at them unless directed by an effect."
+    },
+    {
+      "id": "5.3.2.2",
+      "text": "5.3.2.2. If a card enters a hidden area, ignore any information on the card and remove any existing modifiers attached to it."
+    },
+    {
+      "id": "5.3.2.3",
+      "text": "5.3.2.3. If an effect requires you to reveal and move a card from a hidden area, you must reveal the card before moving it to another area."
+    },
+    {
+      "id": "5.3.2.4",
+      "text": "5.3.2.4. When you search for a card in a hidden area, you do not have to reveal any information about your findings if you fail to find a valid target. See Search."
+    },
+    {
+      "id": "5.3.2.4.1",
+      "text": "5.3.2.4.1. If an effect requires a player to choose from a hidden area using information that is not public, that player may choose to fail to find a target."
+    },
+    {
+      "id": "5.3.2.5",
+      "text": "5.3.2.5. If an effect requires you to choose from a hidden area without requiring a qualifying card information, you must choose a legal target. You are not required to reveal it."
+    },
+    {
+      "id": "5.3.2.6",
+      "text": "5.3.2.6. If an effect instructs you to look at or search cards in a hidden area and does not say what to do with cards not chosen, return those cards to their original area in their original order and state."
+    },
+    {
+      "id": "5.4.2",
+      "text": "5.4.2. Your hand is a hidden area, but you can freely view its contents and change the order of cards in it."
+    },
+    {
+      "id": "5.5.2",
+      "text": "5.5.2. Your deck is a hidden area."
+    },
+    {
+      "id": "5.9",
+      "text": "5.9. ### Trash Area"
+    },
+    {
+      "id": "5.9.1",
+      "text": "5.9.1. The trash area is also referred to as just “the trash” or “your trash” (and variations thereof)."
+    },
+    {
+      "id": "5.9.2",
+      "text": "5.9.2. The trash is a public area."
+    },
+    {
+      "id": "5.9.3",
+      "text": "5.9.3. Cards in this area are placed face-up in a pile, and either player can freely view the contents and order of these cards."
+    },
+    {
+      "id": "5.9.4",
+      "text": "5.9.4. When placing new cards in this area, they are placed on top of the previous card already in the pile."
+    },
+    {
+      "id": "5.9.4.1",
+      "text": "5.9.4.1. If multiple cards enter this area at the same time, their owner adds them in any order."
+    },
+    {
+      "id": "5.9.4.2",
+      "text": "5.9.4.2. Players may freely change the order of cards in their own trash. The cards in the trash should always remain in the face-up position unless specified otherwise."
+    },
+    {
+      "id": "5.12",
+      "text": "5.12. ### Rival Gig Area"
+    },
+    {
+      "id": "5.12.1",
+      "text": "5.12.1. The rival Gig area is also referred to as “your Rival’s Gig area” (and variations thereof)."
+    },
+    {
+      "id": "5.12.2",
+      "text": "5.12.2. This area is a public area and either player can freely view the Gig die in this area."
+    },
+    {
+      "id": "5.12.3",
+      "text": "5.12.3. The Gigs in this area are under your Rival’s control, and are considered rival Gigs. Their values count towards your Rival’s total Street Cred. See GIGS."
+    },
+    {
+      "id": "5.12.4",
+      "text": "5.12.4. The rival Gig area containing at least 1 Gig is a valid attack target."
+    },
+    {
+      "id": "5.12.4.1",
+      "text": "5.12.4.1. If during an attack the rival Gig area no longer contains any Gigs, still proceed with all remaining phases of the attack."
+    },
+    {
+      "id": "5.13",
+      "text": "5.13. ### Removed from Game"
+    },
+    {
+      "id": "5.13.1",
+      "text": "5.13.1. Cards removed from the game are public, and either player can freely view this area and order."
+    },
+    {
+      "id": "5.13.2",
+      "text": "5.13.2. Cards removed from the game do not have a designated game area, because they are no longer part of the game."
+    },
+    {
+      "id": "5.13.2.1",
+      "text": "5.13.2.1. When a card you own is removed from the game, designate a “removed” pile outside of the game areas. Place any removed cards that you own face-up in this pile. This pile can be anywhere, as long as it is clearly visible to both players and doesn’t cause confusion with any game areas."
+    },
+    {
+      "id": "5.13.2.2",
+      "text": "5.13.2.2. A card removed from the game cannot re-enter the game area unless an effect specifically returns the card to the game."
+    },
+    {
+      "id": "8.16",
+      "text": "8.16. When your turn ends, you must resolve any end of turn effects in this order."
+    },
+    {
+      "id": "8.16.1",
+      "text": "8.16.1. Resolve effects that occur “at the end of your turn,” “at the end of each turn,” and variations thereof."
+    },
+    {
+      "id": "8.16.2",
+      "text": "8.16.2. Remove effects that last “this turn” and variations thereof."
+    },
+    {
+      "id": "9.14",
+      "text": "9.14. When the React Step ends, the attack continues. If the attack target is a Unit, proceed to the Fight Step. If the attack target is a Gig area, proceed to the Steal Step."
+    },
+    {
+      "id": "9.15",
+      "text": "9.15. The Fight Step only happens if the attack target is a Unit. If the attack target is a Gig Area, the Steal Step happens instead."
+    },
+    {
+      "id": "9.16",
+      "text": "9.16. During the “Fight Step” of an attack, the attacking Unit and the defending Unit fight."
+    },
+    {
+      "id": "9.16.1",
+      "text": "9.16.1. At the start of the Fight Step, apply effects that last “while fighting” and variations thereof."
+    },
+    {
+      "id": "9.17",
+      "text": "9.17. A “fight” is a game process in which two opposing Units compare power to determine at least one loser and potentially one winner."
+    },
+    {
+      "id": "9.17.1",
+      "text": "9.17.1. A Unit wins a fight when it has a higher power than the opposing Unit."
+    },
+    {
+      "id": "9.17.1.1",
+      "text": "9.17.1.1. When a Unit wins a fight, the opposing Unit always loses, regardless of power."
+    },
+    {
+      "id": "9.17.2",
+      "text": "9.17.2. A Unit loses a fight when it has equal or lower power than the opposing Unit."
+    },
+    {
+      "id": "9.17.3",
+      "text": "9.17.3. If both Units in a fight have the same power, neither Unit wins and both Units lose the fight."
+    },
+    {
+      "id": "9.17.4",
+      "text": "9.17.4. If a card effect says that a Unit wins or loses a fight, it supersedes any win or loss status determined by power comparison."
+    },
+    {
+      "id": "9.18",
+      "text": "9.18. When you determine the loser(s), any effects triggered by the fight (i.e. “when this Unit fights,” “when this Unit loses a fight,” etc.) become pending. Both players must resolve all pending effects before they may defeat the loser(s)."
+    },
+    {
+      "id": "9.19",
+      "text": "9.19. After resolving all effects triggered by the fight, resolve the fight’s result."
+    },
+    {
+      "id": "9.19.1",
+      "text": "9.19.1. When a Unit loses a fight, the opposing Unit defeats it as a result."
+    },
+    {
+      "id": "9.19.1.1",
+      "text": "9.19.1.1. When a Unit is defeated, its owner moves it to their trash."
+    },
+    {
+      "id": "9.19.2",
+      "text": "9.19.2. A Unit with 0 power cannot defeat a Unit as the result of a fight."
+    },
+    {
+      "id": "9.19.3",
+      "text": "9.19.3. If an effect prevents a Unit from being defeated in a fight, it is still a loser that has lost the fight, it only ignores the resulting defeat."
+    },
+    {
+      "id": "9.20",
+      "text": "9.20. After resolving all effects triggered by the fight’s result, the Fight Step and the attack ends. See ATTACK, FIGHT, AND STEAL > Ending an Attack."
+    },
+    {
+      "id": "9.21",
+      "text": "9.21. The Steal Step only happens if the attack target is a Gig area. If the attack target is a Unit, the Fight Step happens instead."
+    },
+    {
+      "id": "9.22",
+      "text": "9.22. If the attacked Gig area has no Gigs in it when the Steal Step begins, no Gigs can be or are stolen."
+    },
+    {
+      "id": "9.23",
+      "text": "9.23. During the “Steal Step” of an attack, the attacker attempts to steal one or more Gig dice from the defending Gig area."
+    },
+    {
+      "id": "9.23.1",
+      "text": "9.23.1. At the start of the Steal Step, before choosing which Gigs are stolen, apply effects that last “while stealing” and variations thereof. Apply any other effects that modify, prevent, or restrict the attacker’s power or ability to steal."
+    },
+    {
+      "id": "9.23.2",
+      "text": "9.23.2. The number of Gigs an attacker steals is based on its power."
+    },
+    {
+      "id": "9.23.2.1",
+      "text": "9.23.2.1. If the attacking Unit has 0 power, it steals 0 Gigs."
+    },
+    {
+      "id": "9.23.2.2",
+      "text": "9.23.2.2. If the attacking Unit has 1 or more power, it steals X Gigs (rounded down) according to this formula, where P = the attacking Unit’s power.\n\n`X = (P / 10) + 1)`\n\n> **EXAMPLE:** A Unit with 1 to 9 power steals 1 Gig. A Unit with 10 to 19 power steals 2 Gigs. Continue this pattern for higher power values."
+    },
+    {
+      "id": "9.23.3",
+      "text": "9.23.3. The attacking player chooses which Gigs the attacker will steal from the attacked Gig area."
+    },
+    {
+      "id": "9.23.3.1",
+      "text": "9.23.3.1. An attacking player may choose to steal any Gig in the defending Gig area, regardless of its value."
+    },
+    {
+      "id": "9.23.3.2",
+      "text": "9.23.3.2. If the attacker will steal multiple Gigs, the attacking player chooses the Gigs one at a time."
+    },
+    {
+      "id": "9.23.3.3",
+      "text": "9.23.3.3. If the attacker steals more Gigs than are in the attacked Gig area, choose as many Gigs as possible to steal."
+    },
+    {
+      "id": "9.23.4",
+      "text": "9.23.4. After all Gigs are chosen, apply any effects that prevent or restrict one or more of those Gigs from being stolen."
+    },
+    {
+      "id": "9.23.5",
+      "text": "9.23.5. After all Gigs are chosen and prevention effects are applied, the attacker steals the Gig(s)."
+    },
+    {
+      "id": "9.23.5.1",
+      "text": "9.23.5.1. To steal the Gig(s), move all chosen Gigs from the defending Gig area to the attacking Gig area at the same time."
+    },
+    {
+      "id": "9.23.5.2",
+      "text": "9.23.5.2. Multiple Gigs are stolen at the same time, each stolen Gig is considered a separate stolen Gig."
+    },
+    {
+      "id": "9.23.6",
+      "text": "9.23.6. Effects that trigger when a Gig is stolen become pending after a stolen Gig is moved."
+    },
+    {
+      "id": "9.24",
+      "text": "9.24. Resolve all pending effects. See EFFECTS > Pending Resolution."
+    },
+    {
+      "id": "9.25",
+      "text": "9.25. After all pending effects from the Steal Step are resolved, the attack ends. See Ending an Attack."
+    },
+    {
+      "id": "9.26",
+      "text": "9.26. An attack ends if any of the following are true:"
+    },
+    {
+      "id": "9.26.1",
+      "text": "9.26.1. The attacking Unit is no longer in the field area."
+    },
+    {
+      "id": "9.26.2",
+      "text": "9.26.2. The attack target is no longer in the area it was attacked in."
+    },
+    {
+      "id": "9.26.3",
+      "text": "9.26.3. The attack target is no longer a legal attack target for the attacking Unit."
+    },
+    {
+      "id": "9.26.4",
+      "text": "9.26.4. An effect has ended the attack."
+    },
+    {
+      "id": "9.27",
+      "text": "9.27. An attack can end before reaching the React Step, Fight Step or Steal Step."
+    },
+    {
+      "id": "9.27.1",
+      "text": "9.27.1. If an attack ends before reaching the React Step, Fight Step or Steal Step, no fight happens and no Gigs are stolen."
+    },
+    {
+      "id": "9.27.2",
+      "text": "9.27.2. If an attack ends while an effect or pending effect is resolving, finish resolving that effect or pending effect."
+    },
+    {
+      "id": "9.28",
+      "text": "9.28. When an attack ends, resolve any pending effects that are already pending for the current timing window."
+    },
+    {
+      "id": "9.29",
+      "text": "9.29. After an attack ends and all effects and pending effects for the current timing window have resolved, remove effects that last “while attacking,” “while stealing,” “while fighting” and variations thereof. The turn player’s Main Phase continues."
+    },
+    {
+      "id": "10.2",
+      "text": "10.2. To “resolve” an effect, follow the instructions of that effect in the order they appear."
+    },
+    {
+      "id": "10.2.1",
+      "text": "10.2.1. Always resolve as much of an effect as possible. See GOLDEN RULES > Resolve as Much as Possible."
+    },
+    {
+      "id": "10.2.2",
+      "text": "10.2.2. If an effect instructs both players to act at the same time, the turn player performs their actions first, followed by their Rival."
+    },
+    {
+      "id": "10.2.3",
+      "text": "10.2.3. Once an effect starts resolving, you cannot play cards, activate effects, or resolve other pending effects until the current effect finishes resolving."
+    },
+    {
+      "id": "10.2.4",
+      "text": "10.2.4. Effects cannot interrupt the activation or resolution of other effects. If an effect triggers in the middle of an activation or resolution, it becomes “pending resolution.” See EFFECTS > Pending Resolution."
+    },
+    {
+      "id": "10.2.5",
+      "text": "10.2.5. After an effect resolves, perform any required rule processing before resolving a new one or taking any actions."
+    },
+    {
+      "id": "10.21",
+      "text": "10.21. Once an activated effect is activated, it resolves even if its source leaves the area it was in."
+    },
+    {
+      "id": "10.23",
+      "text": "10.23. If a persistent effect has a duration, it applies only for that duration.\n\n> **EXAMPLE:** A Unit's effect text reads \"Other friendly Units have +2 power while attacking.” The Unit only gains +2 from the moment the Unit attacks until the attack ends."
+    },
+    {
+      "id": "10.23.1",
+      "text": "10.23.1. When a persistent effect’s duration ends, that effect stops applying immediately once there are no other pending effects."
+    },
+    {
+      "id": "11.19",
+      "text": "11.19. ### [DEFEATED]"
+    },
+    {
+      "id": "11.19.1",
+      "text": "11.19.1. The [DEFEATED] trigger is shorthand for ”When this Unit is defeated, [...]”"
+    },
+    {
+      "id": "11.19.2",
+      "text": "11.19.2. The effect attached to the [DEFEATED] trigger enters pending when the Unit has been declared defeated and is moved to trash."
+    }
+  ],
+  "decisions": {
+    "power": "3.17.2 current effective power at 9.17 after React; retain negative derived power, reference/compare as zero under 2.10.1. Null is not zero (2.10.2).",
+    "fight": "9.17 higher wins; equal/lower loses, tie has no winner. 9.19.2 opposing zero-reference-power Unit cannot defeat: zero/negative tie produces two losers but no defeats.",
+    "defeat": "9.19.1 semantic defeat followed by owner Trash movement through shared Gear/Legend processing. 11.19.2 DEFEATED becomes pending after declaration AND movement; no such card admitted. No fight-win/replacement/prevention handlers admitted.",
+    "trashOrder": "5.9.4.1 owner selects order of host and attached Gear before batch movement. Sequential order selection, auto last; collect both owners orders before any tie defeat movement. Although 5.9.4.2 permits free reordering, do not select owners order for them.",
+    "modifier": "5.3.2.2 removes modifiers on entry to hidden areas (HAND/DECK). TRASH (5.9.2) and REMOVED (5.13.1) are public. END_OF_TURN attaches to physical card ID across these public departures and ends under 8.16.2; no invented zone-object reset. Hidden entry deletes with reason HIDDEN_AREA. No hidden re-entry resurrection.",
+    "steal": "9.23.2 positive power floor(power/10+1), nonpositive reference power zero steals zero. 9.23.3 select sequentially any value, as many as possible. All forced remainder auto selected; transfer only after all chosen (9.23.5.1). Canonical ID transfer serialization, not interleaved decisions/triggers; each Gig stolen separately (9.23.5.2).",
+    "gigIdentity": "1.7.3 owner immutable, 9.23.5.1 move same Gigs; no instruction to reroll/reset values. Street Cred derived from currently controlled Gig current values.",
+    "cleanup": "9.29 current target alone authoritative, clear combat and restore active-player MAIN, preserve spent orientations and turn-duration modifiers. No selected combat-duration mechanics.",
+    "invalid": "9.22 empty area steals none during trusted automatic resolution; stable locked attack with no legal target is rejected per 9.26 rather than repaired.",
+    "scope": "Ordinary source-reviewed Units only. No Go Solo, DEFEATED/fight-win/stolen triggers, restrictions, prevention, or new card admission. Existing earlier policy boundaries remain reproducible."
+  }
+}

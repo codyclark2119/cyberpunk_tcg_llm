@@ -2,6 +2,8 @@ import { failure, success, type CardInstanceId, type PlayerId } from "@tcg/domai
 import type { TurnMutation } from "./turn";
 import { isBlockerEligible } from "./react-queries";
 import { isReactDecision } from "./react-support";
+import { combatResolutionEnabled } from "./combat-resolution-policy";
+import { resolveCombat } from "./combat-resolution";
 import { finishAttackEffects } from "./combat";
 
 export function declareBlocker(m: TurnMutation, actor: PlayerId, id: CardInstanceId) {
@@ -20,5 +22,5 @@ export function passReact(m: TurnMutation, actor: PlayerId) {
     s.timing.combat = { ...c, stage: "COMBAT_RESOLUTION_PENDING" };
     s.timing.step = "COMBAT_RESOLUTION_PENDING"; s.timing.window = "COMBAT_RESOLUTION_PENDING";
     m.emit({ kind: "COMBAT_RESOLUTION_PENDING", attackerId: c.attackerId, target: c.target });
-    return success(null);
+    return combatResolutionEnabled(m.context) ? resolveCombat(m) : success(null);
 }

@@ -1,5 +1,6 @@
 import type { CardInstanceId, GameState } from "@tcg/domain";
 import type { EngineContext } from "./state";
+import { combatResolutionEnabled } from "./combat-resolution-policy";
 import { attachedGear, gearEnabled } from "./attachments";
 export function cardRevision(state: GameState, id: CardInstanceId, context: EngineContext) {
     const c = state.objects.cards[id];
@@ -24,6 +25,6 @@ export function effectivePower(state: GameState, id: CardInstanceId, context: En
         if (card.face === "UP" && card.zone.zone === "LEGENDS" && state.timing.turn > 0 && state.timing.activePlayer === card.controllerId)
             power += modifier.amount * gear.length;
     }
-    power += (state.temporaryModifiers ?? []).filter(m => m.targetId === id && m.expires.turn === state.timing.turn && card.zone.zone === "BATTLEFIELD").reduce((sum, m) => sum + m.amount, 0);
+    power += (state.temporaryModifiers ?? []).filter(m => m.targetId === id && m.expires.turn === state.timing.turn && (card.zone.zone === "BATTLEFIELD" || (combatResolutionEnabled(context) && ["TRASH", "REMOVED"].includes(card.zone.zone)))).reduce((sum, m) => sum + m.amount, 0);
     return power;
 }

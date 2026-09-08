@@ -7,8 +7,8 @@ import { KERRY } from "./noncombat-fixture";
 import { MANTIS } from "./gear-fixture";
 import { unwrap } from "./turn-replay";
 /** Normal setup, real Unit/Lag/equip turns and one unresolved attack. No state/RNG patches. */
-export function reactReplay(seed = "combat-attack-46") {
-    const context = reactContext(), initialization = reactInput(seed), initialized = unwrap(createGameWithEvents(initialization, context));
+export function reactReplay(seed = "combat-attack-46", context = reactContext(), branch: "REACT" | "FIGHT" | "GIG" = "REACT") {
+    const initialization = reactInput(seed), initialized = unwrap(createGameWithEvents(initialization, context));
     let state: GameState = initialized.state;
     const steps: ReturnType<typeof import("./turn-replay").turnReplay>["steps"] = [], positions: TrainingPosition[] = [];
     const take = (predicate: (a: LegalAction) => boolean) => {
@@ -41,13 +41,16 @@ export function reactReplay(seed = "combat-attack-46") {
     end(); roll("D6"); take(a => a.action.kind === "ACTIVATE_ABILITY"); end(); roll("D10");
     const attackPower = new RulesView(state, context).getEffectivePower(attacker);
     take(a => a.action.kind === "DECLARE_ATTACK" && a.action.cardInstanceId === attacker);
-    take(a => a.action.kind === "CHOOSE" && (() => { const o = state.resolution.choice!.options[a.action.optionIndices[0]]; return o.kind === "ATTACK_TARGET" && o.target.kind === "CARD"; })());
+    take(a => a.action.kind === "CHOOSE" && (() => { const o = state.resolution.choice!.options[a.action.optionIndices[0]]; return o.kind === "ATTACK_TARGET" && o.target.kind === (branch === "GIG" ? "GIG_AREA" : "CARD"); })());
+    if (branch !== "GIG") {
     take(a => a.action.kind === "CALL_LEGEND" && state.objects.cards[a.action.cardInstanceId].cardId === VIKTOR);
     while (state.timing.step === "PAYMENT_SELECTION") take(a => a.action.kind === "CHOOSE");
     while (state.resolution.searchContinuation) take(a => a.action.kind === "CHOOSE" && (() => { const o = state.resolution.choice!.options[a.action.optionIndices[0]]; return o.kind === "CARD"; })());
     play(FLOOR_IT);
     if (state.timing.step === "TARGET_SELECTION") take(a => a.action.kind === "CHOOSE" && (() => { const o = state.resolution.choice!.options[a.action.optionIndices[0]]; return o.kind === "CARD" && o.cardInstanceId === attacker; })());
     take(a => a.action.kind === "DECLARE_BLOCKER");
+    }
     take(a => a.action.kind === "PASS_REACT");
-    return { schemaVersion: 1, note: "Legal setup/normal turns, Swordwise ATTACK, defender Viktor CALL/search, Floor It, Secondhand Bombus, explicit PASS; synthetic support deck with reviewed real cards, not demo deck or gold data; stops before combat resolution", content: context.content, initialization, initialized, steps, positions, attackerId: attacker, attackPower, finalState: state, finalStateHash: hashReplayState(state) };
+    while (state.resolution.gigStealContinuation || state.resolution.defeatContinuation) take(a => a.action.kind === "CHOOSE" && a.action.optionIndices[0] === 0);
+    return { schemaVersion: 1, note: branch === "GIG" ? "Legal normal turns and strategic Gig steal to MAIN; reviewed real cards in synthetic constructed support deck, not demo/gold" : branch === "FIGHT" ? "React trace extended through automatic Swordwise vs Bombus fight, semantic defeat and MAIN; no position patches" : "Legal setup/normal turns, Swordwise ATTACK, defender Viktor CALL/search, Floor It, Secondhand Bombus, explicit PASS; synthetic support deck with reviewed real cards, not demo deck or gold data; stops before combat resolution", content: context.content, initialization, initialized, steps, positions, attackerId: attacker, attackPower, finalState: state, finalStateHash: hashReplayState(state) };
 }

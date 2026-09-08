@@ -235,3 +235,6 @@ Next milestone: review and version one official setup/turn/sell/CALL rules slice
 then implement its initialization, pending-effect continuation, state-based checks
 and visibility policies with deterministic replay tests. Only then add combat and
 real card handlers. Do not label these synthetic contract fixtures playable games.
+
+
+Combat-resolution extension: `advanceResolutionWithEvents(state, context)` returns a normal `{ state, events }` transition for an opted-in `COMBAT_RESOLUTION_PENDING` boundary, automatically stopping at MAIN or a genuine combat choice. PASS_REACT normally executes this same reducer within its own event batch. The original state-only `advanceResolution` helper refuses event-producing progression instead of discarding events. No wire operation or player RESOLVE_COMBAT action was introduced. Earlier ruleset policies retain their unsupported boundaries.

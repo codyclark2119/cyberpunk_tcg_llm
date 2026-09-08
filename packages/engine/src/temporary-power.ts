@@ -3,6 +3,7 @@ import type { EngineContext } from "./state";
 import type { TurnMutation } from "./turn";
 import { cardRevision, effectiveCardTypes } from "./characteristics";
 import { reactEnabled, supportsReactPlay } from "./react-support";
+import { combatResolutionEnabled } from "./combat-resolution-policy";
 import { powerTargets } from "./react-queries";
 
 export function applyTemporaryPower(m: TurnMutation, targetId: CardInstanceId) {
@@ -20,13 +21,21 @@ export function expireTemporaryPower(m: TurnMutation) {
     for (const modifier of modifiers) m.emit({ kind: "POWER_MODIFIER_EXPIRED", sourceId: modifier.sourceId, targetId: modifier.targetId, reason: "TURN_END" });
     delete m.state.temporaryModifiers;
 }
+/** 5.3.2.2: duration tracks the physical card until hidden entry, independent of combat. */
+export function expirePowerOnHiddenEntry(m: TurnMutation, targetId: CardInstanceId) {
+    if (!combatResolutionEnabled(m.context) || !m.state.temporaryModifiers) return;
+    for (const x of m.state.temporaryModifiers.filter(x => x.targetId === targetId))
+        m.emit({ kind: "POWER_MODIFIER_EXPIRED", sourceId: x.sourceId, targetId, reason: "HIDDEN_AREA" });
+    m.state.temporaryModifiers = m.state.temporaryModifiers.filter(x => x.targetId !== targetId);
+    if (!m.state.temporaryModifiers.length) delete m.state.temporaryModifiers;
+}
 export function validateTemporaryPower(state: GameState, context: EngineContext) {
     const modifiers = state.temporaryModifiers;
     if (!modifiers) return success(null);
     if (!reactEnabled(context) || !modifiers.length || new Set(modifiers.map(x => x.sourceId)).size !== modifiers.length || canonicalSerialize(modifiers) !== canonicalSerialize([...modifiers].sort((a, b) => a.sourceId < b.sourceId ? -1 : 1))) return failure("INVALID_TEMPORARY_POWER", "Nonempty canonical reviewed modifiers with distinct physical sources required");
     for (const x of modifiers) {
         const source = state.objects.cards[x.sourceId], target = state.objects.cards[x.targetId], r = cardRevision(state, x.sourceId, context);
-        if (x.expires.turn !== state.timing.turn || !source || !supportsReactPlay(r, context).ok || r?.type !== "PROGRAM" || !["TRASH", "RESOLVING_PROGRAM"].includes(source.zone.zone) || !target || target.zone.zone !== "BATTLEFIELD" || !effectiveCardTypes(state, x.targetId, context).includes("UNIT")) return failure("INVALID_TEMPORARY_POWER", "Modifier must reference a played reviewed Program, current field Unit and current turn");
+        if (x.expires.turn !== state.timing.turn || !source || !supportsReactPlay(r, context).ok || r?.type !== "PROGRAM" || !["TRASH", "RESOLVING_PROGRAM"].includes(source.zone.zone) || !target || !(combatResolutionEnabled(context) ? ["BATTLEFIELD", "TRASH", "REMOVED"] : ["BATTLEFIELD"]).includes(target.zone.zone) || !effectiveCardTypes(state, x.targetId, context).includes("UNIT")) return failure("INVALID_TEMPORARY_POWER", "Modifier must reference a played reviewed Program, current public Unit under the reviewed zone lifecycle and current turn");
     }
     return success(null);
 }

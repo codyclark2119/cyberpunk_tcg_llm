@@ -232,6 +232,53 @@
                           "type": "string",
                           "const": "COMBAT_REACT_V1"
                         },
+                        "combatResolution": {
+                          "type": "object",
+                          "properties": {
+                            "version": {
+                              "type": "string",
+                              "const": "COMBAT_RESOLUTION_V1"
+                            },
+                            "negativeReferences": {
+                              "type": "string",
+                              "const": "ZERO"
+                            },
+                            "temporaryModifierIdentity": {
+                              "type": "string",
+                              "const": "PHYSICAL_CARD_UNTIL_HIDDEN_OR_TURN_END"
+                            },
+                            "gigSteal": {
+                              "type": "object",
+                              "properties": {
+                                "nonPositive": {
+                                  "type": "number",
+                                  "const": 0
+                                },
+                                "positiveDivisor": {
+                                  "type": "number",
+                                  "const": 10
+                                },
+                                "positiveBase": {
+                                  "type": "number",
+                                  "const": 1
+                                }
+                              },
+                              "required": [
+                                "nonPositive",
+                                "positiveDivisor",
+                                "positiveBase"
+                              ],
+                              "additionalProperties": false
+                            }
+                          },
+                          "required": [
+                            "version",
+                            "negativeReferences",
+                            "temporaryModifierIdentity",
+                            "gigSteal"
+                          ],
+                          "additionalProperties": false
+                        },
                         "gear": {
                           "type": "string",
                           "const": "REVIEWED_GEAR_V1"
@@ -2716,6 +2763,8 @@
                 "step": {
                   "type": "string",
                   "enum": [
+                    "GIG_STEAL_SELECTION",
+                    "DEFEAT_ORDER_SELECTION",
                     "ATTACK_TARGET_SELECTION",
                     "ATTACK_EFFECTS",
                     "RIVAL_REACT",
@@ -2746,6 +2795,8 @@
                 "window": {
                   "type": "string",
                   "enum": [
+                    "GIG_STEAL_SELECTION",
+                    "DEFEAT_ORDER_SELECTION",
                     "SETUP",
                     "MAIN",
                     "CHOOSE_GIG",
@@ -2812,7 +2863,9 @@
                           "enum": [
                             "ATTACK_EFFECTS",
                             "RIVAL_REACT",
-                            "COMBAT_RESOLUTION_PENDING"
+                            "COMBAT_RESOLUTION_PENDING",
+                            "GIG_STEAL_SELECTION",
+                            "DEFEAT_ORDER_SELECTION"
                           ]
                         },
                         "attackerId": {
@@ -3480,6 +3533,94 @@
                       "additionalProperties": false
                     }
                   ]
+                },
+                "gigStealContinuation": {
+                  "type": "object",
+                  "properties": {
+                    "selected": {
+                      "type": "array",
+                      "items": {
+                        "type": "string",
+                        "minLength": 1,
+                        "maxLength": 200,
+                        "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$"
+                      }
+                    },
+                    "remaining": {
+                      "type": "integer",
+                      "exclusiveMinimum": 0,
+                      "maximum": 9007199254740991
+                    }
+                  },
+                  "required": [
+                    "selected",
+                    "remaining"
+                  ],
+                  "additionalProperties": false
+                },
+                "defeatContinuation": {
+                  "type": "object",
+                  "properties": {
+                    "defeats": {
+                      "minItems": 1,
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "targetId": {
+                            "type": "string",
+                            "minLength": 1,
+                            "maxLength": 200,
+                            "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$"
+                          },
+                          "defeatedBy": {
+                            "type": "string",
+                            "minLength": 1,
+                            "maxLength": 200,
+                            "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$"
+                          }
+                        },
+                        "required": [
+                          "targetId",
+                          "defeatedBy"
+                        ],
+                        "additionalProperties": false
+                      }
+                    },
+                    "orders": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "targetId": {
+                            "type": "string",
+                            "minLength": 1,
+                            "maxLength": 200,
+                            "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$"
+                          },
+                          "cardIds": {
+                            "type": "array",
+                            "items": {
+                              "type": "string",
+                              "minLength": 1,
+                              "maxLength": 200,
+                              "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$"
+                            }
+                          }
+                        },
+                        "required": [
+                          "targetId",
+                          "cardIds"
+                        ],
+                        "additionalProperties": false
+                      }
+                    }
+                  },
+                  "required": [
+                    "defeats",
+                    "orders"
+                  ],
+                  "additionalProperties": false
                 },
                 "playContinuation": {
                   "type": "object",
@@ -7538,6 +7679,53 @@
                         "react": {
                           "type": "string",
                           "const": "COMBAT_REACT_V1"
+                        },
+                        "combatResolution": {
+                          "type": "object",
+                          "properties": {
+                            "version": {
+                              "type": "string",
+                              "const": "COMBAT_RESOLUTION_V1"
+                            },
+                            "negativeReferences": {
+                              "type": "string",
+                              "const": "ZERO"
+                            },
+                            "temporaryModifierIdentity": {
+                              "type": "string",
+                              "const": "PHYSICAL_CARD_UNTIL_HIDDEN_OR_TURN_END"
+                            },
+                            "gigSteal": {
+                              "type": "object",
+                              "properties": {
+                                "nonPositive": {
+                                  "type": "number",
+                                  "const": 0
+                                },
+                                "positiveDivisor": {
+                                  "type": "number",
+                                  "const": 10
+                                },
+                                "positiveBase": {
+                                  "type": "number",
+                                  "const": 1
+                                }
+                              },
+                              "required": [
+                                "nonPositive",
+                                "positiveDivisor",
+                                "positiveBase"
+                              ],
+                              "additionalProperties": false
+                            }
+                          },
+                          "required": [
+                            "version",
+                            "negativeReferences",
+                            "temporaryModifierIdentity",
+                            "gigSteal"
+                          ],
+                          "additionalProperties": false
                         },
                         "gear": {
                           "type": "string",

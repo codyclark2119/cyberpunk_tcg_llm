@@ -1,3 +1,6 @@
+import { combatResolutionEnabled } from "./combat-resolution-policy";
+import { continueGigSteal, continueDefeatOrder, resolveCombat } from "./combat-resolution";
+import { transferGigs } from "./gig-transfer";
 import { isReactDecision, reactEnabled } from "./react-support";
 import { declareBlocker, passReact } from "./rival-reactions";
 import { expireTemporaryPower } from "./temporary-power";
@@ -30,7 +33,7 @@ export function listLegalActions(state: GameState, actor: PlayerId, context: Eng
         return failure("UNKNOWN_PLAYER", "Player is not in match");
     if (!context.content.ruleset.gameplay?.turnSlice && !supportedContent(context))
         return failure("UNSUPPORTED_MECHANICS", "Ability/continuous-effect execution awaits reviewed handlers");
-    if (state.resolution.stage !== "DECISION" && !(context.content.ruleset.gameplay?.turnSlice && state.resolution.stage === "CHOICE" && (state.resolution.choice?.kind === "PAYMENT" || state.resolution.searchContinuation || state.resolution.playContinuation || state.setup || state.timing.combat.stage === "ATTACK_TARGET_SELECTION")))
+    if (state.resolution.stage !== "DECISION" && !(context.content.ruleset.gameplay?.turnSlice && state.resolution.stage === "CHOICE" && (state.resolution.choice?.kind === "PAYMENT" || state.resolution.searchContinuation || state.resolution.playContinuation || state.resolution.gigStealContinuation || state.resolution.defeatContinuation || state.setup || state.timing.combat.stage === "ATTACK_TARGET_SELECTION")))
         return failure("UNSUPPORTED_RESOLUTION", "Pending-effect/choice continuation requires a registered reviewed handler");
     if (actor !== state.timing.actingPlayer)
         return success([]);
@@ -39,7 +42,7 @@ export function listLegalActions(state: GameState, actor: PlayerId, context: Eng
     const slice = context.content.ruleset.gameplay?.turnSlice;
     if (state.match.outcome || state.timing.combat.stage === "COMBAT_RESOLUTION_PENDING" || (state.timing.combat.stage === "RIVAL_REACT" && !reactEnabled(context)))
         return success([]);
-    if (state.setup || state.resolution.searchContinuation || state.resolution.playContinuation || state.timing.combat.stage === "ATTACK_TARGET_SELECTION") {
+    if (state.setup || state.resolution.searchContinuation || state.resolution.playContinuation || state.resolution.gigStealContinuation || state.resolution.defeatContinuation || state.timing.combat.stage === "ATTACK_TARGET_SELECTION") {
         const choice = state.resolution.choice!;
         choice.options.forEach((_, index) => actions.push({ actorId: actor, action: { kind: "CHOOSE", choiceId: choice.id, optionIndices: [index] } }));
     }
@@ -90,6 +93,11 @@ export function listLegalActions(state: GameState, actor: PlayerId, context: Eng
                 if (state.setup) return setupChoiceLabel(state, a.action.optionIndices[0]);
                 const option = state.resolution.choice!.options[a.action.optionIndices[0]];
                 if (option.kind === "ATTACK_TARGET") return option.target.kind === "CARD" ? `Attack ${view.getRevision(option.target.cardInstanceId)?.displayName} (${option.target.cardInstanceId})` : "Attack rival Gig area";
+                if (state.resolution.gigStealContinuation && option.kind === "GIG") {
+                    const gig = view.getGig(option.gigInstanceId);
+                    return `Steal ${gig.dieType} (${gig.id}, current ${gig.roll.kind === "ROLLED" ? gig.roll.currentValue : "unrolled"})`;
+                }
+                if (state.resolution.defeatContinuation && option.kind === "CARD") return `Next in your Trash: ${view.getRevision(option.cardInstanceId)?.displayName} (${option.cardInstanceId})`;
                 if (state.resolution.searchContinuation) return option.kind === "CARD" ? `Reveal and take ${view.getRevision(option.cardInstanceId)?.displayName}` : "Take no more Gears";
                 if (state.resolution.playContinuation?.phase === "EQUIP" && option.kind === "CARD") return `Equip to ${view.getRevision(option.cardInstanceId)?.displayName}`;
                 if (state.resolution.playContinuation && option.kind === "CARD") return `Give ${view.getRevision(option.cardInstanceId)?.displayName} (${option.cardInstanceId}) -1 power this turn`;
@@ -124,7 +132,7 @@ export function validateAction(state: GameState, input: GameAction, context: Eng
         return failure("INVALID_ACTION", action.error.message);
     const checked = validateState(state, context);
     if (!checked.ok) return checked;
-    if (state.timing.combat.stage === "COMBAT_RESOLUTION_PENDING") return failure("UNSUPPORTED_COMBAT_RESOLUTION", "React is closed; fight, damage, defeat and Gig stealing are not implemented");
+    if (state.timing.combat.stage === "COMBAT_RESOLUTION_PENDING") return failure(combatResolutionEnabled(context) ? "AUTOMATIC_COMBAT_RESOLUTION_REQUIRED" : "UNSUPPORTED_COMBAT_RESOLUTION", "PASS_REACT resolves combat automatically; use advanceResolutionWithEvents to resume a trusted pending boundary without dropping its event batch. Earlier policy pins stop here");
     if (state.timing.combat.stage === "RIVAL_REACT" && !reactEnabled(context)) return failure("UNSUPPORTED_RIVAL_REACT", "Attack initiation is complete; defender reactions are not implemented and cannot be auto-passed");
     const legal = listLegalActions(state, action.data.actorId, context);
     if (!legal.ok)
@@ -192,6 +200,11 @@ export function applyAction(state: GameState, action: GameAction, context: Engin
                 break;
             }
             case "CHOOSE": {
+                if (s.resolution.gigStealContinuation || s.resolution.defeatContinuation) {
+                    const result = s.resolution.gigStealContinuation ? continueGigSteal(mutation, action.action.optionIndices[0]) : continueDefeatOrder(mutation, action.action.optionIndices[0]);
+                    if (!result.ok) return result;
+                    break;
+                }
                 if (s.timing.combat.stage === "ATTACK_TARGET_SELECTION") {
                     const result = continueAttack(mutation, action.action.optionIndices[0]);
                     if (!result.ok) return result;
@@ -291,7 +304,7 @@ export function resolveActionId(state: GameState, actor: PlayerId, actionId: str
     const legal = listLegalActions(state, actor, context);
     if (!legal.ok)
         return legal;
-    if (state.timing.combat.stage === "COMBAT_RESOLUTION_PENDING") return failure("UNSUPPORTED_COMBAT_RESOLUTION", "React is closed; fight, damage, defeat and Gig stealing are not implemented");
+    if (state.timing.combat.stage === "COMBAT_RESOLUTION_PENDING") return failure(combatResolutionEnabled(context) ? "AUTOMATIC_COMBAT_RESOLUTION_REQUIRED" : "UNSUPPORTED_COMBAT_RESOLUTION", "PASS_REACT resolves combat automatically; use advanceResolutionWithEvents to resume a trusted pending boundary without dropping its event batch. Earlier policy pins stop here");
     if (state.timing.combat.stage === "RIVAL_REACT" && !reactEnabled(context)) return failure("UNSUPPORTED_RIVAL_REACT", "No supported defender reactions; combat has not resolved");
     const found = legal.value.find(a => a.actionId === actionId);
     return found ? success({ actorId: found.actorId, action: found.action }) : failure("UNKNOWN_ACTION_ID", "Re-enumerate actions from the authoritative current state");
@@ -310,12 +323,26 @@ export function modifyGigValue(state: GameState, id: GigInstanceId, delta: numbe
 }
 export { HandlerRegistry } from "./effects";
 export const STATE_BASED_PIPELINE = ["RESOLVE_EFFECT", "STATE_BASED_CHECKS", "DISCOVER_TRIGGERS", "ORDER_TRIGGERS", "CHOICE", "DECISION"] as const;
+/** Event-preserving automatic driver for a trusted persisted/transient pending boundary.
+ * PASS_REACT calls the same reducer within its own transition. No new player or wire action.
+ */
+export function advanceResolutionWithEvents(state: GameState, context: EngineContext): Result<ActionResult> {
+    const valid = validateState(state, context);
+    if (!valid.ok) return valid;
+    if (state.timing.combat.stage === "COMBAT_RESOLUTION_PENDING" && combatResolutionEnabled(context)) {
+        const m = new TurnMutation(valid.value, context), resolved = resolveCombat(m);
+        return resolved.ok ? m.result() : resolved;
+    }
+    const advanced = advanceResolution(state, context);
+    return advanced.ok ? success({ state: advanced.value, events: [] }) : advanced;
+}
 export function advanceResolution(state: GameState, context: EngineContext): Result<GameState> {
     const valid = validateState(state, context);
     if (!valid.ok)
         return valid;
-    if (state.timing.combat.stage === "COMBAT_RESOLUTION_PENDING") return failure("UNSUPPORTED_COMBAT_RESOLUTION", "React is closed; fight, damage, defeat and Gig stealing are not implemented");
+    if (state.timing.combat.stage === "COMBAT_RESOLUTION_PENDING") return failure(combatResolutionEnabled(context) ? "AUTOMATIC_COMBAT_RESOLUTION_REQUIRED" : "UNSUPPORTED_COMBAT_RESOLUTION", "PASS_REACT resolves combat automatically; use advanceResolutionWithEvents to resume a trusted pending boundary without dropping its event batch. Earlier policy pins stop here");
     if (state.timing.combat.stage === "RIVAL_REACT" && !reactEnabled(context)) return failure("UNSUPPORTED_RIVAL_REACT", "React requires a reviewed defender-action implementation");
+    if (state.resolution.gigStealContinuation || state.resolution.defeatContinuation) return failure("PLAYER_DECISION_REQUIRED", "The owner of the current combat choice must select a legal actionId");
     if (state.timing.combat.stage === "RIVAL_REACT") return failure("PLAYER_DECISION_REQUIRED", "Defender must finish the current reaction or select an explicit React action, including PASS_REACT");
     return state.resolution.stage === "DECISION" ? valid : failure("UNSUPPORTED_RESOLUTION_POLICY", "Current effect must finish before discovered triggers; strategic ordering needs a PendingChoice. No implicit LIFO ordering.");
 }
@@ -339,18 +366,8 @@ export function transferGigControl(state: GameState, id: GigInstanceId, controll
     const valid = validateState(state, context);
     if (!valid.ok)
         return valid;
-    const next = GameStateSchema.parse(state), gig = next.objects.gigs[id];
-    if (!gig || gig.roll.kind !== "ROLLED" || !next.players[controller])
-        return failure("INVALID_GIG_TRANSFER", "A rolled Gig and existing controller are required");
-    const previous = gig.controllerId, refs = next.players[gig.location.playerId].gigs[gig.location.zone];
-    refs.splice(refs.indexOf(id), 1);
-    gig.controllerId = controller;
-    gig.location = { playerId: controller, zone: "GIGS" };
-    next.players[controller].gigs.GIGS.push(id);
-    next.match.version++;
-    const event = GameEventSchema.parse({ sequence: ++next.match.eventSequence, payload: { kind: "GIG_CONTROL_CHANGED", gigInstanceId: id, previous, current: controller } });
-    const checked = validateState(next, context);
-    return checked.ok ? success({ state: checked.value, events: [event] }) : checked;
+    const mutation = new TurnMutation(valid.value, context), transferred = transferGigs(mutation, [id], controller);
+    return transferred.ok ? mutation.result() : transferred;
 }
 export * from "./rng";
 export * from "./initialization";

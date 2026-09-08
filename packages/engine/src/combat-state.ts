@@ -1,3 +1,5 @@
+import { validateCombatOutcome } from "./combat-outcome-state";
+import { combatResolutionEnabled } from "./combat-resolution-policy";
 import { reactEnabled } from "./react-support";
 import { canonicalSerialize, hashCanonical, failure, success, type GameState, type PendingChoice } from "@tcg/domain";
 import type { EngineContext } from "./state";
@@ -14,7 +16,11 @@ export function validateCombatState(state: GameState, context: EngineContext) {
     const c = state.timing.combat, r = state.resolution;
     if (reactEnabled(context) && !combatEnabled(context)) return failure("UNSUPPORTED_REACT_POLICY", "React requires reviewed attack initiation");
     if (combatEnabled(context) && (!gearEnabled(context) || !playEnabled(context) || context.content.ruleset.gameplay?.turnSlice?.callEffects !== "REVIEWED_CALL_V1")) return failure("UNSUPPORTED_COMBAT_POLICY", "Reviewed attack initiation requires the reviewed play, Gear and CALL policies");
-    const combatTiming = ["ATTACK_TARGET_SELECTION", "ATTACK_EFFECTS", "RIVAL_REACT", "COMBAT_RESOLUTION_PENDING"].includes(state.timing.step ?? "") || ["ATTACK_TARGET_SELECTION", "RIVAL_REACT", "COMBAT_RESOLUTION_PENDING"].includes(state.timing.window);
+    if (combatResolutionEnabled(context) && !reactEnabled(context)) return failure("UNSUPPORTED_COMBAT_RESOLUTION_POLICY", "Combat resolution requires reviewed React");
+    const outcome = validateCombatOutcome(state, context);
+    if (!outcome.ok) return outcome;
+    if (c.stage === "GIG_STEAL_SELECTION" || c.stage === "DEFEAT_ORDER_SELECTION") return outcome;
+    const combatTiming = ["GIG_STEAL_SELECTION", "DEFEAT_ORDER_SELECTION", "ATTACK_TARGET_SELECTION", "ATTACK_EFFECTS", "RIVAL_REACT", "COMBAT_RESOLUTION_PENDING"].includes(state.timing.step ?? "") || ["ATTACK_TARGET_SELECTION", "RIVAL_REACT", "COMBAT_RESOLUTION_PENDING"].includes(state.timing.window);
     if (c.stage === "NONE") return combatTiming ? failure("INVALID_COMBAT_TIMING", "Combat timing requires a combat state") : success(null);
     if (!combatEnabled(context)) return failure("UNSUPPORTED_COMBAT", "Combat requires an explicit reviewed ruleset policy");
     if (c.stage !== "ATTACK_TARGET_SELECTION" && c.stage !== "RIVAL_REACT" && c.stage !== "COMBAT_RESOLUTION_PENDING") return failure("UNSUPPORTED_COMBAT_STAGE", "Only target selection, React and resolution-pending are stable combat stages");

@@ -255,6 +255,8 @@
                         "step": {
                           "type": "string",
                           "enum": [
+                            "GIG_STEAL_SELECTION",
+                            "DEFEAT_ORDER_SELECTION",
                             "ATTACK_TARGET_SELECTION",
                             "ATTACK_EFFECTS",
                             "RIVAL_REACT",
@@ -285,6 +287,8 @@
                         "window": {
                           "type": "string",
                           "enum": [
+                            "GIG_STEAL_SELECTION",
+                            "DEFEAT_ORDER_SELECTION",
                             "SETUP",
                             "MAIN",
                             "CHOOSE_GIG",
@@ -351,7 +355,9 @@
                                   "enum": [
                                     "ATTACK_EFFECTS",
                                     "RIVAL_REACT",
-                                    "COMBAT_RESOLUTION_PENDING"
+                                    "COMBAT_RESOLUTION_PENDING",
+                                    "GIG_STEAL_SELECTION",
+                                    "DEFEAT_ORDER_SELECTION"
                                   ]
                                 },
                                 "attackerId": {
@@ -1019,6 +1025,94 @@
                               "additionalProperties": false
                             }
                           ]
+                        },
+                        "gigStealContinuation": {
+                          "type": "object",
+                          "properties": {
+                            "selected": {
+                              "type": "array",
+                              "items": {
+                                "type": "string",
+                                "minLength": 1,
+                                "maxLength": 200,
+                                "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$"
+                              }
+                            },
+                            "remaining": {
+                              "type": "integer",
+                              "exclusiveMinimum": 0,
+                              "maximum": 9007199254740991
+                            }
+                          },
+                          "required": [
+                            "selected",
+                            "remaining"
+                          ],
+                          "additionalProperties": false
+                        },
+                        "defeatContinuation": {
+                          "type": "object",
+                          "properties": {
+                            "defeats": {
+                              "minItems": 1,
+                              "type": "array",
+                              "items": {
+                                "type": "object",
+                                "properties": {
+                                  "targetId": {
+                                    "type": "string",
+                                    "minLength": 1,
+                                    "maxLength": 200,
+                                    "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$"
+                                  },
+                                  "defeatedBy": {
+                                    "type": "string",
+                                    "minLength": 1,
+                                    "maxLength": 200,
+                                    "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$"
+                                  }
+                                },
+                                "required": [
+                                  "targetId",
+                                  "defeatedBy"
+                                ],
+                                "additionalProperties": false
+                              }
+                            },
+                            "orders": {
+                              "type": "array",
+                              "items": {
+                                "type": "object",
+                                "properties": {
+                                  "targetId": {
+                                    "type": "string",
+                                    "minLength": 1,
+                                    "maxLength": 200,
+                                    "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$"
+                                  },
+                                  "cardIds": {
+                                    "type": "array",
+                                    "items": {
+                                      "type": "string",
+                                      "minLength": 1,
+                                      "maxLength": 200,
+                                      "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$"
+                                    }
+                                  }
+                                },
+                                "required": [
+                                  "targetId",
+                                  "cardIds"
+                                ],
+                                "additionalProperties": false
+                              }
+                            }
+                          },
+                          "required": [
+                            "defeats",
+                            "orders"
+                          ],
+                          "additionalProperties": false
                         },
                         "playContinuation": {
                           "type": "object",
@@ -5426,6 +5520,8 @@
                         "step": {
                           "type": "string",
                           "enum": [
+                            "GIG_STEAL_SELECTION",
+                            "DEFEAT_ORDER_SELECTION",
                             "ATTACK_TARGET_SELECTION",
                             "ATTACK_EFFECTS",
                             "RIVAL_REACT",
@@ -5456,6 +5552,8 @@
                         "window": {
                           "type": "string",
                           "enum": [
+                            "GIG_STEAL_SELECTION",
+                            "DEFEAT_ORDER_SELECTION",
                             "SETUP",
                             "MAIN",
                             "CHOOSE_GIG",
@@ -5522,7 +5620,9 @@
                                   "enum": [
                                     "ATTACK_EFFECTS",
                                     "RIVAL_REACT",
-                                    "COMBAT_RESOLUTION_PENDING"
+                                    "COMBAT_RESOLUTION_PENDING",
+                                    "GIG_STEAL_SELECTION",
+                                    "DEFEAT_ORDER_SELECTION"
                                   ]
                                 },
                                 "attackerId": {
@@ -6190,6 +6290,94 @@
                               "additionalProperties": false
                             }
                           ]
+                        },
+                        "gigStealContinuation": {
+                          "type": "object",
+                          "properties": {
+                            "selected": {
+                              "type": "array",
+                              "items": {
+                                "type": "string",
+                                "minLength": 1,
+                                "maxLength": 200,
+                                "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$"
+                              }
+                            },
+                            "remaining": {
+                              "type": "integer",
+                              "exclusiveMinimum": 0,
+                              "maximum": 9007199254740991
+                            }
+                          },
+                          "required": [
+                            "selected",
+                            "remaining"
+                          ],
+                          "additionalProperties": false
+                        },
+                        "defeatContinuation": {
+                          "type": "object",
+                          "properties": {
+                            "defeats": {
+                              "minItems": 1,
+                              "type": "array",
+                              "items": {
+                                "type": "object",
+                                "properties": {
+                                  "targetId": {
+                                    "type": "string",
+                                    "minLength": 1,
+                                    "maxLength": 200,
+                                    "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$"
+                                  },
+                                  "defeatedBy": {
+                                    "type": "string",
+                                    "minLength": 1,
+                                    "maxLength": 200,
+                                    "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$"
+                                  }
+                                },
+                                "required": [
+                                  "targetId",
+                                  "defeatedBy"
+                                ],
+                                "additionalProperties": false
+                              }
+                            },
+                            "orders": {
+                              "type": "array",
+                              "items": {
+                                "type": "object",
+                                "properties": {
+                                  "targetId": {
+                                    "type": "string",
+                                    "minLength": 1,
+                                    "maxLength": 200,
+                                    "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$"
+                                  },
+                                  "cardIds": {
+                                    "type": "array",
+                                    "items": {
+                                      "type": "string",
+                                      "minLength": 1,
+                                      "maxLength": 200,
+                                      "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$"
+                                    }
+                                  }
+                                },
+                                "required": [
+                                  "targetId",
+                                  "cardIds"
+                                ],
+                                "additionalProperties": false
+                              }
+                            }
+                          },
+                          "required": [
+                            "defeats",
+                            "orders"
+                          ],
+                          "additionalProperties": false
                         },
                         "playContinuation": {
                           "type": "object",
@@ -10022,6 +10210,292 @@
                             "properties": {
                               "kind": {
                                 "type": "string",
+                                "const": "FIGHT_STARTED"
+                              },
+                              "attackerId": {
+                                "type": "string",
+                                "minLength": 1,
+                                "maxLength": 200,
+                                "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$"
+                              },
+                              "defenderId": {
+                                "type": "string",
+                                "minLength": 1,
+                                "maxLength": 200,
+                                "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$"
+                              }
+                            },
+                            "required": [
+                              "kind",
+                              "attackerId",
+                              "defenderId"
+                            ],
+                            "additionalProperties": false
+                          },
+                          {
+                            "type": "object",
+                            "properties": {
+                              "kind": {
+                                "type": "string",
+                                "const": "FIGHT_RESULT"
+                              },
+                              "attackerId": {
+                                "type": "string",
+                                "minLength": 1,
+                                "maxLength": 200,
+                                "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$"
+                              },
+                              "defenderId": {
+                                "type": "string",
+                                "minLength": 1,
+                                "maxLength": 200,
+                                "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$"
+                              },
+                              "attackerPower": {
+                                "type": "integer",
+                                "minimum": -9007199254740991,
+                                "maximum": 9007199254740991
+                              },
+                              "defenderPower": {
+                                "type": "integer",
+                                "minimum": -9007199254740991,
+                                "maximum": 9007199254740991
+                              },
+                              "attackerComparisonPower": {
+                                "type": "integer",
+                                "minimum": 0,
+                                "maximum": 9007199254740991
+                              },
+                              "defenderComparisonPower": {
+                                "type": "integer",
+                                "minimum": 0,
+                                "maximum": 9007199254740991
+                              },
+                              "winnerId": {
+                                "anyOf": [
+                                  {
+                                    "type": "string",
+                                    "minLength": 1,
+                                    "maxLength": 200,
+                                    "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$"
+                                  },
+                                  {
+                                    "type": "null"
+                                  }
+                                ]
+                              },
+                              "loserIds": {
+                                "type": "array",
+                                "items": {
+                                  "type": "string",
+                                  "minLength": 1,
+                                  "maxLength": 200,
+                                  "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$"
+                                }
+                              }
+                            },
+                            "required": [
+                              "kind",
+                              "attackerId",
+                              "defenderId",
+                              "attackerPower",
+                              "defenderPower",
+                              "attackerComparisonPower",
+                              "defenderComparisonPower",
+                              "winnerId",
+                              "loserIds"
+                            ],
+                            "additionalProperties": false
+                          },
+                          {
+                            "type": "object",
+                            "properties": {
+                              "kind": {
+                                "type": "string",
+                                "const": "CARD_DEFEATED"
+                              },
+                              "cardInstanceId": {
+                                "type": "string",
+                                "minLength": 1,
+                                "maxLength": 200,
+                                "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$"
+                              },
+                              "defeatedBy": {
+                                "type": "string",
+                                "minLength": 1,
+                                "maxLength": 200,
+                                "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$"
+                              }
+                            },
+                            "required": [
+                              "kind",
+                              "cardInstanceId",
+                              "defeatedBy"
+                            ],
+                            "additionalProperties": false
+                          },
+                          {
+                            "type": "object",
+                            "properties": {
+                              "kind": {
+                                "type": "string",
+                                "const": "DEFEAT_TRASH_ORDER_SELECTED"
+                              },
+                              "targetId": {
+                                "type": "string",
+                                "minLength": 1,
+                                "maxLength": 200,
+                                "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$"
+                              },
+                              "cardInstanceId": {
+                                "type": "string",
+                                "minLength": 1,
+                                "maxLength": 200,
+                                "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$"
+                              },
+                              "ownerId": {
+                                "type": "string",
+                                "format": "uuid",
+                                "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+                              },
+                              "forced": {
+                                "type": "boolean"
+                              }
+                            },
+                            "required": [
+                              "kind",
+                              "targetId",
+                              "cardInstanceId",
+                              "ownerId",
+                              "forced"
+                            ],
+                            "additionalProperties": false
+                          },
+                          {
+                            "type": "object",
+                            "properties": {
+                              "kind": {
+                                "type": "string",
+                                "const": "GIG_STEAL_STARTED"
+                              },
+                              "attackerId": {
+                                "type": "string",
+                                "minLength": 1,
+                                "maxLength": 200,
+                                "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$"
+                              },
+                              "defendingPlayerId": {
+                                "type": "string",
+                                "format": "uuid",
+                                "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+                              },
+                              "power": {
+                                "type": "integer",
+                                "minimum": -9007199254740991,
+                                "maximum": 9007199254740991
+                              },
+                              "allowance": {
+                                "type": "integer",
+                                "minimum": 0,
+                                "maximum": 9007199254740991
+                              },
+                              "count": {
+                                "type": "integer",
+                                "minimum": 0,
+                                "maximum": 9007199254740991
+                              }
+                            },
+                            "required": [
+                              "kind",
+                              "attackerId",
+                              "defendingPlayerId",
+                              "power",
+                              "allowance",
+                              "count"
+                            ],
+                            "additionalProperties": false
+                          },
+                          {
+                            "type": "object",
+                            "properties": {
+                              "kind": {
+                                "type": "string",
+                                "const": "GIG_STEAL_SELECTED"
+                              },
+                              "gigInstanceId": {
+                                "type": "string",
+                                "minLength": 1,
+                                "maxLength": 200,
+                                "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$"
+                              },
+                              "attackerId": {
+                                "type": "string",
+                                "minLength": 1,
+                                "maxLength": 200,
+                                "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$"
+                              },
+                              "forced": {
+                                "type": "boolean"
+                              }
+                            },
+                            "required": [
+                              "kind",
+                              "gigInstanceId",
+                              "attackerId",
+                              "forced"
+                            ],
+                            "additionalProperties": false
+                          },
+                          {
+                            "type": "object",
+                            "properties": {
+                              "kind": {
+                                "type": "string",
+                                "const": "GIG_STOLEN"
+                              },
+                              "gigInstanceId": {
+                                "type": "string",
+                                "minLength": 1,
+                                "maxLength": 200,
+                                "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$"
+                              },
+                              "fromPlayer": {
+                                "type": "string",
+                                "format": "uuid",
+                                "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+                              },
+                              "toPlayer": {
+                                "type": "string",
+                                "format": "uuid",
+                                "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+                              },
+                              "currentValue": {
+                                "type": "integer",
+                                "minimum": -9007199254740991,
+                                "maximum": 9007199254740991
+                              },
+                              "attackerId": {
+                                "type": "string",
+                                "minLength": 1,
+                                "maxLength": 200,
+                                "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$"
+                              }
+                            },
+                            "required": [
+                              "kind",
+                              "gigInstanceId",
+                              "fromPlayer",
+                              "toPlayer",
+                              "currentValue",
+                              "attackerId"
+                            ],
+                            "additionalProperties": false
+                          },
+                          {
+                            "type": "object",
+                            "properties": {
+                              "kind": {
+                                "type": "string",
                                 "const": "POWER_MODIFIER_APPLIED"
                               },
                               "modifier": {
@@ -10104,7 +10578,10 @@
                               },
                               "reason": {
                                 "type": "string",
-                                "const": "TURN_END"
+                                "enum": [
+                                  "TURN_END",
+                                  "HIDDEN_AREA"
+                                ]
                               }
                             },
                             "required": [
@@ -10477,7 +10954,8 @@
                                 "type": "string",
                                 "enum": [
                                   "ATTACKER_INVALID",
-                                  "TARGET_INVALID"
+                                  "TARGET_INVALID",
+                                  "COMPLETED"
                                 ]
                               }
                             },
@@ -11045,6 +11523,8 @@
                               "step": {
                                 "type": "string",
                                 "enum": [
+                                  "GIG_STEAL_SELECTION",
+                                  "DEFEAT_ORDER_SELECTION",
                                   "ATTACK_TARGET_SELECTION",
                                   "ATTACK_EFFECTS",
                                   "RIVAL_REACT",
@@ -11500,6 +11980,8 @@
                     "window": {
                       "type": "string",
                       "enum": [
+                        "GIG_STEAL_SELECTION",
+                        "DEFEAT_ORDER_SELECTION",
                         "SETUP",
                         "MAIN",
                         "CHOOSE_GIG",
@@ -11519,6 +12001,8 @@
                     "step": {
                       "type": "string",
                       "enum": [
+                        "GIG_STEAL_SELECTION",
+                        "DEFEAT_ORDER_SELECTION",
                         "ATTACK_TARGET_SELECTION",
                         "ATTACK_EFFECTS",
                         "RIVAL_REACT",
@@ -11571,7 +12055,9 @@
                           "enum": [
                             "ATTACK_TARGET_SELECTION",
                             "RIVAL_REACT",
-                            "COMBAT_RESOLUTION_PENDING"
+                            "COMBAT_RESOLUTION_PENDING",
+                            "GIG_STEAL_SELECTION",
+                            "DEFEAT_ORDER_SELECTION"
                           ]
                         },
                         "attackerId": {
@@ -11653,6 +12139,27 @@
                           "UNSUPPORTED_COMBAT_RESOLUTION"
                         ]
                       }
+                    },
+                    "gigSteal": {
+                      "type": "object",
+                      "properties": {
+                        "selectedIds": {
+                          "type": "array",
+                          "items": {
+                            "type": "string"
+                          }
+                        },
+                        "remaining": {
+                          "type": "integer",
+                          "exclusiveMinimum": 0,
+                          "maximum": 9007199254740991
+                        }
+                      },
+                      "required": [
+                        "selectedIds",
+                        "remaining"
+                      ],
+                      "additionalProperties": false
                     },
                     "temporaryModifiers": {
                       "type": "array",

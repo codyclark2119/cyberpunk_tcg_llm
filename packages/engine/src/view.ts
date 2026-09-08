@@ -1,3 +1,5 @@
+import { getGigStealAllowance } from "./combat-resolution-policy";
+import { listStealableGigs } from "./combat-outcome-queries";
 import { isReactDecision } from "./react-support";
 import { isBlockerEligible } from "./react-queries";
 import { canPlay } from "./play-support";
@@ -39,6 +41,10 @@ export class RulesView {
     isBlockerEligible(actor: PlayerId, id: CardInstanceId) { return isBlockerEligible(this.state, actor, id, this.context); }
     listBlockers(actor: PlayerId) { return Object.values(this.state.objects.cards).filter(c => this.isBlockerEligible(actor, c.id)).map(c => c.id).sort(); }
     listQuickCards(actor: PlayerId) { return Object.values(this.state.objects.cards).filter(c => this.getRevision(c.id)?.mechanics.keywords.includes("QUICK") && canPlay(this.state, actor, c.id, this.context)).map(c => c.id).sort(); }
+    getGigStealAllowance(id: CardInstanceId) { const power = this.getEffectivePower(id); return power === null ? null : getGigStealAllowance(power, this.context); }
+    listStealableGigs(defender: PlayerId) { return listStealableGigs(this.state, defender); }
+    getControlledGigCount(id: PlayerId) { return this.getControlledGigs(id).length; }
+    getFightDefender() { const target = this.getCombatTarget(); return target?.kind === "CARD" ? this.getCard(target.cardInstanceId) : null; }
     getCombatTarget() { const c = this.state.timing.combat; return "target" in c ? c.target : null; }
     getAttachedGear(hostId: CardInstanceId) { return attachedGear(this.state, hostId, this.context); }
     getEquippedGearCount(hostId: CardInstanceId) { return this.getAttachedGear(hostId).length; }
