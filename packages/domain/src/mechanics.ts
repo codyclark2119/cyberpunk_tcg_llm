@@ -37,6 +37,7 @@ export const PendingChoiceSchema = z.strictObject({
     ordered: z.boolean(), continuationId: z.string().min(1)
 }).refine(c => c.min <= c.max && c.max <= c.options.length, "Invalid choice bounds");
 export const EffectSchema = z.discriminatedUnion("kind", [
+    z.strictObject({ kind: z.literal("SEARCH_GEAR"), count: z.number().int().positive().max(5), maxCost: z.number().int().nonnegative(), maxTake: z.number().int().positive().max(2) }),
     z.strictObject({ kind: z.literal("DRAW"), count: z.number().int().positive() }),
     z.strictObject({ kind: z.literal("DAMAGE"), target: TargetSelectorSchema, amount: z.number().int().nonnegative() }),
     z.strictObject({ kind: z.literal("MOVE_CARD"), target: TargetSelectorSchema, destination: ZoneSchema }),
@@ -48,6 +49,7 @@ export const EffectSchema = z.discriminatedUnion("kind", [
 ]);
 export const AbilitySchema = z.strictObject({ id: z.string().min(1), trigger: TriggerSchema.optional(), conditions: z.array(ConditionSchema), cost: CostSchema, effects: z.array(EffectSchema) });
 export const ContinuousModifierSchema = z.discriminatedUnion("kind", [
+    z.strictObject({ kind: z.literal("POWER_PER_EQUIPPED_GEAR_DURING_OWN_TURN"), amount: z.number().int() }),
     z.strictObject({ kind: z.literal("POWER"), target: TargetSelectorSchema, amount: z.number().int(), requiresFaceUp: z.boolean() }),
     z.strictObject({ kind: z.literal("KEYWORD"), target: TargetSelectorSchema, keyword: KeywordSchema, requiresFaceUp: z.boolean() })
 ]);

@@ -14,8 +14,8 @@ export const TurnSlicePolicySchema = z.strictObject({
     d20Eligibility: z.literal("ORIGINAL_OTHER_DICE_ROLLED"),
     emptyFixer: z.literal("SKIP"), emptyDraw: z.enum(["LOSE", "UNSUPPORTED"]),
     startTurnGigWinCount: z.number().int().positive(),
-    setup: z.literal("AGREED_FIRST_PLAYER_DECLINED_MULLIGANS_AND_CUTS"),
-    callEffects: z.literal("SINGLE_UNCONDITIONAL_DRAW"),
+    setup: z.enum(["AGREED_FIRST_PLAYER_DECLINED_MULLIGANS_AND_CUTS", "ENGINE_SETUP_V1"]),
+    callEffects: z.enum(["SINGLE_UNCONDITIONAL_DRAW", "REVIEWED_CALL_V1"]),
     overtime: z.literal("UNSUPPORTED")
 });
 export const GameplayPolicySchema = z.strictObject({

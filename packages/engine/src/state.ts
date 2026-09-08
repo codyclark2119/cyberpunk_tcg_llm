@@ -1,3 +1,5 @@
+import { validateSearchState } from "./search-state";
+import { validateSetupState } from "./setup-state";
 import { paymentSources, paymentValue, paymentCandidates } from "./payment";
 import { z } from "zod";
 import { GameStateSchema, ContentBundleSchema, ReplayStateHashSchema, PositionHashSchema, hashCanonical, canonicalSerialize, failure, success, type Result, type GameState, type ContentBundle, type PlayerId, type DeepReadonly, CardInstanceIdSchema } from "@tcg/domain";
@@ -51,7 +53,7 @@ export function validateState(input: unknown, context: EngineContext): Result<Ga
         if (c.statuses.includes("GO_SOLO") && (content.type !== "LEGEND" || !content.mechanics.keywords.includes("GO_SOLO") || c.zone.zone !== "BATTLEFIELD"))
             return failure("INVALID_GO_SOLO", "Go Solo requires a printed Legend with the keyword on the battlefield");
         for (const target of c.attachments) {
-            if (target === id || attached.has(target) || !Object.hasOwn(s.objects.cards, target) || s.objects.cards[target].zone.zone !== "BATTLEFIELD" || c.zone.zone !== "BATTLEFIELD")
+            if (target === id || attached.has(target) || !Object.hasOwn(s.objects.cards, target) || s.objects.cards[target].zone.zone !== "BATTLEFIELD" || (c.zone.zone !== "BATTLEFIELD" && !(c.zone.zone === "LEGENDS" && c.face === "UP")))
                 return failure("INVALID_ATTACHMENT", "Attachment references must be unique battlefield objects");
             attached.add(target);
         }
@@ -96,13 +98,17 @@ export function validateState(input: unknown, context: EngineContext): Result<Ga
     if (s.timing.combat.stage !== "NONE" && [s.timing.combat.attackerId, s.timing.combat.targetId, s.timing.combat.blockerId].some(id => id !== null && !Object.hasOwn(s.objects.cards, id)))
         return failure("INVALID_COMBAT_REFERENCE", "Combat objects must resolve");
     const slice = b.ruleset.gameplay?.turnSlice;
-    if (slice) {
+    if (s.setup || s.timing.window === "SETUP") {
+        const validSetup = validateSetupState(s, context);
+        if (!validSetup.ok) return validSetup;
+    }
+    if (slice && !s.setup) {
         const step = s.timing.step;
         if (ids.length !== 2 || !s.timing.firstPlayer || !ids.includes(s.timing.firstPlayer) || !step || s.timing.actingPlayer !== s.timing.activePlayer)
             return failure("INVALID_TURN_STATE", "Turn slice requires two players, first player and an active decision actor");
         if (s.timing.turn < 1 || s.timing.activePlayer !== ids[(s.players[s.timing.firstPlayer].seat + s.timing.turn - 1) % ids.length])
             return failure("INVALID_TURN_ORDER", "Active player must follow first-player and turn order");
-        const boundary = ["MAIN", "CHOOSE_GIG", "PAYMENT_SELECTION", "FINISHED"].includes(step);
+        const boundary = ["MAIN", "CHOOSE_GIG", "PAYMENT_SELECTION", "TARGET_SELECTION", "FINISHED"].includes(step);
         if ((boundary && s.timing.window !== step) || (!boundary && s.timing.window !== "RESOLVING"))
             return failure("INVALID_TURN_TIMING", "Step and window disagree");
         if (Object.values(s.players).some(p => p.economy.usageTurn !== s.timing.turn || p.economy.callsThisTurn === undefined || p.economy.callsThisTurn > slice.callLimitPerTurn || p.economy.sellsThisTurn > b.ruleset.gameplay!.sellLimitPerTurn))
@@ -122,7 +128,7 @@ export function validateState(input: unknown, context: EngineContext): Result<Ga
         if (s.match.outcome && (!ids.includes(s.match.outcome.winnerId) || !ids.includes(s.match.outcome.loserId) || s.match.outcome.winnerId === s.match.outcome.loserId))
             return failure("INVALID_OUTCOME", "Outcome players invalid");
         const continuation = s.resolution.callContinuation;
-        if ((step === "PAYMENT_SELECTION") !== Boolean(continuation) || Boolean(continuation) !== Boolean(choice))
+        if ((step === "PAYMENT_SELECTION") !== Boolean(continuation) || Boolean(continuation) !== Boolean(choice && step === "PAYMENT_SELECTION"))
             return failure("INVALID_PAYMENT_STATE", "Payment step, choice and continuation must agree");
         if (continuation) {
             const legend = s.objects.cards[continuation.legendId], available = paymentSources(s, continuation.actorId, context);
@@ -136,17 +142,24 @@ export function validateState(input: unknown, context: EngineContext): Result<Ga
                 return failure("INVALID_PAYMENT_OPTIONS", "Choice options must exactly match eligible payment continuations");
         }
     }
+    const search = validateSearchState(s, context);
+    if (!search.ok) return search;
     return success(freeze(s));
 }
 export function hashReplayState(state: GameState) { return ReplayStateHashSchema.parse(hashCanonical(state)); }
-/** v1 semantic projection excludes only transport identity/counters. Seat-local instance IDs are retained.
+/** v2 semantic projection excludes transport identity/counters and effect event provenance. Seat-local instance IDs are retained.
  * This is conservative equivalence, not arbitrary graph-isomorphism equivalence. */
 export function hashPosition(state: GameState) {
-    const value = { ...state, match: Object.fromEntries(Object.entries(state.match).filter(([key]) => !["id", "version", "eventSequence"].includes(key))) };
+    const semanticEffect = (effect: NonNullable<GameState["resolution"]["current"]>) => {
+        const { causedBySequence, ...semantic } = effect;
+        void causedBySequence;
+        return semantic;
+    };
+    const value = { ...state, resolution: { ...state.resolution, current: state.resolution.current ? semanticEffect(state.resolution.current) : null, pending: state.resolution.pending.map(semanticEffect), discovered: state.resolution.discovered.map(semanticEffect) }, match: Object.fromEntries(Object.entries(state.match).filter(([key]) => !["id", "version", "eventSequence"].includes(key))) };
     // Player UUIDs are transport identities. Replace exact values and record keys with seat identifiers.
     const seats = new Map<string, string>(state.match.playerOrder.map((id, seat) => [id, `seat:${seat}`]));
     const normalize = (x: unknown): unknown => typeof x === "string" ? seats.get(x) ?? x : Array.isArray(x) ? x.map(normalize) : x && typeof x === "object" ? Object.fromEntries(Object.entries(x).map(([k, v]) => [seats.get(k) ?? k, normalize(v)])) : x;
-    return PositionHashSchema.parse(hashCanonical({ projection: "POSITION_V1", state: normalize(value) }));
+    return PositionHashSchema.parse(hashCanonical({ projection: "POSITION_V2", state: normalize(value) }));
 }
 export const CreateGameInputSchema = z.strictObject({ matchId: z.uuid(), players: z.array(z.uuid()).min(1), seed: z.string().min(1), setup: z.strictObject({ firstPlayerSeat: z.number().int().nonnegative(), mulligans: z.literal("DECLINED"), cuts: z.literal("DECLINED") }).optional(), format: z.enum(["CONSTRUCTED", "SEALED_LIMITED"]).optional(), decks: z.array(z.strictObject({ legends: z.array(z.string()), main: z.array(z.string()) })) });
 export function buildInitialState(input: z.input<typeof CreateGameInputSchema>, context: EngineContext, dealOpeningHand = true): Result<GameState> {

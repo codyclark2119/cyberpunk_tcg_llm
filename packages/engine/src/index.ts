@@ -1,6 +1,9 @@
+import { continueSearch } from "./effects";
+import { continueSetup } from "./setup";
+import { setupChoiceLabel } from "./setup-state";
 import { TurnMutation } from "./turn";
 import { drawDeterministicDie } from "./rng";
-import { GameActionSchema, GameCommandSchema, GameStateSchema, GameEventSchema, hashCanonical, canonicalSerialize, failure, success, type Result, type GameState, type GameAction, type GameEvent, type PlayerId, type LegalAction, type GigInstanceId, type PendingEffect, type Effect } from "@tcg/domain";
+import { GameActionSchema, GameCommandSchema, GameStateSchema, GameEventSchema, hashCanonical, canonicalSerialize, failure, success, type Result, type GameState, type GameAction, type GameEvent, type PlayerId, type LegalAction, type GigInstanceId } from "@tcg/domain";
 import { validateState, hashPosition, type EngineContext } from "./state";
 import { RulesView } from "./view";
 export * from "./state";
@@ -20,7 +23,7 @@ export function listLegalActions(state: GameState, actor: PlayerId, context: Eng
         return failure("UNKNOWN_PLAYER", "Player is not in match");
     if (!context.content.ruleset.gameplay?.turnSlice && !supportedContent(context))
         return failure("UNSUPPORTED_MECHANICS", "Ability/continuous-effect execution awaits reviewed handlers");
-    if (state.resolution.stage !== "DECISION" && !(context.content.ruleset.gameplay?.turnSlice && state.resolution.stage === "CHOICE" && state.resolution.choice?.kind === "PAYMENT"))
+    if (state.resolution.stage !== "DECISION" && !(context.content.ruleset.gameplay?.turnSlice && state.resolution.stage === "CHOICE" && (state.resolution.choice?.kind === "PAYMENT" || state.resolution.searchContinuation || state.setup)))
         return failure("UNSUPPORTED_RESOLUTION", "Pending-effect/choice continuation requires a registered reviewed handler");
     if (actor !== state.timing.actingPlayer)
         return success([]);
@@ -29,7 +32,11 @@ export function listLegalActions(state: GameState, actor: PlayerId, context: Eng
     const slice = context.content.ruleset.gameplay?.turnSlice;
     if (state.match.outcome)
         return success([]);
-    if (slice && state.timing.window === "CHOOSE_GIG") {
+    if (state.setup || state.resolution.searchContinuation) {
+        const choice = state.resolution.choice!;
+        choice.options.forEach((_, index) => actions.push({ actorId: actor, action: { kind: "CHOOSE", choiceId: choice.id, optionIndices: [index] } }));
+    }
+    else if (slice && state.timing.window === "CHOOSE_GIG") {
         for (const gigInstanceId of view.listRollableFixerDice(actor))
             actions.push({ actorId: actor, action: { kind: "ROLL_GIG", gigInstanceId } });
     }
@@ -56,7 +63,9 @@ export function listLegalActions(state: GameState, actor: PlayerId, context: Eng
             case "CALL_LEGEND": return `Call face-down Legend ${state.players[actor].zones.LEGENDS.indexOf(a.action.cardInstanceId) + 1}`;
             case "ROLL_GIG": return `Roll ${view.getGig(a.action.gigInstanceId).dieType}`;
             case "CHOOSE": {
+                if (state.setup) return setupChoiceLabel(state, a.action.optionIndices[0]);
                 const option = state.resolution.choice!.options[a.action.optionIndices[0]];
+                if (state.resolution.searchContinuation) return option.kind === "CARD" ? `Reveal and take ${view.getRevision(option.cardInstanceId)?.displayName}` : "Take no more Gears";
                 if (option.kind !== "PAYMENT")
                     return "Unsupported choice";
                 const source = option.source, zone = source.kind === "EDDIE" ? "EDDIES" : "LEGENDS";
@@ -113,6 +122,17 @@ export function applyAction(state: GameState, action: GameAction, context: Engin
                 break;
             }
             case "CHOOSE": {
+                if (s.setup) {
+                    const resolved = continueSetup(mutation, action.action.optionIndices[0]);
+                    if (!resolved.ok) return resolved;
+                    break;
+                }
+                if (s.resolution.searchContinuation) {
+                    const result = continueSearch(mutation, action.action.optionIndices[0]);
+                    if (!result.ok) return result;
+                    if (!s.resolution.searchContinuation) mutation.finishContinuedEffect();
+                    break;
+                }
                 const pending = s.resolution.callContinuation!, option = s.resolution.choice!.options[action.action.optionIndices[0]];
                 if (option.kind !== "PAYMENT")
                     return failure("UNSUPPORTED_CHOICE", "Only CALL payment is implemented");
@@ -204,19 +224,7 @@ export function modifyGigValue(state: GameState, id: GigInstanceId, delta: numbe
     const checked = validateState(next, context);
     return checked.ok ? success({ state: checked.value, events: [event] }) : checked;
 }
-export type EffectHandler = (view: RulesView, pending: PendingEffect) => Result<{
-    events: GameEvent[];
-    pending: PendingEffect[];
-}>;
-export class HandlerRegistry {
-    private readonly handlers = new Map<string, EffectHandler>();
-    register(id: string, handler: EffectHandler) {
-        if (!/^[a-z][a-z0-9._-]+@\d+$/.test(id) || this.handlers.has(id))
-            throw new Error("Invalid or duplicate handler ID");
-        this.handlers.set(id, handler);
-    }
-    resolve(effect: Effect) { return effect.kind === "CUSTOM" ? this.handlers.get(effect.handlerId) : undefined; }
-}
+export { HandlerRegistry } from "./effects";
 export const STATE_BASED_PIPELINE = ["RESOLVE_EFFECT", "STATE_BASED_CHECKS", "DISCOVER_TRIGGERS", "ORDER_TRIGGERS", "CHOICE", "DECISION"] as const;
 export function advanceResolution(state: GameState, context: EngineContext): Result<GameState> {
     const valid = validateState(state, context);

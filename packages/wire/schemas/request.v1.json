@@ -279,11 +279,17 @@
                         },
                         "setup": {
                           "type": "string",
-                          "const": "AGREED_FIRST_PLAYER_DECLINED_MULLIGANS_AND_CUTS"
+                          "enum": [
+                            "AGREED_FIRST_PLAYER_DECLINED_MULLIGANS_AND_CUTS",
+                            "ENGINE_SETUP_V1"
+                          ]
                         },
                         "callEffects": {
                           "type": "string",
-                          "const": "SINGLE_UNCONDITIONAL_DRAW"
+                          "enum": [
+                            "SINGLE_UNCONDITIONAL_DRAW",
+                            "REVIEWED_CALL_V1"
+                          ]
                         },
                         "overtime": {
                           "type": "string",
@@ -666,6 +672,27 @@
                   "sourceMarkup": {
                     "type": "string"
                   },
+                  "execution": {
+                    "type": "object",
+                    "properties": {
+                      "scope": {
+                        "type": "string",
+                        "const": "NONCOMBAT_SLICE_V1"
+                      },
+                      "status": {
+                        "type": "string",
+                        "enum": [
+                          "SUPPORTED",
+                          "UNSUPPORTED"
+                        ]
+                      }
+                    },
+                    "required": [
+                      "scope",
+                      "status"
+                    ],
+                    "additionalProperties": false
+                  },
                   "mechanics": {
                     "type": "object",
                     "properties": {
@@ -855,6 +882,37 @@
                               "type": "array",
                               "items": {
                                 "oneOf": [
+                                  {
+                                    "type": "object",
+                                    "properties": {
+                                      "kind": {
+                                        "type": "string",
+                                        "const": "SEARCH_GEAR"
+                                      },
+                                      "count": {
+                                        "type": "integer",
+                                        "exclusiveMinimum": 0,
+                                        "maximum": 5
+                                      },
+                                      "maxCost": {
+                                        "type": "integer",
+                                        "minimum": 0,
+                                        "maximum": 9007199254740991
+                                      },
+                                      "maxTake": {
+                                        "type": "integer",
+                                        "exclusiveMinimum": 0,
+                                        "maximum": 2
+                                      }
+                                    },
+                                    "required": [
+                                      "kind",
+                                      "count",
+                                      "maxCost",
+                                      "maxTake"
+                                    ],
+                                    "additionalProperties": false
+                                  },
                                   {
                                     "type": "object",
                                     "properties": {
@@ -1560,6 +1618,25 @@
                               "properties": {
                                 "kind": {
                                   "type": "string",
+                                  "const": "POWER_PER_EQUIPPED_GEAR_DURING_OWN_TURN"
+                                },
+                                "amount": {
+                                  "type": "integer",
+                                  "minimum": -9007199254740991,
+                                  "maximum": 9007199254740991
+                                }
+                              },
+                              "required": [
+                                "kind",
+                                "amount"
+                              ],
+                              "additionalProperties": false
+                            },
+                            {
+                              "type": "object",
+                              "properties": {
+                                "kind": {
+                                  "type": "string",
                                   "const": "POWER"
                                 },
                                 "target": {
@@ -1892,6 +1969,36 @@
         "state": {
           "type": "object",
           "properties": {
+            "setup": {
+              "type": "object",
+              "properties": {
+                "stage": {
+                  "type": "string",
+                  "enum": [
+                    "FIRST_PLAYER",
+                    "MAIN_CUT",
+                    "LEGEND_CUT",
+                    "MULLIGAN"
+                  ]
+                },
+                "decidingSeat": {
+                  "type": "integer",
+                  "minimum": 0,
+                  "maximum": 1
+                },
+                "completed": {
+                  "type": "integer",
+                  "minimum": 0,
+                  "maximum": 1
+                }
+              },
+              "required": [
+                "stage",
+                "decidingSeat",
+                "completed"
+              ],
+              "additionalProperties": false
+            },
             "schemaVersion": {
               "type": "number",
               "const": 2
@@ -2045,6 +2152,10 @@
                 "step": {
                   "type": "string",
                   "enum": [
+                    "TARGET_SELECTION",
+                    "CHOOSE_FIRST_PLAYER",
+                    "CUT_DECISION",
+                    "MULLIGAN_DECISION",
                     "TURN_START",
                     "READY",
                     "DRAW",
@@ -2069,6 +2180,7 @@
                     "MAIN",
                     "CHOOSE_GIG",
                     "PAYMENT_SELECTION",
+                    "TARGET_SELECTION",
                     "RIVAL_REACT",
                     "RESOLVING",
                     "FINISHED"
@@ -2553,6 +2665,34 @@
                     "UNSUPPORTED"
                   ]
                 },
+                "searchContinuation": {
+                  "type": "object",
+                  "properties": {
+                    "looked": {
+                      "type": "array",
+                      "items": {
+                        "type": "string",
+                        "minLength": 1,
+                        "maxLength": 200,
+                        "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$"
+                      }
+                    },
+                    "selected": {
+                      "type": "array",
+                      "items": {
+                        "type": "string",
+                        "minLength": 1,
+                        "maxLength": 200,
+                        "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$"
+                      }
+                    }
+                  },
+                  "required": [
+                    "looked",
+                    "selected"
+                  ],
+                  "additionalProperties": false
+                },
                 "callContinuation": {
                   "type": "object",
                   "properties": {
@@ -2636,6 +2776,37 @@
                         },
                         "effect": {
                           "oneOf": [
+                            {
+                              "type": "object",
+                              "properties": {
+                                "kind": {
+                                  "type": "string",
+                                  "const": "SEARCH_GEAR"
+                                },
+                                "count": {
+                                  "type": "integer",
+                                  "exclusiveMinimum": 0,
+                                  "maximum": 5
+                                },
+                                "maxCost": {
+                                  "type": "integer",
+                                  "minimum": 0,
+                                  "maximum": 9007199254740991
+                                },
+                                "maxTake": {
+                                  "type": "integer",
+                                  "exclusiveMinimum": 0,
+                                  "maximum": 2
+                                }
+                              },
+                              "required": [
+                                "kind",
+                                "count",
+                                "maxCost",
+                                "maxTake"
+                              ],
+                              "additionalProperties": false
+                            },
                             {
                               "type": "object",
                               "properties": {
@@ -3375,6 +3546,37 @@
                             "properties": {
                               "kind": {
                                 "type": "string",
+                                "const": "SEARCH_GEAR"
+                              },
+                              "count": {
+                                "type": "integer",
+                                "exclusiveMinimum": 0,
+                                "maximum": 5
+                              },
+                              "maxCost": {
+                                "type": "integer",
+                                "minimum": 0,
+                                "maximum": 9007199254740991
+                              },
+                              "maxTake": {
+                                "type": "integer",
+                                "exclusiveMinimum": 0,
+                                "maximum": 2
+                              }
+                            },
+                            "required": [
+                              "kind",
+                              "count",
+                              "maxCost",
+                              "maxTake"
+                            ],
+                            "additionalProperties": false
+                          },
+                          {
+                            "type": "object",
+                            "properties": {
+                              "kind": {
+                                "type": "string",
                                 "const": "DRAW"
                               },
                               "count": {
@@ -4100,6 +4302,37 @@
                       },
                       "effect": {
                         "oneOf": [
+                          {
+                            "type": "object",
+                            "properties": {
+                              "kind": {
+                                "type": "string",
+                                "const": "SEARCH_GEAR"
+                              },
+                              "count": {
+                                "type": "integer",
+                                "exclusiveMinimum": 0,
+                                "maximum": 5
+                              },
+                              "maxCost": {
+                                "type": "integer",
+                                "minimum": 0,
+                                "maximum": 9007199254740991
+                              },
+                              "maxTake": {
+                                "type": "integer",
+                                "exclusiveMinimum": 0,
+                                "maximum": 2
+                              }
+                            },
+                            "required": [
+                              "kind",
+                              "count",
+                              "maxCost",
+                              "maxTake"
+                            ],
+                            "additionalProperties": false
+                          },
                           {
                             "type": "object",
                             "properties": {
@@ -5358,11 +5591,17 @@
                         },
                         "setup": {
                           "type": "string",
-                          "const": "AGREED_FIRST_PLAYER_DECLINED_MULLIGANS_AND_CUTS"
+                          "enum": [
+                            "AGREED_FIRST_PLAYER_DECLINED_MULLIGANS_AND_CUTS",
+                            "ENGINE_SETUP_V1"
+                          ]
                         },
                         "callEffects": {
                           "type": "string",
-                          "const": "SINGLE_UNCONDITIONAL_DRAW"
+                          "enum": [
+                            "SINGLE_UNCONDITIONAL_DRAW",
+                            "REVIEWED_CALL_V1"
+                          ]
                         },
                         "overtime": {
                           "type": "string",
@@ -5745,6 +5984,27 @@
                   "sourceMarkup": {
                     "type": "string"
                   },
+                  "execution": {
+                    "type": "object",
+                    "properties": {
+                      "scope": {
+                        "type": "string",
+                        "const": "NONCOMBAT_SLICE_V1"
+                      },
+                      "status": {
+                        "type": "string",
+                        "enum": [
+                          "SUPPORTED",
+                          "UNSUPPORTED"
+                        ]
+                      }
+                    },
+                    "required": [
+                      "scope",
+                      "status"
+                    ],
+                    "additionalProperties": false
+                  },
                   "mechanics": {
                     "type": "object",
                     "properties": {
@@ -5934,6 +6194,37 @@
                               "type": "array",
                               "items": {
                                 "oneOf": [
+                                  {
+                                    "type": "object",
+                                    "properties": {
+                                      "kind": {
+                                        "type": "string",
+                                        "const": "SEARCH_GEAR"
+                                      },
+                                      "count": {
+                                        "type": "integer",
+                                        "exclusiveMinimum": 0,
+                                        "maximum": 5
+                                      },
+                                      "maxCost": {
+                                        "type": "integer",
+                                        "minimum": 0,
+                                        "maximum": 9007199254740991
+                                      },
+                                      "maxTake": {
+                                        "type": "integer",
+                                        "exclusiveMinimum": 0,
+                                        "maximum": 2
+                                      }
+                                    },
+                                    "required": [
+                                      "kind",
+                                      "count",
+                                      "maxCost",
+                                      "maxTake"
+                                    ],
+                                    "additionalProperties": false
+                                  },
                                   {
                                     "type": "object",
                                     "properties": {
@@ -6634,6 +6925,25 @@
                         "type": "array",
                         "items": {
                           "oneOf": [
+                            {
+                              "type": "object",
+                              "properties": {
+                                "kind": {
+                                  "type": "string",
+                                  "const": "POWER_PER_EQUIPPED_GEAR_DURING_OWN_TURN"
+                                },
+                                "amount": {
+                                  "type": "integer",
+                                  "minimum": -9007199254740991,
+                                  "maximum": 9007199254740991
+                                }
+                              },
+                              "required": [
+                                "kind",
+                                "amount"
+                              ],
+                              "additionalProperties": false
+                            },
                             {
                               "type": "object",
                               "properties": {

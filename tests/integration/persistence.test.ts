@@ -1,5 +1,7 @@
+import { setupContext, setupInput } from "../setup-fixture";
+import { unwrap } from "../turn-replay";
 import { turnContext, turnInput } from "../turn-fixture";
-import { createGameWithEvents } from "@tcg/engine";
+import { createGameWithEvents, applyAction, listLegalActions } from "@tcg/engine";
 import { fixtureContext, fixtureState } from "../contract-fixture";
 import test from "node:test";
 import assert from "node:assert/strict";
@@ -116,9 +118,43 @@ test("Postgres ledger: running, conflict, replay, transactional rollback and sta
         assert.equal(initialized.ok,true);
         if (initialized.ok) {
             assert.ok(initialized.value.state.match.eventSequence > 0);
-            assert.equal((await match.create(initialized.value.state)).ok,true);
+            assert.equal((await match.create(initialized.value.state, initialized.value.events)).ok,true);
             assert.deepEqual(await match.find(initialized.value.state.match.id),initialized.value.state);
+            assert.deepEqual(await match.history(initialized.value.state.match.id), initialized.value.events);
         }
+        const setupCtx = setupContext(), setup = unwrap(createGameWithEvents({ ...setupInput(), matchId: randomUUID(), players: [actor, otherActor] }, setupCtx));
+        assert.equal((await match.create(setup.state)).ok, false); // Never silently persist partial setup history.
+        assert.equal(await match.find(setup.state.match.id), null);
+        assert.equal((await match.create(setup.state, setup.events)).ok, true);
+        const allEvents = [...setup.events];
+        let current = setup.state;
+        for (let i = 0; i < 9; i++) {
+            const legal = unwrap(listLegalActions(current, current.timing.actingPlayer, setupCtx));
+            const action = current.setup ? legal.find(a => a.action.kind === "CHOOSE" && a.action.optionIndices[0] === 0)! : legal.find(a => a.action.kind === (i === 7 ? "ROLL_GIG" : "END_TURN"))!;
+            const transition = unwrap(applyAction(current, { actorId: action.actorId, action: action.action }, setupCtx));
+            assert.equal((await match.save(transition.state, current.match.version)).ok, false);
+            assert.deepEqual(await match.find(current.match.id), current);
+            assert.deepEqual(await match.history(current.match.id), allEvents);
+            const saved = await Promise.all([match.save(transition.state, current.match.version, transition.events), match.save(transition.state, current.match.version, transition.events)]);
+            assert.equal(saved.filter(r => r.ok).length, 1);
+            allEvents.push(...transition.events);
+            current = transition.state;
+        }
+        assert.deepEqual(await match.history(current.match.id), allEvents);
+        assert.deepEqual(await match.find(current.match.id), current);
+        // Inject an event insert failure AFTER the state UPDATE to verify transaction rollback.
+        await pool.query("CREATE FUNCTION reject_test_event() RETURNS trigger LANGUAGE plpgsql AS $$ BEGIN RAISE EXCEPTION 'event insert failure'; END $$");
+        await pool.query("CREATE TRIGGER reject_test_event BEFORE INSERT ON match_events FOR EACH ROW EXECUTE FUNCTION reject_test_event()");
+        const action = unwrap(listLegalActions(current, current.timing.actingPlayer, setupCtx))[0];
+        const transition = unwrap(applyAction(current, { actorId: action.actorId, action: action.action }, setupCtx));
+        await assert.rejects(match.save(transition.state, current.match.version, transition.events), /event insert failure/);
+        assert.deepEqual(await match.find(current.match.id), current);
+        assert.deepEqual(await match.history(current.match.id), allEvents);
+        await pool.query("DROP TRIGGER reject_test_event ON match_events");
+        // A historical row created by the previous API is explicitly detected, not treated as complete.
+        await pool.query("DELETE FROM match_events WHERE match_id=$1 AND sequence=1", [current.match.id]);
+        await assert.rejects(match.history(current.match.id), /INCOMPLETE_MATCH_HISTORY/);
+        assert.equal((await match.save(transition.state, current.match.version, transition.events)).ok, false);
     }
     finally {
         await pool.end();

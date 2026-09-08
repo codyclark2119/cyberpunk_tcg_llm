@@ -1,3 +1,4 @@
+import { resolveCallPrimitive } from "./effects";
 import { z } from "zod";
 import { GameStateSchema, GameEventSchema, EffectSchema, hashCanonical, failure, success, type GameState, type GameEvent, type PlayerId, type CardInstanceId, type PaymentSource, type Result } from "@tcg/domain";
 import { type EngineContext, validateState } from "./state";
@@ -99,17 +100,16 @@ export class TurnMutation {
         if (ability) {
             this.phase("CALL_EFFECT");
             const effect = ability.effects[0];
-            const pending = { id: `call-${s.match.eventSequence}`, controllerId: actor, sourceId: legendId, effect: EffectSchema.parse(effect), causedBySequence: s.match.eventSequence };
+            const pending = { id: hashCanonical({ kind: "CALL", turn: s.timing.turn, sourceId: legendId }), controllerId: actor, sourceId: legendId, effect: EffectSchema.parse(effect), causedBySequence: s.match.eventSequence };
             s.resolution.stage = "DISCOVER_TRIGGERS";
             s.resolution.pending = [pending];
             this.emit({ kind: "EFFECT_PENDING", effectId: pending.id, sourceId: legendId });
             s.resolution.current = s.resolution.pending.shift()!;
             s.resolution.stage = "RESOLVE_EFFECT";
-            if (effect.kind !== "DRAW")
-                return failure("UNSUPPORTED_CALL_EFFECT", "Only one unconditional DRAW is implemented");
-            const result = this.draw(actor, effect.count);
+            const result = resolveCallPrimitive(this, pending.effect);
             if (!result.ok)
                 return result;
+            if (s.resolution.searchContinuation) return success(null);
             this.emit({ kind: "EFFECT_RESOLVED", effectId: pending.id });
             if (s.match.outcome)
                 return success(null);
@@ -119,6 +119,12 @@ export class TurnMutation {
         s.resolution = { stage: "DECISION", current: null, pending: [], discovered: [], choice: null };
         this.phase("MAIN");
         return success(null);
+    }
+    finishContinuedEffect() {
+        const current = this.state.resolution.current!;
+        this.emit({ kind: "EFFECT_RESOLVED", effectId: current.id });
+        this.state.resolution = { stage: "STATE_BASED_CHECKS", current: null, pending: [], discovered: [], choice: null };
+        this.phase("MAIN");
     }
     paymentChoice(actor: PlayerId, legendId: CardInstanceId, remainingCost: number, selectedSources: PaymentSource[]): Result<null> {
         const view = new RulesView(this.state, this.context), candidates = view.paymentCandidates(actor, remainingCost, selectedSources);

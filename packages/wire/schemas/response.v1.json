@@ -72,6 +72,36 @@
                 "state": {
                   "type": "object",
                   "properties": {
+                    "setup": {
+                      "type": "object",
+                      "properties": {
+                        "stage": {
+                          "type": "string",
+                          "enum": [
+                            "FIRST_PLAYER",
+                            "MAIN_CUT",
+                            "LEGEND_CUT",
+                            "MULLIGAN"
+                          ]
+                        },
+                        "decidingSeat": {
+                          "type": "integer",
+                          "minimum": 0,
+                          "maximum": 1
+                        },
+                        "completed": {
+                          "type": "integer",
+                          "minimum": 0,
+                          "maximum": 1
+                        }
+                      },
+                      "required": [
+                        "stage",
+                        "decidingSeat",
+                        "completed"
+                      ],
+                      "additionalProperties": false
+                    },
                     "schemaVersion": {
                       "type": "number",
                       "const": 2
@@ -225,6 +255,10 @@
                         "step": {
                           "type": "string",
                           "enum": [
+                            "TARGET_SELECTION",
+                            "CHOOSE_FIRST_PLAYER",
+                            "CUT_DECISION",
+                            "MULLIGAN_DECISION",
                             "TURN_START",
                             "READY",
                             "DRAW",
@@ -249,6 +283,7 @@
                             "MAIN",
                             "CHOOSE_GIG",
                             "PAYMENT_SELECTION",
+                            "TARGET_SELECTION",
                             "RIVAL_REACT",
                             "RESOLVING",
                             "FINISHED"
@@ -733,6 +768,34 @@
                             "UNSUPPORTED"
                           ]
                         },
+                        "searchContinuation": {
+                          "type": "object",
+                          "properties": {
+                            "looked": {
+                              "type": "array",
+                              "items": {
+                                "type": "string",
+                                "minLength": 1,
+                                "maxLength": 200,
+                                "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$"
+                              }
+                            },
+                            "selected": {
+                              "type": "array",
+                              "items": {
+                                "type": "string",
+                                "minLength": 1,
+                                "maxLength": 200,
+                                "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$"
+                              }
+                            }
+                          },
+                          "required": [
+                            "looked",
+                            "selected"
+                          ],
+                          "additionalProperties": false
+                        },
                         "callContinuation": {
                           "type": "object",
                           "properties": {
@@ -816,6 +879,37 @@
                                 },
                                 "effect": {
                                   "oneOf": [
+                                    {
+                                      "type": "object",
+                                      "properties": {
+                                        "kind": {
+                                          "type": "string",
+                                          "const": "SEARCH_GEAR"
+                                        },
+                                        "count": {
+                                          "type": "integer",
+                                          "exclusiveMinimum": 0,
+                                          "maximum": 5
+                                        },
+                                        "maxCost": {
+                                          "type": "integer",
+                                          "minimum": 0,
+                                          "maximum": 9007199254740991
+                                        },
+                                        "maxTake": {
+                                          "type": "integer",
+                                          "exclusiveMinimum": 0,
+                                          "maximum": 2
+                                        }
+                                      },
+                                      "required": [
+                                        "kind",
+                                        "count",
+                                        "maxCost",
+                                        "maxTake"
+                                      ],
+                                      "additionalProperties": false
+                                    },
                                     {
                                       "type": "object",
                                       "properties": {
@@ -1555,6 +1649,37 @@
                                     "properties": {
                                       "kind": {
                                         "type": "string",
+                                        "const": "SEARCH_GEAR"
+                                      },
+                                      "count": {
+                                        "type": "integer",
+                                        "exclusiveMinimum": 0,
+                                        "maximum": 5
+                                      },
+                                      "maxCost": {
+                                        "type": "integer",
+                                        "minimum": 0,
+                                        "maximum": 9007199254740991
+                                      },
+                                      "maxTake": {
+                                        "type": "integer",
+                                        "exclusiveMinimum": 0,
+                                        "maximum": 2
+                                      }
+                                    },
+                                    "required": [
+                                      "kind",
+                                      "count",
+                                      "maxCost",
+                                      "maxTake"
+                                    ],
+                                    "additionalProperties": false
+                                  },
+                                  {
+                                    "type": "object",
+                                    "properties": {
+                                      "kind": {
+                                        "type": "string",
                                         "const": "DRAW"
                                       },
                                       "count": {
@@ -2280,6 +2405,37 @@
                               },
                               "effect": {
                                 "oneOf": [
+                                  {
+                                    "type": "object",
+                                    "properties": {
+                                      "kind": {
+                                        "type": "string",
+                                        "const": "SEARCH_GEAR"
+                                      },
+                                      "count": {
+                                        "type": "integer",
+                                        "exclusiveMinimum": 0,
+                                        "maximum": 5
+                                      },
+                                      "maxCost": {
+                                        "type": "integer",
+                                        "minimum": 0,
+                                        "maximum": 9007199254740991
+                                      },
+                                      "maxTake": {
+                                        "type": "integer",
+                                        "exclusiveMinimum": 0,
+                                        "maximum": 2
+                                      }
+                                    },
+                                    "required": [
+                                      "kind",
+                                      "count",
+                                      "maxCost",
+                                      "maxTake"
+                                    ],
+                                    "additionalProperties": false
+                                  },
                                   {
                                     "type": "object",
                                     "properties": {
@@ -3605,6 +3761,36 @@
                 "state": {
                   "type": "object",
                   "properties": {
+                    "setup": {
+                      "type": "object",
+                      "properties": {
+                        "stage": {
+                          "type": "string",
+                          "enum": [
+                            "FIRST_PLAYER",
+                            "MAIN_CUT",
+                            "LEGEND_CUT",
+                            "MULLIGAN"
+                          ]
+                        },
+                        "decidingSeat": {
+                          "type": "integer",
+                          "minimum": 0,
+                          "maximum": 1
+                        },
+                        "completed": {
+                          "type": "integer",
+                          "minimum": 0,
+                          "maximum": 1
+                        }
+                      },
+                      "required": [
+                        "stage",
+                        "decidingSeat",
+                        "completed"
+                      ],
+                      "additionalProperties": false
+                    },
                     "schemaVersion": {
                       "type": "number",
                       "const": 2
@@ -3758,6 +3944,10 @@
                         "step": {
                           "type": "string",
                           "enum": [
+                            "TARGET_SELECTION",
+                            "CHOOSE_FIRST_PLAYER",
+                            "CUT_DECISION",
+                            "MULLIGAN_DECISION",
                             "TURN_START",
                             "READY",
                             "DRAW",
@@ -3782,6 +3972,7 @@
                             "MAIN",
                             "CHOOSE_GIG",
                             "PAYMENT_SELECTION",
+                            "TARGET_SELECTION",
                             "RIVAL_REACT",
                             "RESOLVING",
                             "FINISHED"
@@ -4266,6 +4457,34 @@
                             "UNSUPPORTED"
                           ]
                         },
+                        "searchContinuation": {
+                          "type": "object",
+                          "properties": {
+                            "looked": {
+                              "type": "array",
+                              "items": {
+                                "type": "string",
+                                "minLength": 1,
+                                "maxLength": 200,
+                                "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$"
+                              }
+                            },
+                            "selected": {
+                              "type": "array",
+                              "items": {
+                                "type": "string",
+                                "minLength": 1,
+                                "maxLength": 200,
+                                "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$"
+                              }
+                            }
+                          },
+                          "required": [
+                            "looked",
+                            "selected"
+                          ],
+                          "additionalProperties": false
+                        },
                         "callContinuation": {
                           "type": "object",
                           "properties": {
@@ -4349,6 +4568,37 @@
                                 },
                                 "effect": {
                                   "oneOf": [
+                                    {
+                                      "type": "object",
+                                      "properties": {
+                                        "kind": {
+                                          "type": "string",
+                                          "const": "SEARCH_GEAR"
+                                        },
+                                        "count": {
+                                          "type": "integer",
+                                          "exclusiveMinimum": 0,
+                                          "maximum": 5
+                                        },
+                                        "maxCost": {
+                                          "type": "integer",
+                                          "minimum": 0,
+                                          "maximum": 9007199254740991
+                                        },
+                                        "maxTake": {
+                                          "type": "integer",
+                                          "exclusiveMinimum": 0,
+                                          "maximum": 2
+                                        }
+                                      },
+                                      "required": [
+                                        "kind",
+                                        "count",
+                                        "maxCost",
+                                        "maxTake"
+                                      ],
+                                      "additionalProperties": false
+                                    },
                                     {
                                       "type": "object",
                                       "properties": {
@@ -5088,6 +5338,37 @@
                                     "properties": {
                                       "kind": {
                                         "type": "string",
+                                        "const": "SEARCH_GEAR"
+                                      },
+                                      "count": {
+                                        "type": "integer",
+                                        "exclusiveMinimum": 0,
+                                        "maximum": 5
+                                      },
+                                      "maxCost": {
+                                        "type": "integer",
+                                        "minimum": 0,
+                                        "maximum": 9007199254740991
+                                      },
+                                      "maxTake": {
+                                        "type": "integer",
+                                        "exclusiveMinimum": 0,
+                                        "maximum": 2
+                                      }
+                                    },
+                                    "required": [
+                                      "kind",
+                                      "count",
+                                      "maxCost",
+                                      "maxTake"
+                                    ],
+                                    "additionalProperties": false
+                                  },
+                                  {
+                                    "type": "object",
+                                    "properties": {
+                                      "kind": {
+                                        "type": "string",
                                         "const": "DRAW"
                                       },
                                       "count": {
@@ -5813,6 +6094,37 @@
                               },
                               "effect": {
                                 "oneOf": [
+                                  {
+                                    "type": "object",
+                                    "properties": {
+                                      "kind": {
+                                        "type": "string",
+                                        "const": "SEARCH_GEAR"
+                                      },
+                                      "count": {
+                                        "type": "integer",
+                                        "exclusiveMinimum": 0,
+                                        "maximum": 5
+                                      },
+                                      "maxCost": {
+                                        "type": "integer",
+                                        "minimum": 0,
+                                        "maximum": 9007199254740991
+                                      },
+                                      "maxTake": {
+                                        "type": "integer",
+                                        "exclusiveMinimum": 0,
+                                        "maximum": 2
+                                      }
+                                    },
+                                    "required": [
+                                      "kind",
+                                      "count",
+                                      "maxCost",
+                                      "maxTake"
+                                    ],
+                                    "additionalProperties": false
+                                  },
                                   {
                                     "type": "object",
                                     "properties": {
@@ -6797,6 +7109,287 @@
                             "properties": {
                               "kind": {
                                 "type": "string",
+                                "const": "FIXER_PREPARED"
+                              },
+                              "playerId": {
+                                "type": "string",
+                                "format": "uuid",
+                                "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+                              }
+                            },
+                            "required": [
+                              "kind",
+                              "playerId"
+                            ],
+                            "additionalProperties": false
+                          },
+                          {
+                            "type": "object",
+                            "properties": {
+                              "kind": {
+                                "type": "string",
+                                "const": "CARD_REVEALED"
+                              },
+                              "cardInstanceId": {
+                                "type": "string",
+                                "minLength": 1,
+                                "maxLength": 200,
+                                "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$"
+                              }
+                            },
+                            "required": [
+                              "kind",
+                              "cardInstanceId"
+                            ],
+                            "additionalProperties": false
+                          },
+                          {
+                            "type": "object",
+                            "properties": {
+                              "kind": {
+                                "type": "string",
+                                "const": "SEARCH_REMAINDER_BOTTOMED"
+                              },
+                              "playerId": {
+                                "type": "string",
+                                "format": "uuid",
+                                "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+                              },
+                              "order": {
+                                "type": "array",
+                                "items": {
+                                  "type": "string",
+                                  "minLength": 1,
+                                  "maxLength": 200,
+                                  "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$"
+                                }
+                              },
+                              "rngCounter": {
+                                "type": "integer",
+                                "minimum": 0,
+                                "maximum": 9007199254740991
+                              }
+                            },
+                            "required": [
+                              "kind",
+                              "playerId",
+                              "order",
+                              "rngCounter"
+                            ],
+                            "additionalProperties": false
+                          },
+                          {
+                            "type": "object",
+                            "properties": {
+                              "kind": {
+                                "type": "string",
+                                "const": "FIRST_PLAYER_DETERMINED"
+                              },
+                              "playerId": {
+                                "type": "string",
+                                "format": "uuid",
+                                "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+                              },
+                              "rngCounter": {
+                                "type": "integer",
+                                "minimum": 0,
+                                "maximum": 9007199254740991
+                              }
+                            },
+                            "required": [
+                              "kind",
+                              "playerId",
+                              "rngCounter"
+                            ],
+                            "additionalProperties": false
+                          },
+                          {
+                            "type": "object",
+                            "properties": {
+                              "kind": {
+                                "type": "string",
+                                "const": "FIRST_PLAYER_CHOSEN"
+                              },
+                              "playerId": {
+                                "type": "string",
+                                "format": "uuid",
+                                "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+                              },
+                              "chosenBy": {
+                                "type": "string",
+                                "format": "uuid",
+                                "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+                              }
+                            },
+                            "required": [
+                              "kind",
+                              "playerId",
+                              "chosenBy"
+                            ],
+                            "additionalProperties": false
+                          },
+                          {
+                            "type": "object",
+                            "properties": {
+                              "kind": {
+                                "type": "string",
+                                "const": "SETUP_SHUFFLED"
+                              },
+                              "playerId": {
+                                "type": "string",
+                                "format": "uuid",
+                                "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+                              },
+                              "zone": {
+                                "type": "string",
+                                "enum": [
+                                  "DECK",
+                                  "LEGENDS"
+                                ]
+                              },
+                              "order": {
+                                "type": "array",
+                                "items": {
+                                  "type": "string",
+                                  "minLength": 1,
+                                  "maxLength": 200,
+                                  "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$"
+                                }
+                              },
+                              "rngCounter": {
+                                "type": "integer",
+                                "minimum": 0,
+                                "maximum": 9007199254740991
+                              }
+                            },
+                            "required": [
+                              "kind",
+                              "playerId",
+                              "zone",
+                              "order",
+                              "rngCounter"
+                            ],
+                            "additionalProperties": false
+                          },
+                          {
+                            "type": "object",
+                            "properties": {
+                              "kind": {
+                                "type": "string",
+                                "const": "SETUP_CUT"
+                              },
+                              "playerId": {
+                                "type": "string",
+                                "format": "uuid",
+                                "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+                              },
+                              "ownerId": {
+                                "type": "string",
+                                "format": "uuid",
+                                "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+                              },
+                              "zone": {
+                                "type": "string",
+                                "enum": [
+                                  "DECK",
+                                  "LEGENDS"
+                                ]
+                              },
+                              "position": {
+                                "type": "integer",
+                                "minimum": 0,
+                                "maximum": 9007199254740991
+                              }
+                            },
+                            "required": [
+                              "kind",
+                              "playerId",
+                              "ownerId",
+                              "zone",
+                              "position"
+                            ],
+                            "additionalProperties": false
+                          },
+                          {
+                            "type": "object",
+                            "properties": {
+                              "kind": {
+                                "type": "string",
+                                "const": "MULLIGAN_DECLARED"
+                              },
+                              "playerId": {
+                                "type": "string",
+                                "format": "uuid",
+                                "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+                              },
+                              "accepted": {
+                                "type": "boolean"
+                              }
+                            },
+                            "required": [
+                              "kind",
+                              "playerId",
+                              "accepted"
+                            ],
+                            "additionalProperties": false
+                          },
+                          {
+                            "type": "object",
+                            "properties": {
+                              "kind": {
+                                "type": "string",
+                                "const": "MULLIGAN_RESOLVED"
+                              },
+                              "playerId": {
+                                "type": "string",
+                                "format": "uuid",
+                                "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+                              }
+                            },
+                            "required": [
+                              "kind",
+                              "playerId"
+                            ],
+                            "additionalProperties": false
+                          },
+                          {
+                            "type": "object",
+                            "properties": {
+                              "kind": {
+                                "type": "string",
+                                "const": "SETUP_LEGEND_SPENT"
+                              },
+                              "cardInstanceId": {
+                                "type": "string",
+                                "minLength": 1,
+                                "maxLength": 200,
+                                "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$"
+                              }
+                            },
+                            "required": [
+                              "kind",
+                              "cardInstanceId"
+                            ],
+                            "additionalProperties": false
+                          },
+                          {
+                            "type": "object",
+                            "properties": {
+                              "kind": {
+                                "type": "string",
+                                "const": "GAME_SETUP_COMPLETED"
+                              }
+                            },
+                            "required": [
+                              "kind"
+                            ],
+                            "additionalProperties": false
+                          },
+                          {
+                            "type": "object",
+                            "properties": {
+                              "kind": {
+                                "type": "string",
                                 "const": "TURN_STARTED"
                               },
                               "playerId": {
@@ -6852,6 +7445,10 @@
                               "step": {
                                 "type": "string",
                                 "enum": [
+                                  "TARGET_SELECTION",
+                                  "CHOOSE_FIRST_PLAYER",
+                                  "CUT_DECISION",
+                                  "MULLIGAN_DECISION",
                                   "TURN_START",
                                   "READY",
                                   "DRAW",
@@ -7299,6 +7896,7 @@
                         "MAIN",
                         "CHOOSE_GIG",
                         "PAYMENT_SELECTION",
+                        "TARGET_SELECTION",
                         "RIVAL_REACT",
                         "RESOLVING",
                         "FINISHED"
@@ -7310,6 +7908,10 @@
                     "step": {
                       "type": "string",
                       "enum": [
+                        "TARGET_SELECTION",
+                        "CHOOSE_FIRST_PLAYER",
+                        "CUT_DECISION",
+                        "MULLIGAN_DECISION",
                         "TURN_START",
                         "READY",
                         "DRAW",
@@ -7343,6 +7945,43 @@
                         "reason"
                       ],
                       "additionalProperties": false
+                    },
+                    "inspectedCards": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "instanceId": {
+                            "type": "string"
+                          },
+                          "content": {
+                            "type": "object",
+                            "properties": {
+                              "cardId": {
+                                "type": "string",
+                                "minLength": 1,
+                                "maxLength": 200,
+                                "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$"
+                              },
+                              "revision": {
+                                "type": "integer",
+                                "exclusiveMinimum": 0,
+                                "maximum": 2147483647
+                              }
+                            },
+                            "required": [
+                              "cardId",
+                              "revision"
+                            ],
+                            "additionalProperties": false
+                          }
+                        },
+                        "required": [
+                          "instanceId",
+                          "content"
+                        ],
+                        "additionalProperties": false
+                      }
                     },
                     "players": {
                       "type": "array",

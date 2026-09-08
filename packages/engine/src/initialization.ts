@@ -1,3 +1,4 @@
+import { beginSetup } from "./setup";
 import { z } from "zod";
 import { DeckSchema, ContentBundleSchema, validateDeck, GameStateSchema, failure, success, type GameState, type Result, type GameEvent } from "@tcg/domain";
 import { buildInitialState, CreateGameInputSchema, type EngineContext } from "./state";
@@ -19,8 +20,10 @@ export function createGameWithEvents(input: z.input<typeof CreateGameInputSchema
         return old.ok ? success({ state: old.value, events: [] }) : old;
     }
     const request = parsed.data, rules = context.content.ruleset.gameplay, policy = rules.turnSlice;
-    if (!policy || !request.setup || request.players.length !== 2 || request.setup.firstPlayerSeat >= 2)
+    const engineSetup = policy?.setup === "ENGINE_SETUP_V1";
+    if (!policy || request.players.length !== 2 || (!engineSetup && (!request.setup || request.setup.firstPlayerSeat >= 2)))
         return failure("UNSUPPORTED_SETUP", "Two players and explicit agreed first-player/declined mulligan/cut decisions are required");
+    if (engineSetup && request.setup) return failure("INVALID_SETUP_INPUT", "Engine-owned setup does not accept external first-player, cut or mulligan decisions");
     if (request.format && request.format !== "CONSTRUCTED")
         return failure("UNSUPPORTED_SETUP_FORMAT", "This initializer currently supports constructed/catalog decks only");
     for (const deck of request.decks) {
@@ -37,13 +40,32 @@ export function createGameWithEvents(input: z.input<typeof CreateGameInputSchema
     const built = buildInitialState(request, context, false);
     if (!built.ok)
         return built;
-    const s = GameStateSchema.parse(built.value), first = s.match.playerOrder[request.setup.firstPlayerSeat];
+    const s = GameStateSchema.parse(built.value), first = s.match.playerOrder[request.setup?.firstPlayerSeat ?? 0];
     s.timing.firstPlayer = first;
     s.timing.activePlayer = first;
     s.timing.actingPlayer = first;
     s.timing.step = "MAIN";
     for (const p of Object.values(s.players))
         p.economy = { sellsThisTurn: 0, callsThisTurn: 0, usageTurn: 1 };
+    // Capability admission is deck-wide, never a hidden-Legend-specific label/filter.
+    const view = new RulesView(s, context);
+    for (const c of Object.values(s.objects.cards)) {
+        const content = view.getRevision(c.id)!;
+        if (policy.callEffects === "REVIEWED_CALL_V1" && content.execution?.status !== "SUPPORTED") return failure("UNREVIEWED_EXECUTION", "Reviewed gameplay requires an explicit executable coverage decision for every deck card");
+        if (content.execution?.status === "UNSUPPORTED") return failure("UNSUPPORTED_CARD_EFFECT", "Corpus presence does not certify executable support");
+        if (content.type === "LEGEND") {
+            const supported = view.callEffectSupport(c.id);
+            if (!supported.ok)
+                return supported;
+        }
+        else if (content.mechanics.abilities.length || content.mechanics.modifiers.length)
+            return failure("UNSUPPORTED_CARD_EFFECT", "Turn slice requires cards without unsupported automatic effects");
+    }
+    if (engineSetup) {
+        const mutation = new TurnMutation(s, context);
+        const begun = beginSetup(mutation);
+        return begun.ok ? mutation.result(false) : begun;
+    }
     const shuffle = <T>(items: T[]) => { for (let i = items.length - 1; i > 0; i--) {
         const r = drawDeterministicInteger(s.rng, i + 1);
         s.rng = r.rng;
@@ -55,18 +77,6 @@ export function createGameWithEvents(input: z.input<typeof CreateGameInputSchema
         shuffle(p.zones.LEGENDS);
         for (const [index, cid] of p.zones.LEGENDS.entries())
             s.objects.cards[cid].readiness = id === first && index < rules.firstPlayerSpentLegends ? "SPENT" : "READY";
-    }
-    // Capability admission is deck-wide, never a hidden-Legend-specific label/filter.
-    const view = new RulesView(s, context);
-    for (const c of Object.values(s.objects.cards)) {
-        const content = view.getRevision(c.id)!;
-        if (content.type === "LEGEND") {
-            const supported = view.callEffectSupport(c.id);
-            if (!supported.ok)
-                return supported;
-        }
-        else if (content.mechanics.abilities.length || content.mechanics.modifiers.length)
-            return failure("UNSUPPORTED_CARD_EFFECT", "Turn slice requires cards without unsupported automatic effects");
     }
     const mutation = new TurnMutation(s, context);
     for (const actor of s.match.playerOrder) {

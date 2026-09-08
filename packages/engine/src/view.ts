@@ -1,3 +1,4 @@
+import { supportsCall } from "./effect-support";
 import { paymentSources, paymentValue, paymentCandidates } from "./payment";
 import { type GameState, type PlayerId, type CardInstanceId, type GigInstanceId, type Condition, type TargetSelector, type PaymentSource, type Cost, canonicalSerialize, failure, success } from "@tcg/domain";
 import { type EngineContext, validateState, freeze } from "./state";
@@ -31,13 +32,18 @@ export class RulesView {
     }
     getEffectiveCardTypes(id: CardInstanceId) { const c = this.getCard(id), p = this.getRevision(id); return p ? [...new Set([p.type, ...(p.type === "LEGEND" && p.mechanics.keywords.includes("GO_SOLO") && c.statuses.includes("GO_SOLO") ? ["UNIT" as const] : [])])] : []; }
     getEffectivePower(id: CardInstanceId) {
-        if (this.context.content.cards.some(c => c.mechanics.modifiers.length))
-            throw new Error("UNSUPPORTED_CONTINUOUS_MODIFIERS");
-        return this.getRevision(id)?.power ?? null;
+        const card = this.getCard(id), revision = this.getRevision(id);
+        if (!revision || revision.power === undefined) return null;
+        let power = revision.power;
+        for (const modifier of revision.mechanics.modifiers) {
+            if (modifier.kind !== "POWER_PER_EQUIPPED_GEAR_DURING_OWN_TURN") throw new Error("UNSUPPORTED_CONTINUOUS_MODIFIERS");
+            if (card.face === "UP" && card.zone.zone === "LEGENDS" && this.state.timing.turn > 0 && this.state.timing.activePlayer === card.controllerId)
+                power += modifier.amount * card.attachments.filter(cid => this.getRevision(cid)?.type === "GEAR").length;
+        }
+        return power;
     }
     getKeywords(id: CardInstanceId) {
-        if (this.context.content.cards.some(c => c.mechanics.modifiers.length))
-            throw new Error("UNSUPPORTED_CONTINUOUS_MODIFIERS");
+        if (this.getRevision(id)?.mechanics.modifiers.some(m => m.kind !== "POWER_PER_EQUIPPED_GEAR_DURING_OWN_TURN")) throw new Error("UNSUPPORTED_CONTINUOUS_MODIFIERS");
         return this.getRevision(id)?.mechanics.keywords ?? [];
     }
     getLegalTargets(source: CardInstanceId, target: TargetSelector) {
@@ -71,13 +77,7 @@ export class RulesView {
     }
     faceDownLegends(actor: PlayerId) { return this.getZone(actor, "LEGENDS").map(id => this.getCard(id)).filter(c => c.face === "DOWN" && c.controllerId === actor); }
     callEffectSupport(id: CardInstanceId) {
-        const card = this.getRevision(id);
-        if (!card || card.mechanics.modifiers.length || card.mechanics.abilities.some(a => a.trigger !== "WHEN_CALLED") || card.mechanics.abilities.length > 1)
-            return failure("UNSUPPORTED_CALL_EFFECT", "Only a single unconditional CALL/DRAW ability is supported");
-        const ability = card.mechanics.abilities[0];
-        if (ability && (ability.cost.kind !== "NONE" || ability.conditions.length || ability.effects.length !== 1 || ability.effects[0].kind !== "DRAW"))
-            return failure("UNSUPPORTED_CALL_EFFECT", "Only a single unconditional CALL/DRAW ability is supported");
-        return success(null);
+        return supportsCall(this.getRevision(id), this.context);
     }
     canCallLegend(actor: PlayerId, id: CardInstanceId) {
         const policy = this.context.content.ruleset.gameplay?.turnSlice, card = this.getCard(id);

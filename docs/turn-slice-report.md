@@ -1,3 +1,5 @@
+> This report records the original turn-slice milestone. See [engine-owned setup and reviewed mechanics](setup-mechanics-report.md) for the subsequent extension and current coverage limitations.
+
 # First deterministic turn slice
 
 Implemented a headless, two-player turn loop using the existing normalized state,

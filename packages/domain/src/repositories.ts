@@ -4,7 +4,7 @@ import { CardReferenceSchema } from "./card";
 import type { Card, CardFilter } from "./card";
 import type { CardId, CardRevision, RulesetId, RulesetVersion, PlayerId, DeckId, MatchId, GameStateVersion, CommandId } from "./identity";
 import type { Ruleset } from "./ruleset";
-import type { GameState } from "./game";
+import type { GameState, GameEvent } from "./game";
 import type { Result } from "./result";
 export type CardPageRequest = { first: number; afterId?: CardId; filter?: CardFilter };
 export type CardPage = { cards: Card[]; hasNextPage: boolean };
@@ -44,8 +44,9 @@ export interface DeckRepository {
 }
 export interface MatchRepository {
   find(id: MatchId): Promise<GameState | null>;
-  create(state: GameState): Promise<Result<GameState>>;
-  save(state: GameState, expectedVersion: GameStateVersion): Promise<Result<GameState>>;
+  history(id: MatchId): Promise<GameEvent[]>;
+  create(state: GameState, events?: readonly GameEvent[]): Promise<Result<GameState>>;
+  save(state: GameState, expectedVersion: GameStateVersion, events?: readonly GameEvent[]): Promise<Result<GameState>>;
 }
 export const CommandRequestSchema = z.strictObject({
   commandId: CommandIdSchema, idempotencyKey: z.string().min(1).max(200), actorId: PlayerIdSchema,

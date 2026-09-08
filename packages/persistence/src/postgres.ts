@@ -1,5 +1,5 @@
 import { Pool, type PoolClient } from "pg";
-import { StoredDeckSchema, GameStateSchema, failure, success, type StoredDeck, type DeckRepository, type MatchRepository, type GameState, type GameStateVersion, type DeckId, type PlayerId, type MatchId } from "@tcg/domain";
+import { StoredDeckSchema, GameStateSchema, GameEventSchema, type GameEvent, failure, success, type StoredDeck, type DeckRepository, type MatchRepository, type GameState, type GameStateVersion, type DeckId, type PlayerId, type MatchId } from "@tcg/domain";
 export function createPostgresPool(url: string | undefined): Pool {
     if (!url)
         throw new Error("DATABASE_URL is not configured");
@@ -74,7 +74,32 @@ export class PostgresMatchRepository implements MatchRepository {
             throw new Error("LEGACY_STATE_UNSUPPORTED: Phase 1 placeholder retained; explicit reinitialization required");
         return result.rows[0]?.state ? GameStateSchema.parse(result.rows[0].state) : null;
     }
-    async create(state: GameState) {
+    async history(id: MatchId) {
+        return transaction(this.pool, async client => {
+            const result = await client.query("SELECT state FROM matches WHERE id=$1", [id]);
+            if (!result.rows[0]) return [];
+            const state = GameStateSchema.parse(result.rows[0].state);
+            const events = await this.readEvents(client, id);
+            if (!this.completeBatch(events, 0, state.match.eventSequence))
+                throw new Error("INCOMPLETE_MATCH_HISTORY: Stored event history does not cover the authoritative state");
+            return events;
+        }, true);
+    }
+    private completeBatch(events: readonly GameEvent[], previous: number, next: number) {
+        return next >= previous && events.length === next - previous && events.every((event, i) => GameEventSchema.safeParse(event).success && event.sequence === previous + i + 1);
+    }
+    private async readEvents(client: PoolClient, id: MatchId): Promise<GameEvent[]> {
+        const result = await client.query("SELECT sequence,payload FROM match_events WHERE match_id=$1 ORDER BY sequence", [id]);
+        return result.rows.map(row => GameEventSchema.parse(row));
+    }
+    private async appendEvents(client: PoolClient, state: GameState, events: readonly GameEvent[]) {
+        for (const event of events)
+            await client.query("INSERT INTO match_events(match_id,sequence,event_type,payload) VALUES($1,$2,$3,$4::jsonb)", [state.match.id, event.sequence, event.payload.kind, JSON.stringify(event.payload)]);
+    }
+    async create(state: GameState, events: readonly GameEvent[] = []) {
+        state = GameStateSchema.parse(state);
+        if (!this.completeBatch(events, 0, state.match.eventSequence))
+            return failure("INCOMPLETE_EVENT_BATCH", "Creation requires all initialization events starting at sequence one");
         if (state.match.version !== 0)
             return failure("INVALID_VERSION", "Initial state version must be zero; setup may already have emitted events");
         return transaction(this.pool, async (client) => {
@@ -85,13 +110,28 @@ export class PostgresMatchRepository implements MatchRepository {
                 await client.query("INSERT INTO match_players(match_id,user_id) VALUES($1,$2)", [state.match.id, player]);
             for (const card of state.match.cards)
                 await client.query("INSERT INTO match_content_revisions(match_id,content_type,content_id,revision) VALUES($1,'CARD',$2,$3)", [state.match.id, card.cardId, String(card.revision)]);
+            await this.appendEvents(client, state, events);
             return success(state);
         });
     }
-    async save(state: GameState, expectedVersion: GameStateVersion) {
+    async save(state: GameState, expectedVersion: GameStateVersion, events: readonly GameEvent[] = []) {
+        state = GameStateSchema.parse(state);
         if (state.match.version !== expectedVersion + 1)
             return failure("INVALID_VERSION", "Next state version must increment by one");
-        const updated = await this.pool.query(`UPDATE matches SET state=$3::jsonb,state_version=state_version+1 WHERE id=$1 AND state_version=$2 AND ruleset_id=$4 AND ruleset_version=$5 AND state->'match'->'cards'=$3::jsonb->'match'->'cards' AND state->'match'->'playerOrder'=$3::jsonb->'match'->'playerOrder' AND state->'match'->'contentManifestHash'=$3::jsonb->'match'->'contentManifestHash' AND state->'match'->'engineArtifactHash'=$3::jsonb->'match'->'engineArtifactHash' RETURNING id`, [state.match.id, expectedVersion, JSON.stringify(state), state.match.rulesetId, state.match.rulesetVersion]);
-        return updated.rowCount === 1 ? success(state) : failure("STALE_OR_INCOMPATIBLE_STATE", "Match is missing, stale, or pinned content/players changed");
+        return transaction(this.pool, async client => {
+            const found = await client.query("SELECT state FROM matches WHERE id=$1 FOR UPDATE", [state.match.id]);
+            if (!found.rows[0]) return failure("STALE_OR_INCOMPATIBLE_STATE", "Match is missing");
+            const previous = GameStateSchema.parse(found.rows[0].state);
+            if (previous.match.version !== expectedVersion) return failure("STALE_OR_INCOMPATIBLE_STATE", "Match version is stale");
+            const history = await this.readEvents(client, state.match.id);
+            if (!this.completeBatch(history, 0, previous.match.eventSequence))
+                return failure("INCOMPLETE_MATCH_HISTORY", "Existing setup/gameplay history is incomplete; explicit recovery required");
+            if (!this.completeBatch(events, previous.match.eventSequence, state.match.eventSequence))
+                return failure("INCOMPLETE_EVENT_BATCH", "Save requires the exact contiguous new event batch");
+            const updated = await client.query(`UPDATE matches SET state=$3::jsonb,state_version=state_version+1 WHERE id=$1 AND state_version=$2 AND ruleset_id=$4 AND ruleset_version=$5 AND state->'match'->'cards'=$3::jsonb->'match'->'cards' AND state->'match'->'playerOrder'=$3::jsonb->'match'->'playerOrder' AND state->'match'->'rulesetHash'=$3::jsonb->'match'->'rulesetHash' AND state->'match'->'engineVersion'=$3::jsonb->'match'->'engineVersion' AND state->'match'->'contentManifestHash'=$3::jsonb->'match'->'contentManifestHash' AND state->'match'->'engineArtifactHash'=$3::jsonb->'match'->'engineArtifactHash' RETURNING id`, [state.match.id, expectedVersion, JSON.stringify(state), state.match.rulesetId, state.match.rulesetVersion]);
+            if (updated.rowCount !== 1) return failure("STALE_OR_INCOMPATIBLE_STATE", "Match is stale or pinned content/players changed");
+            await this.appendEvents(client, state, events);
+            return success(state);
+        });
     }
 }
