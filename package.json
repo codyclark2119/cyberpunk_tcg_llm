@@ -17,7 +17,9 @@
     "codegen": "graphql-codegen --config codegen.ts",
     "db:migrate": "node --import tsx scripts/migrate-postgres.ts",
     "mongo:seed": "node --import tsx scripts/seed-mongo.ts",
-    "training:demo": "node --import tsx scripts/training-demo.ts"
+    "training:demo": "node --import tsx scripts/training-demo.ts",
+    "engine:worker": "node --import tsx scripts/engine-worker.ts",
+    "contracts:export": "node --import tsx scripts/export-wire-schemas.ts"
   },
   "dependencies": {
     "@next/env": "16.3.4"

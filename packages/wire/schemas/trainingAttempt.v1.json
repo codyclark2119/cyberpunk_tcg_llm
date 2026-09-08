@@ -1,0 +1,157 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "properties": {
+    "schemaVersion": {
+      "type": "number",
+      "const": 1
+    },
+    "attemptId": {
+      "type": "string",
+      "minLength": 1
+    },
+    "positionId": {
+      "type": "string",
+      "minLength": 1
+    },
+    "rawModelOutput": {
+      "type": "string"
+    },
+    "parsedChoice": {
+      "anyOf": [
+        {
+          "type": "object",
+          "properties": {
+            "actionId": {
+              "type": "string",
+              "pattern": "^[a-f0-9]{64}$"
+            }
+          },
+          "required": [
+            "actionId"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "validation": {
+      "type": "object",
+      "properties": {
+        "ok": {
+          "type": "boolean"
+        },
+        "codes": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
+      },
+      "required": [
+        "ok",
+        "codes"
+      ],
+      "additionalProperties": false
+    },
+    "resultingStateHash": {
+      "anyOf": [
+        {
+          "type": "string",
+          "pattern": "^[a-f0-9]{64}$"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "modelRevision": {
+      "type": "string",
+      "minLength": 1
+    },
+    "tokenizerRevision": {
+      "type": "string",
+      "minLength": 1
+    },
+    "adapterRevision": {
+      "type": "string",
+      "minLength": 1
+    },
+    "promptFingerprint": {
+      "type": "string",
+      "pattern": "^[a-f0-9]{64}$"
+    },
+    "decoding": {
+      "type": "object",
+      "properties": {
+        "temperature": {
+          "type": "number",
+          "minimum": 0
+        },
+        "topP": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1
+        },
+        "maxTokens": {
+          "type": "integer",
+          "exclusiveMinimum": 0,
+          "maximum": 9007199254740991
+        },
+        "seed": {
+          "anyOf": [
+            {
+              "type": "integer",
+              "minimum": -9007199254740991,
+              "maximum": 9007199254740991
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      },
+      "required": [
+        "temperature",
+        "topP",
+        "maxTokens",
+        "seed"
+      ],
+      "additionalProperties": false
+    },
+    "elapsedMs": {
+      "type": "number",
+      "minimum": 0
+    },
+    "inputTokens": {
+      "type": "integer",
+      "minimum": 0,
+      "maximum": 9007199254740991
+    },
+    "outputTokens": {
+      "type": "integer",
+      "minimum": 0,
+      "maximum": 9007199254740991
+    }
+  },
+  "required": [
+    "schemaVersion",
+    "attemptId",
+    "positionId",
+    "rawModelOutput",
+    "parsedChoice",
+    "validation",
+    "resultingStateHash",
+    "modelRevision",
+    "tokenizerRevision",
+    "adapterRevision",
+    "promptFingerprint",
+    "decoding",
+    "elapsedMs",
+    "inputTokens",
+    "outputTokens"
+  ],
+  "additionalProperties": false
+}

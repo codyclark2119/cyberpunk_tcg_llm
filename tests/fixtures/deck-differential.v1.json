@@ -1,0 +1,668 @@
+{
+  "schemaVersion": 1,
+  "note": "Synthetic differential regression fixtures, not game gold data",
+  "cards": [
+    {
+      "id": "legend-0",
+      "name": "Legend 0",
+      "type": "LEGEND",
+      "colors": [
+        "RED"
+      ],
+      "ram": {
+        "RED": 2
+      }
+    },
+    {
+      "id": "legend-1",
+      "name": "Legend 1",
+      "type": "LEGEND",
+      "colors": [
+        "RED"
+      ],
+      "ram": {
+        "RED": 2
+      }
+    },
+    {
+      "id": "legend-2",
+      "name": "Legend 2",
+      "type": "LEGEND",
+      "colors": [
+        "RED"
+      ],
+      "ram": {
+        "RED": 2
+      }
+    },
+    {
+      "id": "unit-0",
+      "name": "Unit 0",
+      "type": "UNIT",
+      "colors": [
+        "RED"
+      ],
+      "ram": {
+        "RED": 1
+      }
+    },
+    {
+      "id": "unit-1",
+      "name": "Unit 1",
+      "type": "UNIT",
+      "colors": [
+        "RED"
+      ],
+      "ram": {
+        "RED": 1
+      }
+    },
+    {
+      "id": "unit-2",
+      "name": "Unit 2",
+      "type": "UNIT",
+      "colors": [
+        "RED"
+      ],
+      "ram": {
+        "RED": 1
+      }
+    },
+    {
+      "id": "unit-3",
+      "name": "Unit 3",
+      "type": "UNIT",
+      "colors": [
+        "RED"
+      ],
+      "ram": {
+        "RED": 1
+      }
+    },
+    {
+      "id": "unit-4",
+      "name": "Unit 4",
+      "type": "UNIT",
+      "colors": [
+        "RED"
+      ],
+      "ram": {
+        "RED": 1
+      }
+    },
+    {
+      "id": "unit-5",
+      "name": "Unit 5",
+      "type": "UNIT",
+      "colors": [
+        "RED"
+      ],
+      "ram": {
+        "RED": 1
+      }
+    },
+    {
+      "id": "unit-6",
+      "name": "Unit 6",
+      "type": "UNIT",
+      "colors": [
+        "RED"
+      ],
+      "ram": {
+        "RED": 1
+      }
+    },
+    {
+      "id": "unit-7",
+      "name": "Unit 7",
+      "type": "UNIT",
+      "colors": [
+        "RED"
+      ],
+      "ram": {
+        "RED": 1
+      }
+    },
+    {
+      "id": "unit-8",
+      "name": "Unit 8",
+      "type": "UNIT",
+      "colors": [
+        "RED"
+      ],
+      "ram": {
+        "RED": 1
+      }
+    },
+    {
+      "id": "unit-9",
+      "name": "Unit 9",
+      "type": "UNIT",
+      "colors": [
+        "RED"
+      ],
+      "ram": {
+        "RED": 1
+      }
+    },
+    {
+      "id": "unit-10",
+      "name": "Unit 10",
+      "type": "UNIT",
+      "colors": [
+        "RED"
+      ],
+      "ram": {
+        "RED": 1
+      }
+    },
+    {
+      "id": "unit-11",
+      "name": "Unit 11",
+      "type": "UNIT",
+      "colors": [
+        "RED"
+      ],
+      "ram": {
+        "RED": 1
+      }
+    },
+    {
+      "id": "unit-12",
+      "name": "Unit 12",
+      "type": "UNIT",
+      "colors": [
+        "RED"
+      ],
+      "ram": {
+        "RED": 1
+      }
+    },
+    {
+      "id": "unit-13",
+      "name": "Unit 13",
+      "type": "UNIT",
+      "colors": [
+        "RED"
+      ],
+      "ram": {
+        "RED": 1
+      }
+    }
+  ],
+  "cases": [
+    {
+      "name": "legal-40",
+      "deck": {
+        "name": "Differential synthetic deck",
+        "legends": [
+          "legend-0",
+          "legend-1",
+          "legend-2"
+        ],
+        "cards": [
+          {
+            "cardId": "unit-0",
+            "quantity": 3
+          },
+          {
+            "cardId": "unit-1",
+            "quantity": 3
+          },
+          {
+            "cardId": "unit-2",
+            "quantity": 3
+          },
+          {
+            "cardId": "unit-3",
+            "quantity": 3
+          },
+          {
+            "cardId": "unit-4",
+            "quantity": 3
+          },
+          {
+            "cardId": "unit-5",
+            "quantity": 3
+          },
+          {
+            "cardId": "unit-6",
+            "quantity": 3
+          },
+          {
+            "cardId": "unit-7",
+            "quantity": 3
+          },
+          {
+            "cardId": "unit-8",
+            "quantity": 3
+          },
+          {
+            "cardId": "unit-9",
+            "quantity": 3
+          },
+          {
+            "cardId": "unit-10",
+            "quantity": 3
+          },
+          {
+            "cardId": "unit-11",
+            "quantity": 3
+          },
+          {
+            "cardId": "unit-12",
+            "quantity": 3
+          },
+          {
+            "cardId": "unit-13",
+            "quantity": 1
+          }
+        ]
+      },
+      "typescriptIssues": [],
+      "pythonRules": []
+    },
+    {
+      "name": "repeated-entry-copy-bypass",
+      "deck": {
+        "name": "Differential synthetic deck",
+        "legends": [
+          "legend-0",
+          "legend-1",
+          "legend-2"
+        ],
+        "cards": [
+          {
+            "cardId": "unit-0",
+            "quantity": 3
+          },
+          {
+            "cardId": "unit-1",
+            "quantity": 3
+          },
+          {
+            "cardId": "unit-2",
+            "quantity": 3
+          },
+          {
+            "cardId": "unit-3",
+            "quantity": 3
+          },
+          {
+            "cardId": "unit-4",
+            "quantity": 3
+          },
+          {
+            "cardId": "unit-5",
+            "quantity": 3
+          },
+          {
+            "cardId": "unit-6",
+            "quantity": 3
+          },
+          {
+            "cardId": "unit-7",
+            "quantity": 3
+          },
+          {
+            "cardId": "unit-8",
+            "quantity": 3
+          },
+          {
+            "cardId": "unit-9",
+            "quantity": 3
+          },
+          {
+            "cardId": "unit-10",
+            "quantity": 3
+          },
+          {
+            "cardId": "unit-11",
+            "quantity": 3
+          },
+          {
+            "cardId": "unit-12",
+            "quantity": 3
+          },
+          {
+            "cardId": "unit-13",
+            "quantity": 1
+          },
+          {
+            "cardId": "unit-0",
+            "quantity": 3
+          }
+        ]
+      },
+      "typescriptIssues": [
+        "COPY_LIMIT"
+      ],
+      "pythonRules": []
+    },
+    {
+      "name": "single-entry-copy-limit",
+      "deck": {
+        "name": "Differential synthetic deck",
+        "legends": [
+          "legend-0",
+          "legend-1",
+          "legend-2"
+        ],
+        "cards": [
+          {
+            "cardId": "unit-0",
+            "quantity": 4
+          },
+          {
+            "cardId": "unit-1",
+            "quantity": 3
+          },
+          {
+            "cardId": "unit-2",
+            "quantity": 3
+          },
+          {
+            "cardId": "unit-3",
+            "quantity": 3
+          },
+          {
+            "cardId": "unit-4",
+            "quantity": 3
+          },
+          {
+            "cardId": "unit-5",
+            "quantity": 3
+          },
+          {
+            "cardId": "unit-6",
+            "quantity": 3
+          },
+          {
+            "cardId": "unit-7",
+            "quantity": 3
+          },
+          {
+            "cardId": "unit-8",
+            "quantity": 3
+          },
+          {
+            "cardId": "unit-9",
+            "quantity": 3
+          },
+          {
+            "cardId": "unit-10",
+            "quantity": 3
+          },
+          {
+            "cardId": "unit-11",
+            "quantity": 3
+          },
+          {
+            "cardId": "unit-12",
+            "quantity": 3
+          },
+          {
+            "cardId": "unit-13",
+            "quantity": 1
+          }
+        ]
+      },
+      "typescriptIssues": [
+        "COPY_LIMIT"
+      ],
+      "pythonRules": [
+        "max-copies"
+      ]
+    },
+    {
+      "name": "legend-in-main",
+      "deck": {
+        "name": "Differential synthetic deck",
+        "legends": [
+          "legend-0",
+          "legend-1",
+          "legend-2"
+        ],
+        "cards": [
+          {
+            "cardId": "legend-0",
+            "quantity": 3
+          },
+          {
+            "cardId": "unit-1",
+            "quantity": 3
+          },
+          {
+            "cardId": "unit-2",
+            "quantity": 3
+          },
+          {
+            "cardId": "unit-3",
+            "quantity": 3
+          },
+          {
+            "cardId": "unit-4",
+            "quantity": 3
+          },
+          {
+            "cardId": "unit-5",
+            "quantity": 3
+          },
+          {
+            "cardId": "unit-6",
+            "quantity": 3
+          },
+          {
+            "cardId": "unit-7",
+            "quantity": 3
+          },
+          {
+            "cardId": "unit-8",
+            "quantity": 3
+          },
+          {
+            "cardId": "unit-9",
+            "quantity": 3
+          },
+          {
+            "cardId": "unit-10",
+            "quantity": 3
+          },
+          {
+            "cardId": "unit-11",
+            "quantity": 3
+          },
+          {
+            "cardId": "unit-12",
+            "quantity": 3
+          },
+          {
+            "cardId": "unit-13",
+            "quantity": 1
+          }
+        ]
+      },
+      "typescriptIssues": [
+        "LEGEND_IN_MAIN"
+      ],
+      "pythonRules": []
+    },
+    {
+      "name": "unknown-card",
+      "deck": {
+        "name": "Differential synthetic deck",
+        "legends": [
+          "legend-0",
+          "legend-1",
+          "legend-2"
+        ],
+        "cards": [
+          {
+            "cardId": "missing",
+            "quantity": 3
+          },
+          {
+            "cardId": "unit-1",
+            "quantity": 3
+          },
+          {
+            "cardId": "unit-2",
+            "quantity": 3
+          },
+          {
+            "cardId": "unit-3",
+            "quantity": 3
+          },
+          {
+            "cardId": "unit-4",
+            "quantity": 3
+          },
+          {
+            "cardId": "unit-5",
+            "quantity": 3
+          },
+          {
+            "cardId": "unit-6",
+            "quantity": 3
+          },
+          {
+            "cardId": "unit-7",
+            "quantity": 3
+          },
+          {
+            "cardId": "unit-8",
+            "quantity": 3
+          },
+          {
+            "cardId": "unit-9",
+            "quantity": 3
+          },
+          {
+            "cardId": "unit-10",
+            "quantity": 3
+          },
+          {
+            "cardId": "unit-11",
+            "quantity": 3
+          },
+          {
+            "cardId": "unit-12",
+            "quantity": 3
+          },
+          {
+            "cardId": "unit-13",
+            "quantity": 1
+          }
+        ]
+      },
+      "typescriptIssues": [
+        "UNKNOWN_CARD"
+      ],
+      "pythonRules": [
+        "unknown-card"
+      ]
+    },
+    {
+      "name": "duplicate-legend",
+      "deck": {
+        "name": "Differential synthetic deck",
+        "legends": [
+          "legend-0",
+          "legend-0",
+          "legend-2"
+        ],
+        "cards": [
+          {
+            "cardId": "unit-0",
+            "quantity": 3
+          },
+          {
+            "cardId": "unit-1",
+            "quantity": 3
+          },
+          {
+            "cardId": "unit-2",
+            "quantity": 3
+          },
+          {
+            "cardId": "unit-3",
+            "quantity": 3
+          },
+          {
+            "cardId": "unit-4",
+            "quantity": 3
+          },
+          {
+            "cardId": "unit-5",
+            "quantity": 3
+          },
+          {
+            "cardId": "unit-6",
+            "quantity": 3
+          },
+          {
+            "cardId": "unit-7",
+            "quantity": 3
+          },
+          {
+            "cardId": "unit-8",
+            "quantity": 3
+          },
+          {
+            "cardId": "unit-9",
+            "quantity": 3
+          },
+          {
+            "cardId": "unit-10",
+            "quantity": 3
+          },
+          {
+            "cardId": "unit-11",
+            "quantity": 3
+          },
+          {
+            "cardId": "unit-12",
+            "quantity": 3
+          },
+          {
+            "cardId": "unit-13",
+            "quantity": 1
+          }
+        ]
+      },
+      "typescriptIssues": [
+        "LEGEND_COUNT"
+      ],
+      "pythonRules": [
+        "legend-unique-names"
+      ]
+    },
+    {
+      "name": "too-small",
+      "deck": {
+        "name": "Differential synthetic deck",
+        "legends": [
+          "legend-0",
+          "legend-1",
+          "legend-2"
+        ],
+        "cards": [
+          {
+            "cardId": "unit-0",
+            "quantity": 3
+          },
+          {
+            "cardId": "unit-1",
+            "quantity": 3
+          }
+        ]
+      },
+      "typescriptIssues": [
+        "MAIN_DECK_SIZE"
+      ],
+      "pythonRules": [
+        "deck-size"
+      ]
+    }
+  ]
+}

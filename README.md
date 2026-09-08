@@ -1,6 +1,6 @@
 # Cyberpunk TCG Online — Phase 1
 
-A versioned content platform and headless engine foundation. The four bundled cards are development fixtures, not official card data. No Cyberpunk gameplay, authentication, matchmaking, WebSocket server, or LLM integration is implemented.
+A versioned content platform and headless engine foundation. The four bundled cards are development fixtures, not official card data. A headless turn slice supports validated initialization, ready/draw, Gig choice, SELL, CALL/payment and multiple turns through offline Python interop. Full gameplay, authentication, matchmaking and WebSockets remain unimplemented.
 
 ## Workspace and dependencies
 
@@ -122,15 +122,17 @@ The reusable command ledger scopes idempotency keys by actor:
 
 ## Engine and training contracts
 
-`validateState`, `listLegalActions`, `validateAction`, and `applyAction` are pure, deterministic APIs accepting explicit state and ruleset context. They check pinned rules, actor and expected state version. No clock or randomness is read. Phase 1 has **no legal gameplay actions**; unsupported actions return a structured error without mutation or version increments. Future rules must implement transitions/events and inject deterministic RNG if needed.
+The normalized schema-2 engine consumes a pinned `ContentBundle`, validates object/zone references, and returns frozen states. Semantic actions are separate from command metadata; models select engine-generated action IDs. Training positions and individual attempts are separate records. The offline JSONL worker and small Python adapter share this same engine.
 
-Training positions contain canonical state hash/ID, pinned rules, actor, legal actions, optional chosen action/result hash, and metadata. JSONL import validates runtime shapes and state/hash identity; export deduplicates by state hash. Candidate evaluation delegates to the engine. Shape validation alone does not prove imported legal actions are actually legal; consumers must evaluate them using the pinned engine/ruleset.
+See [First turn slice](docs/turn-slice-report.md) for the current playable subset and replay evidence. See [Pre-gameplay contracts](docs/pre-gameplay-contracts.md) for ownership, supported primitives, hidden observations, hashing, migration instructions, protocol usage and explicitly unsupported rules.
 
 ```bash
 npm run --silent training:demo
+npm run contracts:export
+npm run --silent engine:worker < requests.jsonl
 ```
 
-The demo emits a deterministic placeholder position with no legal moves, not invented Cyberpunk training data.
+The demo emits three synthetic gameplay decision positions (Gig choice, main, payment), not full official gameplay or gold training data.
 
 ## GraphQL and code generation
 
