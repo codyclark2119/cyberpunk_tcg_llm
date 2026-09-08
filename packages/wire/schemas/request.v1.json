@@ -220,6 +220,22 @@
                     "turnSlice": {
                       "type": "object",
                       "properties": {
+                        "cardPlay": {
+                          "type": "string",
+                          "const": "NONCOMBAT_PLAY_V1"
+                        },
+                        "combat": {
+                          "type": "string",
+                          "const": "COMBAT_ATTACK_V1"
+                        },
+                        "react": {
+                          "type": "string",
+                          "const": "COMBAT_REACT_V1"
+                        },
+                        "gear": {
+                          "type": "string",
+                          "const": "REVIEWED_GEAR_V1"
+                        },
                         "schemaVersion": {
                           "type": "number",
                           "const": 1
@@ -346,6 +362,10 @@
                         {
                           "type": "string",
                           "const": "UNSUPPORTED"
+                        },
+                        {
+                          "type": "string",
+                          "const": "DIE_FACES_V1"
                         },
                         {
                           "type": "object",
@@ -677,7 +697,12 @@
                     "properties": {
                       "scope": {
                         "type": "string",
-                        "const": "NONCOMBAT_SLICE_V1"
+                        "enum": [
+                          "NONCOMBAT_SLICE_V1",
+                          "NONCOMBAT_PLAY_V1",
+                          "COMBAT_ATTACK_V1",
+                          "COMBAT_REACT_V1"
+                        ]
                       },
                       "status": {
                         "type": "string",
@@ -696,6 +721,19 @@
                   "mechanics": {
                     "type": "object",
                     "properties": {
+                      "equip": {
+                        "type": "object",
+                        "properties": {
+                          "kind": {
+                            "type": "string",
+                            "const": "FRIENDLY_UNIT_OR_FACE_UP_LEGEND"
+                          }
+                        },
+                        "required": [
+                          "kind"
+                        ],
+                        "additionalProperties": false
+                      },
                       "keywords": {
                         "type": "array",
                         "items": {
@@ -727,10 +765,150 @@
                                 "WHEN_DEFEATED"
                               ]
                             },
+                            "activation": {
+                              "type": "object",
+                              "properties": {
+                                "timing": {
+                                  "type": "string",
+                                  "const": "MAIN"
+                                },
+                                "conditionTiming": {
+                                  "type": "string",
+                                  "const": "ACTIVATION_AND_RESOLUTION"
+                                },
+                                "costs": {
+                                  "type": "array",
+                                  "items": {
+                                    "oneOf": [
+                                      {
+                                        "type": "object",
+                                        "properties": {
+                                          "kind": {
+                                            "type": "string",
+                                            "const": "SPEND_SOURCE"
+                                          }
+                                        },
+                                        "required": [
+                                          "kind"
+                                        ],
+                                        "additionalProperties": false
+                                      },
+                                      {
+                                        "type": "object",
+                                        "properties": {
+                                          "kind": {
+                                            "type": "string",
+                                            "const": "PAYMENT_COST"
+                                          },
+                                          "cost": {
+                                            "oneOf": [
+                                              {
+                                                "type": "object",
+                                                "properties": {
+                                                  "kind": {
+                                                    "type": "string",
+                                                    "const": "EDDIES"
+                                                  },
+                                                  "amount": {
+                                                    "type": "integer",
+                                                    "minimum": 0,
+                                                    "maximum": 9007199254740991
+                                                  }
+                                                },
+                                                "required": [
+                                                  "kind",
+                                                  "amount"
+                                                ],
+                                                "additionalProperties": false
+                                              },
+                                              {
+                                                "type": "object",
+                                                "properties": {
+                                                  "kind": {
+                                                    "type": "string",
+                                                    "const": "DASH"
+                                                  }
+                                                },
+                                                "required": [
+                                                  "kind"
+                                                ],
+                                                "additionalProperties": false
+                                              },
+                                              {
+                                                "type": "object",
+                                                "properties": {
+                                                  "kind": {
+                                                    "type": "string",
+                                                    "const": "NONE"
+                                                  }
+                                                },
+                                                "required": [
+                                                  "kind"
+                                                ],
+                                                "additionalProperties": false
+                                              }
+                                            ]
+                                          }
+                                        },
+                                        "required": [
+                                          "kind",
+                                          "cost"
+                                        ],
+                                        "additionalProperties": false
+                                      }
+                                    ]
+                                  }
+                                }
+                              },
+                              "required": [
+                                "timing",
+                                "conditionTiming",
+                                "costs"
+                              ],
+                              "additionalProperties": false
+                            },
                             "conditions": {
                               "type": "array",
                               "items": {
                                 "oneOf": [
+                                  {
+                                    "type": "object",
+                                    "properties": {
+                                      "kind": {
+                                        "type": "string",
+                                        "const": "SOURCE_POWER_AT_LEAST"
+                                      },
+                                      "minimum": {
+                                        "type": "integer",
+                                        "minimum": 0,
+                                        "maximum": 9007199254740991
+                                      }
+                                    },
+                                    "required": [
+                                      "kind",
+                                      "minimum"
+                                    ],
+                                    "additionalProperties": false
+                                  },
+                                  {
+                                    "type": "object",
+                                    "properties": {
+                                      "kind": {
+                                        "type": "string",
+                                        "const": "GIG_VALUE_AT_LEAST"
+                                      },
+                                      "minimum": {
+                                        "type": "integer",
+                                        "minimum": 0,
+                                        "maximum": 9007199254740991
+                                      }
+                                    },
+                                    "required": [
+                                      "kind",
+                                      "minimum"
+                                    ],
+                                    "additionalProperties": false
+                                  },
                                   {
                                     "type": "object",
                                     "properties": {
@@ -887,6 +1065,237 @@
                                     "properties": {
                                       "kind": {
                                         "type": "string",
+                                        "const": "POWER_UNTIL_END_OF_TURN"
+                                      },
+                                      "target": {
+                                        "type": "object",
+                                        "properties": {
+                                          "kind": {
+                                            "type": "string",
+                                            "const": "RIVAL_UNIT"
+                                          }
+                                        },
+                                        "required": [
+                                          "kind"
+                                        ],
+                                        "additionalProperties": false
+                                      },
+                                      "amount": {
+                                        "type": "number",
+                                        "const": -1
+                                      }
+                                    },
+                                    "required": [
+                                      "kind",
+                                      "target",
+                                      "amount"
+                                    ],
+                                    "additionalProperties": false
+                                  },
+                                  {
+                                    "type": "object",
+                                    "properties": {
+                                      "kind": {
+                                        "type": "string",
+                                        "const": "ADJUST_GIG_UP_TO"
+                                      },
+                                      "target": {
+                                        "type": "object",
+                                        "properties": {
+                                          "kind": {
+                                            "type": "string",
+                                            "const": "GIGS"
+                                          },
+                                          "relation": {
+                                            "type": "string",
+                                            "const": "ANY"
+                                          }
+                                        },
+                                        "required": [
+                                          "kind",
+                                          "relation"
+                                        ],
+                                        "additionalProperties": false
+                                      },
+                                      "maximum": {
+                                        "type": "number",
+                                        "const": 1
+                                      }
+                                    },
+                                    "required": [
+                                      "kind",
+                                      "target",
+                                      "maximum"
+                                    ],
+                                    "additionalProperties": false
+                                  },
+                                  {
+                                    "type": "object",
+                                    "properties": {
+                                      "kind": {
+                                        "type": "string",
+                                        "const": "CONDITIONAL_DRAW"
+                                      },
+                                      "timing": {
+                                        "type": "string",
+                                        "const": "RESOLUTION"
+                                      },
+                                      "condition": {
+                                        "oneOf": [
+                                          {
+                                            "type": "object",
+                                            "properties": {
+                                              "kind": {
+                                                "type": "string",
+                                                "const": "SOURCE_POWER_AT_LEAST"
+                                              },
+                                              "minimum": {
+                                                "type": "integer",
+                                                "minimum": 0,
+                                                "maximum": 9007199254740991
+                                              }
+                                            },
+                                            "required": [
+                                              "kind",
+                                              "minimum"
+                                            ],
+                                            "additionalProperties": false
+                                          },
+                                          {
+                                            "type": "object",
+                                            "properties": {
+                                              "kind": {
+                                                "type": "string",
+                                                "const": "GIG_VALUE_AT_LEAST"
+                                              },
+                                              "minimum": {
+                                                "type": "integer",
+                                                "minimum": 0,
+                                                "maximum": 9007199254740991
+                                              }
+                                            },
+                                            "required": [
+                                              "kind",
+                                              "minimum"
+                                            ],
+                                            "additionalProperties": false
+                                          },
+                                          {
+                                            "type": "object",
+                                            "properties": {
+                                              "kind": {
+                                                "type": "string",
+                                                "const": "GIG_COUNT"
+                                              },
+                                              "minimum": {
+                                                "type": "integer",
+                                                "minimum": 0,
+                                                "maximum": 9007199254740991
+                                              }
+                                            },
+                                            "required": [
+                                              "kind",
+                                              "minimum"
+                                            ],
+                                            "additionalProperties": false
+                                          },
+                                          {
+                                            "type": "object",
+                                            "properties": {
+                                              "kind": {
+                                                "type": "string",
+                                                "const": "DISTINCT_GIG_DIE_TYPES"
+                                              },
+                                              "minimum": {
+                                                "type": "integer",
+                                                "minimum": 0,
+                                                "maximum": 9007199254740991
+                                              }
+                                            },
+                                            "required": [
+                                              "kind",
+                                              "minimum"
+                                            ],
+                                            "additionalProperties": false
+                                          },
+                                          {
+                                            "type": "object",
+                                            "properties": {
+                                              "kind": {
+                                                "type": "string",
+                                                "const": "DISTINCT_GIG_VALUES"
+                                              },
+                                              "minimum": {
+                                                "type": "integer",
+                                                "minimum": 0,
+                                                "maximum": 9007199254740991
+                                              }
+                                            },
+                                            "required": [
+                                              "kind",
+                                              "minimum"
+                                            ],
+                                            "additionalProperties": false
+                                          },
+                                          {
+                                            "type": "object",
+                                            "properties": {
+                                              "kind": {
+                                                "type": "string",
+                                                "const": "STREET_CRED"
+                                              },
+                                              "minimum": {
+                                                "type": "integer",
+                                                "minimum": 0,
+                                                "maximum": 9007199254740991
+                                              }
+                                            },
+                                            "required": [
+                                              "kind",
+                                              "minimum"
+                                            ],
+                                            "additionalProperties": false
+                                          },
+                                          {
+                                            "type": "object",
+                                            "properties": {
+                                              "kind": {
+                                                "type": "string",
+                                                "const": "GIG_VALUE"
+                                              },
+                                              "value": {
+                                                "type": "integer",
+                                                "minimum": -9007199254740991,
+                                                "maximum": 9007199254740991
+                                              }
+                                            },
+                                            "required": [
+                                              "kind",
+                                              "value"
+                                            ],
+                                            "additionalProperties": false
+                                          }
+                                        ]
+                                      },
+                                      "count": {
+                                        "type": "integer",
+                                        "exclusiveMinimum": 0,
+                                        "maximum": 9007199254740991
+                                      }
+                                    },
+                                    "required": [
+                                      "kind",
+                                      "timing",
+                                      "condition",
+                                      "count"
+                                    ],
+                                    "additionalProperties": false
+                                  },
+                                  {
+                                    "type": "object",
+                                    "properties": {
+                                      "kind": {
+                                        "type": "string",
                                         "const": "SEARCH_GEAR"
                                       },
                                       "count": {
@@ -946,6 +1355,19 @@
                                             "properties": {
                                               "kind": {
                                                 "type": "string",
+                                                "const": "FRIENDLY_UNIT_OR_FACE_UP_LEGEND"
+                                              }
+                                            },
+                                            "required": [
+                                              "kind"
+                                            ],
+                                            "additionalProperties": false
+                                          },
+                                          {
+                                            "type": "object",
+                                            "properties": {
+                                              "kind": {
+                                                "type": "string",
                                                 "const": "SELF"
                                               }
                                             },
@@ -970,7 +1392,8 @@
                                                   "TRASH",
                                                   "EDDIES",
                                                   "LEGENDS",
-                                                  "REMOVED"
+                                                  "REMOVED",
+                                                  "RESOLVING_PROGRAM"
                                                 ]
                                               },
                                               "relation": {
@@ -1049,6 +1472,19 @@
                                             "properties": {
                                               "kind": {
                                                 "type": "string",
+                                                "const": "FRIENDLY_UNIT_OR_FACE_UP_LEGEND"
+                                              }
+                                            },
+                                            "required": [
+                                              "kind"
+                                            ],
+                                            "additionalProperties": false
+                                          },
+                                          {
+                                            "type": "object",
+                                            "properties": {
+                                              "kind": {
+                                                "type": "string",
                                                 "const": "SELF"
                                               }
                                             },
@@ -1073,7 +1509,8 @@
                                                   "TRASH",
                                                   "EDDIES",
                                                   "LEGENDS",
-                                                  "REMOVED"
+                                                  "REMOVED",
+                                                  "RESOLVING_PROGRAM"
                                                 ]
                                               },
                                               "relation": {
@@ -1134,7 +1571,8 @@
                                           "TRASH",
                                           "EDDIES",
                                           "LEGENDS",
-                                          "REMOVED"
+                                          "REMOVED",
+                                          "RESOLVING_PROGRAM"
                                         ]
                                       }
                                     },
@@ -1154,6 +1592,19 @@
                                       },
                                       "target": {
                                         "oneOf": [
+                                          {
+                                            "type": "object",
+                                            "properties": {
+                                              "kind": {
+                                                "type": "string",
+                                                "const": "FRIENDLY_UNIT_OR_FACE_UP_LEGEND"
+                                              }
+                                            },
+                                            "required": [
+                                              "kind"
+                                            ],
+                                            "additionalProperties": false
+                                          },
                                           {
                                             "type": "object",
                                             "properties": {
@@ -1183,7 +1634,8 @@
                                                   "TRASH",
                                                   "EDDIES",
                                                   "LEGENDS",
-                                                  "REMOVED"
+                                                  "REMOVED",
+                                                  "RESOLVING_PROGRAM"
                                                 ]
                                               },
                                               "relation": {
@@ -1262,6 +1714,19 @@
                                             "properties": {
                                               "kind": {
                                                 "type": "string",
+                                                "const": "FRIENDLY_UNIT_OR_FACE_UP_LEGEND"
+                                              }
+                                            },
+                                            "required": [
+                                              "kind"
+                                            ],
+                                            "additionalProperties": false
+                                          },
+                                          {
+                                            "type": "object",
+                                            "properties": {
+                                              "kind": {
+                                                "type": "string",
                                                 "const": "SELF"
                                               }
                                             },
@@ -1286,7 +1751,8 @@
                                                   "TRASH",
                                                   "EDDIES",
                                                   "LEGENDS",
-                                                  "REMOVED"
+                                                  "REMOVED",
+                                                  "RESOLVING_PROGRAM"
                                                 ]
                                               },
                                               "relation": {
@@ -1389,6 +1855,63 @@
                                             "type": "array",
                                             "items": {
                                               "oneOf": [
+                                                {
+                                                  "type": "object",
+                                                  "properties": {
+                                                    "kind": {
+                                                      "type": "string",
+                                                      "const": "ATTACK_TARGET"
+                                                    },
+                                                    "target": {
+                                                      "oneOf": [
+                                                        {
+                                                          "type": "object",
+                                                          "properties": {
+                                                            "kind": {
+                                                              "type": "string",
+                                                              "const": "CARD"
+                                                            },
+                                                            "cardInstanceId": {
+                                                              "type": "string",
+                                                              "minLength": 1,
+                                                              "maxLength": 200,
+                                                              "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$"
+                                                            }
+                                                          },
+                                                          "required": [
+                                                            "kind",
+                                                            "cardInstanceId"
+                                                          ],
+                                                          "additionalProperties": false
+                                                        },
+                                                        {
+                                                          "type": "object",
+                                                          "properties": {
+                                                            "kind": {
+                                                              "type": "string",
+                                                              "const": "GIG_AREA"
+                                                            },
+                                                            "playerId": {
+                                                              "type": "string",
+                                                              "format": "uuid",
+                                                              "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+                                                            }
+                                                          },
+                                                          "required": [
+                                                            "kind",
+                                                            "playerId"
+                                                          ],
+                                                          "additionalProperties": false
+                                                        }
+                                                      ]
+                                                    }
+                                                  },
+                                                  "required": [
+                                                    "kind",
+                                                    "target"
+                                                  ],
+                                                  "additionalProperties": false
+                                                },
                                                 {
                                                   "type": "object",
                                                   "properties": {
@@ -1618,6 +2141,19 @@
                               "properties": {
                                 "kind": {
                                   "type": "string",
+                                  "const": "GRANT_PRINTED_POWER_TO_HOST"
+                                }
+                              },
+                              "required": [
+                                "kind"
+                              ],
+                              "additionalProperties": false
+                            },
+                            {
+                              "type": "object",
+                              "properties": {
+                                "kind": {
+                                  "type": "string",
                                   "const": "POWER_PER_EQUIPPED_GEAR_DURING_OWN_TURN"
                                 },
                                 "amount": {
@@ -1641,6 +2177,19 @@
                                 },
                                 "target": {
                                   "oneOf": [
+                                    {
+                                      "type": "object",
+                                      "properties": {
+                                        "kind": {
+                                          "type": "string",
+                                          "const": "FRIENDLY_UNIT_OR_FACE_UP_LEGEND"
+                                        }
+                                      },
+                                      "required": [
+                                        "kind"
+                                      ],
+                                      "additionalProperties": false
+                                    },
                                     {
                                       "type": "object",
                                       "properties": {
@@ -1670,7 +2219,8 @@
                                             "TRASH",
                                             "EDDIES",
                                             "LEGENDS",
-                                            "REMOVED"
+                                            "REMOVED",
+                                            "RESOLVING_PROGRAM"
                                           ]
                                         },
                                         "relation": {
@@ -1753,6 +2303,19 @@
                                       "properties": {
                                         "kind": {
                                           "type": "string",
+                                          "const": "FRIENDLY_UNIT_OR_FACE_UP_LEGEND"
+                                        }
+                                      },
+                                      "required": [
+                                        "kind"
+                                      ],
+                                      "additionalProperties": false
+                                    },
+                                    {
+                                      "type": "object",
+                                      "properties": {
+                                        "kind": {
+                                          "type": "string",
                                           "const": "SELF"
                                         }
                                       },
@@ -1777,7 +2340,8 @@
                                             "TRASH",
                                             "EDDIES",
                                             "LEGENDS",
-                                            "REMOVED"
+                                            "REMOVED",
+                                            "RESOLVING_PROGRAM"
                                           ]
                                         },
                                         "relation": {
@@ -2152,6 +2716,12 @@
                 "step": {
                   "type": "string",
                   "enum": [
+                    "ATTACK_TARGET_SELECTION",
+                    "ATTACK_EFFECTS",
+                    "RIVAL_REACT",
+                    "COMBAT_RESOLUTION_PENDING",
+                    "AMOUNT_SELECTION",
+                    "CARD_EFFECT",
                     "TARGET_SELECTION",
                     "CHOOSE_FIRST_PLAYER",
                     "CUT_DECISION",
@@ -2181,7 +2751,10 @@
                     "CHOOSE_GIG",
                     "PAYMENT_SELECTION",
                     "TARGET_SELECTION",
+                    "AMOUNT_SELECTION",
+                    "ATTACK_TARGET_SELECTION",
                     "RIVAL_REACT",
+                    "COMBAT_RESOLUTION_PENDING",
                     "RESOLVING",
                     "FINISHED"
                   ]
@@ -2206,11 +2779,113 @@
                       "properties": {
                         "stage": {
                           "type": "string",
+                          "const": "ATTACK_TARGET_SELECTION"
+                        },
+                        "attackerId": {
+                          "type": "string",
+                          "minLength": 1,
+                          "maxLength": 200,
+                          "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$"
+                        },
+                        "attackingPlayerId": {
+                          "type": "string",
+                          "format": "uuid",
+                          "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+                        },
+                        "target": {
+                          "type": "null"
+                        }
+                      },
+                      "required": [
+                        "stage",
+                        "attackerId",
+                        "attackingPlayerId",
+                        "target"
+                      ],
+                      "additionalProperties": false
+                    },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "stage": {
+                          "type": "string",
+                          "enum": [
+                            "ATTACK_EFFECTS",
+                            "RIVAL_REACT",
+                            "COMBAT_RESOLUTION_PENDING"
+                          ]
+                        },
+                        "attackerId": {
+                          "type": "string",
+                          "minLength": 1,
+                          "maxLength": 200,
+                          "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$"
+                        },
+                        "attackingPlayerId": {
+                          "type": "string",
+                          "format": "uuid",
+                          "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+                        },
+                        "target": {
+                          "oneOf": [
+                            {
+                              "type": "object",
+                              "properties": {
+                                "kind": {
+                                  "type": "string",
+                                  "const": "CARD"
+                                },
+                                "cardInstanceId": {
+                                  "type": "string",
+                                  "minLength": 1,
+                                  "maxLength": 200,
+                                  "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$"
+                                }
+                              },
+                              "required": [
+                                "kind",
+                                "cardInstanceId"
+                              ],
+                              "additionalProperties": false
+                            },
+                            {
+                              "type": "object",
+                              "properties": {
+                                "kind": {
+                                  "type": "string",
+                                  "const": "GIG_AREA"
+                                },
+                                "playerId": {
+                                  "type": "string",
+                                  "format": "uuid",
+                                  "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+                                }
+                              },
+                              "required": [
+                                "kind",
+                                "playerId"
+                              ],
+                              "additionalProperties": false
+                            }
+                          ]
+                        }
+                      },
+                      "required": [
+                        "stage",
+                        "attackerId",
+                        "attackingPlayerId",
+                        "target"
+                      ],
+                      "additionalProperties": false
+                    },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "stage": {
+                          "type": "string",
                           "enum": [
                             "ATTACK_DECLARED",
-                            "ATTACK_EFFECTS",
                             "TARGET_LOCKED",
-                            "RIVAL_REACT",
                             "COMBAT_RESOLUTION",
                             "GIG_STEAL"
                           ]
@@ -2290,25 +2965,78 @@
                   },
                   "zones": {
                     "type": "object",
-                    "propertyNames": {
-                      "type": "string",
-                      "enum": [
-                        "DECK",
-                        "HAND",
-                        "BATTLEFIELD",
-                        "TRASH",
-                        "EDDIES",
-                        "LEGENDS",
-                        "REMOVED"
-                      ]
-                    },
-                    "additionalProperties": {
-                      "type": "array",
-                      "items": {
-                        "type": "string",
-                        "minLength": 1,
-                        "maxLength": 200,
-                        "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$"
+                    "properties": {
+                      "DECK": {
+                        "type": "array",
+                        "items": {
+                          "type": "string",
+                          "minLength": 1,
+                          "maxLength": 200,
+                          "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$"
+                        }
+                      },
+                      "HAND": {
+                        "type": "array",
+                        "items": {
+                          "type": "string",
+                          "minLength": 1,
+                          "maxLength": 200,
+                          "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$"
+                        }
+                      },
+                      "BATTLEFIELD": {
+                        "type": "array",
+                        "items": {
+                          "type": "string",
+                          "minLength": 1,
+                          "maxLength": 200,
+                          "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$"
+                        }
+                      },
+                      "TRASH": {
+                        "type": "array",
+                        "items": {
+                          "type": "string",
+                          "minLength": 1,
+                          "maxLength": 200,
+                          "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$"
+                        }
+                      },
+                      "EDDIES": {
+                        "type": "array",
+                        "items": {
+                          "type": "string",
+                          "minLength": 1,
+                          "maxLength": 200,
+                          "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$"
+                        }
+                      },
+                      "LEGENDS": {
+                        "type": "array",
+                        "items": {
+                          "type": "string",
+                          "minLength": 1,
+                          "maxLength": 200,
+                          "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$"
+                        }
+                      },
+                      "REMOVED": {
+                        "type": "array",
+                        "items": {
+                          "type": "string",
+                          "minLength": 1,
+                          "maxLength": 200,
+                          "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$"
+                        }
+                      },
+                      "RESOLVING_PROGRAM": {
+                        "type": "array",
+                        "items": {
+                          "type": "string",
+                          "minLength": 1,
+                          "maxLength": 200,
+                          "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$"
+                        }
                       }
                     },
                     "required": [
@@ -2319,7 +3047,8 @@
                       "EDDIES",
                       "LEGENDS",
                       "REMOVED"
-                    ]
+                    ],
+                    "additionalProperties": false
                   },
                   "economy": {
                     "type": "object",
@@ -2452,7 +3181,8 @@
                               "TRASH",
                               "EDDIES",
                               "LEGENDS",
-                              "REMOVED"
+                              "REMOVED",
+                              "RESOLVING_PROGRAM"
                             ]
                           }
                         },
@@ -2498,7 +3228,8 @@
                           "type": "string",
                           "enum": [
                             "GO_SOLO",
-                            "CANNOT_SELL"
+                            "CANNOT_SELL",
+                            "LAG"
                           ]
                         }
                       },
@@ -2650,6 +3381,61 @@
               ],
               "additionalProperties": false
             },
+            "temporaryModifiers": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "kind": {
+                    "type": "string",
+                    "const": "POWER"
+                  },
+                  "sourceId": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 200,
+                    "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$"
+                  },
+                  "targetId": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 200,
+                    "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$"
+                  },
+                  "amount": {
+                    "type": "number",
+                    "const": -1
+                  },
+                  "expires": {
+                    "type": "object",
+                    "properties": {
+                      "kind": {
+                        "type": "string",
+                        "const": "END_OF_TURN"
+                      },
+                      "turn": {
+                        "type": "integer",
+                        "exclusiveMinimum": 0,
+                        "maximum": 9007199254740991
+                      }
+                    },
+                    "required": [
+                      "kind",
+                      "turn"
+                    ],
+                    "additionalProperties": false
+                  }
+                },
+                "required": [
+                  "kind",
+                  "sourceId",
+                  "targetId",
+                  "amount",
+                  "expires"
+                ],
+                "additionalProperties": false
+              }
+            },
             "resolution": {
               "type": "object",
               "properties": {
@@ -2664,6 +3450,123 @@
                     "CHOICE",
                     "UNSUPPORTED"
                   ]
+                },
+                "returnTo": {
+                  "oneOf": [
+                    {
+                      "type": "object",
+                      "properties": {
+                        "kind": {
+                          "type": "string",
+                          "const": "MAIN"
+                        }
+                      },
+                      "required": [
+                        "kind"
+                      ],
+                      "additionalProperties": false
+                    },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "kind": {
+                          "type": "string",
+                          "const": "RIVAL_REACT"
+                        }
+                      },
+                      "required": [
+                        "kind"
+                      ],
+                      "additionalProperties": false
+                    }
+                  ]
+                },
+                "playContinuation": {
+                  "type": "object",
+                  "properties": {
+                    "kind": {
+                      "type": "string",
+                      "enum": [
+                        "PLAY",
+                        "ACTIVATE"
+                      ]
+                    },
+                    "actorId": {
+                      "type": "string",
+                      "format": "uuid",
+                      "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+                    },
+                    "sourceId": {
+                      "type": "string",
+                      "minLength": 1,
+                      "maxLength": 200,
+                      "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$"
+                    },
+                    "abilityId": {
+                      "type": "string",
+                      "minLength": 1
+                    },
+                    "phase": {
+                      "type": "string",
+                      "enum": [
+                        "PAYMENT",
+                        "EFFECT",
+                        "EQUIP"
+                      ]
+                    },
+                    "remainingCost": {
+                      "type": "integer",
+                      "minimum": 0,
+                      "maximum": 9007199254740991
+                    },
+                    "selectedSources": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "kind": {
+                            "type": "string",
+                            "enum": [
+                              "EDDIE",
+                              "LEGEND"
+                            ]
+                          },
+                          "cardInstanceId": {
+                            "type": "string",
+                            "minLength": 1,
+                            "maxLength": 200,
+                            "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$"
+                          }
+                        },
+                        "required": [
+                          "kind",
+                          "cardInstanceId"
+                        ],
+                        "additionalProperties": false
+                      }
+                    },
+                    "effectIndex": {
+                      "type": "integer",
+                      "minimum": 0,
+                      "maximum": 9007199254740991
+                    },
+                    "targetGigId": {
+                      "type": "string",
+                      "minLength": 1,
+                      "maxLength": 200,
+                      "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$"
+                    }
+                  },
+                  "required": [
+                    "kind",
+                    "actorId",
+                    "sourceId",
+                    "phase",
+                    "remainingCost",
+                    "selectedSources",
+                    "effectIndex"
+                  ],
+                  "additionalProperties": false
                 },
                 "searchContinuation": {
                   "type": "object",
@@ -2781,6 +3684,237 @@
                               "properties": {
                                 "kind": {
                                   "type": "string",
+                                  "const": "POWER_UNTIL_END_OF_TURN"
+                                },
+                                "target": {
+                                  "type": "object",
+                                  "properties": {
+                                    "kind": {
+                                      "type": "string",
+                                      "const": "RIVAL_UNIT"
+                                    }
+                                  },
+                                  "required": [
+                                    "kind"
+                                  ],
+                                  "additionalProperties": false
+                                },
+                                "amount": {
+                                  "type": "number",
+                                  "const": -1
+                                }
+                              },
+                              "required": [
+                                "kind",
+                                "target",
+                                "amount"
+                              ],
+                              "additionalProperties": false
+                            },
+                            {
+                              "type": "object",
+                              "properties": {
+                                "kind": {
+                                  "type": "string",
+                                  "const": "ADJUST_GIG_UP_TO"
+                                },
+                                "target": {
+                                  "type": "object",
+                                  "properties": {
+                                    "kind": {
+                                      "type": "string",
+                                      "const": "GIGS"
+                                    },
+                                    "relation": {
+                                      "type": "string",
+                                      "const": "ANY"
+                                    }
+                                  },
+                                  "required": [
+                                    "kind",
+                                    "relation"
+                                  ],
+                                  "additionalProperties": false
+                                },
+                                "maximum": {
+                                  "type": "number",
+                                  "const": 1
+                                }
+                              },
+                              "required": [
+                                "kind",
+                                "target",
+                                "maximum"
+                              ],
+                              "additionalProperties": false
+                            },
+                            {
+                              "type": "object",
+                              "properties": {
+                                "kind": {
+                                  "type": "string",
+                                  "const": "CONDITIONAL_DRAW"
+                                },
+                                "timing": {
+                                  "type": "string",
+                                  "const": "RESOLUTION"
+                                },
+                                "condition": {
+                                  "oneOf": [
+                                    {
+                                      "type": "object",
+                                      "properties": {
+                                        "kind": {
+                                          "type": "string",
+                                          "const": "SOURCE_POWER_AT_LEAST"
+                                        },
+                                        "minimum": {
+                                          "type": "integer",
+                                          "minimum": 0,
+                                          "maximum": 9007199254740991
+                                        }
+                                      },
+                                      "required": [
+                                        "kind",
+                                        "minimum"
+                                      ],
+                                      "additionalProperties": false
+                                    },
+                                    {
+                                      "type": "object",
+                                      "properties": {
+                                        "kind": {
+                                          "type": "string",
+                                          "const": "GIG_VALUE_AT_LEAST"
+                                        },
+                                        "minimum": {
+                                          "type": "integer",
+                                          "minimum": 0,
+                                          "maximum": 9007199254740991
+                                        }
+                                      },
+                                      "required": [
+                                        "kind",
+                                        "minimum"
+                                      ],
+                                      "additionalProperties": false
+                                    },
+                                    {
+                                      "type": "object",
+                                      "properties": {
+                                        "kind": {
+                                          "type": "string",
+                                          "const": "GIG_COUNT"
+                                        },
+                                        "minimum": {
+                                          "type": "integer",
+                                          "minimum": 0,
+                                          "maximum": 9007199254740991
+                                        }
+                                      },
+                                      "required": [
+                                        "kind",
+                                        "minimum"
+                                      ],
+                                      "additionalProperties": false
+                                    },
+                                    {
+                                      "type": "object",
+                                      "properties": {
+                                        "kind": {
+                                          "type": "string",
+                                          "const": "DISTINCT_GIG_DIE_TYPES"
+                                        },
+                                        "minimum": {
+                                          "type": "integer",
+                                          "minimum": 0,
+                                          "maximum": 9007199254740991
+                                        }
+                                      },
+                                      "required": [
+                                        "kind",
+                                        "minimum"
+                                      ],
+                                      "additionalProperties": false
+                                    },
+                                    {
+                                      "type": "object",
+                                      "properties": {
+                                        "kind": {
+                                          "type": "string",
+                                          "const": "DISTINCT_GIG_VALUES"
+                                        },
+                                        "minimum": {
+                                          "type": "integer",
+                                          "minimum": 0,
+                                          "maximum": 9007199254740991
+                                        }
+                                      },
+                                      "required": [
+                                        "kind",
+                                        "minimum"
+                                      ],
+                                      "additionalProperties": false
+                                    },
+                                    {
+                                      "type": "object",
+                                      "properties": {
+                                        "kind": {
+                                          "type": "string",
+                                          "const": "STREET_CRED"
+                                        },
+                                        "minimum": {
+                                          "type": "integer",
+                                          "minimum": 0,
+                                          "maximum": 9007199254740991
+                                        }
+                                      },
+                                      "required": [
+                                        "kind",
+                                        "minimum"
+                                      ],
+                                      "additionalProperties": false
+                                    },
+                                    {
+                                      "type": "object",
+                                      "properties": {
+                                        "kind": {
+                                          "type": "string",
+                                          "const": "GIG_VALUE"
+                                        },
+                                        "value": {
+                                          "type": "integer",
+                                          "minimum": -9007199254740991,
+                                          "maximum": 9007199254740991
+                                        }
+                                      },
+                                      "required": [
+                                        "kind",
+                                        "value"
+                                      ],
+                                      "additionalProperties": false
+                                    }
+                                  ]
+                                },
+                                "count": {
+                                  "type": "integer",
+                                  "exclusiveMinimum": 0,
+                                  "maximum": 9007199254740991
+                                }
+                              },
+                              "required": [
+                                "kind",
+                                "timing",
+                                "condition",
+                                "count"
+                              ],
+                              "additionalProperties": false
+                            },
+                            {
+                              "type": "object",
+                              "properties": {
+                                "kind": {
+                                  "type": "string",
                                   "const": "SEARCH_GEAR"
                                 },
                                 "count": {
@@ -2840,6 +3974,19 @@
                                       "properties": {
                                         "kind": {
                                           "type": "string",
+                                          "const": "FRIENDLY_UNIT_OR_FACE_UP_LEGEND"
+                                        }
+                                      },
+                                      "required": [
+                                        "kind"
+                                      ],
+                                      "additionalProperties": false
+                                    },
+                                    {
+                                      "type": "object",
+                                      "properties": {
+                                        "kind": {
+                                          "type": "string",
                                           "const": "SELF"
                                         }
                                       },
@@ -2864,7 +4011,8 @@
                                             "TRASH",
                                             "EDDIES",
                                             "LEGENDS",
-                                            "REMOVED"
+                                            "REMOVED",
+                                            "RESOLVING_PROGRAM"
                                           ]
                                         },
                                         "relation": {
@@ -2943,6 +4091,19 @@
                                       "properties": {
                                         "kind": {
                                           "type": "string",
+                                          "const": "FRIENDLY_UNIT_OR_FACE_UP_LEGEND"
+                                        }
+                                      },
+                                      "required": [
+                                        "kind"
+                                      ],
+                                      "additionalProperties": false
+                                    },
+                                    {
+                                      "type": "object",
+                                      "properties": {
+                                        "kind": {
+                                          "type": "string",
                                           "const": "SELF"
                                         }
                                       },
@@ -2967,7 +4128,8 @@
                                             "TRASH",
                                             "EDDIES",
                                             "LEGENDS",
-                                            "REMOVED"
+                                            "REMOVED",
+                                            "RESOLVING_PROGRAM"
                                           ]
                                         },
                                         "relation": {
@@ -3028,7 +4190,8 @@
                                     "TRASH",
                                     "EDDIES",
                                     "LEGENDS",
-                                    "REMOVED"
+                                    "REMOVED",
+                                    "RESOLVING_PROGRAM"
                                   ]
                                 }
                               },
@@ -3048,6 +4211,19 @@
                                 },
                                 "target": {
                                   "oneOf": [
+                                    {
+                                      "type": "object",
+                                      "properties": {
+                                        "kind": {
+                                          "type": "string",
+                                          "const": "FRIENDLY_UNIT_OR_FACE_UP_LEGEND"
+                                        }
+                                      },
+                                      "required": [
+                                        "kind"
+                                      ],
+                                      "additionalProperties": false
+                                    },
                                     {
                                       "type": "object",
                                       "properties": {
@@ -3077,7 +4253,8 @@
                                             "TRASH",
                                             "EDDIES",
                                             "LEGENDS",
-                                            "REMOVED"
+                                            "REMOVED",
+                                            "RESOLVING_PROGRAM"
                                           ]
                                         },
                                         "relation": {
@@ -3156,6 +4333,19 @@
                                       "properties": {
                                         "kind": {
                                           "type": "string",
+                                          "const": "FRIENDLY_UNIT_OR_FACE_UP_LEGEND"
+                                        }
+                                      },
+                                      "required": [
+                                        "kind"
+                                      ],
+                                      "additionalProperties": false
+                                    },
+                                    {
+                                      "type": "object",
+                                      "properties": {
+                                        "kind": {
+                                          "type": "string",
                                           "const": "SELF"
                                         }
                                       },
@@ -3180,7 +4370,8 @@
                                             "TRASH",
                                             "EDDIES",
                                             "LEGENDS",
-                                            "REMOVED"
+                                            "REMOVED",
+                                            "RESOLVING_PROGRAM"
                                           ]
                                         },
                                         "relation": {
@@ -3283,6 +4474,63 @@
                                       "type": "array",
                                       "items": {
                                         "oneOf": [
+                                          {
+                                            "type": "object",
+                                            "properties": {
+                                              "kind": {
+                                                "type": "string",
+                                                "const": "ATTACK_TARGET"
+                                              },
+                                              "target": {
+                                                "oneOf": [
+                                                  {
+                                                    "type": "object",
+                                                    "properties": {
+                                                      "kind": {
+                                                        "type": "string",
+                                                        "const": "CARD"
+                                                      },
+                                                      "cardInstanceId": {
+                                                        "type": "string",
+                                                        "minLength": 1,
+                                                        "maxLength": 200,
+                                                        "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$"
+                                                      }
+                                                    },
+                                                    "required": [
+                                                      "kind",
+                                                      "cardInstanceId"
+                                                    ],
+                                                    "additionalProperties": false
+                                                  },
+                                                  {
+                                                    "type": "object",
+                                                    "properties": {
+                                                      "kind": {
+                                                        "type": "string",
+                                                        "const": "GIG_AREA"
+                                                      },
+                                                      "playerId": {
+                                                        "type": "string",
+                                                        "format": "uuid",
+                                                        "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+                                                      }
+                                                    },
+                                                    "required": [
+                                                      "kind",
+                                                      "playerId"
+                                                    ],
+                                                    "additionalProperties": false
+                                                  }
+                                                ]
+                                              }
+                                            },
+                                            "required": [
+                                              "kind",
+                                              "target"
+                                            ],
+                                            "additionalProperties": false
+                                          },
                                           {
                                             "type": "object",
                                             "properties": {
@@ -3546,6 +4794,237 @@
                             "properties": {
                               "kind": {
                                 "type": "string",
+                                "const": "POWER_UNTIL_END_OF_TURN"
+                              },
+                              "target": {
+                                "type": "object",
+                                "properties": {
+                                  "kind": {
+                                    "type": "string",
+                                    "const": "RIVAL_UNIT"
+                                  }
+                                },
+                                "required": [
+                                  "kind"
+                                ],
+                                "additionalProperties": false
+                              },
+                              "amount": {
+                                "type": "number",
+                                "const": -1
+                              }
+                            },
+                            "required": [
+                              "kind",
+                              "target",
+                              "amount"
+                            ],
+                            "additionalProperties": false
+                          },
+                          {
+                            "type": "object",
+                            "properties": {
+                              "kind": {
+                                "type": "string",
+                                "const": "ADJUST_GIG_UP_TO"
+                              },
+                              "target": {
+                                "type": "object",
+                                "properties": {
+                                  "kind": {
+                                    "type": "string",
+                                    "const": "GIGS"
+                                  },
+                                  "relation": {
+                                    "type": "string",
+                                    "const": "ANY"
+                                  }
+                                },
+                                "required": [
+                                  "kind",
+                                  "relation"
+                                ],
+                                "additionalProperties": false
+                              },
+                              "maximum": {
+                                "type": "number",
+                                "const": 1
+                              }
+                            },
+                            "required": [
+                              "kind",
+                              "target",
+                              "maximum"
+                            ],
+                            "additionalProperties": false
+                          },
+                          {
+                            "type": "object",
+                            "properties": {
+                              "kind": {
+                                "type": "string",
+                                "const": "CONDITIONAL_DRAW"
+                              },
+                              "timing": {
+                                "type": "string",
+                                "const": "RESOLUTION"
+                              },
+                              "condition": {
+                                "oneOf": [
+                                  {
+                                    "type": "object",
+                                    "properties": {
+                                      "kind": {
+                                        "type": "string",
+                                        "const": "SOURCE_POWER_AT_LEAST"
+                                      },
+                                      "minimum": {
+                                        "type": "integer",
+                                        "minimum": 0,
+                                        "maximum": 9007199254740991
+                                      }
+                                    },
+                                    "required": [
+                                      "kind",
+                                      "minimum"
+                                    ],
+                                    "additionalProperties": false
+                                  },
+                                  {
+                                    "type": "object",
+                                    "properties": {
+                                      "kind": {
+                                        "type": "string",
+                                        "const": "GIG_VALUE_AT_LEAST"
+                                      },
+                                      "minimum": {
+                                        "type": "integer",
+                                        "minimum": 0,
+                                        "maximum": 9007199254740991
+                                      }
+                                    },
+                                    "required": [
+                                      "kind",
+                                      "minimum"
+                                    ],
+                                    "additionalProperties": false
+                                  },
+                                  {
+                                    "type": "object",
+                                    "properties": {
+                                      "kind": {
+                                        "type": "string",
+                                        "const": "GIG_COUNT"
+                                      },
+                                      "minimum": {
+                                        "type": "integer",
+                                        "minimum": 0,
+                                        "maximum": 9007199254740991
+                                      }
+                                    },
+                                    "required": [
+                                      "kind",
+                                      "minimum"
+                                    ],
+                                    "additionalProperties": false
+                                  },
+                                  {
+                                    "type": "object",
+                                    "properties": {
+                                      "kind": {
+                                        "type": "string",
+                                        "const": "DISTINCT_GIG_DIE_TYPES"
+                                      },
+                                      "minimum": {
+                                        "type": "integer",
+                                        "minimum": 0,
+                                        "maximum": 9007199254740991
+                                      }
+                                    },
+                                    "required": [
+                                      "kind",
+                                      "minimum"
+                                    ],
+                                    "additionalProperties": false
+                                  },
+                                  {
+                                    "type": "object",
+                                    "properties": {
+                                      "kind": {
+                                        "type": "string",
+                                        "const": "DISTINCT_GIG_VALUES"
+                                      },
+                                      "minimum": {
+                                        "type": "integer",
+                                        "minimum": 0,
+                                        "maximum": 9007199254740991
+                                      }
+                                    },
+                                    "required": [
+                                      "kind",
+                                      "minimum"
+                                    ],
+                                    "additionalProperties": false
+                                  },
+                                  {
+                                    "type": "object",
+                                    "properties": {
+                                      "kind": {
+                                        "type": "string",
+                                        "const": "STREET_CRED"
+                                      },
+                                      "minimum": {
+                                        "type": "integer",
+                                        "minimum": 0,
+                                        "maximum": 9007199254740991
+                                      }
+                                    },
+                                    "required": [
+                                      "kind",
+                                      "minimum"
+                                    ],
+                                    "additionalProperties": false
+                                  },
+                                  {
+                                    "type": "object",
+                                    "properties": {
+                                      "kind": {
+                                        "type": "string",
+                                        "const": "GIG_VALUE"
+                                      },
+                                      "value": {
+                                        "type": "integer",
+                                        "minimum": -9007199254740991,
+                                        "maximum": 9007199254740991
+                                      }
+                                    },
+                                    "required": [
+                                      "kind",
+                                      "value"
+                                    ],
+                                    "additionalProperties": false
+                                  }
+                                ]
+                              },
+                              "count": {
+                                "type": "integer",
+                                "exclusiveMinimum": 0,
+                                "maximum": 9007199254740991
+                              }
+                            },
+                            "required": [
+                              "kind",
+                              "timing",
+                              "condition",
+                              "count"
+                            ],
+                            "additionalProperties": false
+                          },
+                          {
+                            "type": "object",
+                            "properties": {
+                              "kind": {
+                                "type": "string",
                                 "const": "SEARCH_GEAR"
                               },
                               "count": {
@@ -3605,6 +5084,19 @@
                                     "properties": {
                                       "kind": {
                                         "type": "string",
+                                        "const": "FRIENDLY_UNIT_OR_FACE_UP_LEGEND"
+                                      }
+                                    },
+                                    "required": [
+                                      "kind"
+                                    ],
+                                    "additionalProperties": false
+                                  },
+                                  {
+                                    "type": "object",
+                                    "properties": {
+                                      "kind": {
+                                        "type": "string",
                                         "const": "SELF"
                                       }
                                     },
@@ -3629,7 +5121,8 @@
                                           "TRASH",
                                           "EDDIES",
                                           "LEGENDS",
-                                          "REMOVED"
+                                          "REMOVED",
+                                          "RESOLVING_PROGRAM"
                                         ]
                                       },
                                       "relation": {
@@ -3708,6 +5201,19 @@
                                     "properties": {
                                       "kind": {
                                         "type": "string",
+                                        "const": "FRIENDLY_UNIT_OR_FACE_UP_LEGEND"
+                                      }
+                                    },
+                                    "required": [
+                                      "kind"
+                                    ],
+                                    "additionalProperties": false
+                                  },
+                                  {
+                                    "type": "object",
+                                    "properties": {
+                                      "kind": {
+                                        "type": "string",
                                         "const": "SELF"
                                       }
                                     },
@@ -3732,7 +5238,8 @@
                                           "TRASH",
                                           "EDDIES",
                                           "LEGENDS",
-                                          "REMOVED"
+                                          "REMOVED",
+                                          "RESOLVING_PROGRAM"
                                         ]
                                       },
                                       "relation": {
@@ -3793,7 +5300,8 @@
                                   "TRASH",
                                   "EDDIES",
                                   "LEGENDS",
-                                  "REMOVED"
+                                  "REMOVED",
+                                  "RESOLVING_PROGRAM"
                                 ]
                               }
                             },
@@ -3813,6 +5321,19 @@
                               },
                               "target": {
                                 "oneOf": [
+                                  {
+                                    "type": "object",
+                                    "properties": {
+                                      "kind": {
+                                        "type": "string",
+                                        "const": "FRIENDLY_UNIT_OR_FACE_UP_LEGEND"
+                                      }
+                                    },
+                                    "required": [
+                                      "kind"
+                                    ],
+                                    "additionalProperties": false
+                                  },
                                   {
                                     "type": "object",
                                     "properties": {
@@ -3842,7 +5363,8 @@
                                           "TRASH",
                                           "EDDIES",
                                           "LEGENDS",
-                                          "REMOVED"
+                                          "REMOVED",
+                                          "RESOLVING_PROGRAM"
                                         ]
                                       },
                                       "relation": {
@@ -3921,6 +5443,19 @@
                                     "properties": {
                                       "kind": {
                                         "type": "string",
+                                        "const": "FRIENDLY_UNIT_OR_FACE_UP_LEGEND"
+                                      }
+                                    },
+                                    "required": [
+                                      "kind"
+                                    ],
+                                    "additionalProperties": false
+                                  },
+                                  {
+                                    "type": "object",
+                                    "properties": {
+                                      "kind": {
+                                        "type": "string",
                                         "const": "SELF"
                                       }
                                     },
@@ -3945,7 +5480,8 @@
                                           "TRASH",
                                           "EDDIES",
                                           "LEGENDS",
-                                          "REMOVED"
+                                          "REMOVED",
+                                          "RESOLVING_PROGRAM"
                                         ]
                                       },
                                       "relation": {
@@ -4048,6 +5584,63 @@
                                     "type": "array",
                                     "items": {
                                       "oneOf": [
+                                        {
+                                          "type": "object",
+                                          "properties": {
+                                            "kind": {
+                                              "type": "string",
+                                              "const": "ATTACK_TARGET"
+                                            },
+                                            "target": {
+                                              "oneOf": [
+                                                {
+                                                  "type": "object",
+                                                  "properties": {
+                                                    "kind": {
+                                                      "type": "string",
+                                                      "const": "CARD"
+                                                    },
+                                                    "cardInstanceId": {
+                                                      "type": "string",
+                                                      "minLength": 1,
+                                                      "maxLength": 200,
+                                                      "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$"
+                                                    }
+                                                  },
+                                                  "required": [
+                                                    "kind",
+                                                    "cardInstanceId"
+                                                  ],
+                                                  "additionalProperties": false
+                                                },
+                                                {
+                                                  "type": "object",
+                                                  "properties": {
+                                                    "kind": {
+                                                      "type": "string",
+                                                      "const": "GIG_AREA"
+                                                    },
+                                                    "playerId": {
+                                                      "type": "string",
+                                                      "format": "uuid",
+                                                      "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+                                                    }
+                                                  },
+                                                  "required": [
+                                                    "kind",
+                                                    "playerId"
+                                                  ],
+                                                  "additionalProperties": false
+                                                }
+                                              ]
+                                            }
+                                          },
+                                          "required": [
+                                            "kind",
+                                            "target"
+                                          ],
+                                          "additionalProperties": false
+                                        },
                                         {
                                           "type": "object",
                                           "properties": {
@@ -4307,6 +5900,237 @@
                             "properties": {
                               "kind": {
                                 "type": "string",
+                                "const": "POWER_UNTIL_END_OF_TURN"
+                              },
+                              "target": {
+                                "type": "object",
+                                "properties": {
+                                  "kind": {
+                                    "type": "string",
+                                    "const": "RIVAL_UNIT"
+                                  }
+                                },
+                                "required": [
+                                  "kind"
+                                ],
+                                "additionalProperties": false
+                              },
+                              "amount": {
+                                "type": "number",
+                                "const": -1
+                              }
+                            },
+                            "required": [
+                              "kind",
+                              "target",
+                              "amount"
+                            ],
+                            "additionalProperties": false
+                          },
+                          {
+                            "type": "object",
+                            "properties": {
+                              "kind": {
+                                "type": "string",
+                                "const": "ADJUST_GIG_UP_TO"
+                              },
+                              "target": {
+                                "type": "object",
+                                "properties": {
+                                  "kind": {
+                                    "type": "string",
+                                    "const": "GIGS"
+                                  },
+                                  "relation": {
+                                    "type": "string",
+                                    "const": "ANY"
+                                  }
+                                },
+                                "required": [
+                                  "kind",
+                                  "relation"
+                                ],
+                                "additionalProperties": false
+                              },
+                              "maximum": {
+                                "type": "number",
+                                "const": 1
+                              }
+                            },
+                            "required": [
+                              "kind",
+                              "target",
+                              "maximum"
+                            ],
+                            "additionalProperties": false
+                          },
+                          {
+                            "type": "object",
+                            "properties": {
+                              "kind": {
+                                "type": "string",
+                                "const": "CONDITIONAL_DRAW"
+                              },
+                              "timing": {
+                                "type": "string",
+                                "const": "RESOLUTION"
+                              },
+                              "condition": {
+                                "oneOf": [
+                                  {
+                                    "type": "object",
+                                    "properties": {
+                                      "kind": {
+                                        "type": "string",
+                                        "const": "SOURCE_POWER_AT_LEAST"
+                                      },
+                                      "minimum": {
+                                        "type": "integer",
+                                        "minimum": 0,
+                                        "maximum": 9007199254740991
+                                      }
+                                    },
+                                    "required": [
+                                      "kind",
+                                      "minimum"
+                                    ],
+                                    "additionalProperties": false
+                                  },
+                                  {
+                                    "type": "object",
+                                    "properties": {
+                                      "kind": {
+                                        "type": "string",
+                                        "const": "GIG_VALUE_AT_LEAST"
+                                      },
+                                      "minimum": {
+                                        "type": "integer",
+                                        "minimum": 0,
+                                        "maximum": 9007199254740991
+                                      }
+                                    },
+                                    "required": [
+                                      "kind",
+                                      "minimum"
+                                    ],
+                                    "additionalProperties": false
+                                  },
+                                  {
+                                    "type": "object",
+                                    "properties": {
+                                      "kind": {
+                                        "type": "string",
+                                        "const": "GIG_COUNT"
+                                      },
+                                      "minimum": {
+                                        "type": "integer",
+                                        "minimum": 0,
+                                        "maximum": 9007199254740991
+                                      }
+                                    },
+                                    "required": [
+                                      "kind",
+                                      "minimum"
+                                    ],
+                                    "additionalProperties": false
+                                  },
+                                  {
+                                    "type": "object",
+                                    "properties": {
+                                      "kind": {
+                                        "type": "string",
+                                        "const": "DISTINCT_GIG_DIE_TYPES"
+                                      },
+                                      "minimum": {
+                                        "type": "integer",
+                                        "minimum": 0,
+                                        "maximum": 9007199254740991
+                                      }
+                                    },
+                                    "required": [
+                                      "kind",
+                                      "minimum"
+                                    ],
+                                    "additionalProperties": false
+                                  },
+                                  {
+                                    "type": "object",
+                                    "properties": {
+                                      "kind": {
+                                        "type": "string",
+                                        "const": "DISTINCT_GIG_VALUES"
+                                      },
+                                      "minimum": {
+                                        "type": "integer",
+                                        "minimum": 0,
+                                        "maximum": 9007199254740991
+                                      }
+                                    },
+                                    "required": [
+                                      "kind",
+                                      "minimum"
+                                    ],
+                                    "additionalProperties": false
+                                  },
+                                  {
+                                    "type": "object",
+                                    "properties": {
+                                      "kind": {
+                                        "type": "string",
+                                        "const": "STREET_CRED"
+                                      },
+                                      "minimum": {
+                                        "type": "integer",
+                                        "minimum": 0,
+                                        "maximum": 9007199254740991
+                                      }
+                                    },
+                                    "required": [
+                                      "kind",
+                                      "minimum"
+                                    ],
+                                    "additionalProperties": false
+                                  },
+                                  {
+                                    "type": "object",
+                                    "properties": {
+                                      "kind": {
+                                        "type": "string",
+                                        "const": "GIG_VALUE"
+                                      },
+                                      "value": {
+                                        "type": "integer",
+                                        "minimum": -9007199254740991,
+                                        "maximum": 9007199254740991
+                                      }
+                                    },
+                                    "required": [
+                                      "kind",
+                                      "value"
+                                    ],
+                                    "additionalProperties": false
+                                  }
+                                ]
+                              },
+                              "count": {
+                                "type": "integer",
+                                "exclusiveMinimum": 0,
+                                "maximum": 9007199254740991
+                              }
+                            },
+                            "required": [
+                              "kind",
+                              "timing",
+                              "condition",
+                              "count"
+                            ],
+                            "additionalProperties": false
+                          },
+                          {
+                            "type": "object",
+                            "properties": {
+                              "kind": {
+                                "type": "string",
                                 "const": "SEARCH_GEAR"
                               },
                               "count": {
@@ -4366,6 +6190,19 @@
                                     "properties": {
                                       "kind": {
                                         "type": "string",
+                                        "const": "FRIENDLY_UNIT_OR_FACE_UP_LEGEND"
+                                      }
+                                    },
+                                    "required": [
+                                      "kind"
+                                    ],
+                                    "additionalProperties": false
+                                  },
+                                  {
+                                    "type": "object",
+                                    "properties": {
+                                      "kind": {
+                                        "type": "string",
                                         "const": "SELF"
                                       }
                                     },
@@ -4390,7 +6227,8 @@
                                           "TRASH",
                                           "EDDIES",
                                           "LEGENDS",
-                                          "REMOVED"
+                                          "REMOVED",
+                                          "RESOLVING_PROGRAM"
                                         ]
                                       },
                                       "relation": {
@@ -4469,6 +6307,19 @@
                                     "properties": {
                                       "kind": {
                                         "type": "string",
+                                        "const": "FRIENDLY_UNIT_OR_FACE_UP_LEGEND"
+                                      }
+                                    },
+                                    "required": [
+                                      "kind"
+                                    ],
+                                    "additionalProperties": false
+                                  },
+                                  {
+                                    "type": "object",
+                                    "properties": {
+                                      "kind": {
+                                        "type": "string",
                                         "const": "SELF"
                                       }
                                     },
@@ -4493,7 +6344,8 @@
                                           "TRASH",
                                           "EDDIES",
                                           "LEGENDS",
-                                          "REMOVED"
+                                          "REMOVED",
+                                          "RESOLVING_PROGRAM"
                                         ]
                                       },
                                       "relation": {
@@ -4554,7 +6406,8 @@
                                   "TRASH",
                                   "EDDIES",
                                   "LEGENDS",
-                                  "REMOVED"
+                                  "REMOVED",
+                                  "RESOLVING_PROGRAM"
                                 ]
                               }
                             },
@@ -4574,6 +6427,19 @@
                               },
                               "target": {
                                 "oneOf": [
+                                  {
+                                    "type": "object",
+                                    "properties": {
+                                      "kind": {
+                                        "type": "string",
+                                        "const": "FRIENDLY_UNIT_OR_FACE_UP_LEGEND"
+                                      }
+                                    },
+                                    "required": [
+                                      "kind"
+                                    ],
+                                    "additionalProperties": false
+                                  },
                                   {
                                     "type": "object",
                                     "properties": {
@@ -4603,7 +6469,8 @@
                                           "TRASH",
                                           "EDDIES",
                                           "LEGENDS",
-                                          "REMOVED"
+                                          "REMOVED",
+                                          "RESOLVING_PROGRAM"
                                         ]
                                       },
                                       "relation": {
@@ -4682,6 +6549,19 @@
                                     "properties": {
                                       "kind": {
                                         "type": "string",
+                                        "const": "FRIENDLY_UNIT_OR_FACE_UP_LEGEND"
+                                      }
+                                    },
+                                    "required": [
+                                      "kind"
+                                    ],
+                                    "additionalProperties": false
+                                  },
+                                  {
+                                    "type": "object",
+                                    "properties": {
+                                      "kind": {
+                                        "type": "string",
                                         "const": "SELF"
                                       }
                                     },
@@ -4706,7 +6586,8 @@
                                           "TRASH",
                                           "EDDIES",
                                           "LEGENDS",
-                                          "REMOVED"
+                                          "REMOVED",
+                                          "RESOLVING_PROGRAM"
                                         ]
                                       },
                                       "relation": {
@@ -4809,6 +6690,63 @@
                                     "type": "array",
                                     "items": {
                                       "oneOf": [
+                                        {
+                                          "type": "object",
+                                          "properties": {
+                                            "kind": {
+                                              "type": "string",
+                                              "const": "ATTACK_TARGET"
+                                            },
+                                            "target": {
+                                              "oneOf": [
+                                                {
+                                                  "type": "object",
+                                                  "properties": {
+                                                    "kind": {
+                                                      "type": "string",
+                                                      "const": "CARD"
+                                                    },
+                                                    "cardInstanceId": {
+                                                      "type": "string",
+                                                      "minLength": 1,
+                                                      "maxLength": 200,
+                                                      "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$"
+                                                    }
+                                                  },
+                                                  "required": [
+                                                    "kind",
+                                                    "cardInstanceId"
+                                                  ],
+                                                  "additionalProperties": false
+                                                },
+                                                {
+                                                  "type": "object",
+                                                  "properties": {
+                                                    "kind": {
+                                                      "type": "string",
+                                                      "const": "GIG_AREA"
+                                                    },
+                                                    "playerId": {
+                                                      "type": "string",
+                                                      "format": "uuid",
+                                                      "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+                                                    }
+                                                  },
+                                                  "required": [
+                                                    "kind",
+                                                    "playerId"
+                                                  ],
+                                                  "additionalProperties": false
+                                                }
+                                              ]
+                                            }
+                                          },
+                                          "required": [
+                                            "kind",
+                                            "target"
+                                          ],
+                                          "additionalProperties": false
+                                        },
                                         {
                                           "type": "object",
                                           "properties": {
@@ -5067,6 +7005,63 @@
                           "type": "array",
                           "items": {
                             "oneOf": [
+                              {
+                                "type": "object",
+                                "properties": {
+                                  "kind": {
+                                    "type": "string",
+                                    "const": "ATTACK_TARGET"
+                                  },
+                                  "target": {
+                                    "oneOf": [
+                                      {
+                                        "type": "object",
+                                        "properties": {
+                                          "kind": {
+                                            "type": "string",
+                                            "const": "CARD"
+                                          },
+                                          "cardInstanceId": {
+                                            "type": "string",
+                                            "minLength": 1,
+                                            "maxLength": 200,
+                                            "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$"
+                                          }
+                                        },
+                                        "required": [
+                                          "kind",
+                                          "cardInstanceId"
+                                        ],
+                                        "additionalProperties": false
+                                      },
+                                      {
+                                        "type": "object",
+                                        "properties": {
+                                          "kind": {
+                                            "type": "string",
+                                            "const": "GIG_AREA"
+                                          },
+                                          "playerId": {
+                                            "type": "string",
+                                            "format": "uuid",
+                                            "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+                                          }
+                                        },
+                                        "required": [
+                                          "kind",
+                                          "playerId"
+                                        ],
+                                        "additionalProperties": false
+                                      }
+                                    ]
+                                  }
+                                },
+                                "required": [
+                                  "kind",
+                                  "target"
+                                ],
+                                "additionalProperties": false
+                              },
                               {
                                 "type": "object",
                                 "properties": {
@@ -5532,6 +7527,22 @@
                     "turnSlice": {
                       "type": "object",
                       "properties": {
+                        "cardPlay": {
+                          "type": "string",
+                          "const": "NONCOMBAT_PLAY_V1"
+                        },
+                        "combat": {
+                          "type": "string",
+                          "const": "COMBAT_ATTACK_V1"
+                        },
+                        "react": {
+                          "type": "string",
+                          "const": "COMBAT_REACT_V1"
+                        },
+                        "gear": {
+                          "type": "string",
+                          "const": "REVIEWED_GEAR_V1"
+                        },
                         "schemaVersion": {
                           "type": "number",
                           "const": 1
@@ -5658,6 +7669,10 @@
                         {
                           "type": "string",
                           "const": "UNSUPPORTED"
+                        },
+                        {
+                          "type": "string",
+                          "const": "DIE_FACES_V1"
                         },
                         {
                           "type": "object",
@@ -5989,7 +8004,12 @@
                     "properties": {
                       "scope": {
                         "type": "string",
-                        "const": "NONCOMBAT_SLICE_V1"
+                        "enum": [
+                          "NONCOMBAT_SLICE_V1",
+                          "NONCOMBAT_PLAY_V1",
+                          "COMBAT_ATTACK_V1",
+                          "COMBAT_REACT_V1"
+                        ]
                       },
                       "status": {
                         "type": "string",
@@ -6008,6 +8028,19 @@
                   "mechanics": {
                     "type": "object",
                     "properties": {
+                      "equip": {
+                        "type": "object",
+                        "properties": {
+                          "kind": {
+                            "type": "string",
+                            "const": "FRIENDLY_UNIT_OR_FACE_UP_LEGEND"
+                          }
+                        },
+                        "required": [
+                          "kind"
+                        ],
+                        "additionalProperties": false
+                      },
                       "keywords": {
                         "type": "array",
                         "items": {
@@ -6039,10 +8072,150 @@
                                 "WHEN_DEFEATED"
                               ]
                             },
+                            "activation": {
+                              "type": "object",
+                              "properties": {
+                                "timing": {
+                                  "type": "string",
+                                  "const": "MAIN"
+                                },
+                                "conditionTiming": {
+                                  "type": "string",
+                                  "const": "ACTIVATION_AND_RESOLUTION"
+                                },
+                                "costs": {
+                                  "type": "array",
+                                  "items": {
+                                    "oneOf": [
+                                      {
+                                        "type": "object",
+                                        "properties": {
+                                          "kind": {
+                                            "type": "string",
+                                            "const": "SPEND_SOURCE"
+                                          }
+                                        },
+                                        "required": [
+                                          "kind"
+                                        ],
+                                        "additionalProperties": false
+                                      },
+                                      {
+                                        "type": "object",
+                                        "properties": {
+                                          "kind": {
+                                            "type": "string",
+                                            "const": "PAYMENT_COST"
+                                          },
+                                          "cost": {
+                                            "oneOf": [
+                                              {
+                                                "type": "object",
+                                                "properties": {
+                                                  "kind": {
+                                                    "type": "string",
+                                                    "const": "EDDIES"
+                                                  },
+                                                  "amount": {
+                                                    "type": "integer",
+                                                    "minimum": 0,
+                                                    "maximum": 9007199254740991
+                                                  }
+                                                },
+                                                "required": [
+                                                  "kind",
+                                                  "amount"
+                                                ],
+                                                "additionalProperties": false
+                                              },
+                                              {
+                                                "type": "object",
+                                                "properties": {
+                                                  "kind": {
+                                                    "type": "string",
+                                                    "const": "DASH"
+                                                  }
+                                                },
+                                                "required": [
+                                                  "kind"
+                                                ],
+                                                "additionalProperties": false
+                                              },
+                                              {
+                                                "type": "object",
+                                                "properties": {
+                                                  "kind": {
+                                                    "type": "string",
+                                                    "const": "NONE"
+                                                  }
+                                                },
+                                                "required": [
+                                                  "kind"
+                                                ],
+                                                "additionalProperties": false
+                                              }
+                                            ]
+                                          }
+                                        },
+                                        "required": [
+                                          "kind",
+                                          "cost"
+                                        ],
+                                        "additionalProperties": false
+                                      }
+                                    ]
+                                  }
+                                }
+                              },
+                              "required": [
+                                "timing",
+                                "conditionTiming",
+                                "costs"
+                              ],
+                              "additionalProperties": false
+                            },
                             "conditions": {
                               "type": "array",
                               "items": {
                                 "oneOf": [
+                                  {
+                                    "type": "object",
+                                    "properties": {
+                                      "kind": {
+                                        "type": "string",
+                                        "const": "SOURCE_POWER_AT_LEAST"
+                                      },
+                                      "minimum": {
+                                        "type": "integer",
+                                        "minimum": 0,
+                                        "maximum": 9007199254740991
+                                      }
+                                    },
+                                    "required": [
+                                      "kind",
+                                      "minimum"
+                                    ],
+                                    "additionalProperties": false
+                                  },
+                                  {
+                                    "type": "object",
+                                    "properties": {
+                                      "kind": {
+                                        "type": "string",
+                                        "const": "GIG_VALUE_AT_LEAST"
+                                      },
+                                      "minimum": {
+                                        "type": "integer",
+                                        "minimum": 0,
+                                        "maximum": 9007199254740991
+                                      }
+                                    },
+                                    "required": [
+                                      "kind",
+                                      "minimum"
+                                    ],
+                                    "additionalProperties": false
+                                  },
                                   {
                                     "type": "object",
                                     "properties": {
@@ -6199,6 +8372,237 @@
                                     "properties": {
                                       "kind": {
                                         "type": "string",
+                                        "const": "POWER_UNTIL_END_OF_TURN"
+                                      },
+                                      "target": {
+                                        "type": "object",
+                                        "properties": {
+                                          "kind": {
+                                            "type": "string",
+                                            "const": "RIVAL_UNIT"
+                                          }
+                                        },
+                                        "required": [
+                                          "kind"
+                                        ],
+                                        "additionalProperties": false
+                                      },
+                                      "amount": {
+                                        "type": "number",
+                                        "const": -1
+                                      }
+                                    },
+                                    "required": [
+                                      "kind",
+                                      "target",
+                                      "amount"
+                                    ],
+                                    "additionalProperties": false
+                                  },
+                                  {
+                                    "type": "object",
+                                    "properties": {
+                                      "kind": {
+                                        "type": "string",
+                                        "const": "ADJUST_GIG_UP_TO"
+                                      },
+                                      "target": {
+                                        "type": "object",
+                                        "properties": {
+                                          "kind": {
+                                            "type": "string",
+                                            "const": "GIGS"
+                                          },
+                                          "relation": {
+                                            "type": "string",
+                                            "const": "ANY"
+                                          }
+                                        },
+                                        "required": [
+                                          "kind",
+                                          "relation"
+                                        ],
+                                        "additionalProperties": false
+                                      },
+                                      "maximum": {
+                                        "type": "number",
+                                        "const": 1
+                                      }
+                                    },
+                                    "required": [
+                                      "kind",
+                                      "target",
+                                      "maximum"
+                                    ],
+                                    "additionalProperties": false
+                                  },
+                                  {
+                                    "type": "object",
+                                    "properties": {
+                                      "kind": {
+                                        "type": "string",
+                                        "const": "CONDITIONAL_DRAW"
+                                      },
+                                      "timing": {
+                                        "type": "string",
+                                        "const": "RESOLUTION"
+                                      },
+                                      "condition": {
+                                        "oneOf": [
+                                          {
+                                            "type": "object",
+                                            "properties": {
+                                              "kind": {
+                                                "type": "string",
+                                                "const": "SOURCE_POWER_AT_LEAST"
+                                              },
+                                              "minimum": {
+                                                "type": "integer",
+                                                "minimum": 0,
+                                                "maximum": 9007199254740991
+                                              }
+                                            },
+                                            "required": [
+                                              "kind",
+                                              "minimum"
+                                            ],
+                                            "additionalProperties": false
+                                          },
+                                          {
+                                            "type": "object",
+                                            "properties": {
+                                              "kind": {
+                                                "type": "string",
+                                                "const": "GIG_VALUE_AT_LEAST"
+                                              },
+                                              "minimum": {
+                                                "type": "integer",
+                                                "minimum": 0,
+                                                "maximum": 9007199254740991
+                                              }
+                                            },
+                                            "required": [
+                                              "kind",
+                                              "minimum"
+                                            ],
+                                            "additionalProperties": false
+                                          },
+                                          {
+                                            "type": "object",
+                                            "properties": {
+                                              "kind": {
+                                                "type": "string",
+                                                "const": "GIG_COUNT"
+                                              },
+                                              "minimum": {
+                                                "type": "integer",
+                                                "minimum": 0,
+                                                "maximum": 9007199254740991
+                                              }
+                                            },
+                                            "required": [
+                                              "kind",
+                                              "minimum"
+                                            ],
+                                            "additionalProperties": false
+                                          },
+                                          {
+                                            "type": "object",
+                                            "properties": {
+                                              "kind": {
+                                                "type": "string",
+                                                "const": "DISTINCT_GIG_DIE_TYPES"
+                                              },
+                                              "minimum": {
+                                                "type": "integer",
+                                                "minimum": 0,
+                                                "maximum": 9007199254740991
+                                              }
+                                            },
+                                            "required": [
+                                              "kind",
+                                              "minimum"
+                                            ],
+                                            "additionalProperties": false
+                                          },
+                                          {
+                                            "type": "object",
+                                            "properties": {
+                                              "kind": {
+                                                "type": "string",
+                                                "const": "DISTINCT_GIG_VALUES"
+                                              },
+                                              "minimum": {
+                                                "type": "integer",
+                                                "minimum": 0,
+                                                "maximum": 9007199254740991
+                                              }
+                                            },
+                                            "required": [
+                                              "kind",
+                                              "minimum"
+                                            ],
+                                            "additionalProperties": false
+                                          },
+                                          {
+                                            "type": "object",
+                                            "properties": {
+                                              "kind": {
+                                                "type": "string",
+                                                "const": "STREET_CRED"
+                                              },
+                                              "minimum": {
+                                                "type": "integer",
+                                                "minimum": 0,
+                                                "maximum": 9007199254740991
+                                              }
+                                            },
+                                            "required": [
+                                              "kind",
+                                              "minimum"
+                                            ],
+                                            "additionalProperties": false
+                                          },
+                                          {
+                                            "type": "object",
+                                            "properties": {
+                                              "kind": {
+                                                "type": "string",
+                                                "const": "GIG_VALUE"
+                                              },
+                                              "value": {
+                                                "type": "integer",
+                                                "minimum": -9007199254740991,
+                                                "maximum": 9007199254740991
+                                              }
+                                            },
+                                            "required": [
+                                              "kind",
+                                              "value"
+                                            ],
+                                            "additionalProperties": false
+                                          }
+                                        ]
+                                      },
+                                      "count": {
+                                        "type": "integer",
+                                        "exclusiveMinimum": 0,
+                                        "maximum": 9007199254740991
+                                      }
+                                    },
+                                    "required": [
+                                      "kind",
+                                      "timing",
+                                      "condition",
+                                      "count"
+                                    ],
+                                    "additionalProperties": false
+                                  },
+                                  {
+                                    "type": "object",
+                                    "properties": {
+                                      "kind": {
+                                        "type": "string",
                                         "const": "SEARCH_GEAR"
                                       },
                                       "count": {
@@ -6258,6 +8662,19 @@
                                             "properties": {
                                               "kind": {
                                                 "type": "string",
+                                                "const": "FRIENDLY_UNIT_OR_FACE_UP_LEGEND"
+                                              }
+                                            },
+                                            "required": [
+                                              "kind"
+                                            ],
+                                            "additionalProperties": false
+                                          },
+                                          {
+                                            "type": "object",
+                                            "properties": {
+                                              "kind": {
+                                                "type": "string",
                                                 "const": "SELF"
                                               }
                                             },
@@ -6282,7 +8699,8 @@
                                                   "TRASH",
                                                   "EDDIES",
                                                   "LEGENDS",
-                                                  "REMOVED"
+                                                  "REMOVED",
+                                                  "RESOLVING_PROGRAM"
                                                 ]
                                               },
                                               "relation": {
@@ -6361,6 +8779,19 @@
                                             "properties": {
                                               "kind": {
                                                 "type": "string",
+                                                "const": "FRIENDLY_UNIT_OR_FACE_UP_LEGEND"
+                                              }
+                                            },
+                                            "required": [
+                                              "kind"
+                                            ],
+                                            "additionalProperties": false
+                                          },
+                                          {
+                                            "type": "object",
+                                            "properties": {
+                                              "kind": {
+                                                "type": "string",
                                                 "const": "SELF"
                                               }
                                             },
@@ -6385,7 +8816,8 @@
                                                   "TRASH",
                                                   "EDDIES",
                                                   "LEGENDS",
-                                                  "REMOVED"
+                                                  "REMOVED",
+                                                  "RESOLVING_PROGRAM"
                                                 ]
                                               },
                                               "relation": {
@@ -6446,7 +8878,8 @@
                                           "TRASH",
                                           "EDDIES",
                                           "LEGENDS",
-                                          "REMOVED"
+                                          "REMOVED",
+                                          "RESOLVING_PROGRAM"
                                         ]
                                       }
                                     },
@@ -6466,6 +8899,19 @@
                                       },
                                       "target": {
                                         "oneOf": [
+                                          {
+                                            "type": "object",
+                                            "properties": {
+                                              "kind": {
+                                                "type": "string",
+                                                "const": "FRIENDLY_UNIT_OR_FACE_UP_LEGEND"
+                                              }
+                                            },
+                                            "required": [
+                                              "kind"
+                                            ],
+                                            "additionalProperties": false
+                                          },
                                           {
                                             "type": "object",
                                             "properties": {
@@ -6495,7 +8941,8 @@
                                                   "TRASH",
                                                   "EDDIES",
                                                   "LEGENDS",
-                                                  "REMOVED"
+                                                  "REMOVED",
+                                                  "RESOLVING_PROGRAM"
                                                 ]
                                               },
                                               "relation": {
@@ -6574,6 +9021,19 @@
                                             "properties": {
                                               "kind": {
                                                 "type": "string",
+                                                "const": "FRIENDLY_UNIT_OR_FACE_UP_LEGEND"
+                                              }
+                                            },
+                                            "required": [
+                                              "kind"
+                                            ],
+                                            "additionalProperties": false
+                                          },
+                                          {
+                                            "type": "object",
+                                            "properties": {
+                                              "kind": {
+                                                "type": "string",
                                                 "const": "SELF"
                                               }
                                             },
@@ -6598,7 +9058,8 @@
                                                   "TRASH",
                                                   "EDDIES",
                                                   "LEGENDS",
-                                                  "REMOVED"
+                                                  "REMOVED",
+                                                  "RESOLVING_PROGRAM"
                                                 ]
                                               },
                                               "relation": {
@@ -6701,6 +9162,63 @@
                                             "type": "array",
                                             "items": {
                                               "oneOf": [
+                                                {
+                                                  "type": "object",
+                                                  "properties": {
+                                                    "kind": {
+                                                      "type": "string",
+                                                      "const": "ATTACK_TARGET"
+                                                    },
+                                                    "target": {
+                                                      "oneOf": [
+                                                        {
+                                                          "type": "object",
+                                                          "properties": {
+                                                            "kind": {
+                                                              "type": "string",
+                                                              "const": "CARD"
+                                                            },
+                                                            "cardInstanceId": {
+                                                              "type": "string",
+                                                              "minLength": 1,
+                                                              "maxLength": 200,
+                                                              "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$"
+                                                            }
+                                                          },
+                                                          "required": [
+                                                            "kind",
+                                                            "cardInstanceId"
+                                                          ],
+                                                          "additionalProperties": false
+                                                        },
+                                                        {
+                                                          "type": "object",
+                                                          "properties": {
+                                                            "kind": {
+                                                              "type": "string",
+                                                              "const": "GIG_AREA"
+                                                            },
+                                                            "playerId": {
+                                                              "type": "string",
+                                                              "format": "uuid",
+                                                              "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+                                                            }
+                                                          },
+                                                          "required": [
+                                                            "kind",
+                                                            "playerId"
+                                                          ],
+                                                          "additionalProperties": false
+                                                        }
+                                                      ]
+                                                    }
+                                                  },
+                                                  "required": [
+                                                    "kind",
+                                                    "target"
+                                                  ],
+                                                  "additionalProperties": false
+                                                },
                                                 {
                                                   "type": "object",
                                                   "properties": {
@@ -6930,6 +9448,19 @@
                               "properties": {
                                 "kind": {
                                   "type": "string",
+                                  "const": "GRANT_PRINTED_POWER_TO_HOST"
+                                }
+                              },
+                              "required": [
+                                "kind"
+                              ],
+                              "additionalProperties": false
+                            },
+                            {
+                              "type": "object",
+                              "properties": {
+                                "kind": {
+                                  "type": "string",
                                   "const": "POWER_PER_EQUIPPED_GEAR_DURING_OWN_TURN"
                                 },
                                 "amount": {
@@ -6953,6 +9484,19 @@
                                 },
                                 "target": {
                                   "oneOf": [
+                                    {
+                                      "type": "object",
+                                      "properties": {
+                                        "kind": {
+                                          "type": "string",
+                                          "const": "FRIENDLY_UNIT_OR_FACE_UP_LEGEND"
+                                        }
+                                      },
+                                      "required": [
+                                        "kind"
+                                      ],
+                                      "additionalProperties": false
+                                    },
                                     {
                                       "type": "object",
                                       "properties": {
@@ -6982,7 +9526,8 @@
                                             "TRASH",
                                             "EDDIES",
                                             "LEGENDS",
-                                            "REMOVED"
+                                            "REMOVED",
+                                            "RESOLVING_PROGRAM"
                                           ]
                                         },
                                         "relation": {
@@ -7065,6 +9610,19 @@
                                       "properties": {
                                         "kind": {
                                           "type": "string",
+                                          "const": "FRIENDLY_UNIT_OR_FACE_UP_LEGEND"
+                                        }
+                                      },
+                                      "required": [
+                                        "kind"
+                                      ],
+                                      "additionalProperties": false
+                                    },
+                                    {
+                                      "type": "object",
+                                      "properties": {
+                                        "kind": {
+                                          "type": "string",
                                           "const": "SELF"
                                         }
                                       },
@@ -7089,7 +9647,8 @@
                                             "TRASH",
                                             "EDDIES",
                                             "LEGENDS",
-                                            "REMOVED"
+                                            "REMOVED",
+                                            "RESOLVING_PROGRAM"
                                           ]
                                         },
                                         "relation": {

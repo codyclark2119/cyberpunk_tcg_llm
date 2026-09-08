@@ -1,3 +1,10 @@
+import { isReactDecision, reactEnabled } from "./react-support";
+import { declareBlocker, passReact } from "./rival-reactions";
+import { expireTemporaryPower } from "./temporary-power";
+import { startAttack, continueAttack } from "./combat";
+import { canPlay, canActivate } from "./play-support";
+import { startPlay, continuePlay, activateAbility } from "./play";
+import { changeGigValue } from "./gig-value";
 import { continueSearch } from "./effects";
 import { continueSetup } from "./setup";
 import { setupChoiceLabel } from "./setup-state";
@@ -23,16 +30,16 @@ export function listLegalActions(state: GameState, actor: PlayerId, context: Eng
         return failure("UNKNOWN_PLAYER", "Player is not in match");
     if (!context.content.ruleset.gameplay?.turnSlice && !supportedContent(context))
         return failure("UNSUPPORTED_MECHANICS", "Ability/continuous-effect execution awaits reviewed handlers");
-    if (state.resolution.stage !== "DECISION" && !(context.content.ruleset.gameplay?.turnSlice && state.resolution.stage === "CHOICE" && (state.resolution.choice?.kind === "PAYMENT" || state.resolution.searchContinuation || state.setup)))
+    if (state.resolution.stage !== "DECISION" && !(context.content.ruleset.gameplay?.turnSlice && state.resolution.stage === "CHOICE" && (state.resolution.choice?.kind === "PAYMENT" || state.resolution.searchContinuation || state.resolution.playContinuation || state.setup || state.timing.combat.stage === "ATTACK_TARGET_SELECTION")))
         return failure("UNSUPPORTED_RESOLUTION", "Pending-effect/choice continuation requires a registered reviewed handler");
     if (actor !== state.timing.actingPlayer)
         return success([]);
     const view = new RulesView(valid.value, context);
     const actions: GameAction[] = [];
     const slice = context.content.ruleset.gameplay?.turnSlice;
-    if (state.match.outcome)
+    if (state.match.outcome || state.timing.combat.stage === "COMBAT_RESOLUTION_PENDING" || (state.timing.combat.stage === "RIVAL_REACT" && !reactEnabled(context)))
         return success([]);
-    if (state.setup || state.resolution.searchContinuation) {
+    if (state.setup || state.resolution.searchContinuation || state.resolution.playContinuation || state.timing.combat.stage === "ATTACK_TARGET_SELECTION") {
         const choice = state.resolution.choice!;
         choice.options.forEach((_, index) => actions.push({ actorId: actor, action: { kind: "CHOOSE", choiceId: choice.id, optionIndices: [index] } }));
     }
@@ -46,11 +53,23 @@ export function listLegalActions(state: GameState, actor: PlayerId, context: Eng
             return failure("INVALID_PAYMENT_STATE", "Missing CALL continuation");
         choice.options.forEach((_, index) => actions.push({ actorId: actor, action: { kind: "CHOOSE", choiceId: choice.id, optionIndices: [index] } }));
     }
+    else if (isReactDecision(state, actor, context)) {
+        for (const c of view.faceDownLegends(actor)) if (view.canCallLegend(actor, c.id)) actions.push({ actorId: actor, action: { kind: "CALL_LEGEND", cardInstanceId: c.id } });
+        for (const cardInstanceId of view.listQuickCards(actor)) actions.push({ actorId: actor, action: { kind: "PLAY_CARD", cardInstanceId } });
+        for (const cardInstanceId of view.listBlockers(actor)) actions.push({ actorId: actor, action: { kind: "DECLARE_BLOCKER", cardInstanceId } });
+        actions.push({ actorId: actor, action: { kind: "PASS_REACT" } });
+    }
     else if (state.timing.window === "MAIN") {
         for (const c of Object.values(state.objects.cards))
             if (view.canSellCard(actor, c.id))
                 actions.push({ actorId: actor, action: { kind: "SELL_CARD", cardInstanceId: c.id } });
         if (slice) {
+            for (const card of Object.values(state.objects.cards)) {
+                if (view.isAttackEligible(actor, card.id)) actions.push({ actorId: actor, action: { kind: "DECLARE_ATTACK", cardInstanceId: card.id } });
+                if (canPlay(state, actor, card.id, context)) actions.push({ actorId: actor, action: { kind: "PLAY_CARD", cardInstanceId: card.id } });
+                for (const ability of view.getRevision(card.id)?.mechanics.abilities ?? [])
+                    if (canActivate(state, actor, card.id, ability.id, context)) actions.push({ actorId: actor, action: { kind: "ACTIVATE_ABILITY", sourceInstanceId: card.id, abilityId: ability.id } });
+            }
             for (const c of view.faceDownLegends(actor))
                 if (view.canCallLegend(actor, c.id))
                     actions.push({ actorId: actor, action: { kind: "CALL_LEGEND", cardInstanceId: c.id } });
@@ -59,13 +78,26 @@ export function listLegalActions(state: GameState, actor: PlayerId, context: Eng
     }
     const label = (a: GameAction) => {
         switch (a.action.kind) {
+            case "PASS_REACT": return "End React";
+            case "DECLARE_BLOCKER": return `Block with ${view.getRevision(a.action.cardInstanceId)?.displayName}`;
+            case "DECLARE_ATTACK": return `Attack with ${view.getRevision(a.action.cardInstanceId)?.displayName}`;
+            case "PLAY_CARD": return `Play ${view.getRevision(a.action.cardInstanceId)?.displayName}`;
+            case "ACTIVATE_ABILITY": return `Activate ${view.getRevision(a.action.sourceInstanceId)?.displayName}: Spend to draw 2`;
             case "SELL_CARD": return `Sell ${view.getRevision(a.action.cardInstanceId)?.displayName}`;
             case "CALL_LEGEND": return `Call face-down Legend ${state.players[actor].zones.LEGENDS.indexOf(a.action.cardInstanceId) + 1}`;
             case "ROLL_GIG": return `Roll ${view.getGig(a.action.gigInstanceId).dieType}`;
             case "CHOOSE": {
                 if (state.setup) return setupChoiceLabel(state, a.action.optionIndices[0]);
                 const option = state.resolution.choice!.options[a.action.optionIndices[0]];
+                if (option.kind === "ATTACK_TARGET") return option.target.kind === "CARD" ? `Attack ${view.getRevision(option.target.cardInstanceId)?.displayName} (${option.target.cardInstanceId})` : "Attack rival Gig area";
                 if (state.resolution.searchContinuation) return option.kind === "CARD" ? `Reveal and take ${view.getRevision(option.cardInstanceId)?.displayName}` : "Take no more Gears";
+                if (state.resolution.playContinuation?.phase === "EQUIP" && option.kind === "CARD") return `Equip to ${view.getRevision(option.cardInstanceId)?.displayName}`;
+                if (state.resolution.playContinuation && option.kind === "CARD") return `Give ${view.getRevision(option.cardInstanceId)?.displayName} (${option.cardInstanceId}) -1 power this turn`;
+                if (state.resolution.playContinuation && option.kind === "GIG") {
+                    const gig = view.getGig(option.gigInstanceId);
+                    return `Adjust ${gig.controllerId === actor ? "your" : "rival"} ${gig.dieType} (current ${gig.roll.kind === "ROLLED" ? gig.roll.currentValue : "unrolled"})`;
+                }
+                if (state.resolution.playContinuation && option.kind === "MODE") return option.mode === "KEEP" ? "Adjust by zero (keep current value)" : option.mode === "INCREASE_1" ? "Increase by 1" : "Decrease by 1";
                 if (option.kind !== "PAYMENT")
                     return "Unsupported choice";
                 const source = option.source, zone = source.kind === "EDDIE" ? "EDDIES" : "LEGENDS";
@@ -74,13 +106,26 @@ export function listLegalActions(state: GameState, actor: PlayerId, context: Eng
             default: return a.action.kind;
         }
     };
-    return success(actions.map(a => ({ ...a, actionId: hashCanonical({ version: 1, positionHash: hashPosition(state), seat: state.players[actor].seat, action: a.action }), descriptor: { kind: a.action.kind, label: label(a) } })).sort((a, b) => a.actionId < b.actionId ? -1 : 1));
+    const reactOrder = ["CALL_LEGEND", "PLAY_CARD", "DECLARE_BLOCKER", "PASS_REACT"];
+    return success(actions.map(a => ({ ...a, actionId: hashCanonical({ version: 1, positionHash: hashPosition(state), seat: state.players[actor].seat, action: a.action }), descriptor: { kind: a.action.kind, label: label(a) } })).sort((a, b) => {
+        if (isReactDecision(state, actor, context)) {
+            const kindOrder = reactOrder.indexOf(a.action.kind) - reactOrder.indexOf(b.action.kind);
+            if (kindOrder) return kindOrder;
+            const left = canonicalSerialize(a.action), right = canonicalSerialize(b.action);
+            return left < right ? -1 : left > right ? 1 : 0;
+        }
+        return a.actionId < b.actionId ? -1 : 1;
+    }));
 }
 export function listSellActions(state: GameState, actor: PlayerId, context: EngineContext) { const legal = listLegalActions(state, actor, context); return legal.ok ? success(legal.value.filter(a => a.action.kind === "SELL_CARD")) : legal; }
 export function validateAction(state: GameState, input: GameAction, context: EngineContext): Result<GameAction> {
     const action = GameActionSchema.safeParse(input);
     if (!action.success)
         return failure("INVALID_ACTION", action.error.message);
+    const checked = validateState(state, context);
+    if (!checked.ok) return checked;
+    if (state.timing.combat.stage === "COMBAT_RESOLUTION_PENDING") return failure("UNSUPPORTED_COMBAT_RESOLUTION", "React is closed; fight, damage, defeat and Gig stealing are not implemented");
+    if (state.timing.combat.stage === "RIVAL_REACT" && !reactEnabled(context)) return failure("UNSUPPORTED_RIVAL_REACT", "Attack initiation is complete; defender reactions are not implemented and cannot be auto-passed");
     const legal = listLegalActions(state, action.data.actorId, context);
     if (!legal.ok)
         return legal;
@@ -113,6 +158,31 @@ export function applyAction(state: GameState, action: GameAction, context: Engin
                 mutation.phase("MAIN");
                 break;
             }
+            case "PASS_REACT": {
+                const result = passReact(mutation, actor);
+                if (!result.ok) return result;
+                break;
+            }
+            case "DECLARE_BLOCKER": {
+                const result = declareBlocker(mutation, actor, action.action.cardInstanceId);
+                if (!result.ok) return result;
+                break;
+            }
+            case "DECLARE_ATTACK": {
+                const result = startAttack(mutation, actor, action.action.cardInstanceId);
+                if (!result.ok) return result;
+                break;
+            }
+            case "PLAY_CARD": {
+                const result = startPlay(mutation, actor, action.action.cardInstanceId);
+                if (!result.ok) return result;
+                break;
+            }
+            case "ACTIVATE_ABILITY": {
+                const result = activateAbility(mutation, actor, action.action.sourceInstanceId, action.action.abilityId);
+                if (!result.ok) return result;
+                break;
+            }
             case "CALL_LEGEND": {
                 const cost = context.content.ruleset.gameplay.turnSlice.callCost;
                 const candidates = view.paymentCandidates(actor, cost, []);
@@ -122,6 +192,16 @@ export function applyAction(state: GameState, action: GameAction, context: Engin
                 break;
             }
             case "CHOOSE": {
+                if (s.timing.combat.stage === "ATTACK_TARGET_SELECTION") {
+                    const result = continueAttack(mutation, action.action.optionIndices[0]);
+                    if (!result.ok) return result;
+                    break;
+                }
+                if (s.resolution.playContinuation) {
+                    const result = continuePlay(mutation, action.action.optionIndices[0]);
+                    if (!result.ok) return result;
+                    break;
+                }
                 if (s.setup) {
                     const resolved = continueSetup(mutation, action.action.optionIndices[0]);
                     if (!resolved.ok) return resolved;
@@ -130,7 +210,10 @@ export function applyAction(state: GameState, action: GameAction, context: Engin
                 if (s.resolution.searchContinuation) {
                     const result = continueSearch(mutation, action.action.optionIndices[0]);
                     if (!result.ok) return result;
-                    if (!s.resolution.searchContinuation) mutation.finishContinuedEffect();
+                    if (!s.resolution.searchContinuation) {
+                        const finished = mutation.finishContinuedEffect();
+                        if (!finished.ok) return finished;
+                    }
                     break;
                 }
                 const pending = s.resolution.callContinuation!, option = s.resolution.choice!.options[action.action.optionIndices[0]];
@@ -147,6 +230,13 @@ export function applyAction(state: GameState, action: GameAction, context: Engin
                 if ((s.timing.emptyFixerStarts ?? 0) >= 2)
                     return failure("UNSUPPORTED_OVERTIME", "Two consecutive starts with both Fixers empty; overtime requires a reviewed implementation");
                 mutation.phase("TURN_END");
+                if (context.content.ruleset.gameplay.turnSlice.cardPlay === "NONCOMBAT_PLAY_V1")
+                    for (const card of Object.values(s.objects.cards))
+                        if (card.statuses.includes("LAG")) {
+                            card.statuses = card.statuses.filter(status => status !== "LAG");
+                            mutation.emit({ kind: "LAG_REMOVED", cardInstanceId: card.id });
+                        }
+                expireTemporaryPower(mutation);
                 mutation.emit({ kind: "TURN_ENDED", playerId: actor, turn: s.timing.turn });
                 s.timing.activePlayer = s.match.playerOrder[(s.players[actor].seat + 1) % s.match.playerOrder.length];
                 s.timing.turn++;
@@ -201,6 +291,8 @@ export function resolveActionId(state: GameState, actor: PlayerId, actionId: str
     const legal = listLegalActions(state, actor, context);
     if (!legal.ok)
         return legal;
+    if (state.timing.combat.stage === "COMBAT_RESOLUTION_PENDING") return failure("UNSUPPORTED_COMBAT_RESOLUTION", "React is closed; fight, damage, defeat and Gig stealing are not implemented");
+    if (state.timing.combat.stage === "RIVAL_REACT" && !reactEnabled(context)) return failure("UNSUPPORTED_RIVAL_REACT", "No supported defender reactions; combat has not resolved");
     const found = legal.value.find(a => a.actionId === actionId);
     return found ? success({ actorId: found.actorId, action: found.action }) : failure("UNKNOWN_ACTION_ID", "Re-enumerate actions from the authoritative current state");
 }
@@ -209,18 +301,10 @@ export function modifyGigValue(state: GameState, id: GigInstanceId, delta: numbe
     const valid = validateState(state, context);
     if (!valid.ok)
         return valid;
-    const bounds = context.content.ruleset.gameplay?.gigValueBounds;
-    if (!bounds || bounds === "UNSUPPORTED")
-        return failure("UNSUPPORTED_GIG_BOUNDS", "Reviewed Gig bounds policy required");
-    const next = GameStateSchema.parse(state), g = next.objects.gigs[id];
-    if (!g || g.roll.kind !== "ROLLED" || !Number.isSafeInteger(delta))
-        return failure("INVALID_GIG_CHANGE", "A rolled Gig and integer delta are required");
-    const previous = g.roll.currentValue, current = previous + delta;
-    if (current < bounds.min || current > bounds.max)
-        return failure("GIG_VALUE_OUT_OF_BOUNDS", "Value rejected, never silently clamped");
-    g.roll.currentValue = current;
+    const next = GameStateSchema.parse(state), changed = changeGigValue(next, id, delta, context);
+    if (!changed.ok) return changed;
     next.match.version++;
-    const event = GameEventSchema.parse({ sequence: ++next.match.eventSequence, payload: { kind: "GIG_VALUE_CHANGED", gigInstanceId: id, previous, current } });
+    const event = GameEventSchema.parse({ sequence: ++next.match.eventSequence, payload: changed.value });
     const checked = validateState(next, context);
     return checked.ok ? success({ state: checked.value, events: [event] }) : checked;
 }
@@ -230,6 +314,9 @@ export function advanceResolution(state: GameState, context: EngineContext): Res
     const valid = validateState(state, context);
     if (!valid.ok)
         return valid;
+    if (state.timing.combat.stage === "COMBAT_RESOLUTION_PENDING") return failure("UNSUPPORTED_COMBAT_RESOLUTION", "React is closed; fight, damage, defeat and Gig stealing are not implemented");
+    if (state.timing.combat.stage === "RIVAL_REACT" && !reactEnabled(context)) return failure("UNSUPPORTED_RIVAL_REACT", "React requires a reviewed defender-action implementation");
+    if (state.timing.combat.stage === "RIVAL_REACT") return failure("PLAYER_DECISION_REQUIRED", "Defender must finish the current reaction or select an explicit React action, including PASS_REACT");
     return state.resolution.stage === "DECISION" ? valid : failure("UNSUPPORTED_RESOLUTION_POLICY", "Current effect must finish before discovered triggers; strategic ordering needs a PendingChoice. No implicit LIFO ordering.");
 }
 /** Effect primitives require a trusted rules handler to select the target; never auto-pick a die. */
@@ -268,3 +355,5 @@ export function transferGigControl(state: GameState, id: GigInstanceId, controll
 export * from "./rng";
 export * from "./initialization";
 export * from "./win";
+
+export { moveCardForEffect } from "./card-movement";

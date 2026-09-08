@@ -7,6 +7,10 @@ export const FormatPolicySchema = z.strictObject({
     legendUniqueness: z.enum(["CARD_ID", "DECKBUILDING_IDENTITY"])
 });
 export const TurnSlicePolicySchema = z.strictObject({
+    cardPlay: z.literal("NONCOMBAT_PLAY_V1").optional(),
+    combat: z.literal("COMBAT_ATTACK_V1").optional(),
+    react: z.literal("COMBAT_REACT_V1").optional(),
+            gear: z.literal("REVIEWED_GEAR_V1").optional(),
     schemaVersion: z.literal(1), rulesSourceHash: z.string().regex(/^[a-f0-9]{64}$/),
     drawPerTurn: z.number().int().positive(), callLimitPerTurn: z.number().int().nonnegative(), callCost: z.number().int().nonnegative().max(1000),
     readyZones: z.array(z.enum(["LEGENDS", "BATTLEFIELD", "EDDIES"])),
@@ -23,7 +27,7 @@ export const GameplayPolicySchema = z.strictObject({
     turnSlice: TurnSlicePolicySchema.optional(),
     firstPlayerSpentLegends: z.number().int().nonnegative(), openingHand: z.number().int().nonnegative(),
     sellLimitPerTurn: z.number().int().nonnegative(), legendPaymentValue: z.number().int().nonnegative().nullable(),
-    gigValueBounds: z.union([z.literal("UNSUPPORTED"), z.strictObject({ min: z.number().int(), max: z.number().int() }).refine(x => x.min <= x.max)]),
+    gigValueBounds: z.union([z.literal("UNSUPPORTED"), z.literal("DIE_FACES_V1"), z.strictObject({ min: z.number().int(), max: z.number().int() }).refine(x => x.min <= x.max)]),
     triggerOrdering: z.enum(["UNSUPPORTED", "CONTROLLER_CHOICE"]),
     win: z.union([z.literal("UNSUPPORTED"), z.strictObject({ streetCred: z.number().int().positive(), timing: z.literal("STABLE_DECISION"), simultaneous: z.literal("UNSUPPORTED") })])
 });

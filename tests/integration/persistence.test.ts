@@ -1,7 +1,15 @@
+import { reactContext, reactInput } from "../react-fixture";
+import { reactReplay } from "../react-replay";
+import { noncombatContext, noncombatInput } from "../noncombat-fixture";
+import { noncombatReplay } from "../noncombat-replay";
+import { gearContext, gearInput, MANTIS } from "../gear-fixture";
+import { gearReplay } from "../gear-replay";
+import { combatContext, combatInput } from "../combat-fixture";
+import { combatReplay } from "../combat-replay";
 import { setupContext, setupInput } from "../setup-fixture";
 import { unwrap } from "../turn-replay";
 import { turnContext, turnInput } from "../turn-fixture";
-import { createGameWithEvents, applyAction, listLegalActions } from "@tcg/engine";
+import { createGameWithEvents, applyAction, listLegalActions, hashReplayState, hashPosition, RulesView } from "@tcg/engine";
 import { fixtureContext, fixtureState } from "../contract-fixture";
 import test from "node:test";
 import assert from "node:assert/strict";
@@ -142,6 +150,99 @@ test("Postgres ledger: running, conflict, replay, transactional rollback and sta
         }
         assert.deepEqual(await match.history(current.match.id), allEvents);
         assert.deepEqual(await match.find(current.match.id), current);
+        // Persist each actual noncombat transition, including intermediate payment/target/amount boundaries.
+        const playContext = noncombatContext(), trace = noncombatReplay();
+        const playInitial = unwrap(createGameWithEvents({ ...noncombatInput("noncombat-play-34"), matchId: randomUUID(), players: [actor, otherActor] }, playContext));
+        assert.equal((await match.create(playInitial.state, playInitial.events)).ok, true);
+        let playState = playInitial.state;
+        const playEvents = [...playInitial.events];
+        for (const step of trace.steps) {
+            const transition = unwrap(applyAction(playState, { actorId: playState.timing.actingPlayer, action: step.action.action }, playContext));
+            assert.equal((await match.save(transition.state, playState.match.version, transition.events)).ok, true);
+            playEvents.push(...transition.events);
+            playState = transition.state;
+            assert.deepEqual(await match.find(playState.match.id), playState);
+        }
+        assert.deepEqual(await match.history(playState.match.id), playEvents);
+        assert.ok(playEvents.some(e => e.payload.kind === "GIG_VALUE_CHANGED"));
+        assert.ok(playEvents.some(e => e.payload.kind === "ABILITY_ACTIVATED"));
+        // Persist the complete search -> hand -> play -> payment -> equip sequence, including choices.
+        const equipContext = gearContext(), equipTrace = gearReplay();
+        const equipInitial = unwrap(createGameWithEvents({ ...gearInput("gear-equip-44"), matchId: randomUUID(), players: [actor, otherActor] }, equipContext));
+        assert.equal((await match.create(equipInitial.state, equipInitial.events)).ok, true);
+        let equipState = equipInitial.state;
+        const equipEvents = [...equipInitial.events];
+        for (const step of equipTrace.steps) {
+            const transition = unwrap(applyAction(equipState, { actorId: equipState.timing.actingPlayer, action: step.action.action }, equipContext));
+            assert.equal((await match.save(transition.state, equipState.match.version, transition.events)).ok, true);
+            equipEvents.push(...transition.events);
+            equipState = transition.state;
+            const stored = await match.find(equipState.match.id);
+            assert.deepEqual(stored, equipState);
+            assert.ok(stored);
+            assert.equal(hashReplayState(stored), hashReplayState(equipState));
+            assert.equal(hashPosition(stored), step.positionHash); // Transport UUIDs differ from the replay.
+        }
+        assert.deepEqual(await match.history(equipState.match.id), equipEvents);
+        assert.deepEqual(equipEvents.map(e => e.sequence), Array.from({ length: equipEvents.length }, (_, i) => i + 1));
+        const searched = equipEvents.flatMap(e => e.payload.kind === "CARD_MOVED" && e.payload.from.zone === "DECK" && e.payload.to.zone === "HAND" && equipState.objects.cards[e.payload.cardInstanceId].cardId === MANTIS ? [e.payload.cardInstanceId] : []);
+        const equipped = equipEvents.flatMap(e => e.payload.kind === "GEAR_ATTACHED" ? [e.payload.gearInstanceId] : []);
+        assert.deepEqual(equipped, equipTrace.searchedGear);
+        assert.ok(equipped.every(id => searched.includes(id)));
+        assert.deepEqual(equipState.objects.cards[equipTrace.royceId].attachments, equipped);
+        assert.equal(new RulesView(equipState, equipContext).getEffectivePower(equipTrace.royceId), 14);
+        assert.equal(equipState.timing.step, "MAIN");
+        // Persist attack selection and the final unresolved React boundary, without advancing combat.
+        const attackContext = combatContext(), attackTrace = combatReplay();
+        const attackInitial = unwrap(createGameWithEvents({ ...combatInput("combat-attack-46"), matchId: randomUUID(), players: [actor, otherActor] }, attackContext));
+        assert.equal((await match.create(attackInitial.state, attackInitial.events)).ok, true);
+        let attackState = attackInitial.state;
+        const attackEvents = [...attackInitial.events];
+        for (const step of attackTrace.steps) {
+            const transition = unwrap(applyAction(attackState, { actorId: attackState.timing.actingPlayer, action: step.action.action }, attackContext));
+            assert.equal((await match.save(transition.state, attackState.match.version, transition.events)).ok, true);
+            attackEvents.push(...transition.events);
+            attackState = transition.state;
+            const stored = await match.find(attackState.match.id);
+            assert.deepEqual(stored, attackState); assert.ok(stored);
+            assert.equal(hashReplayState(stored), hashReplayState(attackState));
+            assert.equal(hashPosition(stored), step.positionHash);
+        }
+        assert.deepEqual(await match.history(attackState.match.id), attackEvents);
+        assert.deepEqual(attackEvents.map(e => e.sequence), Array.from({ length: attackEvents.length }, (_, i) => i + 1));
+        assert.equal(attackState.timing.combat.stage, "RIVAL_REACT");
+        assert.deepEqual(unwrap(listLegalActions(attackState, otherActor, attackContext)), []);
+        const attackView = new RulesView(attackState, attackContext);
+        assert.equal(attackView.getCombatAttacker()?.id, attackTrace.attackerId);
+        assert.deepEqual(attackView.getCombatTarget(), attackTrace.finalState.timing.combat.stage === "RIVAL_REACT" ? attackTrace.finalState.timing.combat.target : null);
+        assert.deepEqual(attackState.objects.cards[attackTrace.attackerId].attachments, attackTrace.finalState.objects.cards[attackTrace.attackerId].attachments);
+        assert.equal(attackView.getEffectivePower(attackTrace.attackerId), 5);
+        assert.equal(attackEvents.filter(e => e.payload.kind === "ATTACK_DECLARED").length, 1);
+        assert.equal(attackEvents.at(-1)?.payload.kind, "RIVAL_REACT_OPENED");
+        // Persist every React action/continuation and the closed unresolved combat boundary.
+        const reactCtx = reactContext(), reactTrace = reactReplay();
+        const reactInitial = unwrap(createGameWithEvents({ ...reactInput(reactTrace.initialization.seed), matchId: randomUUID(), players: [actor, otherActor] }, reactCtx));
+        assert.equal((await match.create(reactInitial.state, reactInitial.events)).ok, true);
+        let reactState = reactInitial.state;
+        const reactEvents = [...reactInitial.events];
+        for (const step of reactTrace.steps) {
+            const transition = unwrap(applyAction(reactState, { actorId: reactState.timing.actingPlayer, action: step.action.action }, reactCtx));
+            assert.equal((await match.save(transition.state, reactState.match.version, transition.events)).ok, true);
+            reactEvents.push(...transition.events); reactState = transition.state;
+            const stored = await match.find(reactState.match.id);
+            assert.deepEqual(stored, reactState); assert.ok(stored);
+            assert.equal(hashReplayState(stored), hashReplayState(reactState));
+            assert.equal(hashPosition(stored), step.positionHash);
+        }
+        assert.deepEqual(await match.history(reactState.match.id), reactEvents);
+        assert.deepEqual(reactEvents.map(e => e.sequence), Array.from({ length: reactEvents.length }, (_, i) => i + 1));
+        assert.equal(reactState.timing.combat.stage, "COMBAT_RESOLUTION_PENDING");
+        assert.deepEqual(new RulesView(reactState, reactCtx).getCombatTarget(), new RulesView(reactTrace.finalState, reactCtx).getCombatTarget());
+        assert.deepEqual(reactState.temporaryModifiers, reactTrace.finalState.temporaryModifiers);
+        assert.equal(new RulesView(reactState, reactCtx).getEffectivePower(reactTrace.attackerId), 4);
+        assert.equal(reactEvents.at(-1)?.payload.kind, "COMBAT_RESOLUTION_PENDING");
+        assert.ok(reactEvents.some(e => e.payload.kind === "BLOCKER_DECLARED"));
+        assert.deepEqual(unwrap(listLegalActions(reactState, otherActor, reactCtx)), []);
         // Inject an event insert failure AFTER the state UPDATE to verify transaction rollback.
         await pool.query("CREATE FUNCTION reject_test_event() RETURNS trigger LANGUAGE plpgsql AS $$ BEGIN RAISE EXCEPTION 'event insert failure'; END $$");
         await pool.query("CREATE TRIGGER reject_test_event BEFORE INSERT ON match_events FOR EACH ROW EXECUTE FUNCTION reject_test_event()");

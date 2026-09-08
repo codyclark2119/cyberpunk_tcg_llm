@@ -1,0 +1,397 @@
+{
+  "source": "Pinned local comprehensive rules; implementation review, not human-certified gold",
+  "sha256": "054d2d2a4664e5b560304e0962e71b195467ad097cc4c62b2698fc57467a28dd",
+  "processedSha256": "1f299c9cbe2657c9d088ae4b3a812b85e46c3fd2659579229635959c59a20e19",
+  "errataSha256": "1203a6c268c94d9d670a9cc145f739957fd018fa23eab86628bac94984ce1d75",
+  "processedErrataSha256": "16304146074363480e2c22639c9799b9d4302118c669e85e9f475b4a1bf6a340",
+  "rules": [
+    {
+      "id": "1.7",
+      "text": "1.7. Every game piece has an owner. Every game piece in play also has a controller."
+    },
+    {
+      "id": "1.7.1",
+      "text": "1.7.1. You “own” the pieces you bring to the game (your deck, side deck, Gig dice, etc.). You’re the “owner” of these pieces."
+    },
+    {
+      "id": "1.7.2",
+      "text": "1.7.2. You “control” the pieces currently in your friendly Gig area, field, Legends area, and Eddies area. You’re the “controller” of these pieces, even if you’re not the owner."
+    },
+    {
+      "id": "1.7.2.1",
+      "text": "1.7.2.1. Pieces you control are considered “friendly” pieces."
+    },
+    {
+      "id": "1.7.2.2",
+      "text": "1.7.2.2. Pieces your Rival controls are considered “rival” pieces."
+    },
+    {
+      "id": "1.7.3",
+      "text": "1.7.3. Game pieces can change controllers, but can never change owners."
+    },
+    {
+      "id": "1.7.3.1",
+      "text": "1.7.3.1. When you take control of a Rival’s game piece, follow the rules in Respect Your Rival."
+    },
+    {
+      "id": "1.7.3.2",
+      "text": "1.7.3.2. At the end of the game, return all game pieces to their respective owners."
+    },
+    {
+      "id": "2.3",
+      "text": "2.3. Resolve card effects in the order they appear on the card."
+    },
+    {
+      "id": "3.17",
+      "text": "3.17. ### Power"
+    },
+    {
+      "id": "3.17.1",
+      "text": "3.17.1. A card’s “power” determines its success in stealing and fighting. See ATTACK, FIGHT, AND STEAL."
+    },
+    {
+      "id": "3.17.2",
+      "text": "3.17.2. A Unit or Legend’s power is equal to the power printed on the card plus the power of its equipped Gear and any current effect modifiers."
+    },
+    {
+      "id": "3.17.3",
+      "text": "3.17.3. A Gear’s power modifies the Unit or Legend it is equipped to."
+    },
+    {
+      "id": "3.17.3.1",
+      "text": "3.17.3.1. Units and Legends inherit power from Gears equipped to them."
+    },
+    {
+      "id": "3.17.3.2",
+      "text": "3.17.3.2. A Gear’s power is equal to the power printed on the card."
+    },
+    {
+      "id": "3.17.3.3",
+      "text": "3.17.3.3. A Gear’s power is not modified by card effects, unless the effect specifically targets the Gear."
+    },
+    {
+      "id": "3.17.4",
+      "text": "3.17.4. “Base power” refers to the printed power on a Legend, Unit, or Gear, separate from any applied or inherited modifiers."
+    },
+    {
+      "id": "4.14",
+      "text": "4.14. To play a Program, reveal the card to your Rival, pay its cost, resolve its effect(s), and immediately move it to your trash."
+    },
+    {
+      "id": "4.14.1",
+      "text": "4.14.1. When you reveal a played Program, place it on the table to allow your Rival to read and understand its effects before you resolve it."
+    },
+    {
+      "id": "4.14.2",
+      "text": "4.14.2. After you pay a Program’s cost, the card is considered outside of your hand, field, trash, or any other game area until you finish resolving its effects (though it’s not considered “Removed from Play”). After you resolve the program, it enters your trash."
+    },
+    {
+      "id": "8.12",
+      "text": "8.12. ### Call a Legend\n\nAs an action during your Main phase, you may spend 1 €$ to Call a Legend. See Call a Legend."
+    },
+    {
+      "id": "8.12.1",
+      "text": "8.12.1. You may only take the “Call a Legend” game action once per turn."
+    },
+    {
+      "id": "8.12.2",
+      "text": "8.12.2. You may also “Call a Legend” during the React Step during your Rival’s turn."
+    },
+    {
+      "id": "9.6",
+      "text": "9.6. After all pending effects are resolved, if the attacker or the defending Unit is no longer in the field area, the attack ends. See ATTACK, FIGHT, AND STEAL > Ending an Attack. Otherwise, the attack continues; proceed to the React Step."
+    },
+    {
+      "id": "9.7",
+      "text": "9.7. During the “React Step” of an attack, the defending player has an opportunity to react. They may take as many reactions as they want, in any order they choose."
+    },
+    {
+      "id": "9.7.1",
+      "text": "9.7.1. You may only take reactions during the React Step of an attack, and only if you are the defending player."
+    },
+    {
+      "id": "9.8",
+      "text": "9.8. You may Call a Legend as a reaction. See Call a Legend."
+    },
+    {
+      "id": "9.9",
+      "text": "9.9. You may activate the [BLOCKER] effect on a ready Unit as a reaction."
+    },
+    {
+      "id": "9.9.1",
+      "text": "9.9.1. When a Unit uses [BLOCKER], it becomes the defending Unit, fully replacing the previous attack target."
+    },
+    {
+      "id": "9.10",
+      "text": "9.10. You may activate any effects with the [QUICK] keyword as a reaction. See TERMS > Effect Keywords > QUICK."
+    },
+    {
+      "id": "9.10.1",
+      "text": "9.10.1. If an effect on a Program in your hand has the [QUICK] keyword, you may play that Program as a reaction."
+    },
+    {
+      "id": "9.11",
+      "text": "9.11. If a reaction triggers one or more effects, those effects become pending. Both players must resolve all pending effects before the defending player may take another reaction. See EFFECTS > Triggered Effects."
+    },
+    {
+      "id": "9.12",
+      "text": "9.12. At any point during the React Step, while not taking a reaction and while there are no effects pending resolution, the defending player may choose to end the React Step."
+    },
+    {
+      "id": "9.13",
+      "text": "9.13. If at any point the attacker or the defending Unit is no longer in the field area, the attack ends. See ATTACK, FIGHT, AND STEAL > Ending an Attack."
+    },
+    {
+      "id": "9.14",
+      "text": "9.14. When the React Step ends, the attack continues. If the attack target is a Unit, proceed to the Fight Step. If the attack target is a Gig area, proceed to the Steal Step."
+    },
+    {
+      "id": "9.26",
+      "text": "9.26. An attack ends if any of the following are true:"
+    },
+    {
+      "id": "9.26.1",
+      "text": "9.26.1. The attacking Unit is no longer in the field area."
+    },
+    {
+      "id": "9.26.2",
+      "text": "9.26.2. The attack target is no longer in the area it was attacked in."
+    },
+    {
+      "id": "9.26.3",
+      "text": "9.26.3. The attack target is no longer a legal attack target for the attacking Unit."
+    },
+    {
+      "id": "9.26.4",
+      "text": "9.26.4. An effect has ended the attack."
+    },
+    {
+      "id": "9.27",
+      "text": "9.27. An attack can end before reaching the React Step, Fight Step or Steal Step."
+    },
+    {
+      "id": "9.27.1",
+      "text": "9.27.1. If an attack ends before reaching the React Step, Fight Step or Steal Step, no fight happens and no Gigs are stolen."
+    },
+    {
+      "id": "9.27.2",
+      "text": "9.27.2. If an attack ends while an effect or pending effect is resolving, finish resolving that effect or pending effect."
+    },
+    {
+      "id": "9.28",
+      "text": "9.28. When an attack ends, resolve any pending effects that are already pending for the current timing window."
+    },
+    {
+      "id": "9.29",
+      "text": "9.29. After an attack ends and all effects and pending effects for the current timing window have resolved, remove effects that last “while attacking,” “while stealing,” “while fighting” and variations thereof. The turn player’s Main Phase continues."
+    },
+    {
+      "id": "10.2",
+      "text": "10.2. To “resolve” an effect, follow the instructions of that effect in the order they appear."
+    },
+    {
+      "id": "10.2.1",
+      "text": "10.2.1. Always resolve as much of an effect as possible. See GOLDEN RULES > Resolve as Much as Possible."
+    },
+    {
+      "id": "10.2.2",
+      "text": "10.2.2. If an effect instructs both players to act at the same time, the turn player performs their actions first, followed by their Rival."
+    },
+    {
+      "id": "10.2.3",
+      "text": "10.2.3. Once an effect starts resolving, you cannot play cards, activate effects, or resolve other pending effects until the current effect finishes resolving."
+    },
+    {
+      "id": "10.2.4",
+      "text": "10.2.4. Effects cannot interrupt the activation or resolution of other effects. If an effect triggers in the middle of an activation or resolution, it becomes “pending resolution.” See EFFECTS > Pending Resolution."
+    },
+    {
+      "id": "10.2.5",
+      "text": "10.2.5. After an effect resolves, perform any required rule processing before resolving a new one or taking any actions."
+    },
+    {
+      "id": "10.6",
+      "text": "10.6. An effect is “invalid” if it cannot apply according to its text, the game rules, or the current game state."
+    },
+    {
+      "id": "10.6.1",
+      "text": "10.6.1. If all of an effect is invalid, ignore that effect."
+    },
+    {
+      "id": "10.6.2",
+      "text": "10.6.2. If part of an effect is invalid, ignore the invalid part and resolve as much of the remaining effect as possible."
+    },
+    {
+      "id": "10.6.3",
+      "text": "10.6.3. Even if an effect is invalid, it is still considered an effect on the card."
+    },
+    {
+      "id": "10.23",
+      "text": "10.23. If a persistent effect has a duration, it applies only for that duration.\n\n> **EXAMPLE:** A Unit's effect text reads \"Other friendly Units have +2 power while attacking.” The Unit only gains +2 from the moment the Unit attacks until the attack ends."
+    },
+    {
+      "id": "10.23.1",
+      "text": "10.23.1. When a persistent effect’s duration ends, that effect stops applying immediately once there are no other pending effects."
+    },
+    {
+      "id": "10.31",
+      "text": "10.31. If an effect instructs a player to choose, select, or otherwise make a choice, that choice is made when the effect instructs the player to make that choice."
+    },
+    {
+      "id": "10.31.1",
+      "text": "10.31.1. If an effect requires a choice and no legal choice can be made, that choice is not made."
+    },
+    {
+      "id": "10.31.2",
+      "text": "10.31.2. If an effect requires you to choose a specific number of targets, you must choose that number of targets. If you can’t, choose as many valid targets as possible up to that number instead."
+    },
+    {
+      "id": "10.31.3",
+      "text": "10.31.3. If an effect requires a player to choose a number, that player must choose a non-negative whole number."
+    },
+    {
+      "id": "11.3",
+      "text": "11.3. ### Lag"
+    },
+    {
+      "id": "11.3.1",
+      "text": "11.3.1. Lag is a condition applied to Units when they enter the field. Units with Lag are also called “lagging.”"
+    },
+    {
+      "id": "11.3.1.1",
+      "text": "11.3.1.1. Lagging Units can’t attack."
+    },
+    {
+      "id": "11.3.1.2",
+      "text": "11.3.1.2. Lagging Units can’t activate [Spend Icon] effects."
+    },
+    {
+      "id": "11.3.2",
+      "text": "11.3.2. At the end of each turn, all Units lose the “Lag” condition."
+    },
+    {
+      "id": "11.11",
+      "text": "11.11. ### Call a Legend"
+    },
+    {
+      "id": "11.11.1",
+      "text": "11.11.1. “Call a Legend” is a game action in which you pay 1 €$ to flip a face-down Legend face-up."
+    },
+    {
+      "id": "11.11.1.1",
+      "text": "11.11.1.1. You may choose any one (1) friendly face-down Legend in your Legends area."
+    },
+    {
+      "id": "11.11.1.2",
+      "text": "11.11.1.2. A Legend flipped face-up through the Call a Legend action is a “called” Legend."
+    },
+    {
+      "id": "11.11.1.3",
+      "text": "11.11.1.3. The called Legend maintains its orientation (spent or ready) when flipped face-up."
+    },
+    {
+      "id": "11.11.1.4",
+      "text": "11.11.1.4. When you flip a Legend face up this way it activates any [CALL] keyword effects on that Legend. See [CALL]."
+    },
+    {
+      "id": "11.11.2",
+      "text": "11.11.2. You may only Call a Legend once per turn."
+    },
+    {
+      "id": "11.11.2.1",
+      "text": "11.11.2.1. You may Call a Legend as an action during your main phase."
+    },
+    {
+      "id": "11.11.2.2",
+      "text": "11.11.2.2. You may Call a Legend as a reaction when a rival Unit attacks."
+    },
+    {
+      "id": "11.15",
+      "text": "11.15. ### [Spend Icon] (Spend Icon)"
+    },
+    {
+      "id": "11.15.1",
+      "text": "11.15.1. The [Spend Icon] symbol is shorthand for an activation cost. It means: “Spend this Unit or Legend to activate the following effect.”\n\n> **EXAMPLE:** A friendly Unit has the effect “[Spend Icon] Draw 1.” The [Spend Icon] symbol is an activation trigger. You must specifically spend this Unit as a cost. If you do, you draw a card."
+    },
+    {
+      "id": "11.15.2",
+      "text": "11.15.2. To activate a [Spend Icon] effect, you must spend the card with the express purpose of paying its activation cost. When you spend a Unit or Legend with this symbol for any other reason, it does not trigger the [Spend Icon] effect."
+    },
+    {
+      "id": "11.15.3",
+      "text": "11.15.3. After paying the cost to use a [Spend Icon] effect, immediately resolve the effect."
+    },
+    {
+      "id": "11.15.3.1",
+      "text": "11.15.3.1. If a [Spend Icon] effect also has a condition, the condition must be met at the time of activation and resolution."
+    },
+    {
+      "id": "11.15.3.2",
+      "text": "11.15.3.2. If additional effects conditions are met in the process of using a [Spend Icon:] effect, resolve the [Spend Icon] effect, then resolve any other pending effects."
+    },
+    {
+      "id": "11.24",
+      "text": "11.24. ### [BLOCKER]"
+    },
+    {
+      "id": "11.24.1",
+      "text": "11.24.1. The [BLOCKER] keyword is shorthand for “When a rival Unit attacks, you may spend this Unit to redirect the attack to it instead.“"
+    },
+    {
+      "id": "11.24.2",
+      "text": "11.24.2. Activate [BLOCKER] as a reaction during the React Step of your Rival’s attack action."
+    },
+    {
+      "id": "11.24.3",
+      "text": "11.24.3. When a Unit uses [BLOCKER], it becomes the target of the attacking Unit’s current attack."
+    },
+    {
+      "id": "11.26",
+      "text": "11.26. ### [QUICK]"
+    },
+    {
+      "id": "11.26.1",
+      "text": "11.26.1. The [QUICK] keyword is shorthand for “You may also activate this effect (or play this Program) as a reaction to a rival Unit’s attack.”"
+    },
+    {
+      "id": "11.26.1.1",
+      "text": "11.26.1.1. A card with the [QUICK] keyword alongside no other effect text means the card can be played during the React Step by paying its cost."
+    },
+    {
+      "id": "11.26.1.2",
+      "text": "11.26.1.2. A card with the [QUICK] keyword alongside other effect text means “While this card is face-up on the field, you can use this effect during the React Step by paying its cost.”"
+    },
+    {
+      "id": "11.26.2",
+      "text": "11.26.2. You may activate a [QUICK] effect as an action during your Main Phase or as a reaction during the React Step of your Rival’s attack action."
+    },
+    {
+      "id": "11.26.3",
+      "text": "11.26.3. You must still pay any associated costs no matter when you play the effect."
+    },
+    {
+      "id": "2.10",
+      "text": "2.10. A game value can be a negative number."
+    },
+    {
+      "id": "8.16",
+      "text": "8.16. When your turn ends, you must resolve any end of turn effects in this order."
+    },
+    {
+      "id": "8.16.1",
+      "text": "8.16.1. Resolve effects that occur “at the end of your turn,” “at the end of each turn,” and variations thereof."
+    },
+    {
+      "id": "8.16.2",
+      "text": "8.16.2. Remove effects that last “this turn” and variations thereof."
+    }
+  ],
+  "decisions": {
+    "actor": "Defender only (9.7.1); no alternating priority.",
+    "repeat": "Any number/order (9.7), subject to ordinary cost/readiness and one CALL per global turn. Distinct ready Blockers may replace the target repeatedly; no additional limit.",
+    "lag": "11.3.1.1/2 prohibit attacking and Spend-icon effects. BLOCKER (11.24) is a distinct keyword effect; Lag does not prohibit blocking.",
+    "quick": "Floor It is a Program under 9.10.1/4.14, playable MAIN or defender React under 11.26.2; 11.26.1.2 field-effect wording does not override the explicit Program rule.",
+    "pass": "9.12 ends React irrevocably for this attack; 9.14 fight/steal is the next separately unsupported boundary.",
+    "duration": "Floor It says this turn: additive modifier survives attack end and expires at global turn end (8.16.2). The local snapshot does not settle modifier persistence across leave-and-return; the trusted movement helper explicitly rejects affected target departures pending separate review."
+  }
+}

@@ -1,15 +1,21 @@
 import { z } from "zod";
 import { CardInstanceIdSchema, GigInstanceIdSchema, PlayerIdSchema } from "./identity";
-export const ZoneSchema = z.enum(["DECK", "HAND", "BATTLEFIELD", "TRASH", "EDDIES", "LEGENDS", "REMOVED"]);
+export const GameAreaSchema = z.enum(["DECK", "HAND", "BATTLEFIELD", "TRASH", "EDDIES", "LEGENDS", "REMOVED"]);
+// Technical object location, explicitly NOT a game area or Removed from Play (4.14.2).
+export const ZoneSchema = z.enum([...GameAreaSchema.options, "RESOLVING_PROGRAM"]);
 export const ZoneRefSchema = z.strictObject({ playerId: PlayerIdSchema, zone: ZoneSchema });
 export const KeywordSchema = z.enum(["GO_SOLO", "QUICK", "BLOCKER", "ADRENALINE"]);
 export const TriggerSchema = z.enum(["WHEN_SOLD", "WHEN_CALLED", "WHEN_PLAYED", "WHEN_ATTACKING", "WHEN_DEFEATED"]);
+export const EquipTargetSchema = z.strictObject({ kind: z.literal("FRIENDLY_UNIT_OR_FACE_UP_LEGEND") });
 export const TargetSelectorSchema = z.discriminatedUnion("kind", [
+    EquipTargetSchema,
     z.strictObject({ kind: z.literal("SELF") }),
     z.strictObject({ kind: z.literal("CARDS"), zone: ZoneSchema, relation: z.enum(["CONTROLLED", "RIVAL", "ANY"]), keyword: KeywordSchema.optional() }),
     z.strictObject({ kind: z.literal("GIGS"), relation: z.enum(["CONTROLLED", "RIVAL", "ANY"]) })
 ]);
 export const ConditionSchema = z.discriminatedUnion("kind", [
+    z.strictObject({ kind: z.literal("SOURCE_POWER_AT_LEAST"), minimum: z.number().int().nonnegative() }),
+    z.strictObject({ kind: z.literal("GIG_VALUE_AT_LEAST"), minimum: z.number().int().nonnegative() }),
     z.strictObject({ kind: z.literal("GIG_COUNT"), minimum: z.number().int().nonnegative() }),
     z.strictObject({ kind: z.literal("DISTINCT_GIG_DIE_TYPES"), minimum: z.number().int().nonnegative() }),
     z.strictObject({ kind: z.literal("DISTINCT_GIG_VALUES"), minimum: z.number().int().nonnegative() }),
@@ -21,7 +27,13 @@ export const CostSchema = z.discriminatedUnion("kind", [
     z.strictObject({ kind: z.literal("DASH") }), z.strictObject({ kind: z.literal("NONE") })
 ]);
 export const PaymentSourceSchema = z.strictObject({ kind: z.enum(["EDDIE", "LEGEND"]), cardInstanceId: CardInstanceIdSchema });
+export const AttackTargetSchema = z.discriminatedUnion("kind", [
+    z.strictObject({ kind: z.literal("CARD"), cardInstanceId: CardInstanceIdSchema }),
+    z.strictObject({ kind: z.literal("GIG_AREA"), playerId: PlayerIdSchema })
+]);
+export type AttackTarget = z.infer<typeof AttackTargetSchema>;
 export const ChoiceOptionSchema = z.discriminatedUnion("kind", [
+    z.strictObject({ kind: z.literal("ATTACK_TARGET"), target: AttackTargetSchema }),
     z.strictObject({ kind: z.literal("CARD"), cardInstanceId: CardInstanceIdSchema }),
     z.strictObject({ kind: z.literal("GIG"), gigInstanceId: GigInstanceIdSchema }),
     z.strictObject({ kind: z.literal("MODE"), mode: z.string().min(1) }),
@@ -37,6 +49,9 @@ export const PendingChoiceSchema = z.strictObject({
     ordered: z.boolean(), continuationId: z.string().min(1)
 }).refine(c => c.min <= c.max && c.max <= c.options.length, "Invalid choice bounds");
 export const EffectSchema = z.discriminatedUnion("kind", [
+    z.strictObject({ kind: z.literal("POWER_UNTIL_END_OF_TURN"), target: z.strictObject({ kind: z.literal("RIVAL_UNIT") }), amount: z.literal(-1) }),
+    z.strictObject({ kind: z.literal("ADJUST_GIG_UP_TO"), target: z.strictObject({ kind: z.literal("GIGS"), relation: z.literal("ANY") }), maximum: z.literal(1) }),
+    z.strictObject({ kind: z.literal("CONDITIONAL_DRAW"), timing: z.literal("RESOLUTION"), condition: ConditionSchema, count: z.number().int().positive() }),
     z.strictObject({ kind: z.literal("SEARCH_GEAR"), count: z.number().int().positive().max(5), maxCost: z.number().int().nonnegative(), maxTake: z.number().int().positive().max(2) }),
     z.strictObject({ kind: z.literal("DRAW"), count: z.number().int().positive() }),
     z.strictObject({ kind: z.literal("DAMAGE"), target: TargetSelectorSchema, amount: z.number().int().nonnegative() }),
@@ -47,8 +62,15 @@ export const EffectSchema = z.discriminatedUnion("kind", [
     // A named, versioned handwritten implementation; no arbitrary mutation parameters.
     z.strictObject({ kind: z.literal("CUSTOM"), handlerId: z.string().regex(/^[a-z][a-z0-9._-]+@\d+$/) })
 ]);
-export const AbilitySchema = z.strictObject({ id: z.string().min(1), trigger: TriggerSchema.optional(), conditions: z.array(ConditionSchema), cost: CostSchema, effects: z.array(EffectSchema) });
+export const ActivationCostSchema = z.discriminatedUnion("kind", [
+    z.strictObject({ kind: z.literal("SPEND_SOURCE") }),
+    z.strictObject({ kind: z.literal("PAYMENT_COST"), cost: CostSchema })
+]);
+export const AbilitySchema = z.strictObject({ id: z.string().min(1), trigger: TriggerSchema.optional(),
+    activation: z.strictObject({ timing: z.literal("MAIN"), conditionTiming: z.literal("ACTIVATION_AND_RESOLUTION"), costs: z.array(ActivationCostSchema) }).optional(),
+    conditions: z.array(ConditionSchema), cost: CostSchema, effects: z.array(EffectSchema) });
 export const ContinuousModifierSchema = z.discriminatedUnion("kind", [
+    z.strictObject({ kind: z.literal("GRANT_PRINTED_POWER_TO_HOST") }),
     z.strictObject({ kind: z.literal("POWER_PER_EQUIPPED_GEAR_DURING_OWN_TURN"), amount: z.number().int() }),
     z.strictObject({ kind: z.literal("POWER"), target: TargetSelectorSchema, amount: z.number().int(), requiresFaceUp: z.boolean() }),
     z.strictObject({ kind: z.literal("KEYWORD"), target: TargetSelectorSchema, keyword: KeywordSchema, requiresFaceUp: z.boolean() })

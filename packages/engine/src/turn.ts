@@ -1,3 +1,4 @@
+import { actionReturnContext, finishAction } from "./action-return";
 import { resolveCallPrimitive } from "./effects";
 import { z } from "zod";
 import { GameStateSchema, GameEventSchema, EffectSchema, hashCanonical, failure, success, type GameState, type GameEvent, type PlayerId, type CardInstanceId, type PaymentSource, type Result } from "@tcg/domain";
@@ -21,6 +22,8 @@ export class TurnMutation {
     }
     finish(winnerId: PlayerId, loserId: PlayerId, reason: "EMPTY_DRAW" | "START_TURN_GIGS") {
         this.state.match.outcome = { winnerId, loserId, reason };
+        this.state.timing.combat = { stage: "NONE" };
+        this.state.timing.actingPlayer = this.state.timing.activePlayer;
         this.state.resolution = { stage: "DECISION", current: null, pending: [], discovered: [], choice: null };
         this.phase("FINISHED");
         this.emit({ kind: "GAME_ENDED", winnerId, loserId, reason });
@@ -87,6 +90,7 @@ export class TurnMutation {
         const payment = view.validatePaymentChoice(actor, sources, { kind: "EDDIES", amount: policy.callCost });
         if (!payment.ok)
             return payment;
+        s.resolution.returnTo = actionReturnContext(s);
         for (const source of sources)
             s.objects.cards[source.cardInstanceId].readiness = "SPENT";
         this.emit({ kind: "PAYMENT_MADE", sources });
@@ -116,20 +120,18 @@ export class TurnMutation {
             s.resolution.current = null;
             s.resolution.stage = "STATE_BASED_CHECKS";
         }
-        s.resolution = { stage: "DECISION", current: null, pending: [], discovered: [], choice: null };
-        this.phase("MAIN");
-        return success(null);
+        return finishAction(this);
     }
     finishContinuedEffect() {
         const current = this.state.resolution.current!;
         this.emit({ kind: "EFFECT_RESOLVED", effectId: current.id });
-        this.state.resolution = { stage: "STATE_BASED_CHECKS", current: null, pending: [], discovered: [], choice: null };
-        this.phase("MAIN");
+        return finishAction(this);
     }
     paymentChoice(actor: PlayerId, legendId: CardInstanceId, remainingCost: number, selectedSources: PaymentSource[]): Result<null> {
         const view = new RulesView(this.state, this.context), candidates = view.paymentCandidates(actor, remainingCost, selectedSources);
         if (!candidates.length)
             return failure("CANNOT_PAY", "No exact payment continuation exists");
+        this.state.resolution.returnTo = actionReturnContext(this.state);
         this.state.resolution.stage = "CHOICE";
         this.state.resolution.callContinuation = { actorId: actor, legendId, remainingCost, selectedSources };
         this.state.resolution.choice = { id: hashCanonical({ kind: "call-payment", turn: this.state.timing.turn, actorSeat: this.state.players[actor].seat, legendId, selectedSources }), actorId: actor, kind: "PAYMENT", options: candidates.map(source => ({ kind: "PAYMENT" as const, source })), min: 1, max: 1, ordered: false, continuationId: "call-payment@1" };

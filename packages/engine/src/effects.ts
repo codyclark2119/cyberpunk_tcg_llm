@@ -1,3 +1,8 @@
+import { powerTargets } from "./react-queries";
+import { applyTemporaryPower } from "./temporary-power";
+import { testCondition } from "./conditions";
+import { adjustmentTargets } from "./play-state";
+import { offerPlayChoice } from "./play";
 import { failure, success, type Effect, type Result } from "@tcg/domain";
 import type { TurnMutation } from "./turn";
 import { searchChoice, searchTargets } from "./search-state";
@@ -7,6 +12,16 @@ type Primitive<K extends Effect["kind"]> = Extract<Effect, { kind: K }>;
 /** Handwritten, typed primitive registry; metadata cannot install arbitrary handlers. */
 export class HandlerRegistry {
     readonly primitives = {
+    POWER_UNTIL_END_OF_TURN: (m: TurnMutation): Result<null> => {
+        const targets = powerTargets(m.state, m.state.timing.actingPlayer, m.context);
+        return targets.length > 1 ? offerPlayChoice(m) : targets.length === 1 ? applyTemporaryPower(m, targets[0]) : success(null);
+    },
+    ADJUST_GIG_UP_TO: (m: TurnMutation): Result<null> => adjustmentTargets(m.state).length ? offerPlayChoice(m) : success(null),
+    CONDITIONAL_DRAW: (m: TurnMutation, effect: Primitive<"CONDITIONAL_DRAW">): Result<null> => {
+        const met = testCondition(m.state, m.state.timing.actingPlayer, effect.condition, m.context, m.state.resolution.current?.sourceId);
+        m.emit({ kind: "CONDITION_EVALUATED", effectId: m.state.resolution.current!.id, met });
+        return met ? this.primitives.DRAW(m, { kind: "DRAW", count: effect.count }) : success(null);
+    },
     DRAW: (m: TurnMutation, effect: Primitive<"DRAW">) => m.draw(m.state.timing.actingPlayer, effect.count),
     SEARCH_GEAR: (m: TurnMutation, effect: Primitive<"SEARCH_GEAR">): Result<null> => {
         const s = m.state, actor = s.timing.actingPlayer;
@@ -15,6 +30,9 @@ export class HandlerRegistry {
     }
     };
     resolve(m: TurnMutation, effect: Effect): Result<null> {
+        if (effect.kind === "POWER_UNTIL_END_OF_TURN") return this.primitives.POWER_UNTIL_END_OF_TURN(m);
+        if (effect.kind === "ADJUST_GIG_UP_TO") return this.primitives.ADJUST_GIG_UP_TO(m);
+        if (effect.kind === "CONDITIONAL_DRAW") return this.primitives.CONDITIONAL_DRAW(m, effect);
         if (effect.kind === "DRAW") return this.primitives.DRAW(m, effect);
         if (effect.kind === "SEARCH_GEAR") return this.primitives.SEARCH_GEAR(m, effect);
         return failure("UNSUPPORTED_CALL_EFFECT", "No registered typed CALL primitive");

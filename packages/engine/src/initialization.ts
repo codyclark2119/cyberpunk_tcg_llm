@@ -1,3 +1,4 @@
+import { supportsPlay } from "./play-support";
 import { beginSetup } from "./setup";
 import { z } from "zod";
 import { DeckSchema, ContentBundleSchema, validateDeck, GameStateSchema, failure, success, type GameState, type Result, type GameEvent } from "@tcg/domain";
@@ -58,7 +59,11 @@ export function createGameWithEvents(input: z.input<typeof CreateGameInputSchema
             if (!supported.ok)
                 return supported;
         }
-        else if (content.mechanics.abilities.length || content.mechanics.modifiers.length)
+        else if (content.execution?.scope === "NONCOMBAT_PLAY_V1" || content.execution?.scope === "COMBAT_ATTACK_V1" || content.execution?.scope === "COMBAT_REACT_V1") {
+            const supported = supportsPlay(content, context);
+            if (!supported.ok) return supported;
+        }
+        else if (content.mechanics.equip || content.mechanics.abilities.length || content.mechanics.modifiers.length)
             return failure("UNSUPPORTED_CARD_EFFECT", "Turn slice requires cards without unsupported automatic effects");
     }
     if (engineSetup) {

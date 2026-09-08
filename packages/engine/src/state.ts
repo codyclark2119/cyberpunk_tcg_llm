@@ -1,3 +1,9 @@
+import { validateActionReturn } from "./action-return";
+import { validateTemporaryPower } from "./temporary-power";
+import { supportsCall } from "./effect-support";
+import { validateCombatState } from "./combat-state";
+import { gearEnabled, validateGearAttachments } from "./attachments";
+import { validatePlayState } from "./play-state";
 import { validateSearchState } from "./search-state";
 import { validateSetupState } from "./setup-state";
 import { paymentSources, paymentValue, paymentCandidates } from "./payment";
@@ -32,7 +38,7 @@ export function validateState(input: unknown, context: EngineContext): Result<Ga
     const seen = new Set<string>();
     for (const player of Object.values(s.players)) {
         for (const [zone, refs] of Object.entries(player.zones))
-            for (const id of refs) {
+            for (const id of refs ?? []) {
                 const c = s.objects.cards[id];
                 if (!Object.hasOwn(s.objects.cards, id) || !c || seen.has(id) || c.zone.zone !== zone || c.zone.playerId !== player.id)
                     return failure("INVALID_LOCATION", "Each card must resolve to exactly one matching zone");
@@ -48,11 +54,12 @@ export function validateState(input: unknown, context: EngineContext): Result<Ga
             return failure("INVALID_CARD", "Card identity, owner, controller or content pin is invalid");
         if (c.zone.zone === "EDDIES" && (c.face !== "DOWN" || content.type === "LEGEND" || !content.sellProfile.allowed))
             return failure("INVALID_EDDIE", "Eddies must be face-down sellable card instances");
-        if (c.zone.zone === "LEGENDS" && content.type !== "LEGEND")
+        if (c.zone.zone === "LEGENDS" && content.type !== "LEGEND" && !(gearEnabled(context) && content.type === "GEAR"))
             return failure("INVALID_LEGEND", "Only Legends belong in the Legend zone");
+        if (c.statuses.includes("LAG") && (content.type !== "UNIT" || c.zone.zone !== "BATTLEFIELD")) return failure("INVALID_LAG", "Lag belongs only to Units in the field");
         if (c.statuses.includes("GO_SOLO") && (content.type !== "LEGEND" || !content.mechanics.keywords.includes("GO_SOLO") || c.zone.zone !== "BATTLEFIELD"))
             return failure("INVALID_GO_SOLO", "Go Solo requires a printed Legend with the keyword on the battlefield");
-        for (const target of c.attachments) {
+        if (!gearEnabled(context)) for (const target of c.attachments) {
             if (target === id || attached.has(target) || !Object.hasOwn(s.objects.cards, target) || s.objects.cards[target].zone.zone !== "BATTLEFIELD" || (c.zone.zone !== "BATTLEFIELD" && !(c.zone.zone === "LEGENDS" && c.face === "UP")))
                 return failure("INVALID_ATTACHMENT", "Attachment references must be unique battlefield objects");
             attached.add(target);
@@ -65,10 +72,12 @@ export function validateState(input: unknown, context: EngineContext): Result<Ga
         if (!visit(id, new Set()))
             return failure("ATTACHMENT_CYCLE", "Attachments cannot form cycles");
     }
+    const gear = validateGearAttachments(s, context);
+    if (!gear.ok) return gear;
     seen.clear();
     for (const p of Object.values(s.players))
         for (const [zone, refs] of Object.entries(p.gigs))
-            for (const id of refs) {
+            for (const id of refs ?? []) {
                 const g = s.objects.gigs[id];
                 if (!Object.hasOwn(s.objects.gigs, id) || !g || seen.has(id) || g.location.playerId !== p.id || g.location.zone !== zone)
                     return failure("INVALID_GIG_LOCATION", "Each Gig must resolve to exactly one matching location");
@@ -80,7 +89,7 @@ export function validateState(input: unknown, context: EngineContext): Result<Ga
         if (id !== g.id || !ids.includes(g.ownerId) || !ids.includes(g.controllerId) || g.location.playerId !== g.controllerId || (g.location.zone === "GIGS" && g.roll.kind !== "ROLLED"))
             return failure("INVALID_GIG", "Gig identity/control/location/roll mismatch");
     const bounds = b.ruleset.gameplay?.gigValueBounds;
-    if (bounds && bounds !== "UNSUPPORTED" && Object.values(s.objects.gigs).some(g => g.roll.kind === "ROLLED" && (g.roll.currentValue < bounds.min || g.roll.currentValue > bounds.max)))
+    if (bounds && bounds !== "UNSUPPORTED" && Object.values(s.objects.gigs).some(g => g.roll.kind === "ROLLED" && (g.roll.currentValue < (bounds === "DIE_FACES_V1" ? 1 : bounds.min) || g.roll.currentValue > (bounds === "DIE_FACES_V1" ? Number(g.dieType.slice(1)) : bounds.max))))
         return failure("INVALID_GIG_VALUE", "Current Gig value violates pinned bounds");
     const effects = [...s.resolution.pending, ...s.resolution.discovered, ...(s.resolution.current ? [s.resolution.current] : [])];
     if (new Set(effects.map(e => e.id)).size !== effects.length || effects.some(e => !ids.includes(e.controllerId) || (e.sourceId !== null && !Object.hasOwn(s.objects.cards, e.sourceId)) || e.causedBySequence > s.match.eventSequence))
@@ -95,8 +104,14 @@ export function validateState(input: unknown, context: EngineContext): Result<Ga
         }
     if (s.resolution.stage === "DECISION" && (effects.length || choice || s.timing.window === "RESOLVING"))
         return failure("UNSTABLE_DECISION", "Decision state cannot contain unresolved work");
-    if (s.timing.combat.stage !== "NONE" && [s.timing.combat.attackerId, s.timing.combat.targetId, s.timing.combat.blockerId].some(id => id !== null && !Object.hasOwn(s.objects.cards, id)))
+    if ("targetId" in s.timing.combat && [s.timing.combat.attackerId, s.timing.combat.targetId, s.timing.combat.blockerId].some(id => id !== null && !Object.hasOwn(s.objects.cards, id)))
         return failure("INVALID_COMBAT_REFERENCE", "Combat objects must resolve");
+    const returning = validateActionReturn(s, context);
+    if (!returning.ok) return returning;
+    const temporary = validateTemporaryPower(s, context);
+    if (!temporary.ok) return temporary;
+    const combat = validateCombatState(s, context);
+    if (!combat.ok) return combat;
     const slice = b.ruleset.gameplay?.turnSlice;
     if (s.setup || s.timing.window === "SETUP") {
         const validSetup = validateSetupState(s, context);
@@ -104,11 +119,11 @@ export function validateState(input: unknown, context: EngineContext): Result<Ga
     }
     if (slice && !s.setup) {
         const step = s.timing.step;
-        if (ids.length !== 2 || !s.timing.firstPlayer || !ids.includes(s.timing.firstPlayer) || !step || s.timing.actingPlayer !== s.timing.activePlayer)
+        if (ids.length !== 2 || !s.timing.firstPlayer || !ids.includes(s.timing.firstPlayer) || !step || (!["RIVAL_REACT", "COMBAT_RESOLUTION_PENDING"].includes(s.timing.combat.stage) && s.timing.actingPlayer !== s.timing.activePlayer))
             return failure("INVALID_TURN_STATE", "Turn slice requires two players, first player and an active decision actor");
         if (s.timing.turn < 1 || s.timing.activePlayer !== ids[(s.players[s.timing.firstPlayer].seat + s.timing.turn - 1) % ids.length])
             return failure("INVALID_TURN_ORDER", "Active player must follow first-player and turn order");
-        const boundary = ["MAIN", "CHOOSE_GIG", "PAYMENT_SELECTION", "TARGET_SELECTION", "FINISHED"].includes(step);
+        const boundary = ["MAIN", "CHOOSE_GIG", "PAYMENT_SELECTION", "TARGET_SELECTION", "AMOUNT_SELECTION", "ATTACK_TARGET_SELECTION", "RIVAL_REACT", "COMBAT_RESOLUTION_PENDING", "FINISHED"].includes(step);
         if ((boundary && s.timing.window !== step) || (!boundary && s.timing.window !== "RESOLVING"))
             return failure("INVALID_TURN_TIMING", "Step and window disagree");
         if (Object.values(s.players).some(p => p.economy.usageTurn !== s.timing.turn || p.economy.callsThisTurn === undefined || p.economy.callsThisTurn > slice.callLimitPerTurn || p.economy.sellsThisTurn > b.ruleset.gameplay!.sellLimitPerTurn))
@@ -128,12 +143,13 @@ export function validateState(input: unknown, context: EngineContext): Result<Ga
         if (s.match.outcome && (!ids.includes(s.match.outcome.winnerId) || !ids.includes(s.match.outcome.loserId) || s.match.outcome.winnerId === s.match.outcome.loserId))
             return failure("INVALID_OUTCOME", "Outcome players invalid");
         const continuation = s.resolution.callContinuation;
-        if ((step === "PAYMENT_SELECTION") !== Boolean(continuation) || Boolean(continuation) !== Boolean(choice && step === "PAYMENT_SELECTION"))
+        if ((step === "PAYMENT_SELECTION") !== Boolean(continuation || s.resolution.playContinuation?.phase === "PAYMENT") || (step === "PAYMENT_SELECTION" && !choice))
             return failure("INVALID_PAYMENT_STATE", "Payment step, choice and continuation must agree");
         if (continuation) {
             const legend = s.objects.cards[continuation.legendId], available = paymentSources(s, continuation.actorId, context);
-            if (!Object.hasOwn(s.objects.cards, continuation.legendId) || !legend || legend.zone.zone !== "LEGENDS" || legend.face !== "DOWN" || legend.controllerId !== continuation.actorId || continuation.actorId !== s.timing.activePlayer || s.players[continuation.actorId].economy.callsThisTurn! >= slice.callLimitPerTurn)
+            if (!Object.hasOwn(s.objects.cards, continuation.legendId) || !legend || legend.zone.zone !== "LEGENDS" || legend.face !== "DOWN" || legend.controllerId !== continuation.actorId || continuation.actorId !== s.timing.actingPlayer || s.players[continuation.actorId].economy.callsThisTurn! >= slice.callLimitPerTurn)
                 return failure("INVALID_CALL_CONTINUATION", "CALL target/actor/usage invalid");
+            if (!supportsCall(b.cards.find(c => c.id === legend.cardId && c.revision === legend.revision), context).ok || s.resolution.current || s.resolution.pending.length || s.resolution.discovered.length || s.resolution.playContinuation || s.resolution.searchContinuation) return failure("INVALID_CALL_CONTINUATION", "CALL payment requires a supported source and exclusive continuation");
             const selected = continuation.selectedSources;
             if (new Set(selected.map(p => p.cardInstanceId)).size !== selected.length || selected.some(p => !available.some(a => canonicalSerialize(a) === canonicalSerialize(p))) || selected.reduce((sum, p) => sum + paymentValue(s, context, p), 0) + continuation.remainingCost !== slice.callCost || continuation.remainingCost <= 0)
                 return failure("INVALID_PAYMENT_SOURCES", "Payment selections or remaining cost invalid");
@@ -142,6 +158,8 @@ export function validateState(input: unknown, context: EngineContext): Result<Ga
                 return failure("INVALID_PAYMENT_OPTIONS", "Choice options must exactly match eligible payment continuations");
         }
     }
+    const play = validatePlayState(s, context);
+    if (!play.ok) return play;
     const search = validateSearchState(s, context);
     if (!search.ok) return search;
     return success(freeze(s));

@@ -25,7 +25,7 @@ export function validateSetupState(state: GameState, context: EngineContext) {
         ((stage === "MAIN_CUT" || stage === "LEGEND_CUT") && decidingSeat !== 1 - completed) ||
         (stage === "MULLIGAN" && decidingSeat !== (state.players[first!].seat + completed) % 2))
         return failure("INVALID_SETUP_ORDER", "Setup actor, first-player selection, step or decision order disagrees");
-    if (state.resolution.stage !== "CHOICE" || state.resolution.current || state.resolution.pending.length || state.resolution.discovered.length || state.resolution.callContinuation || state.resolution.searchContinuation || canonicalSerialize(state.resolution.choice) !== canonicalSerialize(setupChoice(state)))
+    if (state.resolution.stage !== "CHOICE" || state.resolution.current || state.resolution.pending.length || state.resolution.discovered.length || state.resolution.callContinuation || state.resolution.searchContinuation || state.resolution.playContinuation || canonicalSerialize(state.resolution.choice) !== canonicalSerialize(setupChoice(state)))
         return failure("INVALID_SETUP_CHOICE", "Setup choice must exactly match the authoritative continuation");
     for (const id of ids) {
         const p = state.players[id];
@@ -33,7 +33,7 @@ export function validateSetupState(state: GameState, context: EngineContext) {
         if (dice.length !== 6 || new Set(dice.map(g => g.dieType)).size !== 6 || dice.some(g => g.roll.kind !== "UNROLLED" || g.controllerId !== id || g.location.zone !== "FIXER") ||
             p.economy.usageTurn !== 0 || p.economy.callsThisTurn !== 0 || p.economy.sellsThisTurn !== 0 || p.statuses.length ||
             p.zones.HAND.length !== (stage === "MULLIGAN" ? rules.openingHand : 0) || p.zones.LEGENDS.length !== 3 ||
-            [p.zones.TRASH, p.zones.EDDIES, p.zones.BATTLEFIELD, p.zones.REMOVED].some(z => z.length))
+            [p.zones.TRASH, p.zones.EDDIES, p.zones.BATTLEFIELD, p.zones.REMOVED, p.zones.RESOLVING_PROGRAM ?? []].some(z => z.length))
             return failure("INVALID_SETUP_OBJECTS", "Setup hands, zones, dice and usage must remain in their setup configuration");
         for (const c of Object.values(state.objects.cards).filter(c => c.ownerId === id)) {
             const expectedSpent = stage === "MULLIGAN" && id === first && c.zone.zone === "LEGENDS" && p.zones.LEGENDS.indexOf(c.id) < rules.firstPlayerSpentLegends;

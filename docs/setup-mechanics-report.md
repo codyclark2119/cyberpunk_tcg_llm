@@ -1,3 +1,5 @@
+> Historical setup milestone report. The subsequent [noncombat play report](noncombat-play-report.md) adds Afterparty/Kerry and supersedes the Program/Gig-boundary blockers below.
+
 # Engine-owned setup and reviewed noncombat mechanics
 
 Implemented engine-owned setup, complete match event batches, Viktor's CALL search/selection, and Royce's persistent Legend-area power query. Rebecca's PRM01 promo is an excluded negative fixture. **The broader requested real-card milestone is only partially met:** the reviewed set has two implemented behaviors, and no real Gig-conditioned CALL or Gig-changing card handler. See [coverage and source decisions](executable-card-coverage.md). Combat and Program/activated-effect play were not added to compensate for unavailable CALL examples.
