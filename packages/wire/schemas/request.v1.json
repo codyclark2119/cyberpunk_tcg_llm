@@ -236,6 +236,10 @@
                           "type": "string",
                           "const": "COMBAT_RESTRICTIONS_V1"
                         },
+                        "gearCapabilities": {
+                          "type": "string",
+                          "const": "GEAR_CAPABILITIES_V1"
+                        },
                         "combatTriggers": {
                           "type": "string",
                           "const": "COMBAT_TRIGGERS_V1"
@@ -758,7 +762,9 @@
                           "COMBAT_ATTACK_V1",
                           "COMBAT_REACT_V1",
                           "COMBAT_RESTRICTIONS_V1",
-                          "COMBAT_TRIGGERS_V1"
+                          "COMBAT_TRIGGERS_V1",
+                          "GEAR_CAPABILITIES_V1",
+                          "GEAR_PRIVATE_LOOK_V1"
                         ]
                       },
                       "status": {
@@ -1205,6 +1211,19 @@
                               "type": "array",
                               "items": {
                                 "oneOf": [
+                                  {
+                                    "type": "object",
+                                    "properties": {
+                                      "kind": {
+                                        "type": "string",
+                                        "const": "LOOK_AT_FRIENDLY_FACE_DOWN_LEGEND"
+                                      }
+                                    },
+                                    "required": [
+                                      "kind"
+                                    ],
+                                    "additionalProperties": false
+                                  },
                                   {
                                     "type": "object",
                                     "properties": {
@@ -2072,6 +2091,25 @@
                                                   "properties": {
                                                     "kind": {
                                                       "type": "string",
+                                                      "const": "LEGEND_SLOT"
+                                                    },
+                                                    "slot": {
+                                                      "type": "integer",
+                                                      "minimum": 0,
+                                                      "maximum": 9007199254740991
+                                                    }
+                                                  },
+                                                  "required": [
+                                                    "kind",
+                                                    "slot"
+                                                  ],
+                                                  "additionalProperties": false
+                                                },
+                                                {
+                                                  "type": "object",
+                                                  "properties": {
+                                                    "kind": {
+                                                      "type": "string",
                                                       "const": "ATTACK_TARGET"
                                                     },
                                                     "target": {
@@ -2348,6 +2386,24 @@
                         "type": "array",
                         "items": {
                           "oneOf": [
+                            {
+                              "type": "object",
+                              "properties": {
+                                "kind": {
+                                  "type": "string",
+                                  "const": "GRANT_KEYWORD_TO_HOST"
+                                },
+                                "keyword": {
+                                  "type": "string",
+                                  "const": "BLOCKER"
+                                }
+                              },
+                              "required": [
+                                "kind",
+                                "keyword"
+                              ],
+                              "additionalProperties": false
+                            },
                             {
                               "type": "object",
                               "properties": {
@@ -2745,6 +2801,58 @@
         "state": {
           "type": "object",
           "properties": {
+            "privateKnowledge": {
+              "minItems": 1,
+              "type": "array",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "kind": {
+                    "type": "string",
+                    "const": "LOOKED_AT_LEGEND"
+                  },
+                  "viewerId": {
+                    "type": "string",
+                    "format": "uuid",
+                    "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+                  },
+                  "cardInstanceId": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 200,
+                    "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$"
+                  },
+                  "content": {
+                    "type": "object",
+                    "properties": {
+                      "cardId": {
+                        "type": "string",
+                        "minLength": 1,
+                        "maxLength": 200,
+                        "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$"
+                      },
+                      "revision": {
+                        "type": "integer",
+                        "exclusiveMinimum": 0,
+                        "maximum": 2147483647
+                      }
+                    },
+                    "required": [
+                      "cardId",
+                      "revision"
+                    ],
+                    "additionalProperties": false
+                  }
+                },
+                "required": [
+                  "kind",
+                  "viewerId",
+                  "cardInstanceId",
+                  "content"
+                ],
+                "additionalProperties": false
+              }
+            },
             "setup": {
               "type": "object",
               "properties": {
@@ -4487,6 +4595,19 @@
                               "properties": {
                                 "kind": {
                                   "type": "string",
+                                  "const": "LOOK_AT_FRIENDLY_FACE_DOWN_LEGEND"
+                                }
+                              },
+                              "required": [
+                                "kind"
+                              ],
+                              "additionalProperties": false
+                            },
+                            {
+                              "type": "object",
+                              "properties": {
+                                "kind": {
+                                  "type": "string",
                                   "const": "OPTIONAL_DECREASE_FRIENDLY_GIG_THEN_DRAW_IF_MIN"
                                 },
                                 "maximum": {
@@ -5349,6 +5470,25 @@
                                             "properties": {
                                               "kind": {
                                                 "type": "string",
+                                                "const": "LEGEND_SLOT"
+                                              },
+                                              "slot": {
+                                                "type": "integer",
+                                                "minimum": 0,
+                                                "maximum": 9007199254740991
+                                              }
+                                            },
+                                            "required": [
+                                              "kind",
+                                              "slot"
+                                            ],
+                                            "additionalProperties": false
+                                          },
+                                          {
+                                            "type": "object",
+                                            "properties": {
+                                              "kind": {
+                                                "type": "string",
                                                 "const": "ATTACK_TARGET"
                                               },
                                               "target": {
@@ -5724,6 +5864,19 @@
                       },
                       "effect": {
                         "oneOf": [
+                          {
+                            "type": "object",
+                            "properties": {
+                              "kind": {
+                                "type": "string",
+                                "const": "LOOK_AT_FRIENDLY_FACE_DOWN_LEGEND"
+                              }
+                            },
+                            "required": [
+                              "kind"
+                            ],
+                            "additionalProperties": false
+                          },
                           {
                             "type": "object",
                             "properties": {
@@ -6586,6 +6739,25 @@
                                     "type": "array",
                                     "items": {
                                       "oneOf": [
+                                        {
+                                          "type": "object",
+                                          "properties": {
+                                            "kind": {
+                                              "type": "string",
+                                              "const": "LEGEND_SLOT"
+                                            },
+                                            "slot": {
+                                              "type": "integer",
+                                              "minimum": 0,
+                                              "maximum": 9007199254740991
+                                            }
+                                          },
+                                          "required": [
+                                            "kind",
+                                            "slot"
+                                          ],
+                                          "additionalProperties": false
+                                        },
                                         {
                                           "type": "object",
                                           "properties": {
@@ -6967,6 +7139,19 @@
                             "properties": {
                               "kind": {
                                 "type": "string",
+                                "const": "LOOK_AT_FRIENDLY_FACE_DOWN_LEGEND"
+                              }
+                            },
+                            "required": [
+                              "kind"
+                            ],
+                            "additionalProperties": false
+                          },
+                          {
+                            "type": "object",
+                            "properties": {
+                              "kind": {
+                                "type": "string",
                                 "const": "OPTIONAL_DECREASE_FRIENDLY_GIG_THEN_DRAW_IF_MIN"
                               },
                               "maximum": {
@@ -7829,6 +8014,25 @@
                                           "properties": {
                                             "kind": {
                                               "type": "string",
+                                              "const": "LEGEND_SLOT"
+                                            },
+                                            "slot": {
+                                              "type": "integer",
+                                              "minimum": 0,
+                                              "maximum": 9007199254740991
+                                            }
+                                          },
+                                          "required": [
+                                            "kind",
+                                            "slot"
+                                          ],
+                                          "additionalProperties": false
+                                        },
+                                        {
+                                          "type": "object",
+                                          "properties": {
+                                            "kind": {
+                                              "type": "string",
                                               "const": "ATTACK_TARGET"
                                             },
                                             "target": {
@@ -8204,6 +8408,25 @@
                           "type": "array",
                           "items": {
                             "oneOf": [
+                              {
+                                "type": "object",
+                                "properties": {
+                                  "kind": {
+                                    "type": "string",
+                                    "const": "LEGEND_SLOT"
+                                  },
+                                  "slot": {
+                                    "type": "integer",
+                                    "minimum": 0,
+                                    "maximum": 9007199254740991
+                                  }
+                                },
+                                "required": [
+                                  "kind",
+                                  "slot"
+                                ],
+                                "additionalProperties": false
+                              },
                               {
                                 "type": "object",
                                 "properties": {
@@ -8742,6 +8965,10 @@
                           "type": "string",
                           "const": "COMBAT_RESTRICTIONS_V1"
                         },
+                        "gearCapabilities": {
+                          "type": "string",
+                          "const": "GEAR_CAPABILITIES_V1"
+                        },
                         "combatTriggers": {
                           "type": "string",
                           "const": "COMBAT_TRIGGERS_V1"
@@ -9264,7 +9491,9 @@
                           "COMBAT_ATTACK_V1",
                           "COMBAT_REACT_V1",
                           "COMBAT_RESTRICTIONS_V1",
-                          "COMBAT_TRIGGERS_V1"
+                          "COMBAT_TRIGGERS_V1",
+                          "GEAR_CAPABILITIES_V1",
+                          "GEAR_PRIVATE_LOOK_V1"
                         ]
                       },
                       "status": {
@@ -9711,6 +9940,19 @@
                               "type": "array",
                               "items": {
                                 "oneOf": [
+                                  {
+                                    "type": "object",
+                                    "properties": {
+                                      "kind": {
+                                        "type": "string",
+                                        "const": "LOOK_AT_FRIENDLY_FACE_DOWN_LEGEND"
+                                      }
+                                    },
+                                    "required": [
+                                      "kind"
+                                    ],
+                                    "additionalProperties": false
+                                  },
                                   {
                                     "type": "object",
                                     "properties": {
@@ -10578,6 +10820,25 @@
                                                   "properties": {
                                                     "kind": {
                                                       "type": "string",
+                                                      "const": "LEGEND_SLOT"
+                                                    },
+                                                    "slot": {
+                                                      "type": "integer",
+                                                      "minimum": 0,
+                                                      "maximum": 9007199254740991
+                                                    }
+                                                  },
+                                                  "required": [
+                                                    "kind",
+                                                    "slot"
+                                                  ],
+                                                  "additionalProperties": false
+                                                },
+                                                {
+                                                  "type": "object",
+                                                  "properties": {
+                                                    "kind": {
+                                                      "type": "string",
                                                       "const": "ATTACK_TARGET"
                                                     },
                                                     "target": {
@@ -10854,6 +11115,24 @@
                         "type": "array",
                         "items": {
                           "oneOf": [
+                            {
+                              "type": "object",
+                              "properties": {
+                                "kind": {
+                                  "type": "string",
+                                  "const": "GRANT_KEYWORD_TO_HOST"
+                                },
+                                "keyword": {
+                                  "type": "string",
+                                  "const": "BLOCKER"
+                                }
+                              },
+                              "required": [
+                                "kind",
+                                "keyword"
+                              ],
+                              "additionalProperties": false
+                            },
                             {
                               "type": "object",
                               "properties": {

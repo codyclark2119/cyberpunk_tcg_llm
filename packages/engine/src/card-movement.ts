@@ -1,3 +1,4 @@
+import { forgetLegendKnowledge } from "./private-knowledge";
 import { failure, success, type CardInstanceId, type GameState, type Result } from "@tcg/domain";
 import type { EngineContext } from "./state";
 import { validateState } from "./state";
@@ -14,6 +15,7 @@ function revision(m: TurnMutation, id: CardInstanceId) {
 export function moveCardLocation(m: TurnMutation, id: CardInstanceId, zone: "BATTLEFIELD" | "LEGENDS" | "RESOLVING_PROGRAM" | Destination) {
     if (zone === "HAND") expirePowerOnHiddenEntry(m, id);
     const card = m.state.objects.cards[id], from = { ...card.zone };
+    forgetLegendKnowledge(m, id);
     const refs = m.state.players[from.playerId].zones[from.zone]!;
     refs.splice(refs.indexOf(id), 1);
     if (from.zone === "RESOLVING_PROGRAM" && !refs.length) delete m.state.players[from.playerId].zones.RESOLVING_PROGRAM;

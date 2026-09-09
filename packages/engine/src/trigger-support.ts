@@ -1,3 +1,5 @@
+import { supportsPrivateLookGear, privateInformationEnabled } from "./private-look-support";
+import { supportsAttackPlay } from "./attack-support";
 import { canonicalSerialize, failure, success, type CardRevisionSnapshot, type DeepReadonly } from "@tcg/domain";
 import type { EngineContext } from "./state";
 export function triggersEnabled(context: EngineContext) { return context.content.ruleset.gameplay?.turnSlice?.combatTriggers === "COMBAT_TRIGGERS_V1"; }
@@ -21,4 +23,9 @@ export function supportsTriggerCard(card: DeepReadonly<CardRevisionSnapshot> | u
         if (canonicalSerialize(m.abilities.map(a => ({ trigger: a.trigger, effect: a.effects[0] }))) === canonicalSerialize(expected)) return success(null);
     }
     return failure("UNSUPPORTED_TRIGGER_CARD", "Both Gear power/granted trigger or the entire reviewed Unit/Legend shape must be implemented");
+}
+
+/** Scheduler admission includes the older complete printed ATTACK shape only in the new private-look bundle. */
+export function supportsEffectiveTriggerSource(card: DeepReadonly<CardRevisionSnapshot> | undefined, context: EngineContext) {
+    return supportsTriggerCard(card, context).ok || supportsPrivateLookGear(card, context).ok || (privateInformationEnabled(context) && supportsAttackPlay(card, context).ok);
 }

@@ -77,7 +77,10 @@ export const SetupStateSchema = z.strictObject({
     decidingSeat: z.number().int().min(0).max(1),
     completed: z.number().int().min(0).max(1)
 });
+/** Remembered identity, not permission to inspect again (5.7.4.3). Public marker follows the physical Legend (5.7.4.2). */
+export const KnownHiddenLegendSchema = z.strictObject({ kind: z.literal("LOOKED_AT_LEGEND"), viewerId: PlayerIdSchema, cardInstanceId: CardInstanceIdSchema, content: CardReferenceSchema });
 export const GameStateSchema = z.strictObject({
+    privateKnowledge: z.array(KnownHiddenLegendSchema).min(1).optional(),
     setup: SetupStateSchema.optional(),
     schemaVersion: z.literal(2),
     match: z.strictObject({ id: MatchIdSchema, version: GameStateVersionSchema, eventSequence: GameEventSequenceSchema,
@@ -116,6 +119,8 @@ export type GameAction = z.infer<typeof GameActionSchema>;
 export type GameCommand = z.infer<typeof GameCommandSchema>;
 export type LegalAction = z.infer<typeof LegalActionSchema>;
 export const EventPayloadSchema = z.discriminatedUnion("kind", [
+    // Safe public fact: no hidden CardRef, name or physical instance identity.
+    z.strictObject({ kind: z.literal("LEGEND_LOOKED_AT"), viewerId: PlayerIdSchema, legendSeat: z.number().int().nonnegative(), slot: z.number().int().nonnegative() }),
     z.strictObject({ kind: z.literal("TRIGGER_ORDER_SELECTED"), effectId: HashSchema, controllerId: PlayerIdSchema, forced: z.boolean() }),
     z.strictObject({ kind: z.literal("OPTIONAL_TRIGGER_ACCEPTED"), effectId: HashSchema, controllerId: PlayerIdSchema }),
     z.strictObject({ kind: z.literal("OPTIONAL_TRIGGER_DECLINED"), effectId: HashSchema, controllerId: PlayerIdSchema }),

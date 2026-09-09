@@ -1,3 +1,5 @@
+import { effectiveCapabilities, effectiveKeywords } from "./capabilities";
+import { supportsCapabilityGear } from "./capability-support";
 import { effectiveTriggeredAbilities } from "./trigger-queries";
 import { getAttackRestrictions, canBeBlocked } from "./combat-permissions";
 import { applicableFightPreventions } from "./fight-prevention";
@@ -12,7 +14,7 @@ import { attachedGear, attachmentHost, gearEnabled, legalEquipHosts } from "./at
 import { testCondition } from "./conditions";
 import { supportsCall } from "./effect-support";
 import { paymentSources, paymentValue, paymentCandidates, validatePayment } from "./payment";
-import { type GameState, type PlayerId, type CardInstanceId, type GigInstanceId, type Condition, type TargetSelector, type PaymentSource, type Cost } from "@tcg/domain";
+import { type GameState, type PlayerId, type CardInstanceId, type GigInstanceId, type Condition, type TargetSelector, type PaymentSource, type Cost, type Keyword } from "@tcg/domain";
 import { type EngineContext, validateState, freeze } from "./state";
 /** Construct from a validated/frozen state. Selectors never mutate authoritative objects. */
 export class RulesView {
@@ -59,9 +61,12 @@ export class RulesView {
     getEquippedGearCount(hostId: CardInstanceId) { return this.getAttachedGear(hostId).length; }
     getAttachmentHost(gearId: CardInstanceId) { return attachmentHost(this.state, gearId); }
     getEffectivePower(id: CardInstanceId) { return effectivePower(this.state, id, this.context); }
+    getEffectiveCapabilities(id: CardInstanceId) { return effectiveCapabilities(this.state, id, this.context); }
+    getCapabilitySources(id: CardInstanceId, keyword: Keyword) { return this.getEffectiveCapabilities(id).find(c => c.keyword === keyword)?.sources ?? []; }
+    getEffectiveKeywords(id: CardInstanceId) { return this.getKeywords(id); }
     getKeywords(id: CardInstanceId) {
-        if (this.getRevision(id)?.mechanics.modifiers.some(m => m.kind !== "POWER_PER_EQUIPPED_GEAR_DURING_OWN_TURN" && !(gearEnabled(this.context) && m.kind === "GRANT_PRINTED_POWER_TO_HOST" && this.getRevision(id)?.type === "GEAR"))) throw new Error("UNSUPPORTED_CONTINUOUS_MODIFIERS");
-        return this.getRevision(id)?.mechanics.keywords ?? [];
+        if (this.getRevision(id)?.mechanics.modifiers.some(m => m.kind !== "POWER_PER_EQUIPPED_GEAR_DURING_OWN_TURN" && !(m.kind === "GRANT_KEYWORD_TO_HOST" && supportsCapabilityGear(this.getRevision(id), this.context).ok) && !(gearEnabled(this.context) && m.kind === "GRANT_PRINTED_POWER_TO_HOST" && this.getRevision(id)?.type === "GEAR"))) throw new Error("UNSUPPORTED_CONTINUOUS_MODIFIERS");
+        return effectiveKeywords(this.state, id, this.context);
     }
     getLegalTargets(source: CardInstanceId, target: TargetSelector) {
         const controller = this.getCard(source)?.controllerId;

@@ -4,7 +4,7 @@ This is an implementation review of a small local capture, **not human-certified
 
 `execution: { scope: "NONCOMBAT_SLICE_V1", status: "SUPPORTED" | "UNSUPPORTED" }` is distinct from catalog `status`, source `legality`, and the existence of display text. `REVIEWED_CALL_V1` admission requires an explicit supported execution decision for **every deck card**, then checks the actual normalized abilities and modifiers against implemented handlers. Unsupported triggers, multiple CALL abilities, costs, conditions, and primitives still fail admission. Existing synthetic legacy policies remain for regression compatibility. No runtime English parsing occurs.
 
-The sections record successive bounded scopes. The latest **COMBAT_REACT_V1** section supersedes earlier statements that all reactions are unsupported; the older attack-only ruleset intentionally retains its unresolved React boundary for regression. No scope certifies full combat resolution.
+The sections record successive bounded scopes. Later sections supersede earlier implementation limits, while older pinned policies retain their regression boundaries. The latest addition is **GEAR_PRIVATE_LOOK_V1** below; no scope certifies a complete starter match.
 
 ## Captured records and implementation decisions
 
@@ -297,3 +297,91 @@ Jackie's historical first-play counter is separate from CALL usage and resets fo
 The local raw rules hash is `054d2d2a4664e5b560304e0962e71b195467ad097cc4c62b2698fc57467a28dd`; processed rules `1f299c9cbe2657c9d088ae4b3a812b85e46c3fd2659579229635959c59a20e19`. Raw errata `1203a6c268c94d9d670a9cc145f739957fd018fa23eab86628bac94984ce1d75`; processed errata `16304146074363480e2c22639c9799b9d4302118c669e85e9f475b4a1bf6a340`. All four captured errata records were reviewed; none matches these three cards. [combat-triggers-rules.v1.json](../tests/fixtures/combat-triggers-rules.v1.json) stores 327 exact rule records and the bounded interpretation decisions.
 
 The [new focused suite](../tests/combat-triggers.test.ts) and three legal replay families prove full-card admission, source identity, shared power, trigger ordering, current conditions, history, hidden-information boundaries, wire traversal and complete event preservation. Coverage is now 14/29 distinct demo cards, 30/60 physical copies. Neither exact 27-main + 3-Legend starter is playable under constructed 40–50; no DEMO_STARTER is introduced. See [combat-triggers-report.md](combat-triggers-report.md).
+
+
+## GEAR_CAPABILITIES_V1: Mandibular Upgrade
+
+The only new admission is `mandibular-upgrade`, application revision **1**, `GEAR_CAPABILITIES_V1 / SUPPORTED`. It requires the explicit `gearCapabilities` policy with reviewed Gear and React policies. Earlier sections retain their historical boundaries; no prior immutable revision changes. Runtime uses reviewed typed metadata, never English parsing or card-slug dispatch.
+
+| Captured characteristic | Value |
+|---|---|
+| Type / classification | Gear / Cyberware |
+| Color / RAM | Yellow / 2 |
+| Eddie cost / printed power | 1 / 0 |
+| Sellability | Yes |
+| Equip selector | Friendly Unit or friendly face-up Legend, in field/Legends area |
+| Complete modifiers | `GRANT_PRINTED_POWER_TO_HOST` (zero) and `GRANT_KEYWORD_TO_HOST: BLOCKER` |
+| Other executable text | No extra trigger, activated effect, restriction or classification bonus |
+
+Complete captured text:
+
+> (Equip to a friendly Unit or face-up Legend.)
+> {Blocker} (You may spend this Unit to redirect a rival Unit's attack to it instead.)
+
+The physical Gear is the capability source; its host possesses the inherited text, and the host controller performs the ordinary `DECLARE_BLOCKER(hostInstanceId)` action. The printed base revision and CardInstance gain no cached keyword. The existing attachment relation supplies power, Satori triggers and Mandibular capability through distinct RulesView queries. Printed power 0 is represented explicitly; Mandibular still counts as a Gear for Royce's existing modifier.
+
+Rules 3.18.3, 4.11.3–4.11.3.1 and 11.6.4 make bottom text apply to the host while equipped. Parenthetical reminder text is not an independent effect (3.18.1.2.2.1). The capability ends immediately on detachment/departure under 4.12.1. Each identical source is retained in deterministic source order; the equivalent host spend/redirect action is enumerated once under 9.9/11.24. This is not a general rule that all duplicate keywords or triggers fail to stack.
+
+A face-up Legends-area Legend can receive the text but **cannot declare Blocker**, because 9.9/11.24 require a ready Unit and 4.2.1 gives Unit type only to field Legends. Go Solo/field-Legend admission remains outside scope. Lag does not forbid the separate Blocker cost; cannot-attack remains independent; cannot-be-blocked suppresses all sources of Blocker without closing React.
+
+Raw-byte SHA-256: `df528346515df46bfcb8b90e4eea7e1dfcae9ea89acc0872fcf5b911623acb87`. Canonical sourceHash: `910fd5afe70fdb58426683410224568d35a1132e1f9495e98d1cacba80eee8a4`. Normalized revision hash: `83329470ed73fc56508de3f4f4f3967bd91d8b2d546949b5c78876442aed44eb`.
+
+| Printing UUID | Set | Collector number |
+|---|---|---|
+| `219b7a29-0f8b-4750-bc46-0f39eec6721b` | `welcometonightcityretail` | 062 |
+| `dc0a7e03-54b6-4334-965f-27a3d469fed6` | `welcometonightcitybeta` | β062 |
+| `d13b8b15-8e31-448c-b28b-322bb498d0a7` | `theheistretailstarterdeck` | 008 |
+| `c3399413-d205-49e7-871a-4f16d7c3ade6` | `theheistbetastarterdeck` | β008 |
+| `49fc6d6e-8e86-4a05-bcd5-bd8a50edf5dc` | `mercdemodeck` | 005 |
+
+[The source fixture](../tests/fixtures/gear-capabilities-card-source.v1.json) retains the full raw record and all five printing objects. All four local errata were inspected; none matches Mandibular. Raw errata hash `1203a6c268c94d9d670a9cc145f739957fd018fa23eab86628bac94984ce1d75`; processed errata `16304146074363480e2c22639c9799b9d4302118c669e85e9f475b4a1bf6a340`. The Kiroshi equip erratum is already reflected in its local card text, but it remained unadmitted at that milestone (the private-look extension below now admits it).
+
+[gear-capabilities-rules.v1.json](../tests/fixtures/gear-capabilities-rules.v1.json) pins 101 exact relevant records: raw rules `054d2d2a4664e5b560304e0962e71b195467ad097cc4c62b2698fc57467a28dd`, processed rules `1f299c9cbe2657c9d088ae4b3a812b85e46c3fd2659579229635959c59a20e19`. [gear-capabilities.test.ts](../tests/gear-capabilities.test.ts) adds 25 focused tests; [mandibular-replay.v1.json](../tests/fixtures/mandibular-replay.v1.json) uses 31 legal setup/turn/equip/Blocker/fight actions, 29 genuine decisions and 142 events, ending at MAIN. Real Mongo/Postgres and the generic Python actionId adapter exercise the new revision/replay. See [gear-capabilities-report.md](gear-capabilities-report.md).
+
+The roadmap is now **15/29 distinct cards, 32/60 physical copies**. Exact demos remain **27+3** and cannot initialize under constructed **40–50**. No DEMO_STARTER, full match, private-look Gear, named-host end-turn effect or generic keyword framework is enabled.
+
+
+## GEAR_PRIVATE_LOOK_V1: Kiroshi Optics
+
+`kiroshi-optics`, application revision **1**, is the only new real-card admission. The full reviewed shape requires existing Gear and combat-trigger policies and its explicit content scope; no new global gameplay flag. No older immutable revision changes. This remains an experimental executable replay bundle, not an automatic catalog import or human-certified gold.
+
+| Captured characteristic | Value |
+|---|---|
+| Type / classification | Gear / Cyberware |
+| Color / RAM | Yellow / 1 |
+| Eddie cost / printed power | 1 / 1 |
+| Sellability | Yes |
+| Equip | Friendly Unit or friendly face-up Legend in field/Legends area |
+| Modifier | `GRANT_PRINTED_POWER_TO_HOST` |
+| Inherited ability | `WHEN_ATTACKING`, source Gear / subject host / controller host controller |
+| Complete effect | `LOOK_AT_FRIENDLY_FACE_DOWN_LEGEND` |
+| Additional executable text | None; no additional keyword, condition, activation cost or restriction |
+
+Complete captured text, including the already-applied equip reminder erratum:
+
+> (Equip to a friendly Unit or face-up Legend.)
+> {Attack} Look at a friendly face-down Legend. (Don't reveal it.)
+
+The shared attachment query adds printed power 1. The existing trigger queue combines inherited ATTACK with other reviewed ATTACK sources, permits same-controller ordering, and resolves each independent Gear before React. Zero legal targets skip; one resolves automatically; multiple friendly face-down Legends produce public slot choices. Neither the Gear nor the hidden Legend becomes the attacker.
+
+A deterministic `privateKnowledge` record stores the viewer, marked physical Legend and immutable remembered CardRef. Rule 5.7.4.2 explicitly allows visually separating marked known Legends: knowledge follows that trackable physical object, not a vacated slot. `rememberedContent` is the viewer's recorded memory; it is not an ongoing permission to look again (5.7.4.3). CALL/reveal or leaving the Legends area removes the redundant/stale hidden-object record. Initial randomization has no memory. A later effect that conceals identity by randomization remains unadmitted; no epoch or invented shuffle effect is introduced.
+
+Both players see `knownToSeats` on the anonymous slot, as 5.7.4.2 requires. Only the entitled viewer receives `rememberedContent`; face remains DOWN, publicId remains the slot, and public `content` stays absent. `LEGEND_LOOKED_AT` carries viewer/seat/slot only. Full state/history/TrainingPosition artifacts are private; UI/model payloads use observation projections. No GraphQL gameplay endpoint exposes raw events.
+
+The public marker necessarily changes the opponent's ObservationHash when first added. With public markers fixed, changing privately remembered identity leaves the opponent hash unchanged. ReplayStateHash and POSITION_V2 include memory; private-look bundles derive action IDs from entitled observation instead of full hidden state. Legacy bundle IDs retain their old protocol, with original-payload compatibility separately audited.
+
+Raw-byte SHA-256: `be8f06622ad9c01a615157e67e312216063cba23d446ae12eede0ea21326888b`. Canonical sourceHash: `437f9f77917cb88b25b0f2386f7afba8bada54b869d2810f4c0da3b698666502`. Normalized revision hash: `85e33a64bce450f9864f402be2f6d380936c9de91e92031708d70b289096d4d9`.
+
+| Printing UUID | Set | Collector number |
+|---|---|---|
+| `ec3368a9-79f1-4dfc-9cf7-1cb464ec1c88` | `welcometonightcityretail` | 061 |
+| `d35720e4-f307-4732-ae3d-8f47f1351549` | `welcometonightcitybeta` | β061 |
+| `aa9b8a2e-ffd6-4435-8bed-c4e64e1c32ac` | `theheistretailstarterdeck` | 007 |
+| `b18ce43d-3441-4a55-a6a9-34ae8765aa27` | `theheistbetastarterdeck` | β007 |
+| `57e1d9b6-0f2b-497b-acaf-49c20a68cd19` | `mercdemodeck` | 004 |
+
+[private-information-card-source.v1.json](../tests/fixtures/private-information-card-source.v1.json) retains the complete raw record and all four errata, including the one applicable equip correction. [private-information-rules.v1.json](../tests/fixtures/private-information-rules.v1.json) pins 210 local rules and the same raw/processed rules and errata hashes as the prior milestone. No network refresh occurred.
+
+[private-information.test.ts](../tests/private-information.test.ts) adds 30 focused tests. The [Kiroshi replay](../tests/fixtures/kiroshi-replay.v1.json) contains 31 legal actions, 29 strategic positions and 136 events, including setup, host/equip, a later attack, private look, React/PASS, MAIN and CALL of the remembered Legend. Real database persistence and the generic Python adapter cover the new state. See [private-information-report.md](private-information-report.md).
+
+Current demo coverage is **16/29 distinct cards, 35/60 physical copies**. Arasaka stays 5/14 and 14/30; Merc advances to 11/15 and 21/30. Constructed remains 40–50 main plus three Legends and existing copy/RAM rules. Neither exact 27+3 starter can initialize or play a complete match.

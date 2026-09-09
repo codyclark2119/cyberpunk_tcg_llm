@@ -1,3 +1,4 @@
+import { grantLegendKnowledge, privateLookTargets } from "./private-knowledge";
 import { PendingEffectSchema, TriggerBindingSchema, TriggerOriginSchema, failure, success, type CardInstanceId, type Result, type TriggerBinding, type TriggerOrigin } from "@tcg/domain";
 import type { TurnMutation } from "./turn";
 import { cardRevision } from "./characteristics";
@@ -41,7 +42,7 @@ export function beginTriggers(m: TurnMutation, origin: TriggerOrigin, captured?:
     return advanceTriggers(m);
 }
 function offer(m: TurnMutation): Result<null> {
-    const choice = triggerChoice(m.state), c = m.state.resolution.triggerContinuation!;
+    const choice = triggerChoice(m.state, m.context), c = m.state.resolution.triggerContinuation!;
     if (choice.options.length === 1) { m.state.resolution.choice = choice; return continueTrigger(m, 0, true); }
     m.state.resolution.choice = choice; m.state.resolution.stage = "CHOICE"; m.state.timing.actingPlayer = choice.actorId;
     const step = c.phase === "SELECT" ? "TRIGGER_ORDER_SELECTION" : c.phase === "OPTIONAL" ? "OPTIONAL_TRIGGER_SELECTION" : c.phase === "TARGET" ? "TARGET_SELECTION" : "AMOUNT_SELECTION";
@@ -66,6 +67,10 @@ export function advanceTriggers(m: TurnMutation): Result<null> {
     m.state.timing.actingPlayer = r.current.controllerId;
     r.stage = "RESOLVE_EFFECT"; r.choice = null;
     const e = r.current.effect;
+    if (e.kind === "LOOK_AT_FRIENDLY_FACE_DOWN_LEGEND") {
+        if (!privateLookTargets(m.state, r.current.controllerId, m.context).length) return completed(m);
+        c.phase = "TARGET"; return offer(m);
+    }
     if (e.kind === "ADJUST_GIG_UP_TO" || e.kind === "OPTIONAL_DECREASE_FRIENDLY_GIG_THEN_DRAW_IF_MIN") {
         if (!triggerGigTargets(m.state).length) return completed(m);
         c.phase = e.kind === "ADJUST_GIG_UP_TO" ? "TARGET" : "OPTIONAL";
@@ -96,6 +101,11 @@ export function continueTrigger(m: TurnMutation, index: number, forced = false):
         c.phase = "TARGET"; return offer(m);
     }
     if (c.phase === "TARGET") {
+        if (current.effect.kind === "LOOK_AT_FRIENDLY_FACE_DOWN_LEGEND") {
+            if (option.kind !== "LEGEND_SLOT") return failure("INVALID_LOOK_TARGET", "Choose a public Legend slot");
+            const learned = grantLegendKnowledge(m, current.controllerId, option.slot);
+            return learned.ok ? completed(m) : learned;
+        }
         if (option.kind !== "GIG" || !triggerGigTargets(m.state).includes(option.gigInstanceId)) return failure("INVALID_TRIGGER_TARGET", "Choose a currently valid Gig");
         c.targetGigId = option.gigInstanceId; c.phase = "AMOUNT";
         m.emit({ kind: "GIG_TARGET_SELECTED", effectId: current.id, gigInstanceId: option.gigInstanceId });

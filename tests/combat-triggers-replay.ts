@@ -43,7 +43,15 @@ export function triggerReplay(kind: TriggerReplayKind, seed: string, collectPosi
         if (state.timing.step === "ATTACK_TARGET_SELECTION") choose(o => o.kind === "ATTACK_TARGET" && o.target.kind === target);
         if (card === DEXTER) resolveAdjust();
     };
-    const finish = () => { take(a => a.action.kind === "PASS_REACT"); while (state.resolution.choice) choose(() => true); };
+    const finish = () => {
+        take(a => a.action.kind === "PASS_REACT");
+        while (state.resolution.choice) {
+            // This headline needs the original D6 steal to establish Dexter's >=10 difference.
+            // Select the gameplay intent explicitly; artifact-dependent actionId ordering is not a fixture policy.
+            if (kind === "DEFEATED" && state.resolution.gigStealContinuation) choose(o => o.kind === "GIG" && o.gigInstanceId === "p0-D6");
+            else choose(() => true);
+        }
+    };
     roll("D4"); sell();
     if (kind === "FIRST_BLUE") {
         take(a => a.action.kind === "CALL_LEGEND" && state.objects.cards[a.action.cardInstanceId].cardId === JACKIE);

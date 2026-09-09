@@ -15,6 +15,7 @@ export function revisionOf(state: GameState, id: CardInstanceId, context: Engine
 /** Admission certifies only these reviewed shapes, never catalog legality or arbitrary metadata. */
 export function supportsPlay(card: DeepReadonly<CardRevisionSnapshot> | undefined, context: EngineContext) {
     if (playEnabled(context) && card?.execution?.scope === "COMBAT_TRIGGERS_V1" && card.type !== "LEGEND") return supportsTriggerCard(card, context);
+    if (playEnabled(context) && card?.execution?.scope === "GEAR_PRIVATE_LOOK_V1" && card.type === "GEAR") return supportsGear(card, context);
     if (card?.mechanics.abilities.some(a => a.inherited || a.guard)) return failure("UNSUPPORTED_TRIGGER_METADATA", "Granted abilities and first-event guards require their full reviewed scope");
     if (playEnabled(context) && card?.execution?.scope === "COMBAT_RESTRICTIONS_V1") return supportsRestrictedPlay(card, context);
     if (card?.mechanics.restrictions?.length) return failure("UNSUPPORTED_CARD_RESTRICTIONS", "Printed restrictions require their complete reviewed execution scope");

@@ -1,3 +1,5 @@
+import { observe, hashObservation } from "./observation";
+import { privateInformationEnabled } from "./private-look-support";
 import { continueTrigger } from "./trigger-resolution";
 import { expireFightPreventions } from "./fight-prevention";
 import { createsFightPrevention } from "./restriction-support";
@@ -102,6 +104,7 @@ export function listLegalActions(state: GameState, actor: PlayerId, context: Eng
                     return `Steal ${gig.dieType} (${gig.id}, current ${gig.roll.kind === "ROLLED" ? gig.roll.currentValue : "unrolled"})`;
                 }
                 if (state.resolution.triggerContinuation) {
+                    if (option.kind === "LEGEND_SLOT") return `Look at friendly face-down Legend slot ${option.slot + 1}`;
                     if (option.kind === "EFFECT") { const e = state.resolution.pending.find(e => e.id === option.effectId)!; return `Resolve ${view.getRevision(e.sourceId!)?.displayName} (${e.sourceId}) for ${view.getRevision(e.trigger!.subjectId)?.displayName}`; }
                     if (option.kind === "CONFIRM") return option.confirmed ? "Use the optional Gig decrease" : "Decline the optional effect";
                     if (option.kind === "GIG") { const g = view.getGig(option.gigInstanceId); return `Choose ${g.controllerId === actor ? "your" : "rival"} ${g.dieType} (current ${g.roll.kind === "ROLLED" ? g.roll.currentValue : "unrolled"})`; }
@@ -125,8 +128,14 @@ export function listLegalActions(state: GameState, actor: PlayerId, context: Eng
             default: return a.action.kind;
         }
     };
+    // Full PositionHash includes secrets; new private-look bundles bind model action IDs to
+    // the entitled observation instead. Old bundle protocols remain byte-compatible.
+    const projected = privateInformationEnabled(context) ? observe(state, actor, context) : null;
+    if (projected && !projected.ok) return projected;
+    const actionIdentity = projected?.ok ? { version: 2, observationHash: hashObservation(projected.value), seat: state.players[actor].seat } : { version: 1, positionHash: hashPosition(state), seat: state.players[actor].seat };
+    const observableAction = (a: GameAction) => a.action.kind === "CALL_LEGEND" && projected?.ok ? { kind: a.action.kind, slot: state.players[actor].zones.LEGENDS.indexOf(a.action.cardInstanceId) } : a.action;
     const reactOrder = ["CALL_LEGEND", "PLAY_CARD", "DECLARE_BLOCKER", "PASS_REACT"];
-    return success(actions.map(a => ({ ...a, actionId: hashCanonical({ version: 1, positionHash: hashPosition(state), seat: state.players[actor].seat, action: a.action }), descriptor: { kind: a.action.kind, label: label(a) } })).sort((a, b) => {
+    return success(actions.map(a => ({ ...a, actionId: hashCanonical({ ...actionIdentity, action: observableAction(a) }), descriptor: { kind: a.action.kind, label: label(a) } })).sort((a, b) => {
         if (state.resolution.triggerContinuation && a.action.kind === "CHOOSE" && b.action.kind === "CHOOSE") return a.action.optionIndices[0] - b.action.optionIndices[0];
         if (isReactDecision(state, actor, context)) {
             const kindOrder = reactOrder.indexOf(a.action.kind) - reactOrder.indexOf(b.action.kind);

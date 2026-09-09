@@ -40,6 +40,7 @@ export const AttackTargetSchema = z.discriminatedUnion("kind", [
 ]);
 export type AttackTarget = z.infer<typeof AttackTargetSchema>;
 export const ChoiceOptionSchema = z.discriminatedUnion("kind", [
+    z.strictObject({ kind: z.literal("LEGEND_SLOT"), slot: z.number().int().nonnegative() }),
     z.strictObject({ kind: z.literal("ATTACK_TARGET"), target: AttackTargetSchema }),
     z.strictObject({ kind: z.literal("CARD"), cardInstanceId: CardInstanceIdSchema }),
     z.strictObject({ kind: z.literal("GIG"), gigInstanceId: GigInstanceIdSchema }),
@@ -56,6 +57,7 @@ export const PendingChoiceSchema = z.strictObject({
     ordered: z.boolean(), continuationId: z.string().min(1)
 }).refine(c => c.min <= c.max && c.max <= c.options.length, "Invalid choice bounds");
 export const EffectSchema = z.discriminatedUnion("kind", [
+    z.strictObject({ kind: z.literal("LOOK_AT_FRIENDLY_FACE_DOWN_LEGEND") }),
     z.strictObject({ kind: z.literal("OPTIONAL_DECREASE_FRIENDLY_GIG_THEN_DRAW_IF_MIN"), maximum: z.literal(2), draw: z.literal(1) }),
     z.strictObject({ kind: z.literal("CREATE_NEXT_RIVAL_FIGHT_PREVENTION") }),
     z.strictObject({ kind: z.literal("POWER_UNTIL_END_OF_TURN"), target: z.strictObject({ kind: z.literal("RIVAL_UNIT") }), amount: z.literal(-1) }),
@@ -81,6 +83,7 @@ export const AbilitySchema = z.strictObject({ id: z.string().min(1), trigger: Tr
     activation: z.strictObject({ timing: z.literal("MAIN"), conditionTiming: z.literal("ACTIVATION_AND_RESOLUTION"), costs: z.array(ActivationCostSchema) }).optional(),
     conditions: z.array(ConditionSchema), cost: CostSchema, effects: z.array(EffectSchema) });
 export const ContinuousModifierSchema = z.discriminatedUnion("kind", [
+    z.strictObject({ kind: z.literal("GRANT_KEYWORD_TO_HOST"), keyword: z.literal("BLOCKER") }),
     z.strictObject({ kind: z.literal("GRANT_PRINTED_POWER_TO_HOST") }),
     z.strictObject({ kind: z.literal("POWER_PER_EQUIPPED_GEAR_DURING_OWN_TURN"), amount: z.number().int() }),
     z.strictObject({ kind: z.literal("POWER"), target: TargetSelectorSchema, amount: z.number().int(), requiresFaceUp: z.boolean() }),

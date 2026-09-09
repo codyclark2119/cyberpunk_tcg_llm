@@ -1,3 +1,6 @@
+import { validatePrivateKnowledge } from "./private-knowledge";
+import { validatePrivateLookMetadata } from "./private-look-support";
+import { validateCapabilityMetadata } from "./capability-support";
 import { validateTriggerState } from "./trigger-state";
 import { validateFightPreventions } from "./fight-prevention";
 import { validateActionReturn } from "./action-return";
@@ -74,6 +77,12 @@ export function validateState(input: unknown, context: EngineContext): Result<Ga
         if (!visit(id, new Set()))
             return failure("ATTACHMENT_CYCLE", "Attachments cannot form cycles");
     }
+    const privateLook = validatePrivateLookMetadata(s, context);
+    if (!privateLook.ok) return privateLook;
+    const capabilities = validateCapabilityMetadata(s, context);
+    if (!capabilities.ok) return capabilities;
+    const knowledge = validatePrivateKnowledge(s, context);
+    if (!knowledge.ok) return knowledge;
     const gear = validateGearAttachments(s, context);
     if (!gear.ok) return gear;
     seen.clear();

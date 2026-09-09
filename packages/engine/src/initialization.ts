@@ -1,3 +1,5 @@
+import { validatePrivateLookMetadata } from "./private-look-support";
+import { validateCapabilityMetadata } from "./capability-support";
 import { triggersEnabled } from "./trigger-support";
 import { supportsPlay } from "./play-support";
 import { beginSetup } from "./setup";
@@ -51,6 +53,10 @@ export function createGameWithEvents(input: z.input<typeof CreateGameInputSchema
         p.economy = { sellsThisTurn: 0, callsThisTurn: 0, usageTurn: 1 };
     if (triggersEnabled(context)) s.turnHistory = { turn: 1, triggeredBatches: 0, blueUnitOrGearPlays: Object.fromEntries(s.match.playerOrder.map(id => [id, 0])) };
     // Capability admission is deck-wide, never a hidden-Legend-specific label/filter.
+    const privateLook = validatePrivateLookMetadata(s, context);
+    if (!privateLook.ok) return privateLook;
+    const capabilities = validateCapabilityMetadata(s, context);
+    if (!capabilities.ok) return capabilities;
     const view = new RulesView(s, context);
     for (const c of Object.values(s.objects.cards)) {
         const content = view.getRevision(c.id)!;
@@ -61,7 +67,7 @@ export function createGameWithEvents(input: z.input<typeof CreateGameInputSchema
             if (!supported.ok)
                 return supported;
         }
-        else if (content.execution?.scope === "NONCOMBAT_PLAY_V1" || content.execution?.scope === "COMBAT_ATTACK_V1" || content.execution?.scope === "COMBAT_REACT_V1" || content.execution?.scope === "COMBAT_RESTRICTIONS_V1" || content.execution?.scope === "COMBAT_TRIGGERS_V1") {
+        else if (content.execution?.scope === "NONCOMBAT_PLAY_V1" || content.execution?.scope === "COMBAT_ATTACK_V1" || content.execution?.scope === "COMBAT_REACT_V1" || content.execution?.scope === "COMBAT_RESTRICTIONS_V1" || content.execution?.scope === "COMBAT_TRIGGERS_V1" || content.execution?.scope === "GEAR_CAPABILITIES_V1" || content.execution?.scope === "GEAR_PRIVATE_LOOK_V1") {
             const supported = supportsPlay(content, context);
             if (!supported.ok) return supported;
         }

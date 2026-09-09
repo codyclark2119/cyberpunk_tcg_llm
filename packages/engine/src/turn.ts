@@ -1,3 +1,4 @@
+import { forgetLegendKnowledge } from "./private-knowledge";
 import { triggersEnabled } from "./trigger-support";
 import { actionReturnContext, finishAction } from "./action-return";
 import { resolveCallPrimitive } from "./effects";
@@ -98,6 +99,7 @@ export class TurnMutation {
         this.emit({ kind: "PAYMENT_MADE", sources });
         const legend = s.objects.cards[legendId];
         legend.face = "UP";
+        forgetLegendKnowledge(this, legendId);
         s.players[actor].economy.callsThisTurn!++;
         s.resolution.choice = null;
         delete s.resolution.callContinuation;

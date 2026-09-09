@@ -26,8 +26,8 @@ All **29 distinct cards** have local raw captures and demo printing metadata. �
 | Dying Night — V's Pistol | Mercs | 2 | Yes; demo 013 | No executable revision | Unreviewed | No | Inherited attack effect, named-host end-turn Eddie ready |
 | Dexter DeShawn — One Last Chance | Mercs | 1 | Yes; demo 002 | Yes; application revision 1 | COMBAT_TRIGGERS_V1 | Scoped only | Complete Play/Attack Gig adjustment and post-movement DEFEATED Street Cred difference/draw |
 | Secondhand Bombus | Mercs | 2 | Yes; demo 003 | Yes; application revision 1 | COMBAT_REACT_V1 | Scoped only | Generic fight/defeat/Gig stealing now supported under COMBAT_RESOLUTION_V1; remaining demo mechanics and demo-format review |
-| Kiroshi Optics | Mercs | 3 | Yes; demo 004 | No executable revision | Unreviewed | No | Inherited attack/private Legend look; erratum review |
-| Mandibular Upgrade | Mercs | 2 | Yes; demo 005 | No executable revision | Unreviewed | No | Inherited Blocker keyword/equip permission |
+| Kiroshi Optics | Mercs | 3 | Yes; demo 004 | Yes; application revision 1 | GEAR_PRIVATE_LOOK_V1 | Scoped only | Complete printed Gear +1, equip erratum, inherited ATTACK/private Legend look, public known marker and viewer-specific remembered identity |
+| Mandibular Upgrade | Mercs | 2 | Yes; demo 005 | Yes; application revision 1 | GEAR_CAPABILITIES_V1 | Scoped only | Complete zero printed-power inheritance, default equip and inherited Blocker; Unit-only declaration uses existing React pipeline |
 | Afterparty at Lizzie's | Mercs | 2 | Yes; demo 006 | Yes; application revision 1 | NONCOMBAT_PLAY_V1 | Scoped only | Supported captured function; full demo match still requires remaining deck mechanics and separate demo-format review |
 | Delamain Cab | Mercs | 3 | Yes; demo 009 | No executable revision | Unreviewed | No | Steal history and end-turn Eddie ready |
 | Evelyn Parker — Scheming Siren | Mercs | 3 | Yes; demo 010 | No executable revision | Unreviewed | No | Ordered attack draw/conditional discard |
@@ -36,28 +36,30 @@ All **29 distinct cards** have local raw captures and demo printing metadata. �
 | Floor It | Mercs | 3 | Yes; demo 014 | Yes; application revision 1 | COMBAT_REACT_V1 | Scoped only | Supported captured function; full demo match still requires remaining deck mechanics and separate demo-format review |
 | Reboot Optics | Mercs | 2 | Yes; demo 015 | Yes; application revision 1 | COMBAT_RESTRICTIONS_V1 | Scoped only | Single outstanding next-fight defeat prevention supported; overlapping copies explicitly unsupported pending interaction review |
 
-## Measured coverage after combat triggers
+## Measured coverage after private Legend look
 
 | Metric | Before this milestone | After |
 |---|---:|---:|
 | Distinct reference cards | 29 | 29 |
-| Reviewed executable distinct cards, within stated scopes | 11 | 14 |
-| Without reviewed executable revisions | 18 | 15 |
-| Remaining cards with identified subsystem/admission blockers | 18 | 15 |
-| Arasaka supported distinct cards / 14 | 4 | 5 |
-| Arasaka executable physical copies / 30 | 11 | 14 |
-| Mercs supported distinct cards / 15 | 7 | 9 |
-| Mercs executable physical copies / 30 | 14 | 16 |
-| Both decks executable physical copies / 60 | 25 | 30 |
+| Reviewed executable distinct cards, within stated scopes | 15 | 16 |
+| Without reviewed executable revisions | 14 | 13 |
+| Remaining cards with identified subsystem/admission blockers | 14 | 13 |
+| Arasaka supported distinct cards / 14 | 5 | 5 |
+| Arasaka executable physical copies / 30 | 14 | 14 |
+| Mercs supported distinct cards / 15 | 10 | 11 |
+| Mercs executable physical copies / 30 | 18 | 21 |
+| Both decks executable physical copies / 60 | 32 | 35 |
 
-Counts are recalculated from the 29 rows above. The 15 unreviewed cards and the 15 cards with known blockers are the same population. Copy coverage does not imply deck readiness. Reboot's two copies remain individually supported with the previous one-outstanding-prevention scope; overlapping use still needs review.
+Recalculated from the actual 29 rows above; physical quantities are unchanged. The 13 unreviewed cards and 13 cards with known blockers are the same population. Copy coverage does not imply deck readiness. Reboot's two copies remain individually supported within the existing one-outstanding-prevention scope.
 
-Exactly three new complete real-card revisions are admitted: Satori, Dexter and Jackie. Their source text, all 14 printing UUIDs, raw/canonical/normalized hashes and errata pins are recorded in [combat-triggers-card-sources.v1.json](../tests/fixtures/combat-triggers-card-sources.v1.json), [combat-triggers-fixture.ts](../tests/combat-triggers-fixture.ts) and [executable-card-coverage.md](executable-card-coverage.md). Satori includes both printed-power inheritance and its inherited draw trigger. Dexter has no static modifier; Jackie has no static modifier or DEFEATED line. Earlier revisions and the 151-card source corpus are unchanged.
+Exactly one new full real-card revision is admitted: Kiroshi Optics. Its default equip (including erratum), printed Gear power 1 and inherited ATTACK/private look are all represented. The source capture retains five printings and all four errata. Rule 5.7.4.2 requires a public known-slot marker; the remembered identity is private, and is not a permission to inspect again under 5.7.4.3. See [private-information-card-source.v1.json](../tests/fixtures/private-information-card-source.v1.json), [private-information-fixture.ts](../tests/private-information-fixture.ts) and [private-information-report.md](private-information-report.md). Earlier immutable revisions and the harness corpus are unchanged.
 
 ## Exact deck readiness
 
-**Can the exact Arasaka list initialize? No. Can the exact Merc list initialize? No. Can they play a complete deterministic match? No.** Both have 27 main cards, below the reviewed constructed minimum. Arasaka also lacks 9 distinct executable cards (16 copies); Mercs lacks 6 (14 copies), with the exact blockers in the table. No local complete demo-format rule capture was found: printing/deck metadata does not establish size, RAM/copy/setup/win-condition exceptions. The generic reference to a Gameplay Guide is not that guide. A separate source review remains necessary.
+**Can the exact Arasaka list initialize? No. Can the exact Merc list initialize? No. Can they play a complete deterministic match? No.** Both have 27 main cards, below the reviewed constructed minimum. Arasaka also lacks 9 distinct executable cards (16 copies); Mercs lacks 4 (9 copies), with the exact blockers in the table. No local complete demo-format rule capture was found: printing/deck metadata does not establish size, RAM/copy/setup/win-condition exceptions. The generic reference to a Gameplay Guide is not that guide. A separate source review remains necessary.
 
-The next bounded review should address inherited Gear keywords, starting with Mandibular Upgrade's complete captured shape and equip permission. Keep Dying Night/Kiroshi effects, Go Solo/field Legends, Yorinobu's first-attack/trait cluster, steal-history and general replacement chains as separate reviewed work. Minotaur/Over the Edge can reuse semantic defeat only after full targeting/condition/cost review. No remaining card is admitted merely because a shared primitive exists.
+The next coherent review candidate is Evelyn Parker — Scheming Siren: its complete captured ordered ATTACK draw/conditional-discard shape is narrower than Dying Night or Delamain's end-turn/history requirements. Review the entire local record and rules before admission; no Evelyn mechanics are implemented here.
 
-See [combat-triggers-report.md](combat-triggers-report.md) for this milestone's source review, exact gates and limits. The [combat-restrictions report](combat-restrictions-report.md) records the preceding eleven-card baseline.
+The remaining four Merc cards are V — Corporate Exile (Go Solo/field Legend), Dying Night — V's Pistol (inherited up-to-two Gig decrease plus named-host end-turn Eddie readying), Delamain Cab (steal history/end-turn readying), and Evelyn Parker (ordered ATTACK draw/conditional discard). Arasaka's nine unreviewed entries remain listed above. No DEMO_STARTER or complete starter match is introduced.
+
+See [private-information-report.md](private-information-report.md) for this milestone and [gear-capabilities-report.md](gear-capabilities-report.md) for the preceding fifteen-card baseline.

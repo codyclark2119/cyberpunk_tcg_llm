@@ -1,3 +1,5 @@
+// Trusted local engine transport: transition/state/event payloads are authoritative private replay data.
+// UI/model consumers must use observe/modelInput projections, never forward raw transitions.
 import { z } from "zod";
 import { ContentBundleSchema, GameStateSchema, PlayerIdSchema, HashSchema, LegalActionSchema, GameEventSchema, GameActionSchema, failure } from "@tcg/domain";
 import { createGameWithEvents, CreateGameInputSchema, validateState, listLegalActions, resolveActionId, validateAction, applyAction, observe, hashReplayState, hashPosition, hashObservation, PlayerObservationSchema } from "@tcg/engine";

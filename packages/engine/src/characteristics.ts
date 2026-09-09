@@ -1,3 +1,4 @@
+import { supportsCapabilityGear } from "./capability-support";
 import type { CardInstanceId, GameState } from "@tcg/domain";
 import type { EngineContext } from "./state";
 import { combatResolutionEnabled } from "./combat-resolution-policy";
@@ -20,6 +21,7 @@ export function applicablePowerModifiers(state: GameState, id: CardInstanceId, c
     if (gearEnabled(context) && card.face === "UP" && ["BATTLEFIELD", "LEGENDS"].includes(card.zone.zone) && ["UNIT", "LEGEND"].includes(revision.type))
         for (const g of gear) result.push({ sourceId: g.id, subjectId: id, kind: "GRANT_PRINTED_POWER_TO_HOST", amount: cardRevision(state, g.id, context)?.power ?? 0 });
     for (const modifier of revision.mechanics.modifiers) {
+        if (modifier.kind === "GRANT_KEYWORD_TO_HOST" && supportsCapabilityGear(revision, context).ok) continue;
         if (modifier.kind === "GRANT_PRINTED_POWER_TO_HOST" && revision.type === "GEAR" && gearEnabled(context)) continue;
         if (modifier.kind !== "POWER_PER_EQUIPPED_GEAR_DURING_OWN_TURN") throw new Error("UNSUPPORTED_CONTINUOUS_MODIFIERS");
         if (card.face === "UP" && card.zone.zone === "LEGENDS" && state.timing.turn > 0 && state.timing.activePlayer === card.controllerId)
