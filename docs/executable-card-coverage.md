@@ -4,7 +4,7 @@ This is an implementation review of a small local capture, **not human-certified
 
 `execution: { scope: "NONCOMBAT_SLICE_V1", status: "SUPPORTED" | "UNSUPPORTED" }` is distinct from catalog `status`, source `legality`, and the existence of display text. `REVIEWED_CALL_V1` admission requires an explicit supported execution decision for **every deck card**, then checks the actual normalized abilities and modifiers against implemented handlers. Unsupported triggers, multiple CALL abilities, costs, conditions, and primitives still fail admission. Existing synthetic legacy policies remain for regression compatibility. No runtime English parsing occurs.
 
-The sections record successive bounded scopes. Later sections supersede earlier implementation limits, while older pinned policies retain their regression boundaries. The latest addition is **GEAR_PRIVATE_LOOK_V1** below; no scope certifies a complete starter match.
+The sections record successive bounded scopes. Later sections supersede earlier implementation limits, while older pinned policies retain their regression boundaries. The latest addition is **ATTACK_ORDERED_EFFECTS_V1** below; no scope certifies a complete starter match.
 
 ## Captured records and implementation decisions
 
@@ -385,3 +385,54 @@ Raw-byte SHA-256: `be8f06622ad9c01a615157e67e312216063cba23d446ae12eede0ea213268
 [private-information.test.ts](../tests/private-information.test.ts) adds 30 focused tests. The [Kiroshi replay](../tests/fixtures/kiroshi-replay.v1.json) contains 31 legal actions, 29 strategic positions and 136 events, including setup, host/equip, a later attack, private look, React/PASS, MAIN and CALL of the remembered Legend. Real database persistence and the generic Python adapter cover the new state. See [private-information-report.md](private-information-report.md).
 
 Current demo coverage is **16/29 distinct cards, 35/60 physical copies**. Arasaka stays 5/14 and 14/30; Merc advances to 11/15 and 21/30. Constructed remains 40–50 main plus three Legends and existing copy/RAM rules. Neither exact 27+3 starter can initialize or play a complete match.
+
+
+## Evelyn Parker — Scheming Siren: complete ordered ATTACK
+
+Application CardId `evelyn-parker-scheming-siren`, immutable application revision **1**, execution `ATTACK_ORDERED_EFFECTS_V1 / SUPPORTED`. This is an implementation review, not human-certified gold. Blue RAM 3, Unit / Doll, cost 2 Eddies, printed power **0**, Uncommon, artist Olgierd Ciszak, **no Sell tag**, no additional keywords or executable clauses. Retail 113 and Merc demo 010 refer to the same captured card. All five printings and all four captured errata were inspected; no Evelyn erratum applies.
+
+Exact captured text:
+
+> {Attack} Draw 1. Then, if you have more ☆ (Street Cred) than a Rival, discard 1.
+> (Units with power 0 don't steal Gigs.)
+
+The second sentence is a reminder of current-power stealing rules. It does not permanently prohibit stealing after Gear increases her power. Ordinary Unit play/payment/Lag uses existing code.
+
+One `WHEN_ATTACKING` ability contains two distinct ordered primitives:
+
+```json
+[
+  { "kind": "DRAW", "count": 1 },
+  { "kind": "DISCARD_CARDS", "player": "CONTROLLER", "count": 1,
+    "selection": "CHOSEN_BY_AFFECTED_PLAYER",
+    "when": { "timing": "RESOLUTION", "condition": { "kind": "STREET_CRED_GREATER_THAN_RIVAL" } } }
+]
+```
+
+The existing DRAW handler moves the top physical card DECK→HAND. Rules 10.2, 10.2.3 and 10.3.3 require the second clause to evaluate against the state after that movement, without interleaving another pending ability. Street Cred is derived from current Gigs; drawing cannot change it. The comparison reuses the inverse of the existing Null-aware less-than query: numeric beats Null; equal numbers and Null/Null are false.
+
+**Her controller chooses and discards from their own hand.** The rival is only part of the Street Cred comparison. No rival-choice, random discard, optional decline or hand-reveal permission is printed. Rules 10.1.4 and 10.31 govern resolution and choices. The local comprehensive snapshot has no standalone discard definition: the reviewed synthesis combines that controller/choice wording, captured Shattered Memories' explicit hand-discard wording, and the official guide's confirmation that discarded cards enter face-up Trash. This supplemental guide review is limited to the discard destination and visibility. [Official Gameplay Guide](https://cyberpunktcg.com/gameplay-guide).
+
+`DISCARD_SELECTION` offers every currently eligible own-hand physical card, including the new draw. Zero eligible cards skip; one mandatory card resolves automatically; multiple cards create a strategic TrainingPosition. A successful Evelyn draw always leaves at least one card; zero-card discard is tested only at the trusted primitive boundary. Empty-deck DRAW loses immediately before any condition/discard. No fake forced-choice training sample is generated.
+
+The existing trigger binding retains source revision, subject/controller, turn/batch and ATTACK return context. `primitiveIndex: 1` and `conditionMet: true` persist the paused second clause. The same ability stays current through discard; independent inherited Kiroshi triggers can resolve before or after it. React opens only after the batch completes. Satori still waits until fight win. Floor It/Reboot react after Evelyn finishes and do not reevaluate her condition.
+
+Discard uses a typed semantic operation plus ordinary movement. `CARD_DISCARDED` records physical card, affected player, source/effect and forced status; `CARD_MOVED` records the actual area transition. Full event/history and TrainingPosition state remain authoritative private records. Only observation and action descriptors become model input. The rival sees hand counts before resolution and the face-up discarded identity afterward. Previous Kiroshi memory survives unchanged.
+
+ReplayStateHash and PositionHash distinguish private hand differences. The chooser's ObservationHash and action IDs reflect their visible hand options; the other viewer's hash does not expose those identities. New ordered-effect bundles use observation-derived action IDs even without Kiroshi. Legacy bundles retain their protocol. Old scopes reject the new metadata, including hidden cards; incomplete full shapes cannot initialize.
+
+Raw-byte SHA-256: `a902a898742d6af0a16f37070dcb0d0f5f6a4fac97212522f839857873fd3c7c`. Canonical sourceHash: `df97cd7c2e340aae07ffbf56bd52425a25ca364f18f0272ccfde67710880f540`. Normalized revision hash: `015f486f2a90cd29964dd9086992148bdbdaaa9eef7115629427ccc9a7523b29`.
+
+| Printing UUID | Set | Collector number |
+|---|---|---|
+| `7d174619-2183-4058-a89a-082c6b7b5a5c` | `welcometonightcityretail` | 113 |
+| `c40f0461-c757-4e09-94cc-27ed31f08dd7` | `welcometonightcitybeta` | β113 |
+| `4b037f20-0cb8-4dfa-bd34-3a3b8381632b` | `theheistretailstarterdeck` | 014 |
+| `c7bc2b37-c1a4-43aa-a4c3-5dd60514b098` | `theheistbetastarterdeck` | β014 |
+| `3757f0f3-32d0-41c2-89dc-515271d2b758` | `mercdemodeck` | 010 |
+
+[attack-ordered-effects-card-source.v1.json](../tests/fixtures/attack-ordered-effects-card-source.v1.json) preserves the full record and errata. [attack-ordered-effects-rules.v1.json](../tests/fixtures/attack-ordered-effects-rules.v1.json) pins 61 numbered rules, raw/processed rules and errata SHA-256 values, source-review decisions and the supplemental guide excerpt. No harness corpus refresh occurred.
+
+[attack-ordered-effects.test.ts](../tests/attack-ordered-effects.test.ts) adds 34 focused tests. The [Evelyn replay](../tests/fixtures/evelyn-replay.v1.json) records 17 legal actions, 16 strategic positions and 90 events, including an actual multi-card discard position and return to MAIN. Mongo revision round trips, PostgreSQL reload/resume, all 18 Python replay families and the original 17-payload audit cover this addition. See [attack-ordered-effects-report.md](attack-ordered-effects-report.md) for commands and measured results.
+
+Current demo coverage is **17/29 distinct cards, 38/60 physical copies**: Arasaka 5/14 and 14/30 unchanged; Merc 12/15 and 24/30. Remaining Merc cards are V — Corporate Exile, Dying Night — V's Pistol and Delamain Cab. Constructed remains 40–50 main plus 3 Legends with existing copy/RAM limits; neither exact 27+3 starter can initialize or run a complete match.

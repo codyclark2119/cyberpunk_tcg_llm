@@ -16,6 +16,9 @@ export function testCondition(state: GameState, actor: PlayerId, condition: Cond
                 return rival.length > 0 && Math.abs(own - rival.reduce((n, g) => n + (g.roll.kind === "ROLLED" ? g.roll.currentValue : 0), 0)) >= condition.minimum;
             });
         }
+        case "STREET_CRED_GREATER_THAN_RIVAL":
+            // Inverse of the existing Null-aware comparison, not subtraction or a stored counter.
+            return state.match.playerOrder.some(id => id !== actor && testCondition(state, id, { kind: "STREET_CRED_LESS_THAN_RIVAL" }, context));
         case "STREET_CRED_LESS_THAN_RIVAL": {
             // 5.11.4: Null is below numeric values; two Null areas are not less than each other.
             const own = values.length ? values.reduce((a, b) => a + b, 0) : null;

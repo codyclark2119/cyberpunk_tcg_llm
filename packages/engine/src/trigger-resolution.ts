@@ -1,3 +1,6 @@
+import { discardCard, getDiscardableCards } from "./discard";
+import { testCondition } from "./conditions";
+import { supportsOrderedAttackCard } from "./ordered-effects-support";
 import { grantLegendKnowledge, privateLookTargets } from "./private-knowledge";
 import { PendingEffectSchema, TriggerBindingSchema, TriggerOriginSchema, failure, success, type CardInstanceId, type Result, type TriggerBinding, type TriggerOrigin } from "@tcg/domain";
 import type { TurnMutation } from "./turn";
@@ -45,7 +48,7 @@ function offer(m: TurnMutation): Result<null> {
     const choice = triggerChoice(m.state, m.context), c = m.state.resolution.triggerContinuation!;
     if (choice.options.length === 1) { m.state.resolution.choice = choice; return continueTrigger(m, 0, true); }
     m.state.resolution.choice = choice; m.state.resolution.stage = "CHOICE"; m.state.timing.actingPlayer = choice.actorId;
-    const step = c.phase === "SELECT" ? "TRIGGER_ORDER_SELECTION" : c.phase === "OPTIONAL" ? "OPTIONAL_TRIGGER_SELECTION" : c.phase === "TARGET" ? "TARGET_SELECTION" : "AMOUNT_SELECTION";
+    const step = c.phase === "DISCARD" ? "DISCARD_SELECTION" : c.phase === "SELECT" ? "TRIGGER_ORDER_SELECTION" : c.phase === "OPTIONAL" ? "OPTIONAL_TRIGGER_SELECTION" : c.phase === "TARGET" ? "TARGET_SELECTION" : "AMOUNT_SELECTION";
     m.state.timing.step = step; m.state.timing.window = step;
     m.emit({ kind: "PHASE_CHANGED", step });
     return success(null);
@@ -54,7 +57,7 @@ function completed(m: TurnMutation): Result<null> {
     const current = m.state.resolution.current!, c = m.state.resolution.triggerContinuation!;
     m.emit({ kind: "EFFECT_RESOLVED", effectId: current.id });
     if (m.state.match.outcome) return success(null);
-    c.resolvedIds.push(current.id); c.phase = "SELECT"; delete c.targetGigId;
+    c.resolvedIds.push(current.id); c.phase = "SELECT"; delete c.targetGigId; delete c.conditionMet;
     m.state.resolution.current = null; m.state.resolution.choice = null;
     return advanceTriggers(m);
 }
@@ -67,6 +70,13 @@ export function advanceTriggers(m: TurnMutation): Result<null> {
     m.state.timing.actingPlayer = r.current.controllerId;
     r.stage = "RESOLVE_EFFECT"; r.choice = null;
     const e = r.current.effect;
+    if (e.kind === "DISCARD_CARDS") {
+        // Evaluated only after the preceding primitive has actually changed authoritative state.
+        const met = !e.when || testCondition(m.state, r.current.controllerId, e.when.condition, m.context, r.current.sourceId);
+        if (e.when) m.emit({ kind: "CONDITION_EVALUATED", effectId: r.current.id, met });
+        if (!met || !getDiscardableCards(m.state, r.current.controllerId).length) return completed(m);
+        c.conditionMet = true; c.phase = "DISCARD"; return offer(m);
+    }
     if (e.kind === "LOOK_AT_FRIENDLY_FACE_DOWN_LEGEND") {
         if (!privateLookTargets(m.state, r.current.controllerId, m.context).length) return completed(m);
         c.phase = "TARGET"; return offer(m);
@@ -80,6 +90,11 @@ export function advanceTriggers(m: TurnMutation): Result<null> {
     if (!result.ok) return result;
     // Empty draw ends the game and clears the continuation; still preserve the resolved fact.
     if (m.state.match.outcome) { m.emit({ kind: "EFFECT_RESOLVED", effectId: current.id }); return success(null); }
+    if (!current.primitiveIndex && supportsOrderedAttackCard(cardRevision(m.state, current.sourceId!, m.context), m.context).ok) {
+        const binding = c.bindings.find(b => b.sourceId === current.sourceId && b.abilityId === current.trigger?.abilityId)!;
+        r.current = PendingEffectSchema.parse(pendingTrigger(m.state, binding, c.ordinal, current.causedBySequence, m.context, 1));
+        return advanceTriggers(m);
+    }
     return completed(m);
 }
 export function continueTrigger(m: TurnMutation, index: number, forced = false): Result<null> {
@@ -94,6 +109,11 @@ export function continueTrigger(m: TurnMutation, index: number, forced = false):
         return advanceTriggers(m);
     }
     const current = r.current!;
+    if (c.phase === "DISCARD") {
+        if (current.effect.kind !== "DISCARD_CARDS" || option.kind !== "CARD") return failure("INVALID_DISCARD", "Choose one current own-hand card");
+        const result = discardCard(m, current.effect, option.cardInstanceId, forced);
+        return result.ok ? completed(m) : result;
+    }
     if (c.phase === "OPTIONAL") {
         if (option.kind !== "CONFIRM") return failure("INVALID_OPTIONAL_TRIGGER", "Accept or decline explicitly");
         m.emit({ kind: option.confirmed ? "OPTIONAL_TRIGGER_ACCEPTED" : "OPTIONAL_TRIGGER_DECLINED", effectId: current.id, controllerId: current.controllerId });

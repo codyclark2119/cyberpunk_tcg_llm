@@ -16,6 +16,7 @@ export const TargetSelectorSchema = z.discriminatedUnion("kind", [
 export const ConditionSchema = z.discriminatedUnion("kind", [
     z.strictObject({ kind: z.literal("STREET_CRED_DIFFERENCE_AT_LEAST"), minimum: z.literal(10) }),
     z.strictObject({ kind: z.literal("STREET_CRED_LESS_THAN_RIVAL") }),
+    z.strictObject({ kind: z.literal("STREET_CRED_GREATER_THAN_RIVAL") }),
     z.strictObject({ kind: z.literal("SOURCE_POWER_AT_LEAST"), minimum: z.number().int().nonnegative() }),
     z.strictObject({ kind: z.literal("GIG_VALUE_AT_LEAST"), minimum: z.number().int().nonnegative() }),
     z.strictObject({ kind: z.literal("GIG_COUNT"), minimum: z.number().int().nonnegative() }),
@@ -52,11 +53,18 @@ export const ChoiceOptionSchema = z.discriminatedUnion("kind", [
 ]);
 export const PendingChoiceSchema = z.strictObject({
     id: z.string().min(1), actorId: PlayerIdSchema,
-    kind: z.enum(["CARD", "TARGET", "MODE", "AMOUNT", "ORDER", "ROLL_GIG", "MODIFY_GIG", "STEAL_GIGS", "PAYMENT", "OPTIONAL"]),
+    kind: z.enum(["CARD", "TARGET", "MODE", "AMOUNT", "ORDER", "ROLL_GIG", "MODIFY_GIG", "STEAL_GIGS", "PAYMENT", "OPTIONAL", "DISCARD"]),
     options: z.array(ChoiceOptionSchema), min: z.number().int().nonnegative(), max: z.number().int().nonnegative(),
     ordered: z.boolean(), continuationId: z.string().min(1)
 }).refine(c => c.min <= c.max && c.max <= c.options.length, "Invalid choice bounds");
+export const DiscardCardsEffectSchema = z.strictObject({
+    kind: z.literal("DISCARD_CARDS"), player: z.literal("CONTROLLER"), count: z.literal(1),
+    selection: z.literal("CHOSEN_BY_AFFECTED_PLAYER"),
+    when: z.strictObject({ timing: z.literal("RESOLUTION"), condition: ConditionSchema }).optional()
+});
+export type DiscardCardsEffect = z.infer<typeof DiscardCardsEffectSchema>;
 export const EffectSchema = z.discriminatedUnion("kind", [
+    DiscardCardsEffectSchema,
     z.strictObject({ kind: z.literal("LOOK_AT_FRIENDLY_FACE_DOWN_LEGEND") }),
     z.strictObject({ kind: z.literal("OPTIONAL_DECREASE_FRIENDLY_GIG_THEN_DRAW_IF_MIN"), maximum: z.literal(2), draw: z.literal(1) }),
     z.strictObject({ kind: z.literal("CREATE_NEXT_RIVAL_FIGHT_PREVENTION") }),

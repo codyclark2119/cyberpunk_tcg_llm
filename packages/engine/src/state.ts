@@ -1,3 +1,4 @@
+import { validateOrderedMetadata } from "./ordered-effects-support";
 import { validatePrivateKnowledge } from "./private-knowledge";
 import { validatePrivateLookMetadata } from "./private-look-support";
 import { validateCapabilityMetadata } from "./capability-support";
@@ -77,6 +78,8 @@ export function validateState(input: unknown, context: EngineContext): Result<Ga
         if (!visit(id, new Set()))
             return failure("ATTACHMENT_CYCLE", "Attachments cannot form cycles");
     }
+    const ordered = validateOrderedMetadata(s, context);
+    if (!ordered.ok) return ordered;
     const privateLook = validatePrivateLookMetadata(s, context);
     if (!privateLook.ok) return privateLook;
     const capabilities = validateCapabilityMetadata(s, context);
@@ -138,7 +141,7 @@ export function validateState(input: unknown, context: EngineContext): Result<Ga
             return failure("INVALID_TURN_STATE", "Turn slice requires two players, first player and an active decision actor");
         if (s.timing.turn < 1 || s.timing.activePlayer !== ids[(s.players[s.timing.firstPlayer].seat + s.timing.turn - 1) % ids.length])
             return failure("INVALID_TURN_ORDER", "Active player must follow first-player and turn order");
-        const boundary = ["TRIGGER_ORDER_SELECTION", "OPTIONAL_TRIGGER_SELECTION", "MAIN", "CHOOSE_GIG", "PAYMENT_SELECTION", "TARGET_SELECTION", "AMOUNT_SELECTION", "ATTACK_TARGET_SELECTION", "RIVAL_REACT", "COMBAT_RESOLUTION_PENDING", "GIG_STEAL_SELECTION", "DEFEAT_ORDER_SELECTION", "FINISHED"].includes(step);
+        const boundary = ["DISCARD_SELECTION", "TRIGGER_ORDER_SELECTION", "OPTIONAL_TRIGGER_SELECTION", "MAIN", "CHOOSE_GIG", "PAYMENT_SELECTION", "TARGET_SELECTION", "AMOUNT_SELECTION", "ATTACK_TARGET_SELECTION", "RIVAL_REACT", "COMBAT_RESOLUTION_PENDING", "GIG_STEAL_SELECTION", "DEFEAT_ORDER_SELECTION", "FINISHED"].includes(step);
         if ((boundary && s.timing.window !== step) || (!boundary && s.timing.window !== "RESOLVING"))
             return failure("INVALID_TURN_TIMING", "Step and window disagree");
         if (Object.values(s.players).some(p => p.economy.usageTurn !== s.timing.turn || p.economy.callsThisTurn === undefined || p.economy.callsThisTurn > slice.callLimitPerTurn || p.economy.sellsThisTurn > b.ruleset.gameplay!.sellLimitPerTurn))

@@ -30,36 +30,36 @@ All **29 distinct cards** have local raw captures and demo printing metadata. �
 | Mandibular Upgrade | Mercs | 2 | Yes; demo 005 | Yes; application revision 1 | GEAR_CAPABILITIES_V1 | Scoped only | Complete zero printed-power inheritance, default equip and inherited Blocker; Unit-only declaration uses existing React pipeline |
 | Afterparty at Lizzie's | Mercs | 2 | Yes; demo 006 | Yes; application revision 1 | NONCOMBAT_PLAY_V1 | Scoped only | Supported captured function; full demo match still requires remaining deck mechanics and separate demo-format review |
 | Delamain Cab | Mercs | 3 | Yes; demo 009 | No executable revision | Unreviewed | No | Steal history and end-turn Eddie ready |
-| Evelyn Parker — Scheming Siren | Mercs | 3 | Yes; demo 010 | No executable revision | Unreviewed | No | Ordered attack draw/conditional discard |
+| Evelyn Parker — Scheming Siren | Mercs | 3 | Yes; demo 010 | Yes; application revision 1 | ATTACK_ORDERED_EFFECTS_V1 | Scoped only | Complete cost2 power0 unsellable Unit; ordered ATTACK draw1 then current Street Cred comparison and mandatory own-hand discard1, before React |
 | MT0D12 Flathead | Mercs | 1 | Yes; demo 011 | Yes; application revision 1 | COMBAT_RESTRICTIONS_V1 | Scoped only | Current Street Cred restriction supported; CALL/Quick/PASS remain legal |
 | Psycho Squad | Mercs | 3 | Yes; demo 012 | Yes; application revision 1 | COMBAT_RESTRICTIONS_V1 | Scoped only | Complete ordinary Unit shape supported; three physical copies unchanged |
 | Floor It | Mercs | 3 | Yes; demo 014 | Yes; application revision 1 | COMBAT_REACT_V1 | Scoped only | Supported captured function; full demo match still requires remaining deck mechanics and separate demo-format review |
 | Reboot Optics | Mercs | 2 | Yes; demo 015 | Yes; application revision 1 | COMBAT_RESTRICTIONS_V1 | Scoped only | Single outstanding next-fight defeat prevention supported; overlapping copies explicitly unsupported pending interaction review |
 
-## Measured coverage after private Legend look
+## Measured coverage after Evelyn ordered ATTACK
 
 | Metric | Before this milestone | After |
 |---|---:|---:|
 | Distinct reference cards | 29 | 29 |
-| Reviewed executable distinct cards, within stated scopes | 15 | 16 |
-| Without reviewed executable revisions | 14 | 13 |
-| Remaining cards with identified subsystem/admission blockers | 14 | 13 |
+| Reviewed executable distinct cards, within stated scopes | 16 | 17 |
+| Without reviewed executable revisions | 13 | 12 |
+| Remaining cards with identified subsystem/admission blockers | 13 | 12 |
 | Arasaka supported distinct cards / 14 | 5 | 5 |
 | Arasaka executable physical copies / 30 | 14 | 14 |
-| Mercs supported distinct cards / 15 | 10 | 11 |
-| Mercs executable physical copies / 30 | 18 | 21 |
-| Both decks executable physical copies / 60 | 32 | 35 |
+| Mercs supported distinct cards / 15 | 11 | 12 |
+| Mercs executable physical copies / 30 | 21 | 24 |
+| Both decks executable physical copies / 60 | 35 | 38 |
 
-Recalculated from the actual 29 rows above; physical quantities are unchanged. The 13 unreviewed cards and 13 cards with known blockers are the same population. Copy coverage does not imply deck readiness. Reboot's two copies remain individually supported within the existing one-outstanding-prevention scope.
+Recalculated from the 29 rows above, with unchanged physical quantities. The 12 unreviewed cards and 12 cards with known blockers are the same population. Reboot's two copies remain individually supported within its one-outstanding-prevention scope. Copy coverage does not imply deck readiness.
 
-Exactly one new full real-card revision is admitted: Kiroshi Optics. Its default equip (including erratum), printed Gear power 1 and inherited ATTACK/private look are all represented. The source capture retains five printings and all four errata. Rule 5.7.4.2 requires a public known-slot marker; the remembered identity is private, and is not a permission to inspect again under 5.7.4.3. See [private-information-card-source.v1.json](../tests/fixtures/private-information-card-source.v1.json), [private-information-fixture.ts](../tests/private-information-fixture.ts) and [private-information-report.md](private-information-report.md). Earlier immutable revisions and the harness corpus are unchanged.
+Exactly one complete real-card revision is newly admitted: Evelyn Parker — Scheming Siren. Her controller draws, then compares current Street Cred, then chooses their own mandatory discard if greater than a rival. The rival does not discard. Zero printed power uses the existing current-power steal allowance, including Gear changes. See [attack-ordered-effects-card-source.v1.json](../tests/fixtures/attack-ordered-effects-card-source.v1.json), [attack-ordered-effects-fixture.ts](../tests/attack-ordered-effects-fixture.ts), and [attack-ordered-effects-report.md](attack-ordered-effects-report.md). All prior immutable card revisions and the harness corpus remain unchanged.
 
 ## Exact deck readiness
 
-**Can the exact Arasaka list initialize? No. Can the exact Merc list initialize? No. Can they play a complete deterministic match? No.** Both have 27 main cards, below the reviewed constructed minimum. Arasaka also lacks 9 distinct executable cards (16 copies); Mercs lacks 4 (9 copies), with the exact blockers in the table. No local complete demo-format rule capture was found: printing/deck metadata does not establish size, RAM/copy/setup/win-condition exceptions. The generic reference to a Gameplay Guide is not that guide. A separate source review remains necessary.
+**Can the exact Arasaka list initialize? No. Can the exact Merc list initialize? No. Can they play a complete deterministic match? No.** Both have 27 main cards, below the reviewed constructed minimum. Arasaka also lacks 9 distinct executable cards (16 copies); Mercs lacks 3 (6 copies), with the exact blockers in the table. No local complete demo-format rule capture was found: printing/deck metadata does not establish size, RAM/copy/setup/win-condition exceptions. The generic reference to a Gameplay Guide is not that guide. A separate source review remains necessary.
 
-The next coherent review candidate is Evelyn Parker — Scheming Siren: its complete captured ordered ATTACK draw/conditional-discard shape is narrower than Dying Night or Delamain's end-turn/history requirements. Review the entire local record and rules before admission; no Evelyn mechanics are implemented here.
+The remaining three Merc cards are V — Corporate Exile (Go Solo/field Legend), Dying Night — V's Pistol (inherited up-to-two Gig decrease plus named-host end-turn Eddie readying), and Delamain Cab (steal history/end-turn readying). Arasaka's nine unreviewed entries remain listed above.
 
-The remaining four Merc cards are V — Corporate Exile (Go Solo/field Legend), Dying Night — V's Pistol (inherited up-to-two Gig decrease plus named-host end-turn Eddie readying), Delamain Cab (steal history/end-turn readying), and Evelyn Parker (ordered ATTACK draw/conditional discard). Arasaka's nine unreviewed entries remain listed above. No DEMO_STARTER or complete starter match is introduced.
+The next candidate is a source review of Dying Night and Delamain's named-host/end-turn/history cluster, beginning with a bounded complete card if those dependencies permit it. Go Solo/field Legends remain a separate larger boundary. No DEMO_STARTER or complete starter match is introduced.
 
-See [private-information-report.md](private-information-report.md) for this milestone and [gear-capabilities-report.md](gear-capabilities-report.md) for the preceding fifteen-card baseline.
+See [attack-ordered-effects-report.md](attack-ordered-effects-report.md) for this milestone and [private-information-report.md](private-information-report.md) for the preceding sixteen-card baseline.

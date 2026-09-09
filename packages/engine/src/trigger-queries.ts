@@ -1,3 +1,4 @@
+import { getDiscardableCards } from "./discard";
 import { privateLookTargets } from "./private-knowledge";
 import { hashCanonical, type GameState, type CardInstanceId, type TriggerBinding, type TriggerOrigin, type PendingChoice, type PendingEffect } from "@tcg/domain";
 import type { EngineContext } from "./state";
@@ -31,10 +32,10 @@ export function discoverTriggers(state: GameState, origin: TriggerOrigin, contex
 export function triggerId(state: GameState, binding: TriggerBinding, ordinal: number) {
     return hashCanonical({ protocol: "reviewed-trigger@1", turn: state.timing.turn, ordinal, sourceId: binding.sourceId, subjectId: binding.subjectId, source: binding.source, abilityId: binding.abilityId, kind: binding.kind, controllerSeat: state.players[binding.controllerId].seat });
 }
-export function pendingTrigger(state: GameState, binding: TriggerBinding, ordinal: number, sequence: number, context: EngineContext): PendingEffect {
+export function pendingTrigger(state: GameState, binding: TriggerBinding, ordinal: number, sequence: number, context: EngineContext, primitiveIndex: 0 | 1 = 0): PendingEffect {
     const a = context.content.cards.find(c => c.id === binding.source.cardId && c.revision === binding.source.revision)!.mechanics.abilities.find(a => a.id === binding.abilityId)!;
     const { sourceId, controllerId, ...trigger } = binding;
-    return { id: triggerId(state, binding, ordinal), sourceId, controllerId, causedBySequence: sequence, effect: a.effects[0], trigger: { ...trigger, ordinal, turn: state.timing.turn } };
+    return { id: triggerId(state, binding, ordinal), sourceId, controllerId, causedBySequence: sequence, effect: a.effects[primitiveIndex], ...(primitiveIndex === 1 ? { primitiveIndex } : {}), trigger: { ...trigger, ordinal, turn: state.timing.turn } };
 }
 export function nextTriggerGroup(state: GameState) {
     const pending = state.resolution.pending;
@@ -50,6 +51,7 @@ export function triggerChoice(state: GameState, context: EngineContext): Pending
     let actorId = current?.controllerId ?? nextTriggerGroup(state)[0].controllerId;
     let kind: PendingChoice["kind"], options: PendingChoice["options"];
     if (c.phase === "SELECT") { const group = nextTriggerGroup(state); actorId = group[0].controllerId; kind = "ORDER"; options = group.map(e => ({ kind: "EFFECT", effectId: e.id })); }
+    else if (c.phase === "DISCARD") { kind = "DISCARD"; options = getDiscardableCards(state, actorId).map(cardInstanceId => ({ kind: "CARD", cardInstanceId })); }
     else if (c.phase === "OPTIONAL") { kind = "OPTIONAL"; options = [{ kind: "CONFIRM", confirmed: true }, { kind: "CONFIRM", confirmed: false }]; }
     else if (c.phase === "TARGET") { kind = "TARGET"; options = current?.effect.kind === "LOOK_AT_FRIENDLY_FACE_DOWN_LEGEND" ? privateLookTargets(state, actorId, context).map(slot => ({ kind: "LEGEND_SLOT", slot })) : triggerGigTargets(state).map(gigInstanceId => ({ kind: "GIG", gigInstanceId })); }
     else {
@@ -58,5 +60,5 @@ export function triggerChoice(state: GameState, context: EngineContext): Pending
             ? [...(value > 1 ? [{ kind: "MODE" as const, mode: "DECREASE_1" }] : []), { kind: "MODE", mode: "KEEP" }, ...(value < Number(g.dieType.slice(1)) ? [{ kind: "MODE" as const, mode: "INCREASE_1" }] : [])]
             : Array.from({ length: Math.min(2, value - 1) + 1 }, (_, amount) => ({ kind: "AMOUNT", amount }));
     }
-    return { id: hashCanonical({ protocol: "trigger-choice@1", turn: state.timing.turn, ordinal: c.ordinal, resolved: c.resolvedIds, current: current?.id ?? null, phase: c.phase, target: c.targetGigId ?? null }), actorId, kind, options, min: 1, max: 1, ordered: false, continuationId: "reviewed-trigger@1" };
+    return { id: hashCanonical({ protocol: "trigger-choice@1", turn: state.timing.turn, ordinal: c.ordinal, resolved: c.resolvedIds, current: current?.id ?? null, phase: c.phase, ...(current?.primitiveIndex === 1 ? { primitiveIndex: 1 } : {}), target: c.targetGigId ?? null }), actorId, kind, options, min: 1, max: 1, ordered: false, continuationId: "reviewed-trigger@1" };
 }

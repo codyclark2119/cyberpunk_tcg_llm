@@ -1,3 +1,4 @@
+import { orderedEffectsEnabled } from "./ordered-effects-support";
 import { observe, hashObservation } from "./observation";
 import { privateInformationEnabled } from "./private-look-support";
 import { continueTrigger } from "./trigger-resolution";
@@ -111,6 +112,7 @@ export function listLegalActions(state: GameState, actor: PlayerId, context: Eng
                     if (option.kind === "AMOUNT") return `Decrease by ${option.amount}`;
                     if (option.kind === "MODE") return option.mode === "KEEP" ? "Adjust by zero (keep current value)" : option.mode === "INCREASE_1" ? "Increase by 1" : "Decrease by 1";
                 }
+                if (state.resolution.choice!.kind === "DISCARD" && option.kind === "CARD") return `Discard ${view.getRevision(option.cardInstanceId)?.displayName} (${option.cardInstanceId})`;
                 if (state.resolution.defeatContinuation && option.kind === "CARD") return `Next in your Trash: ${view.getRevision(option.cardInstanceId)?.displayName} (${option.cardInstanceId})`;
                 if (state.resolution.searchContinuation) return option.kind === "CARD" ? `Reveal and take ${view.getRevision(option.cardInstanceId)?.displayName}` : "Take no more Gears";
                 if (state.resolution.playContinuation?.phase === "EQUIP" && option.kind === "CARD") return `Equip to ${view.getRevision(option.cardInstanceId)?.displayName}`;
@@ -130,7 +132,7 @@ export function listLegalActions(state: GameState, actor: PlayerId, context: Eng
     };
     // Full PositionHash includes secrets; new private-look bundles bind model action IDs to
     // the entitled observation instead. Old bundle protocols remain byte-compatible.
-    const projected = privateInformationEnabled(context) ? observe(state, actor, context) : null;
+    const projected = (privateInformationEnabled(context) || orderedEffectsEnabled(context)) ? observe(state, actor, context) : null;
     if (projected && !projected.ok) return projected;
     const actionIdentity = projected?.ok ? { version: 2, observationHash: hashObservation(projected.value), seat: state.players[actor].seat } : { version: 1, positionHash: hashPosition(state), seat: state.players[actor].seat };
     const observableAction = (a: GameAction) => a.action.kind === "CALL_LEGEND" && projected?.ok ? { kind: a.action.kind, slot: state.players[actor].zones.LEGENDS.indexOf(a.action.cardInstanceId) } : a.action;

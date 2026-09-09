@@ -1,3 +1,5 @@
+import { orderedContext, evelyn } from "../attack-ordered-effects-fixture";
+import { evelynReplay } from "../attack-ordered-effects-replay";
 import { privateContext, kiroshi } from "../private-information-fixture";
 import { kiroshiReplay } from "../private-information-replay";
 import { capabilitiesContext, mandibular } from "../gear-capabilities-fixture";
@@ -63,7 +65,7 @@ test("Mongo revisions: concurrent replay, conflict, history, projection ordering
         assert.equal((await repo.publish(rich)).status, "PUBLISHED");
         assert.equal((await repo.findRevision(cards[0].id, cards[0].revision))?.schemaVersion, 1);
         assert.deepEqual(await repo.findRevision(rich.id, rich.revision), rich);
-        for (const revision of [...restrictionCards, ...triggerCards, mandibular, kiroshi]) {
+        for (const revision of [...restrictionCards, ...triggerCards, mandibular, kiroshi, evelyn]) {
             assert.equal((await repo.publish(revision)).status, "PUBLISHED");
             assert.deepEqual(await repo.findRevision(revision.id, revision.revision), revision);
             assert.equal((await repo.publish(revision)).status, "REPLAY");
@@ -387,6 +389,37 @@ test("Postgres ledger: running, conflict, replay, transactional rollback and sta
         const called = privateState.objects.cards[privateTrace.learned.cardInstanceId];
         assert.equal(called.face, "UP"); assert.equal(called.cardId, privateTrace.learned.content.cardId);
         assert.ok(privateEvents.some(e => e.payload.kind === "LEGEND_LOOKED_AT"));
+        // Ordered ATTACK trace includes a persisted strategic own-hand discard.
+        const orderedCtx = orderedContext(), orderedTrace = evelynReplay();
+        const orderedInitial = unwrap(createGameWithEvents({ ...orderedTrace.initialization, matchId: randomUUID(), players: [actor, otherActor] }, orderedCtx));
+        assert.equal((await match.create(orderedInitial.state, orderedInitial.events)).ok, true);
+        let orderedState = orderedInitial.state;
+        const orderedEvents = [...orderedInitial.events];
+        let discardBoundaries = 0;
+        for (const step of orderedTrace.steps) {
+            const transition = unwrap(applyAction(orderedState, { actorId: orderedState.timing.actingPlayer, action: step.action.action }, orderedCtx));
+            assert.equal((await match.save(transition.state, orderedState.match.version, transition.events)).ok, true);
+            orderedState = transition.state; orderedEvents.push(...transition.events);
+            const stored = await match.find(orderedState.match.id); assert.ok(stored); assert.deepEqual(stored, orderedState);
+            assert.equal(hashReplayState(stored), hashReplayState(orderedState)); assert.equal(hashPosition(stored), step.positionHash);
+            assert.deepEqual(unwrap(listLegalActions(stored, stored.timing.actingPlayer, orderedCtx)), unwrap(listLegalActions(orderedState, orderedState.timing.actingPlayer, orderedCtx)));
+            for (const viewer of stored.match.playerOrder) {
+                const actual: DeepReadonly<PlayerObservation> = unwrap(observe(stored, viewer, orderedCtx));
+                const expected: DeepReadonly<PlayerObservation> = unwrap(observe(orderedState, viewer, orderedCtx));
+                assert.deepEqual(actual, expected); assert.equal(hashObservation(actual), hashObservation(expected));
+            }
+            assert.deepEqual(await match.history(stored.match.id), orderedEvents);
+            if (stored.timing.step === "DISCARD_SELECTION") {
+                discardBoundaries++; assert.equal(stored.resolution.choice?.kind, "DISCARD");
+                assert.equal(stored.resolution.choice?.actorId, stored.timing.activePlayer);
+                assert.equal(stored.resolution.current?.primitiveIndex, 1);
+                assert.equal(stored.timing.combat.stage, "TRIGGER_RESOLUTION");
+                // Submit the next action from the reloaded pending state, never the in-memory copy.
+            }
+            orderedState = stored;
+        }
+        assert.equal(discardBoundaries, 1); assert.equal(orderedState.timing.step, "MAIN");
+        assert.ok(orderedEvents.some(e => e.payload.kind === "CARD_DISCARDED"));
         // Inject an event insert failure AFTER the state UPDATE to verify transaction rollback.
         await pool.query("CREATE FUNCTION reject_test_event() RETURNS trigger LANGUAGE plpgsql AS $$ BEGIN RAISE EXCEPTION 'event insert failure'; END $$");
         await pool.query("CREATE TRIGGER reject_test_event BEFORE INSERT ON match_events FOR EACH ROW EXECUTE FUNCTION reject_test_event()");
