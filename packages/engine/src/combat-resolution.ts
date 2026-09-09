@@ -1,3 +1,4 @@
+import { endTurnEnabled } from "./end-turn-support";
 import { beginTriggers } from "./trigger-resolution";
 import { triggersEnabled } from "./trigger-support";
 import { FightResultSchema, type FightResult } from "@tcg/domain";
@@ -71,6 +72,10 @@ function advanceGigSteal(m: TurnMutation) {
         const g = m.state.objects.gigs[id];
         if (g.roll.kind !== "ROLLED") return failure("INVALID_GIG_STEAL", "Rolled Gig required");
         m.emit({ kind: "GIG_STOLEN", gigInstanceId: id, fromPlayer: c.target.playerId, toPlayer: c.attackingPlayerId, currentValue: g.roll.currentValue, attackerId: c.attackerId });
+        if (endTurnEnabled(m.context)) {
+            const steals = m.state.turnHistory!.gigsStolenByUnit ??= {};
+            steals[c.attackerId] = (steals[c.attackerId] ?? 0) + 1;
+        }
     }
     return finishCombat(m);
 }

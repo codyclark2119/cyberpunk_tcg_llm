@@ -1,3 +1,8 @@
+import { delayedContext, dyingNight } from "../delayed-effects-fixture";
+import { dyingNightReplay } from "../delayed-effects-replay";
+import { positiveFixture, stockEddies } from "../delayed-effects-focused";
+import { endTurnContext, delamain } from "../end-turn-history-fixture";
+import { delamainReplay } from "../end-turn-history-replay";
 import { orderedContext, evelyn } from "../attack-ordered-effects-fixture";
 import { evelynReplay } from "../attack-ordered-effects-replay";
 import { privateContext, kiroshi } from "../private-information-fixture";
@@ -21,7 +26,7 @@ import { combatReplay } from "../combat-replay";
 import { setupContext, setupInput } from "../setup-fixture";
 import { unwrap } from "../turn-replay";
 import { turnContext, turnInput } from "../turn-fixture";
-import { createGameWithEvents, applyAction, listLegalActions, hashReplayState, hashPosition, hashObservation, observe, RulesView, type PlayerObservation } from "@tcg/engine";
+import { createGameWithEvents, applyAction, listLegalActions, hashReplayState, hashPosition, hashObservation, observe, RulesView, validateState, type PlayerObservation } from "@tcg/engine";
 import { fixtureContext, fixtureState } from "../contract-fixture";
 import test from "node:test";
 import assert from "node:assert/strict";
@@ -31,7 +36,7 @@ import { MongoClient } from "mongodb";
 import { Pool } from "pg";
 import { z } from "zod";
 import { cards } from "@tcg/domain/fixtures";
-import { CardRevisionSchema, CommandIdSchema, PlayerIdSchema, GameStateVersionSchema, hashCommandRequest, defaultRuleset, StoredDeckSchema, type CommandRequest, type DeepReadonly } from "@tcg/domain";
+import { CardRevisionSchema, GameStateSchema, GameEventSequenceSchema, MatchIdSchema, type GameEvent, type GameState, CommandIdSchema, PlayerIdSchema, GameStateVersionSchema, hashCommandRequest, defaultRuleset, StoredDeckSchema, type CommandRequest, type DeepReadonly } from "@tcg/domain";
 import { MongoCardRepository, MongoRulesetRepository, createMongoIndexes, PostgresCommandRepository, PostgresMatchRepository, PostgresDeckRepository } from "@tcg/persistence";
 // Explicit URLs required. Tests only remove their own randomized database/schema.
 const mongoUrl = process.env.TEST_MONGODB_URI;
@@ -65,7 +70,7 @@ test("Mongo revisions: concurrent replay, conflict, history, projection ordering
         assert.equal((await repo.publish(rich)).status, "PUBLISHED");
         assert.equal((await repo.findRevision(cards[0].id, cards[0].revision))?.schemaVersion, 1);
         assert.deepEqual(await repo.findRevision(rich.id, rich.revision), rich);
-        for (const revision of [...restrictionCards, ...triggerCards, mandibular, kiroshi, evelyn]) {
+        for (const revision of [...restrictionCards, ...triggerCards, mandibular, kiroshi, evelyn, delamain, dyingNight]) {
             assert.equal((await repo.publish(revision)).status, "PUBLISHED");
             assert.deepEqual(await repo.findRevision(revision.id, revision.revision), revision);
             assert.equal((await repo.publish(revision)).status, "REPLAY");
@@ -420,6 +425,108 @@ test("Postgres ledger: running, conflict, replay, transactional rollback and sta
         }
         assert.equal(discardBoundaries, 1); assert.equal(orderedState.timing.step, "MAIN");
         assert.ok(orderedEvents.some(e => e.payload.kind === "CARD_DISCARDED"));
+        // End-turn trace resumes each action from PostgreSQL, including Eddie choice and next-turn cleanup.
+        const endCtx = endTurnContext(), endTrace = delamainReplay();
+        const endInitial = unwrap(createGameWithEvents({ ...endTrace.initialization, matchId: randomUUID(), players: [actor, otherActor] }, endCtx));
+        assert.equal((await match.create(endInitial.state, endInitial.events)).ok, true);
+        let endState = endInitial.state;
+        const endEvents = [...endInitial.events];
+        let readyBoundaries = 0;
+        for (const step of endTrace.steps) {
+            const transition = unwrap(applyAction(endState, { actorId: endState.timing.actingPlayer, action: step.action.action }, endCtx));
+            assert.equal((await match.save(transition.state, endState.match.version, transition.events)).ok, true);
+            endState = transition.state; endEvents.push(...transition.events);
+            const stored = await match.find(endState.match.id); assert.ok(stored); assert.deepEqual(stored, endState);
+            assert.equal(hashReplayState(stored), hashReplayState(endState)); assert.equal(hashPosition(stored), step.positionHash);
+            assert.deepEqual(unwrap(listLegalActions(stored, stored.timing.actingPlayer, endCtx)), unwrap(listLegalActions(endState, endState.timing.actingPlayer, endCtx)));
+            for (const viewer of stored.match.playerOrder) {
+                const actual: DeepReadonly<PlayerObservation> = unwrap(observe(stored, viewer, endCtx));
+                const expected: DeepReadonly<PlayerObservation> = unwrap(observe(endState, viewer, endCtx));
+                assert.deepEqual(actual, expected); assert.equal(hashObservation(actual), hashObservation(expected));
+            }
+            assert.deepEqual(await match.history(stored.match.id), endEvents);
+            if (stored.timing.step === "EDDIE_READY_SELECTION") {
+                readyBoundaries++; assert.equal(stored.resolution.choice?.kind, "READY_EDDIE");
+                assert.equal(stored.resolution.choice?.actorId, stored.timing.activePlayer);
+                assert.equal(stored.resolution.triggerContinuation?.origin.kind, "END_TURN");
+                assert.ok(stored.turnHistory?.gigsStolenByUnit);
+                assert.equal(stored.resolution.choice?.options.length, 2);
+                // Submit the next action from the reloaded pending state, never the in-memory copy.
+            }
+            endState = stored;
+        }
+        assert.equal(readyBoundaries, 1); assert.equal(endState.timing.step, "CHOOSE_GIG");
+        assert.equal(endState.timing.turn, 6); assert.equal(endState.turnHistory?.gigsStolenByUnit, undefined);
+        assert.ok(endTrace.steps.at(-1)!.events.some(e => e.payload.kind === "CARD_READIED"));
+        // Dying Night legal trace: registered combat/MAIN, shared end-turn batch, removal, next turn.
+        const delayedCtx = delayedContext(), delayedTrace = dyingNightReplay();
+        const delayedInitial = unwrap(createGameWithEvents({ ...delayedTrace.initialization, matchId: randomUUID(), players: [actor, otherActor] }, delayedCtx));
+        assert.equal((await match.create(delayedInitial.state, delayedInitial.events)).ok, true);
+        let delayedState = delayedInitial.state;
+        const delayedEvents = [...delayedInitial.events];
+        let delayedReadyBoundaries = 0;
+        for (const step of delayedTrace.steps) {
+            const transition = unwrap(applyAction(delayedState, { actorId: delayedState.timing.actingPlayer, action: step.action.action }, delayedCtx));
+            assert.equal((await match.save(transition.state, delayedState.match.version, transition.events)).ok, true);
+            delayedState = transition.state; delayedEvents.push(...transition.events);
+            const stored = await match.find(delayedState.match.id); assert.ok(stored); assert.deepEqual(stored, delayedState);
+            assert.equal(hashReplayState(stored), hashReplayState(delayedState)); assert.equal(hashPosition(stored), step.positionHash);
+            assert.deepEqual(unwrap(listLegalActions(stored, stored.timing.actingPlayer, delayedCtx)), unwrap(listLegalActions(delayedState, delayedState.timing.actingPlayer, delayedCtx)));
+            for (const viewer of stored.match.playerOrder) {
+                const actual: DeepReadonly<PlayerObservation> = unwrap(observe(stored, viewer, delayedCtx));
+                const expected: DeepReadonly<PlayerObservation> = unwrap(observe(delayedState, viewer, delayedCtx));
+                assert.deepEqual(actual, expected); assert.equal(hashObservation(actual), hashObservation(expected));
+            }
+            assert.deepEqual(await match.history(stored.match.id), delayedEvents);
+            if (stored.timing.step === "EDDIE_READY_SELECTION") {
+                delayedReadyBoundaries++; assert.equal(stored.resolution.choice?.kind, "READY_EDDIE");
+                assert.equal(stored.resolution.choice?.actorId, stored.timing.activePlayer);
+                assert.equal(stored.resolution.triggerContinuation?.origin.kind, "END_TURN");
+                assert.ok(stored.turnHistory?.gigsStolenByUnit);
+                assert.equal(stored.resolution.choice?.options.length, 2);
+                // Submit the next action from the reloaded pending state, never the in-memory copy.
+            }
+            delayedState = stored;
+        }
+        assert.equal(delayedReadyBoundaries, 1); assert.equal(delayedState.timing.step, "CHOOSE_GIG");
+        assert.equal(delayedState.timing.turn, 6); assert.equal(delayedState.turnHistory?.gigsStolenByUnit, undefined);
+        assert.ok(delayedTrace.steps.at(-1)!.events.some(e => e.payload.kind === "CARD_READIED"));
+        // Trusted synthetic V-positive bootstrap, explicitly not a real-card legal headline.
+        // Persist every subsequent action, including both stages of the unchanged spent-Eddie set.
+        const positive = positiveFixture();
+        const bootstrap = GameStateSchema.parse(stockEddies(positive.state, positive.context, 4));
+        bootstrap.match.id = MatchIdSchema.parse(randomUUID()); bootstrap.match.version = GameStateVersionSchema.parse(0); bootstrap.match.eventSequence = GameEventSequenceSchema.parse(0);
+        for (const id of bootstrap.match.playerOrder) await pool.query("INSERT INTO users(id,display_name) VALUES($1,'trusted delayed fixture') ON CONFLICT(id) DO NOTHING", [id]);
+        assert.equal((await match.create(bootstrap)).ok, true);
+        let positiveState: GameState = unwrap(validateState(bootstrap, positive.context));
+        const positiveEvents: GameEvent[] = []; let positiveChoices = 0, registeredMain = false;
+        for (let n = 0; positiveState.timing.turn === bootstrap.timing.turn; n++) {
+            assert.ok(n < 30);
+            const stored = await match.find(positiveState.match.id); assert.ok(stored); assert.deepEqual(stored, positiveState);
+            assert.equal(hashReplayState(stored), hashReplayState(positiveState)); assert.equal(hashPosition(stored), hashPosition(positiveState));
+            const legal = unwrap(listLegalActions(stored, stored.timing.actingPlayer, positive.context));
+            assert.deepEqual(legal, unwrap(listLegalActions(positiveState, positiveState.timing.actingPlayer, positive.context)));
+            for (const viewer of stored.match.playerOrder) {
+                const actual: DeepReadonly<PlayerObservation> = unwrap(observe(stored, viewer, positive.context));
+                const expected: DeepReadonly<PlayerObservation> = unwrap(observe(positiveState, viewer, positive.context));
+                assert.deepEqual(actual, expected); assert.equal(hashObservation(actual), hashObservation(expected));
+            }
+            if (stored.timing.step === "EDDIE_READY_SELECTION") {
+                positiveChoices++; assert.equal(stored.players[positive.actor].zones.EDDIES.filter(id => stored.objects.cards[id].readiness === "SPENT").length, 4);
+                assert.equal(stored.resolution.choice!.options.length, positiveChoices === 1 ? 4 : 3);
+                assert.equal(stored.resolution.triggerContinuation?.selectedEddieSlots?.length ?? 0, positiveChoices - 1);
+            }
+            if (stored.timing.step === "MAIN" && stored.delayedEffects) registeredMain = true;
+            const selected = legal.find(a => stored.resolution.choice ? a.action.kind === "CHOOSE" && a.action.optionIndices[0] === 0 : stored.timing.step === "RIVAL_REACT" ? a.action.kind === "PASS_REACT" : stored.delayedEffects ? a.action.kind === "END_TURN" : a.action.kind === "DECLARE_ATTACK" && a.action.cardInstanceId === positive.host);
+            assert.ok(selected);
+            const command = { actorId: selected.actorId, action: selected.action };
+            const actual = unwrap(applyAction(stored, command, positive.context)), expected = unwrap(applyAction(positiveState, command, positive.context));
+            assert.deepEqual(actual, expected); assert.equal((await match.save(actual.state, stored.match.version, actual.events)).ok, true);
+            positiveState = actual.state; positiveEvents.push(...actual.events); assert.deepEqual(await match.history(stored.match.id), positiveEvents);
+        }
+        assert.equal(positiveChoices, 2); assert.ok(registeredMain); assert.equal(positiveState.delayedEffects, undefined);
+        assert.equal(positiveState.players[positive.actor].zones.EDDIES.filter(id => positiveState.objects.cards[id].readiness === "READY").length, 2);
+        assert.deepEqual(await match.find(positiveState.match.id), positiveState);
         // Inject an event insert failure AFTER the state UPDATE to verify transaction rollback.
         await pool.query("CREATE FUNCTION reject_test_event() RETURNS trigger LANGUAGE plpgsql AS $$ BEGIN RAISE EXCEPTION 'event insert failure'; END $$");
         await pool.query("CREATE TRIGGER reject_test_event BEFORE INSERT ON match_events FOR EACH ROW EXECUTE FUNCTION reject_test_event()");

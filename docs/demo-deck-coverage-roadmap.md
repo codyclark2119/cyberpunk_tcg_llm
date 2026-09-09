@@ -23,43 +23,45 @@ All **29 distinct cards** have local raw captures and demo printing metadata. �
 | V — Corporate Exile | Mercs | 1 | Yes; demo 008 | No executable revision | Unreviewed | No | Go Solo/field Legend admission |
 | Viktor Vektor — Sit Down and Relax | Mercs | 1 | Yes; demo 001 | Yes; application revision 1 | NONCOMBAT_SLICE_V1 / reviewed CALL (MAIN + React) | Scoped only | Supported captured function; full demo match still requires remaining deck mechanics and separate demo-format review |
 | Jackie Welles — Pour One Out For Me | Mercs | 1 | Yes; demo 007 | Yes; application revision 1 | COMBAT_TRIGGERS_V1 | Scoped only | Complete first Blue Unit/Gear history guard, optional friendly decrease and actual-minimum draw; Legends area only |
-| Dying Night — V's Pistol | Mercs | 2 | Yes; demo 013 | No executable revision | Unreviewed | No | Inherited attack effect, named-host end-turn Eddie ready |
+| Dying Night — V's Pistol | Mercs | 2 | Yes; demo 013 | Yes; application revision 1 | GEAR_DELAYED_ATTACK_V1 | Scoped only | Complete cost2/power2 Gear; one inherited ATTACK decrease then independent end-turn registration; public battlefield/Trash lifetime, exact Unit Name V predicate and atomic ready2 set selection |
 | Dexter DeShawn — One Last Chance | Mercs | 1 | Yes; demo 002 | Yes; application revision 1 | COMBAT_TRIGGERS_V1 | Scoped only | Complete Play/Attack Gig adjustment and post-movement DEFEATED Street Cred difference/draw |
 | Secondhand Bombus | Mercs | 2 | Yes; demo 003 | Yes; application revision 1 | COMBAT_REACT_V1 | Scoped only | Generic fight/defeat/Gig stealing now supported under COMBAT_RESOLUTION_V1; remaining demo mechanics and demo-format review |
 | Kiroshi Optics | Mercs | 3 | Yes; demo 004 | Yes; application revision 1 | GEAR_PRIVATE_LOOK_V1 | Scoped only | Complete printed Gear +1, equip erratum, inherited ATTACK/private Legend look, public known marker and viewer-specific remembered identity |
 | Mandibular Upgrade | Mercs | 2 | Yes; demo 005 | Yes; application revision 1 | GEAR_CAPABILITIES_V1 | Scoped only | Complete zero printed-power inheritance, default equip and inherited Blocker; Unit-only declaration uses existing React pipeline |
 | Afterparty at Lizzie's | Mercs | 2 | Yes; demo 006 | Yes; application revision 1 | NONCOMBAT_PLAY_V1 | Scoped only | Supported captured function; full demo match still requires remaining deck mechanics and separate demo-format review |
-| Delamain Cab | Mercs | 3 | Yes; demo 009 | No executable revision | Unreviewed | No | Steal history and end-turn Eddie ready |
+| Delamain Cab | Mercs | 3 | Yes; demo 009 | Yes; application revision 1 | END_TURN_HISTORY_V1 | Scoped only | Complete cost4 power4 unsellable Unit; own-turn end checks this physical Unit's current-turn actual steals, then readies one own spent Eddie |
 | Evelyn Parker — Scheming Siren | Mercs | 3 | Yes; demo 010 | Yes; application revision 1 | ATTACK_ORDERED_EFFECTS_V1 | Scoped only | Complete cost2 power0 unsellable Unit; ordered ATTACK draw1 then current Street Cred comparison and mandatory own-hand discard1, before React |
 | MT0D12 Flathead | Mercs | 1 | Yes; demo 011 | Yes; application revision 1 | COMBAT_RESTRICTIONS_V1 | Scoped only | Current Street Cred restriction supported; CALL/Quick/PASS remain legal |
 | Psycho Squad | Mercs | 3 | Yes; demo 012 | Yes; application revision 1 | COMBAT_RESTRICTIONS_V1 | Scoped only | Complete ordinary Unit shape supported; three physical copies unchanged |
 | Floor It | Mercs | 3 | Yes; demo 014 | Yes; application revision 1 | COMBAT_REACT_V1 | Scoped only | Supported captured function; full demo match still requires remaining deck mechanics and separate demo-format review |
 | Reboot Optics | Mercs | 2 | Yes; demo 015 | Yes; application revision 1 | COMBAT_RESTRICTIONS_V1 | Scoped only | Single outstanding next-fight defeat prevention supported; overlapping copies explicitly unsupported pending interaction review |
 
-## Measured coverage after Evelyn ordered ATTACK
+## Measured coverage after Dying Night delayed effects
 
 | Metric | Before this milestone | After |
 |---|---:|---:|
 | Distinct reference cards | 29 | 29 |
-| Reviewed executable distinct cards, within stated scopes | 16 | 17 |
-| Without reviewed executable revisions | 13 | 12 |
-| Remaining cards with identified subsystem/admission blockers | 13 | 12 |
+| Reviewed executable distinct cards, within stated scopes | 18 | 19 |
+| Without reviewed executable revisions | 11 | 10 |
+| Remaining cards with identified subsystem/admission blockers | 11 | 10 |
 | Arasaka supported distinct cards / 14 | 5 | 5 |
 | Arasaka executable physical copies / 30 | 14 | 14 |
-| Mercs supported distinct cards / 15 | 11 | 12 |
-| Mercs executable physical copies / 30 | 21 | 24 |
-| Both decks executable physical copies / 60 | 35 | 38 |
+| Mercs supported distinct cards / 15 | 13 | 14 |
+| Mercs executable physical copies / 30 | 27 | 29 |
+| Both decks executable physical copies / 60 | 41 | 43 |
 
-Recalculated from the 29 rows above, with unchanged physical quantities. The 12 unreviewed cards and 12 cards with known blockers are the same population. Reboot's two copies remain individually supported within its one-outstanding-prevention scope. Copy coverage does not imply deck readiness.
+Recalculated from the 29 rows above, with unchanged quantities. Dying Night's two physical copies are the only newly executable demo copies. Reboot retains its existing one-outstanding-prevention limit. Coverage does not imply deck readiness.
 
-Exactly one complete real-card revision is newly admitted: Evelyn Parker — Scheming Siren. Her controller draws, then compares current Street Cred, then chooses their own mandatory discard if greater than a rival. The rival does not discard. Zero printed power uses the existing current-power steal allowance, including Gear changes. See [attack-ordered-effects-card-source.v1.json](../tests/fixtures/attack-ordered-effects-card-source.v1.json), [attack-ordered-effects-fixture.ts](../tests/attack-ordered-effects-fixture.ts), and [attack-ordered-effects-report.md](attack-ordered-effects-report.md). All prior immutable card revisions and the harness corpus remain unchanged.
+Exactly one complete real-card revision is newly admitted: **Dying Night — V's Pistol**. All five official images confirm its single inherited ATTACK paragraph. Newly retrieved official card FAQs establish that choosing zero Gig decrease does not cancel the later benefit, and that the benefit survives defeat of its attacking V host. Each actual paragraph resolution registers independent end-of-current-turn work, which shares the existing end-turn scheduler with Delamain. See [delayed-effects-report.md](delayed-effects-report.md) for the evidence, bounded public source/subject lifetime and complete test matrix.
+
+The legal replay uses Delamain as a non-V host and proves the false condition. A clearly synthetic trusted Unit tests the true V predicate and ready-two path; it does not admit a real V card. Existing immutable revisions and the harness source corpus remain unchanged.
 
 ## Exact deck readiness
 
-**Can the exact Arasaka list initialize? No. Can the exact Merc list initialize? No. Can they play a complete deterministic match? No.** Both have 27 main cards, below the reviewed constructed minimum. Arasaka also lacks 9 distinct executable cards (16 copies); Mercs lacks 3 (6 copies), with the exact blockers in the table. No local complete demo-format rule capture was found: printing/deck metadata does not establish size, RAM/copy/setup/win-condition exceptions. The generic reference to a Gameplay Guide is not that guide. A separate source review remains necessary.
+**Can the exact Arasaka list initialize? No. Can the exact Merc list initialize? No. Can they play a complete deterministic match? No.** Both have 27 main cards, below the unchanged constructed minimum of 40. Arasaka lacks 9 distinct executable cards (16 copies); Mercs lacks 1 (1 copy). Printing/deck metadata does not establish demo size, RAM/copy/setup/win-condition exceptions; separate DEMO_STARTER source review remains necessary.
 
-The remaining three Merc cards are V — Corporate Exile (Go Solo/field Legend), Dying Night — V's Pistol (inherited up-to-two Gig decrease plus named-host end-turn Eddie readying), and Delamain Cab (steal history/end-turn readying). Arasaka's nine unreviewed entries remain listed above.
+Merc's only remaining card blocker is **V — Corporate Exile (1 copy)**. No V revision, Go Solo, or field Legend execution is introduced. Dying Night's named-V benefit cannot currently be reached with a real executable V Unit; the full instruction is architecture-tested using a trusted synthetic Unit.
 
-The next candidate is a source review of Dying Night and Delamain's named-host/end-turn/history cluster, beginning with a bounded complete card if those dependencies permit it. Go Solo/field Legends remain a separate larger boundary. No DEMO_STARTER or complete starter match is introduced.
+The next structural milestone is **Go Solo + field Legend execution**, starting with V and then separately reviewing Arasaka Legends that share that structure. Demo legality stays a separate source review even after individual-card execution is complete.
 
-See [attack-ordered-effects-report.md](attack-ordered-effects-report.md) for this milestone and [private-information-report.md](private-information-report.md) for the preceding sixteen-card baseline.
+See [end-turn-history-report.md](end-turn-history-report.md) for the preserved eighteen-card baseline.

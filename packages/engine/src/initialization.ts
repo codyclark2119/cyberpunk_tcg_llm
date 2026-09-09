@@ -1,3 +1,6 @@
+import { validateDelayedMetadata } from "./delayed-effect-support";
+import { validateDelayedState } from "./delayed-effects";
+import { validateEndTurnMetadata } from "./end-turn-support";
 import { validateOrderedMetadata } from "./ordered-effects-support";
 import { validatePrivateLookMetadata } from "./private-look-support";
 import { validateCapabilityMetadata } from "./capability-support";
@@ -54,6 +57,9 @@ export function createGameWithEvents(input: z.input<typeof CreateGameInputSchema
         p.economy = { sellsThisTurn: 0, callsThisTurn: 0, usageTurn: 1 };
     if (triggersEnabled(context)) s.turnHistory = { turn: 1, triggeredBatches: 0, blueUnitOrGearPlays: Object.fromEntries(s.match.playerOrder.map(id => [id, 0])) };
     // Capability admission is deck-wide, never a hidden-Legend-specific label/filter.
+    const delayedMetadata = validateDelayedMetadata(s, context); if (!delayedMetadata.ok) return delayedMetadata;
+    const delayedState = validateDelayedState(s, context); if (!delayedState.ok) return delayedState;
+    const endMetadata = validateEndTurnMetadata(s, context); if (!endMetadata.ok) return endMetadata;
     const ordered = validateOrderedMetadata(s, context);
     if (!ordered.ok) return ordered;
     const privateLook = validatePrivateLookMetadata(s, context);
@@ -70,7 +76,7 @@ export function createGameWithEvents(input: z.input<typeof CreateGameInputSchema
             if (!supported.ok)
                 return supported;
         }
-        else if (content.execution?.scope === "NONCOMBAT_PLAY_V1" || content.execution?.scope === "COMBAT_ATTACK_V1" || content.execution?.scope === "COMBAT_REACT_V1" || content.execution?.scope === "COMBAT_RESTRICTIONS_V1" || content.execution?.scope === "COMBAT_TRIGGERS_V1" || content.execution?.scope === "GEAR_CAPABILITIES_V1" || content.execution?.scope === "GEAR_PRIVATE_LOOK_V1" || content.execution?.scope === "ATTACK_ORDERED_EFFECTS_V1") {
+        else if (content.execution?.scope === "NONCOMBAT_PLAY_V1" || content.execution?.scope === "COMBAT_ATTACK_V1" || content.execution?.scope === "COMBAT_REACT_V1" || content.execution?.scope === "COMBAT_RESTRICTIONS_V1" || content.execution?.scope === "COMBAT_TRIGGERS_V1" || content.execution?.scope === "GEAR_CAPABILITIES_V1" || content.execution?.scope === "GEAR_PRIVATE_LOOK_V1" || content.execution?.scope === "ATTACK_ORDERED_EFFECTS_V1" || content.execution?.scope === "END_TURN_HISTORY_V1" || content.execution?.scope === "GEAR_DELAYED_ATTACK_V1") {
             const supported = supportsPlay(content, context);
             if (!supported.ok) return supported;
         }

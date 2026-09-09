@@ -1,3 +1,5 @@
+import { getDelayedEffectsForTurn } from "./delayed-effects";
+import { readyableEddieSlots } from "./eddie-ready";
 import { getDiscardableCards } from "./discard";
 import { effectiveCapabilities, effectiveKeywords } from "./capabilities";
 import { supportsCapabilityGear } from "./capability-support";
@@ -28,6 +30,8 @@ export class RulesView {
         this.state = valid.value;
         this.context = freeze(structuredClone(context));
     }
+    getDelayedEffectsForTurn() { return getDelayedEffectsForTurn(this.state); }
+    getReadyableEddieSlots(id: PlayerId) { return readyableEddieSlots(this.state, id); }
     getDiscardableCards(id: PlayerId) { return getDiscardableCards(this.state, id); }
     getPlayer(id: PlayerId) { return this.state.players[id]; }
     getCard(id: CardInstanceId) { return this.state.objects.cards[id]; }

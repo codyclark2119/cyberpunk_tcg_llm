@@ -23,6 +23,7 @@ export class TurnMutation {
         this.emit({ kind: "PHASE_CHANGED", step });
     }
     finish(winnerId: PlayerId, loserId: PlayerId, reason: "EMPTY_DRAW" | "START_TURN_GIGS") {
+        delete this.state.delayedEffects;
         this.state.match.outcome = { winnerId, loserId, reason };
         this.state.timing.combat = { stage: "NONE" };
         this.state.timing.actingPlayer = this.state.timing.activePlayer;

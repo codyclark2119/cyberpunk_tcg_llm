@@ -307,6 +307,7 @@
                         "step": {
                           "type": "string",
                           "enum": [
+                            "EDDIE_READY_SELECTION",
                             "DISCARD_SELECTION",
                             "TRIGGER_ORDER_SELECTION",
                             "OPTIONAL_TRIGGER_SELECTION",
@@ -342,6 +343,7 @@
                         "window": {
                           "type": "string",
                           "enum": [
+                            "EDDIE_READY_SELECTION",
                             "DISCARD_SELECTION",
                             "TRIGGER_ORDER_SELECTION",
                             "OPTIONAL_TRIGGER_SELECTION",
@@ -985,9 +987,131 @@
                       ],
                       "additionalProperties": false
                     },
+                    "delayedEffects": {
+                      "minItems": 1,
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "kind": {
+                            "type": "string",
+                            "const": "END_TURN_READY_EDDIES"
+                          },
+                          "id": {
+                            "type": "string",
+                            "pattern": "^[a-f0-9]{64}$"
+                          },
+                          "controllerId": {
+                            "type": "string",
+                            "format": "uuid",
+                            "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+                          },
+                          "sourceId": {
+                            "type": "string",
+                            "minLength": 1,
+                            "maxLength": 200,
+                            "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$"
+                          },
+                          "source": {
+                            "type": "object",
+                            "properties": {
+                              "cardId": {
+                                "type": "string",
+                                "minLength": 1,
+                                "maxLength": 200,
+                                "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$"
+                              },
+                              "revision": {
+                                "type": "integer",
+                                "exclusiveMinimum": 0,
+                                "maximum": 2147483647
+                              }
+                            },
+                            "required": [
+                              "cardId",
+                              "revision"
+                            ],
+                            "additionalProperties": false
+                          },
+                          "subjectId": {
+                            "type": "string",
+                            "minLength": 1,
+                            "maxLength": 200,
+                            "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$"
+                          },
+                          "subject": {
+                            "type": "object",
+                            "properties": {
+                              "cardId": {
+                                "type": "string",
+                                "minLength": 1,
+                                "maxLength": 200,
+                                "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$"
+                              },
+                              "revision": {
+                                "type": "integer",
+                                "exclusiveMinimum": 0,
+                                "maximum": 2147483647
+                              }
+                            },
+                            "required": [
+                              "cardId",
+                              "revision"
+                            ],
+                            "additionalProperties": false
+                          },
+                          "abilityId": {
+                            "type": "string",
+                            "minLength": 1
+                          },
+                          "createdTurn": {
+                            "type": "integer",
+                            "exclusiveMinimum": 0,
+                            "maximum": 9007199254740991
+                          },
+                          "originOrdinal": {
+                            "type": "integer",
+                            "exclusiveMinimum": 0,
+                            "maximum": 9007199254740991
+                          },
+                          "originEffectId": {
+                            "type": "string",
+                            "pattern": "^[a-f0-9]{64}$"
+                          }
+                        },
+                        "required": [
+                          "kind",
+                          "id",
+                          "controllerId",
+                          "sourceId",
+                          "source",
+                          "subjectId",
+                          "subject",
+                          "abilityId",
+                          "createdTurn",
+                          "originOrdinal",
+                          "originEffectId"
+                        ],
+                        "additionalProperties": false
+                      }
+                    },
                     "turnHistory": {
                       "type": "object",
                       "properties": {
+                        "gigsStolenByUnit": {
+                          "type": "object",
+                          "propertyNames": {
+                            "type": "string",
+                            "minLength": 1,
+                            "maxLength": 200,
+                            "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$"
+                          },
+                          "additionalProperties": {
+                            "type": "integer",
+                            "exclusiveMinimum": 0,
+                            "maximum": 9007199254740991
+                          }
+                        },
                         "turn": {
                           "type": "integer",
                           "exclusiveMinimum": 0,
@@ -1154,6 +1278,139 @@
                           "properties": {
                             "origin": {
                               "oneOf": [
+                                {
+                                  "type": "object",
+                                  "properties": {
+                                    "kind": {
+                                      "type": "string",
+                                      "const": "END_TURN"
+                                    },
+                                    "playerId": {
+                                      "type": "string",
+                                      "format": "uuid",
+                                      "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+                                    },
+                                    "turn": {
+                                      "type": "integer",
+                                      "exclusiveMinimum": 0,
+                                      "maximum": 9007199254740991
+                                    },
+                                    "delayedEffects": {
+                                      "minItems": 1,
+                                      "type": "array",
+                                      "items": {
+                                        "type": "object",
+                                        "properties": {
+                                          "kind": {
+                                            "type": "string",
+                                            "const": "END_TURN_READY_EDDIES"
+                                          },
+                                          "id": {
+                                            "type": "string",
+                                            "pattern": "^[a-f0-9]{64}$"
+                                          },
+                                          "controllerId": {
+                                            "type": "string",
+                                            "format": "uuid",
+                                            "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+                                          },
+                                          "sourceId": {
+                                            "type": "string",
+                                            "minLength": 1,
+                                            "maxLength": 200,
+                                            "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$"
+                                          },
+                                          "source": {
+                                            "type": "object",
+                                            "properties": {
+                                              "cardId": {
+                                                "type": "string",
+                                                "minLength": 1,
+                                                "maxLength": 200,
+                                                "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$"
+                                              },
+                                              "revision": {
+                                                "type": "integer",
+                                                "exclusiveMinimum": 0,
+                                                "maximum": 2147483647
+                                              }
+                                            },
+                                            "required": [
+                                              "cardId",
+                                              "revision"
+                                            ],
+                                            "additionalProperties": false
+                                          },
+                                          "subjectId": {
+                                            "type": "string",
+                                            "minLength": 1,
+                                            "maxLength": 200,
+                                            "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$"
+                                          },
+                                          "subject": {
+                                            "type": "object",
+                                            "properties": {
+                                              "cardId": {
+                                                "type": "string",
+                                                "minLength": 1,
+                                                "maxLength": 200,
+                                                "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$"
+                                              },
+                                              "revision": {
+                                                "type": "integer",
+                                                "exclusiveMinimum": 0,
+                                                "maximum": 2147483647
+                                              }
+                                            },
+                                            "required": [
+                                              "cardId",
+                                              "revision"
+                                            ],
+                                            "additionalProperties": false
+                                          },
+                                          "abilityId": {
+                                            "type": "string",
+                                            "minLength": 1
+                                          },
+                                          "createdTurn": {
+                                            "type": "integer",
+                                            "exclusiveMinimum": 0,
+                                            "maximum": 9007199254740991
+                                          },
+                                          "originOrdinal": {
+                                            "type": "integer",
+                                            "exclusiveMinimum": 0,
+                                            "maximum": 9007199254740991
+                                          },
+                                          "originEffectId": {
+                                            "type": "string",
+                                            "pattern": "^[a-f0-9]{64}$"
+                                          }
+                                        },
+                                        "required": [
+                                          "kind",
+                                          "id",
+                                          "controllerId",
+                                          "sourceId",
+                                          "source",
+                                          "subjectId",
+                                          "subject",
+                                          "abilityId",
+                                          "createdTurn",
+                                          "originOrdinal",
+                                          "originEffectId"
+                                        ],
+                                        "additionalProperties": false
+                                      }
+                                    }
+                                  },
+                                  "required": [
+                                    "kind",
+                                    "playerId",
+                                    "turn"
+                                  ],
+                                  "additionalProperties": false
+                                },
                                 {
                                   "type": "object",
                                   "properties": {
@@ -1361,14 +1618,20 @@
                                     "type": "string",
                                     "minLength": 1
                                   },
+                                  "delayedId": {
+                                    "type": "string",
+                                    "pattern": "^[a-f0-9]{64}$"
+                                  },
                                   "kind": {
                                     "type": "string",
                                     "enum": [
+                                      "DELAYED_END_TURN",
                                       "WHEN_FIGHT_WON",
                                       "WHEN_DEFEATED",
                                       "WHEN_PLAYED",
                                       "WHEN_ATTACKING",
-                                      "WHEN_CARD_PLAYED"
+                                      "WHEN_CARD_PLAYED",
+                                      "WHEN_OWN_TURN_ENDS"
                                     ]
                                   }
                                 },
@@ -1381,6 +1644,16 @@
                                   "kind"
                                 ],
                                 "additionalProperties": false
+                              }
+                            },
+                            "selectedEddieSlots": {
+                              "minItems": 1,
+                              "maxItems": 1,
+                              "type": "array",
+                              "items": {
+                                "type": "integer",
+                                "minimum": 0,
+                                "maximum": 9007199254740991
                               }
                             },
                             "resolvedIds": {
@@ -1397,7 +1670,8 @@
                                 "OPTIONAL",
                                 "TARGET",
                                 "AMOUNT",
-                                "DISCARD"
+                                "DISCARD",
+                                "READY"
                               ]
                             },
                             "conditionMet": {
@@ -1877,6 +2151,176 @@
                                       "properties": {
                                         "kind": {
                                           "type": "string",
+                                          "const": "READY_EDDIES"
+                                        },
+                                        "player": {
+                                          "type": "string",
+                                          "const": "CONTROLLER"
+                                        },
+                                        "count": {
+                                          "anyOf": [
+                                            {
+                                              "type": "number",
+                                              "const": 1
+                                            },
+                                            {
+                                              "type": "number",
+                                              "const": 2
+                                            }
+                                          ]
+                                        },
+                                        "when": {
+                                          "type": "object",
+                                          "properties": {
+                                            "timing": {
+                                              "type": "string",
+                                              "const": "RESOLUTION"
+                                            },
+                                            "condition": {
+                                              "type": "object",
+                                              "properties": {
+                                                "kind": {
+                                                  "type": "string",
+                                                  "const": "SUBJECT_IS_UNIT_NAMED"
+                                                },
+                                                "identity": {
+                                                  "type": "string",
+                                                  "const": "V"
+                                                }
+                                              },
+                                              "required": [
+                                                "kind",
+                                                "identity"
+                                              ],
+                                              "additionalProperties": false
+                                            }
+                                          },
+                                          "required": [
+                                            "timing",
+                                            "condition"
+                                          ],
+                                          "additionalProperties": false
+                                        }
+                                      },
+                                      "required": [
+                                        "kind",
+                                        "player",
+                                        "count"
+                                      ],
+                                      "additionalProperties": false
+                                    },
+                                    {
+                                      "type": "object",
+                                      "properties": {
+                                        "kind": {
+                                          "type": "string",
+                                          "const": "REGISTER_END_TURN_EFFECT"
+                                        },
+                                        "effect": {
+                                          "type": "object",
+                                          "properties": {
+                                            "kind": {
+                                              "type": "string",
+                                              "const": "READY_EDDIES"
+                                            },
+                                            "player": {
+                                              "type": "string",
+                                              "const": "CONTROLLER"
+                                            },
+                                            "count": {
+                                              "type": "number",
+                                              "const": 2
+                                            },
+                                            "when": {
+                                              "type": "object",
+                                              "properties": {
+                                                "timing": {
+                                                  "type": "string",
+                                                  "const": "RESOLUTION"
+                                                },
+                                                "condition": {
+                                                  "type": "object",
+                                                  "properties": {
+                                                    "kind": {
+                                                      "type": "string",
+                                                      "const": "SUBJECT_IS_UNIT_NAMED"
+                                                    },
+                                                    "identity": {
+                                                      "type": "string",
+                                                      "const": "V"
+                                                    }
+                                                  },
+                                                  "required": [
+                                                    "kind",
+                                                    "identity"
+                                                  ],
+                                                  "additionalProperties": false
+                                                }
+                                              },
+                                              "required": [
+                                                "timing",
+                                                "condition"
+                                              ],
+                                              "additionalProperties": false
+                                            }
+                                          },
+                                          "required": [
+                                            "kind",
+                                            "player",
+                                            "count",
+                                            "when"
+                                          ],
+                                          "additionalProperties": false
+                                        }
+                                      },
+                                      "required": [
+                                        "kind",
+                                        "effect"
+                                      ],
+                                      "additionalProperties": false
+                                    },
+                                    {
+                                      "type": "object",
+                                      "properties": {
+                                        "kind": {
+                                          "type": "string",
+                                          "const": "DECREASE_GIG_UP_TO"
+                                        },
+                                        "target": {
+                                          "type": "object",
+                                          "properties": {
+                                            "kind": {
+                                              "type": "string",
+                                              "const": "GIGS"
+                                            },
+                                            "relation": {
+                                              "type": "string",
+                                              "const": "ANY"
+                                            }
+                                          },
+                                          "required": [
+                                            "kind",
+                                            "relation"
+                                          ],
+                                          "additionalProperties": false
+                                        },
+                                        "maximum": {
+                                          "type": "number",
+                                          "const": 2
+                                        }
+                                      },
+                                      "required": [
+                                        "kind",
+                                        "target",
+                                        "maximum"
+                                      ],
+                                      "additionalProperties": false
+                                    },
+                                    {
+                                      "type": "object",
+                                      "properties": {
+                                        "kind": {
+                                          "type": "string",
                                           "const": "DISCARD_CARDS"
                                         },
                                         "player": {
@@ -1900,6 +2344,37 @@
                                             },
                                             "condition": {
                                               "oneOf": [
+                                                {
+                                                  "type": "object",
+                                                  "properties": {
+                                                    "kind": {
+                                                      "type": "string",
+                                                      "const": "SUBJECT_IS_UNIT_NAMED"
+                                                    },
+                                                    "identity": {
+                                                      "type": "string",
+                                                      "const": "V"
+                                                    }
+                                                  },
+                                                  "required": [
+                                                    "kind",
+                                                    "identity"
+                                                  ],
+                                                  "additionalProperties": false
+                                                },
+                                                {
+                                                  "type": "object",
+                                                  "properties": {
+                                                    "kind": {
+                                                      "type": "string",
+                                                      "const": "SUBJECT_STOLE_GIG_THIS_TURN"
+                                                    }
+                                                  },
+                                                  "required": [
+                                                    "kind"
+                                                  ],
+                                                  "additionalProperties": false
+                                                },
                                                 {
                                                   "type": "object",
                                                   "properties": {
@@ -2226,6 +2701,37 @@
                                         },
                                         "condition": {
                                           "oneOf": [
+                                            {
+                                              "type": "object",
+                                              "properties": {
+                                                "kind": {
+                                                  "type": "string",
+                                                  "const": "SUBJECT_IS_UNIT_NAMED"
+                                                },
+                                                "identity": {
+                                                  "type": "string",
+                                                  "const": "V"
+                                                }
+                                              },
+                                              "required": [
+                                                "kind",
+                                                "identity"
+                                              ],
+                                              "additionalProperties": false
+                                            },
+                                            {
+                                              "type": "object",
+                                              "properties": {
+                                                "kind": {
+                                                  "type": "string",
+                                                  "const": "SUBJECT_STOLE_GIG_THIS_TURN"
+                                                }
+                                              },
+                                              "required": [
+                                                "kind"
+                                              ],
+                                              "additionalProperties": false
+                                            },
                                             {
                                               "type": "object",
                                               "properties": {
@@ -2977,13 +3483,33 @@
                                                 "STEAL_GIGS",
                                                 "PAYMENT",
                                                 "OPTIONAL",
-                                                "DISCARD"
+                                                "DISCARD",
+                                                "READY_EDDIE"
                                               ]
                                             },
                                             "options": {
                                               "type": "array",
                                               "items": {
                                                 "oneOf": [
+                                                  {
+                                                    "type": "object",
+                                                    "properties": {
+                                                      "kind": {
+                                                        "type": "string",
+                                                        "const": "EDDIE_SLOT"
+                                                      },
+                                                      "slot": {
+                                                        "type": "integer",
+                                                        "minimum": 0,
+                                                        "maximum": 9007199254740991
+                                                      }
+                                                    },
+                                                    "required": [
+                                                      "kind",
+                                                      "slot"
+                                                    ],
+                                                    "additionalProperties": false
+                                                  },
                                                   {
                                                     "type": "object",
                                                     "properties": {
@@ -3303,14 +3829,20 @@
                                       "type": "string",
                                       "minLength": 1
                                     },
+                                    "delayedId": {
+                                      "type": "string",
+                                      "pattern": "^[a-f0-9]{64}$"
+                                    },
                                     "kind": {
                                       "type": "string",
                                       "enum": [
+                                        "DELAYED_END_TURN",
                                         "WHEN_FIGHT_WON",
                                         "WHEN_DEFEATED",
                                         "WHEN_PLAYED",
                                         "WHEN_ATTACKING",
-                                        "WHEN_CARD_PLAYED"
+                                        "WHEN_CARD_PLAYED",
+                                        "WHEN_OWN_TURN_ENDS"
                                       ]
                                     },
                                     "turn": {
@@ -3392,6 +3924,176 @@
                                     "properties": {
                                       "kind": {
                                         "type": "string",
+                                        "const": "READY_EDDIES"
+                                      },
+                                      "player": {
+                                        "type": "string",
+                                        "const": "CONTROLLER"
+                                      },
+                                      "count": {
+                                        "anyOf": [
+                                          {
+                                            "type": "number",
+                                            "const": 1
+                                          },
+                                          {
+                                            "type": "number",
+                                            "const": 2
+                                          }
+                                        ]
+                                      },
+                                      "when": {
+                                        "type": "object",
+                                        "properties": {
+                                          "timing": {
+                                            "type": "string",
+                                            "const": "RESOLUTION"
+                                          },
+                                          "condition": {
+                                            "type": "object",
+                                            "properties": {
+                                              "kind": {
+                                                "type": "string",
+                                                "const": "SUBJECT_IS_UNIT_NAMED"
+                                              },
+                                              "identity": {
+                                                "type": "string",
+                                                "const": "V"
+                                              }
+                                            },
+                                            "required": [
+                                              "kind",
+                                              "identity"
+                                            ],
+                                            "additionalProperties": false
+                                          }
+                                        },
+                                        "required": [
+                                          "timing",
+                                          "condition"
+                                        ],
+                                        "additionalProperties": false
+                                      }
+                                    },
+                                    "required": [
+                                      "kind",
+                                      "player",
+                                      "count"
+                                    ],
+                                    "additionalProperties": false
+                                  },
+                                  {
+                                    "type": "object",
+                                    "properties": {
+                                      "kind": {
+                                        "type": "string",
+                                        "const": "REGISTER_END_TURN_EFFECT"
+                                      },
+                                      "effect": {
+                                        "type": "object",
+                                        "properties": {
+                                          "kind": {
+                                            "type": "string",
+                                            "const": "READY_EDDIES"
+                                          },
+                                          "player": {
+                                            "type": "string",
+                                            "const": "CONTROLLER"
+                                          },
+                                          "count": {
+                                            "type": "number",
+                                            "const": 2
+                                          },
+                                          "when": {
+                                            "type": "object",
+                                            "properties": {
+                                              "timing": {
+                                                "type": "string",
+                                                "const": "RESOLUTION"
+                                              },
+                                              "condition": {
+                                                "type": "object",
+                                                "properties": {
+                                                  "kind": {
+                                                    "type": "string",
+                                                    "const": "SUBJECT_IS_UNIT_NAMED"
+                                                  },
+                                                  "identity": {
+                                                    "type": "string",
+                                                    "const": "V"
+                                                  }
+                                                },
+                                                "required": [
+                                                  "kind",
+                                                  "identity"
+                                                ],
+                                                "additionalProperties": false
+                                              }
+                                            },
+                                            "required": [
+                                              "timing",
+                                              "condition"
+                                            ],
+                                            "additionalProperties": false
+                                          }
+                                        },
+                                        "required": [
+                                          "kind",
+                                          "player",
+                                          "count",
+                                          "when"
+                                        ],
+                                        "additionalProperties": false
+                                      }
+                                    },
+                                    "required": [
+                                      "kind",
+                                      "effect"
+                                    ],
+                                    "additionalProperties": false
+                                  },
+                                  {
+                                    "type": "object",
+                                    "properties": {
+                                      "kind": {
+                                        "type": "string",
+                                        "const": "DECREASE_GIG_UP_TO"
+                                      },
+                                      "target": {
+                                        "type": "object",
+                                        "properties": {
+                                          "kind": {
+                                            "type": "string",
+                                            "const": "GIGS"
+                                          },
+                                          "relation": {
+                                            "type": "string",
+                                            "const": "ANY"
+                                          }
+                                        },
+                                        "required": [
+                                          "kind",
+                                          "relation"
+                                        ],
+                                        "additionalProperties": false
+                                      },
+                                      "maximum": {
+                                        "type": "number",
+                                        "const": 2
+                                      }
+                                    },
+                                    "required": [
+                                      "kind",
+                                      "target",
+                                      "maximum"
+                                    ],
+                                    "additionalProperties": false
+                                  },
+                                  {
+                                    "type": "object",
+                                    "properties": {
+                                      "kind": {
+                                        "type": "string",
                                         "const": "DISCARD_CARDS"
                                       },
                                       "player": {
@@ -3415,6 +4117,37 @@
                                           },
                                           "condition": {
                                             "oneOf": [
+                                              {
+                                                "type": "object",
+                                                "properties": {
+                                                  "kind": {
+                                                    "type": "string",
+                                                    "const": "SUBJECT_IS_UNIT_NAMED"
+                                                  },
+                                                  "identity": {
+                                                    "type": "string",
+                                                    "const": "V"
+                                                  }
+                                                },
+                                                "required": [
+                                                  "kind",
+                                                  "identity"
+                                                ],
+                                                "additionalProperties": false
+                                              },
+                                              {
+                                                "type": "object",
+                                                "properties": {
+                                                  "kind": {
+                                                    "type": "string",
+                                                    "const": "SUBJECT_STOLE_GIG_THIS_TURN"
+                                                  }
+                                                },
+                                                "required": [
+                                                  "kind"
+                                                ],
+                                                "additionalProperties": false
+                                              },
                                               {
                                                 "type": "object",
                                                 "properties": {
@@ -3741,6 +4474,37 @@
                                       },
                                       "condition": {
                                         "oneOf": [
+                                          {
+                                            "type": "object",
+                                            "properties": {
+                                              "kind": {
+                                                "type": "string",
+                                                "const": "SUBJECT_IS_UNIT_NAMED"
+                                              },
+                                              "identity": {
+                                                "type": "string",
+                                                "const": "V"
+                                              }
+                                            },
+                                            "required": [
+                                              "kind",
+                                              "identity"
+                                            ],
+                                            "additionalProperties": false
+                                          },
+                                          {
+                                            "type": "object",
+                                            "properties": {
+                                              "kind": {
+                                                "type": "string",
+                                                "const": "SUBJECT_STOLE_GIG_THIS_TURN"
+                                              }
+                                            },
+                                            "required": [
+                                              "kind"
+                                            ],
+                                            "additionalProperties": false
+                                          },
                                           {
                                             "type": "object",
                                             "properties": {
@@ -4492,13 +5256,33 @@
                                               "STEAL_GIGS",
                                               "PAYMENT",
                                               "OPTIONAL",
-                                              "DISCARD"
+                                              "DISCARD",
+                                              "READY_EDDIE"
                                             ]
                                           },
                                           "options": {
                                             "type": "array",
                                             "items": {
                                               "oneOf": [
+                                                {
+                                                  "type": "object",
+                                                  "properties": {
+                                                    "kind": {
+                                                      "type": "string",
+                                                      "const": "EDDIE_SLOT"
+                                                    },
+                                                    "slot": {
+                                                      "type": "integer",
+                                                      "minimum": 0,
+                                                      "maximum": 9007199254740991
+                                                    }
+                                                  },
+                                                  "required": [
+                                                    "kind",
+                                                    "slot"
+                                                  ],
+                                                  "additionalProperties": false
+                                                },
                                                 {
                                                   "type": "object",
                                                   "properties": {
@@ -4818,14 +5602,20 @@
                                     "type": "string",
                                     "minLength": 1
                                   },
+                                  "delayedId": {
+                                    "type": "string",
+                                    "pattern": "^[a-f0-9]{64}$"
+                                  },
                                   "kind": {
                                     "type": "string",
                                     "enum": [
+                                      "DELAYED_END_TURN",
                                       "WHEN_FIGHT_WON",
                                       "WHEN_DEFEATED",
                                       "WHEN_PLAYED",
                                       "WHEN_ATTACKING",
-                                      "WHEN_CARD_PLAYED"
+                                      "WHEN_CARD_PLAYED",
+                                      "WHEN_OWN_TURN_ENDS"
                                     ]
                                   },
                                   "turn": {
@@ -4903,6 +5693,176 @@
                                     "properties": {
                                       "kind": {
                                         "type": "string",
+                                        "const": "READY_EDDIES"
+                                      },
+                                      "player": {
+                                        "type": "string",
+                                        "const": "CONTROLLER"
+                                      },
+                                      "count": {
+                                        "anyOf": [
+                                          {
+                                            "type": "number",
+                                            "const": 1
+                                          },
+                                          {
+                                            "type": "number",
+                                            "const": 2
+                                          }
+                                        ]
+                                      },
+                                      "when": {
+                                        "type": "object",
+                                        "properties": {
+                                          "timing": {
+                                            "type": "string",
+                                            "const": "RESOLUTION"
+                                          },
+                                          "condition": {
+                                            "type": "object",
+                                            "properties": {
+                                              "kind": {
+                                                "type": "string",
+                                                "const": "SUBJECT_IS_UNIT_NAMED"
+                                              },
+                                              "identity": {
+                                                "type": "string",
+                                                "const": "V"
+                                              }
+                                            },
+                                            "required": [
+                                              "kind",
+                                              "identity"
+                                            ],
+                                            "additionalProperties": false
+                                          }
+                                        },
+                                        "required": [
+                                          "timing",
+                                          "condition"
+                                        ],
+                                        "additionalProperties": false
+                                      }
+                                    },
+                                    "required": [
+                                      "kind",
+                                      "player",
+                                      "count"
+                                    ],
+                                    "additionalProperties": false
+                                  },
+                                  {
+                                    "type": "object",
+                                    "properties": {
+                                      "kind": {
+                                        "type": "string",
+                                        "const": "REGISTER_END_TURN_EFFECT"
+                                      },
+                                      "effect": {
+                                        "type": "object",
+                                        "properties": {
+                                          "kind": {
+                                            "type": "string",
+                                            "const": "READY_EDDIES"
+                                          },
+                                          "player": {
+                                            "type": "string",
+                                            "const": "CONTROLLER"
+                                          },
+                                          "count": {
+                                            "type": "number",
+                                            "const": 2
+                                          },
+                                          "when": {
+                                            "type": "object",
+                                            "properties": {
+                                              "timing": {
+                                                "type": "string",
+                                                "const": "RESOLUTION"
+                                              },
+                                              "condition": {
+                                                "type": "object",
+                                                "properties": {
+                                                  "kind": {
+                                                    "type": "string",
+                                                    "const": "SUBJECT_IS_UNIT_NAMED"
+                                                  },
+                                                  "identity": {
+                                                    "type": "string",
+                                                    "const": "V"
+                                                  }
+                                                },
+                                                "required": [
+                                                  "kind",
+                                                  "identity"
+                                                ],
+                                                "additionalProperties": false
+                                              }
+                                            },
+                                            "required": [
+                                              "timing",
+                                              "condition"
+                                            ],
+                                            "additionalProperties": false
+                                          }
+                                        },
+                                        "required": [
+                                          "kind",
+                                          "player",
+                                          "count",
+                                          "when"
+                                        ],
+                                        "additionalProperties": false
+                                      }
+                                    },
+                                    "required": [
+                                      "kind",
+                                      "effect"
+                                    ],
+                                    "additionalProperties": false
+                                  },
+                                  {
+                                    "type": "object",
+                                    "properties": {
+                                      "kind": {
+                                        "type": "string",
+                                        "const": "DECREASE_GIG_UP_TO"
+                                      },
+                                      "target": {
+                                        "type": "object",
+                                        "properties": {
+                                          "kind": {
+                                            "type": "string",
+                                            "const": "GIGS"
+                                          },
+                                          "relation": {
+                                            "type": "string",
+                                            "const": "ANY"
+                                          }
+                                        },
+                                        "required": [
+                                          "kind",
+                                          "relation"
+                                        ],
+                                        "additionalProperties": false
+                                      },
+                                      "maximum": {
+                                        "type": "number",
+                                        "const": 2
+                                      }
+                                    },
+                                    "required": [
+                                      "kind",
+                                      "target",
+                                      "maximum"
+                                    ],
+                                    "additionalProperties": false
+                                  },
+                                  {
+                                    "type": "object",
+                                    "properties": {
+                                      "kind": {
+                                        "type": "string",
                                         "const": "DISCARD_CARDS"
                                       },
                                       "player": {
@@ -4926,6 +5886,37 @@
                                           },
                                           "condition": {
                                             "oneOf": [
+                                              {
+                                                "type": "object",
+                                                "properties": {
+                                                  "kind": {
+                                                    "type": "string",
+                                                    "const": "SUBJECT_IS_UNIT_NAMED"
+                                                  },
+                                                  "identity": {
+                                                    "type": "string",
+                                                    "const": "V"
+                                                  }
+                                                },
+                                                "required": [
+                                                  "kind",
+                                                  "identity"
+                                                ],
+                                                "additionalProperties": false
+                                              },
+                                              {
+                                                "type": "object",
+                                                "properties": {
+                                                  "kind": {
+                                                    "type": "string",
+                                                    "const": "SUBJECT_STOLE_GIG_THIS_TURN"
+                                                  }
+                                                },
+                                                "required": [
+                                                  "kind"
+                                                ],
+                                                "additionalProperties": false
+                                              },
                                               {
                                                 "type": "object",
                                                 "properties": {
@@ -5252,6 +6243,37 @@
                                       },
                                       "condition": {
                                         "oneOf": [
+                                          {
+                                            "type": "object",
+                                            "properties": {
+                                              "kind": {
+                                                "type": "string",
+                                                "const": "SUBJECT_IS_UNIT_NAMED"
+                                              },
+                                              "identity": {
+                                                "type": "string",
+                                                "const": "V"
+                                              }
+                                            },
+                                            "required": [
+                                              "kind",
+                                              "identity"
+                                            ],
+                                            "additionalProperties": false
+                                          },
+                                          {
+                                            "type": "object",
+                                            "properties": {
+                                              "kind": {
+                                                "type": "string",
+                                                "const": "SUBJECT_STOLE_GIG_THIS_TURN"
+                                              }
+                                            },
+                                            "required": [
+                                              "kind"
+                                            ],
+                                            "additionalProperties": false
+                                          },
                                           {
                                             "type": "object",
                                             "properties": {
@@ -6003,13 +7025,33 @@
                                               "STEAL_GIGS",
                                               "PAYMENT",
                                               "OPTIONAL",
-                                              "DISCARD"
+                                              "DISCARD",
+                                              "READY_EDDIE"
                                             ]
                                           },
                                           "options": {
                                             "type": "array",
                                             "items": {
                                               "oneOf": [
+                                                {
+                                                  "type": "object",
+                                                  "properties": {
+                                                    "kind": {
+                                                      "type": "string",
+                                                      "const": "EDDIE_SLOT"
+                                                    },
+                                                    "slot": {
+                                                      "type": "integer",
+                                                      "minimum": 0,
+                                                      "maximum": 9007199254740991
+                                                    }
+                                                  },
+                                                  "required": [
+                                                    "kind",
+                                                    "slot"
+                                                  ],
+                                                  "additionalProperties": false
+                                                },
                                                 {
                                                   "type": "object",
                                                   "properties": {
@@ -6329,14 +7371,20 @@
                                     "type": "string",
                                     "minLength": 1
                                   },
+                                  "delayedId": {
+                                    "type": "string",
+                                    "pattern": "^[a-f0-9]{64}$"
+                                  },
                                   "kind": {
                                     "type": "string",
                                     "enum": [
+                                      "DELAYED_END_TURN",
                                       "WHEN_FIGHT_WON",
                                       "WHEN_DEFEATED",
                                       "WHEN_PLAYED",
                                       "WHEN_ATTACKING",
-                                      "WHEN_CARD_PLAYED"
+                                      "WHEN_CARD_PLAYED",
+                                      "WHEN_OWN_TURN_ENDS"
                                     ]
                                   },
                                   "turn": {
@@ -6403,13 +7451,33 @@
                                     "STEAL_GIGS",
                                     "PAYMENT",
                                     "OPTIONAL",
-                                    "DISCARD"
+                                    "DISCARD",
+                                    "READY_EDDIE"
                                   ]
                                 },
                                 "options": {
                                   "type": "array",
                                   "items": {
                                     "oneOf": [
+                                      {
+                                        "type": "object",
+                                        "properties": {
+                                          "kind": {
+                                            "type": "string",
+                                            "const": "EDDIE_SLOT"
+                                          },
+                                          "slot": {
+                                            "type": "integer",
+                                            "minimum": 0,
+                                            "maximum": 9007199254740991
+                                          }
+                                        },
+                                        "required": [
+                                          "kind",
+                                          "slot"
+                                        ],
+                                        "additionalProperties": false
+                                      },
                                       {
                                         "type": "object",
                                         "properties": {
@@ -7363,6 +8431,7 @@
                         "step": {
                           "type": "string",
                           "enum": [
+                            "EDDIE_READY_SELECTION",
                             "DISCARD_SELECTION",
                             "TRIGGER_ORDER_SELECTION",
                             "OPTIONAL_TRIGGER_SELECTION",
@@ -7398,6 +8467,7 @@
                         "window": {
                           "type": "string",
                           "enum": [
+                            "EDDIE_READY_SELECTION",
                             "DISCARD_SELECTION",
                             "TRIGGER_ORDER_SELECTION",
                             "OPTIONAL_TRIGGER_SELECTION",
@@ -8041,9 +9111,131 @@
                       ],
                       "additionalProperties": false
                     },
+                    "delayedEffects": {
+                      "minItems": 1,
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "kind": {
+                            "type": "string",
+                            "const": "END_TURN_READY_EDDIES"
+                          },
+                          "id": {
+                            "type": "string",
+                            "pattern": "^[a-f0-9]{64}$"
+                          },
+                          "controllerId": {
+                            "type": "string",
+                            "format": "uuid",
+                            "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+                          },
+                          "sourceId": {
+                            "type": "string",
+                            "minLength": 1,
+                            "maxLength": 200,
+                            "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$"
+                          },
+                          "source": {
+                            "type": "object",
+                            "properties": {
+                              "cardId": {
+                                "type": "string",
+                                "minLength": 1,
+                                "maxLength": 200,
+                                "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$"
+                              },
+                              "revision": {
+                                "type": "integer",
+                                "exclusiveMinimum": 0,
+                                "maximum": 2147483647
+                              }
+                            },
+                            "required": [
+                              "cardId",
+                              "revision"
+                            ],
+                            "additionalProperties": false
+                          },
+                          "subjectId": {
+                            "type": "string",
+                            "minLength": 1,
+                            "maxLength": 200,
+                            "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$"
+                          },
+                          "subject": {
+                            "type": "object",
+                            "properties": {
+                              "cardId": {
+                                "type": "string",
+                                "minLength": 1,
+                                "maxLength": 200,
+                                "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$"
+                              },
+                              "revision": {
+                                "type": "integer",
+                                "exclusiveMinimum": 0,
+                                "maximum": 2147483647
+                              }
+                            },
+                            "required": [
+                              "cardId",
+                              "revision"
+                            ],
+                            "additionalProperties": false
+                          },
+                          "abilityId": {
+                            "type": "string",
+                            "minLength": 1
+                          },
+                          "createdTurn": {
+                            "type": "integer",
+                            "exclusiveMinimum": 0,
+                            "maximum": 9007199254740991
+                          },
+                          "originOrdinal": {
+                            "type": "integer",
+                            "exclusiveMinimum": 0,
+                            "maximum": 9007199254740991
+                          },
+                          "originEffectId": {
+                            "type": "string",
+                            "pattern": "^[a-f0-9]{64}$"
+                          }
+                        },
+                        "required": [
+                          "kind",
+                          "id",
+                          "controllerId",
+                          "sourceId",
+                          "source",
+                          "subjectId",
+                          "subject",
+                          "abilityId",
+                          "createdTurn",
+                          "originOrdinal",
+                          "originEffectId"
+                        ],
+                        "additionalProperties": false
+                      }
+                    },
                     "turnHistory": {
                       "type": "object",
                       "properties": {
+                        "gigsStolenByUnit": {
+                          "type": "object",
+                          "propertyNames": {
+                            "type": "string",
+                            "minLength": 1,
+                            "maxLength": 200,
+                            "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$"
+                          },
+                          "additionalProperties": {
+                            "type": "integer",
+                            "exclusiveMinimum": 0,
+                            "maximum": 9007199254740991
+                          }
+                        },
                         "turn": {
                           "type": "integer",
                           "exclusiveMinimum": 0,
@@ -8210,6 +9402,139 @@
                           "properties": {
                             "origin": {
                               "oneOf": [
+                                {
+                                  "type": "object",
+                                  "properties": {
+                                    "kind": {
+                                      "type": "string",
+                                      "const": "END_TURN"
+                                    },
+                                    "playerId": {
+                                      "type": "string",
+                                      "format": "uuid",
+                                      "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+                                    },
+                                    "turn": {
+                                      "type": "integer",
+                                      "exclusiveMinimum": 0,
+                                      "maximum": 9007199254740991
+                                    },
+                                    "delayedEffects": {
+                                      "minItems": 1,
+                                      "type": "array",
+                                      "items": {
+                                        "type": "object",
+                                        "properties": {
+                                          "kind": {
+                                            "type": "string",
+                                            "const": "END_TURN_READY_EDDIES"
+                                          },
+                                          "id": {
+                                            "type": "string",
+                                            "pattern": "^[a-f0-9]{64}$"
+                                          },
+                                          "controllerId": {
+                                            "type": "string",
+                                            "format": "uuid",
+                                            "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+                                          },
+                                          "sourceId": {
+                                            "type": "string",
+                                            "minLength": 1,
+                                            "maxLength": 200,
+                                            "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$"
+                                          },
+                                          "source": {
+                                            "type": "object",
+                                            "properties": {
+                                              "cardId": {
+                                                "type": "string",
+                                                "minLength": 1,
+                                                "maxLength": 200,
+                                                "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$"
+                                              },
+                                              "revision": {
+                                                "type": "integer",
+                                                "exclusiveMinimum": 0,
+                                                "maximum": 2147483647
+                                              }
+                                            },
+                                            "required": [
+                                              "cardId",
+                                              "revision"
+                                            ],
+                                            "additionalProperties": false
+                                          },
+                                          "subjectId": {
+                                            "type": "string",
+                                            "minLength": 1,
+                                            "maxLength": 200,
+                                            "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$"
+                                          },
+                                          "subject": {
+                                            "type": "object",
+                                            "properties": {
+                                              "cardId": {
+                                                "type": "string",
+                                                "minLength": 1,
+                                                "maxLength": 200,
+                                                "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$"
+                                              },
+                                              "revision": {
+                                                "type": "integer",
+                                                "exclusiveMinimum": 0,
+                                                "maximum": 2147483647
+                                              }
+                                            },
+                                            "required": [
+                                              "cardId",
+                                              "revision"
+                                            ],
+                                            "additionalProperties": false
+                                          },
+                                          "abilityId": {
+                                            "type": "string",
+                                            "minLength": 1
+                                          },
+                                          "createdTurn": {
+                                            "type": "integer",
+                                            "exclusiveMinimum": 0,
+                                            "maximum": 9007199254740991
+                                          },
+                                          "originOrdinal": {
+                                            "type": "integer",
+                                            "exclusiveMinimum": 0,
+                                            "maximum": 9007199254740991
+                                          },
+                                          "originEffectId": {
+                                            "type": "string",
+                                            "pattern": "^[a-f0-9]{64}$"
+                                          }
+                                        },
+                                        "required": [
+                                          "kind",
+                                          "id",
+                                          "controllerId",
+                                          "sourceId",
+                                          "source",
+                                          "subjectId",
+                                          "subject",
+                                          "abilityId",
+                                          "createdTurn",
+                                          "originOrdinal",
+                                          "originEffectId"
+                                        ],
+                                        "additionalProperties": false
+                                      }
+                                    }
+                                  },
+                                  "required": [
+                                    "kind",
+                                    "playerId",
+                                    "turn"
+                                  ],
+                                  "additionalProperties": false
+                                },
                                 {
                                   "type": "object",
                                   "properties": {
@@ -8417,14 +9742,20 @@
                                     "type": "string",
                                     "minLength": 1
                                   },
+                                  "delayedId": {
+                                    "type": "string",
+                                    "pattern": "^[a-f0-9]{64}$"
+                                  },
                                   "kind": {
                                     "type": "string",
                                     "enum": [
+                                      "DELAYED_END_TURN",
                                       "WHEN_FIGHT_WON",
                                       "WHEN_DEFEATED",
                                       "WHEN_PLAYED",
                                       "WHEN_ATTACKING",
-                                      "WHEN_CARD_PLAYED"
+                                      "WHEN_CARD_PLAYED",
+                                      "WHEN_OWN_TURN_ENDS"
                                     ]
                                   }
                                 },
@@ -8437,6 +9768,16 @@
                                   "kind"
                                 ],
                                 "additionalProperties": false
+                              }
+                            },
+                            "selectedEddieSlots": {
+                              "minItems": 1,
+                              "maxItems": 1,
+                              "type": "array",
+                              "items": {
+                                "type": "integer",
+                                "minimum": 0,
+                                "maximum": 9007199254740991
                               }
                             },
                             "resolvedIds": {
@@ -8453,7 +9794,8 @@
                                 "OPTIONAL",
                                 "TARGET",
                                 "AMOUNT",
-                                "DISCARD"
+                                "DISCARD",
+                                "READY"
                               ]
                             },
                             "conditionMet": {
@@ -8933,6 +10275,176 @@
                                       "properties": {
                                         "kind": {
                                           "type": "string",
+                                          "const": "READY_EDDIES"
+                                        },
+                                        "player": {
+                                          "type": "string",
+                                          "const": "CONTROLLER"
+                                        },
+                                        "count": {
+                                          "anyOf": [
+                                            {
+                                              "type": "number",
+                                              "const": 1
+                                            },
+                                            {
+                                              "type": "number",
+                                              "const": 2
+                                            }
+                                          ]
+                                        },
+                                        "when": {
+                                          "type": "object",
+                                          "properties": {
+                                            "timing": {
+                                              "type": "string",
+                                              "const": "RESOLUTION"
+                                            },
+                                            "condition": {
+                                              "type": "object",
+                                              "properties": {
+                                                "kind": {
+                                                  "type": "string",
+                                                  "const": "SUBJECT_IS_UNIT_NAMED"
+                                                },
+                                                "identity": {
+                                                  "type": "string",
+                                                  "const": "V"
+                                                }
+                                              },
+                                              "required": [
+                                                "kind",
+                                                "identity"
+                                              ],
+                                              "additionalProperties": false
+                                            }
+                                          },
+                                          "required": [
+                                            "timing",
+                                            "condition"
+                                          ],
+                                          "additionalProperties": false
+                                        }
+                                      },
+                                      "required": [
+                                        "kind",
+                                        "player",
+                                        "count"
+                                      ],
+                                      "additionalProperties": false
+                                    },
+                                    {
+                                      "type": "object",
+                                      "properties": {
+                                        "kind": {
+                                          "type": "string",
+                                          "const": "REGISTER_END_TURN_EFFECT"
+                                        },
+                                        "effect": {
+                                          "type": "object",
+                                          "properties": {
+                                            "kind": {
+                                              "type": "string",
+                                              "const": "READY_EDDIES"
+                                            },
+                                            "player": {
+                                              "type": "string",
+                                              "const": "CONTROLLER"
+                                            },
+                                            "count": {
+                                              "type": "number",
+                                              "const": 2
+                                            },
+                                            "when": {
+                                              "type": "object",
+                                              "properties": {
+                                                "timing": {
+                                                  "type": "string",
+                                                  "const": "RESOLUTION"
+                                                },
+                                                "condition": {
+                                                  "type": "object",
+                                                  "properties": {
+                                                    "kind": {
+                                                      "type": "string",
+                                                      "const": "SUBJECT_IS_UNIT_NAMED"
+                                                    },
+                                                    "identity": {
+                                                      "type": "string",
+                                                      "const": "V"
+                                                    }
+                                                  },
+                                                  "required": [
+                                                    "kind",
+                                                    "identity"
+                                                  ],
+                                                  "additionalProperties": false
+                                                }
+                                              },
+                                              "required": [
+                                                "timing",
+                                                "condition"
+                                              ],
+                                              "additionalProperties": false
+                                            }
+                                          },
+                                          "required": [
+                                            "kind",
+                                            "player",
+                                            "count",
+                                            "when"
+                                          ],
+                                          "additionalProperties": false
+                                        }
+                                      },
+                                      "required": [
+                                        "kind",
+                                        "effect"
+                                      ],
+                                      "additionalProperties": false
+                                    },
+                                    {
+                                      "type": "object",
+                                      "properties": {
+                                        "kind": {
+                                          "type": "string",
+                                          "const": "DECREASE_GIG_UP_TO"
+                                        },
+                                        "target": {
+                                          "type": "object",
+                                          "properties": {
+                                            "kind": {
+                                              "type": "string",
+                                              "const": "GIGS"
+                                            },
+                                            "relation": {
+                                              "type": "string",
+                                              "const": "ANY"
+                                            }
+                                          },
+                                          "required": [
+                                            "kind",
+                                            "relation"
+                                          ],
+                                          "additionalProperties": false
+                                        },
+                                        "maximum": {
+                                          "type": "number",
+                                          "const": 2
+                                        }
+                                      },
+                                      "required": [
+                                        "kind",
+                                        "target",
+                                        "maximum"
+                                      ],
+                                      "additionalProperties": false
+                                    },
+                                    {
+                                      "type": "object",
+                                      "properties": {
+                                        "kind": {
+                                          "type": "string",
                                           "const": "DISCARD_CARDS"
                                         },
                                         "player": {
@@ -8956,6 +10468,37 @@
                                             },
                                             "condition": {
                                               "oneOf": [
+                                                {
+                                                  "type": "object",
+                                                  "properties": {
+                                                    "kind": {
+                                                      "type": "string",
+                                                      "const": "SUBJECT_IS_UNIT_NAMED"
+                                                    },
+                                                    "identity": {
+                                                      "type": "string",
+                                                      "const": "V"
+                                                    }
+                                                  },
+                                                  "required": [
+                                                    "kind",
+                                                    "identity"
+                                                  ],
+                                                  "additionalProperties": false
+                                                },
+                                                {
+                                                  "type": "object",
+                                                  "properties": {
+                                                    "kind": {
+                                                      "type": "string",
+                                                      "const": "SUBJECT_STOLE_GIG_THIS_TURN"
+                                                    }
+                                                  },
+                                                  "required": [
+                                                    "kind"
+                                                  ],
+                                                  "additionalProperties": false
+                                                },
                                                 {
                                                   "type": "object",
                                                   "properties": {
@@ -9282,6 +10825,37 @@
                                         },
                                         "condition": {
                                           "oneOf": [
+                                            {
+                                              "type": "object",
+                                              "properties": {
+                                                "kind": {
+                                                  "type": "string",
+                                                  "const": "SUBJECT_IS_UNIT_NAMED"
+                                                },
+                                                "identity": {
+                                                  "type": "string",
+                                                  "const": "V"
+                                                }
+                                              },
+                                              "required": [
+                                                "kind",
+                                                "identity"
+                                              ],
+                                              "additionalProperties": false
+                                            },
+                                            {
+                                              "type": "object",
+                                              "properties": {
+                                                "kind": {
+                                                  "type": "string",
+                                                  "const": "SUBJECT_STOLE_GIG_THIS_TURN"
+                                                }
+                                              },
+                                              "required": [
+                                                "kind"
+                                              ],
+                                              "additionalProperties": false
+                                            },
                                             {
                                               "type": "object",
                                               "properties": {
@@ -10033,13 +11607,33 @@
                                                 "STEAL_GIGS",
                                                 "PAYMENT",
                                                 "OPTIONAL",
-                                                "DISCARD"
+                                                "DISCARD",
+                                                "READY_EDDIE"
                                               ]
                                             },
                                             "options": {
                                               "type": "array",
                                               "items": {
                                                 "oneOf": [
+                                                  {
+                                                    "type": "object",
+                                                    "properties": {
+                                                      "kind": {
+                                                        "type": "string",
+                                                        "const": "EDDIE_SLOT"
+                                                      },
+                                                      "slot": {
+                                                        "type": "integer",
+                                                        "minimum": 0,
+                                                        "maximum": 9007199254740991
+                                                      }
+                                                    },
+                                                    "required": [
+                                                      "kind",
+                                                      "slot"
+                                                    ],
+                                                    "additionalProperties": false
+                                                  },
                                                   {
                                                     "type": "object",
                                                     "properties": {
@@ -10359,14 +11953,20 @@
                                       "type": "string",
                                       "minLength": 1
                                     },
+                                    "delayedId": {
+                                      "type": "string",
+                                      "pattern": "^[a-f0-9]{64}$"
+                                    },
                                     "kind": {
                                       "type": "string",
                                       "enum": [
+                                        "DELAYED_END_TURN",
                                         "WHEN_FIGHT_WON",
                                         "WHEN_DEFEATED",
                                         "WHEN_PLAYED",
                                         "WHEN_ATTACKING",
-                                        "WHEN_CARD_PLAYED"
+                                        "WHEN_CARD_PLAYED",
+                                        "WHEN_OWN_TURN_ENDS"
                                       ]
                                     },
                                     "turn": {
@@ -10448,6 +12048,176 @@
                                     "properties": {
                                       "kind": {
                                         "type": "string",
+                                        "const": "READY_EDDIES"
+                                      },
+                                      "player": {
+                                        "type": "string",
+                                        "const": "CONTROLLER"
+                                      },
+                                      "count": {
+                                        "anyOf": [
+                                          {
+                                            "type": "number",
+                                            "const": 1
+                                          },
+                                          {
+                                            "type": "number",
+                                            "const": 2
+                                          }
+                                        ]
+                                      },
+                                      "when": {
+                                        "type": "object",
+                                        "properties": {
+                                          "timing": {
+                                            "type": "string",
+                                            "const": "RESOLUTION"
+                                          },
+                                          "condition": {
+                                            "type": "object",
+                                            "properties": {
+                                              "kind": {
+                                                "type": "string",
+                                                "const": "SUBJECT_IS_UNIT_NAMED"
+                                              },
+                                              "identity": {
+                                                "type": "string",
+                                                "const": "V"
+                                              }
+                                            },
+                                            "required": [
+                                              "kind",
+                                              "identity"
+                                            ],
+                                            "additionalProperties": false
+                                          }
+                                        },
+                                        "required": [
+                                          "timing",
+                                          "condition"
+                                        ],
+                                        "additionalProperties": false
+                                      }
+                                    },
+                                    "required": [
+                                      "kind",
+                                      "player",
+                                      "count"
+                                    ],
+                                    "additionalProperties": false
+                                  },
+                                  {
+                                    "type": "object",
+                                    "properties": {
+                                      "kind": {
+                                        "type": "string",
+                                        "const": "REGISTER_END_TURN_EFFECT"
+                                      },
+                                      "effect": {
+                                        "type": "object",
+                                        "properties": {
+                                          "kind": {
+                                            "type": "string",
+                                            "const": "READY_EDDIES"
+                                          },
+                                          "player": {
+                                            "type": "string",
+                                            "const": "CONTROLLER"
+                                          },
+                                          "count": {
+                                            "type": "number",
+                                            "const": 2
+                                          },
+                                          "when": {
+                                            "type": "object",
+                                            "properties": {
+                                              "timing": {
+                                                "type": "string",
+                                                "const": "RESOLUTION"
+                                              },
+                                              "condition": {
+                                                "type": "object",
+                                                "properties": {
+                                                  "kind": {
+                                                    "type": "string",
+                                                    "const": "SUBJECT_IS_UNIT_NAMED"
+                                                  },
+                                                  "identity": {
+                                                    "type": "string",
+                                                    "const": "V"
+                                                  }
+                                                },
+                                                "required": [
+                                                  "kind",
+                                                  "identity"
+                                                ],
+                                                "additionalProperties": false
+                                              }
+                                            },
+                                            "required": [
+                                              "timing",
+                                              "condition"
+                                            ],
+                                            "additionalProperties": false
+                                          }
+                                        },
+                                        "required": [
+                                          "kind",
+                                          "player",
+                                          "count",
+                                          "when"
+                                        ],
+                                        "additionalProperties": false
+                                      }
+                                    },
+                                    "required": [
+                                      "kind",
+                                      "effect"
+                                    ],
+                                    "additionalProperties": false
+                                  },
+                                  {
+                                    "type": "object",
+                                    "properties": {
+                                      "kind": {
+                                        "type": "string",
+                                        "const": "DECREASE_GIG_UP_TO"
+                                      },
+                                      "target": {
+                                        "type": "object",
+                                        "properties": {
+                                          "kind": {
+                                            "type": "string",
+                                            "const": "GIGS"
+                                          },
+                                          "relation": {
+                                            "type": "string",
+                                            "const": "ANY"
+                                          }
+                                        },
+                                        "required": [
+                                          "kind",
+                                          "relation"
+                                        ],
+                                        "additionalProperties": false
+                                      },
+                                      "maximum": {
+                                        "type": "number",
+                                        "const": 2
+                                      }
+                                    },
+                                    "required": [
+                                      "kind",
+                                      "target",
+                                      "maximum"
+                                    ],
+                                    "additionalProperties": false
+                                  },
+                                  {
+                                    "type": "object",
+                                    "properties": {
+                                      "kind": {
+                                        "type": "string",
                                         "const": "DISCARD_CARDS"
                                       },
                                       "player": {
@@ -10471,6 +12241,37 @@
                                           },
                                           "condition": {
                                             "oneOf": [
+                                              {
+                                                "type": "object",
+                                                "properties": {
+                                                  "kind": {
+                                                    "type": "string",
+                                                    "const": "SUBJECT_IS_UNIT_NAMED"
+                                                  },
+                                                  "identity": {
+                                                    "type": "string",
+                                                    "const": "V"
+                                                  }
+                                                },
+                                                "required": [
+                                                  "kind",
+                                                  "identity"
+                                                ],
+                                                "additionalProperties": false
+                                              },
+                                              {
+                                                "type": "object",
+                                                "properties": {
+                                                  "kind": {
+                                                    "type": "string",
+                                                    "const": "SUBJECT_STOLE_GIG_THIS_TURN"
+                                                  }
+                                                },
+                                                "required": [
+                                                  "kind"
+                                                ],
+                                                "additionalProperties": false
+                                              },
                                               {
                                                 "type": "object",
                                                 "properties": {
@@ -10797,6 +12598,37 @@
                                       },
                                       "condition": {
                                         "oneOf": [
+                                          {
+                                            "type": "object",
+                                            "properties": {
+                                              "kind": {
+                                                "type": "string",
+                                                "const": "SUBJECT_IS_UNIT_NAMED"
+                                              },
+                                              "identity": {
+                                                "type": "string",
+                                                "const": "V"
+                                              }
+                                            },
+                                            "required": [
+                                              "kind",
+                                              "identity"
+                                            ],
+                                            "additionalProperties": false
+                                          },
+                                          {
+                                            "type": "object",
+                                            "properties": {
+                                              "kind": {
+                                                "type": "string",
+                                                "const": "SUBJECT_STOLE_GIG_THIS_TURN"
+                                              }
+                                            },
+                                            "required": [
+                                              "kind"
+                                            ],
+                                            "additionalProperties": false
+                                          },
                                           {
                                             "type": "object",
                                             "properties": {
@@ -11548,13 +13380,33 @@
                                               "STEAL_GIGS",
                                               "PAYMENT",
                                               "OPTIONAL",
-                                              "DISCARD"
+                                              "DISCARD",
+                                              "READY_EDDIE"
                                             ]
                                           },
                                           "options": {
                                             "type": "array",
                                             "items": {
                                               "oneOf": [
+                                                {
+                                                  "type": "object",
+                                                  "properties": {
+                                                    "kind": {
+                                                      "type": "string",
+                                                      "const": "EDDIE_SLOT"
+                                                    },
+                                                    "slot": {
+                                                      "type": "integer",
+                                                      "minimum": 0,
+                                                      "maximum": 9007199254740991
+                                                    }
+                                                  },
+                                                  "required": [
+                                                    "kind",
+                                                    "slot"
+                                                  ],
+                                                  "additionalProperties": false
+                                                },
                                                 {
                                                   "type": "object",
                                                   "properties": {
@@ -11874,14 +13726,20 @@
                                     "type": "string",
                                     "minLength": 1
                                   },
+                                  "delayedId": {
+                                    "type": "string",
+                                    "pattern": "^[a-f0-9]{64}$"
+                                  },
                                   "kind": {
                                     "type": "string",
                                     "enum": [
+                                      "DELAYED_END_TURN",
                                       "WHEN_FIGHT_WON",
                                       "WHEN_DEFEATED",
                                       "WHEN_PLAYED",
                                       "WHEN_ATTACKING",
-                                      "WHEN_CARD_PLAYED"
+                                      "WHEN_CARD_PLAYED",
+                                      "WHEN_OWN_TURN_ENDS"
                                     ]
                                   },
                                   "turn": {
@@ -11959,6 +13817,176 @@
                                     "properties": {
                                       "kind": {
                                         "type": "string",
+                                        "const": "READY_EDDIES"
+                                      },
+                                      "player": {
+                                        "type": "string",
+                                        "const": "CONTROLLER"
+                                      },
+                                      "count": {
+                                        "anyOf": [
+                                          {
+                                            "type": "number",
+                                            "const": 1
+                                          },
+                                          {
+                                            "type": "number",
+                                            "const": 2
+                                          }
+                                        ]
+                                      },
+                                      "when": {
+                                        "type": "object",
+                                        "properties": {
+                                          "timing": {
+                                            "type": "string",
+                                            "const": "RESOLUTION"
+                                          },
+                                          "condition": {
+                                            "type": "object",
+                                            "properties": {
+                                              "kind": {
+                                                "type": "string",
+                                                "const": "SUBJECT_IS_UNIT_NAMED"
+                                              },
+                                              "identity": {
+                                                "type": "string",
+                                                "const": "V"
+                                              }
+                                            },
+                                            "required": [
+                                              "kind",
+                                              "identity"
+                                            ],
+                                            "additionalProperties": false
+                                          }
+                                        },
+                                        "required": [
+                                          "timing",
+                                          "condition"
+                                        ],
+                                        "additionalProperties": false
+                                      }
+                                    },
+                                    "required": [
+                                      "kind",
+                                      "player",
+                                      "count"
+                                    ],
+                                    "additionalProperties": false
+                                  },
+                                  {
+                                    "type": "object",
+                                    "properties": {
+                                      "kind": {
+                                        "type": "string",
+                                        "const": "REGISTER_END_TURN_EFFECT"
+                                      },
+                                      "effect": {
+                                        "type": "object",
+                                        "properties": {
+                                          "kind": {
+                                            "type": "string",
+                                            "const": "READY_EDDIES"
+                                          },
+                                          "player": {
+                                            "type": "string",
+                                            "const": "CONTROLLER"
+                                          },
+                                          "count": {
+                                            "type": "number",
+                                            "const": 2
+                                          },
+                                          "when": {
+                                            "type": "object",
+                                            "properties": {
+                                              "timing": {
+                                                "type": "string",
+                                                "const": "RESOLUTION"
+                                              },
+                                              "condition": {
+                                                "type": "object",
+                                                "properties": {
+                                                  "kind": {
+                                                    "type": "string",
+                                                    "const": "SUBJECT_IS_UNIT_NAMED"
+                                                  },
+                                                  "identity": {
+                                                    "type": "string",
+                                                    "const": "V"
+                                                  }
+                                                },
+                                                "required": [
+                                                  "kind",
+                                                  "identity"
+                                                ],
+                                                "additionalProperties": false
+                                              }
+                                            },
+                                            "required": [
+                                              "timing",
+                                              "condition"
+                                            ],
+                                            "additionalProperties": false
+                                          }
+                                        },
+                                        "required": [
+                                          "kind",
+                                          "player",
+                                          "count",
+                                          "when"
+                                        ],
+                                        "additionalProperties": false
+                                      }
+                                    },
+                                    "required": [
+                                      "kind",
+                                      "effect"
+                                    ],
+                                    "additionalProperties": false
+                                  },
+                                  {
+                                    "type": "object",
+                                    "properties": {
+                                      "kind": {
+                                        "type": "string",
+                                        "const": "DECREASE_GIG_UP_TO"
+                                      },
+                                      "target": {
+                                        "type": "object",
+                                        "properties": {
+                                          "kind": {
+                                            "type": "string",
+                                            "const": "GIGS"
+                                          },
+                                          "relation": {
+                                            "type": "string",
+                                            "const": "ANY"
+                                          }
+                                        },
+                                        "required": [
+                                          "kind",
+                                          "relation"
+                                        ],
+                                        "additionalProperties": false
+                                      },
+                                      "maximum": {
+                                        "type": "number",
+                                        "const": 2
+                                      }
+                                    },
+                                    "required": [
+                                      "kind",
+                                      "target",
+                                      "maximum"
+                                    ],
+                                    "additionalProperties": false
+                                  },
+                                  {
+                                    "type": "object",
+                                    "properties": {
+                                      "kind": {
+                                        "type": "string",
                                         "const": "DISCARD_CARDS"
                                       },
                                       "player": {
@@ -11982,6 +14010,37 @@
                                           },
                                           "condition": {
                                             "oneOf": [
+                                              {
+                                                "type": "object",
+                                                "properties": {
+                                                  "kind": {
+                                                    "type": "string",
+                                                    "const": "SUBJECT_IS_UNIT_NAMED"
+                                                  },
+                                                  "identity": {
+                                                    "type": "string",
+                                                    "const": "V"
+                                                  }
+                                                },
+                                                "required": [
+                                                  "kind",
+                                                  "identity"
+                                                ],
+                                                "additionalProperties": false
+                                              },
+                                              {
+                                                "type": "object",
+                                                "properties": {
+                                                  "kind": {
+                                                    "type": "string",
+                                                    "const": "SUBJECT_STOLE_GIG_THIS_TURN"
+                                                  }
+                                                },
+                                                "required": [
+                                                  "kind"
+                                                ],
+                                                "additionalProperties": false
+                                              },
                                               {
                                                 "type": "object",
                                                 "properties": {
@@ -12308,6 +14367,37 @@
                                       },
                                       "condition": {
                                         "oneOf": [
+                                          {
+                                            "type": "object",
+                                            "properties": {
+                                              "kind": {
+                                                "type": "string",
+                                                "const": "SUBJECT_IS_UNIT_NAMED"
+                                              },
+                                              "identity": {
+                                                "type": "string",
+                                                "const": "V"
+                                              }
+                                            },
+                                            "required": [
+                                              "kind",
+                                              "identity"
+                                            ],
+                                            "additionalProperties": false
+                                          },
+                                          {
+                                            "type": "object",
+                                            "properties": {
+                                              "kind": {
+                                                "type": "string",
+                                                "const": "SUBJECT_STOLE_GIG_THIS_TURN"
+                                              }
+                                            },
+                                            "required": [
+                                              "kind"
+                                            ],
+                                            "additionalProperties": false
+                                          },
                                           {
                                             "type": "object",
                                             "properties": {
@@ -13059,13 +15149,33 @@
                                               "STEAL_GIGS",
                                               "PAYMENT",
                                               "OPTIONAL",
-                                              "DISCARD"
+                                              "DISCARD",
+                                              "READY_EDDIE"
                                             ]
                                           },
                                           "options": {
                                             "type": "array",
                                             "items": {
                                               "oneOf": [
+                                                {
+                                                  "type": "object",
+                                                  "properties": {
+                                                    "kind": {
+                                                      "type": "string",
+                                                      "const": "EDDIE_SLOT"
+                                                    },
+                                                    "slot": {
+                                                      "type": "integer",
+                                                      "minimum": 0,
+                                                      "maximum": 9007199254740991
+                                                    }
+                                                  },
+                                                  "required": [
+                                                    "kind",
+                                                    "slot"
+                                                  ],
+                                                  "additionalProperties": false
+                                                },
                                                 {
                                                   "type": "object",
                                                   "properties": {
@@ -13385,14 +15495,20 @@
                                     "type": "string",
                                     "minLength": 1
                                   },
+                                  "delayedId": {
+                                    "type": "string",
+                                    "pattern": "^[a-f0-9]{64}$"
+                                  },
                                   "kind": {
                                     "type": "string",
                                     "enum": [
+                                      "DELAYED_END_TURN",
                                       "WHEN_FIGHT_WON",
                                       "WHEN_DEFEATED",
                                       "WHEN_PLAYED",
                                       "WHEN_ATTACKING",
-                                      "WHEN_CARD_PLAYED"
+                                      "WHEN_CARD_PLAYED",
+                                      "WHEN_OWN_TURN_ENDS"
                                     ]
                                   },
                                   "turn": {
@@ -13459,13 +15575,33 @@
                                     "STEAL_GIGS",
                                     "PAYMENT",
                                     "OPTIONAL",
-                                    "DISCARD"
+                                    "DISCARD",
+                                    "READY_EDDIE"
                                   ]
                                 },
                                 "options": {
                                   "type": "array",
                                   "items": {
                                     "oneOf": [
+                                      {
+                                        "type": "object",
+                                        "properties": {
+                                          "kind": {
+                                            "type": "string",
+                                            "const": "EDDIE_SLOT"
+                                          },
+                                          "slot": {
+                                            "type": "integer",
+                                            "minimum": 0,
+                                            "maximum": 9007199254740991
+                                          }
+                                        },
+                                        "required": [
+                                          "kind",
+                                          "slot"
+                                        ],
+                                        "additionalProperties": false
+                                      },
                                       {
                                         "type": "object",
                                         "properties": {
@@ -15429,6 +17565,7 @@
                               "step": {
                                 "type": "string",
                                 "enum": [
+                                  "EDDIE_READY_SELECTION",
                                   "DISCARD_SELECTION",
                                   "TRIGGER_ORDER_SELECTION",
                                   "OPTIONAL_TRIGGER_SELECTION",
@@ -15460,6 +17597,124 @@
                             "required": [
                               "kind",
                               "step"
+                            ],
+                            "additionalProperties": false
+                          },
+                          {
+                            "type": "object",
+                            "properties": {
+                              "kind": {
+                                "type": "string",
+                                "const": "DELAYED_EFFECT_CREATED"
+                              },
+                              "delayedEffect": {
+                                "type": "object",
+                                "properties": {
+                                  "kind": {
+                                    "type": "string",
+                                    "const": "END_TURN_READY_EDDIES"
+                                  },
+                                  "id": {
+                                    "type": "string",
+                                    "pattern": "^[a-f0-9]{64}$"
+                                  },
+                                  "controllerId": {
+                                    "type": "string",
+                                    "format": "uuid",
+                                    "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+                                  },
+                                  "sourceId": {
+                                    "type": "string",
+                                    "minLength": 1,
+                                    "maxLength": 200,
+                                    "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$"
+                                  },
+                                  "source": {
+                                    "type": "object",
+                                    "properties": {
+                                      "cardId": {
+                                        "type": "string",
+                                        "minLength": 1,
+                                        "maxLength": 200,
+                                        "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$"
+                                      },
+                                      "revision": {
+                                        "type": "integer",
+                                        "exclusiveMinimum": 0,
+                                        "maximum": 2147483647
+                                      }
+                                    },
+                                    "required": [
+                                      "cardId",
+                                      "revision"
+                                    ],
+                                    "additionalProperties": false
+                                  },
+                                  "subjectId": {
+                                    "type": "string",
+                                    "minLength": 1,
+                                    "maxLength": 200,
+                                    "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$"
+                                  },
+                                  "subject": {
+                                    "type": "object",
+                                    "properties": {
+                                      "cardId": {
+                                        "type": "string",
+                                        "minLength": 1,
+                                        "maxLength": 200,
+                                        "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$"
+                                      },
+                                      "revision": {
+                                        "type": "integer",
+                                        "exclusiveMinimum": 0,
+                                        "maximum": 2147483647
+                                      }
+                                    },
+                                    "required": [
+                                      "cardId",
+                                      "revision"
+                                    ],
+                                    "additionalProperties": false
+                                  },
+                                  "abilityId": {
+                                    "type": "string",
+                                    "minLength": 1
+                                  },
+                                  "createdTurn": {
+                                    "type": "integer",
+                                    "exclusiveMinimum": 0,
+                                    "maximum": 9007199254740991
+                                  },
+                                  "originOrdinal": {
+                                    "type": "integer",
+                                    "exclusiveMinimum": 0,
+                                    "maximum": 9007199254740991
+                                  },
+                                  "originEffectId": {
+                                    "type": "string",
+                                    "pattern": "^[a-f0-9]{64}$"
+                                  }
+                                },
+                                "required": [
+                                  "kind",
+                                  "id",
+                                  "controllerId",
+                                  "sourceId",
+                                  "source",
+                                  "subjectId",
+                                  "subject",
+                                  "abilityId",
+                                  "createdTurn",
+                                  "originOrdinal",
+                                  "originEffectId"
+                                ],
+                                "additionalProperties": false
+                              }
+                            },
+                            "required": [
+                              "kind",
+                              "delayedEffect"
                             ],
                             "additionalProperties": false
                           },
@@ -15931,6 +18186,7 @@
                     "window": {
                       "type": "string",
                       "enum": [
+                        "EDDIE_READY_SELECTION",
                         "DISCARD_SELECTION",
                         "TRIGGER_ORDER_SELECTION",
                         "OPTIONAL_TRIGGER_SELECTION",
@@ -15955,6 +18211,7 @@
                     "step": {
                       "type": "string",
                       "enum": [
+                        "EDDIE_READY_SELECTION",
                         "DISCARD_SELECTION",
                         "TRIGGER_ORDER_SELECTION",
                         "OPTIONAL_TRIGGER_SELECTION",
@@ -16204,11 +18461,13 @@
                           "kind": {
                             "type": "string",
                             "enum": [
+                              "DELAYED_END_TURN",
                               "WHEN_FIGHT_WON",
                               "WHEN_DEFEATED",
                               "WHEN_PLAYED",
                               "WHEN_ATTACKING",
-                              "WHEN_CARD_PLAYED"
+                              "WHEN_CARD_PLAYED",
+                              "WHEN_OWN_TURN_ENDS"
                             ]
                           }
                         },
@@ -16297,6 +18556,103 @@
                         "loserIds"
                       ],
                       "additionalProperties": false
+                    },
+                    "delayedEffects": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "sourceId": {
+                            "type": "string"
+                          },
+                          "source": {
+                            "type": "object",
+                            "properties": {
+                              "cardId": {
+                                "type": "string",
+                                "minLength": 1,
+                                "maxLength": 200,
+                                "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$"
+                              },
+                              "revision": {
+                                "type": "integer",
+                                "exclusiveMinimum": 0,
+                                "maximum": 2147483647
+                              }
+                            },
+                            "required": [
+                              "cardId",
+                              "revision"
+                            ],
+                            "additionalProperties": false
+                          },
+                          "subjectId": {
+                            "type": "string"
+                          },
+                          "controllerSeat": {
+                            "type": "integer",
+                            "minimum": -9007199254740991,
+                            "maximum": 9007199254740991
+                          },
+                          "createdTurn": {
+                            "type": "integer",
+                            "minimum": -9007199254740991,
+                            "maximum": 9007199254740991
+                          },
+                          "timing": {
+                            "type": "string",
+                            "const": "END_OF_TURN"
+                          },
+                          "condition": {
+                            "type": "string",
+                            "const": "SUBJECT_IS_UNIT_NAMED_V"
+                          },
+                          "readyCount": {
+                            "type": "number",
+                            "const": 2
+                          }
+                        },
+                        "required": [
+                          "sourceId",
+                          "source",
+                          "subjectId",
+                          "controllerSeat",
+                          "createdTurn",
+                          "timing",
+                          "condition",
+                          "readyCount"
+                        ],
+                        "additionalProperties": false
+                      }
+                    },
+                    "selectedEddieSlots": {
+                      "type": "array",
+                      "items": {
+                        "type": "integer",
+                        "minimum": 0,
+                        "maximum": 9007199254740991
+                      }
+                    },
+                    "gigSteals": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "attackerId": {
+                            "type": "string"
+                          },
+                          "count": {
+                            "type": "integer",
+                            "exclusiveMinimum": 0,
+                            "maximum": 9007199254740991
+                          }
+                        },
+                        "required": [
+                          "attackerId",
+                          "count"
+                        ],
+                        "additionalProperties": false
+                      }
                     },
                     "turnPlays": {
                       "type": "array",

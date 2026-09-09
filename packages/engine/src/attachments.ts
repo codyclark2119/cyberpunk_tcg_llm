@@ -1,3 +1,4 @@
+import { supportsDelayedAttackGear } from "./delayed-effect-support";
 import { supportsPrivateLookGear } from "./private-look-support";
 import { supportsCapabilityGear } from "./capability-support";
 import { supportsTriggerCard } from "./trigger-support";
@@ -9,6 +10,7 @@ function revision(state: GameState, id: CardInstanceId, context: EngineContext) 
     return context.content.cards.find(r => r.id === c?.cardId && r.revision === c?.revision);
 }
 export function supportsGear(card: DeepReadonly<CardRevisionSnapshot> | undefined, context: EngineContext) {
+    if (card?.execution?.scope === "GEAR_DELAYED_ATTACK_V1") return supportsDelayedAttackGear(card, context);
     if (card?.execution?.scope === "GEAR_PRIVATE_LOOK_V1") return supportsPrivateLookGear(card, context);
     if (card?.execution?.scope === "GEAR_CAPABILITIES_V1") return supportsCapabilityGear(card, context);
     if (gearEnabled(context) && card?.type === "GEAR" && card.execution?.scope === "COMBAT_TRIGGERS_V1") return supportsTriggerCard(card, context);

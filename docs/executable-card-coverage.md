@@ -4,7 +4,7 @@ This is an implementation review of a small local capture, **not human-certified
 
 `execution: { scope: "NONCOMBAT_SLICE_V1", status: "SUPPORTED" | "UNSUPPORTED" }` is distinct from catalog `status`, source `legality`, and the existence of display text. `REVIEWED_CALL_V1` admission requires an explicit supported execution decision for **every deck card**, then checks the actual normalized abilities and modifiers against implemented handlers. Unsupported triggers, multiple CALL abilities, costs, conditions, and primitives still fail admission. Existing synthetic legacy policies remain for regression compatibility. No runtime English parsing occurs.
 
-The sections record successive bounded scopes. Later sections supersede earlier implementation limits, while older pinned policies retain their regression boundaries. The latest addition is **ATTACK_ORDERED_EFFECTS_V1** below; no scope certifies a complete starter match.
+The sections record successive bounded scopes. Later sections supersede earlier implementation limits, while older pinned policies retain their regression boundaries. The latest addition is **GEAR_DELAYED_ATTACK_V1** below (19/29 demo cards, 43/60 copies); no scope certifies a complete starter match.
 
 ## Captured records and implementation decisions
 
@@ -103,7 +103,7 @@ The additional pinned `turnSlice.gear: "REVIEWED_GEAR_V1"` enables the simple Ge
 - Primary printing `7ffa8ba4-f187-4ba0-a719-fa8ebf45a03b`, Welcome to Night City — Retail **025**. All six printing UUIDs are retained: Retail 025, Beta β025, Embracing Power Retail 007 and Beta β007, Arasaka Demo 004, Pre-Release Beta 011.
 - Raw capture SHA-256: `a711d560ac0c863b1df894cc1c6443212b28bd4b8ad60de581094797c97302e2`.
 - Canonical record sourceHash: `2b801a356c0239342909fc9fe3b5edab19bc31d79719ade6deac161e1352d62e`.
-- Normalized revision content hash: `be7d2903937458366526cf65cd7818a09394e807e4fc6cc714b16937c58bb319`.
+- Normalized revision content hash: `be7d2903937458366526cf65cd7818a09394e807e4fc6cc714b17537c58bb319`.
 
 [gear-card-source.v1.json](../tests/fixtures/gear-card-source.v1.json) preserves the exact local record, original-byte hash and raw/processed errata hashes. There is no matching captured erratum. [gear-rules.v1.json](../tests/fixtures/gear-rules.v1.json) preserves exact selected rules, raw/processed snapshot hashes and implementation decisions. [gear-fixture.ts](../tests/gear-fixture.ts) normalizes this review by hand. The parenthetical is reminder text; the quoted sentence carries no gameplay instruction. No card image was available locally or fetched; this review uses the captured text/metadata and comprehensive rules, not image-layout certification.
 
@@ -225,7 +225,7 @@ Psycho Squad's explicit `[Flavour]` and Emergency Atlus's quoted narrative conta
 | `reboot-optics` | `5e75a4492e9c5375c7dd24bfa5de6dbe9046d0ed50bacbf93a3525466362c9b9` | `26beb709278092f79d4809e436f1db5ff74c754872bd74605106faef399044ac` | `dbc84769ae27e11b67d34f83ed7d1be60b96d794289f65544b624265b86e1243` |
 | `corpo-security` | `ca00222ae8b1b4c6edd7a4238b90e0a7414d678f83da652087cf2477eefe4afd` | `4ad43c7f2fc8f902b014a9f3d9c37962c1289bca43e8af7deb9dd6cae9e44eaf` | `949cb395f736e8e6a27cb07a725a2420df9123554f1b3ddc20810533491e5fee` |
 | `mt0d12-flathead` | `25f9729e49b6c4b502f295c8251260b36b9f3cfab5452a7eab04b0383b46d80b` | `3be73028c2647e5c2eec3ca45115901fad377e94cd65880c7e7e530a5d49be23` | `06a6a78f8973b177ba8da90b68b7ec10de8fa40cd4349be58ee9dd4c5a2be8e4` |
-| `psycho-squad` | `b684eb207662916924ab8d910582f3eb94d683c812dace6546507e2cec6df4dc` | `318d221ca664064605dac5fc2f9508f6d11f9fbe19c0345344b9ddc3da2ff387` | `d45245c914161e18a056d95fbe5a3d19075055b3d9b78600d2f555d641e09b7c` |
+| `psycho-squad` | `b684eb207662917524ab8d910582f3eb94d683c812dace6546507e2cec6df4dc` | `318d221ca664064605dac5fc2f9508f6d11f9fbe19c0345344b9ddc3da2ff387` | `d45245c914161e18a056d95fbe5a3d19075055b3d9b78600d2f555d641e09b7c` |
 | `emergency-atlus` | `a521b700a916562d392a9343055a1cdc8d6c5ac163c1e0c53a539183426611d6` | `25b38856b8c1356339600969c350d0cd7353d2e78575cacdac455cfcba1d053f` | `7c821e3255667936e4f176df5390b3c3edd231fac89f4ccaa78babd5dc1fa956` |
 
 | CardId | Primary printing UUID / collector number | Demo printing UUID / collector number | Captured printings |
@@ -274,7 +274,7 @@ Jackie's historical first-play counter is separate from CALL usage and resets fo
 | CardId | Raw-byte SHA-256 | Canonical sourceHash | Normalized revision hash |
 |---|---|---|---|
 | `satori-sword-of-saburo` | `de1018613a3e9bc3255614635d07efe0342c0513dca73b317b009d543856bec0` | `84009143dfce688adb70f003db7fd3605d0f9e246eeff4ec287ccf0b84b8bb1c` | `121dfed616aa22d1ceb01a2196a45bbca1f5ae7c6f0dee449f1060e7b084310a` |
-| `dexter-deshawn-one-last-chance` | `c3ece59708f92495fbc3508fbcb8a3ef00603ac558e3fdf15e201ccff8b9c7f0` | `420729845ee84c1c1b9a7a3014082e1421691640c7165a25035dd0d1a97a586d` | `20cfcd10698a2d6c04d13e16a7d92a5f43b27570f9aae2bf479ee24322a4dd10` |
+| `dexter-deshawn-one-last-chance` | `c3ece59708f92495fbc3508fbcb8a3ef00603ac558e3fdf15e201ccff8b9c7f0` | `420729845ee84c1c1b9a7a3014082e1421751640c7165a25035dd0d1a97a586d` | `20cfcd10698a2d6c04d13e16a7d92a5f43b27570f9aae2bf479ee24322a4dd10` |
 | `jackie-welles-pour-one-out-for-me` | `c92a779b5b4ac21bac4f243e357121e2d90e9fe6f8beaca6562de8c247c66dd8` | `f920079646c57179f1a173313611c5e3957c5b4d76a4c1134196892696833d69` | `32ce0a027f7319aa347c0b0d9832478814033e2843957aa2879b55a9d90be16c` |
 
 | CardId | Printing UUID | Set | Collector number |
@@ -436,3 +436,73 @@ Raw-byte SHA-256: `a902a898742d6af0a16f37070dcb0d0f5f6a4fac97212522f839857873fd3
 [attack-ordered-effects.test.ts](../tests/attack-ordered-effects.test.ts) adds 34 focused tests. The [Evelyn replay](../tests/fixtures/evelyn-replay.v1.json) records 17 legal actions, 16 strategic positions and 90 events, including an actual multi-card discard position and return to MAIN. Mongo revision round trips, PostgreSQL reload/resume, all 18 Python replay families and the original 17-payload audit cover this addition. See [attack-ordered-effects-report.md](attack-ordered-effects-report.md) for commands and measured results.
 
 Current demo coverage is **17/29 distinct cards, 38/60 physical copies**: Arasaka 5/14 and 14/30 unchanged; Merc 12/15 and 24/30. Remaining Merc cards are V — Corporate Exile, Dying Night — V's Pistol and Delamain Cab. Constructed remains 40–50 main plus 3 Legends with existing copy/RAM limits; neither exact 27+3 starter can initialize or run a complete match.
+
+
+## END_TURN_HISTORY_V1: Delamain Cab
+
+Application CardId `delamain-cab`, immutable application revision **1**, `END_TURN_HISTORY_V1 / SUPPORTED`. Full captured Unit / Vehicle, Blue RAM2, cost4 Eddies, printed power4, **unsellable**, Common. Retail artist CD PROJEKT RED; beta artist Daniel Valaisis; all five printing records and all four captured errata reviewed, none applicable. No additional reminder, keyword, restriction, activation cost, equip clause or effect was omitted. This is an implementation-reviewed executable bundle, not human-certified gold or an automatic catalog import.
+
+Exact captured text:
+
+> At the end of your turn, if this Unit stole a Gig this turn, ready 1 Eddie.
+
+The single `WHEN_OWN_TURN_ENDS` ability has condition `SUBJECT_STOLE_GIG_THIS_TURN`, no cost, and effect `{kind:"READY_EDDIES",player:"CONTROLLER",count:1}`. The narrow admission validator requires this whole shape. Existing ordinary Unit payment, play, Lag, Gear-derived power, attack/React/fight and actual Gig stealing are reused.
+
+The authoritative history extends Jackie's existing current-turn summary with optional `gigsStolenByUnit: Record<CardInstanceId, positive integer>`. Only actual `GIG_STOLEN` facts increment the attacking physical Unit's count. Another Unit's steal, mere attack declaration, ownership/control, an earlier turn's steal and generic control transfer do not qualify Delamain. Multi-Gig steals increment per Gig but produce just one end-turn trigger per qualifying Delamain. No runtime card-name branch or general event-query language was added.
+
+Rules 8.9 and 8.16.1 begin end-turn effects; the existing pending-effect scheduler can pause for controller-selected order or Eddie selection. Only after that batch completes does cleanup remove Lag, expire Floor It/unused Reboot, emit TURN_ENDED and begin the rival's next turn. History and CALL/SELL counters reset in startTurn, after the old turn's work. Conditions are checked at discovery and resolution. Pending-source departure follows 10.15; a focused Trash move does not cancel an already pending ability. No supported effect changes controller or re-equips Gear here.
+
+Readying changes the selected own spent face-down Eddie's **SPENT→READY** on the same CardInstance, with no zone movement or numeric currency counter. It uses existing `CARD_READIED`. “Ready 1” is mandatory if possible: zero eligible cards skip, one auto-resolves, multiple produce `EDDIE_READY_SELECTION`. Each subsequent source rederives options from current readiness. Both players are forbidden to inspect underlying Eddie identities by 5.8.3.1; descriptors use public slots such as “Ready Eddie 1.” Ready Eddies, rival Eddies and Legends are ineligible.
+
+Public observation adds current-turn physical-attacker/count facts only when present; full histories affect replay and POSITION_V2 hashes. This bundle uses observation-derived action IDs. Sold CardIds/revisions do not appear in Eddie options, descriptors or either viewer's observation. Kiroshi memory is untouched. Full replay state/history remains private; model input is only the entitled observation plus actionId/descriptors. TrainingAttempt and wire protocol v1 are unchanged; additive schemas are regenerated.
+
+Raw-byte SHA-256: `201a4b6123f8c7ce153a86af4abf6d1e225f0dc7c618982bc081a0b0d453292c`. Canonical record sourceHash: `e0b999c826a7b7456d86a4142b168e9b43825563c600ca2f39fd18b40f5df473`. Normalized revision hash: `e696327e1483d61a95b00550b25412645f19f2a3feef6cf584b346a64f0ffddd`.
+
+| Printing UUID | Set | Collector number |
+|---|---|---|
+| `5b9cdefa-29f4-4a3a-a426-eea46302ef60` | `welcometonightcityretail` | 112 |
+| `cddf9659-8ba5-4718-827f-5a6518e7df83` | `welcometonightcitybeta` | β112 |
+| `8092ff00-bff0-4a33-98e1-1fa33adabb8d` | `theheistretailstarterdeck` | 013 |
+| `a6bc4a11-ed78-49dc-999b-68b7fe50aefd` | `theheistbetastarterdeck` | β013 |
+| `e15c07b6-f563-4825-aad4-6b3068c1ab85` | `mercdemodeck` | 009 |
+
+[The two-card source fixture](../tests/fixtures/end-turn-history-card-sources.v1.json) preserves both complete raw records and all errata. [The rules fixture](../tests/fixtures/end-turn-history-rules.v1.json) pins 175 numbered rules, decisions, raw/processed rules hashes and errata hashes. Raw rules SHA-256 `054d2d2a4664e5b560304e0962e71b195467ad097cc4c62b2698fc57467a28dd`; processed `1f299c9cbe2657c9d088ae4b3a812b85e46c3fd2659579229635959c59a20e19`. No corpus refresh occurred.
+
+[32 focused tests](../tests/end-turn-history.test.ts) cover complete admission, one/two-source ordering, actual and non-steal history, prior-turn negatives, zero/one/multiple Eddies, hidden identity, stale/forged state, expiration and immutable format pins. [The legal Delamain replay](../tests/fixtures/delamain-replay.v1.json) contains 33 actions, 33 strategic positions and 140 events, ending at turn6/CHOOSE_GIG. Mongo immutable revision and PostgreSQL reload/resume tests plus the generic Python adapter cover the new state. See [end-turn-history-report.md](end-turn-history-report.md) for the complete source review and gates.
+
+## Dying Night — V's Pistol: complete bounded delayed ATTACK support
+
+Application revision 1 uses `GEAR_DELAYED_ATTACK_V1`, status `SUPPORTED`. The complete captured shape is Blue RAM2, cost2, printed power2, sellable Gear / Merc / Weapon, Rare, artist Ivan Shavrin, Merc Demo Deck **013**, retail128. Exact captured text:
+
+> (Equip to a friendly Unit or face-up Legend.)
+> {Attack} Decrease a Gig by up to 2. At the end of your turn, if this Unit is named "V", ready 2 Eddies.
+
+Both sentences remain **one ATTACK paragraph**, confirmed by all five current official printing images; the Merc image is retained in [dying-night-demo013.webp](../tests/fixtures/dying-night-demo013.webp). The earlier Delamain milestone left this card blocked; this review found the official site's card FAQ API, including two explicit rulings: choosing no decrease preserves the benefit, and defeat of the attacking V host does not cancel it. [Official Dying Night FAQ](https://api.netdeck.gg/api/faqs/cyberpunk?scope=card&card_slug=dying-night-v-s-pistol).
+
+The normalized inherited `WHEN_ATTACKING` ability has exactly two ordered primitives: `DECREASE_GIG_UP_TO` and `REGISTER_END_TURN_EFFECT`. There is no recurring end-turn ability on this Gear. Normal Gear play/payment/equip and printed power inheritance remain shared. First choose either player's rolled Gig in GIGS, never Fixer, then choose 0..min(2,currentValue−1). Zero emits no value-change fact. Rules10.2.1/10.6.2 and the explicit zero FAQ mean the later registration still runs when the first instruction does nothing or lacks a target.
+
+`DelayedEffect` holds deterministic occurrence identity, creation turn/controller, physical Gear source plus immutable CardRef, original host plus immutable CardRef, and originating ATTACK ability/batch/effect identity. It is distinct from `PendingEffect`: registration completes the ATTACK paragraph and allows React, combat and normal MAIN actions. IDs use semantic turn/source/subject/occurrence and controller seat, never counters or transport UUIDs. Two Gear copies or repeated attacks register separately (4.11.3,11.6.4,10.16.2–3).
+
+Registered work survives source or host departure to public Trash, including semantic defeat and Gear detachment (official host-defeat FAQ,4.12,10.10.1). It never rebinds to a later attachment. Unchanged immutable subject data supplies the later Unit/Name query. Hidden-zone departures, control changes and type/name-changing mechanics remain unsupported; such delayed states reject explicitly. No unsupported general lifecycle is inferred.
+
+At the current own-turn end, stored work moves into the existing scheduler alongside board-discovered Delamain abilities (8.16.1,10.12–13). Controller orders independent effects. The internal condition is evaluated when reached (10.3.3): subject revision type UNIT and exact `deckbuildingIdentity === "V"`. Name excludes subtitle (3.9.2/3.10.2); no display parsing or slug matching. A Legends-area Legend named V does not qualify. False condition and zero eligible Eddies complete and remove the one-shot instruction.
+
+`READY_EDDIES count2` collects an unordered set before changing any readiness (3.8,5.8,10.31.2). Zero/one/two eligible Eddies auto-resolve as far as possible. With three or more, public-slot choices gather two distinct slots, then commit both in canonical order in one effect; the first selection leaves every Eddie spent. No other effect interleaves (10.2.3). It is not two count1 effects. Later effects recompute eligibility; both Dying/Delamain orders are tested. Lag, Floor It, unused Reboot, history and private memory retain the established cleanup ordering.
+
+Public observation exposes future source/subject, controller seat, timing and reviewed condition/count, plus the public partial Eddie selection. It omits occurrence internals and sold-card identities. Replay and POSITION_V2 hashes include exact future work; entitled observation hashes include its public projection. Action IDs remain independent of hidden Eddie contents. Generic `DELAYED_EFFECT_CREATED` makes registration auditable; end turn reuses `EFFECT_PENDING`, `CONDITION_EVALUATED`, `CARD_READIED` and `EFFECT_RESOLVED`.
+
+Raw-byte SHA-256: `ff35eafac6b1c3c89c3eef1d997dad09a03244fbdd00ff577cc25dfd8ba320b0`. Canonical raw record hash: `33229b2912f87aadec96b43ab24bc7b39d2a569ab4bed37676c2797d05011069`. Normalized revision hash: `162169d6cb32d35f93bb6aeedaee44d08f5aece9bdee82ddc388647b5522cb4a`. The [complete source fixture](../tests/fixtures/delayed-effects-card-source.v1.json) pins all printings, four errata and five image hashes; no Dying erratum exists in the reviewed set. The [focused rules fixture](../tests/fixtures/delayed-effects-rules.v1.json) pins 204 rules, raw/processed hashes and five narrowly relevant official FAQ record hashes/summaries. Current official rules and errata still match the local captures; no corpus refresh occurred.
+
+| Printing UUID | Set | Collector number |
+|---|---|---|
+| `2b1b6268-193f-4b9e-a63c-0cbc200d6db7` | `welcometonightcityretail` | 128 |
+| `3ceebded-0941-477f-b486-f2cb22ca653d` | `welcometonightcitybeta` | β128 |
+| `4bb35017-9842-4178-99a6-34353a3de2d4` | `theheistretailstarterdeck` | 017 |
+| `1dc3c618-a40a-4717-bf4d-a573915c8ac0` | `theheistbetastarterdeck` | β017 |
+| `dd423c67-68f4-4da8-884c-cbeb91554c0d` | `mercdemodeck` | 013 |
+
+[55 focused tests](../tests/delayed-effects.test.ts) cover complete admission, zero/no-target clauses, lifetime, multiplicity, ready2 forced/strategic choices, stale/malformed state, privacy, hashes, V identity/type, Delamain/Kiroshi/Evelyn/Dexter/Satori interactions and cleanup. The [legal Dying Night replay](../tests/fixtures/dying-night-replay.v1.json) has 36 actions, 35 strategic positions and 154 events through turn6. Its real host is Delamain: the V condition is false. The true named-V path uses a clearly labeled synthetic trusted Unit, not a real V admission. Mongo round-trips the immutable revision; PostgreSQL reloads the legal trace and both positive ready2 choice stages. Python traverses the replay through generic action IDs.
+
+Current measured demo coverage: **19/29 executable distinct, 43/60 physical copies**. Arasaka remains5/14 and14/30; Merc reaches14/15 and29/30. Its only remaining card blocker is **V — Corporate Exile (1 copy)**. Exact27+3 lists still fail constructed **40–50 main + exactly3 Legends**, with copy/RAM unchanged. Neither demo can initialize or play a complete match. See [delayed-effects-report.md](delayed-effects-report.md) for evidence, commands and remaining boundaries.
+
+The Gear/Legend steering audit confirms that Dying grants power and inherited ATTACK text to a friendly face-up Legend in `LEGENDS`, while attack legality and the later Unit-and-Name condition remain separate. Faceplate is still unadmitted; spend-trigger and future field-Legend integration gaps are recorded in [Gear on Legends-area hosts](delayed-effects-report.md#gear-on-legends-area-hosts).

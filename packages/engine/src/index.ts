@@ -1,8 +1,10 @@
+import { delayedEffectsEnabled } from "./delayed-effect-support";
+import { endTurn } from "./end-turn";
+import { endTurnEnabled } from "./end-turn-support";
 import { orderedEffectsEnabled } from "./ordered-effects-support";
 import { observe, hashObservation } from "./observation";
 import { privateInformationEnabled } from "./private-look-support";
 import { continueTrigger } from "./trigger-resolution";
-import { expireFightPreventions } from "./fight-prevention";
 import { createsFightPrevention } from "./restriction-support";
 import { cardRevision } from "./characteristics";
 import { combatResolutionEnabled } from "./combat-resolution-policy";
@@ -10,7 +12,6 @@ import { continueGigSteal, continueDefeatOrder, resolveCombat } from "./combat-r
 import { transferGigs } from "./gig-transfer";
 import { isReactDecision, reactEnabled } from "./react-support";
 import { declareBlocker, passReact } from "./rival-reactions";
-import { expireTemporaryPower } from "./temporary-power";
 import { startAttack, continueAttack } from "./combat";
 import { canPlay, canActivate } from "./play-support";
 import { startPlay, continuePlay, activateAbility } from "./play";
@@ -105,6 +106,7 @@ export function listLegalActions(state: GameState, actor: PlayerId, context: Eng
                     return `Steal ${gig.dieType} (${gig.id}, current ${gig.roll.kind === "ROLLED" ? gig.roll.currentValue : "unrolled"})`;
                 }
                 if (state.resolution.triggerContinuation) {
+                    if (option.kind === "EDDIE_SLOT") return `Ready Eddie ${option.slot + 1}`;
                     if (option.kind === "LEGEND_SLOT") return `Look at friendly face-down Legend slot ${option.slot + 1}`;
                     if (option.kind === "EFFECT") { const e = state.resolution.pending.find(e => e.id === option.effectId)!; return `Resolve ${view.getRevision(e.sourceId!)?.displayName} (${e.sourceId}) for ${view.getRevision(e.trigger!.subjectId)?.displayName}`; }
                     if (option.kind === "CONFIRM") return option.confirmed ? "Use the optional Gig decrease" : "Decline the optional effect";
@@ -132,7 +134,7 @@ export function listLegalActions(state: GameState, actor: PlayerId, context: Eng
     };
     // Full PositionHash includes secrets; new private-look bundles bind model action IDs to
     // the entitled observation instead. Old bundle protocols remain byte-compatible.
-    const projected = (privateInformationEnabled(context) || orderedEffectsEnabled(context)) ? observe(state, actor, context) : null;
+    const projected = (delayedEffectsEnabled(context) || privateInformationEnabled(context) || orderedEffectsEnabled(context) || endTurnEnabled(context)) ? observe(state, actor, context) : null;
     if (projected && !projected.ok) return projected;
     const actionIdentity = projected?.ok ? { version: 2, observationHash: hashObservation(projected.value), seat: state.players[actor].seat } : { version: 1, positionHash: hashPosition(state), seat: state.players[actor].seat };
     const observableAction = (a: GameAction) => a.action.kind === "CALL_LEGEND" && projected?.ok ? { kind: a.action.kind, slot: state.players[actor].zones.LEGENDS.indexOf(a.action.cardInstanceId) } : a.action;
@@ -264,24 +266,7 @@ export function applyAction(state: GameState, action: GameAction, context: Engin
                 break;
             }
             case "END_TURN": {
-                // Overtime is deliberately a policy boundary, not a fabricated extra turn loop.
-                if ((s.timing.emptyFixerStarts ?? 0) >= 2)
-                    return failure("UNSUPPORTED_OVERTIME", "Two consecutive starts with both Fixers empty; overtime requires a reviewed implementation");
-                mutation.phase("TURN_END");
-                if (context.content.ruleset.gameplay.turnSlice.cardPlay === "NONCOMBAT_PLAY_V1")
-                    for (const card of Object.values(s.objects.cards))
-                        if (card.statuses.includes("LAG")) {
-                            card.statuses = card.statuses.filter(status => status !== "LAG");
-                            mutation.emit({ kind: "LAG_REMOVED", cardInstanceId: card.id });
-                        }
-                expireTemporaryPower(mutation);
-                expireFightPreventions(mutation);
-                mutation.emit({ kind: "TURN_ENDED", playerId: actor, turn: s.timing.turn });
-                s.timing.activePlayer = s.match.playerOrder[(s.players[actor].seat + 1) % s.match.playerOrder.length];
-                s.timing.turn++;
-                const started = mutation.startTurn();
-                if (!started.ok)
-                    return started;
+                const ended = endTurn(mutation); if (!ended.ok) return ended;
                 break;
             }
             case "SELL_CARD": {

@@ -7,6 +7,11 @@ export function testCondition(state: GameState, actor: PlayerId, condition: Cond
     const gigs = Object.values(state.objects.gigs).filter(g => g.controllerId === actor && g.location.zone === "GIGS" && g.roll.kind === "ROLLED");
     const values = gigs.flatMap(g => g.roll.kind === "ROLLED" ? [g.roll.currentValue] : []);
     switch (condition.kind) {
+        case "SUBJECT_IS_UNIT_NAMED": {
+            const c = sourceId && state.objects.cards[sourceId], r = c && context?.content.cards.find(r => r.id === c.cardId && r.revision === c.revision);
+            return Boolean(r && r.type === "UNIT" && r.deckbuildingIdentity === condition.identity);
+        }
+        case "SUBJECT_STOLE_GIG_THIS_TURN": return Boolean(sourceId && state.turnHistory?.turn === state.timing.turn && (state.turnHistory.gigsStolenByUnit?.[sourceId] ?? 0) > 0);
         case "STREET_CRED_DIFFERENCE_AT_LEAST": {
             if (!values.length) return false; // Null cannot participate in numeric subtraction (2.10.2).
             const own = values.reduce((a, b) => a + b, 0);

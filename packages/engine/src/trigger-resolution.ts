@@ -1,3 +1,7 @@
+import { registerEndTurnEffect } from "./delayed-effects";
+import { supportsDelayedAttackGear } from "./delayed-effect-support";
+import { finishEndTurn } from "./end-turn";
+import { readyableEddieSlots, readyEddie } from "./eddie-ready";
 import { discardCard, getDiscardableCards } from "./discard";
 import { testCondition } from "./conditions";
 import { supportsOrderedAttackCard } from "./ordered-effects-support";
@@ -25,6 +29,7 @@ function resume(m: TurnMutation, origin: TriggerOrigin): Result<null> {
     m.state.resolution = { stage: "STATE_BASED_CHECKS", current: null, pending: [], discovered: [], choice: null };
     m.state.timing.actingPlayer = m.state.timing.activePlayer;
     const combat = m.state.timing.combat;
+    if (origin.kind === "END_TURN") return finishEndTurn(m);
     if (origin.kind === "PLAY") return finishAction(m);
     if (origin.kind === "ATTACK" && "target" in combat && combat.target) { m.state.timing.combat = { ...combat, stage: "ATTACK_EFFECTS" }; return finishAttackEffects(m); }
     if (origin.kind === "FIGHT") return completeFightResult(m, origin.result);
@@ -40,7 +45,7 @@ export function beginTriggers(m: TurnMutation, origin: TriggerOrigin, captured?:
     const pending = bindings.map(b => PendingEffectSchema.parse(pendingTrigger(m.state, b, ordinal, sequence, m.context)));
     m.state.resolution = { stage: "DISCOVER_TRIGGERS", current: null, pending, discovered: [], choice: null, triggerContinuation: { origin: TriggerOriginSchema.parse(origin), ordinal, bindings: bindings.map(b => TriggerBindingSchema.parse(b)), resolvedIds: [], phase: "SELECT" } };
     const combat = m.state.timing.combat;
-    if (origin.kind !== "PLAY" && "target" in combat && combat.target) m.state.timing.combat = { ...combat, stage: "TRIGGER_RESOLUTION" };
+    if (origin.kind !== "PLAY" && origin.kind !== "END_TURN" && "target" in combat && combat.target) m.state.timing.combat = { ...combat, stage: "TRIGGER_RESOLUTION" };
     for (const e of pending) m.emit({ kind: "EFFECT_PENDING", effectId: e.id, sourceId: e.sourceId! });
     return advanceTriggers(m);
 }
@@ -48,18 +53,35 @@ function offer(m: TurnMutation): Result<null> {
     const choice = triggerChoice(m.state, m.context), c = m.state.resolution.triggerContinuation!;
     if (choice.options.length === 1) { m.state.resolution.choice = choice; return continueTrigger(m, 0, true); }
     m.state.resolution.choice = choice; m.state.resolution.stage = "CHOICE"; m.state.timing.actingPlayer = choice.actorId;
-    const step = c.phase === "DISCARD" ? "DISCARD_SELECTION" : c.phase === "SELECT" ? "TRIGGER_ORDER_SELECTION" : c.phase === "OPTIONAL" ? "OPTIONAL_TRIGGER_SELECTION" : c.phase === "TARGET" ? "TARGET_SELECTION" : "AMOUNT_SELECTION";
+    const step = c.phase === "READY" ? "EDDIE_READY_SELECTION" : c.phase === "DISCARD" ? "DISCARD_SELECTION" : c.phase === "SELECT" ? "TRIGGER_ORDER_SELECTION" : c.phase === "OPTIONAL" ? "OPTIONAL_TRIGGER_SELECTION" : c.phase === "TARGET" ? "TARGET_SELECTION" : "AMOUNT_SELECTION";
     m.state.timing.step = step; m.state.timing.window = step;
     m.emit({ kind: "PHASE_CHANGED", step });
     return success(null);
 }
 function completed(m: TurnMutation): Result<null> {
     const current = m.state.resolution.current!, c = m.state.resolution.triggerContinuation!;
+    if (!current.primitiveIndex && current.trigger?.kind === "WHEN_ATTACKING" && supportsDelayedAttackGear(cardRevision(m.state, current.sourceId!, m.context), m.context).ok) {
+        const binding = c.bindings.find(b => b.sourceId === current.sourceId && b.abilityId === current.trigger?.abilityId)!;
+        m.state.resolution.current = PendingEffectSchema.parse(pendingTrigger(m.state, binding, c.ordinal, current.causedBySequence, m.context, 1));
+        return advanceTriggers(m);
+    }
     m.emit({ kind: "EFFECT_RESOLVED", effectId: current.id });
     if (m.state.match.outcome) return success(null);
-    c.resolvedIds.push(current.id); c.phase = "SELECT"; delete c.targetGigId; delete c.conditionMet;
+    c.resolvedIds.push(current.id); c.phase = "SELECT"; delete c.targetGigId; delete c.conditionMet; delete c.selectedEddieSlots;
     m.state.resolution.current = null; m.state.resolution.choice = null;
     return advanceTriggers(m);
+}
+/** Selection is sequential UI, but readiness changes only after the complete unordered set is chosen. */
+function advanceReady(m: TurnMutation): Result<null> {
+    const current = m.state.resolution.current!, c = m.state.resolution.triggerContinuation!, selected = c.selectedEddieSlots ?? [];
+    if (current.effect.kind !== "READY_EDDIES") return failure("INVALID_READY_EFFECT", "Ready instruction required");
+    const eligible = readyableEddieSlots(m.state, current.controllerId).filter(slot => !selected.includes(slot));
+    if (selected.length >= current.effect.count || selected.length + eligible.length <= current.effect.count) {
+        const slots = [...selected, ...(selected.length < current.effect.count ? eligible : [])].sort((a, b) => a - b);
+        for (const slot of slots) { const result = readyEddie(m, current.controllerId, slot); if (!result.ok) return result; }
+        return completed(m);
+    }
+    c.phase = "READY"; return offer(m);
 }
 export function advanceTriggers(m: TurnMutation): Result<null> {
     const r = m.state.resolution, c = r.triggerContinuation!;
@@ -70,6 +92,14 @@ export function advanceTriggers(m: TurnMutation): Result<null> {
     m.state.timing.actingPlayer = r.current.controllerId;
     r.stage = "RESOLVE_EFFECT"; r.choice = null;
     const e = r.current.effect;
+    if (e.kind === "REGISTER_END_TURN_EFFECT") { const result = registerEndTurnEffect(m); return result.ok ? completed(m) : result; }
+    if (e.kind === "READY_EDDIES") {
+        const current = r.current, a = cardRevision(m.state, current.sourceId!, m.context)!.mechanics.abilities.find(a => a.id === current.trigger!.abilityId)!;
+        const met = e.when ? testCondition(m.state, current.controllerId, e.when.condition, m.context, current.trigger!.subjectId) : a.conditions.every(c => testCondition(m.state, current.controllerId, c, m.context, current.trigger!.subjectId));
+        m.emit({ kind: "CONDITION_EVALUATED", effectId: current.id, met });
+        if (!met) return completed(m);
+        return advanceReady(m);
+    }
     if (e.kind === "DISCARD_CARDS") {
         // Evaluated only after the preceding primitive has actually changed authoritative state.
         const met = !e.when || testCondition(m.state, r.current.controllerId, e.when.condition, m.context, r.current.sourceId);
@@ -81,9 +111,9 @@ export function advanceTriggers(m: TurnMutation): Result<null> {
         if (!privateLookTargets(m.state, r.current.controllerId, m.context).length) return completed(m);
         c.phase = "TARGET"; return offer(m);
     }
-    if (e.kind === "ADJUST_GIG_UP_TO" || e.kind === "OPTIONAL_DECREASE_FRIENDLY_GIG_THEN_DRAW_IF_MIN") {
+    if (e.kind === "DECREASE_GIG_UP_TO" || e.kind === "ADJUST_GIG_UP_TO" || e.kind === "OPTIONAL_DECREASE_FRIENDLY_GIG_THEN_DRAW_IF_MIN") {
         if (!triggerGigTargets(m.state).length) return completed(m);
-        c.phase = e.kind === "ADJUST_GIG_UP_TO" ? "TARGET" : "OPTIONAL";
+        c.phase = e.kind === "OPTIONAL_DECREASE_FRIENDLY_GIG_THEN_DRAW_IF_MIN" ? "OPTIONAL" : "TARGET";
         return offer(m);
     }
     const current = r.current, result = new HandlerRegistry().resolve(m, e);
@@ -109,6 +139,12 @@ export function continueTrigger(m: TurnMutation, index: number, forced = false):
         return advanceTriggers(m);
     }
     const current = r.current!;
+    if (c.phase === "READY") {
+        if (current.effect.kind !== "READY_EDDIES" || option.kind !== "EDDIE_SLOT") return failure("INVALID_EDDIE_READY", "Choose a currently eligible Eddie slot");
+        if (!readyableEddieSlots(m.state, current.controllerId).includes(option.slot) || c.selectedEddieSlots?.includes(option.slot)) return failure("INVALID_EDDIE_READY", "A spent Eddie can be selected only once");
+        c.selectedEddieSlots = [...(c.selectedEddieSlots ?? []), option.slot].sort((a, b) => a - b);
+        return advanceReady(m);
+    }
     if (c.phase === "DISCARD") {
         if (current.effect.kind !== "DISCARD_CARDS" || option.kind !== "CARD") return failure("INVALID_DISCARD", "Choose one current own-hand card");
         const result = discardCard(m, current.effect, option.cardInstanceId, forced);

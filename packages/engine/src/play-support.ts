@@ -1,3 +1,4 @@
+import { supportsEndTurnCard } from "./end-turn-support";
 import { supportsOrderedAttackCard } from "./ordered-effects-support";
 import { supportsTriggerCard } from "./trigger-support";
 import { createsFightPrevention, supportsRestrictedPlay } from "./restriction-support";
@@ -15,8 +16,10 @@ export function revisionOf(state: GameState, id: CardInstanceId, context: Engine
 }
 /** Admission certifies only these reviewed shapes, never catalog legality or arbitrary metadata. */
 export function supportsPlay(card: DeepReadonly<CardRevisionSnapshot> | undefined, context: EngineContext) {
+    if (playEnabled(context) && card?.execution?.scope === "END_TURN_HISTORY_V1") return supportsEndTurnCard(card, context);
     if (playEnabled(context) && card?.execution?.scope === "ATTACK_ORDERED_EFFECTS_V1") return supportsOrderedAttackCard(card, context);
     if (playEnabled(context) && card?.execution?.scope === "COMBAT_TRIGGERS_V1" && card.type !== "LEGEND") return supportsTriggerCard(card, context);
+    if (playEnabled(context) && card?.execution?.scope === "GEAR_DELAYED_ATTACK_V1" && card.type === "GEAR") return supportsGear(card, context);
     if (playEnabled(context) && card?.execution?.scope === "GEAR_PRIVATE_LOOK_V1" && card.type === "GEAR") return supportsGear(card, context);
     if (card?.mechanics.abilities.some(a => a.inherited || a.guard)) return failure("UNSUPPORTED_TRIGGER_METADATA", "Granted abilities and first-event guards require their full reviewed scope");
     if (playEnabled(context) && card?.execution?.scope === "COMBAT_RESTRICTIONS_V1") return supportsRestrictedPlay(card, context);

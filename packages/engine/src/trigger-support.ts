@@ -1,3 +1,5 @@
+import { supportsDelayedAttackGear } from "./delayed-effect-support";
+import { supportsEndTurnCard } from "./end-turn-support";
 import { supportsOrderedAttackCard } from "./ordered-effects-support";
 import { supportsPrivateLookGear, privateInformationEnabled } from "./private-look-support";
 import { supportsAttackPlay } from "./attack-support";
@@ -28,5 +30,5 @@ export function supportsTriggerCard(card: DeepReadonly<CardRevisionSnapshot> | u
 
 /** Scheduler admission includes the older complete printed ATTACK shape only in the new private-look bundle. */
 export function supportsEffectiveTriggerSource(card: DeepReadonly<CardRevisionSnapshot> | undefined, context: EngineContext) {
-    return supportsOrderedAttackCard(card, context).ok || supportsTriggerCard(card, context).ok || supportsPrivateLookGear(card, context).ok || (privateInformationEnabled(context) && supportsAttackPlay(card, context).ok);
+    return supportsDelayedAttackGear(card, context).ok || supportsEndTurnCard(card, context).ok || supportsOrderedAttackCard(card, context).ok || supportsTriggerCard(card, context).ok || supportsPrivateLookGear(card, context).ok || (privateInformationEnabled(context) && supportsAttackPlay(card, context).ok);
 }

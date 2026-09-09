@@ -5,7 +5,7 @@ export const GameAreaSchema = z.enum(["DECK", "HAND", "BATTLEFIELD", "TRASH", "E
 export const ZoneSchema = z.enum([...GameAreaSchema.options, "RESOLVING_PROGRAM"]);
 export const ZoneRefSchema = z.strictObject({ playerId: PlayerIdSchema, zone: ZoneSchema });
 export const KeywordSchema = z.enum(["GO_SOLO", "QUICK", "BLOCKER", "ADRENALINE"]);
-export const TriggerSchema = z.enum(["WHEN_SOLD", "WHEN_CALLED", "WHEN_PLAYED", "WHEN_ATTACKING", "WHEN_DEFEATED", "WHEN_FIGHT_WON", "WHEN_CARD_PLAYED"]);
+export const TriggerSchema = z.enum(["WHEN_SOLD", "WHEN_CALLED", "WHEN_PLAYED", "WHEN_ATTACKING", "WHEN_DEFEATED", "WHEN_FIGHT_WON", "WHEN_CARD_PLAYED", "WHEN_OWN_TURN_ENDS"]);
 export const EquipTargetSchema = z.strictObject({ kind: z.literal("FRIENDLY_UNIT_OR_FACE_UP_LEGEND") });
 export const TargetSelectorSchema = z.discriminatedUnion("kind", [
     EquipTargetSchema,
@@ -13,7 +13,10 @@ export const TargetSelectorSchema = z.discriminatedUnion("kind", [
     z.strictObject({ kind: z.literal("CARDS"), zone: ZoneSchema, relation: z.enum(["CONTROLLED", "RIVAL", "ANY"]), keyword: KeywordSchema.optional() }),
     z.strictObject({ kind: z.literal("GIGS"), relation: z.enum(["CONTROLLED", "RIVAL", "ANY"]) })
 ]);
+export const NamedUnitConditionSchema = z.strictObject({ kind: z.literal("SUBJECT_IS_UNIT_NAMED"), identity: z.literal("V") });
 export const ConditionSchema = z.discriminatedUnion("kind", [
+    NamedUnitConditionSchema,
+    z.strictObject({ kind: z.literal("SUBJECT_STOLE_GIG_THIS_TURN") }),
     z.strictObject({ kind: z.literal("STREET_CRED_DIFFERENCE_AT_LEAST"), minimum: z.literal(10) }),
     z.strictObject({ kind: z.literal("STREET_CRED_LESS_THAN_RIVAL") }),
     z.strictObject({ kind: z.literal("STREET_CRED_GREATER_THAN_RIVAL") }),
@@ -41,6 +44,7 @@ export const AttackTargetSchema = z.discriminatedUnion("kind", [
 ]);
 export type AttackTarget = z.infer<typeof AttackTargetSchema>;
 export const ChoiceOptionSchema = z.discriminatedUnion("kind", [
+    z.strictObject({ kind: z.literal("EDDIE_SLOT"), slot: z.number().int().nonnegative() }),
     z.strictObject({ kind: z.literal("LEGEND_SLOT"), slot: z.number().int().nonnegative() }),
     z.strictObject({ kind: z.literal("ATTACK_TARGET"), target: AttackTargetSchema }),
     z.strictObject({ kind: z.literal("CARD"), cardInstanceId: CardInstanceIdSchema }),
@@ -53,7 +57,7 @@ export const ChoiceOptionSchema = z.discriminatedUnion("kind", [
 ]);
 export const PendingChoiceSchema = z.strictObject({
     id: z.string().min(1), actorId: PlayerIdSchema,
-    kind: z.enum(["CARD", "TARGET", "MODE", "AMOUNT", "ORDER", "ROLL_GIG", "MODIFY_GIG", "STEAL_GIGS", "PAYMENT", "OPTIONAL", "DISCARD"]),
+    kind: z.enum(["CARD", "TARGET", "MODE", "AMOUNT", "ORDER", "ROLL_GIG", "MODIFY_GIG", "STEAL_GIGS", "PAYMENT", "OPTIONAL", "DISCARD", "READY_EDDIE"]),
     options: z.array(ChoiceOptionSchema), min: z.number().int().nonnegative(), max: z.number().int().nonnegative(),
     ordered: z.boolean(), continuationId: z.string().min(1)
 }).refine(c => c.min <= c.max && c.max <= c.options.length, "Invalid choice bounds");
@@ -63,7 +67,14 @@ export const DiscardCardsEffectSchema = z.strictObject({
     when: z.strictObject({ timing: z.literal("RESOLUTION"), condition: ConditionSchema }).optional()
 });
 export type DiscardCardsEffect = z.infer<typeof DiscardCardsEffectSchema>;
+export const ReadyEddiesEffectSchema = z.strictObject({ kind: z.literal("READY_EDDIES"), player: z.literal("CONTROLLER"), count: z.union([z.literal(1), z.literal(2)]),
+    when: z.strictObject({ timing: z.literal("RESOLUTION"), condition: NamedUnitConditionSchema }).optional() });
+export const RegisterEndTurnEffectSchema = z.strictObject({ kind: z.literal("REGISTER_END_TURN_EFFECT"),
+    effect: ReadyEddiesEffectSchema.extend({ count: z.literal(2), when: z.strictObject({ timing: z.literal("RESOLUTION"), condition: NamedUnitConditionSchema }) }) });
 export const EffectSchema = z.discriminatedUnion("kind", [
+    ReadyEddiesEffectSchema,
+    RegisterEndTurnEffectSchema,
+    z.strictObject({ kind: z.literal("DECREASE_GIG_UP_TO"), target: z.strictObject({ kind: z.literal("GIGS"), relation: z.literal("ANY") }), maximum: z.literal(2) }),
     DiscardCardsEffectSchema,
     z.strictObject({ kind: z.literal("LOOK_AT_FRIENDLY_FACE_DOWN_LEGEND") }),
     z.strictObject({ kind: z.literal("OPTIONAL_DECREASE_FRIENDLY_GIG_THEN_DRAW_IF_MIN"), maximum: z.literal(2), draw: z.literal(1) }),
