@@ -9,12 +9,15 @@ import { revisionOf } from "./play-support";
 import { playChoice, playEffectId, adjustmentTargets } from "./play-state";
 import { forcedPaymentSources, paymentValue, validatePayment } from "./payment";
 import { HandlerRegistry } from "./effects";
-import { changeGigValue } from "./gig-value";
+import { changeGigValue, gigAdjustmentDelta } from "./gig-value";
 import { testCondition } from "./conditions";
 
 export function offerPlayChoice(m: TurnMutation) {
     const choice = playChoice(m.state, m.context);
     m.state.resolution.choice = choice;
+    const effect = m.state.resolution.current?.effect;
+    // Only new directional effects adopt forced target/zero-magnitude resolution; preserve old replay protocols.
+    if (effect?.kind === "ADJUST_GIG_UP_TO" && effect.direction === "INCREASE" && choice.options.length === 1) return continuePlay(m, 0);
     m.state.resolution.stage = "CHOICE";
     const step = choice.kind === "PAYMENT" ? "PAYMENT_SELECTION" : choice.kind === "TARGET" ? "TARGET_SELECTION" : "AMOUNT_SELECTION";
     m.state.timing.step = step;
@@ -37,6 +40,8 @@ function resolveChain(m: TurnMutation): Result<null> {
         s.resolution.stage = "RESOLVE_EFFECT";
         const result = registry.resolve(m, current.effect);
         if (!result.ok) return result;
+        // A forced target/amount may have resumed and finished the chain synchronously.
+        if (current.effect.kind === "ADJUST_GIG_UP_TO" && current.effect.direction === "INCREASE" && s.resolution.current !== current) return success(null);
         if (s.resolution.choice) return success(null);
         m.emit({ kind: "EFFECT_RESOLVED", effectId: current.id });
         if (s.match.outcome) return finishPlay(m, sourceId);
@@ -124,10 +129,11 @@ export function continuePlay(m: TurnMutation, index: number): Result<null> {
         m.emit({ kind: "GIG_TARGET_SELECTED", effectId: s.resolution.current!.id, gigInstanceId: c.targetGigId });
         return offerPlayChoice(m);
     }
-    if (option.kind !== "MODE" || !["KEEP", "DECREASE_1", "INCREASE_1"].includes(option.mode)) return failure("INVALID_GIG_AMOUNT", "Choose an enumerated adjustment");
-    if (option.mode === "KEEP") m.emit({ kind: "GIG_ADJUSTMENT_DECLINED", gigInstanceId: c.targetGigId });
+    const effect = s.resolution.current?.effect, delta = effect?.kind === "ADJUST_GIG_UP_TO" ? gigAdjustmentDelta(effect, option) : null;
+    if (delta === null) return failure("INVALID_GIG_AMOUNT", "Choose an enumerated adjustment");
+    if (delta === 0) m.emit({ kind: "GIG_ADJUSTMENT_DECLINED", gigInstanceId: c.targetGigId });
     else {
-        const changed = changeGigValue(s, c.targetGigId, option.mode === "INCREASE_1" ? 1 : -1, m.context);
+        const changed = changeGigValue(s, c.targetGigId, delta, m.context);
         if (!changed.ok) return changed;
         m.emit(changed.value);
     }

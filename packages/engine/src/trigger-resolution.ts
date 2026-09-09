@@ -15,7 +15,7 @@ import { finishAction } from "./action-return";
 import { finishAttackEffects } from "./combat";
 import { finishCombat, completeFightResult } from "./combat-resolution";
 import { HandlerRegistry } from "./effects";
-import { changeGigValue } from "./gig-value";
+import { changeGigValue, gigAdjustmentDelta } from "./gig-value";
 import { triggersEnabled } from "./trigger-support";
 import { discoverTriggers, pendingTrigger, triggerChoice, triggerGigTargets } from "./trigger-queries";
 
@@ -169,7 +169,7 @@ export function continueTrigger(m: TurnMutation, index: number, forced = false):
         m.emit({ kind: "GIG_TARGET_SELECTED", effectId: current.id, gigInstanceId: option.gigInstanceId });
         return offer(m);
     }
-    const delta = current.effect.kind === "ADJUST_GIG_UP_TO" && option.kind === "MODE" ? option.mode === "KEEP" ? 0 : option.mode === "DECREASE_1" ? -1 : 1 : option.kind === "AMOUNT" ? -option.amount : null;
+    const delta = current.effect.kind === "ADJUST_GIG_UP_TO" ? gigAdjustmentDelta(current.effect, option) : option.kind === "AMOUNT" ? -option.amount : null;
     if (delta === null) return failure("INVALID_TRIGGER_AMOUNT", "Choose a legal adjustment or decrease amount");
     if (!delta) m.emit({ kind: "GIG_ADJUSTMENT_DECLINED", gigInstanceId: c.targetGigId! });
     else {

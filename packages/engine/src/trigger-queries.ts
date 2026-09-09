@@ -1,3 +1,4 @@
+import { gigAdjustmentOptions } from "./gig-value";
 import { isFirstArasakaAttack } from "./first-attack-history";
 import { effectiveCardTypes } from "./characteristics";
 import { delayedBinding } from "./delayed-effects";
@@ -74,7 +75,7 @@ export function triggerChoice(state: GameState, context: EngineContext): Pending
     else {
         kind = "AMOUNT"; const g = state.objects.gigs[c.targetGigId!], value = g.roll.kind === "ROLLED" ? g.roll.currentValue : 0;
         options = current?.effect.kind === "ADJUST_GIG_UP_TO"
-            ? [...(value > 1 ? [{ kind: "MODE" as const, mode: "DECREASE_1" }] : []), { kind: "MODE", mode: "KEEP" }, ...(value < Number(g.dieType.slice(1)) ? [{ kind: "MODE" as const, mode: "INCREASE_1" }] : [])]
+            ? gigAdjustmentOptions(g, current.effect)
             : Array.from({ length: Math.min(2, value - 1) + 1 }, (_, amount) => ({ kind: "AMOUNT", amount }));
     }
     return { id: hashCanonical({ protocol: "trigger-choice@1", turn: state.timing.turn, ordinal: c.ordinal, resolved: c.resolvedIds, current: current?.id ?? null, phase: c.phase, ...(c.selectedEddieSlots ? { selectedEddieSlots: c.selectedEddieSlots } : {}), ...(current?.primitiveIndex === 1 ? { primitiveIndex: 1 } : {}), target: c.targetGigId ?? null }), actorId, kind, options, min: 1, max: 1, ordered: false, continuationId: "reviewed-trigger@1" };

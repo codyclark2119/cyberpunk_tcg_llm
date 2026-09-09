@@ -2549,6 +2549,19 @@
                                       "properties": {
                                         "kind": {
                                           "type": "string",
+                                          "const": "STREET_CRED_IS_EVEN"
+                                        }
+                                      },
+                                      "required": [
+                                        "kind"
+                                      ],
+                                      "additionalProperties": false
+                                    },
+                                    {
+                                      "type": "object",
+                                      "properties": {
+                                        "kind": {
+                                          "type": "string",
                                           "const": "STREET_CRED_LESS_THAN_VALUE"
                                         },
                                         "value": {
@@ -2896,8 +2909,20 @@
                               "additionalProperties": false
                             },
                             "maximum": {
-                              "type": "number",
-                              "const": 1
+                              "anyOf": [
+                                {
+                                  "type": "number",
+                                  "const": 1
+                                },
+                                {
+                                  "type": "number",
+                                  "const": 4
+                                }
+                              ]
+                            },
+                            "direction": {
+                              "type": "string",
+                              "const": "INCREASE"
                             }
                           },
                           "required": [
@@ -2920,6 +2945,19 @@
                             },
                             "condition": {
                               "oneOf": [
+                                {
+                                  "type": "object",
+                                  "properties": {
+                                    "kind": {
+                                      "type": "string",
+                                      "const": "STREET_CRED_IS_EVEN"
+                                    }
+                                  },
+                                  "required": [
+                                    "kind"
+                                  ],
+                                  "additionalProperties": false
+                                },
                                 {
                                   "type": "object",
                                   "properties": {
@@ -4361,6 +4399,19 @@
                                     "properties": {
                                       "kind": {
                                         "type": "string",
+                                        "const": "STREET_CRED_IS_EVEN"
+                                      }
+                                    },
+                                    "required": [
+                                      "kind"
+                                    ],
+                                    "additionalProperties": false
+                                  },
+                                  {
+                                    "type": "object",
+                                    "properties": {
+                                      "kind": {
+                                        "type": "string",
                                         "const": "STREET_CRED_LESS_THAN_VALUE"
                                       },
                                       "value": {
@@ -4708,8 +4759,20 @@
                             "additionalProperties": false
                           },
                           "maximum": {
-                            "type": "number",
-                            "const": 1
+                            "anyOf": [
+                              {
+                                "type": "number",
+                                "const": 1
+                              },
+                              {
+                                "type": "number",
+                                "const": 4
+                              }
+                            ]
+                          },
+                          "direction": {
+                            "type": "string",
+                            "const": "INCREASE"
                           }
                         },
                         "required": [
@@ -4732,6 +4795,19 @@
                           },
                           "condition": {
                             "oneOf": [
+                              {
+                                "type": "object",
+                                "properties": {
+                                  "kind": {
+                                    "type": "string",
+                                    "const": "STREET_CRED_IS_EVEN"
+                                  }
+                                },
+                                "required": [
+                                  "kind"
+                                ],
+                                "additionalProperties": false
+                              },
                               {
                                 "type": "object",
                                 "properties": {
@@ -6169,6 +6245,19 @@
                                     "properties": {
                                       "kind": {
                                         "type": "string",
+                                        "const": "STREET_CRED_IS_EVEN"
+                                      }
+                                    },
+                                    "required": [
+                                      "kind"
+                                    ],
+                                    "additionalProperties": false
+                                  },
+                                  {
+                                    "type": "object",
+                                    "properties": {
+                                      "kind": {
+                                        "type": "string",
                                         "const": "STREET_CRED_LESS_THAN_VALUE"
                                       },
                                       "value": {
@@ -6516,8 +6605,20 @@
                             "additionalProperties": false
                           },
                           "maximum": {
-                            "type": "number",
-                            "const": 1
+                            "anyOf": [
+                              {
+                                "type": "number",
+                                "const": 1
+                              },
+                              {
+                                "type": "number",
+                                "const": 4
+                              }
+                            ]
+                          },
+                          "direction": {
+                            "type": "string",
+                            "const": "INCREASE"
                           }
                         },
                         "required": [
@@ -6540,6 +6641,19 @@
                           },
                           "condition": {
                             "oneOf": [
+                              {
+                                "type": "object",
+                                "properties": {
+                                  "kind": {
+                                    "type": "string",
+                                    "const": "STREET_CRED_IS_EVEN"
+                                  }
+                                },
+                                "required": [
+                                  "kind"
+                                ],
+                                "additionalProperties": false
+                              },
                               {
                                 "type": "object",
                                 "properties": {

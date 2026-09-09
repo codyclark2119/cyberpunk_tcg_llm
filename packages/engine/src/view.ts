@@ -40,6 +40,8 @@ export class RulesView {
     getRevision(id: CardInstanceId) { const c = this.getCard(id); return this.context.content.cards.find(p => p.id === c?.cardId && p.revision === c.revision); }
     getZone(id: PlayerId, zone: keyof GameState["players"][PlayerId]["zones"]) { return this.getPlayer(id).zones[zone] ?? []; }
     getControlledGigs(id: PlayerId) { return Object.values(this.state.objects.gigs).filter(g => g.controllerId === id && g.location.zone === "GIGS").sort((a, b) => a.id < b.id ? -1 : 1); }
+    hasControlledGigWithCurrentValueAtLeast(id: PlayerId, minimum: number) { return this.testCondition(id, { kind: "GIG_VALUE_AT_LEAST", minimum }); }
+    isStreetCredEven(id: PlayerId) { return this.testCondition(id, { kind: "STREET_CRED_IS_EVEN" }); }
     getStreetCred(id: PlayerId) { return this.getControlledGigs(id).reduce((n, g) => n + (g.roll.kind === "ROLLED" ? g.roll.currentValue : 0), 0); }
     testCondition(id: PlayerId, condition: Condition, sourceId?: CardInstanceId): boolean {
         return testCondition(this.state, id, condition, this.context, sourceId);

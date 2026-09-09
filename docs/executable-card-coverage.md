@@ -639,3 +639,63 @@ Real Goro7 + Mantis2 is9 before attack,10 while attacking with Saburo, then9 aft
 Engine **0.4.0-attacking-aura-1**, additive wire v1. Mongo publishes/reads the immutable revision; PostgreSQL reloads the complete legal trace including spent source and live power across both Gig choices. Python adds only one replay-family name. See the report for all quality gates and the original-payload audit.
 
 Measured demo coverage becomes **23/29 distinct, 47/60 copies**: Arasaka8/14 and17/30; Merc15/15 and30/30. Six Arasaka cards/13 copies remain blocked. Both physical27+3 lists stay unchanged and invalid under constructed40–50 main/exactly3 Legends. The [roadmap](demo-deck-coverage-roadmap.md) records the read-only next-cluster review.
+
+## VALUE_CONDITIONS_V1 — Industrial Assembly
+
+Immutable application CardId **industrial-assembly**, revision **1**, execution **SUPPORTED / VALUE_CONDITIONS_V1**. Complete captured text:
+
+> Increase a Gig by up to 4. If you control a Gig with 8+ value, draw 1.
+
+Program, Red RAM1, cost1, Null printed power, sellable, Arasaka/Braindance. No raw keywords, flavor text, reminder text or additional rules text. All6 printings are retained verbatim; the two starter printings spell the artist **Alexander Duder**, while the others spell **Alexander Dudar**. This is preserved source metadata, not a guessed correction.
+
+| Printing UUID | Set | Number | Rarity | Artist |
+|---|---|---|---|---|
+| 9103b5db-bf95-4385-8941-308cb0353c9a | welcometonightcityretail | 033 | Uncommon | Alexander Dudar |
+| 161bfaaf-ec85-4142-8538-f5faf9181267 | welcometonightcitybeta | β033 | Uncommon | Alexander Dudar |
+| 301b47dd-eab3-4648-aece-bc071b87dcd1 | embracingpowerretailstarterdeck | 009 | Uncommon | Alexander Duder |
+| 84bdb994-a01d-4e4c-81d9-a970aef4d08c | embracingpowerbetastarterdeck | β009 | Uncommon | Alexander Duder |
+| 7f0ad31f-3b16-4c7a-88bb-90dd07e55a9b | arasakademodeck | 006 | Uncommon | Alexander Dudar |
+| 36728e75-5520-4ba8-a82d-e5d884b18170 | edgerunneropens1 | 004 | Nova Rare | Alexander Dudar |
+
+Complete source UUID: **a708461f-1f91-4789-bb0d-96e3de5fcf44**. Local raw-byte SHA-256: **73359b0cbc8ce581095e922efd6ac483da45f884dd7abd4f3671aeae2f6a874d**. Canonical captured-record hash: **98727e3e220b956ad60bc6f4a733338aec35130f9c3475e6a75e97ee0b66e7ed**. Immutable normalized revision hash: **cbc4120d7240adda62924f6d40e026ba344b1ba51260ca6233c770b54756a043**. Narrow [official card check](https://api.netdeck.gg/api/cards/cyberpunk/industrial-assembly) SHA-256: **d65acacc419933334d21589e95849c9f7f5b7068074971105a3913a91517b98b**; all gameplay fields and printing identities agree with the local capture.
+
+The complete source, printings and all4 captured errata are pinned in [value-conditions-card-sources.v1.json](../tests/fixtures/value-conditions-card-sources.v1.json). Neither card has an applicable erratum. [value-conditions-fixture.ts](../tests/value-conditions-fixture.ts) contains the explicit full normalization. [value-conditions-rules.v1.json](../tests/fixtures/value-conditions-rules.v1.json) pins183 exact rule nodes, source hashes and3 official FAQ records. This is implementation review, not human-certified gold; no corpus refresh.
+
+FAQ **ad3b75f8-1401-485f-891d-7e54fdbfe30f** permits zero and says it does not count as adjusting. FAQ **2f4ce47f-25ba-4321-a673-809fc8f75bd7** confirms a rival Gig may be targeted. Any eligible rolled Gig is selectable; Fixer dice are excluded. Legal amounts are exactly0 through min(4,dieMaximum−currentValue), with no clamping. Zero emits GIG_ADJUSTMENT_DECLINED, never GIG_VALUE_CHANGED, and does not cancel the remaining clause. Single target/amount choices resolve internally; multiple options produce the existing TARGET_SELECTION/AMOUNT_SELECTION.
+
+The ordinary Program pipeline reveals, pays, resolves its complete ordered chain, then moves to owner Trash. The shared changeGigValue operation is used by earlier adjustment cards too. After the actual mutation, the existing GIG_VALUE_AT_LEAST condition scans canonical rolled Gigs by **current controller** and **currentValue**. Any currently controlled Gig may qualify, including a different or stolen Gig. The selected Gig, original roll, die type and owner are not substituted for that condition. No-target adjustment skips to the conditional clause under resolve-as-much-as-possible. No action or another ability interleaves between clauses. Existing draw/EMPTY_DRAW behavior applies.
+
+The shared bounded scope validates each **complete** metadata/effect shape and rejects additional/missing effects, different order/condition/count, wrong printed metadata, unreviewed sources and new metadata hidden under old scopes. It does not certify arbitrary up-to4 effects, parity cards or expressions. [103 focused checks](../tests/value-conditions.test.ts) cover both cards, exact bounds including D4/D20, threshold order, current control, zero/forced/no-target cases, parity/Null, ordinary Unit lifecycle, interactions, invalid external continuations, privacy, hashes, wire/training and constructed rules.
+
+The [combined legal replay](../tests/fixtures/value-conditions-replay.v1.json) uses22 actions/22 strategic positions/97 events, seed value-46 and unchanged constructed rules: D8 goes7→8, Street Cred11→12, Industrial draws, then Field Operator draws and remains READY+Lag at turn3 MAIN. The separately executed legal ODD branch chooses0, leaves Street Cred11 and draws for neither card. No headline state/RNG patches. Mongo publishes/reads both revisions; PostgreSQL reloads both complete branches. All24 preserved original replay families/816 decisions retain semantic payloads. Python adds only one replay name. See [value-conditions-report.md](value-conditions-report.md).
+
+
+## VALUE_CONDITIONS_V1 — Field Operator
+
+Immutable application CardId **field-operator**, revision **1**, execution **SUPPORTED / VALUE_CONDITIONS_V1**. Complete captured text:
+
+> {Play} If your ☆ (Street Cred) is an even number, draw 1.
+
+Unit, Green RAM2, cost3, power2, unsellable, Arasaka/Corpo/Techie. No raw keywords, flavor text, reminder text or additional rules text. Printed PLAY is normalized as WHEN_PLAYED, not as an activated ability. All5 Common printings credit Michal Ivan.
+
+| Printing UUID | Set | Number | Rarity | Artist |
+|---|---|---|---|---|
+| 876dfa5c-6df4-4930-b284-f2c466e6b90c | welcometonightcityretail | 078 | Common | Michal Ivan |
+| 62d99053-43eb-4eba-9bf4-9d7c298d03ab | welcometonightcitybeta | β078 | Common | Michal Ivan |
+| 377a3054-68e1-4843-8109-70e230592519 | embracingpowerretailstarterdeck | 016 | Common | Michal Ivan |
+| 34d2a24a-7976-4178-9f9e-b819f15a6a34 | embracingpowerbetastarterdeck | β016 | Common | Michal Ivan |
+| 45ae40b9-f0f3-4fd9-901a-cd1bed292133 | arasakademodeck | 012 | Common | Michal Ivan |
+
+Complete source UUID: **4a8dfe3f-980d-4370-ac10-6bd989042cdf**. Local raw-byte SHA-256: **6b4cca346e5c3d0f25a338c02079a9aaee85f9261ff746919c8b427eb6bac24b**. Canonical captured-record hash: **688d1d85f655f59c58d9b31af5014cbbe19f03e2d62e90c2f76d1a60135227cc**. Immutable normalized revision hash: **deac3246957f78b89ce4c0740af50d9b4f52d1be78c03a24f1bd2b66d4f1ddbc**. Narrow [official card check](https://api.netdeck.gg/api/cards/cyberpunk/field-operator) SHA-256: **cd2f51083a4f87a34fc18a1172d465b9c57c02f7aff0cb36a39ca0f2940b4cce**; all gameplay fields and printing identities agree with the local capture.
+
+The complete source, printings and all4 captured errata are pinned in [value-conditions-card-sources.v1.json](../tests/fixtures/value-conditions-card-sources.v1.json). Neither card has an applicable erratum. [value-conditions-fixture.ts](../tests/value-conditions-fixture.ts) contains the explicit full normalization. [value-conditions-rules.v1.json](../tests/fixtures/value-conditions-rules.v1.json) pins183 exact rule nodes, source hashes and3 official FAQ records. This is implementation review, not human-certified gold; no corpus refresh.
+
+FAQ **e83fc5f6-3649-4162-9415-f1ff3fde56ed** answers **No** to zero counting as even. Rules2.10.2 and5.11.4.1 establish that an empty Gig area is Null, not a numeric zero or an even/odd value. Legal current faces are positive, so a nonempty controlled-Gig sum cannot produce numeric Street Cred0; no impossible zero fixture is invented.
+
+Ordinary PLAY_CARD/payment enters BATTLEFIELD READY with Lag, then the existing PLAY scheduler resolves CONDITIONAL_DRAW through the shared draw primitive. STREET_CRED_IS_EVEN reads the current controlled rolled-Gig values at that point, returning false for Null and odd totals and true for positive even totals. There is no stored parity, second Street Cred mutation, new PendingChoice or automatic-draw training decision. Initial play does not snapshot parity. Stolen Gigs contribute to the current controller. Industrial, Afterparty and Jackie update the same current-value state; later Field Operator sees their results without card-specific integration code. Empty draw ends the game through existing EMPTY_DRAW cleanup.
+
+The shared bounded scope validates each **complete** metadata/effect shape and rejects additional/missing effects, different order/condition/count, wrong printed metadata, unreviewed sources and new metadata hidden under old scopes. It does not certify arbitrary up-to4 effects, parity cards or expressions. [103 focused checks](../tests/value-conditions.test.ts) cover both cards, exact bounds including D4/D20, threshold order, current control, zero/forced/no-target cases, parity/Null, ordinary Unit lifecycle, interactions, invalid external continuations, privacy, hashes, wire/training and constructed rules.
+
+The [combined legal replay](../tests/fixtures/value-conditions-replay.v1.json) uses22 actions/22 strategic positions/97 events, seed value-46 and unchanged constructed rules: D8 goes7→8, Street Cred11→12, Industrial draws, then Field Operator draws and remains READY+Lag at turn3 MAIN. The separately executed legal ODD branch chooses0, leaves Street Cred11 and draws for neither card. No headline state/RNG patches. Mongo publishes/reads both revisions; PostgreSQL reloads both complete branches. All24 preserved original replay families/816 decisions retain semantic payloads. Python adds only one replay name. See [value-conditions-report.md](value-conditions-report.md).
+
+Measured combined coverage becomes **25/29 distinct, 53/60 copies**: Arasaka10/14 and23/30; Merc15/15 and30/30. All47 prior immutable revisions remain, with2 real additions and no new synthetic revision. Four Arasaka cards/7 copies remain blocked. Exact physical27+3 teaching lists remain unchanged and invalid under constructed40–50 main/exactly3 Legends. Engine0.4.0-value-conditions-1; wire v1 schemas expand additively and TrainingAttempt is unchanged.

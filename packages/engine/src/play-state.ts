@@ -1,3 +1,4 @@
+import { gigAdjustmentOptions } from "./gig-value";
 import { powerTargets } from "./react-queries";
 import { legalEquipHosts } from "./attachments";
 import { canonicalSerialize, hashCanonical, failure, success, type GameState, type PendingChoice } from "@tcg/domain";
@@ -32,9 +33,8 @@ export function playChoice(state: GameState, context: EngineContext): PendingCho
     } else {
         kind = "AMOUNT";
         const gig = state.objects.gigs[c.targetGigId];
-        const value = gig?.roll.kind === "ROLLED" ? gig.roll.currentValue : 0;
-        // Direction plus magnitude; 10.31.3 requires a chosen number to be nonnegative.
-        options = [ ...(value > 1 ? [{ kind: "MODE" as const, mode: "DECREASE_1" }] : []), { kind: "MODE", mode: "KEEP" }, ...(value < Number(gig?.dieType.slice(1)) ? [{ kind: "MODE" as const, mode: "INCREASE_1" }] : []) ];
+        const effect = state.resolution.current!.effect;
+        options = effect.kind === "ADJUST_GIG_UP_TO" ? gigAdjustmentOptions(gig, effect) : [];
     }
     return { id: hashCanonical({ continuation: playIdentity(state), phase: c.phase, index: c.effectIndex, selected: c.selectedSources, target: c.targetGigId ?? null }), actorId: c.actorId, kind, options, min: 1, max: 1, ordered: false, continuationId: "noncombat-play@1" };
 }
@@ -76,6 +76,6 @@ export function validatePlayState(state: GameState, context: EngineContext) {
     }
     if (revision?.type === "GEAR" && !legalEquipHosts(state, c.sourceId, context).length) return failure("NO_EQUIP_HOST", "Gear play requires an eligible host throughout payment");
     const expected = playChoice(state, context);
-    if (!expected.options.length || canonicalSerialize(expected) !== canonicalSerialize(state.resolution.choice)) return failure("INVALID_PLAY_CHOICE", "Choice must exactly match current engine targets, amounts or payment sources");
+    if (!expected.options.length || (current?.effect.kind === "ADJUST_GIG_UP_TO" && current.effect.direction === "INCREASE" && expected.options.length < 2) || canonicalSerialize(expected) !== canonicalSerialize(state.resolution.choice)) return failure("INVALID_PLAY_CHOICE", "Choice must exactly match current engine targets, amounts or payment sources");
     return success(null);
 }

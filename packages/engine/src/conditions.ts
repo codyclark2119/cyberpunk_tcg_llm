@@ -7,6 +7,8 @@ export function testCondition(state: GameState, actor: PlayerId, condition: Cond
     const gigs = Object.values(state.objects.gigs).filter(g => g.controllerId === actor && g.location.zone === "GIGS" && g.roll.kind === "ROLLED");
     const values = gigs.flatMap(g => g.roll.kind === "ROLLED" ? [g.roll.currentValue] : []);
     switch (condition.kind) {
+        // 2.10.2/5.11.4.1 and Field Operator FAQ: no Gigs is Null, never numeric zero/even.
+        case "STREET_CRED_IS_EVEN": { const total = values.reduce((a, b) => a + b, 0); return values.length > 0 && total > 0 && total % 2 === 0; }
         // 5.11.4/5.11.4.2: an empty area is Null, ordered below 0 (and hence below this nonnegative threshold).
         case "STREET_CRED_LESS_THAN_VALUE": return !values.length || values.reduce((a, b) => a + b, 0) < condition.value;
         case "SUBJECT_IS_UNIT_NAMED": {

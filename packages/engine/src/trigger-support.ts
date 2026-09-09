@@ -1,3 +1,4 @@
+import { supportsValueConditionCard } from "./value-conditions-support";
 import { firstAttackHistoryEnabled, supportsFirstAttackLegend } from "./first-attack-support";
 import { supportsDelayedAttackGear } from "./delayed-effect-support";
 import { supportsEndTurnCard } from "./end-turn-support";
@@ -31,5 +32,5 @@ export function supportsTriggerCard(card: DeepReadonly<CardRevisionSnapshot> | u
 
 /** Scheduler admission includes the older complete printed ATTACK shape only in the new private-look bundle. */
 export function supportsEffectiveTriggerSource(card: DeepReadonly<CardRevisionSnapshot> | undefined, context: EngineContext) {
-    return supportsFirstAttackLegend(card, context).ok || supportsDelayedAttackGear(card, context).ok || supportsEndTurnCard(card, context).ok || supportsOrderedAttackCard(card, context).ok || supportsTriggerCard(card, context).ok || supportsPrivateLookGear(card, context).ok || ((privateInformationEnabled(context) || firstAttackHistoryEnabled(context)) && supportsAttackPlay(card, context).ok);
+    return (card?.type === "UNIT" && supportsValueConditionCard(card, context).ok) || supportsFirstAttackLegend(card, context).ok || supportsDelayedAttackGear(card, context).ok || supportsEndTurnCard(card, context).ok || supportsOrderedAttackCard(card, context).ok || supportsTriggerCard(card, context).ok || supportsPrivateLookGear(card, context).ok || ((privateInformationEnabled(context) || firstAttackHistoryEnabled(context)) && supportsAttackPlay(card, context).ok);
 }

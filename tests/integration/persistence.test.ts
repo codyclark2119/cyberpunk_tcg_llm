@@ -1,3 +1,5 @@
+import { valueContext, valueCards } from "../value-conditions-fixture";
+import { valueConditionsReplay } from "../value-conditions-replay";
 import { saburoContext, saburo } from "../saburo-fixture";
 import { saburoReplay } from "../saburo-replay";
 import { yorinobuContext, yorinobu } from "../yorinobu-fixture";
@@ -79,7 +81,7 @@ test("Mongo revisions: concurrent replay, conflict, history, projection ordering
         assert.equal((await repo.publish(rich)).status, "PUBLISHED");
         assert.equal((await repo.findRevision(cards[0].id, cards[0].revision))?.schemaVersion, 1);
         assert.deepEqual(await repo.findRevision(rich.id, rich.revision), rich);
-        for (const revision of [...restrictionCards, ...triggerCards, mandibular, kiroshi, evelyn, delamain, dyingNight, fieldLegend, goro, yorinobu, saburo]) {
+        for (const revision of [...restrictionCards, ...triggerCards, mandibular, kiroshi, evelyn, delamain, dyingNight, fieldLegend, goro, yorinobu, saburo, ...valueCards]) {
             assert.equal((await repo.publish(revision)).status, "PUBLISHED");
             assert.deepEqual(await repo.findRevision(revision.id, revision.revision), revision);
             assert.equal((await repo.publish(revision)).status, "REPLAY");
@@ -672,6 +674,39 @@ test("Postgres ledger: running, conflict, replay, transactional rollback and sta
         assert.equal(saburoEvents.filter(e => e.payload.kind === "GIG_STOLEN").length, 2);
         assert.ok(saburoEvents.some(e => e.payload.kind === "GIG_STEAL_STARTED" && e.payload.power === 10 && e.payload.allowance === 2));
         for (const kind of ["LEGEND_CALLED", "GEAR_ATTACHED", "GO_SOLO_ACTIVATED", "PAYMENT_MADE", "ATTACK_DECLARED", "RIVAL_REACT_OPENED", "GIG_STEAL_STARTED", "ATTACK_ENDED"]) assert.ok(saburoEvents.some(e => e.payload.kind === kind), kind);
+        // Both fully legal alternative amounts: true Industrial threshold/even PLAY draw,
+        // and false threshold/odd PLAY no-draw. All choices resume from PostgreSQL reload.
+        const valueCtx = valueContext();
+        for (const mode of ["EVEN", "ODD"] as const) {
+            const trace = valueConditionsReplay("value-46", mode), initialized = unwrap(createGameWithEvents({ ...trace.initialization, matchId: randomUUID(), players: [actor, otherActor] }, valueCtx));
+            assert.equal((await match.create(initialized.state, initialized.events)).ok, true);
+            let state = initialized.state; const history = [...initialized.events]; let targets = 0, amounts = 0, operatorPlayed = false;
+            for (const step of trace.steps) {
+                const stored = await match.find(state.match.id); assert.ok(stored); assert.deepEqual(stored, state);
+                const command = { actorId: stored.timing.actingPlayer, action: step.action.action }, next = unwrap(applyAction(stored, command, valueCtx));
+                assert.deepEqual(next, unwrap(applyAction(state, command, valueCtx))); assert.equal((await match.save(next.state, stored.match.version, next.events)).ok, true);
+                state = next.state; history.push(...next.events); const loaded = await match.find(state.match.id); assert.ok(loaded); assert.deepEqual(loaded, state);
+                assert.equal(hashReplayState(loaded), hashReplayState(state)); assert.equal(hashPosition(loaded), step.positionHash);
+                assert.deepEqual(unwrap(listLegalActions(loaded, loaded.timing.actingPlayer, valueCtx)), unwrap(listLegalActions(state, state.timing.actingPlayer, valueCtx)));
+                for (const viewer of loaded.match.playerOrder) {
+                    const actual: DeepReadonly<PlayerObservation> = unwrap(observe(loaded, viewer, valueCtx)), expected: DeepReadonly<PlayerObservation> = unwrap(observe(state, viewer, valueCtx));
+                    assert.deepEqual(actual, expected); assert.equal(hashObservation(actual), hashObservation(expected));
+                }
+                if (loaded.timing.step === "TARGET_SELECTION") targets++;
+                if (loaded.timing.step === "AMOUNT_SELECTION") amounts++;
+                if (next.events.some(e => e.payload.kind === "CARD_PLAYED" && e.payload.cardInstanceId === trace.operator)) {
+                    operatorPlayed = true; assert.ok(next.events.some(e => e.payload.kind === "CONDITION_EVALUATED" && e.payload.met === (mode === "EVEN")));
+                    assert.equal(next.events.filter(e => e.payload.kind === "CARD_MOVED" && e.payload.from.zone === "DECK" && e.payload.to.zone === "HAND").length, mode === "EVEN" ? 1 : 0);
+                }
+                assert.deepEqual(await match.history(loaded.match.id), history); state = loaded;
+            }
+            assert.equal(targets, 1); assert.equal(amounts, 1); assert.ok(operatorPlayed);
+            assert.equal(new RulesView(state, valueCtx).isStreetCredEven(actor), mode === "EVEN"); assert.equal(new RulesView(state, valueCtx).hasControlledGigWithCurrentValueAtLeast(actor, 8), mode === "EVEN");
+            assert.equal(state.objects.cards[trace.operator].zone.zone, "BATTLEFIELD"); assert.ok(state.objects.cards[trace.operator].statuses.includes("LAG"));
+            assert.equal(state.timing.step, "MAIN"); assert.equal(state.resolution.choice, null);
+            assert.equal(history.filter(e => e.payload.kind === "GIG_VALUE_CHANGED").length, mode === "EVEN" ? 1 : 0);
+            assert.equal(history.filter(e => e.payload.kind === "GIG_ADJUSTMENT_DECLINED").length, mode === "ODD" ? 1 : 0);
+        }
         // Inject an event insert failure AFTER the state UPDATE to verify transaction rollback.
         await pool.query("CREATE FUNCTION reject_test_event() RETURNS trigger LANGUAGE plpgsql AS $$ BEGIN RAISE EXCEPTION 'event insert failure'; END $$");
         await pool.query("CREATE TRIGGER reject_test_event BEFORE INSERT ON match_events FOR EACH ROW EXECUTE FUNCTION reject_test_event()");

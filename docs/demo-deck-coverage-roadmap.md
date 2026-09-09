@@ -13,11 +13,11 @@ All **29 distinct cards** have local raw captures and demo printing metadata. �
 | Swordwise Huscle | Arasaka | 2 | Yes; demo 003 | Yes; application revision 1 | COMBAT_ATTACK_V1 | Scoped only | Generic fight/defeat/Gig stealing now supported under COMBAT_RESOLUTION_V1; remaining demo mechanics and demo-format review |
 | Mantis Blades | Arasaka | 3 | Yes; demo 004 | Yes; application revision 1 | NONCOMBAT_PLAY_V1 + REVIEWED_GEAR_V1 | Scoped only | Supported captured function; full demo match still requires remaining deck mechanics and separate demo-format review |
 | Satori — Sword of Saburo | Arasaka | 3 | Yes; demo 005 | Yes; application revision 1 | COMBAT_TRIGGERS_V1 | Scoped only | Complete printed Gear +2 inheritance and inherited fight-win draw; independent copies and controller ordering |
-| Industrial Assembly | Arasaka | 3 | Yes; demo 006 | No executable revision | Unreviewed | No | Up-to4 Gig increase, then current friendly Gig value≥8 conditional draw |
+| Industrial Assembly | Arasaka | 3 | Yes; demo 006 | Yes; application revision 1 | VALUE_CONDITIONS_V1 | Scoped only | Complete Red RAM1 cost1 sellable Program: any Gig increase0–4 within die bounds, then current any-controlled-Gig≥8 draw1; ordered, including zero/no target |
 | Over the Edge | Arasaka | 2 | Yes; demo 007 | No executable revision | Unreviewed | No | ANY Unit power≤friendly d20 value target filter and defeat; not rival-only |
 | Corpo Security | Arasaka | 3 | Yes; demo 010 | Yes; application revision 1 | COMBAT_RESTRICTIONS_V1 | Scoped only | Complete cannot-attack + Blocker shape supported; independent Blocker legality |
 | Emergency Atlus | Arasaka | 3 | Yes; demo 011 | Yes; application revision 1 | COMBAT_RESTRICTIONS_V1 | Scoped only | Complete ordinary Unit shape supported; no executable text omitted |
-| Field Operator | Arasaka | 3 | Yes; demo 012 | No executable revision | Unreviewed | No | Current Street Cred parity/Null review and conditional PLAY draw1 |
+| Field Operator | Arasaka | 3 | Yes; demo 012 | Yes; application revision 1 | VALUE_CONDITIONS_V1 | Scoped only | Complete Green RAM2 cost3 power2 unsellable Arasaka/Corpo/Techie Unit: ordinary payment/READY+Lag, PLAY current even Street Cred draw1; Null false |
 | Goro Takemura — Losing His Way | Arasaka | 1 | Yes; demo 013 | No executable revision | Unreviewed | No | All Legends revealed condition, +5 turn modifier on attack |
 | Corporate Surveillance | Arasaka | 3 | Yes; demo 014 | No executable revision | Unreviewed | No | Cost-filtered rival Unit spending |
 | V — Corporate Exile | Mercs | 1 | Yes; demo 008 | Yes; application revision 1 | FIELD_LEGENDS_V1 | Scoped only | Complete ordinary/Go Solo field play, exact payment, Unit+Legend types, pre-equipped Gear preservation, combat/defeat/removal and real Dying-positive delayed resolution |
@@ -36,20 +36,24 @@ All **29 distinct cards** have local raw captures and demo printing metadata. �
 | Floor It | Mercs | 3 | Yes; demo 014 | Yes; application revision 1 | COMBAT_REACT_V1 | Scoped only | Supported captured function; full demo match still requires remaining deck mechanics and separate demo-format review |
 | Reboot Optics | Mercs | 2 | Yes; demo 015 | Yes; application revision 1 | COMBAT_RESTRICTIONS_V1 | Scoped only | Single outstanding next-fight defeat prevention supported; overlapping copies explicitly unsupported pending interaction review |
 
-## Measured coverage after Saburo — Stubborn Patriarch
+## Measured coverage after Industrial Assembly + Field Operator
 
 | Metric | Before this milestone | After |
 |---|---:|---:|
 | Distinct reference cards | 29 | 29 |
-| Reviewed executable distinct cards, within stated scopes | 22 | 23 |
-| Without reviewed executable revisions | 7 | 6 |
-| Arasaka supported distinct cards / 14 | 7 | 8 |
-| Arasaka executable physical copies / 30 | 16 | 17 |
+| Reviewed executable distinct cards, within stated scopes | 23 | 25 |
+| Without reviewed executable revisions | 6 | 4 |
+| Arasaka supported distinct cards / 14 | 8 | 10 |
+| Arasaka executable physical copies / 30 | 17 | 23 |
 | Mercs supported distinct cards / 15 | 15 | 15 |
 | Mercs executable physical copies / 30 | 30 | 30 |
-| Both decks executable physical copies / 60 | 46 | 47 |
+| Both decks executable physical copies / 60 | 47 | 53 |
 
-Calculated from the actual 29 rows before and after admitting Saburo. Only its one physical Legend copy changes status; no quantities change. All 46 prior immutable content revisions are preserved. Saburo adds exactly one real revision and no synthetic revision. Existing synthetic support cards remain excluded from real/demo counts. Reboot retains its one-outstanding-prevention limit.
+Calculated from the actual 29 rows preserved before editing. Industrial Assembly contributes3 copies and Field Operator3; no quantities change. All47 prior immutable content revisions are preserved, with exactly2 complete real revisions added and no new synthetic revision. Synthetic support cards remain excluded from real/demo counts. Reboot retains its one-outstanding-prevention limit.
+
+Industrial uses the existing Program ordered continuation: choose any rolled Gig, increase by0–4 within its actual die maximum, then inspect all currently controlled Gigs for value8+. Zero does not adjust but does not cancel the second clause. Field Operator enters through ordinary Unit play/payment/READY+Lag, then evaluates current Street Cred parity in its PLAY trigger; Null is never even. The legal combined replay changes a D8 from7 to8 and Street Cred from11 to12, then both cards draw. See [value-conditions-report.md](value-conditions-report.md) for complete source review, focused regressions and the legal odd/no-draw alternative.
+
+Field Operator supplies a real printed Arasaka Unit to the reviewed content bundle. Existing exact-classification/effective-Unit queries apply to it without changing Yorinobu or Saburo. Their earlier reports describe their own historical admission baselines.
 
 Saburo uses the same exact **Arasaka** classification and effective Unit query as Yorinobu, with independent current attacking/source eligibility. Face-up spent Saburo still contributes; Goro7 + Mantis2 becomes10 during attack and returns9 at cleanup. The legal replay crosses the actual steal allowance1→2 threshold. See [saburo-attacking-aura-report.md](saburo-attacking-aura-report.md).
 
@@ -61,25 +65,23 @@ Yorinobu uses immutable exact **Arasaka** classification and effective Unit type
 
 **Merc exact demo initialization: still NO until DEMO_STARTER policy is reviewed.**
 
-Neither exact 27-main + 3-Legend reference list passes constructed's unchanged 40–50-main + exactly-3-Legends requirement. Copy and RAM rules are unchanged. Arasaka additionally lacks six distinct executable cards (13 copies). No DEMO_STARTER policy, padded physical teaching list, or complete demo match is introduced.
+Neither exact 27-main + 3-Legend reference list passes constructed's unchanged 40–50-main + exactly-3-Legends requirement. Copy and RAM rules are unchanged. Arasaka additionally lacks four distinct executable cards (7 copies). No DEMO_STARTER policy, padded physical teaching list, or complete demo match is introduced.
 
 ## Remaining Arasaka review and next milestone
 
-All six remaining complete local source rows were reviewed read-only; none is admitted in this milestone. Quantities remain **6 distinct / 13 copies**. The following summarizes executable text, not a substitute for the next full printing/errata/FAQ/rules review.
+All four remaining complete local source records, all their printings and the captured errata were reviewed read-only. None is admitted here. Quantities remain **4 distinct / 7 copies**. This blocker review does not replace the focused FAQ/rules review required before the next implementation.
 
 | Card | Copies | Complete executable behavior still blocked |
 |---|---:|---|
-| Minotaur | 1 | Red RAM2 Unit, cost7/power9, unsellable, Arasaka/Drone/Militech. PLAY: if own Street Cred is greater than a rival's, defeat a rival Unit with power ≤5. Needs complete conditional targeted-defeat resolution and target legality. |
-| Industrial Assembly | 3 | Red RAM1 Program, cost1/Null power, sellable, Arasaka/Braindance. Increase a Gig by up to4; then draw1 if a controlled Gig has value8+. Needs bounded up-to4 adjustment and current controlled-Gig threshold condition with exact ordered timing. |
-| Over the Edge | 2 | Red RAM2 Program, cost3/Null power, sellable, Merc. Defeat **a Unit**, with power ≤ value of a friendly d20. Target relation is not rival-only. Needs d20 value/filter semantics, eligible Unit selection and targeted defeat. |
-| Field Operator | 3 | Green RAM2 Unit, cost3/power2, unsellable, Arasaka/Corpo/Techie. PLAY: draw1 if current Street Cred is even. Needs complete current parity condition, including a rules review of Null. |
-| Goro Takemura — Losing His Way | 1 | Green RAM3 Unit, cost4/power4, unsellable, Arasaka/Corpo. ATTACK: if all friendly Legends are face-up, this Unit gets +5 this turn. Needs all-Legends condition and bounded own-turn temporary power. This is a printed Unit, not another field-Legend admission. |
-| Corporate Surveillance | 3 | Green RAM1 Program, cost2/Null power, sellable, Corpo. Spend a rival Unit with cost ≤4. Needs cost-filtered rival effective-Unit targeting, spending eligibility and Null-cost review. |
+| Minotaur | 1 | Red RAM2 Unit, cost7/power9, unsellable, Arasaka/Drone/Militech;3 printings. PLAY: if own Street Cred is greater than a rival's, defeat a rival Unit with power≤5. Needs resolution-time Null-aware comparison, current effective-power filtering, rival-only target legality and complete defeat/departure ordering. |
+| Over the Edge | 2 | Red RAM2 Program, cost3/Null power, sellable, Merc;5 printings. Defeat **a Unit** with power≤value of a friendly d20. ANY Unit relationship, not rival-only. Needs current controlled-d20/Null semantics, current effective-power filtering and complete targeted defeat. |
+| Goro Takemura — Losing His Way | 1 | Green RAM3 Unit, cost4/power4, unsellable, Arasaka/Corpo;3 printings. ATTACK: if all friendly Legends are face-up, this Unit gets+5 this turn. Needs the all-friendly-Legends condition and own temporary-power lifetime. This is a printed Unit, not another field-Legend admission. |
+| Corporate Surveillance | 3 | Green RAM1 Program, cost2/Null power, sellable, Corpo;5 printings. Spend a rival Unit with cost≤4. Needs current effective-Unit/cost filtering, Null-cost review and spending eligibility; spending is distinct from defeat. |
 
-**Recommended next cluster: Industrial Assembly + Field Operator** (2 complete cards / 6 copies). Reuse current Gig adjustment and ordered condition/draw machinery; add only reviewed current Gig/Street Cred conditions and the required up-to4 bound. These are distinct narrow conditions, not a trait/expression DSL. Review their complete shapes and exact condition timing/Null semantics before implementation.
+**Recommended next cluster: Minotaur + Over the Edge** (2 complete cards / 3 copies). Review both complete shapes and focused sources, then share the smallest targeted-defeat operation. Preserve their different RIVAL/ANY relationships, conditional PLAY versus Program timing, current effective-power and current d20/Street Cred filters, no-target/forced-target behavior, owner ordering, Gear departure and field-Legend removal. Do not infer those details from combat defeat alone.
 
-**Alternative: Minotaur + Over the Edge** (2 cards / 3 copies) shares a new targeted-defeat operation, but also needs different relationship and current-power/d20 filters plus defeat scheduling/owner ordering. Corporate Surveillance adds3 copies, but shares target selection rather than defeat; spending and cost filtering are another behavior and should not be bundled merely to raise counts. Losing His Way is a separate one-card temporary-power step; Saburo's continuous aura must not be repurposed into a stored turn modifier.
+Corporate Surveillance can follow as a cost-filtered spending milestone; shared target selection alone is insufficient to certify it alongside defeat. Losing His Way remains a separate all-Legends condition/temporary-modifier pass. Saburo's continuous aura must not be converted to a stored turn modifier.
 
-The Saburo source, six printings, all four local errata and focused official Fight/Steal FAQ are pinned in its new fixtures. Neither Saburo nor Yorinobu has an applicable captured erratum. No broad harness corpus refresh occurred. Faceplate, WHEN_SPENT, control changes, general aura/trait scripting and full demo matches remain outside this scope.
+The two new complete sources, all11 printings, all4 captured errata and3 focused official FAQs are pinned in [value-conditions-card-sources.v1.json](../tests/fixtures/value-conditions-card-sources.v1.json) and [value-conditions-rules.v1.json](../tests/fixtures/value-conditions-rules.v1.json). Neither card has an applicable captured erratum. The narrow live source check agrees on gameplay fields/printing identities, and live parsed rules equal the local snapshot. No broad harness corpus refresh occurred. Faceplate, WHEN_SPENT, general control-transfer actions, arithmetic/condition DSLs and full demo matches remain outside scope.
 
 A later teaching-format review must establish size, Legend, RAM, copy, setup, win-condition and other exceptions before exact demos can initialize. Neither constructed's 40–50 requirement nor the physical 27+3 lists have changed.
