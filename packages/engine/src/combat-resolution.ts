@@ -1,10 +1,13 @@
+import { beginTriggers } from "./trigger-resolution";
+import { triggersEnabled } from "./trigger-support";
+import { FightResultSchema, type FightResult } from "@tcg/domain";
 import { applyFightPreventions } from "./fight-prevention";
 import { failure, success } from "@tcg/domain";
 import type { TurnMutation } from "./turn";
 import { RulesView } from "./view";
 import { defeatCards, defeatSupport } from "./defeat";
 import { transferGigs } from "./gig-transfer";
-import { defeatOrderChoice, evaluateFight, gigStealChoice, listStealableGigs, unfinishedDefeatOrder } from "./combat-outcome-queries";
+import { defeatOrderChoice, defeatsFromFightResult, evaluateFight, gigStealChoice, listStealableGigs, unfinishedDefeatOrder } from "./combat-outcome-queries";
 
 export function finishCombat(m: TurnMutation) {
     const c = m.state.timing.combat;
@@ -37,7 +40,7 @@ function advanceDefeats(m: TurnMutation) {
     }
     m.state.resolution.choice = null;
     const result = defeatCards(m, continuation.defeats, continuation.orders);
-    return result.ok ? finishCombat(m) : result;
+    return result.ok ? (triggersEnabled(m.context) ? beginTriggers(m, { kind: "DEFEAT", defeated: continuation.defeats }, result.value) : finishCombat(m)) : result;
 }
 export function continueDefeatOrder(m: TurnMutation, index: number) {
     const choice = m.state.resolution.choice, option = choice?.options[index], order = unfinishedDefeatOrder(m.state);
@@ -93,11 +96,7 @@ export function resolveCombat(m: TurnMutation) {
         m.emit({ kind: "FIGHT_STARTED", attackerId: c.attackerId, defenderId: c.target.cardInstanceId });
         const result = evaluateFight(m.state, m.context, id => view.getEffectivePower(id));
         m.emit(result.event);
-        // No admitted fight-result triggers (9.18). Never cache power/outcome into GameState.
-        const outcome = applyFightPreventions(m, result.defeats);
-        if (!outcome.defeats.length) return finishCombat(m);
-        m.state.resolution.defeatContinuation = { ...outcome, orders: outcome.defeats.map(d => ({ targetId: d.targetId, cardIds: [] })) };
-        return advanceDefeats(m);
+        return triggersEnabled(m.context) ? beginTriggers(m, { kind: "FIGHT", result: result.event }) : completeFightResult(m, result.event);
     }
     const power = view.getEffectivePower(c.attackerId);
     if (power === null) return failure("UNSUPPORTED_NULL_STEAL_POWER", "Null is not a numeric power");
@@ -107,4 +106,12 @@ export function resolveCombat(m: TurnMutation) {
     if (!count) return finishCombat(m);
     m.state.resolution.gigStealContinuation = { selected: [], remaining: count };
     return advanceGigSteal(m);
+}
+
+/** Resume after the reviewed fight-result trigger window, without recomputing who won. */
+export function completeFightResult(m: TurnMutation, result: FightResult) {
+    const outcome = applyFightPreventions(m, defeatsFromFightResult(m.state, m.context, result));
+    if (!outcome.defeats.length) return finishCombat(m);
+    m.state.resolution.defeatContinuation = { ...outcome, ...(triggersEnabled(m.context) ? { fightResult: FightResultSchema.parse(result) } : {}), orders: outcome.defeats.map(d => ({ targetId: d.targetId, cardIds: [] })) };
+    return advanceDefeats(m);
 }

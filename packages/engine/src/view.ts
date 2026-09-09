@@ -1,3 +1,4 @@
+import { effectiveTriggeredAbilities } from "./trigger-queries";
 import { getAttackRestrictions, canBeBlocked } from "./combat-permissions";
 import { applicableFightPreventions } from "./fight-prevention";
 import { getGigStealAllowance } from "./combat-resolution-policy";
@@ -5,7 +6,7 @@ import { listStealableGigs } from "./combat-outcome-queries";
 import { isReactDecision } from "./react-support";
 import { isBlockerEligible } from "./react-queries";
 import { canPlay } from "./play-support";
-import { effectiveCardTypes, effectivePower } from "./characteristics";
+import { applicablePowerModifiers, effectiveCardTypes, effectivePower } from "./characteristics";
 import { isAttackEligible, isUnitForGameplay, listAttackTargets } from "./combat-queries";
 import { attachedGear, attachmentHost, gearEnabled, legalEquipHosts } from "./attachments";
 import { testCondition } from "./conditions";
@@ -47,6 +48,9 @@ export class RulesView {
     listStealableGigs(defender: PlayerId) { return listStealableGigs(this.state, defender); }
     getControlledGigCount(id: PlayerId) { return this.getControlledGigs(id).length; }
     getFightDefender() { const target = this.getCombatTarget(); return target?.kind === "CARD" ? this.getCard(target.cardInstanceId) : null; }
+    getEffectiveTriggeredAbilities(id: CardInstanceId) { return effectiveTriggeredAbilities(this.state, id, this.context); }
+    getApplicableCharacteristicModifiers(id: CardInstanceId) { return applicablePowerModifiers(this.state, id, this.context); }
+    getTurnEventSummary() { return this.state.turnHistory ?? null; }
     getAttackRestrictions(id: CardInstanceId) { return getAttackRestrictions(this.state, id, this.context); }
     canBeBlocked(id: CardInstanceId) { return canBeBlocked(this.state, id, this.context); }
     getApplicableFightPreventions() { return applicableFightPreventions(this.state); }

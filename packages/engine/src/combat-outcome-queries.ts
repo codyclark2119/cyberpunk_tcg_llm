@@ -1,4 +1,4 @@
-import { hashCanonical, type CardInstanceId, type DefeatInstruction, type GameState, type PendingChoice, type PlayerId } from "@tcg/domain";
+import { hashCanonical, type FightResult, type CardInstanceId, type DefeatInstruction, type GameState, type PendingChoice, type PlayerId } from "@tcg/domain";
 import type { EngineContext } from "./state";
 import { effectivePower } from "./characteristics";
 import { referencedPower } from "./combat-resolution-policy";
@@ -30,4 +30,13 @@ export function unfinishedDefeatOrder(state: GameState) {
 export function defeatOrderChoice(state: GameState): PendingChoice {
     const order = unfinishedDefeatOrder(state)!;
     return { id: hashCanonical({ protocol: "defeat-order@1", turn: state.timing.turn, targetId: order.targetId, selected: order.cardIds }), actorId: state.objects.cards[order.targetId].ownerId, kind: "ORDER", min: 1, max: 1, ordered: true, continuationId: "defeat-order@1", options: defeatBatch(state, order.targetId).filter(id => !order.cardIds.includes(id)).map(id => ({ kind: "CARD", cardInstanceId: id })) };
+}
+
+/** Winners/losers are historical facts; zero-power defeat permission uses the current post-trigger characteristic. */
+export function defeatsFromFightResult(state: GameState, context: EngineContext, result: FightResult): DefeatInstruction[] {
+    return result.loserIds.flatMap(targetId => {
+        const defeatedBy = targetId === result.attackerId ? result.defenderId : result.attackerId;
+        const power = effectivePower(state, defeatedBy, context);
+        return power !== null && referencedPower(power) > 0 ? [{ targetId, defeatedBy }] : [];
+    });
 }

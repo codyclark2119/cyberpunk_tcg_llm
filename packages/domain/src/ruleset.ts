@@ -11,6 +11,7 @@ export const TurnSlicePolicySchema = z.strictObject({
     combat: z.literal("COMBAT_ATTACK_V1").optional(),
     react: z.literal("COMBAT_REACT_V1").optional(),
     combatRestrictions: z.literal("COMBAT_RESTRICTIONS_V1").optional(),
+    combatTriggers: z.literal("COMBAT_TRIGGERS_V1").optional(),
     combatResolution: z.strictObject({
         version: z.literal("COMBAT_RESOLUTION_V1"),
         negativeReferences: z.literal("ZERO"),

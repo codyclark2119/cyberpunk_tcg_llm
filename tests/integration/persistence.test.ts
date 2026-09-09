@@ -1,3 +1,5 @@
+import { triggersContext, triggerCards } from "../combat-triggers-fixture";
+import { satoriReplay, defeatedReplay, firstBlueReplay } from "../combat-triggers-replay";
 import { resolutionContext } from "../combat-resolution-fixture";
 import { restrictionsContext, restrictionCards } from "../combat-restrictions-fixture";
 import { preventionReplay, preventionExpirationReplay, permissionsReplay, vanillaReplay } from "../combat-restrictions-replay";
@@ -57,7 +59,7 @@ test("Mongo revisions: concurrent replay, conflict, history, projection ordering
         assert.equal((await repo.publish(rich)).status, "PUBLISHED");
         assert.equal((await repo.findRevision(cards[0].id, cards[0].revision))?.schemaVersion, 1);
         assert.deepEqual(await repo.findRevision(rich.id, rich.revision), rich);
-        for (const revision of restrictionCards) {
+        for (const revision of [...restrictionCards, ...triggerCards]) {
             assert.equal((await repo.publish(revision)).status, "PUBLISHED");
             assert.deepEqual(await repo.findRevision(revision.id, revision.revision), revision);
             assert.equal((await repo.publish(revision)).status, "REPLAY");
@@ -303,6 +305,31 @@ test("Postgres ledger: running, conflict, replay, transactional rollback and sta
             assert.equal(state.fightPreventions, undefined);
             assert.deepEqual(events.map(e => e.sequence), Array.from({ length: events.length }, (_, i) => i + 1));
             for (const kind of ["FIGHT_PREVENTION_CREATED", "FIGHT_PREVENTION_CONSUMED", "FIGHT_PREVENTION_EXPIRED", "FIGHT_DEFEAT_PREVENTED", "FIGHT_RESULT", "CARD_DEFEATED"])
+                assert.equal(events.filter(e => e.payload.kind === kind).length, trace.steps.flatMap(s => s.events).filter(e => e.payload.kind === kind).length);
+        }
+        // Trigger queues, source snapshots, first-play history and complete event batches use the existing JSON storage.
+        const triggerCtx = triggersContext();
+        for (const trace of [satoriReplay(), defeatedReplay(), firstBlueReplay()]) {
+            const initial = unwrap(createGameWithEvents({ ...trace.initialization, matchId: randomUUID(), players: [actor, otherActor] }, triggerCtx));
+            assert.equal((await match.create(initial.state, initial.events)).ok, true);
+            let state = initial.state;
+            const events = [...initial.events];
+            for (const step of trace.steps) {
+                const legal = unwrap(listLegalActions(state, state.timing.actingPlayer, triggerCtx));
+                assert.deepEqual(legal.map(a => a.actionId), step.legalActions.map(a => a.actionId));
+                const transition = unwrap(applyAction(state, { actorId: state.timing.actingPlayer, action: step.action.action }, triggerCtx));
+                assert.equal((await match.save(transition.state, state.match.version, transition.events)).ok, true);
+                events.push(...transition.events); state = transition.state;
+                const stored = await match.find(state.match.id);
+                assert.deepEqual(stored, state); assert.ok(stored);
+                assert.equal(hashReplayState(stored), hashReplayState(state)); assert.equal(hashPosition(stored), step.positionHash);
+                assert.deepEqual(unwrap(listLegalActions(stored, stored.timing.actingPlayer, triggerCtx)), unwrap(listLegalActions(state, state.timing.actingPlayer, triggerCtx)));
+                assert.deepEqual(await match.history(state.match.id), events);
+            }
+            assert.equal(state.timing.combat.stage, "NONE"); assert.equal(state.timing.window, "MAIN");
+            assert.equal(state.fightPreventions, undefined);
+            assert.deepEqual(events.map(e => e.sequence), Array.from({ length: events.length }, (_, i) => i + 1));
+            for (const kind of ["TRIGGER_ORDER_SELECTED", "OPTIONAL_TRIGGER_ACCEPTED", "QUALIFYING_PLAY_RECORDED", "EFFECT_PENDING", "FIGHT_RESULT", "CARD_DEFEATED"])
                 assert.equal(events.filter(e => e.payload.kind === kind).length, trace.steps.flatMap(s => s.events).filter(e => e.payload.kind === kind).length);
         }
         // Inject an event insert failure AFTER the state UPDATE to verify transaction rollback.

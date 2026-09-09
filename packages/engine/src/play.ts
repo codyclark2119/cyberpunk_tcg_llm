@@ -1,3 +1,5 @@
+import { recordPlayedCard } from "./trigger-resolution";
+import { triggersEnabled } from "./trigger-support";
 import { actionReturnContext, finishAction } from "./action-return";
 import { applyTemporaryPower } from "./temporary-power";
 import { attachPlayedGear, moveCardLocation } from "./card-movement";
@@ -22,6 +24,7 @@ export function offerPlayChoice(m: TurnMutation) {
 }
 function finishPlay(m: TurnMutation, sourceId: CardInstanceId) {
     if (m.state.objects.cards[sourceId].zone.zone === "RESOLVING_PROGRAM") moveCardLocation(m, sourceId, "TRASH");
+    if (!m.state.match.outcome && triggersEnabled(m.context) && m.state.resolution.playContinuation?.kind === "PLAY" && ["UNIT", "GEAR"].includes(revisionOf(m.state, sourceId, m.context)!.type)) return recordPlayedCard(m, sourceId);
     if (!m.state.match.outcome) return finishAction(m);
     return success(null);
 }
@@ -67,7 +70,7 @@ export function startPlay(m: TurnMutation, actorId: PlayerId, sourceId: CardInst
     s.resolution.returnTo = actionReturnContext(s);
     s.objects.cards[sourceId].face = "UP";
     m.emit({ kind: "CARD_REVEALED", cardInstanceId: sourceId });
-    s.resolution.playContinuation = { kind: "PLAY", actorId, sourceId, ...(r.mechanics.abilities[0] ? { abilityId: r.mechanics.abilities[0].id } : {}), phase: "PAYMENT", remainingCost: r.printedCost.amount, selectedSources: [], effectIndex: 0 };
+    s.resolution.playContinuation = { kind: "PLAY", actorId, sourceId, ...(r.type !== "GEAR" && r.mechanics.abilities[0] ? { abilityId: r.mechanics.abilities[0].id } : {}), phase: "PAYMENT", remainingCost: r.printedCost.amount, selectedSources: [], effectIndex: 0 };
     const forced = forcedPaymentSources(s, actorId, m.context, r.printedCost.amount, []);
     if (forced) return completePayment(m, forced);
     return offerPlayChoice(m);

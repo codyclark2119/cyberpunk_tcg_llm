@@ -1,3 +1,4 @@
+import { continueTrigger } from "./trigger-resolution";
 import { expireFightPreventions } from "./fight-prevention";
 import { createsFightPrevention } from "./restriction-support";
 import { cardRevision } from "./characteristics";
@@ -36,7 +37,7 @@ export function listLegalActions(state: GameState, actor: PlayerId, context: Eng
         return failure("UNKNOWN_PLAYER", "Player is not in match");
     if (!context.content.ruleset.gameplay?.turnSlice && !supportedContent(context))
         return failure("UNSUPPORTED_MECHANICS", "Ability/continuous-effect execution awaits reviewed handlers");
-    if (state.resolution.stage !== "DECISION" && !(context.content.ruleset.gameplay?.turnSlice && state.resolution.stage === "CHOICE" && (state.resolution.choice?.kind === "PAYMENT" || state.resolution.searchContinuation || state.resolution.playContinuation || state.resolution.gigStealContinuation || state.resolution.defeatContinuation || state.setup || state.timing.combat.stage === "ATTACK_TARGET_SELECTION")))
+    if (state.resolution.stage !== "DECISION" && !(context.content.ruleset.gameplay?.turnSlice && state.resolution.stage === "CHOICE" && (state.resolution.choice?.kind === "PAYMENT" || state.resolution.searchContinuation || state.resolution.playContinuation || state.resolution.gigStealContinuation || state.resolution.defeatContinuation || state.resolution.triggerContinuation || state.setup || state.timing.combat.stage === "ATTACK_TARGET_SELECTION")))
         return failure("UNSUPPORTED_RESOLUTION", "Pending-effect/choice continuation requires a registered reviewed handler");
     if (actor !== state.timing.actingPlayer)
         return success([]);
@@ -45,7 +46,7 @@ export function listLegalActions(state: GameState, actor: PlayerId, context: Eng
     const slice = context.content.ruleset.gameplay?.turnSlice;
     if (state.match.outcome || state.timing.combat.stage === "COMBAT_RESOLUTION_PENDING" || (state.timing.combat.stage === "RIVAL_REACT" && !reactEnabled(context)))
         return success([]);
-    if (state.setup || state.resolution.searchContinuation || state.resolution.playContinuation || state.resolution.gigStealContinuation || state.resolution.defeatContinuation || state.timing.combat.stage === "ATTACK_TARGET_SELECTION") {
+    if (state.resolution.triggerContinuation || state.setup || state.resolution.searchContinuation || state.resolution.playContinuation || state.resolution.gigStealContinuation || state.resolution.defeatContinuation || state.timing.combat.stage === "ATTACK_TARGET_SELECTION") {
         const choice = state.resolution.choice!;
         choice.options.forEach((_, index) => actions.push({ actorId: actor, action: { kind: "CHOOSE", choiceId: choice.id, optionIndices: [index] } }));
     }
@@ -100,6 +101,13 @@ export function listLegalActions(state: GameState, actor: PlayerId, context: Eng
                     const gig = view.getGig(option.gigInstanceId);
                     return `Steal ${gig.dieType} (${gig.id}, current ${gig.roll.kind === "ROLLED" ? gig.roll.currentValue : "unrolled"})`;
                 }
+                if (state.resolution.triggerContinuation) {
+                    if (option.kind === "EFFECT") { const e = state.resolution.pending.find(e => e.id === option.effectId)!; return `Resolve ${view.getRevision(e.sourceId!)?.displayName} (${e.sourceId}) for ${view.getRevision(e.trigger!.subjectId)?.displayName}`; }
+                    if (option.kind === "CONFIRM") return option.confirmed ? "Use the optional Gig decrease" : "Decline the optional effect";
+                    if (option.kind === "GIG") { const g = view.getGig(option.gigInstanceId); return `Choose ${g.controllerId === actor ? "your" : "rival"} ${g.dieType} (current ${g.roll.kind === "ROLLED" ? g.roll.currentValue : "unrolled"})`; }
+                    if (option.kind === "AMOUNT") return `Decrease by ${option.amount}`;
+                    if (option.kind === "MODE") return option.mode === "KEEP" ? "Adjust by zero (keep current value)" : option.mode === "INCREASE_1" ? "Increase by 1" : "Decrease by 1";
+                }
                 if (state.resolution.defeatContinuation && option.kind === "CARD") return `Next in your Trash: ${view.getRevision(option.cardInstanceId)?.displayName} (${option.cardInstanceId})`;
                 if (state.resolution.searchContinuation) return option.kind === "CARD" ? `Reveal and take ${view.getRevision(option.cardInstanceId)?.displayName}` : "Take no more Gears";
                 if (state.resolution.playContinuation?.phase === "EQUIP" && option.kind === "CARD") return `Equip to ${view.getRevision(option.cardInstanceId)?.displayName}`;
@@ -119,6 +127,7 @@ export function listLegalActions(state: GameState, actor: PlayerId, context: Eng
     };
     const reactOrder = ["CALL_LEGEND", "PLAY_CARD", "DECLARE_BLOCKER", "PASS_REACT"];
     return success(actions.map(a => ({ ...a, actionId: hashCanonical({ version: 1, positionHash: hashPosition(state), seat: state.players[actor].seat, action: a.action }), descriptor: { kind: a.action.kind, label: label(a) } })).sort((a, b) => {
+        if (state.resolution.triggerContinuation && a.action.kind === "CHOOSE" && b.action.kind === "CHOOSE") return a.action.optionIndices[0] - b.action.optionIndices[0];
         if (isReactDecision(state, actor, context)) {
             const kindOrder = reactOrder.indexOf(a.action.kind) - reactOrder.indexOf(b.action.kind);
             if (kindOrder) return kindOrder;
@@ -204,6 +213,7 @@ export function applyAction(state: GameState, action: GameAction, context: Engin
                 break;
             }
             case "CHOOSE": {
+                if (s.resolution.triggerContinuation) { const result = continueTrigger(mutation, action.action.optionIndices[0]); if (!result.ok) return result; break; }
                 if (s.resolution.gigStealContinuation || s.resolution.defeatContinuation) {
                     const result = s.resolution.gigStealContinuation ? continueGigSteal(mutation, action.action.optionIndices[0]) : continueDefeatOrder(mutation, action.action.optionIndices[0]);
                     if (!result.ok) return result;
@@ -347,7 +357,7 @@ export function advanceResolution(state: GameState, context: EngineContext): Res
         return valid;
     if (state.timing.combat.stage === "COMBAT_RESOLUTION_PENDING") return failure(combatResolutionEnabled(context) ? "AUTOMATIC_COMBAT_RESOLUTION_REQUIRED" : "UNSUPPORTED_COMBAT_RESOLUTION", "PASS_REACT resolves combat automatically; use advanceResolutionWithEvents to resume a trusted pending boundary without dropping its event batch. Earlier policy pins stop here");
     if (state.timing.combat.stage === "RIVAL_REACT" && !reactEnabled(context)) return failure("UNSUPPORTED_RIVAL_REACT", "React requires a reviewed defender-action implementation");
-    if (state.resolution.gigStealContinuation || state.resolution.defeatContinuation) return failure("PLAYER_DECISION_REQUIRED", "The owner of the current combat choice must select a legal actionId");
+    if (state.resolution.triggerContinuation || state.resolution.gigStealContinuation || state.resolution.defeatContinuation) return failure("PLAYER_DECISION_REQUIRED", "The owner of the current combat choice must select a legal actionId");
     if (state.timing.combat.stage === "RIVAL_REACT") return failure("PLAYER_DECISION_REQUIRED", "Defender must finish the current reaction or select an explicit React action, including PASS_REACT");
     return state.resolution.stage === "DECISION" ? valid : failure("UNSUPPORTED_RESOLUTION_POLICY", "Current effect must finish before discovered triggers; strategic ordering needs a PendingChoice. No implicit LIFO ordering.");
 }

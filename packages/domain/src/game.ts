@@ -22,18 +22,34 @@ export const PlayerStateSchema = z.strictObject({
 export const CombatStateSchema = z.discriminatedUnion("stage", [
     z.strictObject({ stage: z.literal("NONE") }),
     z.strictObject({ stage: z.literal("ATTACK_TARGET_SELECTION"), attackerId: CardInstanceIdSchema, attackingPlayerId: PlayerIdSchema, target: z.null() }),
-    z.strictObject({ stage: z.enum(["ATTACK_EFFECTS", "RIVAL_REACT", "COMBAT_RESOLUTION_PENDING", "GIG_STEAL_SELECTION", "DEFEAT_ORDER_SELECTION"]), attackerId: CardInstanceIdSchema, attackingPlayerId: PlayerIdSchema, target: AttackTargetSchema }),
+    z.strictObject({ stage: z.enum(["ATTACK_EFFECTS", "RIVAL_REACT", "COMBAT_RESOLUTION_PENDING", "GIG_STEAL_SELECTION", "DEFEAT_ORDER_SELECTION", "TRIGGER_RESOLUTION"]), attackerId: CardInstanceIdSchema, attackingPlayerId: PlayerIdSchema, target: AttackTargetSchema }),
     // Historical vocabulary only; no executable handler/admission for these later stages.
     z.strictObject({ stage: z.enum(["ATTACK_DECLARED", "TARGET_LOCKED", "COMBAT_RESOLUTION", "GIG_STEAL"]), attackerId: CardInstanceIdSchema, targetId: CardInstanceIdSchema.nullable(), blockerId: CardInstanceIdSchema.nullable() })
 ]);
-export const TurnStepSchema = z.enum(["GIG_STEAL_SELECTION", "DEFEAT_ORDER_SELECTION", "ATTACK_TARGET_SELECTION", "ATTACK_EFFECTS", "RIVAL_REACT", "COMBAT_RESOLUTION_PENDING", "GIG_STEAL_SELECTION", "DEFEAT_ORDER_SELECTION", "AMOUNT_SELECTION", "CARD_EFFECT", "TARGET_SELECTION", "CHOOSE_FIRST_PLAYER", "CUT_DECISION", "MULLIGAN_DECISION", "TURN_START", "READY", "DRAW", "CHOOSE_GIG", "ROLL_GIG", "MAIN", "PAYMENT_SELECTION", "CALL_EFFECT", "TURN_END", "FINISHED"]);
+export const TurnStepSchema = z.enum(["TRIGGER_ORDER_SELECTION", "OPTIONAL_TRIGGER_SELECTION","GIG_STEAL_SELECTION", "DEFEAT_ORDER_SELECTION", "ATTACK_TARGET_SELECTION", "ATTACK_EFFECTS", "RIVAL_REACT", "COMBAT_RESOLUTION_PENDING", "GIG_STEAL_SELECTION", "DEFEAT_ORDER_SELECTION", "AMOUNT_SELECTION", "CARD_EFFECT", "TARGET_SELECTION", "CHOOSE_FIRST_PLAYER", "CUT_DECISION", "MULLIGAN_DECISION", "TURN_START", "READY", "DRAW", "CHOOSE_GIG", "ROLL_GIG", "MAIN", "PAYMENT_SELECTION", "CALL_EFFECT", "TURN_END", "FINISHED"]);
 export const TimingStateSchema = z.strictObject({
     turn: z.number().int().nonnegative(), activePlayer: PlayerIdSchema, actingPlayer: PlayerIdSchema,
     emptyFixerStarts: z.number().int().nonnegative().optional(),
     step: TurnStepSchema.optional(), firstPlayer: PlayerIdSchema.optional(),
-    window: z.enum(["GIG_STEAL_SELECTION", "DEFEAT_ORDER_SELECTION", "SETUP", "MAIN", "CHOOSE_GIG", "PAYMENT_SELECTION", "TARGET_SELECTION", "AMOUNT_SELECTION", "ATTACK_TARGET_SELECTION", "RIVAL_REACT", "COMBAT_RESOLUTION_PENDING", "RESOLVING", "FINISHED"]), combat: CombatStateSchema
+    window: z.enum(["TRIGGER_ORDER_SELECTION", "OPTIONAL_TRIGGER_SELECTION","GIG_STEAL_SELECTION", "DEFEAT_ORDER_SELECTION", "SETUP", "MAIN", "CHOOSE_GIG", "PAYMENT_SELECTION", "TARGET_SELECTION", "AMOUNT_SELECTION", "ATTACK_TARGET_SELECTION", "RIVAL_REACT", "COMBAT_RESOLUTION_PENDING", "RESOLVING", "FINISHED"]), combat: CombatStateSchema
 });
-export const PendingEffectSchema = z.strictObject({ id: z.string().min(1), controllerId: PlayerIdSchema, sourceId: CardInstanceIdSchema.nullable(), effect: EffectSchema, causedBySequence: z.number().int().nonnegative() });
+export const FightResultSchema = z.strictObject({ kind: z.literal("FIGHT_RESULT"), attackerId: CardInstanceIdSchema, defenderId: CardInstanceIdSchema,
+        attackerPower: z.number().int(), defenderPower: z.number().int(), attackerComparisonPower: z.number().int().nonnegative(), defenderComparisonPower: z.number().int().nonnegative(),
+        winnerId: CardInstanceIdSchema.nullable(), loserIds: z.array(CardInstanceIdSchema) });
+export type FightResult = DeepReadonly<z.infer<typeof FightResultSchema>>;
+export const TriggerBindingSchema = z.strictObject({ sourceId: CardInstanceIdSchema, subjectId: CardInstanceIdSchema, controllerId: PlayerIdSchema,
+    source: CardReferenceSchema, abilityId: z.string().min(1), kind: z.enum(["WHEN_FIGHT_WON", "WHEN_DEFEATED", "WHEN_PLAYED", "WHEN_ATTACKING", "WHEN_CARD_PLAYED"]) });
+export type TriggerBinding = DeepReadonly<z.infer<typeof TriggerBindingSchema>>;
+export const TriggerOriginSchema = z.discriminatedUnion("kind", [
+    z.strictObject({ kind: z.enum(["PLAY", "ATTACK"]), subjectId: CardInstanceIdSchema }),
+    z.strictObject({ kind: z.literal("FIGHT"), result: FightResultSchema }),
+    z.strictObject({ kind: z.literal("DEFEAT"), defeated: z.array(z.strictObject({ targetId: CardInstanceIdSchema, defeatedBy: CardInstanceIdSchema })).min(1) })
+]);
+export type TriggerOrigin = DeepReadonly<z.infer<typeof TriggerOriginSchema>>;
+export const TriggerContinuationSchema = z.strictObject({ origin: TriggerOriginSchema, ordinal: z.number().int().positive(), bindings: z.array(TriggerBindingSchema).min(1),
+    resolvedIds: z.array(HashSchema), phase: z.enum(["SELECT", "OPTIONAL", "TARGET", "AMOUNT"]), targetGigId: GigInstanceIdSchema.optional() });
+export const TurnHistorySchema = z.strictObject({ turn: z.number().int().positive(), triggeredBatches: z.number().int().nonnegative(), blueUnitOrGearPlays: z.record(PlayerIdSchema, z.number().int().nonnegative()) });
+export const PendingEffectSchema = z.strictObject({ id: z.string().min(1), controllerId: PlayerIdSchema, sourceId: CardInstanceIdSchema.nullable(), effect: EffectSchema, trigger: TriggerBindingSchema.omit({ sourceId: true, controllerId: true }).extend({ turn: z.number().int().positive(), ordinal: z.number().int().positive() }).optional(), causedBySequence: z.number().int().nonnegative() });
 export const ActionReturnContextSchema = z.discriminatedUnion("kind", [z.strictObject({ kind: z.literal("MAIN") }), z.strictObject({ kind: z.literal("RIVAL_REACT") })]);
 export type ActionReturnContext = z.infer<typeof ActionReturnContextSchema>;
 export const TemporaryPowerModifierSchema = z.strictObject({ kind: z.literal("POWER"), sourceId: CardInstanceIdSchema, targetId: CardInstanceIdSchema, amount: z.literal(-1), expires: z.strictObject({ kind: z.literal("END_OF_TURN"), turn: z.number().int().positive() }) });
@@ -46,9 +62,10 @@ export const DefeatInstructionSchema = z.strictObject({ targetId: CardInstanceId
 export type DefeatInstruction = z.infer<typeof DefeatInstructionSchema>;
 export const ResolutionStateSchema = z.strictObject({
     stage: z.enum(["DECISION", "RESOLVE_EFFECT", "STATE_BASED_CHECKS", "DISCOVER_TRIGGERS", "ORDER_TRIGGERS", "CHOICE", "UNSUPPORTED"]),
+    triggerContinuation: TriggerContinuationSchema.optional(),
     returnTo: ActionReturnContextSchema.optional(),
     gigStealContinuation: z.strictObject({ selected: z.array(GigInstanceIdSchema), remaining: z.number().int().positive() }).optional(),
-    defeatContinuation: z.strictObject({ appliedPrevention: FightPreventionSchema.optional(), defeats: z.array(DefeatInstructionSchema).min(1), orders: z.array(z.strictObject({ targetId: CardInstanceIdSchema, cardIds: z.array(CardInstanceIdSchema) })) }).optional(),
+    defeatContinuation: z.strictObject({ fightResult: FightResultSchema.optional(), appliedPrevention: FightPreventionSchema.optional(), defeats: z.array(DefeatInstructionSchema).min(1), orders: z.array(z.strictObject({ targetId: CardInstanceIdSchema, cardIds: z.array(CardInstanceIdSchema) })) }).optional(),
     playContinuation: z.strictObject({ kind: z.enum(["PLAY", "ACTIVATE"]), actorId: PlayerIdSchema, sourceId: CardInstanceIdSchema, abilityId: z.string().min(1).optional(), phase: z.enum(["PAYMENT", "EFFECT", "EQUIP"]), remainingCost: z.number().int().nonnegative(), selectedSources: z.array(PaymentSourceSchema), effectIndex: z.number().int().nonnegative(), targetGigId: GigInstanceIdSchema.optional() }).optional(),
     searchContinuation: z.strictObject({ looked: z.array(CardInstanceIdSchema), selected: z.array(CardInstanceIdSchema) }).optional(),
     callContinuation: z.strictObject({ actorId: PlayerIdSchema, legendId: CardInstanceIdSchema, remainingCost: z.number().int().nonnegative(), selectedSources: z.array(PaymentSourceSchema) }).optional(),
@@ -69,6 +86,7 @@ export const GameStateSchema = z.strictObject({
         engineVersion: z.string().min(1), engineArtifactHash: HashSchema, cards: z.array(CardReferenceSchema), playerOrder: z.array(PlayerIdSchema).min(1) }),
     timing: TimingStateSchema, players: z.record(PlayerIdSchema, PlayerStateSchema),
     objects: z.strictObject({ cards: z.record(CardInstanceIdSchema, CardInstanceStateSchema), gigs: z.record(GigInstanceIdSchema, GigInstanceStateSchema) }),
+    turnHistory: TurnHistorySchema.optional(),
     fightPreventions: z.array(FightPreventionSchema).optional(),
     temporaryModifiers: z.array(TemporaryPowerModifierSchema).optional(),
     resolution: ResolutionStateSchema, rng: RngStateSchema
@@ -98,14 +116,16 @@ export type GameAction = z.infer<typeof GameActionSchema>;
 export type GameCommand = z.infer<typeof GameCommandSchema>;
 export type LegalAction = z.infer<typeof LegalActionSchema>;
 export const EventPayloadSchema = z.discriminatedUnion("kind", [
+    z.strictObject({ kind: z.literal("TRIGGER_ORDER_SELECTED"), effectId: HashSchema, controllerId: PlayerIdSchema, forced: z.boolean() }),
+    z.strictObject({ kind: z.literal("OPTIONAL_TRIGGER_ACCEPTED"), effectId: HashSchema, controllerId: PlayerIdSchema }),
+    z.strictObject({ kind: z.literal("OPTIONAL_TRIGGER_DECLINED"), effectId: HashSchema, controllerId: PlayerIdSchema }),
+    z.strictObject({ kind: z.literal("QUALIFYING_PLAY_RECORDED"), playerId: PlayerIdSchema, cardInstanceId: CardInstanceIdSchema, ordinal: z.number().int().positive() }),
     z.strictObject({ kind: z.literal("FIGHT_PREVENTION_CREATED"), effect: FightPreventionSchema }),
     z.strictObject({ kind: z.literal("FIGHT_PREVENTION_CONSUMED"), effectId: HashSchema, sourceId: CardInstanceIdSchema, controllerId: PlayerIdSchema, attackerId: CardInstanceIdSchema, defenderId: CardInstanceIdSchema }),
     z.strictObject({ kind: z.literal("FIGHT_DEFEAT_PREVENTED"), effectId: HashSchema, sourceId: CardInstanceIdSchema, cardInstanceId: CardInstanceIdSchema, defeatedBy: CardInstanceIdSchema }),
     z.strictObject({ kind: z.literal("FIGHT_PREVENTION_EXPIRED"), effectId: HashSchema, sourceId: CardInstanceIdSchema, reason: z.literal("TURN_END") }),
     z.strictObject({ kind: z.literal("FIGHT_STARTED"), attackerId: CardInstanceIdSchema, defenderId: CardInstanceIdSchema }),
-    z.strictObject({ kind: z.literal("FIGHT_RESULT"), attackerId: CardInstanceIdSchema, defenderId: CardInstanceIdSchema,
-        attackerPower: z.number().int(), defenderPower: z.number().int(), attackerComparisonPower: z.number().int().nonnegative(), defenderComparisonPower: z.number().int().nonnegative(),
-        winnerId: CardInstanceIdSchema.nullable(), loserIds: z.array(CardInstanceIdSchema) }),
+    FightResultSchema,
     z.strictObject({ kind: z.literal("CARD_DEFEATED"), cardInstanceId: CardInstanceIdSchema, defeatedBy: CardInstanceIdSchema }),
     z.strictObject({ kind: z.literal("DEFEAT_TRASH_ORDER_SELECTED"), targetId: CardInstanceIdSchema, cardInstanceId: CardInstanceIdSchema, ownerId: PlayerIdSchema, forced: z.boolean() }),
     z.strictObject({ kind: z.literal("GIG_STEAL_STARTED"), attackerId: CardInstanceIdSchema, defendingPlayerId: PlayerIdSchema, power: z.number().int(), allowance: z.number().int().nonnegative(), count: z.number().int().nonnegative() }),

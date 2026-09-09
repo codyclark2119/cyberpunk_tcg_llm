@@ -6,7 +6,7 @@ export function createsFightPrevention(card: DeepReadonly<CardRevisionSnapshot> 
 }
 /** Complete scoped shapes; explicit immutable reviewed revisions are still required per real card. */
 export function supportsRestrictedPlay(card: DeepReadonly<CardRevisionSnapshot> | undefined, context: EngineContext) {
-    if (!restrictionsEnabled(context) || !card || !card.provenance.reviewed || card.execution?.scope !== "COMBAT_RESTRICTIONS_V1" || card.execution.status !== "SUPPORTED" || card.printedCost.kind !== "EDDIES" || card.printedCost.amount > 1000 || card.mechanics.equip || card.mechanics.modifiers.length)
+    if (!restrictionsEnabled(context) || !card || card.mechanics.abilities.some(a => a.inherited || a.guard) || !card.provenance.reviewed || card.execution?.scope !== "COMBAT_RESTRICTIONS_V1" || card.execution.status !== "SUPPORTED" || card.printedCost.kind !== "EDDIES" || card.printedCost.amount > 1000 || card.mechanics.equip || card.mechanics.modifiers.length)
         return failure("UNSUPPORTED_RESTRICTION_CARD", "Reviewed scope, numeric cost and full supported shape required");
     const m = card.mechanics, restrictions = m.restrictions ?? [];
     if (card.type === "UNIT" && card.power !== undefined && !m.abilities.length) {

@@ -1,6 +1,9 @@
+import { supportsTriggerCard } from "./trigger-support";
 import { failure, success, type CardRevisionSnapshot, type DeepReadonly } from "@tcg/domain";
 import type { EngineContext } from "./state";
 export function supportsCall(card: DeepReadonly<CardRevisionSnapshot> | undefined, context: EngineContext) {
+    if (card?.type === "LEGEND" && card.execution?.scope === "COMBAT_TRIGGERS_V1") return supportsTriggerCard(card, context);
+    if (card?.mechanics.abilities.some(a => a.inherited || a.guard)) return failure("UNSUPPORTED_TRIGGER_METADATA", "Unsupported granted/guarded CALL shape");
     const reviewed = context.content.ruleset.gameplay?.turnSlice?.callEffects === "REVIEWED_CALL_V1";
     if (!card || card.mechanics.restrictions?.length || card.mechanics.equip || (reviewed && card.execution?.status !== "SUPPORTED") || card.execution?.status === "UNSUPPORTED" || card.mechanics.abilities.length > 1 || card.mechanics.abilities.some(a => a.trigger !== "WHEN_CALLED") || card.mechanics.modifiers.some(m => !reviewed || m.kind !== "POWER_PER_EQUIPPED_GEAR_DURING_OWN_TURN"))
         return failure("UNSUPPORTED_CALL_EFFECT", "Card requires unimplemented automatic or continuous mechanics");

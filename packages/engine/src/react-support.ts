@@ -9,7 +9,7 @@ export function isReactDecision(state: GameState, actor: PlayerId, context: Engi
 }
 /** Full reviewed executable shapes. Keyword presence alone never certifies a card. */
 export function supportsReactPlay(card: DeepReadonly<CardRevisionSnapshot> | undefined, context: EngineContext) {
-    if (!reactEnabled(context) || !card || card.execution?.scope !== "COMBAT_REACT_V1" || card.execution.status !== "SUPPORTED" || card.printedCost.kind !== "EDDIES" || card.mechanics.restrictions?.length || card.mechanics.equip || card.mechanics.modifiers.length)
+    if (!reactEnabled(context) || !card || card.mechanics.abilities.some(a => a.inherited || a.guard) || card.execution?.scope !== "COMBAT_REACT_V1" || card.execution.status !== "SUPPORTED" || card.printedCost.kind !== "EDDIES" || card.mechanics.restrictions?.length || card.mechanics.equip || card.mechanics.modifiers.length)
         return failure("UNSUPPORTED_REACT_CARD", "Reviewed React execution scope, cost and complete mechanics required");
     const m = card.mechanics;
     if (card.type === "UNIT" && card.power === 0 && card.printedCost.amount === 2 && m.keywords.length === 1 && m.keywords[0] === "BLOCKER" && !m.abilities.length) return success(null);

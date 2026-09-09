@@ -1,3 +1,4 @@
+import { triggersEnabled } from "./trigger-support";
 import { supportsPlay } from "./play-support";
 import { beginSetup } from "./setup";
 import { z } from "zod";
@@ -48,6 +49,7 @@ export function createGameWithEvents(input: z.input<typeof CreateGameInputSchema
     s.timing.step = "MAIN";
     for (const p of Object.values(s.players))
         p.economy = { sellsThisTurn: 0, callsThisTurn: 0, usageTurn: 1 };
+    if (triggersEnabled(context)) s.turnHistory = { turn: 1, triggeredBatches: 0, blueUnitOrGearPlays: Object.fromEntries(s.match.playerOrder.map(id => [id, 0])) };
     // Capability admission is deck-wide, never a hidden-Legend-specific label/filter.
     const view = new RulesView(s, context);
     for (const c of Object.values(s.objects.cards)) {
@@ -59,7 +61,7 @@ export function createGameWithEvents(input: z.input<typeof CreateGameInputSchema
             if (!supported.ok)
                 return supported;
         }
-        else if (content.execution?.scope === "NONCOMBAT_PLAY_V1" || content.execution?.scope === "COMBAT_ATTACK_V1" || content.execution?.scope === "COMBAT_REACT_V1" || content.execution?.scope === "COMBAT_RESTRICTIONS_V1") {
+        else if (content.execution?.scope === "NONCOMBAT_PLAY_V1" || content.execution?.scope === "COMBAT_ATTACK_V1" || content.execution?.scope === "COMBAT_REACT_V1" || content.execution?.scope === "COMBAT_RESTRICTIONS_V1" || content.execution?.scope === "COMBAT_TRIGGERS_V1") {
             const supported = supportsPlay(content, context);
             if (!supported.ok) return supported;
         }
@@ -67,6 +69,7 @@ export function createGameWithEvents(input: z.input<typeof CreateGameInputSchema
             return failure("UNSUPPORTED_CARD_EFFECT", "Turn slice requires cards without unsupported automatic effects");
     }
     if (engineSetup) {
+        delete s.turnHistory;
         const mutation = new TurnMutation(s, context);
         const begun = beginSetup(mutation);
         return begun.ok ? mutation.result(false) : begun;

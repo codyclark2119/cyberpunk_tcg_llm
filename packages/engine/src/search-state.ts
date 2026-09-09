@@ -17,7 +17,7 @@ export function searchChoice(state: GameState, context: EngineContext): PendingC
 }
 export function validateSearchState(state: GameState, context: EngineContext) {
     const c = state.resolution.searchContinuation, current = state.resolution.current;
-    if ((state.timing.step === "TARGET_SELECTION" && !state.resolution.playContinuation) !== Boolean(c)) return failure("INVALID_SEARCH_STATE", "Search step and continuation must agree");
+    if ((state.timing.step === "TARGET_SELECTION" && !state.resolution.playContinuation && !state.resolution.triggerContinuation) !== Boolean(c)) return failure("INVALID_SEARCH_STATE", "Search step and continuation must agree");
     if (!c) return success(null);
     if (context.content.ruleset.gameplay?.turnSlice?.callEffects !== "REVIEWED_CALL_V1" || current?.effect.kind !== "SEARCH_GEAR" || !current.sourceId || state.resolution.pending.length || state.resolution.discovered.length || state.resolution.callContinuation)
         return failure("INVALID_SEARCH_STATE", "Search requires a supported single pending CALL effect");

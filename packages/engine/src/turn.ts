@@ -1,3 +1,4 @@
+import { triggersEnabled } from "./trigger-support";
 import { actionReturnContext, finishAction } from "./action-return";
 import { resolveCallPrimitive } from "./effects";
 import { z } from "zod";
@@ -49,6 +50,7 @@ export class TurnMutation {
     startTurn(): Result<null> {
         const s = this.state, actor = s.timing.activePlayer, rules = this.context.content.ruleset.gameplay!, policy = rules.turnSlice!;
         s.timing.actingPlayer = actor;
+        if (triggersEnabled(this.context)) s.turnHistory = { turn: s.timing.turn, triggeredBatches: 0, blueUnitOrGearPlays: Object.fromEntries(s.match.playerOrder.map(id => [id, 0])) };
         s.resolution = { stage: "DECISION", current: null, pending: [], discovered: [], choice: null };
         // Usage belongs to the global turn, including future rival reaction calls.
         for (const p of Object.values(s.players))

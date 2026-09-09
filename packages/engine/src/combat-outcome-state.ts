@@ -1,3 +1,5 @@
+import { validFightFact } from "./trigger-state";
+import { triggersEnabled } from "./trigger-support";
 import { preventFightDefeats } from "./fight-prevention";
 import { canonicalSerialize, failure, success, type GameState } from "@tcg/domain";
 import type { EngineContext } from "./state";
@@ -5,7 +7,7 @@ import { combatResolutionEnabled, getGigStealAllowance } from "./combat-resoluti
 import { effectivePower } from "./characteristics";
 import { attackSourceValid, listAttackTargets } from "./combat-queries";
 import { defeatBatch, defeatSupport } from "./defeat";
-import { defeatOrderChoice, evaluateFight, gigStealChoice, listStealableGigs, unfinishedDefeatOrder } from "./combat-outcome-queries";
+import { defeatOrderChoice, defeatsFromFightResult, evaluateFight, gigStealChoice, listStealableGigs, unfinishedDefeatOrder } from "./combat-outcome-queries";
 
 export function validateCombatOutcome(state: GameState, context: EngineContext) {
     const c = state.timing.combat, r = state.resolution;
@@ -30,7 +32,8 @@ export function validateCombatOutcome(state: GameState, context: EngineContext) 
             if (!support.ok) return support;
             if (effectivePower(state, id, context) === null) return failure("INVALID_FIGHT_POWER", "Numeric power required");
         }
-        const raw = evaluateFight(state, context).defeats, expected = preventFightDefeats(state, raw, continuation.appliedPrevention);
+        if (continuation.fightResult && (!triggersEnabled(context) || !validFightFact(state, continuation.fightResult))) return failure("INVALID_FIGHT_FACT", "Historical fight result must be coherent and in the reviewed scope");
+        const raw = continuation.fightResult ? defeatsFromFightResult(state, context, continuation.fightResult) : evaluateFight(state, context).defeats, expected = preventFightDefeats(state, raw, continuation.appliedPrevention);
         if (continuation.appliedPrevention && canonicalSerialize(raw) === canonicalSerialize(expected)) return failure("INVALID_APPLIED_PREVENTION", "Consumed proof is retained only for an actually prevented defeat during owner ordering");
         if (canonicalSerialize(continuation.defeats) !== canonicalSerialize(expected) || canonicalSerialize(continuation.orders.map(o => o.targetId)) !== canonicalSerialize(expected.map(d => d.targetId))) return failure("INVALID_DEFEAT_CONTINUATION", "Defeats and orders must match the current authoritative fight result");
         let unfinished = false;

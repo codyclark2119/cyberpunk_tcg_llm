@@ -7,6 +7,15 @@ export function testCondition(state: GameState, actor: PlayerId, condition: Cond
     const gigs = Object.values(state.objects.gigs).filter(g => g.controllerId === actor && g.location.zone === "GIGS" && g.roll.kind === "ROLLED");
     const values = gigs.flatMap(g => g.roll.kind === "ROLLED" ? [g.roll.currentValue] : []);
     switch (condition.kind) {
+        case "STREET_CRED_DIFFERENCE_AT_LEAST": {
+            if (!values.length) return false; // Null cannot participate in numeric subtraction (2.10.2).
+            const own = values.reduce((a, b) => a + b, 0);
+            return state.match.playerOrder.some(id => {
+                if (id === actor) return false;
+                const rival = Object.values(state.objects.gigs).filter(g => g.controllerId === id && g.location.zone === "GIGS" && g.roll.kind === "ROLLED");
+                return rival.length > 0 && Math.abs(own - rival.reduce((n, g) => n + (g.roll.kind === "ROLLED" ? g.roll.currentValue : 0), 0)) >= condition.minimum;
+            });
+        }
         case "STREET_CRED_LESS_THAN_RIVAL": {
             // 5.11.4: Null is below numeric values; two Null areas are not less than each other.
             const own = values.length ? values.reduce((a, b) => a + b, 0) : null;

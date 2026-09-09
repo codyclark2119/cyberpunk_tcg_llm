@@ -239,3 +239,61 @@ Psycho Squad's explicit `[Flavour]` and Emergency Atlus's quoted narrative conta
 Pinned raw errata SHA-256: `1203a6c268c94d9d670a9cc145f739957fd018fa23eab86628bac94984ce1d75`; processed errata SHA-256: `16304146074363480e2c22639c9799b9d4302118c669e85e9f475b4a1bf6a340`. All four local records were reviewed; none matches these five cards. The source fixture stores full raw record objects and original byte hashes. Content manifests pin normalized revision hashes. Runtime reads typed mechanics only.
 
 [combat-restrictions-rules.v1.json](../tests/fixtures/combat-restrictions-rules.v1.json) pins 140 exact rules and interpretation decisions. [combat-restrictions.test.ts](../tests/combat-restrictions.test.ts) covers complete-shape rejection, lifetime, combat, visibility and ordering. Three new legal replay families plus an expiration branch pass through PostgreSQL; Python traverses all 12 goldens by actionId without rules duplication. The [demo roadmap](demo-deck-coverage-roadmap.md) is 11/29 distinct cards, still insufficient for either exact starter. See [combat-restrictions-report.md](combat-restrictions-report.md) for runtime pins, commands and limits.
+
+
+## COMBAT_TRIGGERS_V1: complete characteristic and trigger composition
+
+This milestone adds exactly three immutable revision-1 cards under `COMBAT_TRIGGERS_V1 / SUPPORTED`, enabled only by `turnSlice.combatTriggers: "COMBAT_TRIGGERS_V1"` with the preceding combat policies. Earlier sections retain their historical boundaries. Existing revisions are unchanged. Complete raw records and all fourteen printing objects are pinned in [combat-triggers-card-sources.v1.json](../tests/fixtures/combat-triggers-card-sources.v1.json); [combat-triggers-fixture.ts](../tests/combat-triggers-fixture.ts) performs handwritten normalization. Runtime has no card-name dispatch or English interpretation.
+
+| CardId / revision 1 | Printed characteristics | Characteristic modifiers / restrictions | Entire executable effect shape |
+|---|---|---|---|
+| `satori-sword-of-saburo` | Red RAM 1; Gear, Arasaka/Weapon; cost 2; power 2; sellable | `GRANT_PRINTED_POWER_TO_HOST`, ordinary friendly Unit/face-up Legend equip. Exactly +2 from printed Gear power, with no separate bonus line. | Inherited `WHEN_FIGHT_WON` on equipped Unit → `DRAW 1`. Gear is physical source, host is subject, host controller is captured. |
+| `dexter-deshawn-one-last-chance` | Yellow RAM 2; Unit/Fixer; cost 3; power 4; not sellable | No static modifier, keyword or restriction. | `WHEN_PLAYED` and `WHEN_ATTACKING`: adjust any rolled Gig by up to 1. `WHEN_DEFEATED`: current numeric absolute Street Cred difference of at least 10 from a rival → draw 2. |
+| `jackie-welles-pour-one-out-for-me` | Blue RAM 2; Legend/Merc; dash field cost; Null power; sellable | No static modifier, keyword or restriction. Legends-area execution only. | First completed Blue Unit/Gear play each global turn → explicit optional friendly Gig decrease by 0–2; draw 1 only when an actual decrease makes it minimum. No DEFEATED line. |
+
+**Satori: Sword of Saburo — complete captured text:**
+
+> (Equip to a friendly Unit or face-up Legend.)
+> When this Unit wins a fight against a rival Unit, draw 1.
+
+**Dexter DeShawn: One Last Chance — complete captured text:**
+
+> {Play} {Attack} Adjust a Gig by up to 1.
+> {Defeated} If your ☆ (Street Cred) differs from a Rival's by 10+, draw 2.
+
+**Jackie Welles: Pour One Out For Me — complete captured text:**
+
+> The first time you play a Blue Unit or Blue Gear each turn, you may decrease a friendly Gig by up to 2. If it becomes a min Gig, draw 1.
+
+The Satori bonus is counted once per physical Gear through the same derivation as Mantis, Royce and Floor It. Two Satori grant +4 and independently create two draw triggers; power adjustments never enter the pending queue. Dropping either power inheritance or the draw line fails full-shape admission. Older scopes reject new metadata they do not understand.
+
+Rule 9.18 places fight-result effects before defeat. Rule 11.19.2 places DEFEATED pending effects after declaration and movement. The small scheduler uses controller-selected next effects (10.12), turn-player-first cross-player groups (10.13), immutable source/revision/subject/controller snapshots and historical fight-result facts (10.10.1/10.15). No recursive trigger DSL or LIFO stack is introduced. Selected primitives cannot create nested supported triggers; those cases explicitly remain outside this scope.
+
+Jackie's historical first-play counter is separate from CALL usage and resets for both players at each global turn start. It counts plays before reveal and after declining. Programs, CALL, SELL and incomplete/failed plays do not qualify. Rule 6.4.5 means zero decrease or an already-minimum Gig does not earn a draw. Dexter's numeric difference does not treat Null as zero.
+
+| CardId | Raw-byte SHA-256 | Canonical sourceHash | Normalized revision hash |
+|---|---|---|---|
+| `satori-sword-of-saburo` | `de1018613a3e9bc3255614635d07efe0342c0513dca73b317b009d543856bec0` | `84009143dfce688adb70f003db7fd3605d0f9e246eeff4ec287ccf0b84b8bb1c` | `121dfed616aa22d1ceb01a2196a45bbca1f5ae7c6f0dee449f1060e7b084310a` |
+| `dexter-deshawn-one-last-chance` | `c3ece59708f92495fbc3508fbcb8a3ef00603ac558e3fdf15e201ccff8b9c7f0` | `420729845ee84c1c1b9a7a3014082e1421691640c7165a25035dd0d1a97a586d` | `20cfcd10698a2d6c04d13e16a7d92a5f43b27570f9aae2bf479ee24322a4dd10` |
+| `jackie-welles-pour-one-out-for-me` | `c92a779b5b4ac21bac4f243e357121e2d90e9fe6f8beaca6562de8c247c66dd8` | `f920079646c57179f1a173313611c5e3957c5b4d76a4c1134196892696833d69` | `32ce0a027f7319aa347c0b0d9832478814033e2843957aa2879b55a9d90be16c` |
+
+| CardId | Printing UUID | Set | Collector number |
+|---|---|---|---|
+| `satori-sword-of-saburo` | `11a8fed4-5401-4cfc-901b-ab9b5b94d0ab` | `welcometonightcityretail` | 026 |
+| `satori-sword-of-saburo` | `b12e1665-bf29-4b2c-b92d-865cff227a67` | `welcometonightcitybeta` | β026 |
+| `satori-sword-of-saburo` | `0e0e7e20-eaf3-4dea-a177-cb54e01ffec6` | `embracingpowerretailstarterdeck` | 008 |
+| `satori-sword-of-saburo` | `e9dba54d-79bf-4f33-bd67-ba026e371c03` | `embracingpowerbetastarterdeck` | β008 |
+| `satori-sword-of-saburo` | `3b656cec-684d-440b-9c76-0aa9a4a98b81` | `arasakademodeck` | 005 |
+| `dexter-deshawn-one-last-chance` | `e2f38541-ecc9-41dc-ae15-164171391bff` | `theheistretailstarterdeck` | 002 |
+| `dexter-deshawn-one-last-chance` | `f9c512f2-a41f-4114-9500-cee3f8d8cc35` | `theheistbetastarterdeck` | β002 |
+| `dexter-deshawn-one-last-chance` | `daabe14b-dc95-413f-b91a-d3e32937bfd2` | `mercdemodeck` | 002 |
+| `jackie-welles-pour-one-out-for-me` | `a33d3324-fe48-4a9f-80a8-8545a0a4727f` | `theheistretailstarterdeck` | 011 |
+| `jackie-welles-pour-one-out-for-me` | `a0ef9536-ad3b-47f6-8c2a-171aa3b8b181` | `theheistbetastarterdeck` | β011 |
+| `jackie-welles-pour-one-out-for-me` | `762951bd-7bcf-42cd-a44e-b5b127cf00d2` | `mercdemodeck` | 007 |
+| `jackie-welles-pour-one-out-for-me` | `e4e17d32-3ec4-4c74-927c-fd0911b86e72` | `boxtoppersretail` | 005 |
+| `jackie-welles-pour-one-out-for-me` | `328cd3e4-4177-4d6a-86c0-00d1a5a12b38` | `boxtoppersbeta` | β005 |
+| `jackie-welles-pour-one-out-for-me` | `3f37a0e1-e31f-4c6b-b97e-bec9f929432c` | `edgerunneropens1` | 050 |
+
+The local raw rules hash is `054d2d2a4664e5b560304e0962e71b195467ad097cc4c62b2698fc57467a28dd`; processed rules `1f299c9cbe2657c9d088ae4b3a812b85e46c3fd2659579229635959c59a20e19`. Raw errata `1203a6c268c94d9d670a9cc145f739957fd018fa23eab86628bac94984ce1d75`; processed errata `16304146074363480e2c22639c9799b9d4302118c669e85e9f475b4a1bf6a340`. All four captured errata records were reviewed; none matches these three cards. [combat-triggers-rules.v1.json](../tests/fixtures/combat-triggers-rules.v1.json) stores 327 exact rule records and the bounded interpretation decisions.
+
+The [new focused suite](../tests/combat-triggers.test.ts) and three legal replay families prove full-card admission, source identity, shared power, trigger ordering, current conditions, history, hidden-information boundaries, wire traversal and complete event preservation. Coverage is now 14/29 distinct demo cards, 30/60 physical copies. Neither exact 27-main + 3-Legend starter is playable under constructed 40–50; no DEMO_STARTER is introduced. See [combat-triggers-report.md](combat-triggers-report.md).

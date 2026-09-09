@@ -1,3 +1,4 @@
+import { validateTriggerState } from "./trigger-state";
 import { validateFightPreventions } from "./fight-prevention";
 import { validateActionReturn } from "./action-return";
 import { validateTemporaryPower } from "./temporary-power";
@@ -107,6 +108,8 @@ export function validateState(input: unknown, context: EngineContext): Result<Ga
         return failure("UNSTABLE_DECISION", "Decision state cannot contain unresolved work");
     if ("targetId" in s.timing.combat && [s.timing.combat.attackerId, s.timing.combat.targetId, s.timing.combat.blockerId].some(id => id !== null && !Object.hasOwn(s.objects.cards, id)))
         return failure("INVALID_COMBAT_REFERENCE", "Combat objects must resolve");
+    const triggers = validateTriggerState(s, context);
+    if (!triggers.ok) return triggers;
     const returning = validateActionReturn(s, context);
     if (!returning.ok) return returning;
     const temporary = validateTemporaryPower(s, context);
@@ -122,11 +125,11 @@ export function validateState(input: unknown, context: EngineContext): Result<Ga
     }
     if (slice && !s.setup) {
         const step = s.timing.step;
-        if (ids.length !== 2 || !s.timing.firstPlayer || !ids.includes(s.timing.firstPlayer) || !step || (!["RIVAL_REACT", "COMBAT_RESOLUTION_PENDING", "DEFEAT_ORDER_SELECTION"].includes(s.timing.combat.stage) && s.timing.actingPlayer !== s.timing.activePlayer))
+        if (ids.length !== 2 || !s.timing.firstPlayer || !ids.includes(s.timing.firstPlayer) || !step || (!["RIVAL_REACT", "COMBAT_RESOLUTION_PENDING", "DEFEAT_ORDER_SELECTION", "TRIGGER_RESOLUTION"].includes(s.timing.combat.stage) && s.timing.actingPlayer !== s.timing.activePlayer))
             return failure("INVALID_TURN_STATE", "Turn slice requires two players, first player and an active decision actor");
         if (s.timing.turn < 1 || s.timing.activePlayer !== ids[(s.players[s.timing.firstPlayer].seat + s.timing.turn - 1) % ids.length])
             return failure("INVALID_TURN_ORDER", "Active player must follow first-player and turn order");
-        const boundary = ["MAIN", "CHOOSE_GIG", "PAYMENT_SELECTION", "TARGET_SELECTION", "AMOUNT_SELECTION", "ATTACK_TARGET_SELECTION", "RIVAL_REACT", "COMBAT_RESOLUTION_PENDING", "GIG_STEAL_SELECTION", "DEFEAT_ORDER_SELECTION", "FINISHED"].includes(step);
+        const boundary = ["TRIGGER_ORDER_SELECTION", "OPTIONAL_TRIGGER_SELECTION", "MAIN", "CHOOSE_GIG", "PAYMENT_SELECTION", "TARGET_SELECTION", "AMOUNT_SELECTION", "ATTACK_TARGET_SELECTION", "RIVAL_REACT", "COMBAT_RESOLUTION_PENDING", "GIG_STEAL_SELECTION", "DEFEAT_ORDER_SELECTION", "FINISHED"].includes(step);
         if ((boundary && s.timing.window !== step) || (!boundary && s.timing.window !== "RESOLVING"))
             return failure("INVALID_TURN_TIMING", "Step and window disagree");
         if (Object.values(s.players).some(p => p.economy.usageTurn !== s.timing.turn || p.economy.callsThisTurn === undefined || p.economy.callsThisTurn > slice.callLimitPerTurn || p.economy.sellsThisTurn > b.ruleset.gameplay!.sellLimitPerTurn))
