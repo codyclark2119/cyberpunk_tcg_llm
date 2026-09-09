@@ -7,6 +7,8 @@ export function testCondition(state: GameState, actor: PlayerId, condition: Cond
     const gigs = Object.values(state.objects.gigs).filter(g => g.controllerId === actor && g.location.zone === "GIGS" && g.roll.kind === "ROLLED");
     const values = gigs.flatMap(g => g.roll.kind === "ROLLED" ? [g.roll.currentValue] : []);
     switch (condition.kind) {
+        // 5.11.4/5.11.4.2: an empty area is Null, ordered below 0 (and hence below this nonnegative threshold).
+        case "STREET_CRED_LESS_THAN_VALUE": return !values.length || values.reduce((a, b) => a + b, 0) < condition.value;
         case "SUBJECT_IS_UNIT_NAMED": {
             const c = sourceId && state.objects.cards[sourceId], r = c && context?.content.cards.find(r => r.id === c.cardId && r.revision === c.revision);
             return Boolean(r && context && c && (effectiveCardTypes(state, c.id, context).includes("UNIT") || c.zone.zone === "REMOVED" && lastValidTypes?.includes("UNIT")) && r.deckbuildingIdentity === condition.identity);

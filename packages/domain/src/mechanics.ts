@@ -5,7 +5,7 @@ export const GameAreaSchema = z.enum(["DECK", "HAND", "BATTLEFIELD", "TRASH", "E
 export const ZoneSchema = z.enum([...GameAreaSchema.options, "RESOLVING_PROGRAM"]);
 export const ZoneRefSchema = z.strictObject({ playerId: PlayerIdSchema, zone: ZoneSchema });
 export const KeywordSchema = z.enum(["GO_SOLO", "QUICK", "BLOCKER", "ADRENALINE"]);
-export const TriggerSchema = z.enum(["WHEN_SOLD", "WHEN_CALLED", "WHEN_PLAYED", "WHEN_ATTACKING", "WHEN_DEFEATED", "WHEN_FIGHT_WON", "WHEN_CARD_PLAYED", "WHEN_OWN_TURN_ENDS"]);
+export const TriggerSchema = z.enum(["WHEN_SOLD", "WHEN_CALLED", "WHEN_PLAYED", "WHEN_ATTACKING", "WHEN_DEFEATED", "WHEN_FIGHT_WON", "WHEN_CARD_PLAYED", "WHEN_OWN_TURN_ENDS", "WHEN_UNIT_ATTACKS"]);
 export const EquipTargetSchema = z.strictObject({ kind: z.literal("FRIENDLY_UNIT_OR_FACE_UP_LEGEND") });
 export const TargetSelectorSchema = z.discriminatedUnion("kind", [
     EquipTargetSchema,
@@ -15,6 +15,7 @@ export const TargetSelectorSchema = z.discriminatedUnion("kind", [
 ]);
 export const NamedUnitConditionSchema = z.strictObject({ kind: z.literal("SUBJECT_IS_UNIT_NAMED"), identity: z.literal("V") });
 export const ConditionSchema = z.discriminatedUnion("kind", [
+    z.strictObject({ kind: z.literal("STREET_CRED_LESS_THAN_VALUE"), value: z.number().int().nonnegative() }),
     NamedUnitConditionSchema,
     z.strictObject({ kind: z.literal("SUBJECT_STOLE_GIG_THIS_TURN") }),
     z.strictObject({ kind: z.literal("STREET_CRED_DIFFERENCE_AT_LEAST"), minimum: z.literal(10) }),
@@ -98,10 +99,11 @@ export const ActivationCostSchema = z.discriminatedUnion("kind", [
 ]);
 export const AbilitySchema = z.strictObject({ id: z.string().min(1), trigger: TriggerSchema.optional(),
     inherited: z.literal("EQUIPPED_HOST").optional(),
-    guard: z.literal("FIRST_BLUE_UNIT_OR_GEAR_PLAY_PER_TURN").optional(),
+    guard: z.enum(["FIRST_BLUE_UNIT_OR_GEAR_PLAY_PER_TURN", "FIRST_FRIENDLY_ARASAKA_UNIT_ATTACK_PER_TURN"]).optional(),
     activation: z.strictObject({ timing: z.literal("MAIN"), conditionTiming: z.literal("ACTIVATION_AND_RESOLUTION"), costs: z.array(ActivationCostSchema) }).optional(),
     conditions: z.array(ConditionSchema), cost: CostSchema, effects: z.array(EffectSchema) });
 export const ContinuousModifierSchema = z.discriminatedUnion("kind", [
+    z.strictObject({ kind: z.literal("FRIENDLY_ARASAKA_ATTACKING_UNIT_POWER"), amount: z.literal(1) }),
     z.strictObject({ kind: z.literal("GRANT_KEYWORD_TO_HOST"), keyword: z.literal("BLOCKER") }),
     z.strictObject({ kind: z.literal("GRANT_PRINTED_POWER_TO_HOST") }),
     z.strictObject({ kind: z.literal("POWER_PER_EQUIPPED_GEAR_DURING_OWN_TURN"), amount: z.number().int() }),

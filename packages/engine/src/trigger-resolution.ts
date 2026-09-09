@@ -6,7 +6,7 @@ import { finishEndTurn } from "./end-turn";
 import { readyableEddieSlots, readyEddie } from "./eddie-ready";
 import { discardCard, getDiscardableCards } from "./discard";
 import { testCondition } from "./conditions";
-import { supportsOrderedAttackCard } from "./ordered-effects-support";
+import { supportsOrderedTriggerSource } from "./ordered-effects-support";
 import { grantLegendKnowledge, privateLookTargets } from "./private-knowledge";
 import { PendingEffectSchema, TriggerBindingSchema, TriggerOriginSchema, failure, success, type CardInstanceId, type Result, type TriggerBinding, type TriggerOrigin } from "@tcg/domain";
 import type { TurnMutation } from "./turn";
@@ -122,7 +122,7 @@ export function advanceTriggers(m: TurnMutation): Result<null> {
     if (!result.ok) return result;
     // Empty draw ends the game and clears the continuation; still preserve the resolved fact.
     if (m.state.match.outcome) { m.emit({ kind: "EFFECT_RESOLVED", effectId: current.id }); return success(null); }
-    if (!current.primitiveIndex && supportsOrderedAttackCard(cardRevision(m.state, current.sourceId!, m.context), m.context).ok) {
+    if (!current.primitiveIndex && supportsOrderedTriggerSource(cardRevision(m.state, current.sourceId!, m.context), m.context)) {
         const binding = c.bindings.find(b => b.sourceId === current.sourceId && b.abilityId === current.trigger?.abilityId)!;
         r.current = PendingEffectSchema.parse(pendingTrigger(m.state, binding, c.ordinal, current.causedBySequence, m.context, 1));
         return advanceTriggers(m);

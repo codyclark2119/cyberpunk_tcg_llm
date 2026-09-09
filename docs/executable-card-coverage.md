@@ -4,7 +4,7 @@ This is an implementation review of a small local capture, **not human-certified
 
 `execution: { scope: "NONCOMBAT_SLICE_V1", status: "SUPPORTED" | "UNSUPPORTED" }` is distinct from catalog `status`, source `legality`, and the existence of display text. `REVIEWED_CALL_V1` admission requires an explicit supported execution decision for **every deck card**, then checks the actual normalized abilities and modifiers against implemented handlers. Unsupported triggers, multiple CALL abilities, costs, conditions, and primitives still fail admission. Existing synthetic legacy policies remain for regression compatibility. No runtime English parsing occurs.
 
-The sections record successive bounded scopes. Later sections supersede earlier implementation limits, while older pinned policies retain their regression boundaries. The latest addition is **FIELD_LEGENDS_V1** below (20/29 demo cards, 44/60 copies); no scope certifies a complete starter match.
+The sections record successive bounded scopes. Later sections supersede earlier implementation limits, while older pinned policies retain their regression boundaries. The latest addition is **FIELD_LEGENDS_V1** below with Goro — Hands Unclean (21/29 demo cards, 45/60 copies); no scope certifies a complete starter match.
 
 ## Captured records and implementation decisions
 
@@ -514,7 +514,7 @@ New immutable application revision v-corporate-exile / 1 is fully admitted under
 
 > {Go Solo} (Pay this Legend's cost to play it as a ready Unit. It can attack this turn. When it leaves the field, remove it from the game.)
 
-Printed LEGEND, Blue RAM2, cost5, power8, sellable, classifications Corpo/Merc. Raw keywords are empty; opening markup normalizes to GO_SOLO. No other abilities, conditions, costs, modifiers or triggers occur in the captured card. All four local errata were reviewed; none applies to V. No partial shape or other Go Solo Legend is admitted.
+Printed LEGEND, Blue RAM2, cost5, power8, sellable, classifications Corpo/Merc. Raw keywords are empty; opening markup normalizes to GO_SOLO. No other abilities, conditions, costs, modifiers or triggers occur in the captured card. All four local errata were reviewed; none applies to V. That first admission covered only V; the Goro extension below adds a second complete shape.
 
 | Printing UUID | Set | Number |
 |---|---|---|
@@ -536,3 +536,106 @@ Defeat uses shared fight/owner-ordered Trash movement: host and Gear reach Trash
 The canonical real V-positive [field-Legend replay](../tests/fixtures/field-legends-replay.v1.json) has **38 actions, 37 strategic positions, 159 events**: setup, blind CALL slot1, pre-equip Dying, Go Solo, same-turn ATTACK, decrease2/registration, React/steal, real V-positive ready2, next turn. No state/RNG patches. [47 focused tests](../tests/field-legends.test.ts) cover ordinary play, readiness, self-payment, multiple Gears, Blocker, Satori, Kiroshi, defeat, malformed states, privacy, hashes, wire and training. Original Dying/Delamain negative and synthetic isolated Name regressions remain.
 
 Merc individual execution coverage is **15/15 distinct, 30/30 copies**; Arasaka remains **5/14, 14/30**. Exact teaching-list initialization remains unavailable pending format review. Faceplate/WHEN_SPENT, other Legend shapes, control changes and return-to-LEGENDS effects remain outside this scope. See [field-legends-report.md](field-legends-report.md).
+
+## FIELD_LEGENDS_V1 — Goro Takemura — Hands Unclean
+
+Immutable application CardId **goro-takemura-hands-unclean**, revision **1**, execution **SUPPORTED / FIELD_LEGENDS_V1**. Complete captured text:
+
+> {Go Solo} (Pay this Legend's cost to play it as a ready Unit. It can attack this turn. If it leaves the field, remove it from the game.)
+> {Blocker} (You may spend this Unit to redirect a rival Unit's attack to it instead.)
+
+Printed Legend, Green RAM 2, €5, power 7, sellable, classifications Arasaka/Corpo. API keywords is empty; the two printed markup clauses explicitly normalize to GO_SOLO and BLOCKER. There are no additional triggers, conditions, modifiers, restrictions or activated abilities. All four captured errata were reviewed; none applies. The exact raw record, all six printings and errata are retained in [goro-card-source.v1.json](../tests/fixtures/goro-card-source.v1.json); [goro-fixture.ts](../tests/goro-fixture.ts) contains the complete explicit normalization.
+
+| Printing UUID | Set | Number |
+|---|---|---|
+| 2ba68619-7050-44c5-b0ce-b32d48b8f40f | embracingpowerretailstarterdeck | 012 |
+| 25b09451-8cc8-4581-898d-3b5ee6ff6b14 | embracingpowerbetastarterdeck | β012 |
+| fd889659-8291-41fd-9197-9cdf7cbf6810 | arasakademodeck | 008 |
+| 1b6e44dd-d6e7-46eb-a5e5-24c38eed888b | boxtoppersretail | 003 |
+| 15430373-fafd-479c-84d4-5737c71d0850 | boxtoppersbeta | β003 |
+| 8bdba66b-a20e-49f3-8e85-2e3d7e0c6a37 | edgerunneropens1 | 041 |
+
+Arasaka Demo printing: **fd889659-8291-41fd-9197-9cdf7cbf6810 / 008**. Raw-byte SHA-256: a70354773e9362bc2f5b919d9be28ba1c8d4d33326573067413586fd3e0fb4f2. Canonical raw-record hash: ea8be33a89100f6a55d104961b0f0a60878c1c9c2690118d7fe4bc1ad2bfd525. Normalized immutable revision hash: ffe03cff4ba12a5f241d5d92d71e8da39e006bc5d866fd1a1ece2c2d284f8703.
+
+[goro-rules.v1.json](../tests/fixtures/goro-rules.v1.json) preserves the 216 exact field-Legend rule nodes and 16 prior focused FAQ findings, plus Hands Unclean's own FAQ 9ad7e1cf-9965-4ba0-8503-ac17c897ffbd: Blocker cannot be used in LEGENDS. It pins raw/processed rules and errata hashes and the narrow live FAQ review. Current official gameplay fields and printing identities match the local Goro capture; all 270 FAQ questions/answers/publication dates match the previous review. Signed image URLs change response-byte hashes without changing semantics. No corpus refresh.
+
+Only the complete-shape admission predicate changes in the engine. Both variants share payment, CALL, ordinary play, Go Solo, movement, effective types, Gear inheritance, attack, Blocker, fight, defeat, observation and delayed-effects infrastructure. No card ID/name branch, Goro action or second field-Legend policy is added. Green RAM 2 is evaluated by ordinary constructed validation; Green entry does not consume Jackie's first-Blue history.
+
+Same CardInstanceId/owner/controller/revision/face/attachments move atomically from LEGENDS to FIELD. Mantis gives **7+2=9** in both areas; Satori gives 9 and inherits fight-win draw; Kiroshi gives 8 and private ATTACK look; Mandibular adds a second physical Blocker source while there remains one semantic declaration; Dying gives 9, registers normally, and later evaluates false for Goro's Name, including after defeat. Multiple Gear do not double-count power or detach/re-equip. General Legends-area Gear hosting remains intact for future Faceplate work.
+
+Printed Blocker exists in LEGENDS but cannot be declared there. On FIELD, ready Goro uses the existing React spend/redirect/fight pipeline. Lag does not independently prevent Blocker; own-turn Go Solo/ordinary play's Lag clears at end turn before the later legal rival attack. Go Solo grants its same-turn attack exception; ordinary entry preserves post-payment orientation and cannot attack while Lagging. Field Goro cannot CALL or pay as a Legends-area source. Defeat offers the owner's Gear/host Trash order, then removes the Legend and leaves detached Gear in Trash.
+
+[45 focused tests](../tests/goro.test.ts) cover full admission, payment/self-payment, ordinary entry, pre-equipped Gear, all inherited compositions, duplicate Blocker sources, attack restrictions, Green history/RAM, eligibility, visibility, transport-normalized hashes, wire action IDs, constructed invariants and retained V behavior. The [legal Goro replay](../tests/fixtures/goro-replay.v1.json) has **58 actions, 56 strategic positions, 229 events**, finishing turn 8 MAIN after printed-Blocker defeat. It uses constructed 42-main/3-Legend synthetic support decks and no state/RNG patches.
+
+Engine **0.4.0-field-legends-2**. All 21 original families/665 original decisions preserve their semantic payloads under new pins. Mongo tests publish/read the immutable revision; PostgreSQL reloads every legal trace state and event batch, including payment and owner-order pauses; Python adds only the new generic replay family. Wire v1 schemas and TrainingAttempt remain unchanged.
+
+Demo coverage is now **21/29 distinct and 45/60 copies**: Merc stays 15/15, 30/30; Arasaka reaches 6/14, 15/30. Remaining Arasaka cards, Faceplate/WHEN_SPENT, unreviewed Legend shapes, arbitrary control changes and return-to-LEGENDS effects remain unsupported. Exact 27+3 teaching decks still cannot initialize under constructed. See [goro-field-legends-report.md](goro-field-legends-report.md).
+
+## FIRST_ATTACK_HISTORY_V1 — Yorinobu Arasaka — Embracing Destruction
+
+Immutable application CardId **yorinobu-arasaka-embracing-destruction**, revision **1**, execution **SUPPORTED / FIRST_ATTACK_HISTORY_V1**. Complete captured text:
+
+> The first time a friendly ARASAKA Unit attacks each turn, draw 1. Then, if you have less than 20 ☆ (Street Cred), discard 1.
+
+Legend, Red RAM2, sellable, Arasaka/Corpo, Null printed cost/power, no Go Solo, no markup keywords, no flavor text and no additional rules text. ADIA illustrates the three Epic starter/demo printings; Vincenzo Riccardi illustrates the three Nova Rare variants. Full normalization is in [yorinobu-fixture.ts](../tests/yorinobu-fixture.ts). All six printings and all four local errata are pinned in [yorinobu-card-source.v1.json](../tests/fixtures/yorinobu-card-source.v1.json); no erratum applies.
+
+| Printing UUID | Set | Number |
+|---|---|---|
+| f70b75b5-aa2f-4c2d-b8c3-01fcb2a670ec | embracingpowerretailstarterdeck | 001 |
+| 362bef23-c935-4729-a13b-dc3bc646d9b3 | embracingpowerbetastarterdeck | β001 |
+| aaad5db8-fcd4-42f0-8ced-e7527dbccf79 | arasakademodeck | 001 |
+| dc7bb3cf-1005-4584-ad7a-447f0ccf07bf | boxtoppersretail | 001 |
+| 12337d92-713c-4c7c-8a16-595a7b4717f1 | boxtoppersbeta | β001 |
+| ba15a39b-fc76-474b-a2f0-76e5069a69e4 | edgerunneropens1 | 034 |
+
+Arasaka Demo printing: **aaad5db8-fcd4-42f0-8ced-e7527dbccf79 / 001**. Raw-byte SHA-256: **9a01723fde94d8feca1582272de879bba21feec88faa012856a448226061c51d**. Canonical captured-record hash: **5d94f9d0d3d9851efcb49f81878af2a3b47faf71aeea47c95336570ab4bcdbba**. Normalized immutable revision hash: **63333c2d8392b6368390474593bb897066a792276b7af8b54d6d08635f120f3d**. The focused live card check matches gameplay fields and all printing identities; signed images/selected printing are transport metadata. No AI corpus refresh.
+
+[yorinobu-rules.v1.json](../tests/fixtures/yorinobu-rules.v1.json) pins **252** exact local rule nodes, source hashes and the two focused official FAQ records. FAQ **61ad63b3-47d9-48ee-a3f6-4c2842b11c66** explicitly forbids triggering after an earlier qualifying attack before reveal. Saburo FAQ **18318e94-6979-4623-9cf5-fee73924d728** is retained only for next-milestone review. The raw/processed rules and errata hashes are unchanged.
+
+Qualification is per controller, per global turn: an actual face-up FIELD effective Unit with exact immutable **Arasaka** tag. A field Goro is LEGEND + UNIT and qualifies. Deck affiliation, display name, slug, case-folding and attached Gear never supply classification. No currently admitted printed demo Unit supplies Arasaka; the narrow printed-Unit test uses a distinct synthetic revision. Source-independent history records at ATTACK_DECLARED after target lock/spend even with Yorinobu hidden or absent. Enumeration and target-selection start do not record. Retain count and first physical attacker/CardRef; Blocker, invalidation, combat cleanup, defeat and Goro removal do not undo it. Only next global startTurn resets both players.
+
+The face-up LEGENDS source joins the shared ATTACK batch for the first qualifying occurrence. No field entry is added for Null-cost Yorinobu. DRAW1 then current Street Cred <20 then controller chosen discard1 reuse the ordered continuation. Null is below 0 under5.11.4.2 and therefore below20, without numerical coercion. The drawn card is eligible; one hand option resolves automatically, multiple produce DISCARD_SELECTION, ≥20 skips discard, and empty draw loss stops the remaining clauses. Dying/Kiroshi can be ordered before or after this effect; nothing interleaves within it. Satori remains fight-win timing; Floor It/Reboot remain later React.
+
+Public per-seat **turnAttacks** exposes only the count even when Yorinobu is face-down. Hidden Legend identity and rival hand data stay private. Position and both observation hashes change with consumed history; transport counters do not. The first-attack policy independently opts into observation-derived action IDs and preserves older Swordwise ATTACK execution without requiring other late-scope cards in the content bundle.
+
+[86 focused tests](../tests/yorinobu.test.ts) cover source-independent/reveal timing, real Goro, printed synthetic Unit, exact filtering, controller/global-turn semantics, ordered thresholds/Null/empty cases, composed scheduling, removal/reset, strict metadata/history/pending validation, complete captured batches, hashes, privacy, wire and constructed boundaries. The legal [Yorinobu replay](../tests/fixtures/yorinobu-replay.v1.json) has **49 actions, 48 strategic positions, 209 events**, through turn7 MAIN: setup, blind CALL slots1/2, real Dying pre-equip, Goro Go Solo, Yorinobu-first ordering, chosen discard, React/combat, reset and another qualifying attack. No state/RNG patches. The same-turn second attack is a validated trusted focused setup because no admitted repeat-ready card is used.
+
+Engine **0.4.0-first-attack-history-1**. All22 original families/723 original decisions retain their semantic payloads under new pins. Mongo publishes/reads the immutable revision; PostgreSQL reloads the legal trace and a separately identified trusted second-attack/next-turn trace. Python adds only one family name. Wire v1 is additive; TrainingAttempt is byte-unchanged.
+
+Demo coverage becomes **22/29 distinct and46/60 copies**: Arasaka7/14 and16/30; Merc15/15 and30/30. The physical27+3 lists remain unchanged and illegal under constructed40–50 main/exactly3 Legends. Saburo, Losing His Way, the other five Arasaka blockers, Faceplate/WHEN_SPENT, control changes, off-turn attack actions and general trait/event languages remain unadmitted. See [yorinobu-first-attack-report.md](yorinobu-first-attack-report.md).
+
+## ATTACKING_AURA_V1 — Saburo Arasaka — Stubborn Patriarch
+
+Immutable application CardId **saburo-arasaka-stubborn-patriarch**, revision **1**, execution **SUPPORTED / ATTACKING_AURA_V1**. Complete captured text:
+
+> Friendly ARASAKA Units have +1 power while attacking.
+> (Units steal an extra Gig for every 10 power.)
+
+Legend, Green RAM2, sellable, Arasaka/Corpo, Null printed cost/power, no Go Solo, no markup abilities, no raw keywords and no flavor text. The six printings and all four local errata are retained in [saburo-card-source.v1.json](../tests/fixtures/saburo-card-source.v1.json); no Saburo erratum applies. [saburo-fixture.ts](../tests/saburo-fixture.ts) contains full normalization. Three Epic starter/demo printings use ADIA; the three Nova Rare variants use Vincenzo Riccardi.
+
+| Printing UUID | Set | Number |
+|---|---|---|
+| 6ac7adce-01af-4b5b-956b-698eda0bed14 | embracingpowerretailstarterdeck | 013 |
+| 54136fbd-ce97-4d23-a8e8-f876e3e64819 | embracingpowerbetastarterdeck | β013 |
+| 13ba5cd2-5000-4cf8-bcfc-6f1b8afe44ca | arasakademodeck | 009 |
+| 77e482f2-6090-47e9-9d03-be28417cb1cb | boxtoppersretail | 004 |
+| 0cb4ae83-a7ca-4ca6-9c83-6c0581baae57 | boxtoppersbeta | β004 |
+| 46387af0-342b-40c7-82fa-858d08ea473f | edgerunneropens1 | 047 |
+
+Arasaka Demo printing is **13ba5cd2-5000-4cf8-bcfc-6f1b8afe44ca / 009**. Local raw-byte SHA-256: **72d450459d340c1088b3713701d80bec7c289a98258aa491e0b946824af649b2**. Live source SHA-256: **3a28a40a678febfc2a4e1dd5c17d6977db96874c51c4b99131bb016915cf4f9e**. The narrow live check matched all gameplay fields and printing identities. Canonical raw-record and normalized revision hashes are recorded in the [milestone report](saburo-attacking-aura-report.md).
+
+[saburo-rules.v1.json](../tests/fixtures/saburo-rules.v1.json) pins exact rules for controller relationship, face/readiness, Legend source areas and payment, classification/effective Unit type, persistent effects, attack boundaries, Fight and Steal. Official FAQ **18318e94-6979-4623-9cf5-fee73924d728** explicitly answers **Yes** to the +1 applying in Fight and Steal. Live parsed comprehensive rules exactly match the local snapshot; no broad corpus refresh. These are implementation-reviewed sources, not human-certified gold.
+
+The source must be its controller's unique face-up Saburo in LEGENDS. READY and SPENT both work; actual legal payment with Saburo is covered. Face-down/REMOVED sources do not contribute. Current source eligibility is queried live, so trusted mid-attack reveal/removal changes power immediately. Saburo has Null cost and no Go Solo, so FIELD entry and control-transfer actions remain unadmitted; hypothetical field-source semantics are not guessed.
+
+The target must currently be the declared attacker, on its controller's field, face-up, effective UNIT and exactly tagged **Arasaka**. Effective type includes real Go Solo Goro; Gear does not confer tags. Owner alone, deck membership, name, CardId and color are not selectors. A target/Blocker/non-Arasaka Unit receives nothing. Before target lock/spend/declaration the aura is absent. It remains through ATTACK effects, React/Quick effects, Blocker redirection, Fight, Steal and pending cleanup, then disappears when combat clears, including early invalidation.
+
+One narrow continuous modifier is derived by the shared **RulesView.getApplicableCharacteristicModifiers/getEffectivePower**, retaining physical source/subject IDs. There is no PendingEffect, new action, event, stored target/duration/modifier or cleanup mutation for Saburo. Both observations use existing public effectivePower. Source availability and CombatState already distinguish positions; transport counters remain irrelevant to position/action IDs.
+
+Real Goro7 + Mantis2 is9 before attack,10 while attacking with Saburo, then9 afterward. The headline's actual steal allowance changes from1 to2 with two strategic selections. Real Goro+Satori changes a9–9 tie to a10–9 win and truthfully triggers Satori's draw. Floor It composes as7+2+1−1=9 before actual Steal; its end-turn −1 remains after Saburo naturally stops. Yorinobu triggers only on the first qualifying attack; Saburo contributes again to a trusted second same-turn attack. Royce's existing per-Gear modifier remains unchanged.
+
+[60 focused tests](../tests/saburo.test.ts) cover complete admission, source eligibility/spending, exact filters, timing, Fight/Steal outcomes, composition, strict old-scope/state rejection, uniqueness, privacy, hashes, wire, training and constructed invariants. The [legal Saburo replay](../tests/fixtures/saburo-replay.v1.json) has **44 actions, 44 strategic positions, 172 events** through turn7 MAIN. It uses 42 main cards, three actual Legends and eight existing synthetic Gear filler revisions; no new synthetic revision or state/RNG patch. Every old immutable revision is preserved.
+
+Engine **0.4.0-attacking-aura-1**, additive wire v1. Mongo publishes/reads the immutable revision; PostgreSQL reloads the complete legal trace including spent source and live power across both Gig choices. Python adds only one replay-family name. See the report for all quality gates and the original-payload audit.
+
+Measured demo coverage becomes **23/29 distinct, 47/60 copies**: Arasaka8/14 and17/30; Merc15/15 and30/30. Six Arasaka cards/13 copies remain blocked. Both physical27+3 lists stay unchanged and invalid under constructed40–50 main/exactly3 Legends. The [roadmap](demo-deck-coverage-roadmap.md) records the read-only next-cluster review.

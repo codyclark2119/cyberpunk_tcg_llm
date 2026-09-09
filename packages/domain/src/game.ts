@@ -46,7 +46,7 @@ export const DelayedEffectSchema = z.strictObject({
 });
 export type DelayedEffect = DeepReadonly<z.infer<typeof DelayedEffectSchema>>;
 export const TriggerBindingSchema = z.strictObject({ sourceId: CardInstanceIdSchema, subjectId: CardInstanceIdSchema, controllerId: PlayerIdSchema,
-    source: CardReferenceSchema, abilityId: z.string().min(1), delayedId: HashSchema.optional(), kind: z.enum(["DELAYED_END_TURN", "WHEN_FIGHT_WON", "WHEN_DEFEATED", "WHEN_PLAYED", "WHEN_ATTACKING", "WHEN_CARD_PLAYED", "WHEN_OWN_TURN_ENDS"]) });
+    source: CardReferenceSchema, abilityId: z.string().min(1), delayedId: HashSchema.optional(), kind: z.enum(["DELAYED_END_TURN", "WHEN_FIGHT_WON", "WHEN_DEFEATED", "WHEN_PLAYED", "WHEN_ATTACKING", "WHEN_CARD_PLAYED", "WHEN_OWN_TURN_ENDS", "WHEN_UNIT_ATTACKS"]) });
 export type TriggerBinding = DeepReadonly<z.infer<typeof TriggerBindingSchema>>;
 export const TriggerOriginSchema = z.discriminatedUnion("kind", [
     z.strictObject({ kind: z.literal("END_TURN"), playerId: PlayerIdSchema, turn: z.number().int().positive(), delayedEffects: z.array(DelayedEffectSchema).min(1).optional() }),
@@ -57,7 +57,12 @@ export const TriggerOriginSchema = z.discriminatedUnion("kind", [
 export type TriggerOrigin = DeepReadonly<z.infer<typeof TriggerOriginSchema>>;
 export const TriggerContinuationSchema = z.strictObject({ origin: TriggerOriginSchema, ordinal: z.number().int().positive(), bindings: z.array(TriggerBindingSchema).min(1),
     selectedEddieSlots: z.array(z.number().int().nonnegative()).length(1).optional(), resolvedIds: z.array(HashSchema), phase: z.enum(["SELECT", "OPTIONAL", "TARGET", "AMOUNT", "DISCARD", "READY"]), conditionMet: z.literal(true).optional(), targetGigId: GigInstanceIdSchema.optional() });
-export const TurnHistorySchema = z.strictObject({ gigsStolenByUnit: z.record(CardInstanceIdSchema, z.number().int().positive()).optional(), turn: z.number().int().positive(), triggeredBatches: z.number().int().nonnegative(), blueUnitOrGearPlays: z.record(PlayerIdSchema, z.number().int().nonnegative()) });
+export const QualifyingAttackSummarySchema = z.strictObject({
+    count: z.number().int().nonnegative(),
+    first: z.strictObject({ attackerId: CardInstanceIdSchema, attacker: CardReferenceSchema }).nullable()
+}).refine(h => (h.count === 0) === (h.first === null), "Zero attacks have no first occurrence; positive counts require one");
+export const TurnHistorySchema = z.strictObject({
+    firstArasakaAttacks: z.record(PlayerIdSchema, QualifyingAttackSummarySchema).optional(), gigsStolenByUnit: z.record(CardInstanceIdSchema, z.number().int().positive()).optional(), turn: z.number().int().positive(), triggeredBatches: z.number().int().nonnegative(), blueUnitOrGearPlays: z.record(PlayerIdSchema, z.number().int().nonnegative()) });
 export const PendingEffectSchema = z.strictObject({ id: z.string().min(1), controllerId: PlayerIdSchema, sourceId: CardInstanceIdSchema.nullable(), primitiveIndex: z.literal(1).optional(), effect: EffectSchema, trigger: TriggerBindingSchema.omit({ sourceId: true, controllerId: true }).extend({ turn: z.number().int().positive(), ordinal: z.number().int().positive() }).optional(), causedBySequence: z.number().int().nonnegative() });
 export const ActionReturnContextSchema = z.discriminatedUnion("kind", [z.strictObject({ kind: z.literal("MAIN") }), z.strictObject({ kind: z.literal("RIVAL_REACT") })]);
 export type ActionReturnContext = z.infer<typeof ActionReturnContextSchema>;

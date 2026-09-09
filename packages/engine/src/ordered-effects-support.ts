@@ -1,3 +1,4 @@
+import { supportsFirstAttackLegend } from "./first-attack-support";
 import { canonicalSerialize, failure, success, type CardRevisionSnapshot, type DeepReadonly, type GameState } from "@tcg/domain";
 import type { EngineContext } from "./state";
 export function orderedEffectsEnabled(context: EngineContext) {
@@ -11,12 +12,14 @@ export function supportsOrderedAttackCard(card: DeepReadonly<CardRevisionSnapsho
         return failure("UNSUPPORTED_ORDERED_ATTACK", "Complete reviewed unsellable Blue RAM3 Doll, cost2 power0 and ordered ATTACK draw/conditional own-hand discard required");
     return success(null);
 }
+/** Both reviewed draw-then-discard abilities use the same two-primitive continuation. */
+export function supportsOrderedTriggerSource(card: DeepReadonly<CardRevisionSnapshot> | undefined, context: EngineContext) { return supportsOrderedAttackCard(card, context).ok || supportsFirstAttackLegend(card, context).ok; }
 /** Inspect hidden content too: old execution scopes cannot silently ignore the new metadata. */
 export function validateOrderedMetadata(state: GameState, context: EngineContext) {
     for (const c of Object.values(state.objects.cards)) {
         const r = context.content.cards.find(r => r.id === c.cardId && r.revision === c.revision);
         if (r && (r.execution?.scope === "ATTACK_ORDERED_EFFECTS_V1" || r.mechanics.abilities.some(a => a.conditions.some(c => c.kind === "STREET_CRED_GREATER_THAN_RIVAL") || a.effects.some(e => e.kind === "DISCARD_CARDS" || e.kind === "CONDITIONAL_DRAW" && e.condition.kind === "STREET_CRED_GREATER_THAN_RIVAL")))) {
-            const supported = supportsOrderedAttackCard(r, context); if (!supported.ok) return supported;
+            const supported = supportsOrderedAttackCard(r, context); if (!supported.ok && !supportsFirstAttackLegend(r, context).ok) return supported;
         }
     }
     return success(null);

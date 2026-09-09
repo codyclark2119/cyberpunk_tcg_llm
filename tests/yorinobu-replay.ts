@@ -1,0 +1,55 @@
+import type { GameState, LegalAction } from "@tcg/domain";
+import { applyAction, createGameWithEvents, hashObservation, hashPosition, hashReplayState, listLegalActions, observe } from "@tcg/engine";
+import { generatePosition, type TrainingPosition } from "@tcg/training-harness";
+import { yorinobuContext, yorinobuInput, YORINOBU } from "./yorinobu-fixture";
+import { GORO } from "./goro-fixture";
+
+
+import { unwrap } from "./turn-replay";
+/** Setup and legal actions only. CALLs choose public slots 1 and 2 without inspecting hidden identities. */
+export function yorinobuReplay(seed = "yorinobu-24", collectPositions = true) {
+    const context = yorinobuContext(), initialization = yorinobuInput(seed), initialized = unwrap(createGameWithEvents(initialization, context));
+    let state: GameState = initialized.state;
+    const steps: ReturnType<typeof import("./turn-replay").turnReplay>["steps"] = [], positions: TrainingPosition[] = [];
+    const take = (predicate: (a: LegalAction) => boolean) => {
+        const actorId = state.timing.actingPlayer, legalActions = unwrap(listLegalActions(state, actorId, context)), selected = legalActions.find(predicate);
+        if (!selected) throw new Error("Missing Yorinobu replay action at " + state.timing.turn + "/" + state.timing.step);
+        const observation = unwrap(observe(state, actorId, context));
+        if (collectPositions && legalActions.length > 1) positions.push(unwrap(generatePosition(state, actorId, context, "yorinobu-" + steps.length)));
+        const action = { actorId, action: selected.action }, next = unwrap(applyAction(state, action, context)); state = next.state;
+        steps.push({ actorId, action, actionId: selected.actionId, legalActions, observation, events: next.events, stateHash: hashReplayState(state), positionHash: hashPosition(state), observationHash: hashObservation(unwrap(observe(state, state.timing.actingPlayer, context))), step: state.timing.step });
+    };
+    const choose = (index = 0) => take(a => a.action.kind === "CHOOSE" && a.action.optionIndices[0] === index);
+    while (state.setup) choose(state.setup.stage === "FIRST_PLAYER" && state.timing.actingPlayer !== state.match.playerOrder[0] ? 1 : 0);
+    const actor = state.timing.activePlayer, rival = state.match.playerOrder.find(p => p !== actor)!;
+    const legend = state.players[actor].zones.LEGENDS[0], host = state.players[actor].zones.LEGENDS[1];
+    const choice = () => state.resolution.choice;
+    const roll = () => take(a => a.action.kind === "ROLL_GIG");
+    const end = () => take(a => a.action.kind === "END_TURN");
+    const sell = () => take(a => a.action.kind === "SELL_CARD" && state.objects.cards[a.action.cardInstanceId].cardId !== "dying-night-v-s-pistol");
+    const pay = () => { while (state.resolution.choice?.kind === "PAYMENT") { const i = state.resolution.choice.options.findIndex(o => o.kind === "PAYMENT" && o.source.kind === "EDDIE"); choose(Math.max(0, i)); } };
+    roll(); sell(); take(a => a.action.kind === "CALL_LEGEND" && a.action.cardInstanceId === legend); pay();
+    if (state.objects.cards[legend].cardId !== YORINOBU) throw new Error("Frozen seed requires blind slot 1 CALL to reveal Yorinobu");
+    const calledLegend = state;
+    end(); roll(); end(); roll(); sell(); take(a => a.action.kind === "CALL_LEGEND" && a.action.cardInstanceId === host); pay();
+    if (state.objects.cards[host].cardId !== GORO) throw new Error("Frozen seed requires blind slot 2 CALL to reveal Goro");
+    take(a => a.action.kind === "PLAY_CARD" && state.objects.cards[a.action.cardInstanceId].cardId === "dying-night-v-s-pistol"); pay();
+    choose(choice()!.options.findIndex(o => o.kind === "CARD" && o.cardInstanceId === host));
+    const preEquipped = state;
+    end(); roll(); end(); roll(); sell(); const beforeGoSolo = state;
+    take(a => a.action.kind === "GO_SOLO" && a.action.cardInstanceId === host); pay(); const beforeAttack = state;
+    take(a => a.action.kind === "DECLARE_ATTACK" && a.action.cardInstanceId === host);
+    if (state.timing.step === "ATTACK_TARGET_SELECTION") choose(choice()!.options.findIndex(o => o.kind === "ATTACK_TARGET" && o.target.kind === "GIG_AREA"));
+    const pendingOrder = state;
+    choose(choice()!.options.findIndex(o => o.kind === "EFFECT" && state.resolution.pending.some(e => e.id === o.effectId && e.sourceId === legend)));
+    const pendingDiscard = state;
+    if (state.resolution.choice?.kind !== "DISCARD") throw new Error("Frozen seed requires strategic Yorinobu discard below 20");
+    while (state.resolution.choice) choose(); const beforeReact = state;
+    take(a => a.action.kind === "PASS_REACT"); while (state.resolution.choice) choose(); const afterAttack = state;
+    end(); const reset = state;
+    roll(); end(); roll();
+    take(a => a.action.kind === "DECLARE_ATTACK" && a.action.cardInstanceId === host);
+    if (state.timing.step === "ATTACK_TARGET_SELECTION") choose(choice()!.options.findIndex(o => o.kind === "ATTACK_TARGET" && o.target.kind === "GIG_AREA"));
+    while (state.resolution.choice) choose(); take(a => a.action.kind === "PASS_REACT"); while (state.resolution.choice) choose();
+    return { schemaVersion: 1, note: "Private authoritative replay, not model input or human gold. Legal constructed synthetic support decks. Blind CALL slots 1/2 reveal real Yorinobu/Goro; pre-equip real Dying Night; Go Solo Goro; qualifying attack orders Yorinobu draw/conditional discard and Dying Night; React/combat; natural global-turn reset and another first qualifying Goro attack. No state/RNG patches. Same-turn second attack and FAQ reveal tested in explicitly trusted focused setups. Not a physical demo match.", content: context.content, initialization, initialized, steps, positions, legend, host, actor, rival, calledLegend, preEquipped, beforeGoSolo, beforeAttack, pendingOrder, pendingDiscard, beforeReact, afterAttack, reset, finalState: state, finalStateHash: hashReplayState(state) };
+}

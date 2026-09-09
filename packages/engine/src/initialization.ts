@@ -1,3 +1,6 @@
+import { validateAttackingAuraMetadata } from "./attacking-aura-support";
+import { validateFirstAttackMetadata } from "./first-attack-support";
+import { validateFirstAttackHistory } from "./first-attack-history";
 import { validateFieldLegendMetadata } from "./field-legend-support";
 import { validateDelayedMetadata } from "./delayed-effect-support";
 import { validateDelayedState } from "./delayed-effects";
@@ -5,6 +8,8 @@ import { validateEndTurnMetadata } from "./end-turn-support";
 import { validateOrderedMetadata } from "./ordered-effects-support";
 import { validatePrivateLookMetadata } from "./private-look-support";
 import { validateCapabilityMetadata } from "./capability-support";
+import { firstAttackHistoryEnabled } from "./first-attack-support";
+import { initialFirstAttackHistory } from "./first-attack-history";
 import { triggersEnabled } from "./trigger-support";
 import { supportsPlay } from "./play-support";
 import { beginSetup } from "./setup";
@@ -56,8 +61,11 @@ export function createGameWithEvents(input: z.input<typeof CreateGameInputSchema
     s.timing.step = "MAIN";
     for (const p of Object.values(s.players))
         p.economy = { sellsThisTurn: 0, callsThisTurn: 0, usageTurn: 1 };
-    if (triggersEnabled(context)) s.turnHistory = { turn: 1, triggeredBatches: 0, blueUnitOrGearPlays: Object.fromEntries(s.match.playerOrder.map(id => [id, 0])) };
+    if (triggersEnabled(context)) s.turnHistory = { ...(firstAttackHistoryEnabled(context) ? { firstArasakaAttacks: initialFirstAttackHistory(s) } : {}), turn: 1, triggeredBatches: 0, blueUnitOrGearPlays: Object.fromEntries(s.match.playerOrder.map(id => [id, 0])) };
     // Capability admission is deck-wide, never a hidden-Legend-specific label/filter.
+    const auraMetadata = validateAttackingAuraMetadata(s, context); if (!auraMetadata.ok) return auraMetadata;
+    const firstMetadata = validateFirstAttackMetadata(s, context); if (!firstMetadata.ok) return firstMetadata;
+    const firstHistory = validateFirstAttackHistory(s, context); if (!firstHistory.ok) return firstHistory;
     const fieldMetadata = validateFieldLegendMetadata(s, context); if (!fieldMetadata.ok) return fieldMetadata;
     const delayedMetadata = validateDelayedMetadata(s, context); if (!delayedMetadata.ok) return delayedMetadata;
     const delayedState = validateDelayedState(s, context); if (!delayedState.ok) return delayedState;

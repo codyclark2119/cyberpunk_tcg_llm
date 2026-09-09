@@ -1,3 +1,10 @@
+import { saburoContext, saburo } from "../saburo-fixture";
+import { saburoReplay } from "../saburo-replay";
+import { yorinobuContext, yorinobu } from "../yorinobu-fixture";
+import { yorinobuReplay } from "../yorinobu-replay";
+import { bare, readyAgain } from "../yorinobu-focused";
+import { goroContext, goro } from "../goro-fixture";
+import { goroReplay } from "../goro-replay";
 import { fieldLegendContext, fieldLegend } from "../field-legends-fixture";
 import { vDyingNightReplay } from "../field-legends-replay";
 import { delayedContext, dyingNight } from "../delayed-effects-fixture";
@@ -72,7 +79,7 @@ test("Mongo revisions: concurrent replay, conflict, history, projection ordering
         assert.equal((await repo.publish(rich)).status, "PUBLISHED");
         assert.equal((await repo.findRevision(cards[0].id, cards[0].revision))?.schemaVersion, 1);
         assert.deepEqual(await repo.findRevision(rich.id, rich.revision), rich);
-        for (const revision of [...restrictionCards, ...triggerCards, mandibular, kiroshi, evelyn, delamain, dyingNight, fieldLegend]) {
+        for (const revision of [...restrictionCards, ...triggerCards, mandibular, kiroshi, evelyn, delamain, dyingNight, fieldLegend, goro, yorinobu, saburo]) {
             assert.equal((await repo.publish(revision)).status, "PUBLISHED");
             assert.deepEqual(await repo.findRevision(revision.id, revision.revision), revision);
             assert.equal((await repo.publish(revision)).status, "REPLAY");
@@ -557,6 +564,114 @@ test("Postgres ledger: running, conflict, replay, transactional rollback and sta
         assert.ok(entryPayments > 0); assert.equal(readyTwoChoices, 2); assert.equal(fieldState.timing.turn, 6);
         assert.equal(fieldState.players[actor].zones.EDDIES.filter(id => fieldState.objects.cards[id].readiness === "READY").length, 2);
         assert.ok(fieldEvents.some(e => e.payload.kind === "GO_SOLO_ACTIVATED")); assert.ok(fieldEvents.some(e => e.payload.kind === "CONDITION_EVALUATED" && e.payload.met));
+        // Complete legal Goro path, including real printed Blocker defeat and owner Gear order.
+        const goroCtx = goroContext(), goroTrace = goroReplay();
+        const goroInitial = unwrap(createGameWithEvents({ ...goroTrace.initialization, matchId: randomUUID(), players: [actor, otherActor] }, goroCtx));
+        assert.equal((await match.create(goroInitial.state, goroInitial.events)).ok, true);
+        let goroState = goroInitial.state;
+        const goroEvents = [...goroInitial.events]; let goroPayments = 0, goroOrders = 0;
+        for (const step of goroTrace.steps) {
+            const stored = await match.find(goroState.match.id); assert.ok(stored); assert.deepEqual(stored, goroState);
+            const transition = unwrap(applyAction(stored, { actorId: stored.timing.actingPlayer, action: step.action.action }, goroCtx));
+            assert.equal((await match.save(transition.state, stored.match.version, transition.events)).ok, true);
+            goroState = transition.state; goroEvents.push(...transition.events);
+            const reloaded = await match.find(goroState.match.id); assert.ok(reloaded); assert.deepEqual(reloaded, goroState);
+            assert.equal(hashReplayState(reloaded), hashReplayState(goroState)); assert.equal(hashPosition(reloaded), step.positionHash);
+            assert.deepEqual(unwrap(listLegalActions(reloaded, reloaded.timing.actingPlayer, goroCtx)), unwrap(listLegalActions(goroState, goroState.timing.actingPlayer, goroCtx)));
+            for (const viewer of reloaded.match.playerOrder) {
+                const actual: DeepReadonly<PlayerObservation> = unwrap(observe(reloaded, viewer, goroCtx));
+                const expected: DeepReadonly<PlayerObservation> = unwrap(observe(goroState, viewer, goroCtx));
+                assert.deepEqual(actual, expected); assert.equal(hashObservation(actual), hashObservation(expected));
+            }
+            if (reloaded.resolution.legendEntryContinuation) goroPayments++;
+            if (reloaded.timing.step === "DEFEAT_ORDER_SELECTION") { goroOrders++; assert.equal(reloaded.timing.actingPlayer, actor); }
+            const c = reloaded.objects.cards[goroTrace.legend];
+            assert.ok(c.attachments.every(id => reloaded.objects.cards[id].zone.zone === c.zone.zone));
+            assert.deepEqual(await match.history(reloaded.match.id), goroEvents); goroState = reloaded;
+        }
+        assert.ok(goroPayments > 0); assert.ok(goroOrders > 0);
+        assert.equal(goroState.objects.cards[goroTrace.legend].zone.zone, "REMOVED");
+        for (const id of goroTrace.fieldEntry.objects.cards[goroTrace.legend].attachments) assert.equal(goroState.objects.cards[id].zone.zone, "TRASH");
+        assert.deepEqual(goroState.objects.cards[goroTrace.legend].attachments, []);
+        for (const kind of ["LEGEND_CALLED", "GEAR_ATTACHED", "GO_SOLO_ACTIVATED", "PAYMENT_MADE", "ATTACK_DECLARED", "BLOCKER_DECLARED", "CARD_DEFEATED"]) assert.ok(goroEvents.some(e => e.payload.kind === kind), kind);
+        // Complete legal Yorinobu trace: history before/after declaration, pending DRAW/order,
+        // post-draw strategic discard, combat, next-global-turn reset and a new qualifying attack.
+        const yoriCtx = yorinobuContext(), yoriTrace = yorinobuReplay();
+        const yoriInitial = unwrap(createGameWithEvents({ ...yoriTrace.initialization, matchId: randomUUID(), players: [actor, otherActor] }, yoriCtx));
+        assert.equal((await match.create(yoriInitial.state, yoriInitial.events)).ok, true);
+        let yoriState = yoriInitial.state; const yoriEvents = [...yoriInitial.events]; let yoriOrders = 0, yoriDiscards = 0, yoriResets = 0;
+        for (const step of yoriTrace.steps) {
+            const stored = await match.find(yoriState.match.id); assert.ok(stored); assert.deepEqual(stored, yoriState);
+            const command = { actorId: stored.timing.actingPlayer, action: step.action.action };
+            const transition = unwrap(applyAction(stored, command, yoriCtx)); assert.deepEqual(transition, unwrap(applyAction(yoriState, command, yoriCtx)));
+            assert.equal((await match.save(transition.state, stored.match.version, transition.events)).ok, true);
+            yoriState = transition.state; yoriEvents.push(...transition.events);
+            const loaded = await match.find(yoriState.match.id); assert.ok(loaded); assert.deepEqual(loaded, yoriState);
+            assert.equal(hashReplayState(loaded), hashReplayState(yoriState)); assert.equal(hashPosition(loaded), step.positionHash);
+            assert.deepEqual(unwrap(listLegalActions(loaded, loaded.timing.actingPlayer, yoriCtx)), unwrap(listLegalActions(yoriState, yoriState.timing.actingPlayer, yoriCtx)));
+            for (const viewer of loaded.match.playerOrder) {
+                const actual: DeepReadonly<PlayerObservation> = unwrap(observe(loaded, viewer, yoriCtx)), expected: DeepReadonly<PlayerObservation> = unwrap(observe(yoriState, viewer, yoriCtx));
+                assert.deepEqual(actual, expected); assert.equal(hashObservation(actual), hashObservation(expected));
+            }
+            if (loaded.timing.step === "TRIGGER_ORDER_SELECTION") { yoriOrders++; assert.ok(loaded.resolution.pending.some(e => e.sourceId === yoriTrace.legend && e.effect.kind === "DRAW")); }
+            if (loaded.timing.step === "DISCARD_SELECTION") { yoriDiscards++; assert.equal(loaded.resolution.current?.primitiveIndex, 1); }
+            if (stored.turnHistory?.firstArasakaAttacks?.[actor].count && loaded.timing.turn > stored.timing.turn) { yoriResets++; assert.equal(loaded.turnHistory?.firstArasakaAttacks?.[actor].count, 0); }
+            assert.deepEqual(await match.history(loaded.match.id), yoriEvents); yoriState = loaded;
+        }
+        assert.equal(yoriOrders, 2); assert.ok(yoriDiscards > 0); assert.equal(yoriResets, 1);
+        // Separately labeled trusted repeat-attack bootstrap: no admitted card readies Goro twice.
+        // Persist the already consumed history, then execute every subsequent command from reload.
+        const repeated = GameStateSchema.parse(readyAgain(bare(yoriTrace.afterAttack, yoriTrace.host, yoriCtx), yoriTrace.host, yoriCtx));
+        repeated.match.id = MatchIdSchema.parse(randomUUID()); repeated.match.version = GameStateVersionSchema.parse(0); repeated.match.eventSequence = GameEventSequenceSchema.parse(0);
+        for (const id of repeated.match.playerOrder) await pool.query("INSERT INTO users(id,display_name) VALUES($1,'trusted first-attack fixture') ON CONFLICT(id) DO NOTHING", [id]);
+        assert.equal((await match.create(unwrap(validateState(repeated, yoriCtx)))).ok, true);
+        let repeatState: GameState = repeated; const repeatEvents: GameEvent[] = []; let declarations = 0;
+        for (let n = 0; ; n++) {
+            assert.ok(n < 20); const stored = await match.find(repeatState.match.id); assert.ok(stored); assert.deepEqual(stored, repeatState);
+            assert.equal(hashReplayState(stored), hashReplayState(repeatState)); assert.equal(hashPosition(stored), hashPosition(repeatState));
+            const legal = unwrap(listLegalActions(stored, stored.timing.actingPlayer, yoriCtx)); assert.deepEqual(legal, unwrap(listLegalActions(repeatState, repeatState.timing.actingPlayer, yoriCtx)));
+            for (const viewer of stored.match.playerOrder) { const a: DeepReadonly<PlayerObservation> = unwrap(observe(stored, viewer, yoriCtx)), e: DeepReadonly<PlayerObservation> = unwrap(observe(repeatState, viewer, yoriCtx)); assert.deepEqual(a, e); assert.equal(hashObservation(a), hashObservation(e)); }
+            assert.deepEqual(await match.history(stored.match.id), repeatEvents);
+            if (stored.timing.turn > repeated.timing.turn) { assert.equal(stored.turnHistory?.firstArasakaAttacks?.[yoriTrace.actor].count, 0); break; }
+            const selected = legal.find(a => stored.resolution.choice ? a.action.kind === "CHOOSE" && a.action.optionIndices[0] === 0 : stored.timing.step === "RIVAL_REACT" ? a.action.kind === "PASS_REACT" : declarations ? a.action.kind === "END_TURN" : a.action.kind === "DECLARE_ATTACK" && a.action.cardInstanceId === yoriTrace.host); assert.ok(selected);
+            const command = { actorId: selected.actorId, action: selected.action }, next = unwrap(applyAction(stored, command, yoriCtx)); assert.deepEqual(next, unwrap(applyAction(repeatState, command, yoriCtx)));
+            if (next.events.some(e => e.payload.kind === "ATTACK_DECLARED")) declarations++;
+            if (declarations && next.state.timing.turn === repeated.timing.turn) assert.equal(next.state.turnHistory!.firstArasakaAttacks![yoriTrace.actor].count, 2);
+            assert.equal(next.events.some(e => e.payload.kind === "EFFECT_PENDING" && e.payload.sourceId === yoriTrace.legend), false);
+            assert.equal((await match.save(next.state, stored.match.version, next.events)).ok, true); repeatState = next.state; repeatEvents.push(...next.events);
+        }
+        assert.equal(declarations, 1);
+        // Complete legal Saburo trace from DOWN setup through CALL, pre-equip, payment with
+        // spent UP source, field Goro, ATTACK/React, both strategic steals and cleanup.
+        const saburoCtx = saburoContext(), saburoTrace = saburoReplay();
+        const saburoInitial = unwrap(createGameWithEvents({ ...saburoTrace.initialization, matchId: randomUUID(), players: [actor, otherActor] }, saburoCtx));
+        assert.equal((await match.create(saburoInitial.state, saburoInitial.events)).ok, true);
+        assert.equal(saburoInitial.state.objects.cards[saburoTrace.legend].face, "DOWN");
+        let saburoState = saburoInitial.state; const saburoEvents = [...saburoInitial.events]; let auraWindows = 0, auraStealChoices = 0, spentAura = false, preEquipped = false;
+        for (const step of saburoTrace.steps) {
+            const stored = await match.find(saburoState.match.id); assert.ok(stored); assert.deepEqual(stored, saburoState);
+            const command = { actorId: stored.timing.actingPlayer, action: step.action.action };
+            const transition = unwrap(applyAction(stored, command, saburoCtx)); assert.deepEqual(transition, unwrap(applyAction(saburoState, command, saburoCtx)));
+            assert.equal((await match.save(transition.state, stored.match.version, transition.events)).ok, true);
+            saburoState = transition.state; saburoEvents.push(...transition.events);
+            const loaded = await match.find(saburoState.match.id); assert.ok(loaded); assert.deepEqual(loaded, saburoState);
+            assert.equal(hashReplayState(loaded), hashReplayState(saburoState)); assert.equal(hashPosition(loaded), step.positionHash);
+            assert.deepEqual(unwrap(listLegalActions(loaded, loaded.timing.actingPlayer, saburoCtx)), unwrap(listLegalActions(saburoState, saburoState.timing.actingPlayer, saburoCtx)));
+            for (const viewer of loaded.match.playerOrder) {
+                const actual: DeepReadonly<PlayerObservation> = unwrap(observe(loaded, viewer, saburoCtx)), expected: DeepReadonly<PlayerObservation> = unwrap(observe(saburoState, viewer, saburoCtx));
+                assert.deepEqual(actual, expected); assert.equal(hashObservation(actual), hashObservation(expected));
+            }
+            const view = new RulesView(loaded, saburoCtx), host = loaded.objects.cards[saburoTrace.host], source = loaded.objects.cards[saburoTrace.legend];
+            if (host.zone.zone === "LEGENDS" && host.attachments.length) { preEquipped = true; assert.equal(view.getEffectivePower(host.id), 9); }
+            if (view.isAttacking(host.id)) { auraWindows++; assert.equal(view.getEffectivePower(host.id), 10); assert.equal(view.getApplicableCharacteristicModifiers(host.id).find(m => m.kind === "FRIENDLY_ARASAKA_ATTACKING_UNIT_POWER")!.sourceId, source.id); if (source.face === "UP" && source.readiness === "SPENT") spentAura = true; }
+            if (loaded.timing.step === "GIG_STEAL_SELECTION") auraStealChoices++;
+            assert.deepEqual(await match.history(loaded.match.id), saburoEvents); saburoState = loaded;
+        }
+        assert.ok(preEquipped && spentAura); assert.ok(auraWindows >= 4); assert.equal(auraStealChoices, 2);
+        assert.equal(saburoState.timing.combat.stage, "NONE"); assert.equal(new RulesView(saburoState, saburoCtx).getEffectivePower(saburoTrace.host), 9);
+        assert.equal(saburoEvents.filter(e => e.payload.kind === "GIG_STOLEN").length, 2);
+        assert.ok(saburoEvents.some(e => e.payload.kind === "GIG_STEAL_STARTED" && e.payload.power === 10 && e.payload.allowance === 2));
+        for (const kind of ["LEGEND_CALLED", "GEAR_ATTACHED", "GO_SOLO_ACTIVATED", "PAYMENT_MADE", "ATTACK_DECLARED", "RIVAL_REACT_OPENED", "GIG_STEAL_STARTED", "ATTACK_ENDED"]) assert.ok(saburoEvents.some(e => e.payload.kind === kind), kind);
         // Inject an event insert failure AFTER the state UPDATE to verify transaction rollback.
         await pool.query("CREATE FUNCTION reject_test_event() RETURNS trigger LANGUAGE plpgsql AS $$ BEGIN RAISE EXCEPTION 'event insert failure'; END $$");
         await pool.query("CREATE TRIGGER reject_test_event BEFORE INSERT ON match_events FOR EACH ROW EXECUTE FUNCTION reject_test_event()");

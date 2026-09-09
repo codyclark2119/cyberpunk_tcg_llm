@@ -1,3 +1,4 @@
+import { isFirstArasakaAttack } from "./first-attack-history";
 import { effectiveCardTypes } from "./characteristics";
 import { delayedBinding } from "./delayed-effects";
 import { readyableEddieSlots } from "./eddie-ready";
@@ -19,7 +20,7 @@ export function effectiveTriggeredAbilities(state: GameState, subjectId: CardIns
         const r = cardRevision(state, source.id, context);
         if (!supportsEffectiveTriggerSource(r, context) || !r) return [];
         return r.mechanics.abilities.flatMap(a => {
-            if (!a.trigger || (source.id !== subjectId) !== (a.inherited === "EQUIPPED_HOST") || !(a.trigger === "WHEN_FIGHT_WON" || a.trigger === "WHEN_DEFEATED" || a.trigger === "WHEN_PLAYED" || a.trigger === "WHEN_ATTACKING" || a.trigger === "WHEN_CARD_PLAYED" || a.trigger === "WHEN_OWN_TURN_ENDS")) return [];
+            if (!a.trigger || (source.id !== subjectId) !== (a.inherited === "EQUIPPED_HOST") || !(a.trigger === "WHEN_FIGHT_WON" || a.trigger === "WHEN_DEFEATED" || a.trigger === "WHEN_PLAYED" || a.trigger === "WHEN_ATTACKING" || a.trigger === "WHEN_CARD_PLAYED" || a.trigger === "WHEN_OWN_TURN_ENDS" || a.trigger === "WHEN_UNIT_ATTACKS")) return [];
             return [{ sourceId: source.id, subjectId, controllerId: subject.controllerId, source: { cardId: r.id, revision: r.revision }, abilityId: a.id, kind: a.trigger }];
         });
     }).sort((a, b) => a.sourceId < b.sourceId ? -1 : a.sourceId > b.sourceId ? 1 : a.abilityId < b.abilityId ? -1 : a.abilityId > b.abilityId ? 1 : 0);
@@ -32,7 +33,11 @@ export function discoverTriggers(state: GameState, origin: TriggerOrigin, contex
     if (origin.kind === "FIGHT") return origin.result.winnerId ? effectiveTriggeredAbilities(state, origin.result.winnerId, context).filter(b => b.kind === "WHEN_FIGHT_WON") : [];
     if (origin.kind === "DEFEAT") return origin.defeated.flatMap(d => effectiveTriggeredAbilities(state, d.targetId, context).filter(b => b.kind === "WHEN_DEFEATED")); // Capture before movement; enqueue after.
     const own = effectiveTriggeredAbilities(state, origin.subjectId, context).filter(b => b.kind === (origin.kind === "PLAY" ? "WHEN_PLAYED" : "WHEN_ATTACKING"));
-    if (origin.kind !== "PLAY") return own;
+    if (origin.kind === "ATTACK") {
+        if (!isFirstArasakaAttack(state, origin.subjectId, context)) return own;
+        const actor = state.objects.cards[origin.subjectId].controllerId;
+        return [...own, ...state.players[actor].zones.LEGENDS.flatMap(id => effectiveTriggeredAbilities(state, id, context).filter(b => b.kind === "WHEN_UNIT_ATTACKS" && b.controllerId === actor))];
+    }
     const played = state.objects.cards[origin.subjectId], revision = cardRevision(state, origin.subjectId, context)!;
     if (!effectiveCardTypes(state, played.id, context).some(t => t === "UNIT" || t === "GEAR") || !revision.colors.includes("BLUE") || state.turnHistory?.blueUnitOrGearPlays[played.controllerId] !== 1) return own;
     return [...own, ...state.players[played.controllerId].zones.LEGENDS.flatMap(id => effectiveTriggeredAbilities(state, id, context).filter(b => b.kind === "WHEN_CARD_PLAYED"))];

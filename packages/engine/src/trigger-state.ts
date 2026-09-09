@@ -4,13 +4,15 @@ import { delayedBinding } from "./delayed-effects";
 import { delayedSubjectTypes } from "./delayed-effects";
 import { readyableEddieSlots } from "./eddie-ready";
 import { endTurnEnabled } from "./end-turn-support";
-import { supportsOrderedAttackCard } from "./ordered-effects-support";
+import { firstAttackHistoryEnabled, supportsFirstAttackLegend } from "./first-attack-support";
+import { isFirstArasakaAttack } from "./first-attack-history";
+import { supportsOrderedTriggerSource } from "./ordered-effects-support";
 import { testCondition } from "./conditions";
 import { canonicalSerialize, failure, success, type GameState, type FightResult, type TriggerBinding } from "@tcg/domain";
 import type { EngineContext } from "./state";
 import { cardRevision } from "./characteristics";
 import { supportsEffectiveTriggerSource, triggersEnabled } from "./trigger-support";
-import { nextTriggerGroup, pendingTrigger, triggerChoice, triggerGigTargets, triggerId } from "./trigger-queries";
+import { discoverTriggers, nextTriggerGroup, pendingTrigger, triggerChoice, triggerGigTargets, triggerId } from "./trigger-queries";
 
 /** Validate the historical comparison, not a new comparison using post-trigger power. */
 export function validFightFact(state: GameState, f: FightResult) {
@@ -29,7 +31,10 @@ function validBinding(state: GameState, b: TriggerBinding, context: EngineContex
     if (origin.kind === "END_TURN") return b.kind === "WHEN_OWN_TURN_ENDS" && b.sourceId === b.subjectId && b.controllerId === origin.playerId && ability.conditions.every(c => testCondition(state, b.controllerId, c, context, b.subjectId));
     if (origin.kind === "FIGHT") return b.kind === "WHEN_FIGHT_WON" && b.subjectId === origin.result.winnerId && validFightFact(state, origin.result);
     if (origin.kind === "DEFEAT") return b.kind === "WHEN_DEFEATED" && origin.defeated.some(d => d.targetId === b.subjectId) && !["BATTLEFIELD", "LEGENDS"].includes(subject.zone.zone);
-    if (origin.kind === "ATTACK") return b.kind === "WHEN_ATTACKING" && b.subjectId === origin.subjectId;
+    if (origin.kind === "ATTACK") {
+        if (b.kind === "WHEN_UNIT_ATTACKS") return b.sourceId === b.subjectId && source.face === "UP" && source.zone.zone === "LEGENDS" && supportsFirstAttackLegend(r, context).ok && state.objects.cards[origin.subjectId]?.controllerId === b.controllerId && isFirstArasakaAttack(state, origin.subjectId, context);
+        return b.kind === "WHEN_ATTACKING" && b.subjectId === origin.subjectId;
+    }
     if (b.kind === "WHEN_PLAYED") return b.subjectId === origin.subjectId;
     const played = state.objects.cards[origin.subjectId], revision = cardRevision(state, origin.subjectId, context);
     return b.kind === "WHEN_CARD_PLAYED" && ability.guard === "FIRST_BLUE_UNIT_OR_GEAR_PLAY_PER_TURN" && r?.type === "LEGEND" && played?.controllerId === b.controllerId && revision?.colors.includes("BLUE") && effectiveCardTypes(state, played.id, context).some(t => t === "UNIT" || t === "GEAR") && state.turnHistory!.blueUnitOrGearPlays[b.controllerId] === 1;
@@ -54,10 +59,17 @@ export function validateTriggerState(state: GameState, context: EngineContext) {
     if (c.origin.kind === "ATTACK" && (combat.stage !== "TRIGGER_RESOLUTION" || combat.attackerId !== c.origin.subjectId || state.objects.cards[combat.attackerId].readiness !== "SPENT")) return failure("INVALID_ATTACK_TRIGGER", "Committed attacking subject required");
     if (c.origin.kind === "DEFEAT" && (new Set(c.origin.defeated.map(d => d.targetId)).size !== c.origin.defeated.length || c.origin.defeated.some(d => !state.objects.cards[d.defeatedBy] || !state.objects.cards[d.targetId] || ["BATTLEFIELD", "LEGENDS"].includes(state.objects.cards[d.targetId].zone.zone)))) return failure("INVALID_DEFEATED_TRIGGER", "Defeat declaration and movement must precede the pending batch");
     if (c.bindings.some(b => !validBinding(state, b, context))) return failure("INVALID_TRIGGER_SOURCE", "Immutable source, inherited subject, trigger-time controller and origin must match reviewed text");
+    if (c.origin.kind === "ATTACK" && firstAttackHistoryEnabled(context)) {
+        // These admitted attack primitives cannot remove/reveal sources. The complete captured
+        // batch must therefore match declaration-time discovery, including already resolved bindings.
+        const expected = discoverTriggers(state, c.origin, context).map(b => canonicalSerialize(b)).sort();
+        if (canonicalSerialize(expected) !== canonicalSerialize(c.bindings.map(b => canonicalSerialize(b)).sort()))
+            return failure("INVALID_TRIGGER_BATCH", "Every eligible attack source must be captured once");
+    }
     const ids = c.bindings.map(b => triggerId(state, b, c.ordinal)), remaining = all.map(e => e.id), partition = [...remaining, ...c.resolvedIds];
     if (new Set(ids).size !== ids.length || new Set(partition).size !== partition.length || canonicalSerialize([...partition].sort()) !== canonicalSerialize([...ids].sort())) return failure("INVALID_TRIGGER_BATCH", "Every captured independent trigger must be exactly pending, current or resolved");
     for (const e of all) {
-        if (e.primitiveIndex !== undefined && (e !== r.current || e.primitiveIndex !== 1 || !(supportsOrderedAttackCard(cardRevision(state, e.sourceId!, context), context).ok || e.trigger?.kind === "WHEN_ATTACKING" && supportsDelayedAttackGear(cardRevision(state, e.sourceId!, context), context).ok))) return failure("INVALID_PRIMITIVE_INDEX", "Only the current reviewed ordered ability may advance to its second primitive");
+        if (e.primitiveIndex !== undefined && (e !== r.current || e.primitiveIndex !== 1 || !(supportsOrderedTriggerSource(cardRevision(state, e.sourceId!, context), context) || e.trigger?.kind === "WHEN_ATTACKING" && supportsDelayedAttackGear(cardRevision(state, e.sourceId!, context), context).ok))) return failure("INVALID_PRIMITIVE_INDEX", "Only the current reviewed ordered ability may advance to its second primitive");
         const binding = c.bindings.find(b => triggerId(state, b, c.ordinal) === e.id);
         if (!binding || canonicalSerialize(e) !== canonicalSerialize(pendingTrigger(state, binding, c.ordinal, e.causedBySequence, context, e.primitiveIndex ?? 0))) return failure("INVALID_PENDING_TRIGGER", "Pending effect must equal its immutable ability and semantic origin");
     }

@@ -1,3 +1,6 @@
+import { validateAttackingAuraMetadata } from "./attacking-aura-support";
+import { validateFirstAttackMetadata } from "./first-attack-support";
+import { validateFirstAttackHistory } from "./first-attack-history";
 import { validateFieldLegendMetadata } from "./field-legend-support";
 import { validateDelayedMetadata } from "./delayed-effect-support";
 import { validateLegendEntryState } from "./legend-entry";
@@ -84,6 +87,9 @@ export function validateState(input: unknown, context: EngineContext): Result<Ga
         if (!visit(id, new Set()))
             return failure("ATTACHMENT_CYCLE", "Attachments cannot form cycles");
     }
+    const auraMetadata = validateAttackingAuraMetadata(s, context); if (!auraMetadata.ok) return auraMetadata;
+    const firstMetadata = validateFirstAttackMetadata(s, context); if (!firstMetadata.ok) return firstMetadata;
+    const firstHistory = validateFirstAttackHistory(s, context); if (!firstHistory.ok) return firstHistory;
     const fieldMetadata = validateFieldLegendMetadata(s, context); if (!fieldMetadata.ok) return fieldMetadata;
     const delayedMetadata = validateDelayedMetadata(s, context); if (!delayedMetadata.ok) return delayedMetadata;
     const delayedState = validateDelayedState(s, context); if (!delayedState.ok) return delayedState;

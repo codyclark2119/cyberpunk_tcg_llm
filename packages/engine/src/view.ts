@@ -11,7 +11,8 @@ import { listStealableGigs } from "./combat-outcome-queries";
 import { isReactDecision } from "./react-support";
 import { isBlockerEligible } from "./react-queries";
 import { canPlay } from "./play-support";
-import { applicablePowerModifiers, effectiveCardTypes, effectivePower } from "./characteristics";
+import { supportsAttackingAuraLegend } from "./attacking-aura-support";
+import { isAttacking, hasClassification, applicablePowerModifiers, effectiveCardTypes, effectivePower } from "./characteristics";
 import { isAttackEligible, isUnitForGameplay, listAttackTargets } from "./combat-queries";
 import { attachedGear, attachmentHost, gearEnabled, legalEquipHosts } from "./attachments";
 import { testCondition } from "./conditions";
@@ -43,6 +44,8 @@ export class RulesView {
     testCondition(id: PlayerId, condition: Condition, sourceId?: CardInstanceId): boolean {
         return testCondition(this.state, id, condition, this.context, sourceId);
     }
+    isAttacking(id: CardInstanceId) { return isAttacking(this.state, id); }
+    hasClassification(id: CardInstanceId, classification: string) { return hasClassification(this.state, id, classification, this.context); }
     getEffectiveCardTypes(id: CardInstanceId) { return effectiveCardTypes(this.state, id, this.context); }
     isUnitForGameplay(id: CardInstanceId) { return isUnitForGameplay(this.state, id, this.context); }
     isAttackEligible(actor: PlayerId, id: CardInstanceId) { return isAttackEligible(this.state, actor, id, this.context); }
@@ -71,7 +74,7 @@ export class RulesView {
     getCapabilitySources(id: CardInstanceId, keyword: Keyword) { return this.getEffectiveCapabilities(id).find(c => c.keyword === keyword)?.sources ?? []; }
     getEffectiveKeywords(id: CardInstanceId) { return this.getKeywords(id); }
     getKeywords(id: CardInstanceId) {
-        if (this.getRevision(id)?.mechanics.modifiers.some(m => m.kind !== "POWER_PER_EQUIPPED_GEAR_DURING_OWN_TURN" && !(m.kind === "GRANT_KEYWORD_TO_HOST" && supportsCapabilityGear(this.getRevision(id), this.context).ok) && !(gearEnabled(this.context) && m.kind === "GRANT_PRINTED_POWER_TO_HOST" && this.getRevision(id)?.type === "GEAR"))) throw new Error("UNSUPPORTED_CONTINUOUS_MODIFIERS");
+        if (this.getRevision(id)?.mechanics.modifiers.some(m => m.kind !== "POWER_PER_EQUIPPED_GEAR_DURING_OWN_TURN" && !(m.kind === "FRIENDLY_ARASAKA_ATTACKING_UNIT_POWER" && supportsAttackingAuraLegend(this.getRevision(id), this.context).ok) && !(m.kind === "GRANT_KEYWORD_TO_HOST" && supportsCapabilityGear(this.getRevision(id), this.context).ok) && !(gearEnabled(this.context) && m.kind === "GRANT_PRINTED_POWER_TO_HOST" && this.getRevision(id)?.type === "GEAR"))) throw new Error("UNSUPPORTED_CONTINUOUS_MODIFIERS");
         return effectiveKeywords(this.state, id, this.context);
     }
     getLegalTargets(source: CardInstanceId, target: TargetSelector) {

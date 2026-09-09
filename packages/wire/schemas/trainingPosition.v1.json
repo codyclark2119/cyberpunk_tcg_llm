@@ -1152,6 +1152,73 @@
         "turnHistory": {
           "type": "object",
           "properties": {
+            "firstArasakaAttacks": {
+              "type": "object",
+              "propertyNames": {
+                "type": "string",
+                "format": "uuid",
+                "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+              },
+              "additionalProperties": {
+                "type": "object",
+                "properties": {
+                  "count": {
+                    "type": "integer",
+                    "minimum": 0,
+                    "maximum": 9007199254740991
+                  },
+                  "first": {
+                    "anyOf": [
+                      {
+                        "type": "object",
+                        "properties": {
+                          "attackerId": {
+                            "type": "string",
+                            "minLength": 1,
+                            "maxLength": 200,
+                            "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$"
+                          },
+                          "attacker": {
+                            "type": "object",
+                            "properties": {
+                              "cardId": {
+                                "type": "string",
+                                "minLength": 1,
+                                "maxLength": 200,
+                                "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$"
+                              },
+                              "revision": {
+                                "type": "integer",
+                                "exclusiveMinimum": 0,
+                                "maximum": 2147483647
+                              }
+                            },
+                            "required": [
+                              "cardId",
+                              "revision"
+                            ],
+                            "additionalProperties": false
+                          }
+                        },
+                        "required": [
+                          "attackerId",
+                          "attacker"
+                        ],
+                        "additionalProperties": false
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ]
+                  }
+                },
+                "required": [
+                  "count",
+                  "first"
+                ],
+                "additionalProperties": false
+              }
+            },
             "gigsStolenByUnit": {
               "type": "object",
               "propertyNames": {
@@ -1701,7 +1768,8 @@
                           "WHEN_PLAYED",
                           "WHEN_ATTACKING",
                           "WHEN_CARD_PLAYED",
-                          "WHEN_OWN_TURN_ENDS"
+                          "WHEN_OWN_TURN_ENDS",
+                          "WHEN_UNIT_ATTACKS"
                         ]
                       }
                     },
@@ -2481,6 +2549,25 @@
                                       "properties": {
                                         "kind": {
                                           "type": "string",
+                                          "const": "STREET_CRED_LESS_THAN_VALUE"
+                                        },
+                                        "value": {
+                                          "type": "integer",
+                                          "minimum": 0,
+                                          "maximum": 9007199254740991
+                                        }
+                                      },
+                                      "required": [
+                                        "kind",
+                                        "value"
+                                      ],
+                                      "additionalProperties": false
+                                    },
+                                    {
+                                      "type": "object",
+                                      "properties": {
+                                        "kind": {
+                                          "type": "string",
                                           "const": "SUBJECT_IS_UNIT_NAMED"
                                         },
                                         "identity": {
@@ -2833,6 +2920,25 @@
                             },
                             "condition": {
                               "oneOf": [
+                                {
+                                  "type": "object",
+                                  "properties": {
+                                    "kind": {
+                                      "type": "string",
+                                      "const": "STREET_CRED_LESS_THAN_VALUE"
+                                    },
+                                    "value": {
+                                      "type": "integer",
+                                      "minimum": 0,
+                                      "maximum": 9007199254740991
+                                    }
+                                  },
+                                  "required": [
+                                    "kind",
+                                    "value"
+                                  ],
+                                  "additionalProperties": false
+                                },
                                 {
                                   "type": "object",
                                   "properties": {
@@ -3974,7 +4080,8 @@
                             "WHEN_PLAYED",
                             "WHEN_ATTACKING",
                             "WHEN_CARD_PLAYED",
-                            "WHEN_OWN_TURN_ENDS"
+                            "WHEN_OWN_TURN_ENDS",
+                            "WHEN_UNIT_ATTACKS"
                           ]
                         },
                         "turn": {
@@ -4254,6 +4361,25 @@
                                     "properties": {
                                       "kind": {
                                         "type": "string",
+                                        "const": "STREET_CRED_LESS_THAN_VALUE"
+                                      },
+                                      "value": {
+                                        "type": "integer",
+                                        "minimum": 0,
+                                        "maximum": 9007199254740991
+                                      }
+                                    },
+                                    "required": [
+                                      "kind",
+                                      "value"
+                                    ],
+                                    "additionalProperties": false
+                                  },
+                                  {
+                                    "type": "object",
+                                    "properties": {
+                                      "kind": {
+                                        "type": "string",
                                         "const": "SUBJECT_IS_UNIT_NAMED"
                                       },
                                       "identity": {
@@ -4606,6 +4732,25 @@
                           },
                           "condition": {
                             "oneOf": [
+                              {
+                                "type": "object",
+                                "properties": {
+                                  "kind": {
+                                    "type": "string",
+                                    "const": "STREET_CRED_LESS_THAN_VALUE"
+                                  },
+                                  "value": {
+                                    "type": "integer",
+                                    "minimum": 0,
+                                    "maximum": 9007199254740991
+                                  }
+                                },
+                                "required": [
+                                  "kind",
+                                  "value"
+                                ],
+                                "additionalProperties": false
+                              },
                               {
                                 "type": "object",
                                 "properties": {
@@ -5747,7 +5892,8 @@
                           "WHEN_PLAYED",
                           "WHEN_ATTACKING",
                           "WHEN_CARD_PLAYED",
-                          "WHEN_OWN_TURN_ENDS"
+                          "WHEN_OWN_TURN_ENDS",
+                          "WHEN_UNIT_ATTACKS"
                         ]
                       },
                       "turn": {
@@ -6023,6 +6169,25 @@
                                     "properties": {
                                       "kind": {
                                         "type": "string",
+                                        "const": "STREET_CRED_LESS_THAN_VALUE"
+                                      },
+                                      "value": {
+                                        "type": "integer",
+                                        "minimum": 0,
+                                        "maximum": 9007199254740991
+                                      }
+                                    },
+                                    "required": [
+                                      "kind",
+                                      "value"
+                                    ],
+                                    "additionalProperties": false
+                                  },
+                                  {
+                                    "type": "object",
+                                    "properties": {
+                                      "kind": {
+                                        "type": "string",
                                         "const": "SUBJECT_IS_UNIT_NAMED"
                                       },
                                       "identity": {
@@ -6375,6 +6540,25 @@
                           },
                           "condition": {
                             "oneOf": [
+                              {
+                                "type": "object",
+                                "properties": {
+                                  "kind": {
+                                    "type": "string",
+                                    "const": "STREET_CRED_LESS_THAN_VALUE"
+                                  },
+                                  "value": {
+                                    "type": "integer",
+                                    "minimum": 0,
+                                    "maximum": 9007199254740991
+                                  }
+                                },
+                                "required": [
+                                  "kind",
+                                  "value"
+                                ],
+                                "additionalProperties": false
+                              },
                               {
                                 "type": "object",
                                 "properties": {
@@ -7516,7 +7700,8 @@
                           "WHEN_PLAYED",
                           "WHEN_ATTACKING",
                           "WHEN_CARD_PLAYED",
-                          "WHEN_OWN_TURN_ENDS"
+                          "WHEN_OWN_TURN_ENDS",
+                          "WHEN_UNIT_ATTACKS"
                         ]
                       },
                       "turn": {
@@ -8234,7 +8419,8 @@
                   "WHEN_PLAYED",
                   "WHEN_ATTACKING",
                   "WHEN_CARD_PLAYED",
-                  "WHEN_OWN_TURN_ENDS"
+                  "WHEN_OWN_TURN_ENDS",
+                  "WHEN_UNIT_ATTACKS"
                 ]
               }
             },
@@ -8417,6 +8603,29 @@
             "required": [
               "attackerId",
               "count"
+            ],
+            "additionalProperties": false
+          }
+        },
+        "turnAttacks": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "seat": {
+                "type": "integer",
+                "minimum": -9007199254740991,
+                "maximum": 9007199254740991
+              },
+              "arasakaUnitAttacks": {
+                "type": "integer",
+                "minimum": 0,
+                "maximum": 9007199254740991
+              }
+            },
+            "required": [
+              "seat",
+              "arasakaUnitAttacks"
             ],
             "additionalProperties": false
           }
