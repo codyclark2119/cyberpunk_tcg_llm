@@ -1,0 +1,54 @@
+import type { GameState, LegalAction } from "@tcg/domain";
+import { applyAction, createGameWithEvents, hashObservation, hashPosition, hashReplayState, listLegalActions, observe } from "@tcg/engine";
+import { generatePosition, type TrainingPosition } from "@tcg/training-harness";
+import { fieldLegendContext, fieldLegendInput, V } from "./field-legends-fixture";
+import { DYING_NIGHT } from "./delayed-effects-fixture";
+import { unwrap } from "./turn-replay";
+/** Legal setup and actions only. CALL always chooses public slot 1; the frozen seed makes it V. */
+export function fieldLegendReplay(seed: string, collectPositions = true) {
+    const context = fieldLegendContext(), initialization = fieldLegendInput(seed), initialized = unwrap(createGameWithEvents(initialization, context));
+    let state: GameState = initialized.state;
+    const steps: ReturnType<typeof import("./turn-replay").turnReplay>["steps"] = [], positions: TrainingPosition[] = [];
+    const take = (predicate: (a: LegalAction) => boolean) => {
+        const actorId = state.timing.actingPlayer, legalActions = unwrap(listLegalActions(state, actorId, context)), selected = legalActions.find(predicate);
+        if (!selected) throw new Error(`Missing field-Legend action at ${state.timing.turn}/${state.timing.step}`);
+        const observation = unwrap(observe(state, actorId, context));
+        if (collectPositions && legalActions.length > 1) positions.push(unwrap(generatePosition(state, actorId, context, `field-legends-${steps.length}`)));
+        const action = { actorId, action: selected.action }, next = unwrap(applyAction(state, action, context)); state = next.state;
+        steps.push({ actorId, action, actionId: selected.actionId, legalActions, observation, events: next.events, stateHash: hashReplayState(state), positionHash: hashPosition(state), observationHash: hashObservation(unwrap(observe(state, state.timing.actingPlayer, context))), step: state.timing.step });
+    };
+    const choose = (index = 0) => take(a => a.action.kind === "CHOOSE" && a.action.optionIndices[0] === index);
+    while (state.setup) choose(state.setup.stage === "FIRST_PLAYER" && state.timing.actingPlayer !== state.match.playerOrder[0] ? 1 : 0);
+    const actor = state.timing.activePlayer;
+    const roll = (die: string) => take(a => a.action.kind === "ROLL_GIG" && a.action.gigInstanceId.endsWith(die));
+    const end = () => take(a => a.action.kind === "END_TURN");
+    const sell = () => take(a => a.action.kind === "SELL_CARD" && state.objects.cards[a.action.cardInstanceId].cardId !== DYING_NIGHT);
+    const pay = () => { while (state.resolution.choice?.kind === "PAYMENT") { const index = state.resolution.choice.options.findIndex(o => o.kind === "PAYMENT" && o.source.kind === "EDDIE"); choose(Math.max(0, index)); } };
+    roll("D4"); sell();
+    const legend = state.players[actor].zones.LEGENDS[0];
+    take(a => a.action.kind === "CALL_LEGEND" && a.action.cardInstanceId === legend); pay();
+    if (state.objects.cards[legend].cardId !== V) throw new Error("Frozen headline needs V revealed by blind CALL slot 1");
+    const calledLegend = state;
+    end(); roll("D12"); end(); roll("D6"); sell();
+    take(a => a.action.kind === "PLAY_CARD" && state.objects.cards[a.action.cardInstanceId].cardId === DYING_NIGHT); pay();
+    if (state.resolution.choice?.kind !== "TARGET") throw new Error("Expected Gear equip choice");
+    choose(state.resolution.choice.options.findIndex(o => o.kind === "CARD" && o.cardInstanceId === legend));
+    const preEquippedLegend = state;
+    end(); roll("D10"); end(); roll("D8"); sell();
+    const beforeGoSolo = state;
+    take(a => a.action.kind === "GO_SOLO" && a.action.cardInstanceId === legend);
+    const pendingEntry = state; pay(); const fieldEntry = state;
+    take(a => a.action.kind === "DECLARE_ATTACK" && a.action.cardInstanceId === legend);
+    const pendingAttack = state;
+    if (state.timing.step !== "TARGET_SELECTION") throw new Error("Expected Dying Night Gig target choice");
+    const target = state.resolution.choice!.options.findIndex(o => { if (o.kind !== "GIG") return false; const g = state.objects.gigs[o.gigInstanceId]; return g.controllerId !== actor && g.roll.kind === "ROLLED" && g.roll.currentValue >= 3; });
+    if (target < 0) throw new Error("Seed needs a rival decrease2 target");
+    choose(target); choose(state.resolution.choice!.options.findIndex(o => o.kind === "AMOUNT" && o.amount === 2));
+    const registeredDuringReact = state;
+    take(a => a.action.kind === "PASS_REACT");
+    while (state.resolution.choice) choose();
+    const beforeEndTurn = state; end(); const pendingEndTurn = state;
+    while (state.resolution.choice) choose();
+    return { schemaVersion: 1, note: "Private authoritative replay, not model input or human gold. Real V: blind CALL slot1, pre-equip real Dying Night in LEGENDS, Go Solo preserving physical host/Gear, same-turn ATTACK, decrease2 and delayed registration, React/steal, end-turn real V-positive ready2, next turn. No state/RNG patches.", content: context.content, initialization, initialized, steps, positions, legend, calledLegend, preEquippedLegend, beforeGoSolo, pendingEntry, fieldEntry, pendingAttack, registeredDuringReact, beforeEndTurn, pendingEndTurn, finalState: state, finalStateHash: hashReplayState(state) };
+}
+export const vDyingNightReplay = () => fieldLegendReplay("field-legends-12");

@@ -1,4 +1,7 @@
+import { validateFieldLegendMetadata } from "./field-legend-support";
 import { validateDelayedMetadata } from "./delayed-effect-support";
+import { validateLegendEntryState } from "./legend-entry";
+import { effectiveCardTypes } from "./characteristics";
 import { validateDelayedState } from "./delayed-effects";
 import { validateEndTurnMetadata } from "./end-turn-support";
 import { validateOrderedMetadata } from "./ordered-effects-support";
@@ -65,7 +68,7 @@ export function validateState(input: unknown, context: EngineContext): Result<Ga
             return failure("INVALID_EDDIE", "Eddies must be face-down sellable card instances");
         if (c.zone.zone === "LEGENDS" && content.type !== "LEGEND" && !(gearEnabled(context) && content.type === "GEAR"))
             return failure("INVALID_LEGEND", "Only Legends belong in the Legend zone");
-        if (c.statuses.includes("LAG") && (content.type !== "UNIT" || c.zone.zone !== "BATTLEFIELD")) return failure("INVALID_LAG", "Lag belongs only to Units in the field");
+        if (c.statuses.includes("LAG") && (!effectiveCardTypes(s, c.id, context).includes("UNIT") || c.zone.zone !== "BATTLEFIELD")) return failure("INVALID_LAG", "Lag belongs only to Units in the field");
         if (c.statuses.includes("GO_SOLO") && (content.type !== "LEGEND" || !content.mechanics.keywords.includes("GO_SOLO") || c.zone.zone !== "BATTLEFIELD"))
             return failure("INVALID_GO_SOLO", "Go Solo requires a printed Legend with the keyword on the battlefield");
         if (!gearEnabled(context)) for (const target of c.attachments) {
@@ -81,6 +84,7 @@ export function validateState(input: unknown, context: EngineContext): Result<Ga
         if (!visit(id, new Set()))
             return failure("ATTACHMENT_CYCLE", "Attachments cannot form cycles");
     }
+    const fieldMetadata = validateFieldLegendMetadata(s, context); if (!fieldMetadata.ok) return fieldMetadata;
     const delayedMetadata = validateDelayedMetadata(s, context); if (!delayedMetadata.ok) return delayedMetadata;
     const delayedState = validateDelayedState(s, context); if (!delayedState.ok) return delayedState;
     const endMetadata = validateEndTurnMetadata(s, context); if (!endMetadata.ok) return endMetadata;
@@ -167,7 +171,7 @@ export function validateState(input: unknown, context: EngineContext): Result<Ga
         if (s.match.outcome && (!ids.includes(s.match.outcome.winnerId) || !ids.includes(s.match.outcome.loserId) || s.match.outcome.winnerId === s.match.outcome.loserId))
             return failure("INVALID_OUTCOME", "Outcome players invalid");
         const continuation = s.resolution.callContinuation;
-        if ((step === "PAYMENT_SELECTION") !== Boolean(continuation || s.resolution.playContinuation?.phase === "PAYMENT") || (step === "PAYMENT_SELECTION" && !choice))
+        if ((step === "PAYMENT_SELECTION") !== Boolean(continuation || s.resolution.legendEntryContinuation || s.resolution.playContinuation?.phase === "PAYMENT") || (step === "PAYMENT_SELECTION" && !choice))
             return failure("INVALID_PAYMENT_STATE", "Payment step, choice and continuation must agree");
         if (continuation) {
             const legend = s.objects.cards[continuation.legendId], available = paymentSources(s, continuation.actorId, context);
@@ -182,6 +186,7 @@ export function validateState(input: unknown, context: EngineContext): Result<Ga
                 return failure("INVALID_PAYMENT_OPTIONS", "Choice options must exactly match eligible payment continuations");
         }
     }
+    const entry = validateLegendEntryState(s, context); if (!entry.ok) return entry;
     const play = validatePlayState(s, context);
     if (!play.ok) return play;
     const search = validateSearchState(s, context);

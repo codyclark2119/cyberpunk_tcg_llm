@@ -1,5 +1,7 @@
+import { effectiveCardTypes } from "./characteristics";
 import { delayedEffectsEnabled, supportsDelayedAttackGear } from "./delayed-effect-support";
 import { delayedBinding } from "./delayed-effects";
+import { delayedSubjectTypes } from "./delayed-effects";
 import { readyableEddieSlots } from "./eddie-ready";
 import { endTurnEnabled } from "./end-turn-support";
 import { supportsOrderedAttackCard } from "./ordered-effects-support";
@@ -30,7 +32,7 @@ function validBinding(state: GameState, b: TriggerBinding, context: EngineContex
     if (origin.kind === "ATTACK") return b.kind === "WHEN_ATTACKING" && b.subjectId === origin.subjectId;
     if (b.kind === "WHEN_PLAYED") return b.subjectId === origin.subjectId;
     const played = state.objects.cards[origin.subjectId], revision = cardRevision(state, origin.subjectId, context);
-    return b.kind === "WHEN_CARD_PLAYED" && ability.guard === "FIRST_BLUE_UNIT_OR_GEAR_PLAY_PER_TURN" && r?.type === "LEGEND" && played?.controllerId === b.controllerId && revision?.colors.includes("BLUE") && ["UNIT", "GEAR"].includes(revision.type) && state.turnHistory!.blueUnitOrGearPlays[b.controllerId] === 1;
+    return b.kind === "WHEN_CARD_PLAYED" && ability.guard === "FIRST_BLUE_UNIT_OR_GEAR_PLAY_PER_TURN" && r?.type === "LEGEND" && played?.controllerId === b.controllerId && revision?.colors.includes("BLUE") && effectiveCardTypes(state, played.id, context).some(t => t === "UNIT" || t === "GEAR") && state.turnHistory!.blueUnitOrGearPlays[b.controllerId] === 1;
 }
 export function validateTriggerState(state: GameState, context: EngineContext) {
     const r = state.resolution, c = r.triggerContinuation, history = state.turnHistory, enabled = triggersEnabled(context);
@@ -39,7 +41,7 @@ export function validateTriggerState(state: GameState, context: EngineContext) {
     if (enabled && (!context.content.ruleset.gameplay?.turnSlice?.combatRestrictions || (!state.setup && (!history || history.turn !== state.timing.turn || canonicalSerialize(Object.keys(history.blueUnitOrGearPlays).sort()) !== canonicalSerialize([...state.match.playerOrder].sort()))))) return failure("INVALID_TURN_HISTORY", "Current turn, exact player counters and prior combat policy required");
     if (state.setup && history) return failure("INVALID_TURN_HISTORY", "Turn history starts with the first actual turn");
     if (!c) return all.some(e => e.trigger || e.primitiveIndex !== undefined) || state.timing.combat.stage === "TRIGGER_RESOLUTION" || ["EDDIE_READY_SELECTION", "DISCARD_SELECTION", "TRIGGER_ORDER_SELECTION", "OPTIONAL_TRIGGER_SELECTION"].includes(state.timing.step ?? "") ? failure("ORPHAN_TRIGGER", "Pending trigger metadata requires its continuation") : success(null);
-    if (!enabled || state.setup || state.match.outcome || r.returnTo || r.playContinuation || r.callContinuation || r.searchContinuation || r.gigStealContinuation || r.defeatContinuation || r.discovered.length || r.stage !== "CHOICE" || !r.choice || c.ordinal !== history?.triggeredBatches || Object.values(state.objects.cards).some(c => c.zone.zone === "RESOLVING_PROGRAM")) return failure("INVALID_TRIGGER_CONTINUATION", "Exclusive player-choice trigger batch required");
+    if (!enabled || state.setup || state.match.outcome || r.returnTo || r.legendEntryContinuation || r.playContinuation || r.callContinuation || r.searchContinuation || r.gigStealContinuation || r.defeatContinuation || r.discovered.length || r.stage !== "CHOICE" || !r.choice || c.ordinal !== history?.triggeredBatches || Object.values(state.objects.cards).some(c => c.zone.zone === "RESOLVING_PROGRAM")) return failure("INVALID_TRIGGER_CONTINUATION", "Exclusive player-choice trigger batch required");
     const combat = state.timing.combat;
     if (c.origin.kind === "END_TURN" && (!(endTurnEnabled(context) || delayedEffectsEnabled(context)) || c.origin.playerId !== state.timing.activePlayer || c.origin.turn !== state.timing.turn)) return failure("INVALID_END_TURN_RETURN", "Current active player/global turn and supported end-turn policy required");
     if (c.origin.kind === "PLAY" || c.origin.kind === "END_TURN" ? combat.stage !== "NONE" : combat.stage !== "TRIGGER_RESOLUTION" || combat.attackingPlayerId !== state.timing.activePlayer) return failure("INVALID_TRIGGER_COMBAT", "Trigger batch must pause its original combat stage");
@@ -69,7 +71,7 @@ export function validateTriggerState(state: GameState, context: EngineContext) {
         return failure("INVALID_READY_SELECTION", "Only a count2 ready choice may hold one still-spent public slot");
     if (c.phase === "READY" && r.current?.effect.kind === "READY_EDDIES") {
         const e = r.current.effect, selected = c.selectedEddieSlots ?? [], available = readyableEddieSlots(state, r.current.controllerId).filter(slot => !selected.includes(slot));
-        if (available.length <= e.count - selected.length || e.when && !testCondition(state, r.current.controllerId, e.when.condition, context, r.current.trigger!.subjectId))
+        if (available.length <= e.count - selected.length || e.when && !testCondition(state, r.current.controllerId, e.when.condition, context, r.current.trigger!.subjectId, delayedSubjectTypes(state)))
             return failure("INVALID_READY_CONTINUATION", "Only a true-condition strategic selection may remain pending; forced cases resolve automatically");
     }
     if (c.phase === "DISCARD" || r.current?.effect.kind === "DISCARD_CARDS" || c.conditionMet !== undefined) {

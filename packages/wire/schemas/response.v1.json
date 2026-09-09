@@ -1060,6 +1060,22 @@
                             ],
                             "additionalProperties": false
                           },
+                          "subjectTypesAtCreation": {
+                            "type": "array",
+                            "prefixItems": [
+                              {
+                                "type": "string",
+                                "const": "LEGEND"
+                              },
+                              {
+                                "type": "string",
+                                "const": "UNIT"
+                              }
+                            ],
+                            "items": false,
+                            "minItems": 2,
+                            "maxItems": 2
+                          },
                           "abilityId": {
                             "type": "string",
                             "minLength": 1
@@ -1367,6 +1383,22 @@
                                               "revision"
                                             ],
                                             "additionalProperties": false
+                                          },
+                                          "subjectTypesAtCreation": {
+                                            "type": "array",
+                                            "prefixItems": [
+                                              {
+                                                "type": "string",
+                                                "const": "LEGEND"
+                                              },
+                                              {
+                                                "type": "string",
+                                                "const": "UNIT"
+                                              }
+                                            ],
+                                            "items": false,
+                                            "minItems": 2,
+                                            "maxItems": 2
                                           },
                                           "abilityId": {
                                             "type": "string",
@@ -1941,6 +1973,68 @@
                           "required": [
                             "defeats",
                             "orders"
+                          ],
+                          "additionalProperties": false
+                        },
+                        "legendEntryContinuation": {
+                          "type": "object",
+                          "properties": {
+                            "mode": {
+                              "type": "string",
+                              "enum": [
+                                "GO_SOLO",
+                                "PLAY"
+                              ]
+                            },
+                            "actorId": {
+                              "type": "string",
+                              "format": "uuid",
+                              "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+                            },
+                            "sourceId": {
+                              "type": "string",
+                              "minLength": 1,
+                              "maxLength": 200,
+                              "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$"
+                            },
+                            "remainingCost": {
+                              "type": "integer",
+                              "exclusiveMinimum": 0,
+                              "maximum": 9007199254740991
+                            },
+                            "selectedSources": {
+                              "type": "array",
+                              "items": {
+                                "type": "object",
+                                "properties": {
+                                  "kind": {
+                                    "type": "string",
+                                    "enum": [
+                                      "EDDIE",
+                                      "LEGEND"
+                                    ]
+                                  },
+                                  "cardInstanceId": {
+                                    "type": "string",
+                                    "minLength": 1,
+                                    "maxLength": 200,
+                                    "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$"
+                                  }
+                                },
+                                "required": [
+                                  "kind",
+                                  "cardInstanceId"
+                                ],
+                                "additionalProperties": false
+                              }
+                            }
+                          },
+                          "required": [
+                            "mode",
+                            "actorId",
+                            "sourceId",
+                            "remainingCost",
+                            "selectedSources"
                           ],
                           "additionalProperties": false
                         },
@@ -9184,6 +9278,22 @@
                             ],
                             "additionalProperties": false
                           },
+                          "subjectTypesAtCreation": {
+                            "type": "array",
+                            "prefixItems": [
+                              {
+                                "type": "string",
+                                "const": "LEGEND"
+                              },
+                              {
+                                "type": "string",
+                                "const": "UNIT"
+                              }
+                            ],
+                            "items": false,
+                            "minItems": 2,
+                            "maxItems": 2
+                          },
                           "abilityId": {
                             "type": "string",
                             "minLength": 1
@@ -9491,6 +9601,22 @@
                                               "revision"
                                             ],
                                             "additionalProperties": false
+                                          },
+                                          "subjectTypesAtCreation": {
+                                            "type": "array",
+                                            "prefixItems": [
+                                              {
+                                                "type": "string",
+                                                "const": "LEGEND"
+                                              },
+                                              {
+                                                "type": "string",
+                                                "const": "UNIT"
+                                              }
+                                            ],
+                                            "items": false,
+                                            "minItems": 2,
+                                            "maxItems": 2
                                           },
                                           "abilityId": {
                                             "type": "string",
@@ -10065,6 +10191,68 @@
                           "required": [
                             "defeats",
                             "orders"
+                          ],
+                          "additionalProperties": false
+                        },
+                        "legendEntryContinuation": {
+                          "type": "object",
+                          "properties": {
+                            "mode": {
+                              "type": "string",
+                              "enum": [
+                                "GO_SOLO",
+                                "PLAY"
+                              ]
+                            },
+                            "actorId": {
+                              "type": "string",
+                              "format": "uuid",
+                              "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+                            },
+                            "sourceId": {
+                              "type": "string",
+                              "minLength": 1,
+                              "maxLength": 200,
+                              "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$"
+                            },
+                            "remainingCost": {
+                              "type": "integer",
+                              "exclusiveMinimum": 0,
+                              "maximum": 9007199254740991
+                            },
+                            "selectedSources": {
+                              "type": "array",
+                              "items": {
+                                "type": "object",
+                                "properties": {
+                                  "kind": {
+                                    "type": "string",
+                                    "enum": [
+                                      "EDDIE",
+                                      "LEGEND"
+                                    ]
+                                  },
+                                  "cardInstanceId": {
+                                    "type": "string",
+                                    "minLength": 1,
+                                    "maxLength": 200,
+                                    "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$"
+                                  }
+                                },
+                                "required": [
+                                  "kind",
+                                  "cardInstanceId"
+                                ],
+                                "additionalProperties": false
+                              }
+                            }
+                          },
+                          "required": [
+                            "mode",
+                            "actorId",
+                            "sourceId",
+                            "remainingCost",
+                            "selectedSources"
                           ],
                           "additionalProperties": false
                         },
@@ -17104,6 +17292,26 @@
                             "properties": {
                               "kind": {
                                 "type": "string",
+                                "const": "GO_SOLO_ACTIVATED"
+                              },
+                              "cardInstanceId": {
+                                "type": "string",
+                                "minLength": 1,
+                                "maxLength": 200,
+                                "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$"
+                              }
+                            },
+                            "required": [
+                              "kind",
+                              "cardInstanceId"
+                            ],
+                            "additionalProperties": false
+                          },
+                          {
+                            "type": "object",
+                            "properties": {
+                              "kind": {
+                                "type": "string",
                                 "const": "CARD_PLAYED"
                               },
                               "cardInstanceId": {
@@ -17676,6 +17884,22 @@
                                       "revision"
                                     ],
                                     "additionalProperties": false
+                                  },
+                                  "subjectTypesAtCreation": {
+                                    "type": "array",
+                                    "prefixItems": [
+                                      {
+                                        "type": "string",
+                                        "const": "LEGEND"
+                                      },
+                                      {
+                                        "type": "string",
+                                        "const": "UNIT"
+                                      }
+                                    ],
+                                    "items": false,
+                                    "minItems": 2,
+                                    "maxItems": 2
                                   },
                                   "abilityId": {
                                     "type": "string",
@@ -18844,6 +19068,22 @@
                             "items": {
                               "type": "object",
                               "properties": {
+                                "effectiveTypes": {
+                                  "type": "array",
+                                  "items": {
+                                    "type": "string",
+                                    "enum": [
+                                      "LEGEND",
+                                      "UNIT",
+                                      "GEAR",
+                                      "PROGRAM"
+                                    ]
+                                  }
+                                },
+                                "goSolo": {
+                                  "type": "boolean",
+                                  "const": true
+                                },
                                 "knownToSeats": {
                                   "type": "array",
                                   "items": {

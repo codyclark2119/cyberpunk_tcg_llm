@@ -1,3 +1,5 @@
+import { supportsFieldLegend } from "./field-legend-support";
+import type { LegendEntryMode } from "./legend-entry";
 import { forgetLegendKnowledge } from "./private-knowledge";
 import { failure, success, type CardInstanceId, type GameState, type Result } from "@tcg/domain";
 import type { EngineContext } from "./state";
@@ -23,8 +25,20 @@ export function moveCardLocation(m: TurnMutation, id: CardInstanceId, zone: "BAT
     (m.state.players[card.zone.playerId].zones[zone] ??= []).push(id);
     if (zone === "HAND") card.face = "DOWN";
     else card.face = "UP";
-    if (zone !== "BATTLEFIELD") card.statuses = card.statuses.filter(status => status !== "LAG");
+    if (zone !== "BATTLEFIELD") card.statuses = card.statuses.filter(status => status !== "LAG" && status !== "GO_SOLO");
     m.emit({ kind: "CARD_MOVED", cardInstanceId: id, from, to: card.zone });
+}
+/** 4.12: one semantic transition. No external state is returned until host and Gear share FIELD. */
+export function moveLegendToFieldWithAttachments(m: TurnMutation, id: CardInstanceId, mode: LegendEntryMode): Result<null> {
+    const host = m.state.objects.cards[id];
+    if (!host || host.face !== "UP" || host.zone.zone !== "LEGENDS" || !supportsFieldLegend(revision(m, id), m.context).ok) return failure("INVALID_LEGEND_ENTRY", "Reviewed public Legends-area source required");
+    const gearIds = [...host.attachments].sort();
+    moveCardLocation(m, id, "BATTLEFIELD");
+    for (const gearId of gearIds) moveCardLocation(m, gearId, "BATTLEFIELD");
+    // Go Solo overrides attack Lag only, not the Spend-icon restriction (official FAQ).
+    host.statuses.push("LAG");
+    if (mode === "GO_SOLO") { host.readiness = "READY"; host.statuses.push("GO_SOLO"); }
+    return success(null);
 }
 export function attachPlayedGear(m: TurnMutation, gearId: CardInstanceId, hostId: CardInstanceId): Result<null> {
     if (!legalEquipHosts(m.state, gearId, m.context).includes(hostId)) return failure("INVALID_EQUIP_TARGET", "Host is no longer an eligible friendly Unit/Legend");
@@ -59,7 +73,7 @@ export function processDeparture(m: TurnMutation, id: CardInstanceId, destinatio
 }
 /** Trusted engine effect/test boundary, NOT a player action or JSONL operation. No combat/defeat semantics.
  * This slice supports same-owner/controller HAND/TRASH departures and owners' REMOVED piles only. Bottom-deck groups and
- * between-field/Legends-area movement need their own reviewed action/ordering implementation. */
+ * other area transitions need their own reviewed action/ordering implementation; Legend field entry uses the separate atomic operation above. */
 export function moveCardForEffect(state: GameState, id: CardInstanceId, destination: Destination, context: EngineContext, trashOrder?: readonly CardInstanceId[]) {
     const valid = validateState(state, context);
     if (!valid.ok) return valid;

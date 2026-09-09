@@ -1,4 +1,6 @@
+import { effectiveCardTypes } from "./characteristics";
 import { registerEndTurnEffect } from "./delayed-effects";
+import { delayedSubjectTypes } from "./delayed-effects";
 import { supportsDelayedAttackGear } from "./delayed-effect-support";
 import { finishEndTurn } from "./end-turn";
 import { readyableEddieSlots, readyEddie } from "./eddie-ready";
@@ -19,7 +21,7 @@ import { discoverTriggers, pendingTrigger, triggerChoice, triggerGigTargets } fr
 
 export function recordPlayedCard(m: TurnMutation, sourceId: CardInstanceId) {
     const c = m.state.objects.cards[sourceId], r = cardRevision(m.state, sourceId, m.context)!;
-    if (r.colors.includes("BLUE") && ["UNIT", "GEAR"].includes(r.type)) {
+    if (r.colors.includes("BLUE") && effectiveCardTypes(m.state, sourceId, m.context).some(t => t === "UNIT" || t === "GEAR")) {
         const ordinal = ++m.state.turnHistory!.blueUnitOrGearPlays[c.controllerId];
         m.emit({ kind: "QUALIFYING_PLAY_RECORDED", playerId: c.controllerId, cardInstanceId: sourceId, ordinal });
     }
@@ -95,7 +97,7 @@ export function advanceTriggers(m: TurnMutation): Result<null> {
     if (e.kind === "REGISTER_END_TURN_EFFECT") { const result = registerEndTurnEffect(m); return result.ok ? completed(m) : result; }
     if (e.kind === "READY_EDDIES") {
         const current = r.current, a = cardRevision(m.state, current.sourceId!, m.context)!.mechanics.abilities.find(a => a.id === current.trigger!.abilityId)!;
-        const met = e.when ? testCondition(m.state, current.controllerId, e.when.condition, m.context, current.trigger!.subjectId) : a.conditions.every(c => testCondition(m.state, current.controllerId, c, m.context, current.trigger!.subjectId));
+        const met = e.when ? testCondition(m.state, current.controllerId, e.when.condition, m.context, current.trigger!.subjectId, delayedSubjectTypes(m.state)) : a.conditions.every(c => testCondition(m.state, current.controllerId, c, m.context, current.trigger!.subjectId));
         m.emit({ kind: "CONDITION_EVALUATED", effectId: current.id, met });
         if (!met) return completed(m);
         return advanceReady(m);

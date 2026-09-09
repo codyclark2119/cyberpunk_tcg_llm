@@ -1,3 +1,4 @@
+import { effectiveCardTypes } from "./characteristics";
 import { discoverTriggers } from "./trigger-queries";
 import { triggersEnabled, supportsTriggerCard } from "./trigger-support";
 import { failure, success, type CardInstanceId, type DefeatInstruction, type GameState } from "@tcg/domain";
@@ -12,8 +13,8 @@ export function defeatBatch(state: GameState, id: CardInstanceId): CardInstanceI
 }
 export function defeatSupport(state: GameState, id: CardInstanceId, context: EngineContext) {
     const c = state.objects.cards[id], revision = cardRevision(state, id, context);
-    if (!c || c.zone.zone !== "BATTLEFIELD" || c.face !== "UP" || revision?.type !== "UNIT" || !supportsPlay(revision, context).ok || (revision.mechanics.abilities.some(a => a.trigger === "WHEN_DEFEATED") && !supportsTriggerCard(revision, context).ok))
-        return failure("UNSUPPORTED_DEFEAT", "Defeat currently admits reviewed ordinary field Units with fully reviewed DEFEATED effects only; no Go Solo execution");
+    if (!c || c.zone.zone !== "BATTLEFIELD" || c.face !== "UP" || !revision || !effectiveCardTypes(state, id, context).includes("UNIT") || !supportsPlay(revision, context).ok || (revision.mechanics.abilities.some(a => a.trigger === "WHEN_DEFEATED") && !supportsTriggerCard(revision, context).ok))
+        return failure("UNSUPPORTED_DEFEAT", "Defeat requires a reviewed effective field Unit with fully supported DEFEATED effects");
     if (defeatBatch(state, id).some(cid => state.objects.cards[cid].ownerId !== c.ownerId || state.objects.cards[cid].controllerId !== c.ownerId))
         return failure("UNSUPPORTED_DEFEAT_OWNERSHIP", "Cross-owner card/Gear movement requires a separately reviewed destination and ordering protocol");
     return success(null);

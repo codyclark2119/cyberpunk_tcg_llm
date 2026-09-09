@@ -1,3 +1,4 @@
+import { supportsFieldLegend } from "./field-legend-support";
 import { supportsEndTurnCard } from "./end-turn-support";
 import { supportsOrderedAttackCard } from "./ordered-effects-support";
 import { supportsTriggerCard } from "./trigger-support";
@@ -16,6 +17,7 @@ export function revisionOf(state: GameState, id: CardInstanceId, context: Engine
 }
 /** Admission certifies only these reviewed shapes, never catalog legality or arbitrary metadata. */
 export function supportsPlay(card: DeepReadonly<CardRevisionSnapshot> | undefined, context: EngineContext) {
+    if (playEnabled(context) && card?.execution?.scope === "FIELD_LEGENDS_V1") return supportsFieldLegend(card, context);
     if (playEnabled(context) && card?.execution?.scope === "END_TURN_HISTORY_V1") return supportsEndTurnCard(card, context);
     if (playEnabled(context) && card?.execution?.scope === "ATTACK_ORDERED_EFFECTS_V1") return supportsOrderedAttackCard(card, context);
     if (playEnabled(context) && card?.execution?.scope === "COMBAT_TRIGGERS_V1" && card.type !== "LEGEND") return supportsTriggerCard(card, context);

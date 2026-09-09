@@ -1,3 +1,4 @@
+import { validateFieldLegendMetadata } from "./field-legend-support";
 import { validateDelayedMetadata } from "./delayed-effect-support";
 import { validateDelayedState } from "./delayed-effects";
 import { validateEndTurnMetadata } from "./end-turn-support";
@@ -57,6 +58,7 @@ export function createGameWithEvents(input: z.input<typeof CreateGameInputSchema
         p.economy = { sellsThisTurn: 0, callsThisTurn: 0, usageTurn: 1 };
     if (triggersEnabled(context)) s.turnHistory = { turn: 1, triggeredBatches: 0, blueUnitOrGearPlays: Object.fromEntries(s.match.playerOrder.map(id => [id, 0])) };
     // Capability admission is deck-wide, never a hidden-Legend-specific label/filter.
+    const fieldMetadata = validateFieldLegendMetadata(s, context); if (!fieldMetadata.ok) return fieldMetadata;
     const delayedMetadata = validateDelayedMetadata(s, context); if (!delayedMetadata.ok) return delayedMetadata;
     const delayedState = validateDelayedState(s, context); if (!delayedState.ok) return delayedState;
     const endMetadata = validateEndTurnMetadata(s, context); if (!endMetadata.ok) return endMetadata;

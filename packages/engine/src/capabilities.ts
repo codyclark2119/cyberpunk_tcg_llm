@@ -1,3 +1,4 @@
+import { supportsFieldLegend } from "./field-legend-support";
 import type { CardInstanceId, CardReference, GameState, Keyword, PlayerId } from "@tcg/domain";
 import type { EngineContext } from "./state";
 import { cardRevision } from "./characteristics";
@@ -18,7 +19,7 @@ export function effectiveCapabilities(state: GameState, id: CardInstanceId, cont
         groups.set(keyword, [...(groups.get(keyword) ?? []), source]);
     };
     for (const keyword of new Set(revision.mechanics.keywords)) add(keyword, id, "PRINTED");
-    if (capabilitiesEnabled(context) && host.face === "UP" && host.zone.playerId === host.controllerId && ((revision.type === "UNIT" && host.zone.zone === "BATTLEFIELD") || (revision.type === "LEGEND" && host.zone.zone === "LEGENDS")))
+    if (capabilitiesEnabled(context) && host.face === "UP" && host.zone.playerId === host.controllerId && ((revision.type === "UNIT" && host.zone.zone === "BATTLEFIELD") || (revision.type === "LEGEND" && (host.zone.zone === "LEGENDS" || host.zone.zone === "BATTLEFIELD" && supportsFieldLegend(revision, context).ok))))
         for (const gear of attachedGear(state, id, context)) {
             if (gear.face !== "UP" || gear.controllerId !== host.controllerId || gear.zone.playerId !== host.zone.playerId || gear.zone.zone !== host.zone.zone || !supportsCapabilityGear(cardRevision(state, gear.id, context), context).ok) continue;
             for (const modifier of cardRevision(state, gear.id, context)!.mechanics.modifiers) if (modifier.kind === "GRANT_KEYWORD_TO_HOST") add(modifier.keyword, gear.id, "EQUIPPED_HOST");

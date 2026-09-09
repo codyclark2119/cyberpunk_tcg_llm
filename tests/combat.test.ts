@@ -1,3 +1,4 @@
+import { effectiveCardTypes } from "../packages/engine/src/characteristics";
 import test from "node:test";
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
@@ -81,8 +82,10 @@ test("effective Unit semantics include field Legends architecturally, while Lege
     const view = new RulesView(s, context); assert.equal(view.getEffectivePower(royce.id), 6); assert.equal(view.isUnitForGameplay(royce.id), false);
     for (const c of Object.values(s.objects.cards).filter(c => ["LEGENDS", "HAND"].includes(c.zone.zone) || c.cardId === MANTIS)) assert.equal(view.isAttackEligible(actor, c.id), false);
     relocate(s, royce.id, "BATTLEFIELD");
-    const field = new RulesView(s, context); assert.deepEqual(field.getEffectiveCardTypes(royce.id), ["LEGEND", "UNIT"]);
-    assert.equal(field.isUnitForGameplay(royce.id), true); assert.equal(field.isAttackEligible(actor, royce.id), false); // Field Legend execution is not admitted yet.
+    assert.deepEqual(effectiveCardTypes(s, royce.id, context), ["LEGEND", "UNIT"]);
+    // The printed/effective distinction remains; a fabricated unreviewed field Royce is now rejected at validation.
+    assert.equal(validateState(s, context).ok, false);
+    assert.throws(() => new RulesView(s, context), /UNSUPPORTED_FIELD_LEGEND/);
 });
 test("real Kerry play applies Lag, end of turn clears it and the same ready Unit later becomes an attacker", () => {
     const entered = states.find(s => s.objects.cards[kerry]?.zone.zone === "BATTLEFIELD" && s.objects.cards[kerry].statuses.includes("LAG"))!;

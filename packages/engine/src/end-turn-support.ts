@@ -1,3 +1,4 @@
+import { supportsFieldLegend } from "./field-legend-support";
 import { CardInstanceIdSchema, canonicalSerialize, failure, success, type CardRevisionSnapshot, type DeepReadonly, type GameState } from "@tcg/domain";
 import type { EngineContext } from "./state";
 export function endTurnEnabled(context: EngineContext) {
@@ -20,7 +21,7 @@ export function validateEndTurnMetadata(state: GameState, context: EngineContext
     const history = state.turnHistory?.gigsStolenByUnit;
     if (history && (!endTurnEnabled(context) || !Object.keys(history).length || Object.entries(history).some(([id, count]) => {
         const c = state.objects.cards[CardInstanceIdSchema.parse(id)], r = c && context.content.cards.find(r => r.id === c.cardId && r.revision === c.revision);
-        return !c || r?.type !== "UNIT" || count > Object.keys(state.objects.gigs).length;
+        return !c || (r?.type !== "UNIT" && !supportsFieldLegend(r, context).ok) || count > Object.keys(state.objects.gigs).length;
     }))) return failure("INVALID_STEAL_HISTORY", "Nonempty supported per-Unit actual-steal counts and existing physical Unit references required");
     return success(null);
 }

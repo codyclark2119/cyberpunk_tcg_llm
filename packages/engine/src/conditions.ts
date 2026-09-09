@@ -1,15 +1,15 @@
 import { combatResolutionEnabled, referencedPower } from "./combat-resolution-policy";
-import { effectivePower } from "./characteristics";
+import { effectivePower, effectiveCardTypes } from "./characteristics";
 import type { EngineContext } from "./state";
 import type { Condition, GameState, PlayerId, CardInstanceId } from "@tcg/domain";
 /** Queries the supplied state now; caller explicitly owns condition timing. */
-export function testCondition(state: GameState, actor: PlayerId, condition: Condition, context?: EngineContext, sourceId?: CardInstanceId | null): boolean {
+export function testCondition(state: GameState, actor: PlayerId, condition: Condition, context?: EngineContext, sourceId?: CardInstanceId | null, lastValidTypes?: readonly ["LEGEND", "UNIT"]): boolean {
     const gigs = Object.values(state.objects.gigs).filter(g => g.controllerId === actor && g.location.zone === "GIGS" && g.roll.kind === "ROLLED");
     const values = gigs.flatMap(g => g.roll.kind === "ROLLED" ? [g.roll.currentValue] : []);
     switch (condition.kind) {
         case "SUBJECT_IS_UNIT_NAMED": {
             const c = sourceId && state.objects.cards[sourceId], r = c && context?.content.cards.find(r => r.id === c.cardId && r.revision === c.revision);
-            return Boolean(r && r.type === "UNIT" && r.deckbuildingIdentity === condition.identity);
+            return Boolean(r && context && c && (effectiveCardTypes(state, c.id, context).includes("UNIT") || c.zone.zone === "REMOVED" && lastValidTypes?.includes("UNIT")) && r.deckbuildingIdentity === condition.identity);
         }
         case "SUBJECT_STOLE_GIG_THIS_TURN": return Boolean(sourceId && state.turnHistory?.turn === state.timing.turn && (state.turnHistory.gigsStolenByUnit?.[sourceId] ?? 0) > 0);
         case "STREET_CRED_DIFFERENCE_AT_LEAST": {

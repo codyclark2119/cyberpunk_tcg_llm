@@ -1,3 +1,4 @@
+import { effectiveCardTypes } from "./characteristics";
 import { delayedBinding } from "./delayed-effects";
 import { readyableEddieSlots } from "./eddie-ready";
 import { testCondition } from "./conditions";
@@ -33,7 +34,7 @@ export function discoverTriggers(state: GameState, origin: TriggerOrigin, contex
     const own = effectiveTriggeredAbilities(state, origin.subjectId, context).filter(b => b.kind === (origin.kind === "PLAY" ? "WHEN_PLAYED" : "WHEN_ATTACKING"));
     if (origin.kind !== "PLAY") return own;
     const played = state.objects.cards[origin.subjectId], revision = cardRevision(state, origin.subjectId, context)!;
-    if (!["UNIT", "GEAR"].includes(revision.type) || !revision.colors.includes("BLUE") || state.turnHistory?.blueUnitOrGearPlays[played.controllerId] !== 1) return own;
+    if (!effectiveCardTypes(state, played.id, context).some(t => t === "UNIT" || t === "GEAR") || !revision.colors.includes("BLUE") || state.turnHistory?.blueUnitOrGearPlays[played.controllerId] !== 1) return own;
     return [...own, ...state.players[played.controllerId].zones.LEGENDS.flatMap(id => effectiveTriggeredAbilities(state, id, context).filter(b => b.kind === "WHEN_CARD_PLAYED"))];
 }
 export function triggerId(state: GameState, binding: TriggerBinding, ordinal: number) {

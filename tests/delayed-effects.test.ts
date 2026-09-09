@@ -182,12 +182,15 @@ for (const cardId of [EVELYN, DEXTER]) test(`Dying and ${cardId} use one ATTACK 
     assert.equal(order.timing.step, "TRIGGER_ORDER_SELECTION"); assert.equal(order.resolution.pending.length, 2);
     const done = finishChoices(order, context).state; assert.equal(done.timing.step, "RIVAL_REACT"); assert.equal(done.delayedEffects!.length, 1);
 });
-test("Name excludes subtitle; exact immutable identity and Unit type are required", () => {
+test("Name excludes subtitle; exact immutable identity and effective Unit type are required", () => {
     const condition = { kind: "SUBJECT_IS_UNIT_NAMED" as const, identity: "V" as const };
     for (const [identity, type, subtitle, expected] of [["V", "UNIT", "Corporate Exile fixture", true], ["V", "UNIT", "Different subtitle fixture", true], ["Viper", "UNIT", "", false], ["V", "LEGEND", "", false]] as const) {
         const r = CardRevisionSnapshotSchema.parse({ ...trustedV, deckbuildingIdentity: identity, type, subtitle });
         const ctx = { content: createContentBundle(p.context.content.ruleset, p.context.content.cards.map(c => c.id === trustedV.id ? r : c), p.context.content.manifest.engine) };
-        assert.equal(testCondition(p.state, actor, condition, ctx, p.host), expected);
+        const state = GameStateSchema.parse(p.state);
+        // A Legends-area Legend fails the predicate; a field Legend is now also a Unit (real V covered separately).
+        if (type === "LEGEND") state.objects.cards[p.host].zone.zone = "LEGENDS";
+        assert.equal(testCondition(state, actor, condition, ctx, p.host), expected);
     }
     assert.equal(context.content.cards.some(c => c.id === "v-corporate-exile"), false);
 });

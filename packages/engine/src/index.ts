@@ -1,3 +1,5 @@
+import { fieldLegendsEnabled } from "./field-legend-support";
+import { canEnterField, startLegendEntry, continueLegendEntry } from "./legend-entry";
 import { delayedEffectsEnabled } from "./delayed-effect-support";
 import { endTurn } from "./end-turn";
 import { endTurnEnabled } from "./end-turn-support";
@@ -41,7 +43,7 @@ export function listLegalActions(state: GameState, actor: PlayerId, context: Eng
         return failure("UNKNOWN_PLAYER", "Player is not in match");
     if (!context.content.ruleset.gameplay?.turnSlice && !supportedContent(context))
         return failure("UNSUPPORTED_MECHANICS", "Ability/continuous-effect execution awaits reviewed handlers");
-    if (state.resolution.stage !== "DECISION" && !(context.content.ruleset.gameplay?.turnSlice && state.resolution.stage === "CHOICE" && (state.resolution.choice?.kind === "PAYMENT" || state.resolution.searchContinuation || state.resolution.playContinuation || state.resolution.gigStealContinuation || state.resolution.defeatContinuation || state.resolution.triggerContinuation || state.setup || state.timing.combat.stage === "ATTACK_TARGET_SELECTION")))
+    if (state.resolution.stage !== "DECISION" && !(context.content.ruleset.gameplay?.turnSlice && state.resolution.stage === "CHOICE" && (state.resolution.choice?.kind === "PAYMENT" || state.resolution.legendEntryContinuation || state.resolution.searchContinuation || state.resolution.playContinuation || state.resolution.gigStealContinuation || state.resolution.defeatContinuation || state.resolution.triggerContinuation || state.setup || state.timing.combat.stage === "ATTACK_TARGET_SELECTION")))
         return failure("UNSUPPORTED_RESOLUTION", "Pending-effect/choice continuation requires a registered reviewed handler");
     if (actor !== state.timing.actingPlayer)
         return success([]);
@@ -50,7 +52,7 @@ export function listLegalActions(state: GameState, actor: PlayerId, context: Eng
     const slice = context.content.ruleset.gameplay?.turnSlice;
     if (state.match.outcome || state.timing.combat.stage === "COMBAT_RESOLUTION_PENDING" || (state.timing.combat.stage === "RIVAL_REACT" && !reactEnabled(context)))
         return success([]);
-    if (state.resolution.triggerContinuation || state.setup || state.resolution.searchContinuation || state.resolution.playContinuation || state.resolution.gigStealContinuation || state.resolution.defeatContinuation || state.timing.combat.stage === "ATTACK_TARGET_SELECTION") {
+    if (state.resolution.triggerContinuation || state.setup || state.resolution.legendEntryContinuation || state.resolution.searchContinuation || state.resolution.playContinuation || state.resolution.gigStealContinuation || state.resolution.defeatContinuation || state.timing.combat.stage === "ATTACK_TARGET_SELECTION") {
         const choice = state.resolution.choice!;
         choice.options.forEach((_, index) => actions.push({ actorId: actor, action: { kind: "CHOOSE", choiceId: choice.id, optionIndices: [index] } }));
     }
@@ -77,7 +79,8 @@ export function listLegalActions(state: GameState, actor: PlayerId, context: Eng
         if (slice) {
             for (const card of Object.values(state.objects.cards)) {
                 if (view.isAttackEligible(actor, card.id)) actions.push({ actorId: actor, action: { kind: "DECLARE_ATTACK", cardInstanceId: card.id } });
-                if (canPlay(state, actor, card.id, context)) actions.push({ actorId: actor, action: { kind: "PLAY_CARD", cardInstanceId: card.id } });
+                if (canEnterField(state, actor, card.id, context)) actions.push({ actorId: actor, action: { kind: "GO_SOLO", cardInstanceId: card.id } });
+                if (canEnterField(state, actor, card.id, context) || canPlay(state, actor, card.id, context)) actions.push({ actorId: actor, action: { kind: "PLAY_CARD", cardInstanceId: card.id } });
                 for (const ability of view.getRevision(card.id)?.mechanics.abilities ?? [])
                     if (canActivate(state, actor, card.id, ability.id, context)) actions.push({ actorId: actor, action: { kind: "ACTIVATE_ABILITY", sourceInstanceId: card.id, abilityId: ability.id } });
             }
@@ -92,6 +95,7 @@ export function listLegalActions(state: GameState, actor: PlayerId, context: Eng
             case "PASS_REACT": return "End React";
             case "DECLARE_BLOCKER": return `Block with ${view.getRevision(a.action.cardInstanceId)?.displayName}`;
             case "DECLARE_ATTACK": return `Attack with ${view.getRevision(a.action.cardInstanceId)?.displayName}`;
+            case "GO_SOLO": return `Go Solo with ${view.getRevision(a.action.cardInstanceId)?.displayName}`;
             case "PLAY_CARD": return `Play ${view.getRevision(a.action.cardInstanceId)?.displayName}`;
             case "ACTIVATE_ABILITY": return `Activate ${view.getRevision(a.action.sourceInstanceId)?.displayName}: Spend to draw 2`;
             case "SELL_CARD": return `Sell ${view.getRevision(a.action.cardInstanceId)?.displayName}`;
@@ -134,7 +138,7 @@ export function listLegalActions(state: GameState, actor: PlayerId, context: Eng
     };
     // Full PositionHash includes secrets; new private-look bundles bind model action IDs to
     // the entitled observation instead. Old bundle protocols remain byte-compatible.
-    const projected = (delayedEffectsEnabled(context) || privateInformationEnabled(context) || orderedEffectsEnabled(context) || endTurnEnabled(context)) ? observe(state, actor, context) : null;
+    const projected = (fieldLegendsEnabled(context) || delayedEffectsEnabled(context) || privateInformationEnabled(context) || orderedEffectsEnabled(context) || endTurnEnabled(context)) ? observe(state, actor, context) : null;
     if (projected && !projected.ok) return projected;
     const actionIdentity = projected?.ok ? { version: 2, observationHash: hashObservation(projected.value), seat: state.players[actor].seat } : { version: 1, positionHash: hashPosition(state), seat: state.players[actor].seat };
     const observableAction = (a: GameAction) => a.action.kind === "CALL_LEGEND" && projected?.ok ? { kind: a.action.kind, slot: state.players[actor].zones.LEGENDS.indexOf(a.action.cardInstanceId) } : a.action;
@@ -208,7 +212,12 @@ export function applyAction(state: GameState, action: GameAction, context: Engin
                 break;
             }
             case "PLAY_CARD": {
-                const result = startPlay(mutation, actor, action.action.cardInstanceId);
+                const result = canEnterField(s, actor, action.action.cardInstanceId, context) ? startLegendEntry(mutation, actor, action.action.cardInstanceId, "PLAY") : startPlay(mutation, actor, action.action.cardInstanceId);
+                if (!result.ok) return result;
+                break;
+            }
+            case "GO_SOLO": {
+                const result = startLegendEntry(mutation, actor, action.action.cardInstanceId, "GO_SOLO");
                 if (!result.ok) return result;
                 break;
             }
@@ -237,6 +246,7 @@ export function applyAction(state: GameState, action: GameAction, context: Engin
                     if (!result.ok) return result;
                     break;
                 }
+                if (s.resolution.legendEntryContinuation) { const result = continueLegendEntry(mutation, action.action.optionIndices[0]); if (!result.ok) return result; break; }
                 if (s.resolution.playContinuation) {
                     const result = continuePlay(mutation, action.action.optionIndices[0]);
                     if (!result.ok) return result;

@@ -1,3 +1,4 @@
+import { supportsFieldLegend } from "./field-legend-support";
 import { supportsDelayedAttackGear } from "./delayed-effect-support";
 import { supportsPrivateLookGear } from "./private-look-support";
 import { supportsCapabilityGear } from "./capability-support";
@@ -27,8 +28,7 @@ export function attachmentHost(state: GameState, gearId: CardInstanceId) {
 }
 function supportedHost(state: GameState, id: CardInstanceId, context: EngineContext) {
     const c = state.objects.cards[id], r = revision(state, id, context);
-    // Field Legends/effective Unit transitions remain a separate unsupported lifecycle.
-    return c?.face === "UP" && c.zone.playerId === c.controllerId && ((r?.type === "UNIT" && c.zone.zone === "BATTLEFIELD") || (r?.type === "LEGEND" && c.zone.zone === "LEGENDS"));
+    return c?.face === "UP" && c.zone.playerId === c.controllerId && ((r?.type === "UNIT" && c.zone.zone === "BATTLEFIELD") || (r?.type === "LEGEND" && (c.zone.zone === "LEGENDS" || c.zone.zone === "BATTLEFIELD" && supportsFieldLegend(r, context).ok)));
 }
 export function legalEquipHosts(state: GameState, gearId: CardInstanceId, context: EngineContext) {
     const gear = state.objects.cards[gearId];
@@ -40,7 +40,7 @@ export function validateGearAttachments(state: GameState, context: EngineContext
     if (!gearEnabled(context)) return success(null);
     const seen = new Set<CardInstanceId>();
     for (const host of Object.values(state.objects.cards)) {
-        if (host.attachments.length && !supportedHost(state, host.id, context)) return failure("INVALID_EQUIP_HOST", "Only friendly face-up field Units or Legends-area Legends are supported hosts");
+        if (host.attachments.length && !supportedHost(state, host.id, context)) return failure("INVALID_EQUIP_HOST", "Only friendly face-up field Units (including reviewed field Legends) or Legends-area Legends are supported hosts");
         for (const id of host.attachments) {
             const gear = state.objects.cards[id];
             if (!gear || id === host.id || seen.has(id) || !supportsGear(revision(state, id, context), context).ok || gear.attachments.length || gear.face !== "UP" || gear.controllerId !== host.controllerId || gear.zone.playerId !== host.zone.playerId || gear.zone.zone !== host.zone.zone)

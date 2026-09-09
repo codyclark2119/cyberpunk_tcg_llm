@@ -4,7 +4,7 @@ This is an implementation review of a small local capture, **not human-certified
 
 `execution: { scope: "NONCOMBAT_SLICE_V1", status: "SUPPORTED" | "UNSUPPORTED" }` is distinct from catalog `status`, source `legality`, and the existence of display text. `REVIEWED_CALL_V1` admission requires an explicit supported execution decision for **every deck card**, then checks the actual normalized abilities and modifiers against implemented handlers. Unsupported triggers, multiple CALL abilities, costs, conditions, and primitives still fail admission. Existing synthetic legacy policies remain for regression compatibility. No runtime English parsing occurs.
 
-The sections record successive bounded scopes. Later sections supersede earlier implementation limits, while older pinned policies retain their regression boundaries. The latest addition is **GEAR_DELAYED_ATTACK_V1** below (19/29 demo cards, 43/60 copies); no scope certifies a complete starter match.
+The sections record successive bounded scopes. Later sections supersede earlier implementation limits, while older pinned policies retain their regression boundaries. The latest addition is **FIELD_LEGENDS_V1** below (20/29 demo cards, 44/60 copies); no scope certifies a complete starter match.
 
 ## Captured records and implementation decisions
 
@@ -506,3 +506,33 @@ Raw-byte SHA-256: `ff35eafac6b1c3c89c3eef1d997dad09a03244fbdd00ff577cc25dfd8ba32
 Current measured demo coverage: **19/29 executable distinct, 43/60 physical copies**. Arasaka remains5/14 and14/30; Merc reaches14/15 and29/30. Its only remaining card blocker is **V — Corporate Exile (1 copy)**. Exact27+3 lists still fail constructed **40–50 main + exactly3 Legends**, with copy/RAM unchanged. Neither demo can initialize or play a complete match. See [delayed-effects-report.md](delayed-effects-report.md) for evidence, commands and remaining boundaries.
 
 The Gear/Legend steering audit confirms that Dying grants power and inherited ATTACK text to a friendly face-up Legend in `LEGENDS`, while attack legality and the later Unit-and-Name condition remain separate. Faceplate is still unadmitted; spend-trigger and future field-Legend integration gaps are recorded in [Gear on Legends-area hosts](delayed-effects-report.md#gear-on-legends-area-hosts).
+
+
+## FIELD_LEGENDS_V1 — V — Corporate Exile
+
+New immutable application revision v-corporate-exile / 1 is fully admitted under the explicit field-Legend policy. Complete captured text:
+
+> {Go Solo} (Pay this Legend's cost to play it as a ready Unit. It can attack this turn. When it leaves the field, remove it from the game.)
+
+Printed LEGEND, Blue RAM2, cost5, power8, sellable, classifications Corpo/Merc. Raw keywords are empty; opening markup normalizes to GO_SOLO. No other abilities, conditions, costs, modifiers or triggers occur in the captured card. All four local errata were reviewed; none applies to V. No partial shape or other Go Solo Legend is admitted.
+
+| Printing UUID | Set | Number |
+|---|---|---|
+| 4a5591f9-743e-4186-8deb-560971bb3f82 | theheistretailstarterdeck | 012 |
+| a6511c82-3a16-41b3-a39a-5194897c8648 | theheistbetastarterdeck | β012 |
+| 20bd1c78-1773-486e-bf45-4075fd4f2a3f | mercdemodeck | 008 |
+| f509ebd8-c8b7-4a22-8922-2d71c6df0b6f | boxtoppersretail | 006 |
+| e44580df-d78d-4b09-bb53-edb1ee32ac96 | boxtoppersbeta | β006 |
+| 848e3de6-3a3e-462e-8186-0a214ff03b79 | edgerunneropens1 | 053 |
+
+Complete record/printings/errata: [field-legends-card-source.v1.json](../tests/fixtures/field-legends-card-source.v1.json). Raw file SHA-256: deac316764ac93da51d4cae2602d52ca7b63551d2ccbc048f2e849d9ef5b8f67. Canonical record hash: d1b56071f0eabd301c6e5ca5d1b63cae6bb68267a2a6c368f54d32f3d424ab9b. Immutable normalized revision hash: 7d9d2b9a32b578db8fb254142b506d8224b7345dd0ca8a78189bd08d76e35aeb. [Rule fixture](../tests/fixtures/field-legends-rules.v1.json) pins216 local rule nodes and16 relevant official FAQ IDs/findings/hashes. Current official rules parse identically to the local capture; V differs only in image URLs. No corpus refresh.
+
+Both PLAY_CARD and GO_SOLO require own open MAIN, face-up reviewed LEGENDS source and exact printed payment. Readiness is not required. The entering Legend may pay for itself. Ordinary entry preserves its post-payment orientation and applies Lag. Go Solo enters READY with Lag and specifically permits attacking that turn; Spend-icon effects remain prohibited. Other attack restrictions still apply. Both modes count as Unit PLAY for Jackie's first-Blue guard; moving attached Gear is not another play.
+
+The semantic moveLegendToFieldWithAttachments operation moves the same host and sorted attached Gear to BATTLEFIELD in one action result, retaining attachments, owner/controller and printed identity. Effective types become LEGEND + UNIT without revision mutation or a new Unit instance. Existing Gear power/text continues to apply; Unit-only action eligibility changes through shared combat queries. Pre-equipped Mandibular can Block, Satori can draw after a fight win, and Kiroshi can privately look after ATTACK. Legends-area hosting and ordinary CALL/payment remain supported.
+
+Defeat uses shared fight/owner-ordered Trash movement: host and Gear reach Trash, detach, then V reaches REMOVED while Gear stays. Outside FIELD V's current effective type is LEGEND. Dying's new field-Legend delayed records retain last-valid LEGEND + UNIT types for the reviewed public defeat/removal lifetime, following10.10.1 and the Dying FAQ. Exact Name identity is evaluated at resolution. Ordinary Unit delayed records remain unchanged.
+
+The canonical real V-positive [field-Legend replay](../tests/fixtures/field-legends-replay.v1.json) has **38 actions, 37 strategic positions, 159 events**: setup, blind CALL slot1, pre-equip Dying, Go Solo, same-turn ATTACK, decrease2/registration, React/steal, real V-positive ready2, next turn. No state/RNG patches. [47 focused tests](../tests/field-legends.test.ts) cover ordinary play, readiness, self-payment, multiple Gears, Blocker, Satori, Kiroshi, defeat, malformed states, privacy, hashes, wire and training. Original Dying/Delamain negative and synthetic isolated Name regressions remain.
+
+Merc individual execution coverage is **15/15 distinct, 30/30 copies**; Arasaka remains **5/14, 14/30**. Exact teaching-list initialization remains unavailable pending format review. Faceplate/WHEN_SPENT, other Legend shapes, control changes and return-to-LEGENDS effects remain outside this scope. See [field-legends-report.md](field-legends-report.md).

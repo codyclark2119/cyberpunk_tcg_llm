@@ -220,6 +220,10 @@
                     "turnSlice": {
                       "type": "object",
                       "properties": {
+                        "fieldLegends": {
+                          "type": "string",
+                          "const": "FIELD_LEGENDS_V1"
+                        },
                         "cardPlay": {
                           "type": "string",
                           "const": "NONCOMBAT_PLAY_V1"
@@ -767,7 +771,8 @@
                           "GEAR_PRIVATE_LOOK_V1",
                           "ATTACK_ORDERED_EFFECTS_V1",
                           "END_TURN_HISTORY_V1",
-                          "GEAR_DELAYED_ATTACK_V1"
+                          "GEAR_DELAYED_ATTACK_V1",
+                          "FIELD_LEGENDS_V1"
                         ]
                       },
                       "status": {
@@ -4326,6 +4331,22 @@
                     ],
                     "additionalProperties": false
                   },
+                  "subjectTypesAtCreation": {
+                    "type": "array",
+                    "prefixItems": [
+                      {
+                        "type": "string",
+                        "const": "LEGEND"
+                      },
+                      {
+                        "type": "string",
+                        "const": "UNIT"
+                      }
+                    ],
+                    "items": false,
+                    "minItems": 2,
+                    "maxItems": 2
+                  },
                   "abilityId": {
                     "type": "string",
                     "minLength": 1
@@ -4633,6 +4654,22 @@
                                       "revision"
                                     ],
                                     "additionalProperties": false
+                                  },
+                                  "subjectTypesAtCreation": {
+                                    "type": "array",
+                                    "prefixItems": [
+                                      {
+                                        "type": "string",
+                                        "const": "LEGEND"
+                                      },
+                                      {
+                                        "type": "string",
+                                        "const": "UNIT"
+                                      }
+                                    ],
+                                    "items": false,
+                                    "minItems": 2,
+                                    "maxItems": 2
                                   },
                                   "abilityId": {
                                     "type": "string",
@@ -5207,6 +5244,68 @@
                   "required": [
                     "defeats",
                     "orders"
+                  ],
+                  "additionalProperties": false
+                },
+                "legendEntryContinuation": {
+                  "type": "object",
+                  "properties": {
+                    "mode": {
+                      "type": "string",
+                      "enum": [
+                        "GO_SOLO",
+                        "PLAY"
+                      ]
+                    },
+                    "actorId": {
+                      "type": "string",
+                      "format": "uuid",
+                      "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+                    },
+                    "sourceId": {
+                      "type": "string",
+                      "minLength": 1,
+                      "maxLength": 200,
+                      "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$"
+                    },
+                    "remainingCost": {
+                      "type": "integer",
+                      "exclusiveMinimum": 0,
+                      "maximum": 9007199254740991
+                    },
+                    "selectedSources": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "kind": {
+                            "type": "string",
+                            "enum": [
+                              "EDDIE",
+                              "LEGEND"
+                            ]
+                          },
+                          "cardInstanceId": {
+                            "type": "string",
+                            "minLength": 1,
+                            "maxLength": 200,
+                            "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$"
+                          }
+                        },
+                        "required": [
+                          "kind",
+                          "cardInstanceId"
+                        ],
+                        "additionalProperties": false
+                      }
+                    }
+                  },
+                  "required": [
+                    "mode",
+                    "actorId",
+                    "sourceId",
+                    "remainingCost",
+                    "selectedSources"
                   ],
                   "additionalProperties": false
                 },
@@ -11285,6 +11384,10 @@
                     "turnSlice": {
                       "type": "object",
                       "properties": {
+                        "fieldLegends": {
+                          "type": "string",
+                          "const": "FIELD_LEGENDS_V1"
+                        },
                         "cardPlay": {
                           "type": "string",
                           "const": "NONCOMBAT_PLAY_V1"
@@ -11832,7 +11935,8 @@
                           "GEAR_PRIVATE_LOOK_V1",
                           "ATTACK_ORDERED_EFFECTS_V1",
                           "END_TURN_HISTORY_V1",
-                          "GEAR_DELAYED_ATTACK_V1"
+                          "GEAR_DELAYED_ATTACK_V1",
+                          "FIELD_LEGENDS_V1"
                         ]
                       },
                       "status": {

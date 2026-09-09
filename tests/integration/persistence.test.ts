@@ -1,3 +1,5 @@
+import { fieldLegendContext, fieldLegend } from "../field-legends-fixture";
+import { vDyingNightReplay } from "../field-legends-replay";
 import { delayedContext, dyingNight } from "../delayed-effects-fixture";
 import { dyingNightReplay } from "../delayed-effects-replay";
 import { positiveFixture, stockEddies } from "../delayed-effects-focused";
@@ -70,7 +72,7 @@ test("Mongo revisions: concurrent replay, conflict, history, projection ordering
         assert.equal((await repo.publish(rich)).status, "PUBLISHED");
         assert.equal((await repo.findRevision(cards[0].id, cards[0].revision))?.schemaVersion, 1);
         assert.deepEqual(await repo.findRevision(rich.id, rich.revision), rich);
-        for (const revision of [...restrictionCards, ...triggerCards, mandibular, kiroshi, evelyn, delamain, dyingNight]) {
+        for (const revision of [...restrictionCards, ...triggerCards, mandibular, kiroshi, evelyn, delamain, dyingNight, fieldLegend]) {
             assert.equal((await repo.publish(revision)).status, "PUBLISHED");
             assert.deepEqual(await repo.findRevision(revision.id, revision.revision), revision);
             assert.equal((await repo.publish(revision)).status, "REPLAY");
@@ -527,6 +529,34 @@ test("Postgres ledger: running, conflict, replay, transactional rollback and sta
         assert.equal(positiveChoices, 2); assert.ok(registeredMain); assert.equal(positiveState.delayedEffects, undefined);
         assert.equal(positiveState.players[positive.actor].zones.EDDIES.filter(id => positiveState.objects.cards[id].readiness === "READY").length, 2);
         assert.deepEqual(await match.find(positiveState.match.id), positiveState);
+        // First real V-positive path: legal CALL/pre-equip/Go Solo/payment/combat/delayed ready2.
+        const fieldCtx = fieldLegendContext(), fieldTrace = vDyingNightReplay();
+        const fieldInitial = unwrap(createGameWithEvents({ ...fieldTrace.initialization, matchId: randomUUID(), players: [actor, otherActor] }, fieldCtx));
+        assert.equal((await match.create(fieldInitial.state, fieldInitial.events)).ok, true);
+        let fieldState = fieldInitial.state;
+        const fieldEvents = [...fieldInitial.events]; let entryPayments = 0, readyTwoChoices = 0;
+        for (const step of fieldTrace.steps) {
+            const stored = await match.find(fieldState.match.id); assert.ok(stored); assert.deepEqual(stored, fieldState);
+            const transition = unwrap(applyAction(stored, { actorId: stored.timing.actingPlayer, action: step.action.action }, fieldCtx));
+            assert.equal((await match.save(transition.state, stored.match.version, transition.events)).ok, true);
+            fieldState = transition.state; fieldEvents.push(...transition.events);
+            const reloaded = await match.find(fieldState.match.id); assert.ok(reloaded); assert.deepEqual(reloaded, fieldState);
+            assert.equal(hashReplayState(reloaded), hashReplayState(fieldState)); assert.equal(hashPosition(reloaded), step.positionHash);
+            assert.deepEqual(unwrap(listLegalActions(reloaded, reloaded.timing.actingPlayer, fieldCtx)), unwrap(listLegalActions(fieldState, fieldState.timing.actingPlayer, fieldCtx)));
+            for (const viewer of reloaded.match.playerOrder) {
+                const a: DeepReadonly<PlayerObservation> = unwrap(observe(reloaded, viewer, fieldCtx));
+                const b: DeepReadonly<PlayerObservation> = unwrap(observe(fieldState, viewer, fieldCtx));
+                assert.deepEqual(a, b); assert.equal(hashObservation(a), hashObservation(b));
+            }
+            if (reloaded.resolution.legendEntryContinuation) entryPayments++;
+            if (reloaded.timing.step === "EDDIE_READY_SELECTION") readyTwoChoices++;
+            const v = reloaded.objects.cards[fieldTrace.legend];
+            assert.ok(v.attachments.every(id => reloaded.objects.cards[id].zone.zone === v.zone.zone));
+            assert.deepEqual(await match.history(reloaded.match.id), fieldEvents); fieldState = reloaded;
+        }
+        assert.ok(entryPayments > 0); assert.equal(readyTwoChoices, 2); assert.equal(fieldState.timing.turn, 6);
+        assert.equal(fieldState.players[actor].zones.EDDIES.filter(id => fieldState.objects.cards[id].readiness === "READY").length, 2);
+        assert.ok(fieldEvents.some(e => e.payload.kind === "GO_SOLO_ACTIVATED")); assert.ok(fieldEvents.some(e => e.payload.kind === "CONDITION_EVALUATED" && e.payload.met));
         // Inject an event insert failure AFTER the state UPDATE to verify transaction rollback.
         await pool.query("CREATE FUNCTION reject_test_event() RETURNS trigger LANGUAGE plpgsql AS $$ BEGIN RAISE EXCEPTION 'event insert failure'; END $$");
         await pool.query("CREATE TRIGGER reject_test_event BEFORE INSERT ON match_events FOR EACH ROW EXECUTE FUNCTION reject_test_event()");

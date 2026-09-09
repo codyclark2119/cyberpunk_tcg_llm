@@ -1,7 +1,9 @@
+import { supportsFieldLegend } from "./field-legend-support";
 import { supportsTriggerCard } from "./trigger-support";
 import { failure, success, type CardRevisionSnapshot, type DeepReadonly } from "@tcg/domain";
 import type { EngineContext } from "./state";
 export function supportsCall(card: DeepReadonly<CardRevisionSnapshot> | undefined, context: EngineContext) {
+    if (card?.execution?.scope === "FIELD_LEGENDS_V1") return supportsFieldLegend(card, context);
     if (card?.type === "LEGEND" && card.execution?.scope === "COMBAT_TRIGGERS_V1") return supportsTriggerCard(card, context);
     if (card?.mechanics.abilities.some(a => a.inherited || a.guard)) return failure("UNSUPPORTED_TRIGGER_METADATA", "Unsupported granted/guarded CALL shape");
     const reviewed = context.content.ruleset.gameplay?.turnSlice?.callEffects === "REVIEWED_CALL_V1";

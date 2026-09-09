@@ -7,7 +7,7 @@ export function cardRevision(state: GameState, id: CardInstanceId, context: Engi
     const c = state.objects.cards[id];
     return context.content.cards.find(r => r.id === c?.cardId && r.revision === c?.revision);
 }
-/** 4.2.1: field Legends are both types, independent of the future method of entering the field. */
+/** 4.2.1: field Legends are both types, independent of ordinary play versus Go Solo entry. */
 export function effectiveCardTypes(state: GameState, id: CardInstanceId, context: EngineContext) {
     const c = state.objects.cards[id], r = cardRevision(state, id, context);
     return r ? [...new Set([r.type, ...(r.type === "LEGEND" && c.zone.zone === "BATTLEFIELD" ? ["UNIT" as const] : [])])] : [];
