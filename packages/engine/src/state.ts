@@ -1,4 +1,5 @@
 import { validateTargetedDefeatState } from "./targeted-defeat-state";
+import { validateAttackConditionPowerMetadata } from "./attack-condition-power-support";
 import { validateTargetedSpendMetadata } from "./targeted-spend-support";
 import { validateTargetedDefeatMetadata } from "./targeted-defeat-support";
 import { validateValueConditionMetadata } from "./value-conditions-support";
@@ -91,6 +92,7 @@ export function validateState(input: unknown, context: EngineContext): Result<Ga
         if (!visit(id, new Set()))
             return failure("ATTACHMENT_CYCLE", "Attachments cannot form cycles");
     }
+    const attackPowerMetadata = validateAttackConditionPowerMetadata(s, context); if (!attackPowerMetadata.ok) return attackPowerMetadata;
     const spendMetadata = validateTargetedSpendMetadata(s, context); if (!spendMetadata.ok) return spendMetadata;
     const targetedMetadata = validateTargetedDefeatMetadata(s, context); if (!targetedMetadata.ok) return targetedMetadata;
     const valueMetadata = validateValueConditionMetadata(s, context); if (!valueMetadata.ok) return valueMetadata;

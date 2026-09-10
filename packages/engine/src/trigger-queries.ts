@@ -33,7 +33,12 @@ export function discoverTriggers(state: GameState, origin: TriggerOrigin, contex
     }))];
     if (origin.kind === "FIGHT") return origin.result.winnerId ? effectiveTriggeredAbilities(state, origin.result.winnerId, context).filter(b => b.kind === "WHEN_FIGHT_WON") : [];
     if (origin.kind === "DEFEAT") return origin.defeated.flatMap(d => effectiveTriggeredAbilities(state, d.targetId, context).filter(b => b.kind === "WHEN_DEFEATED")); // Capture before movement; enqueue after.
-    const own = effectiveTriggeredAbilities(state, origin.subjectId, context).filter(b => b.kind === (origin.kind === "PLAY" ? "WHEN_PLAYED" : "WHEN_ATTACKING"));
+    const own = effectiveTriggeredAbilities(state, origin.subjectId, context).filter(b => {
+        if (b.kind !== (origin.kind === "PLAY" ? "WHEN_PLAYED" : "WHEN_ATTACKING")) return false;
+        // Losing His Way FAQ0c5b038a: becoming face-up after declaration does not create a trigger.
+        const a = cardRevision(state, b.sourceId, context)!.mechanics.abilities.find(a => a.id === b.abilityId)!;
+        return !a.conditions.some(c => c.kind === "ALL_FRIENDLY_LEGENDS_FACE_UP" && !testCondition(state, b.controllerId, c, context, b.subjectId));
+    });
     if (origin.kind === "ATTACK") {
         if (!isFirstArasakaAttack(state, origin.subjectId, context)) return own;
         const actor = state.objects.cards[origin.subjectId].controllerId;

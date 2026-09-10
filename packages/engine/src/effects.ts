@@ -16,6 +16,15 @@ type Primitive<K extends Effect["kind"]> = Extract<Effect, { kind: K }>;
 export class HandlerRegistry {
     readonly primitives = {
     POWER_UNTIL_END_OF_TURN: (m: TurnMutation): Result<null> => {
+        const current = m.state.resolution.current!;
+        if (current.effect.kind === "POWER_UNTIL_END_OF_TURN" && current.effect.target.kind === "SOURCE_SUBJECT") {
+            const source = current.sourceId && m.context.content.cards.find(c => c.id === m.state.objects.cards[current.sourceId!].cardId && c.revision === m.state.objects.cards[current.sourceId!].revision);
+            const a = source?.mechanics.abilities.find(a => a.id === current.trigger?.abilityId);
+            if (!a || !current.trigger) return failure("INVALID_POWER_SOURCE", "Self power requires its captured ATTACK binding");
+            const met = a.conditions.every(c => testCondition(m.state, current.controllerId, c, m.context, current.trigger!.subjectId));
+            m.emit({ kind: "CONDITION_EVALUATED", effectId: current.id, met });
+            return met ? applyTemporaryPower(m, current.trigger.subjectId) : success(null);
+        }
         const targets = powerTargets(m.state, m.state.timing.actingPlayer, m.context);
         return targets.length > 1 ? offerPlayChoice(m) : targets.length === 1 ? applyTemporaryPower(m, targets[0]) : success(null);
     },

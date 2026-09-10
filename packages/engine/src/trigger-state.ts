@@ -1,3 +1,4 @@
+import { attackConditionPowerEnabled } from "./attack-condition-power-support";
 import { validateEffectDefeatFacts } from "./targeted-defeat-state";
 import { effectiveCardTypes } from "./characteristics";
 import { delayedEffectsEnabled, supportsDelayedAttackGear } from "./delayed-effect-support";
@@ -62,7 +63,7 @@ export function validateTriggerState(state: GameState, context: EngineContext) {
     if (c.origin.kind === "DEFEAT" && (new Set(c.origin.defeated.map(d => d.targetId)).size !== c.origin.defeated.length || c.origin.defeated.some(d => !state.objects.cards[d.defeatedBy] || !state.objects.cards[d.targetId] || ["BATTLEFIELD", "LEGENDS"].includes(state.objects.cards[d.targetId].zone.zone)))) return failure("INVALID_DEFEATED_TRIGGER", "Defeat declaration and movement must precede the pending batch");
     const effectDefeats = validateEffectDefeatFacts(state, context); if (!effectDefeats.ok) return effectDefeats;
     if (c.bindings.some(b => !validBinding(state, b, context))) return failure("INVALID_TRIGGER_SOURCE", "Immutable source, inherited subject, trigger-time controller and origin must match reviewed text");
-    if (c.origin.kind === "ATTACK" && firstAttackHistoryEnabled(context)) {
+    if (c.origin.kind === "ATTACK" && (firstAttackHistoryEnabled(context) || attackConditionPowerEnabled(context))) {
         // These admitted attack primitives cannot remove/reveal sources. The complete captured
         // batch must therefore match declaration-time discovery, including already resolved bindings.
         const expected = discoverTriggers(state, c.origin, context).map(b => canonicalSerialize(b)).sort();

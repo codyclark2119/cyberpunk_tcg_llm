@@ -1,3 +1,5 @@
+import { attackPowerContext, losing } from "../attack-condition-power-fixture";
+import { attackConditionPowerReplay } from "../attack-condition-power-replay";
 import { spendContext, surveillance } from "../targeted-spend-fixture";
 import { targetedSpendReplay } from "../targeted-spend-replay";
 import { targetedContext, targetedCards } from "../targeted-defeat-fixture";
@@ -85,7 +87,7 @@ test("Mongo revisions: concurrent replay, conflict, history, projection ordering
         assert.equal((await repo.publish(rich)).status, "PUBLISHED");
         assert.equal((await repo.findRevision(cards[0].id, cards[0].revision))?.schemaVersion, 1);
         assert.deepEqual(await repo.findRevision(rich.id, rich.revision), rich);
-        for (const revision of [...restrictionCards, ...triggerCards, mandibular, kiroshi, evelyn, delamain, dyingNight, fieldLegend, goro, yorinobu, saburo, ...valueCards, ...targetedCards, surveillance]) {
+        for (const revision of [...restrictionCards, ...triggerCards, mandibular, kiroshi, evelyn, delamain, dyingNight, fieldLegend, goro, yorinobu, saburo, ...valueCards, ...targetedCards, surveillance, losing]) {
             assert.equal((await repo.publish(revision)).status, "PUBLISHED");
             assert.deepEqual(await repo.findRevision(revision.id, revision.revision), revision);
             assert.equal((await repo.publish(revision)).status, "REPLAY");
@@ -779,6 +781,33 @@ test("Postgres ledger: running, conflict, replay, transactional rollback and sta
         assert.ok(spendPayments>0); assert.equal(spendTargets,1); assert.equal(effectSpends,1);
         assert.equal(spendHistory.some(e=>e.payload.kind === "CARD_DEFEATED" || e.payload.kind === "GEAR_DETACHED"),false);
         assert.equal(spendState.objects.cards[spendTrace.target].zone.zone,"BATTLEFIELD"); assert.equal(spendState.objects.cards[spendTrace.target].readiness,"SPENT");
+        // Losing His Way: complete legal CALL/field-Legend/attack/turn-expiry trace, continued from every reload.
+        const powerCtx = attackPowerContext(), powerTrace = attackConditionPowerReplay();
+        const powerInitial = unwrap(createGameWithEvents({ ...powerTrace.initialization, matchId: randomUUID(), players: [actor, otherActor] }, powerCtx));
+        assert.equal((await match.create(powerInitial.state, powerInitial.events)).ok, true);
+        let powerState = powerInitial.state; const powerHistory = [...powerInitial.events]; let attackPending = 0, appliedPower = 0, postAttackPower = 0, expiredPower = 0;
+        for (const step of powerTrace.steps) {
+            const stored = await match.find(powerState.match.id); assert.ok(stored); assert.deepEqual(stored, powerState);
+            const command = { actorId: stored.timing.actingPlayer, action: step.action.action }, next = unwrap(applyAction(stored, command, powerCtx));
+            assert.deepEqual(next, unwrap(applyAction(powerState, command, powerCtx))); assert.equal((await match.save(next.state, stored.match.version, next.events)).ok, true);
+            powerState = next.state; powerHistory.push(...next.events); const loaded = await match.find(powerState.match.id); assert.ok(loaded); assert.deepEqual(loaded, powerState);
+            assert.equal(hashReplayState(loaded), hashReplayState(powerState)); assert.equal(hashPosition(loaded), step.positionHash);
+            assert.deepEqual(unwrap(listLegalActions(loaded, loaded.timing.actingPlayer, powerCtx)), unwrap(listLegalActions(powerState, powerState.timing.actingPlayer, powerCtx)));
+            for (const viewer of loaded.match.playerOrder) {
+                const actual: DeepReadonly<PlayerObservation> = unwrap(observe(loaded, viewer, powerCtx)), expected: DeepReadonly<PlayerObservation> = unwrap(observe(powerState, viewer, powerCtx));
+                assert.deepEqual(actual, expected); assert.equal(hashObservation(actual), hashObservation(expected));
+            }
+            if (loaded.resolution.triggerContinuation?.origin.kind === "ATTACK" && loaded.resolution.pending.some(e => e.sourceId === powerTrace.source)) attackPending++;
+            const events = next.events.map(e => e.payload), view = new RulesView(loaded, powerCtx);
+            if (events.some(e => e.kind === "POWER_MODIFIER_APPLIED" && e.modifier.amount === 5)) {
+                appliedPower++; assert.equal(view.getEffectivePower(powerTrace.source), 12); assert.ok(view.areAllFriendlyLegendsFaceUp(actor)); assert.equal(loaded.objects.cards[powerTrace.fieldLegend].zone.zone, "BATTLEFIELD");
+            }
+            if (events.some(e => e.kind === "ATTACK_ENDED")) { postAttackPower++; assert.equal(loaded.timing.step, "MAIN"); assert.equal(view.getEffectivePower(powerTrace.source), 11); assert.equal(loaded.temporaryModifiers?.length, 1); }
+            if (events.some(e => e.kind === "POWER_MODIFIER_EXPIRED")) { expiredPower++; assert.equal(view.getEffectivePower(powerTrace.source), 6); assert.equal(loaded.temporaryModifiers, undefined); assert.equal(loaded.timing.turn, 10); }
+            assert.deepEqual(await match.history(loaded.match.id), powerHistory); powerState = loaded;
+        }
+        assert.ok(attackPending > 0); assert.equal(appliedPower, 1); assert.equal(postAttackPower, 1); assert.equal(expiredPower, 1);
+        assert.equal(powerHistory.filter(e => e.payload.kind === "GIG_STOLEN" && e.payload.attackerId === powerTrace.source).length, 2);
         // Inject an event insert failure AFTER the state UPDATE to verify transaction rollback.
         await pool.query("CREATE FUNCTION reject_test_event() RETURNS trigger LANGUAGE plpgsql AS $$ BEGIN RAISE EXCEPTION 'event insert failure'; END $$");
         await pool.query("CREATE TRIGGER reject_test_event BEFORE INSERT ON match_events FOR EACH ROW EXECUTE FUNCTION reject_test_event()");

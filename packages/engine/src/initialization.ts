@@ -1,3 +1,4 @@
+import { validateAttackConditionPowerMetadata } from "./attack-condition-power-support";
 import { validateTargetedSpendMetadata } from "./targeted-spend-support";
 import { validateTargetedDefeatMetadata } from "./targeted-defeat-support";
 import { validateValueConditionMetadata } from "./value-conditions-support";
@@ -66,6 +67,7 @@ export function createGameWithEvents(input: z.input<typeof CreateGameInputSchema
         p.economy = { sellsThisTurn: 0, callsThisTurn: 0, usageTurn: 1 };
     if (triggersEnabled(context)) s.turnHistory = { ...(firstAttackHistoryEnabled(context) ? { firstArasakaAttacks: initialFirstAttackHistory(s) } : {}), turn: 1, triggeredBatches: 0, blueUnitOrGearPlays: Object.fromEntries(s.match.playerOrder.map(id => [id, 0])) };
     // Capability admission is deck-wide, never a hidden-Legend-specific label/filter.
+    const attackPowerMetadata = validateAttackConditionPowerMetadata(s, context); if (!attackPowerMetadata.ok) return attackPowerMetadata;
     const spendMetadata = validateTargetedSpendMetadata(s, context); if (!spendMetadata.ok) return spendMetadata;
     const targetedMetadata = validateTargetedDefeatMetadata(s, context); if (!targetedMetadata.ok) return targetedMetadata;
     const valueMetadata = validateValueConditionMetadata(s, context); if (!valueMetadata.ok) return valueMetadata;
@@ -92,7 +94,7 @@ export function createGameWithEvents(input: z.input<typeof CreateGameInputSchema
             if (!supported.ok)
                 return supported;
         }
-        else if (content.execution?.scope === "TARGETED_SPEND_V1" || content.execution?.scope === "TARGETED_DEFEAT_V1" || content.execution?.scope === "VALUE_CONDITIONS_V1" || content.execution?.scope === "NONCOMBAT_PLAY_V1" || content.execution?.scope === "COMBAT_ATTACK_V1" || content.execution?.scope === "COMBAT_REACT_V1" || content.execution?.scope === "COMBAT_RESTRICTIONS_V1" || content.execution?.scope === "COMBAT_TRIGGERS_V1" || content.execution?.scope === "GEAR_CAPABILITIES_V1" || content.execution?.scope === "GEAR_PRIVATE_LOOK_V1" || content.execution?.scope === "ATTACK_ORDERED_EFFECTS_V1" || content.execution?.scope === "END_TURN_HISTORY_V1" || content.execution?.scope === "GEAR_DELAYED_ATTACK_V1") {
+        else if (content.execution?.scope === "ATTACK_CONDITION_POWER_V1" || content.execution?.scope === "TARGETED_SPEND_V1" || content.execution?.scope === "TARGETED_DEFEAT_V1" || content.execution?.scope === "VALUE_CONDITIONS_V1" || content.execution?.scope === "NONCOMBAT_PLAY_V1" || content.execution?.scope === "COMBAT_ATTACK_V1" || content.execution?.scope === "COMBAT_REACT_V1" || content.execution?.scope === "COMBAT_RESTRICTIONS_V1" || content.execution?.scope === "COMBAT_TRIGGERS_V1" || content.execution?.scope === "GEAR_CAPABILITIES_V1" || content.execution?.scope === "GEAR_PRIVATE_LOOK_V1" || content.execution?.scope === "ATTACK_ORDERED_EFFECTS_V1" || content.execution?.scope === "END_TURN_HISTORY_V1" || content.execution?.scope === "GEAR_DELAYED_ATTACK_V1") {
             const supported = supportsPlay(content, context);
             if (!supported.ok) return supported;
         }

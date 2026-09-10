@@ -1,3 +1,4 @@
+import { hasAttackConditionPowerMetadata, supportsAttackConditionPowerCard } from "./attack-condition-power-support";
 import { hasTargetedDefeatMetadata, supportsTargetedDefeatCard } from "./targeted-defeat-support";
 import { hasValueConditionMetadata, supportsValueConditionCard } from "./value-conditions-support";
 import { supportsTargetedSpendCard } from "./targeted-spend-support";
@@ -20,6 +21,7 @@ export function revisionOf(state: GameState, id: CardInstanceId, context: Engine
 }
 /** Admission certifies only these reviewed shapes, never catalog legality or arbitrary metadata. */
 export function supportsPlay(card: DeepReadonly<CardRevisionSnapshot> | undefined, context: EngineContext) {
+    if (card && hasAttackConditionPowerMetadata(card)) return supportsAttackConditionPowerCard(card, context);
     if (card && hasTargetedDefeatMetadata(card)) return supportsTargetedDefeatCard(card, context);
     if (card && hasValueConditionMetadata(card)) return supportsValueConditionCard(card, context);
     if (card?.execution?.scope === "TARGETED_SPEND_V1") return supportsTargetedSpendCard(card, context);

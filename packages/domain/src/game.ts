@@ -66,7 +66,13 @@ export const TurnHistorySchema = z.strictObject({
 export const PendingEffectSchema = z.strictObject({ id: z.string().min(1), controllerId: PlayerIdSchema, sourceId: CardInstanceIdSchema.nullable(), primitiveIndex: z.literal(1).optional(), effect: EffectSchema, trigger: TriggerBindingSchema.omit({ sourceId: true, controllerId: true }).extend({ turn: z.number().int().positive(), ordinal: z.number().int().positive() }).optional(), causedBySequence: z.number().int().nonnegative() });
 export const ActionReturnContextSchema = z.discriminatedUnion("kind", [z.strictObject({ kind: z.literal("MAIN") }), z.strictObject({ kind: z.literal("RIVAL_REACT") })]);
 export type ActionReturnContext = z.infer<typeof ActionReturnContextSchema>;
-export const TemporaryPowerModifierSchema = z.strictObject({ kind: z.literal("POWER"), sourceId: CardInstanceIdSchema, targetId: CardInstanceIdSchema, amount: z.literal(-1), expires: z.strictObject({ kind: z.literal("END_OF_TURN"), turn: z.number().int().positive() }) });
+const TemporaryPowerBaseSchema = z.strictObject({ kind: z.literal("POWER"), sourceId: CardInstanceIdSchema, targetId: CardInstanceIdSchema, expires: z.strictObject({ kind: z.literal("END_OF_TURN"), turn: z.number().int().positive() }) });
+// Older one-shot Program payloads remain byte-compatible; repeated triggered buffs need occurrence identity.
+export const TemporaryPowerModifierSchema = z.discriminatedUnion("amount", [
+    TemporaryPowerBaseSchema.extend({ amount: z.literal(-1) }),
+    TemporaryPowerBaseSchema.extend({ amount: z.literal(5), origin: z.strictObject({ effectId: HashSchema, abilityId: z.string().min(1), ordinal: z.number().int().positive() }) })
+]);
+export type TemporaryPowerModifier = z.infer<typeof TemporaryPowerModifierSchema>;
 export const FightPreventionSchema = z.strictObject({
     kind: z.literal("PREVENT_NEXT_RIVAL_FIGHT_DEFEAT"), id: HashSchema, sourceId: CardInstanceIdSchema, controllerId: PlayerIdSchema,
     createdTurn: z.number().int().positive(), expires: z.strictObject({ kind: z.literal("END_OF_TURN"), turn: z.number().int().positive() })
@@ -155,7 +161,7 @@ export const EventPayloadSchema = z.discriminatedUnion("kind", [
     z.strictObject({ kind: z.literal("GIG_STEAL_SELECTED"), gigInstanceId: GigInstanceIdSchema, attackerId: CardInstanceIdSchema, forced: z.boolean() }),
     z.strictObject({ kind: z.literal("GIG_STOLEN"), gigInstanceId: GigInstanceIdSchema, fromPlayer: PlayerIdSchema, toPlayer: PlayerIdSchema, currentValue: z.number().int(), attackerId: CardInstanceIdSchema }),
     z.strictObject({ kind: z.literal("POWER_MODIFIER_APPLIED"), modifier: TemporaryPowerModifierSchema }),
-    z.strictObject({ kind: z.literal("POWER_MODIFIER_EXPIRED"), sourceId: CardInstanceIdSchema, targetId: CardInstanceIdSchema, reason: z.enum(["TURN_END", "HIDDEN_AREA"]) }),
+    z.strictObject({ kind: z.literal("POWER_MODIFIER_EXPIRED"), sourceId: CardInstanceIdSchema, targetId: CardInstanceIdSchema, reason: z.enum(["TURN_END", "HIDDEN_AREA"]), effectId: HashSchema.optional() }),
     z.strictObject({ kind: z.literal("BLOCKER_SPENT"), cardInstanceId: CardInstanceIdSchema }),
     z.strictObject({ kind: z.literal("BLOCKER_DECLARED"), cardInstanceId: CardInstanceIdSchema, previousTarget: AttackTargetSchema }),
     z.strictObject({ kind: z.literal("RIVAL_REACT_CLOSED"), defendingPlayerId: PlayerIdSchema, reason: z.literal("PASS_REACT") }),

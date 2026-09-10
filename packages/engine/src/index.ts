@@ -1,3 +1,4 @@
+import { attackConditionPowerEnabled } from "./attack-condition-power-support";
 import { targetedSpendEnabled } from "./targeted-spend-support";
 import { continueTargetedDefeat } from "./targeted-defeat";
 import { targetedDefeatEnabled } from "./targeted-defeat-support";
@@ -147,7 +148,7 @@ export function listLegalActions(state: GameState, actor: PlayerId, context: Eng
     };
     // Full PositionHash includes secrets; new private-look bundles bind model action IDs to
     // the entitled observation instead. Old bundle protocols remain byte-compatible.
-    const projected = (targetedSpendEnabled(context) || targetedDefeatEnabled(context) || valueConditionsEnabled(context) || attackingAuraEnabled(context) || firstAttackHistoryEnabled(context) || fieldLegendsEnabled(context) || delayedEffectsEnabled(context) || privateInformationEnabled(context) || orderedEffectsEnabled(context) || endTurnEnabled(context)) ? observe(state, actor, context) : null;
+    const projected = (attackConditionPowerEnabled(context) || targetedSpendEnabled(context) || targetedDefeatEnabled(context) || valueConditionsEnabled(context) || attackingAuraEnabled(context) || firstAttackHistoryEnabled(context) || fieldLegendsEnabled(context) || delayedEffectsEnabled(context) || privateInformationEnabled(context) || orderedEffectsEnabled(context) || endTurnEnabled(context)) ? observe(state, actor, context) : null;
     if (projected && !projected.ok) return projected;
     const actionIdentity = projected?.ok ? { version: 2, observationHash: hashObservation(projected.value), seat: state.players[actor].seat } : { version: 1, positionHash: hashPosition(state), seat: state.players[actor].seat };
     const observableAction = (a: GameAction) => a.action.kind === "CALL_LEGEND" && projected?.ok ? { kind: a.action.kind, slot: state.players[actor].zones.LEGENDS.indexOf(a.action.cardInstanceId) } : a.action;
