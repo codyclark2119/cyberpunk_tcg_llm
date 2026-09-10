@@ -18,11 +18,11 @@ import { triggersEnabled } from "./trigger-support";
 import { supportsPlay } from "./play-support";
 import { beginSetup } from "./setup";
 import { z } from "zod";
-import { DeckSchema, ContentBundleSchema, validateDeck, GameStateSchema, failure, success, type GameState, type Result, type GameEvent } from "@tcg/domain";
+import { matchDemoManifest, DeckSchema, ContentBundleSchema, validateDeck, GameStateSchema, failure, success, type GameState, type Result, type GameEvent } from "@tcg/domain";
 import { buildInitialState, CreateGameInputSchema, type EngineContext } from "./state";
 import { TurnMutation } from "./turn";
 import { drawDeterministicInteger } from "./rng";
-import { RulesView } from "./view";
+import { supportsCall } from "./effect-support";
 export function createGameWithEvents(input: z.input<typeof CreateGameInputSchema>, context: EngineContext): Result<{
     state: GameState;
     events: GameEvent[];
@@ -33,6 +33,8 @@ export function createGameWithEvents(input: z.input<typeof CreateGameInputSchema
     const bundleCheck = ContentBundleSchema.safeParse(context.content);
     if (!bundleCheck.success)
         return failure("INVALID_CONTENT", bundleCheck.error.message);
+    if (parsed.data.format === "DEMO_STARTER_V1" && !context.content.ruleset.demoStarter)
+        return failure("UNSUPPORTED_FORMAT", "Content ruleset has no DEMO_STARTER_V1 policy");
     if (context.content.ruleset.gameplay?.initialization !== "TURN_SLICE_V1") {
         const old = buildInitialState(input, context);
         return old.ok ? success({ state: old.value, events: [] }) : old;
@@ -42,19 +44,27 @@ export function createGameWithEvents(input: z.input<typeof CreateGameInputSchema
     if (!policy || request.players.length !== 2 || (!engineSetup && (!request.setup || request.setup.firstPlayerSeat >= 2)))
         return failure("UNSUPPORTED_SETUP", "Two players and explicit agreed first-player/declined mulligan/cut decisions are required");
     if (engineSetup && request.setup) return failure("INVALID_SETUP_INPUT", "Engine-owned setup does not accept external first-player, cut or mulligan decisions");
-    if (request.format && request.format !== "CONSTRUCTED")
-        return failure("UNSUPPORTED_SETUP_FORMAT", "This initializer currently supports constructed/catalog decks only");
+    if (request.format && request.format !== "CONSTRUCTED" && request.format !== "DEMO_STARTER_V1")
+        return failure("UNSUPPORTED_SETUP_FORMAT", "This initializer supports constructed decks and the explicit fixed-pair Demo format");
+    const demoManifests: string[] = [];
     for (const deck of request.decks) {
         const d = DeckSchema.safeParse({ name: "Initialization", legends: deck.legends, cards: deck.main.map(cardId => ({ cardId, quantity: 1 })) });
         if (!d.success)
             return failure("INVALID_DECK", d.error.message);
         const bundle = ContentBundleSchema.parse(context.content);
-        const valid = validateDeck(d.data, bundle.cards, bundle.ruleset);
+        const valid = validateDeck(d.data, bundle.cards, bundle.ruleset, { format: request.format ?? "CONSTRUCTED", availability: { kind: "CATALOG" } });
+        if (request.format === "DEMO_STARTER_V1") {
+            const manifest = matchDemoManifest(d.data, bundle.cards);
+            if (!manifest) return failure("DEMO_MANIFEST_MISMATCH", "Deck does not match a supported fixed demo manifest/revision");
+            demoManifests.push(manifest);
+        }
         if (!valid.legal)
             return failure("INVALID_DECK", JSON.stringify(valid.issues));
         if (deck.main.length < rules.openingHand)
             return failure("INVALID_DECK", "Deck cannot supply opening hand");
     }
+    if (request.format === "DEMO_STARTER_V1" && (demoManifests.length !== 2 || new Set(demoManifests).size !== 2))
+        return failure("DEMO_PAIR_INVALID", "Demo requires one Arasaka and one Merc manifest, in either seat");
     const built = buildInitialState(request, context, false);
     if (!built.ok)
         return built;
@@ -84,13 +94,14 @@ export function createGameWithEvents(input: z.input<typeof CreateGameInputSchema
     if (!privateLook.ok) return privateLook;
     const capabilities = validateCapabilityMetadata(s, context);
     if (!capabilities.ok) return capabilities;
-    const view = new RulesView(s, context);
+    // Admission inspects pinned revisions directly; the complete initialized state is
+    // validated by TurnMutation.result after automatic setup randomness is recorded.
     for (const c of Object.values(s.objects.cards)) {
-        const content = view.getRevision(c.id)!;
+        const content = context.content.cards.find(r => r.id === c.cardId && r.revision === c.revision)!;
         if (policy.callEffects === "REVIEWED_CALL_V1" && content.execution?.status !== "SUPPORTED") return failure("UNREVIEWED_EXECUTION", "Reviewed gameplay requires an explicit executable coverage decision for every deck card");
         if (content.execution?.status === "UNSUPPORTED") return failure("UNSUPPORTED_CARD_EFFECT", "Corpus presence does not certify executable support");
         if (content.type === "LEGEND") {
-            const supported = view.callEffectSupport(c.id);
+            const supported = supportsCall(content, context);
             if (!supported.ok)
                 return supported;
         }

@@ -1,3 +1,4 @@
+import { matchDemoManifest } from "./demo";
 import type { Card, CardColor } from "./card";
 import { z } from "zod";
 import { CardIdSchema, DeckIdSchema } from "./identity";
@@ -53,6 +54,8 @@ export function validateDeck(deck: Deck, cardPool: readonly Card[], ruleset: Rul
         return { legal: false, mainDeckCount: 0, ramAvailable: {}, ramRequired: {}, issues: [{ code: "UNSUPPORTED_FORMAT", message: "Ruleset has no policy for this format", severity: "error" }] };
     const byId = new Map(cardPool.map((card) => [card.id, card]));
     const issues: DeckValidationIssue[] = [];
+    if (format === "DEMO_STARTER_V1" && (!ruleset.demoStarter || !matchDemoManifest(deck, cardPool)))
+        issues.push({ code: "DEMO_MANIFEST_MISMATCH", severity: "error", message: "Demo requires an exact supported ARASAKA_DEMO_V1 or MERC_DEMO_V1 composition and revision pins" });
     if (policy.legendUniqueness === "DECKBUILDING_IDENTITY" && deck.legends.some(id => byId.get(id)?.schemaVersion !== 2))
         issues.push({ code: "MISSING_DECKBUILDING_IDENTITY", severity: "error", message: "This format requires reviewed card identities" });
     if (format === "SEALED_LIMITED" && options?.availability.kind !== "SEALED")

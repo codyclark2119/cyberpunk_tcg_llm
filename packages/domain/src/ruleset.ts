@@ -1,6 +1,8 @@
 import { z } from "zod";
+import { DemoStarterPolicySchema, demoDeckPolicy } from "./demo";
+import { hashCanonical } from "./canonical";
 import { RulesetIdSchema, RulesetVersionSchema } from "./identity";
-export const DeckFormatSchema = z.enum(["CONSTRUCTED", "SEALED_LIMITED"]);
+export const DeckFormatSchema = z.enum(["CONSTRUCTED", "SEALED_LIMITED", "DEMO_STARTER_V1"]);
 export const FormatPolicySchema = z.strictObject({
     mainDeck: z.strictObject({ min: z.number().int().nonnegative(), max: z.number().int().nonnegative() }).refine(x => x.max >= x.min),
     legendCount: z.number().int().nonnegative(), maxCopies: z.number().int().positive(),
@@ -48,6 +50,7 @@ export const GameplayPolicySchema = z.strictObject({
 });
 export const RulesetSchema = z.strictObject({
     id: RulesetIdSchema, version: RulesetVersionSchema, schemaVersion: z.union([z.literal(1), z.literal(2)]),
+    demoStarter: DemoStarterPolicySchema.optional(),
     formats: z.partialRecord(DeckFormatSchema, FormatPolicySchema).optional(),
     gameplay: GameplayPolicySchema.optional(),
     deckbuilding: z.strictObject({
@@ -56,11 +59,18 @@ export const RulesetSchema = z.strictObject({
         legendCount: z.number().int().nonnegative(), maxCopies: z.number().int().positive()
     })
 }).superRefine((rules, ctx) => {
+    if (rules.demoStarter || rules.formats?.DEMO_STARTER_V1) {
+        if (!rules.demoStarter || hashCanonical(rules.formats?.CONSTRUCTED ?? null) !== hashCanonical({ mainDeck: { min: 40, max: 50 }, legendCount: 3, maxCopies: 3, legendUniqueness: "DECKBUILDING_IDENTITY" }) || hashCanonical(rules.formats?.DEMO_STARTER_V1 ?? null) !== hashCanonical(demoDeckPolicy) ||
+            rules.gameplay?.initialization !== "TURN_SLICE_V1" || rules.gameplay.turnSlice?.setup !== "ENGINE_SETUP_V1" ||
+            rules.gameplay.openingHand !== 6 || rules.gameplay.firstPlayerSpentLegends !== 2 ||
+            rules.gameplay.turnSlice.startTurnGigWinCount !== 7 || rules.gameplay.turnSlice.emptyDraw !== "LOSE")
+            ctx.addIssue({ code: "custom", message: "Demo requires the exact fixed-pair policy and reviewed comprehensive setup/win rules" });
+    }
     if (rules.gameplay?.initialization === "TURN_SLICE_V1" && !rules.gameplay.turnSlice)
         ctx.addIssue({ code: "custom", message: "Turn slice requires explicit policies" });
     if (rules.schemaVersion === 2 && (!rules.formats?.CONSTRUCTED || !rules.formats.SEALED_LIMITED || !rules.gameplay))
         ctx.addIssue({ code: "custom", message: "Schema 2 requires both format policies and explicit gameplay policies" });
-    if (rules.schemaVersion === 1 && (rules.formats || rules.gameplay))
+    if (rules.schemaVersion === 1 && (rules.formats || rules.gameplay || rules.demoStarter))
         ctx.addIssue({ code: "custom", message: "Publish a new schema 2 ruleset to add policies; do not rewrite legacy snapshots" });
 });
 export type Ruleset = z.infer<typeof RulesetSchema>;

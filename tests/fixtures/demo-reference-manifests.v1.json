@@ -1,0 +1,990 @@
+{
+  "schemaVersion": 1,
+  "status": "REFERENCE_ONLY",
+  "formatDecision": "NOT_ADMITTED",
+  "note": "Official directly playable products; these audited artifacts do not authorize a runtime format while setup precedence remains unresolved. User quantities preserved exactly.",
+  "manifests": [
+    {
+      "schemaVersion": 1,
+      "id": "ARASAKA_DEMO_V1",
+      "status": "REFERENCE_ONLY",
+      "publisherName": "Embracing Power Demo Deck (Arasaka)",
+      "entries": [
+        {
+          "cardId": "goro-takemura-hands-unclean",
+          "revision": 1,
+          "zone": "LEGENDS",
+          "quantity": 1,
+          "revisionHash": "ffe03cff4ba12a5f241d5d92d71e8da39e006bc5d866fd1a1ece2c2d284f8703",
+          "printing": {
+            "id": "fd889659-8291-41fd-9197-9cdf7cbf6810",
+            "applicationPrintingId": "fd889659-8291-41fd-9197-9cdf7cbf6810",
+            "setCode": "arasakademodeck",
+            "collectorNumber": "008"
+          },
+          "source": {
+            "localPath": "cyberpunk_llm/data/raw/cards/goro-takemura-hands-unclean.json",
+            "rawSha256": "a70354773e9362bc2f5b919d9be28ba1c8d4d33326573067413586fd3e0fb4f2",
+            "recordHash": "ea8be33a89100f6a55d104961b0f0a60878c1c9c2690118d7fe4bc1ad2bfd525"
+          }
+        },
+        {
+          "cardId": "yorinobu-arasaka-embracing-destruction",
+          "revision": 1,
+          "zone": "LEGENDS",
+          "quantity": 1,
+          "revisionHash": "63333c2d8392b6368390474593bb897066a792276b7af8b54d6d08635f120f3d",
+          "printing": {
+            "id": "aaad5db8-fcd4-42f0-8ced-e7527dbccf79",
+            "applicationPrintingId": "aaad5db8-fcd4-42f0-8ced-e7527dbccf79",
+            "setCode": "arasakademodeck",
+            "collectorNumber": "001"
+          },
+          "source": {
+            "localPath": "cyberpunk_llm/data/raw/cards/yorinobu-arasaka-embracing-destruction.json",
+            "rawSha256": "9a01723fde94d8feca1582272de879bba21feec88faa012856a448226061c51d",
+            "recordHash": "5d94f9d0d3d9851efcb49f81878af2a3b47faf71aeea47c95336570ab4bcdbba"
+          }
+        },
+        {
+          "cardId": "saburo-arasaka-stubborn-patriarch",
+          "revision": 1,
+          "zone": "LEGENDS",
+          "quantity": 1,
+          "revisionHash": "d2e767a25172ebf2a8e3220131081a3114e112c2b999e5c6847ce5dba5b5f1d6",
+          "printing": {
+            "id": "13ba5cd2-5000-4cf8-bcfc-6f1b8afe44ca",
+            "applicationPrintingId": "13ba5cd2-5000-4cf8-bcfc-6f1b8afe44ca",
+            "setCode": "arasakademodeck",
+            "collectorNumber": "009"
+          },
+          "source": {
+            "localPath": "cyberpunk_llm/data/raw/cards/saburo-arasaka-stubborn-patriarch.json",
+            "rawSha256": "72d450459d340c1088b3713701d80bec7c289a98258aa491e0b946824af649b2",
+            "recordHash": "22930d73b2cf7d1ed2637d882c44f43cdf1f5fb7157708a030f4c3f88451bcc3"
+          }
+        },
+        {
+          "cardId": "minotaur",
+          "revision": 1,
+          "zone": "MAIN",
+          "quantity": 1,
+          "revisionHash": "eaa4cd993d6614f334b87970195d77f837ef8cf5602c932328c521427ef77b62",
+          "printing": {
+            "id": "6e023192-0834-4d6f-935a-e5d6d4d6eff0",
+            "applicationPrintingId": "6e023192-0834-4d6f-935a-e5d6d4d6eff0",
+            "setCode": "arasakademodeck",
+            "collectorNumber": "002"
+          },
+          "source": {
+            "localPath": "cyberpunk_llm/data/raw/cards/minotaur.json",
+            "rawSha256": "84df69b3fffeb73e7a26d6db8ec1975fbab70ff46de48c5d6186ee4069ddd18c",
+            "recordHash": "b04720d22b6dc916ddf6175cae97a284635b9a8ab63eaadb910c7cc1edc98c83"
+          }
+        },
+        {
+          "cardId": "swordwise-huscle",
+          "revision": 1,
+          "zone": "MAIN",
+          "quantity": 2,
+          "revisionHash": "91e8146afcf3b57b8adac59c9ab2be82a4f6ac0e0f6c405a98656f79f0ed4bda",
+          "printing": {
+            "id": "39ef1f5d-50e0-405c-bd25-6961fd93d2a1",
+            "applicationPrintingId": "39ef1f5d-50e0-405c-bd25-6961fd93d2a1",
+            "setCode": "arasakademodeck",
+            "collectorNumber": "003"
+          },
+          "source": {
+            "localPath": "cyberpunk_llm/data/raw/cards/swordwise-huscle.json",
+            "rawSha256": "f71f7b0ad57d370d2fb602d29f4bba1aa8e2aa0f2ff21e5837891e1aa4b07f7a",
+            "recordHash": "6303e45dd851708391d23625ca5b2c0059bfd7f1675d8bfcdeeaf496df91de8b"
+          }
+        },
+        {
+          "cardId": "mantis-blades",
+          "revision": 1,
+          "zone": "MAIN",
+          "quantity": 3,
+          "revisionHash": "be7d2903937458366526cf65cd7818a09394e807e4fc6cc714b16937c58bb319",
+          "printing": {
+            "id": "4ad21be4-1406-4631-bfe7-ad2effde7af2",
+            "applicationPrintingId": "4ad21be4-1406-4631-bfe7-ad2effde7af2",
+            "setCode": "arasakademodeck",
+            "collectorNumber": "004"
+          },
+          "source": {
+            "localPath": "cyberpunk_llm/data/raw/cards/mantis-blades.json",
+            "rawSha256": "a711d560ac0c863b1df894cc1c6443212b28bd4b8ad60de581094797c97302e2",
+            "recordHash": "2b801a356c0239342909fc9fe3b5edab19bc31d79719ade6deac161e1352d62e"
+          }
+        },
+        {
+          "cardId": "satori-sword-of-saburo",
+          "revision": 1,
+          "zone": "MAIN",
+          "quantity": 3,
+          "revisionHash": "121dfed616aa22d1ceb01a2196a45bbca1f5ae7c6f0dee449f1060e7b084310a",
+          "printing": {
+            "id": "3b656cec-684d-440b-9c76-0aa9a4a98b81",
+            "applicationPrintingId": "3b656cec-684d-440b-9c76-0aa9a4a98b81",
+            "setCode": "arasakademodeck",
+            "collectorNumber": "005"
+          },
+          "source": {
+            "localPath": "cyberpunk_llm/data/raw/cards/satori-sword-of-saburo.json",
+            "rawSha256": "de1018613a3e9bc3255614635d07efe0342c0513dca73b317b009d543856bec0",
+            "recordHash": "84009143dfce688adb70f003db7fd3605d0f9e246eeff4ec287ccf0b84b8bb1c"
+          }
+        },
+        {
+          "cardId": "industrial-assembly",
+          "revision": 1,
+          "zone": "MAIN",
+          "quantity": 3,
+          "revisionHash": "cbc4120d7240adda62924f6d40e026ba344b1ba51260ca6233c770b54756a043",
+          "printing": {
+            "id": "7f0ad31f-3b16-4c7a-88bb-90dd07e55a9b",
+            "applicationPrintingId": "7f0ad31f-3b16-4c7a-88bb-90dd07e55a9b",
+            "setCode": "arasakademodeck",
+            "collectorNumber": "006"
+          },
+          "source": {
+            "localPath": "cyberpunk_llm/data/raw/cards/industrial-assembly.json",
+            "rawSha256": "73359b0cbc8ce581095e922efd6ac483da45f884dd7abd4f3671aeae2f6a874d",
+            "recordHash": "98727e3e220b956ad60bc6f4a733338aec35130f9c3475e6a75e97ee0b66e7ed"
+          }
+        },
+        {
+          "cardId": "over-the-edge",
+          "revision": 1,
+          "zone": "MAIN",
+          "quantity": 2,
+          "revisionHash": "c76eff1582840113ee3a87c61fd2742137e33664c4e28c92f24caf1180e4bd26",
+          "printing": {
+            "id": "cf48d5e6-21d2-4d17-a731-5dc9091c6cd1",
+            "applicationPrintingId": "cf48d5e6-21d2-4d17-a731-5dc9091c6cd1",
+            "setCode": "arasakademodeck",
+            "collectorNumber": "007"
+          },
+          "source": {
+            "localPath": "cyberpunk_llm/data/raw/cards/over-the-edge.json",
+            "rawSha256": "86803baacbdccd9ab6395321b3b5a814fccd510c7421a612bf655a68cb62205c",
+            "recordHash": "6106fd2f01f12f873ad05d05d468885cb9b1d3cb752b8b67753fef2bee4d48cc"
+          }
+        },
+        {
+          "cardId": "corpo-security",
+          "revision": 1,
+          "zone": "MAIN",
+          "quantity": 3,
+          "revisionHash": "949cb395f736e8e6a27cb07a725a2420df9123554f1b3ddc20810533491e5fee",
+          "printing": {
+            "id": "c165a5eb-3338-4a80-8fb9-b7e39b412e5b",
+            "applicationPrintingId": "c165a5eb-3338-4a80-8fb9-b7e39b412e5b",
+            "setCode": "arasakademodeck",
+            "collectorNumber": "010"
+          },
+          "source": {
+            "localPath": "cyberpunk_llm/data/raw/cards/corpo-security.json",
+            "rawSha256": "ca00222ae8b1b4c6edd7a4238b90e0a7414d678f83da652087cf2477eefe4afd",
+            "recordHash": "4ad43c7f2fc8f902b014a9f3d9c37962c1289bca43e8af7deb9dd6cae9e44eaf"
+          }
+        },
+        {
+          "cardId": "emergency-atlus",
+          "revision": 1,
+          "zone": "MAIN",
+          "quantity": 3,
+          "revisionHash": "7c821e3255667936e4f176df5390b3c3edd231fac89f4ccaa78babd5dc1fa956",
+          "printing": {
+            "id": "45dd3b11-7bd8-4239-a404-ab0c9b24fcdb",
+            "applicationPrintingId": "45dd3b11-7bd8-4239-a404-ab0c9b24fcdb",
+            "setCode": "arasakademodeck",
+            "collectorNumber": "011"
+          },
+          "source": {
+            "localPath": "cyberpunk_llm/data/raw/cards/emergency-atlus.json",
+            "rawSha256": "a521b700a916562d392a9343055a1cdc8d6c5ac163c1e0c53a539183426611d6",
+            "recordHash": "25b38856b8c1356339600969c350d0cd7353d2e78575cacdac455cfcba1d053f"
+          }
+        },
+        {
+          "cardId": "field-operator",
+          "revision": 1,
+          "zone": "MAIN",
+          "quantity": 3,
+          "revisionHash": "deac3246957f78b89ce4c0740af50d9b4f52d1be78c03a24f1bd2b66d4f1ddbc",
+          "printing": {
+            "id": "45ae40b9-f0f3-4fd9-901a-cd1bed292133",
+            "applicationPrintingId": "45ae40b9-f0f3-4fd9-901a-cd1bed292133",
+            "setCode": "arasakademodeck",
+            "collectorNumber": "012"
+          },
+          "source": {
+            "localPath": "cyberpunk_llm/data/raw/cards/field-operator.json",
+            "rawSha256": "6b4cca346e5c3d0f25a338c02079a9aaee85f9261ff746919c8b427eb6bac24b",
+            "recordHash": "688d1d85f655f59c58d9b31af5014cbbe19f03e2d62e90c2f76d1a60135227cc"
+          }
+        },
+        {
+          "cardId": "goro-takemura-losing-his-way",
+          "revision": 1,
+          "zone": "MAIN",
+          "quantity": 1,
+          "revisionHash": "9e649112dc22a493ba733f643259eed40e798b5c7840d042d42959498ba3bc03",
+          "printing": {
+            "id": "384b716d-fe9c-4a09-86b3-fe9b25928c51",
+            "applicationPrintingId": "384b716d-fe9c-4a09-86b3-fe9b25928c51",
+            "setCode": "arasakademodeck",
+            "collectorNumber": "013"
+          },
+          "source": {
+            "localPath": "cyberpunk_llm/data/raw/cards/goro-takemura-losing-his-way.json",
+            "rawSha256": "579743b07f78c80d9b7e664006767e686f462a390994a2345a7fb39d1fbb973c",
+            "recordHash": "9999ee1d698fc18e53de9f6bbc969321a27b209a738e9c71d8e725c3be2ab78c"
+          }
+        },
+        {
+          "cardId": "corporate-surveillance",
+          "revision": 1,
+          "zone": "MAIN",
+          "quantity": 3,
+          "revisionHash": "cf4fcc88977b4239b5cbb72181690fe5195b813d3f69832f6deb33b84adde82c",
+          "printing": {
+            "id": "af658f81-5214-4f56-ba8a-782a4419e366",
+            "applicationPrintingId": "af658f81-5214-4f56-ba8a-782a4419e366",
+            "setCode": "arasakademodeck",
+            "collectorNumber": "014"
+          },
+          "source": {
+            "localPath": "cyberpunk_llm/data/raw/cards/corporate-surveillance.json",
+            "rawSha256": "2be0e1ec6474d85c2c3fa210fb2132a4558b8f8084e1ef65b4bf978e8d45da9a",
+            "recordHash": "27108509430c3b14ac8430798287a6f490733b5178ede31d674aea68345ef448"
+          }
+        }
+      ],
+      "compositionHash": "7ef234191430bce642888161bcad4127c138faddb41c826a0f7b8b68fd90a386",
+      "provenance": {
+        "sourceId": "arasaka.pdf",
+        "url": "https://cyberpunktcg.com/docs/print-and-play-araska.pdf",
+        "sha256": "4df4ef76929bcebe2188bdc3d6fcb8350776b949c3119a3cf587c1b5bde9a52e",
+        "pages": 4,
+        "pdfCreatedAt": "2026-06-30",
+        "visualAudit": "All four pages inspected; pages 1–3 contain nine cards each; page 4 contains three cards plus four reminder panels. Slots count left-to-right, top-to-bottom.",
+        "physicalSlots": [
+          {
+            "cardId": "goro-takemura-hands-unclean",
+            "collectorNumber": "008",
+            "zone": "LEGENDS",
+            "pdfPage": 1,
+            "slot": 1
+          },
+          {
+            "cardId": "yorinobu-arasaka-embracing-destruction",
+            "collectorNumber": "001",
+            "zone": "LEGENDS",
+            "pdfPage": 1,
+            "slot": 2
+          },
+          {
+            "cardId": "saburo-arasaka-stubborn-patriarch",
+            "collectorNumber": "009",
+            "zone": "LEGENDS",
+            "pdfPage": 1,
+            "slot": 3
+          },
+          {
+            "cardId": "minotaur",
+            "collectorNumber": "002",
+            "zone": "MAIN",
+            "pdfPage": 1,
+            "slot": 4
+          },
+          {
+            "cardId": "swordwise-huscle",
+            "collectorNumber": "003",
+            "zone": "MAIN",
+            "pdfPage": 1,
+            "slot": 5
+          },
+          {
+            "cardId": "swordwise-huscle",
+            "collectorNumber": "003",
+            "zone": "MAIN",
+            "pdfPage": 1,
+            "slot": 6
+          },
+          {
+            "cardId": "mantis-blades",
+            "collectorNumber": "004",
+            "zone": "MAIN",
+            "pdfPage": 1,
+            "slot": 7
+          },
+          {
+            "cardId": "mantis-blades",
+            "collectorNumber": "004",
+            "zone": "MAIN",
+            "pdfPage": 1,
+            "slot": 8
+          },
+          {
+            "cardId": "mantis-blades",
+            "collectorNumber": "004",
+            "zone": "MAIN",
+            "pdfPage": 1,
+            "slot": 9
+          },
+          {
+            "cardId": "satori-sword-of-saburo",
+            "collectorNumber": "005",
+            "zone": "MAIN",
+            "pdfPage": 2,
+            "slot": 1
+          },
+          {
+            "cardId": "satori-sword-of-saburo",
+            "collectorNumber": "005",
+            "zone": "MAIN",
+            "pdfPage": 2,
+            "slot": 2
+          },
+          {
+            "cardId": "satori-sword-of-saburo",
+            "collectorNumber": "005",
+            "zone": "MAIN",
+            "pdfPage": 2,
+            "slot": 3
+          },
+          {
+            "cardId": "industrial-assembly",
+            "collectorNumber": "006",
+            "zone": "MAIN",
+            "pdfPage": 2,
+            "slot": 4
+          },
+          {
+            "cardId": "industrial-assembly",
+            "collectorNumber": "006",
+            "zone": "MAIN",
+            "pdfPage": 2,
+            "slot": 5
+          },
+          {
+            "cardId": "industrial-assembly",
+            "collectorNumber": "006",
+            "zone": "MAIN",
+            "pdfPage": 2,
+            "slot": 6
+          },
+          {
+            "cardId": "over-the-edge",
+            "collectorNumber": "007",
+            "zone": "MAIN",
+            "pdfPage": 2,
+            "slot": 7
+          },
+          {
+            "cardId": "over-the-edge",
+            "collectorNumber": "007",
+            "zone": "MAIN",
+            "pdfPage": 2,
+            "slot": 8
+          },
+          {
+            "cardId": "corpo-security",
+            "collectorNumber": "010",
+            "zone": "MAIN",
+            "pdfPage": 2,
+            "slot": 9
+          },
+          {
+            "cardId": "corpo-security",
+            "collectorNumber": "010",
+            "zone": "MAIN",
+            "pdfPage": 3,
+            "slot": 1
+          },
+          {
+            "cardId": "corpo-security",
+            "collectorNumber": "010",
+            "zone": "MAIN",
+            "pdfPage": 3,
+            "slot": 2
+          },
+          {
+            "cardId": "emergency-atlus",
+            "collectorNumber": "011",
+            "zone": "MAIN",
+            "pdfPage": 3,
+            "slot": 3
+          },
+          {
+            "cardId": "emergency-atlus",
+            "collectorNumber": "011",
+            "zone": "MAIN",
+            "pdfPage": 3,
+            "slot": 4
+          },
+          {
+            "cardId": "emergency-atlus",
+            "collectorNumber": "011",
+            "zone": "MAIN",
+            "pdfPage": 3,
+            "slot": 5
+          },
+          {
+            "cardId": "field-operator",
+            "collectorNumber": "012",
+            "zone": "MAIN",
+            "pdfPage": 3,
+            "slot": 6
+          },
+          {
+            "cardId": "field-operator",
+            "collectorNumber": "012",
+            "zone": "MAIN",
+            "pdfPage": 3,
+            "slot": 7
+          },
+          {
+            "cardId": "field-operator",
+            "collectorNumber": "012",
+            "zone": "MAIN",
+            "pdfPage": 3,
+            "slot": 8
+          },
+          {
+            "cardId": "goro-takemura-losing-his-way",
+            "collectorNumber": "013",
+            "zone": "MAIN",
+            "pdfPage": 3,
+            "slot": 9
+          },
+          {
+            "cardId": "corporate-surveillance",
+            "collectorNumber": "014",
+            "zone": "MAIN",
+            "pdfPage": 4,
+            "slot": 1
+          },
+          {
+            "cardId": "corporate-surveillance",
+            "collectorNumber": "014",
+            "zone": "MAIN",
+            "pdfPage": 4,
+            "slot": 2
+          },
+          {
+            "cardId": "corporate-surveillance",
+            "collectorNumber": "014",
+            "zone": "MAIN",
+            "pdfPage": 4,
+            "slot": 3
+          }
+        ],
+        "orderMeaning": "PRESENTATION_ONLY; printed reminder requires shuffling, not a scripted draw order."
+      }
+    },
+    {
+      "schemaVersion": 1,
+      "id": "MERC_DEMO_V1",
+      "status": "REFERENCE_ONLY",
+      "publisherName": "The Heist Demo Deck (Mercs)",
+      "entries": [
+        {
+          "cardId": "v-corporate-exile",
+          "revision": 1,
+          "zone": "LEGENDS",
+          "quantity": 1,
+          "revisionHash": "7d9d2b9a32b578db8fb254142b506d8224b7345dd0ca8a78189bd08d76e35aeb",
+          "printing": {
+            "id": "20bd1c78-1773-486e-bf45-4075fd4f2a3f",
+            "applicationPrintingId": "20bd1c78-1773-486e-bf45-4075fd4f2a3f",
+            "setCode": "mercdemodeck",
+            "collectorNumber": "008"
+          },
+          "source": {
+            "localPath": "cyberpunk_llm/data/raw/cards/v-corporate-exile.json",
+            "rawSha256": "deac316764ac93da51d4cae2602d52ca7b63551d2ccbc048f2e849d9ef5b8f67",
+            "recordHash": "d1b56071f0eabd301c6e5ca5d1b63cae6bb68267a2a6c368f54d32f3d424ab9b"
+          }
+        },
+        {
+          "cardId": "viktor-vektor-sit-down-and-relax",
+          "revision": 1,
+          "zone": "LEGENDS",
+          "quantity": 1,
+          "revisionHash": "d5bff6201f5c133ff4948b4c61a6369fff402b8768856c2a10f203a06a7e2660",
+          "printing": {
+            "id": "2344e8d6-3aed-415b-ab6e-f1d634b5ba18",
+            "applicationPrintingId": "viktor-vektor-sit-down-and-relax-printing-2",
+            "setCode": "mercdemodeck",
+            "collectorNumber": "001"
+          },
+          "source": {
+            "localPath": "cyberpunk_llm/data/raw/cards/viktor-vektor-sit-down-and-relax.json",
+            "rawSha256": "d58114d02c2f0139515833b0e4ac8e0840de4101194ebdfaf02499d336a19348",
+            "recordHash": "25855154480d1b8153baad93ee864e3b1996120da880a9dd77844db21270a0ae"
+          }
+        },
+        {
+          "cardId": "jackie-welles-pour-one-out-for-me",
+          "revision": 1,
+          "zone": "LEGENDS",
+          "quantity": 1,
+          "revisionHash": "32ce0a027f7319aa347c0b0d9832478814033e2843957aa2879b55a9d90be16c",
+          "printing": {
+            "id": "762951bd-7bcf-42cd-a44e-b5b127cf00d2",
+            "applicationPrintingId": "762951bd-7bcf-42cd-a44e-b5b127cf00d2",
+            "setCode": "mercdemodeck",
+            "collectorNumber": "007"
+          },
+          "source": {
+            "localPath": "cyberpunk_llm/data/raw/cards/jackie-welles-pour-one-out-for-me.json",
+            "rawSha256": "c92a779b5b4ac21bac4f243e357121e2d90e9fe6f8beaca6562de8c247c66dd8",
+            "recordHash": "f920079646c57179f1a173313611c5e3957c5b4d76a4c1134196892696833d69"
+          }
+        },
+        {
+          "cardId": "dying-night-v-s-pistol",
+          "revision": 1,
+          "zone": "MAIN",
+          "quantity": 2,
+          "revisionHash": "162169d6cb32d35f93bb6aeedaee44d08f5aece9bdee82ddc388647b5522cb4a",
+          "printing": {
+            "id": "dd423c67-68f4-4da8-884c-cbeb91554c0d",
+            "applicationPrintingId": "dd423c67-68f4-4da8-884c-cbeb91554c0d",
+            "setCode": "mercdemodeck",
+            "collectorNumber": "013"
+          },
+          "source": {
+            "localPath": "cyberpunk_llm/data/raw/cards/dying-night-v-s-pistol.json",
+            "rawSha256": "ff35eafac6b1c3c89c3eef1d997dad09a03244fbdd00ff577cc25dfd8ba320b0",
+            "recordHash": "33229b2912f87aadec96b43ab24bc7b39d2a569ab4bed37676c2797d05011069"
+          }
+        },
+        {
+          "cardId": "dexter-deshawn-one-last-chance",
+          "revision": 1,
+          "zone": "MAIN",
+          "quantity": 1,
+          "revisionHash": "20cfcd10698a2d6c04d13e16a7d92a5f43b27570f9aae2bf479ee24322a4dd10",
+          "printing": {
+            "id": "daabe14b-dc95-413f-b91a-d3e32937bfd2",
+            "applicationPrintingId": "daabe14b-dc95-413f-b91a-d3e32937bfd2",
+            "setCode": "mercdemodeck",
+            "collectorNumber": "002"
+          },
+          "source": {
+            "localPath": "cyberpunk_llm/data/raw/cards/dexter-deshawn-one-last-chance.json",
+            "rawSha256": "c3ece59708f92495fbc3508fbcb8a3ef00603ac558e3fdf15e201ccff8b9c7f0",
+            "recordHash": "420729845ee84c1c1b9a7a3014082e1421691640c7165a25035dd0d1a97a586d"
+          }
+        },
+        {
+          "cardId": "secondhand-bombus",
+          "revision": 1,
+          "zone": "MAIN",
+          "quantity": 2,
+          "revisionHash": "2753476bfee920145e5cb26a2aa6c73211b7d4e7321a8311ff0576eb534981f6",
+          "printing": {
+            "id": "62d6b51a-ceaf-498b-8a04-27c3d3e21feb",
+            "applicationPrintingId": "62d6b51a-ceaf-498b-8a04-27c3d3e21feb",
+            "setCode": "mercdemodeck",
+            "collectorNumber": "003"
+          },
+          "source": {
+            "localPath": "cyberpunk_llm/data/raw/cards/secondhand-bombus.json",
+            "rawSha256": "542dcc586363882708e6768ca5e61285aa3b478d6c53e3f113daac77503b3fc4",
+            "recordHash": "1ccbafe3251e2acef6c460eba31d7da27cb14a52ff73e72c5ad335a835cf4200"
+          }
+        },
+        {
+          "cardId": "kiroshi-optics",
+          "revision": 1,
+          "zone": "MAIN",
+          "quantity": 3,
+          "revisionHash": "85e33a64bce450f9864f402be2f6d380936c9de91e92031708d70b289096d4d9",
+          "printing": {
+            "id": "57e1d9b6-0f2b-497b-acaf-49c20a68cd19",
+            "applicationPrintingId": "57e1d9b6-0f2b-497b-acaf-49c20a68cd19",
+            "setCode": "mercdemodeck",
+            "collectorNumber": "004"
+          },
+          "source": {
+            "localPath": "cyberpunk_llm/data/raw/cards/kiroshi-optics.json",
+            "rawSha256": "be8f06622ad9c01a615157e67e312216063cba23d446ae12eede0ea21326888b",
+            "recordHash": "437f9f77917cb88b25b0f2386f7afba8bada54b869d2810f4c0da3b698666502"
+          }
+        },
+        {
+          "cardId": "mandibular-upgrade",
+          "revision": 1,
+          "zone": "MAIN",
+          "quantity": 2,
+          "revisionHash": "83329470ed73fc56508de3f4f4f3967bd91d8b2d546949b5c78876442aed44eb",
+          "printing": {
+            "id": "49fc6d6e-8e86-4a05-bcd5-bd8a50edf5dc",
+            "applicationPrintingId": "49fc6d6e-8e86-4a05-bcd5-bd8a50edf5dc",
+            "setCode": "mercdemodeck",
+            "collectorNumber": "005"
+          },
+          "source": {
+            "localPath": "cyberpunk_llm/data/raw/cards/mandibular-upgrade.json",
+            "rawSha256": "df528346515df46bfcb8b90e4eea7e1dfcae9ea89acc0872fcf5b911623acb87",
+            "recordHash": "910fd5afe70fdb58426683410224568d35a1132e1f9495e98d1cacba80eee8a4"
+          }
+        },
+        {
+          "cardId": "afterparty-at-lizzie-s",
+          "revision": 1,
+          "zone": "MAIN",
+          "quantity": 2,
+          "revisionHash": "3d4b39e64dabab7e84ea066976d6956668c8e7ca27c1721abb104af1cfea7587",
+          "printing": {
+            "id": "eb272131-add5-4dda-b426-4166041af144",
+            "applicationPrintingId": "eb272131-add5-4dda-b426-4166041af144",
+            "setCode": "mercdemodeck",
+            "collectorNumber": "006"
+          },
+          "source": {
+            "localPath": "cyberpunk_llm/data/raw/cards/afterparty-at-lizzie-s.json",
+            "rawSha256": "892b6eef568aa7cada92ba77f01307f4130bf8870653df97ef5e8b866e29f241",
+            "recordHash": "7557229547a745ed79dd6287604534e772ee57517165d0bd9ee4f18b8eac8b4e"
+          }
+        },
+        {
+          "cardId": "delamain-cab",
+          "revision": 1,
+          "zone": "MAIN",
+          "quantity": 3,
+          "revisionHash": "e696327e1483d61a95b00550b25412645f19f2a3feef6cf584b346a64f0ffddd",
+          "printing": {
+            "id": "e15c07b6-f563-4825-aad4-6b3068c1ab85",
+            "applicationPrintingId": "e15c07b6-f563-4825-aad4-6b3068c1ab85",
+            "setCode": "mercdemodeck",
+            "collectorNumber": "009"
+          },
+          "source": {
+            "localPath": "cyberpunk_llm/data/raw/cards/delamain-cab.json",
+            "rawSha256": "201a4b6123f8c7ce153a86af4abf6d1e225f0dc7c618982bc081a0b0d453292c",
+            "recordHash": "e0b999c826a7b7456d86a4142b168e9b43825563c600ca2f39fd18b40f5df473"
+          }
+        },
+        {
+          "cardId": "evelyn-parker-scheming-siren",
+          "revision": 1,
+          "zone": "MAIN",
+          "quantity": 3,
+          "revisionHash": "015f486f2a90cd29964dd9086992148bdbdaaa9eef7115629427ccc9a7523b29",
+          "printing": {
+            "id": "3757f0f3-32d0-41c2-89dc-515271d2b758",
+            "applicationPrintingId": "3757f0f3-32d0-41c2-89dc-515271d2b758",
+            "setCode": "mercdemodeck",
+            "collectorNumber": "010"
+          },
+          "source": {
+            "localPath": "cyberpunk_llm/data/raw/cards/evelyn-parker-scheming-siren.json",
+            "rawSha256": "a902a898742d6af0a16f37070dcb0d0f5f6a4fac97212522f839857873fd3c7c",
+            "recordHash": "df97cd7c2e340aae07ffbf56bd52425a25ca364f18f0272ccfde67710880f540"
+          }
+        },
+        {
+          "cardId": "mt0d12-flathead",
+          "revision": 1,
+          "zone": "MAIN",
+          "quantity": 1,
+          "revisionHash": "06a6a78f8973b177ba8da90b68b7ec10de8fa40cd4349be58ee9dd4c5a2be8e4",
+          "printing": {
+            "id": "f7742fc7-0abe-45ee-a6ce-22caf159e06d",
+            "applicationPrintingId": "f7742fc7-0abe-45ee-a6ce-22caf159e06d",
+            "setCode": "mercdemodeck",
+            "collectorNumber": "011"
+          },
+          "source": {
+            "localPath": "cyberpunk_llm/data/raw/cards/mt0d12-flathead.json",
+            "rawSha256": "25f9729e49b6c4b502f295c8251260b36b9f3cfab5452a7eab04b0383b46d80b",
+            "recordHash": "3be73028c2647e5c2eec3ca45115901fad377e94cd65880c7e7e530a5d49be23"
+          }
+        },
+        {
+          "cardId": "psycho-squad",
+          "revision": 1,
+          "zone": "MAIN",
+          "quantity": 3,
+          "revisionHash": "d45245c914161e18a056d95fbe5a3d19075055b3d9b78600d2f555d641e09b7c",
+          "printing": {
+            "id": "c45d93f9-bc2d-4e35-9d77-ba62d9d4e4d9",
+            "applicationPrintingId": "c45d93f9-bc2d-4e35-9d77-ba62d9d4e4d9",
+            "setCode": "mercdemodeck",
+            "collectorNumber": "012"
+          },
+          "source": {
+            "localPath": "cyberpunk_llm/data/raw/cards/psycho-squad.json",
+            "rawSha256": "b684eb207662916924ab8d910582f3eb94d683c812dace6546507e2cec6df4dc",
+            "recordHash": "318d221ca664064605dac5fc2f9508f6d11f9fbe19c0345344b9ddc3da2ff387"
+          }
+        },
+        {
+          "cardId": "floor-it",
+          "revision": 1,
+          "zone": "MAIN",
+          "quantity": 3,
+          "revisionHash": "dc0484009279e457a47e46a838c4f3debbd61aae5afea1da92c7baa73e2f6bcc",
+          "printing": {
+            "id": "9d62921e-382e-4e93-85d8-aa628566ccd7",
+            "applicationPrintingId": "9d62921e-382e-4e93-85d8-aa628566ccd7",
+            "setCode": "mercdemodeck",
+            "collectorNumber": "014"
+          },
+          "source": {
+            "localPath": "cyberpunk_llm/data/raw/cards/floor-it.json",
+            "rawSha256": "4370c66d95ac3d3000397f0f03c603b36e5dd97101122819a0d0bd293de79f83",
+            "recordHash": "80922d41909881e9ea8e5b7184f337778beea19d030d0e0f0107fc7882863f82"
+          }
+        },
+        {
+          "cardId": "reboot-optics",
+          "revision": 1,
+          "zone": "MAIN",
+          "quantity": 2,
+          "revisionHash": "dbc84769ae27e11b67d34f83ed7d1be60b96d794289f65544b624265b86e1243",
+          "printing": {
+            "id": "7a8acee6-f460-4d2d-aaa3-3d057ef7c36c",
+            "applicationPrintingId": "7a8acee6-f460-4d2d-aaa3-3d057ef7c36c",
+            "setCode": "mercdemodeck",
+            "collectorNumber": "015"
+          },
+          "source": {
+            "localPath": "cyberpunk_llm/data/raw/cards/reboot-optics.json",
+            "rawSha256": "5e75a4492e9c5375c7dd24bfa5de6dbe9046d0ed50bacbf93a3525466362c9b9",
+            "recordHash": "26beb709278092f79d4809e436f1db5ff74c754872bd74605106faef399044ac"
+          }
+        }
+      ],
+      "compositionHash": "c0551a2293a54080e44cbf45afbd7daf96d9b8b33ef9b113037647004991c38e",
+      "provenance": {
+        "sourceId": "mercs.pdf",
+        "url": "https://cyberpunktcg.com/docs/print-and-play-mercs.pdf",
+        "sha256": "47469c3ed21cca8c4c2f214ef12b28ba13720aaac90ad768528d7d2a8a70f8cb",
+        "pages": 4,
+        "pdfCreatedAt": "2026-06-30",
+        "visualAudit": "All four pages inspected; pages 1–3 contain nine cards each; page 4 contains three cards plus four reminder panels. Slots count left-to-right, top-to-bottom.",
+        "physicalSlots": [
+          {
+            "cardId": "v-corporate-exile",
+            "collectorNumber": "008",
+            "zone": "LEGENDS",
+            "pdfPage": 1,
+            "slot": 1
+          },
+          {
+            "cardId": "viktor-vektor-sit-down-and-relax",
+            "collectorNumber": "001",
+            "zone": "LEGENDS",
+            "pdfPage": 1,
+            "slot": 2
+          },
+          {
+            "cardId": "jackie-welles-pour-one-out-for-me",
+            "collectorNumber": "007",
+            "zone": "LEGENDS",
+            "pdfPage": 1,
+            "slot": 3
+          },
+          {
+            "cardId": "dying-night-v-s-pistol",
+            "collectorNumber": "013",
+            "zone": "MAIN",
+            "pdfPage": 1,
+            "slot": 4
+          },
+          {
+            "cardId": "dying-night-v-s-pistol",
+            "collectorNumber": "013",
+            "zone": "MAIN",
+            "pdfPage": 1,
+            "slot": 5
+          },
+          {
+            "cardId": "dexter-deshawn-one-last-chance",
+            "collectorNumber": "002",
+            "zone": "MAIN",
+            "pdfPage": 1,
+            "slot": 6
+          },
+          {
+            "cardId": "secondhand-bombus",
+            "collectorNumber": "003",
+            "zone": "MAIN",
+            "pdfPage": 1,
+            "slot": 7
+          },
+          {
+            "cardId": "secondhand-bombus",
+            "collectorNumber": "003",
+            "zone": "MAIN",
+            "pdfPage": 1,
+            "slot": 8
+          },
+          {
+            "cardId": "kiroshi-optics",
+            "collectorNumber": "004",
+            "zone": "MAIN",
+            "pdfPage": 1,
+            "slot": 9
+          },
+          {
+            "cardId": "kiroshi-optics",
+            "collectorNumber": "004",
+            "zone": "MAIN",
+            "pdfPage": 2,
+            "slot": 1
+          },
+          {
+            "cardId": "kiroshi-optics",
+            "collectorNumber": "004",
+            "zone": "MAIN",
+            "pdfPage": 2,
+            "slot": 2
+          },
+          {
+            "cardId": "mandibular-upgrade",
+            "collectorNumber": "005",
+            "zone": "MAIN",
+            "pdfPage": 2,
+            "slot": 3
+          },
+          {
+            "cardId": "mandibular-upgrade",
+            "collectorNumber": "005",
+            "zone": "MAIN",
+            "pdfPage": 2,
+            "slot": 4
+          },
+          {
+            "cardId": "afterparty-at-lizzie-s",
+            "collectorNumber": "006",
+            "zone": "MAIN",
+            "pdfPage": 2,
+            "slot": 5
+          },
+          {
+            "cardId": "afterparty-at-lizzie-s",
+            "collectorNumber": "006",
+            "zone": "MAIN",
+            "pdfPage": 2,
+            "slot": 6
+          },
+          {
+            "cardId": "delamain-cab",
+            "collectorNumber": "009",
+            "zone": "MAIN",
+            "pdfPage": 2,
+            "slot": 7
+          },
+          {
+            "cardId": "delamain-cab",
+            "collectorNumber": "009",
+            "zone": "MAIN",
+            "pdfPage": 2,
+            "slot": 8
+          },
+          {
+            "cardId": "delamain-cab",
+            "collectorNumber": "009",
+            "zone": "MAIN",
+            "pdfPage": 2,
+            "slot": 9
+          },
+          {
+            "cardId": "evelyn-parker-scheming-siren",
+            "collectorNumber": "010",
+            "zone": "MAIN",
+            "pdfPage": 3,
+            "slot": 1
+          },
+          {
+            "cardId": "evelyn-parker-scheming-siren",
+            "collectorNumber": "010",
+            "zone": "MAIN",
+            "pdfPage": 3,
+            "slot": 2
+          },
+          {
+            "cardId": "evelyn-parker-scheming-siren",
+            "collectorNumber": "010",
+            "zone": "MAIN",
+            "pdfPage": 3,
+            "slot": 3
+          },
+          {
+            "cardId": "mt0d12-flathead",
+            "collectorNumber": "011",
+            "zone": "MAIN",
+            "pdfPage": 3,
+            "slot": 4
+          },
+          {
+            "cardId": "psycho-squad",
+            "collectorNumber": "012",
+            "zone": "MAIN",
+            "pdfPage": 3,
+            "slot": 5
+          },
+          {
+            "cardId": "psycho-squad",
+            "collectorNumber": "012",
+            "zone": "MAIN",
+            "pdfPage": 3,
+            "slot": 6
+          },
+          {
+            "cardId": "psycho-squad",
+            "collectorNumber": "012",
+            "zone": "MAIN",
+            "pdfPage": 3,
+            "slot": 7
+          },
+          {
+            "cardId": "floor-it",
+            "collectorNumber": "014",
+            "zone": "MAIN",
+            "pdfPage": 3,
+            "slot": 8
+          },
+          {
+            "cardId": "floor-it",
+            "collectorNumber": "014",
+            "zone": "MAIN",
+            "pdfPage": 3,
+            "slot": 9
+          },
+          {
+            "cardId": "floor-it",
+            "collectorNumber": "014",
+            "zone": "MAIN",
+            "pdfPage": 4,
+            "slot": 1
+          },
+          {
+            "cardId": "reboot-optics",
+            "collectorNumber": "015",
+            "zone": "MAIN",
+            "pdfPage": 4,
+            "slot": 2
+          },
+          {
+            "cardId": "reboot-optics",
+            "collectorNumber": "015",
+            "zone": "MAIN",
+            "pdfPage": 4,
+            "slot": 3
+          }
+        ],
+        "orderMeaning": "PRESENTATION_ONLY; printed reminder requires shuffling, not a scripted draw order."
+      }
+    }
+  ]
+}

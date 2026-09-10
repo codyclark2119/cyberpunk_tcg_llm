@@ -25,10 +25,11 @@ import { validateCombatState } from "./combat-state";
 import { gearEnabled, validateGearAttachments } from "./attachments";
 import { validatePlayState } from "./play-state";
 import { validateSearchState } from "./search-state";
+import { validateDemoState } from "./demo-state";
 import { validateSetupState } from "./setup-state";
 import { paymentSources, paymentValue, paymentCandidates } from "./payment";
 import { z } from "zod";
-import { GameStateSchema, ContentBundleSchema, ReplayStateHashSchema, PositionHashSchema, hashCanonical, canonicalSerialize, failure, success, type Result, type GameState, type ContentBundle, type PlayerId, type DeepReadonly, CardInstanceIdSchema } from "@tcg/domain";
+import { DeckFormatSchema, GameStateSchema, ContentBundleSchema, ReplayStateHashSchema, PositionHashSchema, hashCanonical, canonicalSerialize, failure, success, type Result, type GameState, type ContentBundle, type PlayerId, type DeepReadonly, CardInstanceIdSchema } from "@tcg/domain";
 export type EngineContext = {
     readonly content: DeepReadonly<ContentBundle>;
 };
@@ -52,6 +53,7 @@ export function validateState(input: unknown, context: EngineContext): Result<Ga
     const ids = s.match.playerOrder;
     if (new Set(ids).size !== ids.length || ids.length !== Object.keys(s.players).length || ids.some((id, seat) => s.players[id]?.id !== id || s.players[id].seat !== seat) || !ids.includes(s.timing.activePlayer) || !ids.includes(s.timing.actingPlayer))
         return failure("INVALID_PLAYERS", "Player keys, seats and timing references must agree");
+    const demo = validateDemoState(s, b); if (!demo.ok) return demo;
     const pins = b.manifest.cards.map(({ cardId, revision }) => ({ cardId, revision }));
     if (canonicalSerialize(s.match.cards) !== canonicalSerialize(pins))
         return failure("CONTENT_MISMATCH", "Match must retain the bundle revision pins in canonical order");
@@ -219,12 +221,15 @@ export function hashPosition(state: GameState) {
         return semantic;
     };
     const value = { ...state, resolution: { ...state.resolution, current: state.resolution.current ? semanticEffect(state.resolution.current) : null, pending: state.resolution.pending.map(semanticEffect), discovered: state.resolution.discovered.map(semanticEffect) }, match: Object.fromEntries(Object.entries(state.match).filter(([key]) => !["id", "version", "eventSequence"].includes(key))) };
+    // Literal selection rolls are public replay history with no subsequent rule effect.
+    // RNG state remains semantic under POSITION_V2; excluding past rolls does not equate future RNG streams.
+    delete value.firstPlayerRolls;
     // Player UUIDs are transport identities. Replace exact values and record keys with seat identifiers.
     const seats = new Map<string, string>(state.match.playerOrder.map((id, seat) => [id, `seat:${seat}`]));
     const normalize = (x: unknown): unknown => typeof x === "string" ? seats.get(x) ?? x : Array.isArray(x) ? x.map(normalize) : x && typeof x === "object" ? Object.fromEntries(Object.entries(x).map(([k, v]) => [seats.get(k) ?? k, normalize(v)])) : x;
     return PositionHashSchema.parse(hashCanonical({ projection: "POSITION_V2", state: normalize(value) }));
 }
-export const CreateGameInputSchema = z.strictObject({ matchId: z.uuid(), players: z.array(z.uuid()).min(1), seed: z.string().min(1), setup: z.strictObject({ firstPlayerSeat: z.number().int().nonnegative(), mulligans: z.literal("DECLINED"), cuts: z.literal("DECLINED") }).optional(), format: z.enum(["CONSTRUCTED", "SEALED_LIMITED"]).optional(), decks: z.array(z.strictObject({ legends: z.array(z.string()), main: z.array(z.string()) })) });
+export const CreateGameInputSchema = z.strictObject({ matchId: z.uuid(), players: z.array(z.uuid()).min(1), seed: z.string().min(1), setup: z.strictObject({ firstPlayerSeat: z.number().int().nonnegative(), mulligans: z.literal("DECLINED"), cuts: z.literal("DECLINED") }).optional(), format: DeckFormatSchema.optional(), decks: z.array(z.strictObject({ legends: z.array(z.string()), main: z.array(z.string()) })) });
 export function buildInitialState(input: z.input<typeof CreateGameInputSchema>, context: EngineContext, dealOpeningHand = true): Result<GameState> {
     const parsed = CreateGameInputSchema.safeParse(input);
     if (!parsed.success)
@@ -270,7 +275,7 @@ export function buildInitialState(input: z.input<typeof CreateGameInputSchema>, 
         }
         playerMap[id] = { id, seat, zones, economy: { sellsThisTurn: 0 }, gigs: { FIXER: fixer, GIGS: [] }, statuses: [] };
     }
-    const initial = { schemaVersion: 2, match: { id: matchId, version: 0, eventSequence: 0, rulesetId: b.ruleset.id, rulesetVersion: b.ruleset.version, rulesetHash: b.manifest.ruleset.hash, contentManifestHash: b.manifestHash, engineVersion: b.manifest.engine.version, engineArtifactHash: b.manifest.engine.artifactHash, cards: b.manifest.cards.map(({ cardId, revision }) => ({ cardId, revision })), playerOrder: players }, timing: { turn: 1, activePlayer: players[0], actingPlayer: players[0], window: "MAIN", combat: { stage: "NONE" } }, players: playerMap, objects: { cards, gigs }, resolution: { stage: "DECISION", current: null, pending: [], discovered: [], choice: null }, rng: { algorithm: "SHA256_COUNTER_V1", seed, counter: 0 } };
+    const initial = { schemaVersion: 2, match: { ...(parsed.data.format === "DEMO_STARTER_V1" ? { format: "DEMO_STARTER_V1" } : {}), id: matchId, version: 0, eventSequence: 0, rulesetId: b.ruleset.id, rulesetVersion: b.ruleset.version, rulesetHash: b.manifest.ruleset.hash, contentManifestHash: b.manifestHash, engineVersion: b.manifest.engine.version, engineArtifactHash: b.manifest.engine.artifactHash, cards: b.manifest.cards.map(({ cardId, revision }) => ({ cardId, revision })), playerOrder: players }, timing: { turn: 1, activePlayer: players[0], actingPlayer: players[0], window: "MAIN", combat: { stage: "NONE" } }, players: playerMap, objects: { cards, gigs }, resolution: { stage: "DECISION", current: null, pending: [], discovered: [], choice: null }, rng: { algorithm: "SHA256_COUNTER_V1", seed, counter: 0 } };
     return dealOpeningHand ? validateState(initial, context) : success(GameStateSchema.parse(initial));
 }
 export function requirePlayer(state: GameState, actor: PlayerId): boolean { return Boolean(state.players[actor]); }

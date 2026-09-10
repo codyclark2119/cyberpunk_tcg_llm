@@ -147,13 +147,64 @@
                     }
                   ]
                 },
+                "demoStarter": {
+                  "type": "object",
+                  "properties": {
+                    "authority": {
+                      "type": "string",
+                      "const": "APPLICATION_DECISION"
+                    },
+                    "deckPolicy": {
+                      "type": "string",
+                      "const": "FIXED_MANIFEST_PAIR"
+                    },
+                    "manifests": {
+                      "type": "array",
+                      "prefixItems": [
+                        {
+                          "type": "string",
+                          "const": "ARASAKA_DEMO_V1"
+                        },
+                        {
+                          "type": "string",
+                          "const": "MERC_DEMO_V1"
+                        }
+                      ],
+                      "items": false,
+                      "minItems": 2,
+                      "maxItems": 2
+                    },
+                    "seatAssignment": {
+                      "type": "string",
+                      "const": "EITHER"
+                    },
+                    "setupSequence": {
+                      "type": "string",
+                      "const": "ENGINE_SETUP_V1"
+                    },
+                    "firstPlayerMethod": {
+                      "type": "string",
+                      "const": "OPPOSED_D20"
+                    }
+                  },
+                  "required": [
+                    "authority",
+                    "deckPolicy",
+                    "manifests",
+                    "seatAssignment",
+                    "setupSequence",
+                    "firstPlayerMethod"
+                  ],
+                  "additionalProperties": false
+                },
                 "formats": {
                   "type": "object",
                   "propertyNames": {
                     "type": "string",
                     "enum": [
                       "CONSTRUCTED",
-                      "SEALED_LIMITED"
+                      "SEALED_LIMITED",
+                      "DEMO_STARTER_V1"
                     ]
                   },
                   "additionalProperties": {
@@ -3773,6 +3824,28 @@
               ],
               "additionalProperties": false
             },
+            "firstPlayerRolls": {
+              "minItems": 1,
+              "type": "array",
+              "items": {
+                "type": "array",
+                "prefixItems": [
+                  {
+                    "type": "integer",
+                    "minimum": 1,
+                    "maximum": 20
+                  },
+                  {
+                    "type": "integer",
+                    "minimum": 1,
+                    "maximum": 20
+                  }
+                ],
+                "items": false,
+                "minItems": 2,
+                "maxItems": 2
+              }
+            },
             "schemaVersion": {
               "type": "number",
               "const": 2
@@ -3780,6 +3853,10 @@
             "match": {
               "type": "object",
               "properties": {
+                "format": {
+                  "type": "string",
+                  "const": "DEMO_STARTER_V1"
+                },
                 "id": {
                   "type": "string",
                   "format": "uuid",
@@ -12613,13 +12690,64 @@
                     }
                   ]
                 },
+                "demoStarter": {
+                  "type": "object",
+                  "properties": {
+                    "authority": {
+                      "type": "string",
+                      "const": "APPLICATION_DECISION"
+                    },
+                    "deckPolicy": {
+                      "type": "string",
+                      "const": "FIXED_MANIFEST_PAIR"
+                    },
+                    "manifests": {
+                      "type": "array",
+                      "prefixItems": [
+                        {
+                          "type": "string",
+                          "const": "ARASAKA_DEMO_V1"
+                        },
+                        {
+                          "type": "string",
+                          "const": "MERC_DEMO_V1"
+                        }
+                      ],
+                      "items": false,
+                      "minItems": 2,
+                      "maxItems": 2
+                    },
+                    "seatAssignment": {
+                      "type": "string",
+                      "const": "EITHER"
+                    },
+                    "setupSequence": {
+                      "type": "string",
+                      "const": "ENGINE_SETUP_V1"
+                    },
+                    "firstPlayerMethod": {
+                      "type": "string",
+                      "const": "OPPOSED_D20"
+                    }
+                  },
+                  "required": [
+                    "authority",
+                    "deckPolicy",
+                    "manifests",
+                    "seatAssignment",
+                    "setupSequence",
+                    "firstPlayerMethod"
+                  ],
+                  "additionalProperties": false
+                },
                 "formats": {
                   "type": "object",
                   "propertyNames": {
                     "type": "string",
                     "enum": [
                       "CONSTRUCTED",
-                      "SEALED_LIMITED"
+                      "SEALED_LIMITED",
+                      "DEMO_STARTER_V1"
                     ]
                   },
                   "additionalProperties": {
@@ -16203,7 +16331,8 @@
               "type": "string",
               "enum": [
                 "CONSTRUCTED",
-                "SEALED_LIMITED"
+                "SEALED_LIMITED",
+                "DEMO_STARTER_V1"
               ]
             },
             "decks": {

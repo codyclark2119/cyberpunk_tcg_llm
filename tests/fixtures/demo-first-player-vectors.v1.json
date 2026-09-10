@@ -1,0 +1,78 @@
+{
+  "schemaVersion": 1,
+  "authority": "APPLICATION_DECISION",
+  "rngOrder": "SEAT_0_THEN_SEAT_1_PER_ROUND",
+  "vectors": {
+    "first_1": {
+      "seed": "demo-setup-0",
+      "rounds": [
+        [
+          11,
+          19
+        ]
+      ],
+      "winner": 1,
+      "rngCounter": 2
+    },
+    "first_0": {
+      "seed": "demo-setup-1",
+      "rounds": [
+        [
+          11,
+          3
+        ]
+      ],
+      "winner": 0,
+      "rngCounter": 2
+    },
+    "tie_0": {
+      "seed": "demo-setup-14",
+      "rounds": [
+        [
+          20,
+          20
+        ],
+        [
+          12,
+          11
+        ]
+      ],
+      "winner": 0,
+      "rngCounter": 4
+    },
+    "multiple_ties": {
+      "seed": "demo-setup-33",
+      "rounds": [
+        [
+          6,
+          6
+        ],
+        [
+          10,
+          10
+        ],
+        [
+          11,
+          19
+        ]
+      ],
+      "winner": 1,
+      "rngCounter": 6
+    },
+    "tie_1": {
+      "seed": "demo-setup-81",
+      "rounds": [
+        [
+          2,
+          2
+        ],
+        [
+          3,
+          6
+        ]
+      ],
+      "winner": 1,
+      "rngCounter": 4
+    }
+  }
+}

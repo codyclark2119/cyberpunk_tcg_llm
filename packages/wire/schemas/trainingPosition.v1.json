@@ -192,6 +192,28 @@
           ],
           "additionalProperties": false
         },
+        "firstPlayerRolls": {
+          "minItems": 1,
+          "type": "array",
+          "items": {
+            "type": "array",
+            "prefixItems": [
+              {
+                "type": "integer",
+                "minimum": 1,
+                "maximum": 20
+              },
+              {
+                "type": "integer",
+                "minimum": 1,
+                "maximum": 20
+              }
+            ],
+            "items": false,
+            "minItems": 2,
+            "maxItems": 2
+          }
+        },
         "schemaVersion": {
           "type": "number",
           "const": 2
@@ -199,6 +221,10 @@
         "match": {
           "type": "object",
           "properties": {
+            "format": {
+              "type": "string",
+              "const": "DEMO_STARTER_V1"
+            },
             "id": {
               "type": "string",
               "format": "uuid",
@@ -8880,6 +8906,37 @@
     "observation": {
       "type": "object",
       "properties": {
+        "format": {
+          "type": "string",
+          "const": "DEMO_STARTER_V1"
+        },
+        "firstPlayerRolls": {
+          "minItems": 1,
+          "type": "array",
+          "items": {
+            "type": "array",
+            "prefixItems": [
+              {
+                "type": "integer",
+                "minimum": 1,
+                "maximum": 20
+              },
+              {
+                "type": "integer",
+                "minimum": 1,
+                "maximum": 20
+              }
+            ],
+            "items": false,
+            "minItems": 2,
+            "maxItems": 2
+          }
+        },
+        "selectedSeat": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 1
+        },
         "schemaVersion": {
           "type": "number",
           "const": 1

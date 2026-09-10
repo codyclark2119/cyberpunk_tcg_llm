@@ -1,8 +1,8 @@
 # First demo match: execution coverage roadmap
 
-These are the user-supplied physical reference lists, preserved exactly: **27 main cards + 3 Legends = 30 total per deck**. Merc Psycho Squad is **3 copies**. Official constructed remains **40–50 main cards**. No starter padding, format exception, DEMO_STARTER policy or runnable demo match is introduced.
+These are the user-supplied physical reference lists, preserved exactly: **27 main cards + 3 Legends = 30 total per deck**. Merc Psycho Squad is **3 copies**. Official constructed remains **40–50 main cards**. The explicit **DEMO_STARTER_V1** policy now admits only one exact Arasaka deck and one exact Merc deck, in either seat. No padding or arbitrary 27-card construction is admitted.
 
-All **29 distinct cards** have local raw captures and demo printing metadata. “Executable revision” means an implementation-reviewed application revision, distinct from the harness's display/text normalization. CardIds are stable slugs, never demo collector numbers. Replays use constructed-size synthetic support decks and are not human-certified gold data.
+All **29 distinct cards** have local raw captures and demo printing metadata. “Executable revision” means an implementation-reviewed application revision, distinct from the harness's display/text normalization. CardIds are stable slugs, never demo collector numbers. Earlier card-mechanic replays use constructed-size synthetic support decks. The new **demo-setup** contract fixture uses only the exact 29 real revisions and stops before normal gameplay. Neither category is human-certified gold data. The per-card rows retain their historical execution-scope descriptions; current format readiness is recorded below.
 
 | Card | Deck | Copies | Captured? | Executable revision | Execution scope | Supported now? | Remaining blocker(s) / scope |
 |---|---|---:|---|---|---|---|---|
@@ -63,20 +63,23 @@ The legal 55-action headline uses three blind CALLs, real Saburo/Yorinobu/Hands 
 
 **Merc card execution: COMPLETE within documented scopes (15/15 distinct, 30/30 copies).**
 
-**Exact demo initialization: still NO. The next blocker is FORMAT POLICY, not card execution.**
+**Demo fixed-list legality: SUPPORTED — DEMO_STARTER_V1. Exact demo initialization: SUPPORTED.**
 
-Both physical lists remain 27 main+3 Legends=30 total. Neither meets the unchanged official constructed requirement of 40–50 main cards and exactly 3 Legends. RAM/copy rules remain unchanged. There is no DEMO_STARTER policy, deck padding, teaching exception or complete exact-deck match in this change. Individual-card coverage does not establish format legality or certify every possible interaction.
+The user's application policy selects Comprehensive Rules setup ordering, retaining physical opposed-d20 selection. One exact Arasaka and one exact Merc deck are required; either seat assignment works. Both still fail default/explicit constructed MAIN_DECK_SIZE. Setup seed `demo-setup-14` rolls 20–20 then 12–11; p0 chooses SECOND, so p1's two leftmost Legends are spent. The six-action contract trace proves cuts, six-card hands and the first whole-hand mulligan, then stops at the second mulligan before turn 1.
 
-## Next milestone: DEMO_STARTER format review
+**Overtime: UNSUPPORTED. Full exact match: NOT YET VERIFIED.** Existing card interaction limits remain. Next: **CYBERPUNK TCG — OVERTIME EXECUTION**. See the [current implementation report](demo-starter-report.md).
 
-Stop adding reference-card mechanics. A separate source review must establish:
+## Historical DEMO_STARTER source review outcome
 
-- Whether these exact 27-card main decks and three Legends are intended to be directly playable against each other.
-- Copy limits, RAM restrictions and any teaching-deck exceptions.
-- Setup, mulligan and first-player procedures or differences.
-- Win conditions, overtime and all teaching exceptions.
+The historical [setup clarification follow-up](demo-setup-review-report.md): all four downloadable instructions and the HTML guide are byte-unchanged; FAQ changes affect image URLs only. Additional sealed-event/card-errata authority statements do not resolve the demo-specific setup conflict. The source review left setup precedence and first-player method separately UNRESOLVED and admitted no runtime format. The subsequent application decision above resolves implementation policy without inventing publisher clarification.
 
-Only after that evidence is captured and an explicit format policy is reviewed should the first exact Arasaka-vs-Merc 30-card deterministic demo match be built. Printing metadata and 60/60 execution coverage do not establish any of those rules.
+**DIRECT PLAY CONFIRMED. DEMO_STARTER: NOT ADMITTED.** Official publisher announcements invite independent home play of these two exact products; visual PDF audit confirms both 27-main/3-Legend lists, including three Psycho Squads. This finding supersedes the earlier unanswered direct-play question.
+
+The product reminders/current gameplay guide expressly put shuffling before first-player determination; formal rule 7.4 requires first-player determination before shuffling. No explicit publisher precedence or demo exception resolves that ordered setup conflict. The exact two fixed lists are the narrow future candidate, not general 27-card construction. The review therefore retains them as **REFERENCE_ONLY** under the user's source-conflict requirement.
+
+[Reference manifests](../tests/fixtures/demo-reference-manifests.v1.json) now pin all 60 physical copies and their printing provenance; [44 focused tests](../tests/demo-format.test.ts) calculate counts, resolve exactly 29 real supported revisions, preserve all 53 prior revisions, and reject both exact lists under default/explicit constructed. Both pass existing RAM/copy/Legend checks; only MAIN_DECK_SIZE fails. The real-only bundle is deterministic and contains no synthetic support.
+
+At that historical review, the next step was to resolve setup precedence before admission. The subsequent user decision supplies application authority; it does not alter those source findings. Overtime is explicitly present in the demo instructions and remains an independent unsupported full-match boundary. No exact teaching match was played. See the [complete format report](demo-format-report.md) and [source fixture](../tests/fixtures/demo-format-sources.v1.json).
 
 The final card's complete three-printing source and all four captured errata are pinned in [attack-condition-power-card-source.v1.json](../tests/fixtures/attack-condition-power-card-source.v1.json). The [rules fixture](../tests/fixtures/attack-condition-power-rules.v1.json) contains 362 complete rule nodes and 3 FAQs. Narrow live gameplay/printing checks agree with local data; parsed live rules equal the local snapshot. No corpus refresh occurred. Earlier milestone reports retain their historical baselines.
 

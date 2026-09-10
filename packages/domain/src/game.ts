@@ -94,6 +94,7 @@ export const ResolutionStateSchema = z.strictObject({
     current: PendingEffectSchema.nullable(), pending: z.array(PendingEffectSchema), discovered: z.array(PendingEffectSchema), choice: PendingChoiceSchema.nullable()
 });
 export const RngStateSchema = z.strictObject({ algorithm: z.literal("SHA256_COUNTER_V1"), seed: z.string().min(1), counter: z.number().int().nonnegative() });
+export const FirstPlayerRollPairSchema = z.tuple([z.number().int().min(1).max(20), z.number().int().min(1).max(20)]);
 export const SetupStateSchema = z.strictObject({
     stage: z.enum(["FIRST_PLAYER", "MAIN_CUT", "LEGEND_CUT", "MULLIGAN"]),
     decidingSeat: z.number().int().min(0).max(1),
@@ -104,8 +105,9 @@ export const KnownHiddenLegendSchema = z.strictObject({ kind: z.literal("LOOKED_
 export const GameStateSchema = z.strictObject({
     privateKnowledge: z.array(KnownHiddenLegendSchema).min(1).optional(),
     setup: SetupStateSchema.optional(),
+    firstPlayerRolls: z.array(FirstPlayerRollPairSchema).min(1).optional(),
     schemaVersion: z.literal(2),
-    match: z.strictObject({ id: MatchIdSchema, version: GameStateVersionSchema, eventSequence: GameEventSequenceSchema,
+    match: z.strictObject({ format: z.literal("DEMO_STARTER_V1").optional(), id: MatchIdSchema, version: GameStateVersionSchema, eventSequence: GameEventSequenceSchema,
         outcome: z.strictObject({ winnerId: PlayerIdSchema, loserId: PlayerIdSchema, reason: z.enum(["EMPTY_DRAW", "START_TURN_GIGS"]) }).optional(),
         rulesetId: RulesetIdSchema, rulesetVersion: RulesetVersionSchema, rulesetHash: HashSchema, contentManifestHash: HashSchema,
         engineVersion: z.string().min(1), engineArtifactHash: HashSchema, cards: z.array(CardReferenceSchema), playerOrder: z.array(PlayerIdSchema).min(1) }),
@@ -186,6 +188,7 @@ export const EventPayloadSchema = z.discriminatedUnion("kind", [
     z.strictObject({ kind: z.literal("FIXER_PREPARED"), playerId: PlayerIdSchema }),
     z.strictObject({ kind: z.literal("CARD_REVEALED"), cardInstanceId: CardInstanceIdSchema }),
     z.strictObject({ kind: z.literal("SEARCH_REMAINDER_BOTTOMED"), playerId: PlayerIdSchema, order: z.array(CardInstanceIdSchema), rngCounter: z.number().int().nonnegative() }),
+    z.strictObject({ kind: z.literal("FIRST_PLAYER_ROLLED"), round: z.number().int().positive(), rolls: FirstPlayerRollPairSchema, tied: z.boolean() }),
     z.strictObject({ kind: z.literal("FIRST_PLAYER_DETERMINED"), playerId: PlayerIdSchema, rngCounter: z.number().int().nonnegative() }),
     z.strictObject({ kind: z.literal("FIRST_PLAYER_CHOSEN"), playerId: PlayerIdSchema, chosenBy: PlayerIdSchema }),
     z.strictObject({ kind: z.literal("SETUP_SHUFFLED"), playerId: PlayerIdSchema, zone: z.enum(["DECK", "LEGENDS"]), order: z.array(CardInstanceIdSchema), rngCounter: z.number().int().nonnegative() }),

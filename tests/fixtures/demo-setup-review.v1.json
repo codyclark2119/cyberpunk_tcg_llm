@@ -1,0 +1,571 @@
+{
+  "schemaVersion": 1,
+  "reviewId": "DEMO_SETUP_CLARIFICATION_REVIEW_V1",
+  "reviewedAt": "2026-09-10T04:39:45.720619+00:00",
+  "timezone": "America/Chicago",
+  "status": "NOT_ADMITTED",
+  "directPlay": "CONFIRMED",
+  "priorEvidence": {
+    "path": "tests/fixtures/demo-format-sources.v1.json",
+    "sha256": "a0c5f2cf725369b588c6fc019060d16be7370827c00caaeced43f072f6eafb33",
+    "referenceManifestPath": "tests/fixtures/demo-reference-manifests.v1.json",
+    "referenceManifestSha256": "d7490c7647c45991e5027f5566683f3e7bdb127dac637641f26771dc74dd2ad1"
+  },
+  "sources": [
+    {
+      "file": "arasaka.pdf",
+      "url": "https://cyberpunktcg.com/docs/print-and-play-araska.pdf",
+      "retrievedAt": "2026-09-10T04:35:12.843670+00:00",
+      "status": 200,
+      "resolvedUrl": "https://cyberpunktcg.com/docs/print-and-play-araska.pdf",
+      "lastModified": "Tue, 08 Sep 2026 20:46:21 GMT",
+      "bytes": 11712913,
+      "sha256": "4df4ef76929bcebe2188bdc3d6fcb8350776b949c3119a3cf587c1b5bde9a52e",
+      "previousSha256": "4df4ef76929bcebe2188bdc3d6fcb8350776b949c3119a3cf587c1b5bde9a52e",
+      "previousRetrievedAt": "2026-09-10T03:31:49.177601+00:00",
+      "byteComparison": "UNCHANGED",
+      "kind": "OFFICIAL_PRODUCT",
+      "location": "page 4; BEFORE YOU BEGIN / IN ORDER",
+      "finding": "Unchanged shuffle-first product procedure; explicit opposed d20 and tie rerolls; winner chooses play order.",
+      "setupComparison": "UNCHANGED"
+    },
+    {
+      "file": "mercs.pdf",
+      "url": "https://cyberpunktcg.com/docs/print-and-play-mercs.pdf",
+      "retrievedAt": "2026-09-10T04:35:12.843995+00:00",
+      "status": 200,
+      "resolvedUrl": "https://cyberpunktcg.com/docs/print-and-play-mercs.pdf",
+      "lastModified": "Tue, 08 Sep 2026 20:46:23 GMT",
+      "bytes": 11855265,
+      "sha256": "47469c3ed21cca8c4c2f214ef12b28ba13720aaac90ad768528d7d2a8a70f8cb",
+      "previousSha256": "47469c3ed21cca8c4c2f214ef12b28ba13720aaac90ad768528d7d2a8a70f8cb",
+      "previousRetrievedAt": "2026-09-10T03:31:49.177913+00:00",
+      "byteComparison": "UNCHANGED",
+      "kind": "OFFICIAL_PRODUCT",
+      "location": "page 4; BEFORE YOU BEGIN / IN ORDER",
+      "finding": "Unchanged same setup instructions as Arasaka.",
+      "setupComparison": "UNCHANGED"
+    },
+    {
+      "file": "guide.pdf",
+      "url": "https://cyberpunktcg.com/docs/printable-gameplay-guide.pdf",
+      "retrievedAt": "2026-09-10T04:35:12.844074+00:00",
+      "status": 200,
+      "resolvedUrl": "https://cyberpunktcg.com/docs/printable-gameplay-guide.pdf",
+      "lastModified": "Tue, 08 Sep 2026 20:46:26 GMT",
+      "bytes": 5086321,
+      "sha256": "d7b090d8f6b0ce71e5a180c578d9c2ac9a625cd242ce304fda7f7a624d596378",
+      "previousSha256": "d7b090d8f6b0ce71e5a180c578d9c2ac9a625cd242ce304fda7f7a624d596378",
+      "previousRetrievedAt": "2026-09-10T03:31:49.178023+00:00",
+      "byteComparison": "UNCHANGED",
+      "kind": "OFFICIAL_GUIDE",
+      "location": "PDF page 9, printed page 7, SETUP",
+      "finding": "Unchanged shuffle-first setup and opposed d20 method.",
+      "setupComparison": "UNCHANGED"
+    },
+    {
+      "file": "reminder.pdf",
+      "url": "https://cyberpunktcg.com/docs/printable-reminder-sheet.pdf",
+      "retrievedAt": "2026-09-10T04:35:12.844133+00:00",
+      "status": 200,
+      "resolvedUrl": "https://cyberpunktcg.com/docs/printable-reminder-sheet.pdf",
+      "lastModified": "Tue, 08 Sep 2026 20:46:24 GMT",
+      "bytes": 474882,
+      "sha256": "a36c0ccaa4919da34b8ca1ad1d46c9510e62be0263c495623f36deb4abaa289d",
+      "previousSha256": "a36c0ccaa4919da34b8ca1ad1d46c9510e62be0263c495623f36deb4abaa289d",
+      "previousRetrievedAt": "2026-09-10T03:31:49.178104+00:00",
+      "byteComparison": "UNCHANGED",
+      "kind": "OFFICIAL_DEMO_REMINDER",
+      "location": "page 1; BEFORE YOU BEGIN / IN ORDER",
+      "finding": "Unchanged shuffle-first sequence and stated opposed d20 procedure.",
+      "setupComparison": "UNCHANGED"
+    },
+    {
+      "file": "guide.html",
+      "url": "https://cyberpunktcg.com/gameplay-guide",
+      "retrievedAt": "2026-09-10T04:35:13.300547+00:00",
+      "status": 200,
+      "resolvedUrl": "https://cyberpunktcg.com/gameplay-guide",
+      "lastModified": "Tue, 08 Sep 2026 20:46:29 GMT",
+      "bytes": 107489,
+      "sha256": "2393ca089412ff38f0dc926594770a472abe225998ae8218380c02cbc681dcd9",
+      "previousSha256": "2393ca089412ff38f0dc926594770a472abe225998ae8218380c02cbc681dcd9",
+      "previousRetrievedAt": "2026-09-10T03:31:49.554915+00:00",
+      "byteComparison": "UNCHANGED",
+      "kind": "OFFICIAL_GUIDE",
+      "location": "HOW TO PLAY > SETUP, ordered steps 1–3",
+      "finding": "Unchanged current HTML still shuffles before first-player determination; no hierarchy clarification.",
+      "setupComparison": "UNCHANGED"
+    },
+    {
+      "file": "rules.json",
+      "url": "https://api.netdeck.gg/api/cyberpunk/comprehensive-rules",
+      "retrievedAt": "2026-09-10T04:35:13.314012+00:00",
+      "status": 200,
+      "resolvedUrl": "https://api.netdeck.gg/api/cyberpunk/comprehensive-rules",
+      "lastModified": "Tue, 01 Sep 2026 19:28:10 GMT",
+      "bytes": 377458,
+      "sha256": "b1e36a820eefa70885cee00b2116b55077dd90565554f81400bc1700e6cbe06a",
+      "previousSha256": "b1e36a820eefa70885cee00b2116b55077dd90565554f81400bc1700e6cbe06a",
+      "previousRetrievedAt": "2026-09-10T03:31:49.756838+00:00",
+      "byteComparison": "UNCHANGED",
+      "kind": "FORMAL_RULES",
+      "location": "1.1–1.3; 7.2.1; 7.4–7.9",
+      "finding": "All 713 nodes and full response bytes unchanged; formal determine-first order and agreed random method remain."
+    },
+    {
+      "file": "faqs.json",
+      "url": "https://api.netdeck.gg/api/faqs/cyberpunk",
+      "retrievedAt": "2026-09-10T04:35:13.341048+00:00",
+      "status": 200,
+      "resolvedUrl": "https://api.netdeck.gg/api/faqs/cyberpunk",
+      "lastModified": null,
+      "bytes": 239149,
+      "sha256": "3a482c2be10191762d946259e9c958fc0eb1a340615a01fac18f6f7c36ab49d1",
+      "previousSha256": "844a439524c09aa14cc26415b4bbdd623026974fdbe11803a39dc0fbb1c5aaa3",
+      "previousRetrievedAt": "2026-09-10T03:31:49.808154+00:00",
+      "byteComparison": "CHANGED",
+      "kind": "OFFICIAL_FAQ",
+      "location": "270 Q/A records; setup/precedence/method term search",
+      "finding": "Only 245 items[*].card.image_url values differ. All other fields, including all Q/A, are identical. No matching setup/precedence answer."
+    },
+    {
+      "file": "comp-rules-published.html",
+      "url": "https://cyberpunktcg.com/blog/comp-rules-published",
+      "retrievedAt": "2026-09-10T04:35:13.545525+00:00",
+      "status": 200,
+      "resolvedUrl": "https://cyberpunktcg.com/blog/comp-rules-published",
+      "lastModified": "Tue, 08 Sep 2026 20:46:28 GMT",
+      "bytes": 32292,
+      "sha256": "2afa56dfa294c36a4efc623eb946b1472566472be8369e42a41f91f7b861b77f",
+      "previousSha256": "2afa56dfa294c36a4efc623eb946b1472566472be8369e42a41f91f7b861b77f",
+      "previousRetrievedAt": "2026-09-10T03:35:01.195896+00:00",
+      "byteComparison": "UNCHANGED",
+      "kind": "PUBLISHER_STATEMENT",
+      "location": "August 28, 2026; introduction and guide recommendation",
+      "finding": "Describes detailed answers for judges/players, but no express resolution of the competing demo sequence."
+    },
+    {
+      "file": "ax-announcements.html",
+      "url": "https://cyberpunktcg.com/blog/ax-announcements",
+      "retrievedAt": "2026-09-10T04:35:13.754749+00:00",
+      "status": 200,
+      "resolvedUrl": "https://cyberpunktcg.com/blog/ax-announcements",
+      "lastModified": "Tue, 08 Sep 2026 20:46:27 GMT",
+      "bytes": 42561,
+      "sha256": "2c67ccd3929d3ccd75d177200d3d5366b95673e0b15caaedd5cdf6bfba738b29",
+      "previousSha256": "2c67ccd3929d3ccd75d177200d3d5366b95673e0b15caaedd5cdf6bfba738b29",
+      "previousRetrievedAt": "2026-09-10T03:35:01.195792+00:00",
+      "byteComparison": "UNCHANGED",
+      "kind": "PUBLISHER_STATEMENT",
+      "location": "July 3, 2026; updated Print-and-Play section",
+      "finding": "Direct-play intent and guide resource links remain; no change to demo setup authority."
+    },
+    {
+      "file": "ax-preview.html",
+      "url": "https://cyberpunktcg.com/blog/ax-preview",
+      "retrievedAt": "2026-09-10T04:35:13.840973+00:00",
+      "status": 200,
+      "resolvedUrl": "https://cyberpunktcg.com/blog/ax-preview",
+      "lastModified": "Tue, 08 Sep 2026 20:46:27 GMT",
+      "bytes": 40695,
+      "sha256": "149f44f6693a54b30aa0431253db39307c0085b6814df649ccdc2c4d41611b09",
+      "previousSha256": "149f44f6693a54b30aa0431253db39307c0085b6814df649ccdc2c4d41611b09",
+      "previousRetrievedAt": "2026-09-10T03:35:01.195454+00:00",
+      "byteComparison": "UNCHANGED",
+      "kind": "PUBLISHER_STATEMENT",
+      "location": "June 26, 2026; new demo decks",
+      "finding": "Direct home play and replacement of Alpha products remain; no setup-precedence ruling."
+    },
+    {
+      "file": "blog.html",
+      "url": "https://cyberpunktcg.com/blog?page=3",
+      "retrievedAt": "2026-09-10T04:35:13.898892+00:00",
+      "status": 200,
+      "resolvedUrl": "https://cyberpunktcg.com/blog?page=3",
+      "lastModified": "Tue, 08 Sep 2026 20:46:28 GMT",
+      "bytes": 187940,
+      "sha256": "ab6ed4308afc276cf9d0da56af439cfb59e70eec184c37c8849a5fd01f7347b5",
+      "previousSha256": "ab6ed4308afc276cf9d0da56af439cfb59e70eec184c37c8849a5fd01f7347b5",
+      "previousRetrievedAt": "2026-09-10T03:31:49.580873+00:00",
+      "byteComparison": "UNCHANGED",
+      "kind": "DISCOVERY_ONLY",
+      "location": "Embedded metadata/body strings for 31 publisher articles, targeted setup/precedence search",
+      "finding": "Listing bytes unchanged. September 7 gameplay-video article concerns starter/custom gameplay; no new textual demo ruling discovered. Image URLs excluded as evidence."
+    },
+    {
+      "file": "faq.html",
+      "url": "https://cyberpunktcg.com/faq",
+      "retrievedAt": "2026-09-10T04:35:14.032028+00:00",
+      "status": 200,
+      "resolvedUrl": "https://cyberpunktcg.com/faq",
+      "lastModified": "Tue, 08 Sep 2026 20:46:29 GMT",
+      "bytes": 46508,
+      "sha256": "fa5c7bcd65d7c950217b3e1cc3d0d06a00bd09aa102bc5a539b5142bd750b194",
+      "previousSha256": "fa5c7bcd65d7c950217b3e1cc3d0d06a00bd09aa102bc5a539b5142bd750b194",
+      "previousRetrievedAt": "2026-09-10T03:31:49.597652+00:00",
+      "byteComparison": "UNCHANGED",
+      "kind": "OFFICIAL_FAQ",
+      "location": "Product FAQ; Alpha Kit reference",
+      "finding": "Legacy product links do not resolve current demo setup."
+    },
+    {
+      "file": "beta-event-guide.html",
+      "url": "https://cyberpunktcg.com/beta-event-guide",
+      "retrievedAt": "2026-09-10T04:35:14.056078+00:00",
+      "status": 200,
+      "resolvedUrl": "https://cyberpunktcg.com/beta-event-guide",
+      "lastModified": "Tue, 08 Sep 2026 20:46:27 GMT",
+      "bytes": 56053,
+      "sha256": "a176b4f8cebfcd0b851d71fe8aa5fb34df9ca8cd6a82a0adc807690ef883127a",
+      "kind": "PUBLISHER_STATEMENT",
+      "location": "Learn the Cyberpunk TCG Game Rules; introduction defines sealed Beta Event scope",
+      "finding": "Explicitly directs event gameplay disputes to comprehensive rules. Relevant authority lead, but no explicit extension to the June demo products or conflicting English setup instructions.",
+      "excerpt": "Reference document that adjudicates every possible gameplay process and interaction.",
+      "publishedAt": "NOT_STATED",
+      "scope": "SEALED_BETA_EVENTS"
+    },
+    {
+      "file": "beta-rule-updates.html",
+      "url": "https://cyberpunktcg.com/blog/beta-rule-updates",
+      "retrievedAt": "2026-09-10T04:35:14.081120+00:00",
+      "status": 200,
+      "resolvedUrl": "https://cyberpunktcg.com/blog/beta-rule-updates",
+      "lastModified": "Tue, 08 Sep 2026 20:46:27 GMT",
+      "bytes": 46869,
+      "sha256": "37c6db9ce40d02c3011d7f4f1689462739937500967b12ccf22ccc710b13faf8",
+      "kind": "PUBLISHER_STATEMENT",
+      "location": "May 29, 2026; final gameplay update paragraphs",
+      "finding": "Recommends new Beta changes for Alpha/print-and-play players. Specific changes cover turn structure, CALL and victory, not the later competing setup orders or first-player method.",
+      "publishedAt": "2026-05-29",
+      "excerpt": "These updated rules are in effect starting today!",
+      "scope": "ALPHA_TO_BETA_CHANGES_DESCRIBED_IN_ARTICLE"
+    },
+    {
+      "file": "rules.html",
+      "url": "https://cyberpunktcg.com/comprehensive-rules",
+      "retrievedAt": "2026-09-10T04:35:14.250060+00:00",
+      "status": 200,
+      "resolvedUrl": "https://cyberpunktcg.com/comprehensive-rules",
+      "lastModified": "Tue, 08 Sep 2026 20:46:29 GMT",
+      "bytes": 2186,
+      "sha256": "0c4cad5c46252e63829f6b4c607e451febc1fc461a996ab9fd3aa30d4a2e88fb",
+      "kind": "OFFICIAL_RULES_PAGE",
+      "location": "Current comprehensive-rules application page",
+      "finding": "Presentation entry point; JSON endpoint supplies the authoritative rule nodes. No independent precedence clause."
+    },
+    {
+      "file": "errata.html",
+      "url": "https://cyberpunktcg.com/errata",
+      "retrievedAt": "2026-09-10T04:35:14.265985+00:00",
+      "status": 200,
+      "resolvedUrl": "https://cyberpunktcg.com/errata",
+      "lastModified": "Tue, 08 Sep 2026 20:46:29 GMT",
+      "bytes": 32470,
+      "sha256": "5a90b75c355d2c090b2041d7f019721a240bcf291c734dbf1db50378a9306bdf",
+      "kind": "OFFICIAL_CARD_ERRATA",
+      "location": "Introductory authority paragraph",
+      "finding": "Explicit supersession applies to updated text/characteristics of cards on this page, not demo setup documents.",
+      "excerpt": "The updated text shown here supersedes all printed text at all levels of play.",
+      "scope": "LISTED_CARD_TEXT_AND_CHARACTERISTICS"
+    },
+    {
+      "file": "gameplay-videos-2.html",
+      "url": "https://cyberpunktcg.com/blog/gameplay-videos-2",
+      "retrievedAt": "2026-09-10T04:37:05.102145+00:00",
+      "status": 200,
+      "lastModified": "Tue, 08 Sep 2026 20:46:28 GMT",
+      "sha256": "2123a880949c95c712e5f696c3c1be469f353319ec11215d12dbe2098a6e3961",
+      "bytes": 31620,
+      "kind": "PUBLISHER_STATEMENT",
+      "location": "September 7, 2026; article body",
+      "finding": "Advertises starter/custom-deck gameplay videos; no demo setup ruling in article. Linked matches were not reviewed and are not used as source authority.",
+      "publishedAt": "2026-09-07"
+    },
+    {
+      "file": "gen-con-announcements.html",
+      "url": "https://cyberpunktcg.com/blog/gen-con-announcements",
+      "retrievedAt": "2026-09-10T04:37:05.102440+00:00",
+      "status": 200,
+      "lastModified": "Tue, 08 Sep 2026 20:46:28 GMT",
+      "sha256": "287d874b67a4d3b5abd24f6beb48f4cf71b01471491d9b5ded3e6f2237686223",
+      "bytes": 37945,
+      "kind": "PUBLISHER_STATEMENT",
+      "location": "July 31, 2026; introduction",
+      "finding": "Confirms convention demos; no setup or hierarchy clarification. Unrelated card reveals not re-reviewed."
+    },
+    {
+      "file": "developer-insights-gig-dice.html",
+      "url": "https://cyberpunktcg.com/blog/developer-insights-gig-dice",
+      "retrievedAt": "2026-09-10T04:37:05.102558+00:00",
+      "status": 200,
+      "lastModified": "Tue, 08 Sep 2026 20:46:28 GMT",
+      "sha256": "28f1209b66ed86df051fcae3ae92f0c09d8a589e57ab697a591d1423d8a836fc",
+      "bytes": 33486,
+      "kind": "PUBLISHER_STATEMENT",
+      "location": "Dice design discussion",
+      "finding": "Discusses in-game Gig randomness, not setup roll equivalence; not used to justify a first-player abstraction."
+    },
+    {
+      "file": "errata-cms.json",
+      "url": "https://api.netdeck.gg/api/cyberpunk/content/query",
+      "retrievedAt": "2026-09-10T04:37:05.102645+00:00",
+      "requestBody": {
+        "params": {
+          "content_type": "cyberpunkPage",
+          "fields.slug": "errata",
+          "include": 3
+        }
+      },
+      "status": 200,
+      "lastModified": null,
+      "sha256": "7daccd21432f93f70237b4a0844debc9671c1326d6979af73bf0d7862b67c5a9",
+      "bytes": 4105,
+      "kind": "OFFICIAL_CARD_ERRATA",
+      "location": "cyberpunkPage errata; introductory markdown block, include=3",
+      "finding": "Existing CMS route agrees on card-specific errata precedence; no setup ruling. No card records refreshed.",
+      "excerpt": "The updated text shown here supersedes all printed text at all levels of play.",
+      "scope": "LISTED_CARD_TEXT_AND_CHARACTERISTICS"
+    }
+  ],
+  "ruleReferences": [
+    {
+      "displayNumber": "1.1",
+      "stableAnchor": "rule-3e266cc2-9fcc-56c4-ad9d-0f4b4eccfa7a",
+      "nodeHash": "85613457cac1c88c75c82bccff13f3741f3ea44b1eaefd9f08d69dc903eeba59"
+    },
+    {
+      "displayNumber": "1.2",
+      "stableAnchor": "rule-2cc46293-e43b-5a94-94d9-3d666387e673",
+      "nodeHash": "c47e239f7a16d63fbb2af771bccfc0f737a370df009b1f30b24fb27e128862bc"
+    },
+    {
+      "displayNumber": "1.3",
+      "stableAnchor": "rule-03541924-383c-53f3-b4eb-cc80c641143b",
+      "nodeHash": "959afb9128f8b6b844628667914be812d8a46df3003307b6a1f630330366eaa2"
+    },
+    {
+      "displayNumber": "7.2.1",
+      "stableAnchor": "rule-e0573cc0-9950-53ae-80ae-077bd020d4e5",
+      "nodeHash": "5e479c54ff31b6b85ed87fc433be692999f83d7a8930071498558dad6d971806"
+    },
+    {
+      "displayNumber": "7.4",
+      "stableAnchor": "rule-d976c0eb-3de4-5302-a029-263fa63769d4",
+      "nodeHash": "9952bcab59b82f7e8f83aa4b3e0a99ba80bbd6d29a690b60062929c4ff498cb5"
+    },
+    {
+      "displayNumber": "7.5",
+      "stableAnchor": "rule-94dc6a39-b3ea-512b-bdc5-dcb430a1b87a",
+      "nodeHash": "392b84ea83bd20719f77334b3d981daf4120f2e3b97d885fdd58c892c7ad2b82"
+    },
+    {
+      "displayNumber": "7.5.1",
+      "stableAnchor": "rule-ab48c13d-8a69-5eb6-94c6-49eccd0a7ca7",
+      "nodeHash": "400eb1ed98836e5be1c58c7434e29363b6148984115c481e2f03cd1c09a70f06"
+    },
+    {
+      "displayNumber": "7.5.2",
+      "stableAnchor": "rule-0011e28c-7729-5219-a28f-c390d1a3efcb",
+      "nodeHash": "16ea16d135589c5176e9615e5084aada410dc1ffd8c18908f759fa57f90c3f62"
+    },
+    {
+      "displayNumber": "7.6",
+      "stableAnchor": "rule-0bb219ac-32c1-5a94-8913-5bd511f826d5",
+      "nodeHash": "942291bc15ce978dedee3e28c2f9e5fe501f302386a6639f522726fdbd3b8b3a"
+    },
+    {
+      "displayNumber": "7.6.1",
+      "stableAnchor": "rule-87b37be1-b361-5c30-a056-f9b1e331ee4f",
+      "nodeHash": "d964980b9f244c9319544a82374ce0cc4c365e8d204ad10cd33fafa899abaf44"
+    },
+    {
+      "displayNumber": "7.6.2",
+      "stableAnchor": "rule-899afa0c-7c58-5f98-8b92-abd98475ab4e",
+      "nodeHash": "63376ec6bc2851361e868cbc87ae28a5a7ef2f13b9892206aa03d137c4b62f69"
+    },
+    {
+      "displayNumber": "7.7",
+      "stableAnchor": "rule-a874c239-436b-5edc-af6d-acefc38d774d",
+      "nodeHash": "4ed46e745d56b56d5c51e314c6d4aa113c73079d9ff279c2b8ba4c148a1fa28c"
+    },
+    {
+      "displayNumber": "7.7.1",
+      "stableAnchor": "rule-43e3cce3-8561-5a78-8533-7f917e4fb3b5",
+      "nodeHash": "864a84cc8092efc0d1254a4ca7e44d93a4131fdd1ead507126de6b33e89f4bd4"
+    },
+    {
+      "displayNumber": "7.7.2",
+      "stableAnchor": "rule-51e5cc05-f77b-5e50-8642-3077779bf054",
+      "nodeHash": "2478554b12e69dff93ce555ee6fdc990337579e6bd6c72118e6348b12a5006ba"
+    },
+    {
+      "displayNumber": "7.7.3",
+      "stableAnchor": "rule-18053075-e1ce-585f-8623-0bd712f9d307",
+      "nodeHash": "df5486d4f69dda3b8dedb93776dbfeeea2cd113093cb35937e867853d76856e8"
+    },
+    {
+      "displayNumber": "7.7.4",
+      "stableAnchor": "rule-07d3b666-c2b7-5bac-8438-b7eda93fe942",
+      "nodeHash": "93202e2179fd1e3c0c912feb7a69e5647adc13a8ebd3aa723bf40f9d62b0cd2d"
+    },
+    {
+      "displayNumber": "7.8",
+      "stableAnchor": "rule-280ae118-ae77-5eb7-af1d-b0cbeb856e61",
+      "nodeHash": "4c3e293192a8da0de7a1e0a132b8c04ca7735877915e87e5e13630949f339914"
+    },
+    {
+      "displayNumber": "7.8.1",
+      "stableAnchor": "rule-1341ed90-416f-51ca-bf6c-5a995d22a6ce",
+      "nodeHash": "010643b0f0d1279e81484cf198bc3008997c29dc29e423f1ac562e7958e1f10e"
+    },
+    {
+      "displayNumber": "7.9",
+      "stableAnchor": "rule-5c2fa2e2-8494-51ea-8581-fef8a126806d",
+      "nodeHash": "3330a23b416be37ae1e9aa54b08e08ca373592d6b3110a7a08776abe21ac146b"
+    },
+    {
+      "displayNumber": "7.9.1",
+      "stableAnchor": "rule-544bb6d5-534d-5ea0-89e9-255b500f0c01",
+      "nodeHash": "05393b9d7402eec3c6dd12fe0f41a81fc7220a44f7bbc16cbd41b2007a6afe8e"
+    },
+    {
+      "displayNumber": "7.9.2",
+      "stableAnchor": "rule-78255489-5be1-5c1c-b220-79c79ba715ec",
+      "nodeHash": "bee34fcde1e04ff7d464fefdcd0e4c647756cab1000df5b2eec987309cf94dd4"
+    },
+    {
+      "displayNumber": "7.9.3.2",
+      "stableAnchor": "rule-2965c7e5-63d7-5fde-b293-802af2de35ae",
+      "nodeHash": "74abb68b718f2285ac328a0d782b8cd1cf172e6ea1aefeeec5870586956400e3"
+    }
+  ],
+  "physicalProcedure": {
+    "sourceIds": [
+      "arasaka.pdf",
+      "mercs.pdf",
+      "reminder.pdf",
+      "guide.html"
+    ],
+    "location": "ordered setup panel/section",
+    "evidenceClass": "EXPLICIT_PRODUCT_INSTRUCTIONS",
+    "setupOrder": [
+      "SHUFFLE_MAIN_AND_RANDOMIZE_LEGENDS",
+      "DETERMINE_PLAY_ORDER",
+      "SPEND_FIRST_PLAYERS_TWO_LEFTMOST_LEGENDS",
+      "DRAW_SIX_AND_OPTIONAL_WHOLE_HAND_MULLIGAN"
+    ],
+    "firstPlayerMethod": {
+      "procedure": "OPPOSED_D20_REROLL_TIES_HIGHER_CHOOSES_FIRST_OR_SECOND",
+      "wording": "INSTRUCTION_NOT_LABELLED_RECOMMENDATION",
+      "excerpt": "Both players roll a d20 (reroll on a tie)."
+    }
+  },
+  "formalProcedure": {
+    "sourceId": "rules.json",
+    "orderedBy": "7.4",
+    "setupOrder": [
+      {
+        "rule": "7.5",
+        "operation": "RANDOM_PLAYER_THEN_FIRST_SECOND_CHOICE"
+      },
+      {
+        "rule": "7.6",
+        "operation": "MAIN_SHUFFLE_AND_OPTIONAL_RIVAL_CUT"
+      },
+      {
+        "rule": "7.7",
+        "operation": "LEGEND_RANDOMIZATION_AND_OPTIONAL_RIVAL_CUT_THEN_SPEND_FIRST_TWO"
+      },
+      {
+        "rule": "7.8",
+        "operation": "PREPARE_SIX_FIXERS"
+      },
+      {
+        "rule": "7.9",
+        "operation": "DRAW_SIX_AND_OPTIONAL_WHOLE_HAND_MULLIGAN_FIRST_PLAYER_FIRST"
+      }
+    ],
+    "firstPlayerMethod": {
+      "rule": "7.5.1",
+      "allowed": "AGREED_RANDOM_PLAYER_METHOD",
+      "recommended": "OPPOSED_D20_REROLL_TIES",
+      "choiceRule": "7.5.2"
+    }
+  },
+  "faqComparison": {
+    "priorCapturedAt": "2026-09-10T03:31:49.808154+00:00",
+    "updatedAt": "2026-09-08T20:55:01.135Z",
+    "recordCount": 270,
+    "changedFieldCount": 245,
+    "changedPathPattern": "items[*].card.image_url",
+    "allOtherFieldsUnchanged": true,
+    "semanticFields": [
+      "id",
+      "scope",
+      "question",
+      "answer"
+    ],
+    "semanticHash": "43d093d28443132e1f14aa3d5e412d86d0e5672c657576d0dab0ca5f43432d21",
+    "semanticEquality": true,
+    "setupPrecedenceMethodMatches": 0
+  },
+  "search": {
+    "domains": [
+      "cyberpunktcg.com",
+      "api.netdeck.gg"
+    ],
+    "queries": [
+      "site:cyberpunktcg.com \"demo\" \"setup\"",
+      "site:cyberpunktcg.com \"comprehensive\" \"precedence\"",
+      "site:cyberpunktcg.com \"shuffle\" \"first player\"",
+      "site:cyberpunktcg.com \"d20\" \"demo\"",
+      "site:cyberpunktcg.com \"rules\" \"supersede\"",
+      "site:cyberpunktcg.com \"demo\" \"first\"",
+      "site:cyberpunktcg.com \"rules\" \"override\"",
+      "site:api.netdeck.gg \"cyberpunk\" \"setup\"",
+      "site:cyberpunktcg.com \"setup order\"",
+      "site:cyberpunktcg.com \"demo\" \"supersedes\"",
+      "site:cyberpunktcg.com \"comprehensive rules\" \"guide\" \"conflict\"",
+      "site:cyberpunktcg.com \"shuffle\" \"d20\"",
+      "site:cyberpunktcg.com \"convention demo\" \"setup\"",
+      "site:cyberpunktcg.com \"first-player\" \"rules\"",
+      "site:cyberpunktcg.com \"starter setup\"",
+      "site:cyberpunktcg.com \"print and play\" \"rules\""
+    ],
+    "embeddedPublisherPostCount": 31,
+    "outcome": "NO_APPLICABLE_CLARIFICATION_FOUND",
+    "boundary": "Targeted bounded review; no claim all possible publisher communications were exhausted. No external message sent."
+  },
+  "decisions": {
+    "setupPrecedence": {
+      "result": "UNRESOLVED",
+      "reason": "Two explicit ordered procedures remain. No publisher statement resolves precedence for these demo products. Sealed-event dispute guidance and card errata have narrower stated scopes."
+    },
+    "firstPlayerMethod": {
+      "result": "D_UNRESOLVED",
+      "physicalText": "Opposed d20 is an instruction, not labelled merely recommended.",
+      "formalText": "An agreed random method is allowed; opposed d20 is a recommendation.",
+      "reason": "No ruling establishes whether these demo products inherit the formal method permission. This question is independent of shuffle ordering."
+    },
+    "digitalAbstraction": {
+      "result": "NOT_ADMITTED_FOR_DEMO",
+      "mathematicalAnalysis": "With independent fair d20 rolls: 190 ordered outcomes select each seat, 20 tie. Repeating ties yields each winner with probability 190/(400-20)=1/2.",
+      "boundary": "Distributional equivalence of winning seat only. It is not equal RNG consumption, literal roll/event history, or an official ruling allowing procedure substitution. No later use of setup values is specified in the reviewed setup text.",
+      "conditionalCandidate": "If permitted, one deterministic random-seat selection and the existing FIRST/SECOND choice is the smallest candidate. No in-game Gig objects or public physical roll events need be invented solely to explain this probability analysis."
+    },
+    "format": "NOT_ADMITTED",
+    "initialization": "NOT_RUN",
+    "overtime": "UNSUPPORTED",
+    "fullExactMatch": "NOT_YET_VERIFIED"
+  },
+  "publisherQuestions": [
+    "For the June 2026 Arasaka/Merc Print-and-Play Demo Decks, should setup follow the Demo Reminder's shuffle/randomize-before-play-order sequence, or Comprehensive Rules 7.4–7.9's determine-first-player-before-randomization sequence?",
+    "For those products, is the opposed d20 procedure mandatory, or may players use the general agreed random-player method in 7.5? If physical rolls are mandatory, is a digital uniform winning-seat selection followed by FIRST/SECOND choice an acceptable semantic equivalent when setup roll values have no later use?"
+  ],
+  "limitations": [
+    "No card source refresh, new mechanics, overtime implementation, exact demo initialization, gameplay seed search, model download, training or gold promotion.",
+    "No authority inferred from publication timestamps, document title, product specificity or mathematical probability alone.",
+    "All prior reference manifests, composition hashes, 29 real revisions, 53 parent revisions, runtime contracts and engine artifact remain unchanged."
+  ]
+}

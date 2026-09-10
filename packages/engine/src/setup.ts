@@ -1,6 +1,7 @@
 import { success, failure, type Result } from "@tcg/domain";
 import { TurnMutation } from "./turn";
 import { drawDeterministicInteger } from "./rng";
+import { selectOpposedD20 } from "./first-player";
 import { setupChoice } from "./setup-state";
 
 function offer(m: TurnMutation) {
@@ -28,9 +29,18 @@ export function beginSetup(m: TurnMutation): Result<null> {
     delete s.timing.firstPlayer;
     for (const p of Object.values(s.players)) p.economy = { sellsThisTurn: 0, callsThisTurn: 0, usageTurn: 0 };
     for (const c of Object.values(s.objects.cards)) c.readiness = "READY";
-    const counter = s.rng.counter, result = drawDeterministicInteger(s.rng, 2);
-    s.rng = result.rng;
-    s.setup = { stage: "FIRST_PLAYER", decidingSeat: result.rawValue - 1, completed: 0 };
+    const counter = s.rng.counter;
+    let decidingSeat: number;
+    if (s.match.format === "DEMO_STARTER_V1") {
+        const result = selectOpposedD20(s.rng);
+        s.rng = result.rng; s.firstPlayerRolls = result.rounds; decidingSeat = result.decidingSeat;
+        for (const [index, rolls] of result.rounds.entries())
+            m.emit({ kind: "FIRST_PLAYER_ROLLED", round: index + 1, rolls, tied: rolls[0] === rolls[1] });
+    } else {
+        const result = drawDeterministicInteger(s.rng, 2);
+        s.rng = result.rng; decidingSeat = result.rawValue - 1;
+    }
+    s.setup = { stage: "FIRST_PLAYER", decidingSeat, completed: 0 };
     m.emit({ kind: "FIRST_PLAYER_DETERMINED", playerId: s.match.playerOrder[s.setup.decidingSeat], rngCounter: counter });
     offer(m);
     return success(null);

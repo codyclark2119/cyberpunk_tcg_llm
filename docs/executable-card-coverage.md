@@ -1,10 +1,12 @@
 # Executable card coverage — reviewed play, Gear, attack and defender React
 
+**Current implementation (September 10, 2026):** [DEMO_STARTER_V1 implementation report](demo-starter-report.md) admits only the fixed Arasaka/Merc pair, in either seat, using Comprehensive Rules setup order and literal opposed d20. This is the user's **application policy decision**. The publisher source conflict remains historically unresolved. Exact initialization is supported; overtime remains UNSUPPORTED and a full exact match is NOT YET VERIFIED. The review findings below retain their historical meaning.
+
 This is an implementation review of a small local capture, **not human-certified gold data, full official card coverage, or a corpus refresh**. The application still validates its four original catalog fixtures. The experimental replay bundles explicitly pin the reviewed revisions below and use synthetic support decks.
 
 `execution: { scope: "NONCOMBAT_SLICE_V1", status: "SUPPORTED" | "UNSUPPORTED" }` is distinct from catalog `status`, source `legality`, and the existence of display text. `REVIEWED_CALL_V1` admission requires an explicit supported execution decision for **every deck card**, then checks the actual normalized abilities and modifiers against implemented handlers. Unsupported triggers, multiple CALL abilities, costs, conditions, and primitives still fail admission. Existing synthetic legacy policies remain for regression compatibility. No runtime English parsing occurs.
 
-The sections record successive bounded scopes. Later sections supersede earlier implementation limits, while older pinned policies retain their regression boundaries. The latest addition is **FIELD_LEGENDS_V1** below with Goro — Hands Unclean (21/29 demo cards, 45/60 copies); no scope certifies a complete starter match.
+The sections record successive bounded scopes. Later sections supersede earlier implementation limits, while older pinned policies retain their regression boundaries. Historical sections include **FIELD_LEGENDS_V1** (then 21/29 cards, 45/60 copies). The completed reference roster is now **29/29 distinct, 60/60 copies**. DEMO_STARTER_V1 adds fixed-list legality and setup admission without changing any card revision; no scope certifies a complete starter match.
 
 ## Captured records and implementation decisions
 
@@ -814,3 +816,9 @@ The [legal headline](../tests/fixtures/attack-condition-power-replay.v1.json) ha
 **REFERENCE CARD EXECUTION COVERAGE: COMPLETE —29/29 distinct, 60/60 physical copies.** Arasaka 14/14 and 30/30; Merc 15/15 and 30/30. All 52 prior immutable revisions remain unchanged; one complete real revision brings this test bundle to 53. Physical 27-main+3-Legend lists and constructed 40–50 main/exactly 3 Legends remain unchanged. **The next blocker is FORMAT POLICY, not card execution.** Exact demo initialization and a full teaching match remain outside this milestone. Engine **0.4.0-attack-condition-power-1**; additive wire v1; TrainingAttempt unchanged. See [attack-condition-power-report.md](attack-condition-power-report.md).
 
 Final gates: 84 focused /1028 full application tests, 2 live Mongo/Postgres tests, 28 original families/987 decisions preserved, 29 Python replay families/1042 actions, 7 wire goldens, 87 gameplay and 48 harness-core tests pass. All 24 generators, typecheck, lint, contracts export, 4-record starter validation and production build pass.
+
+## Demo product format review — reference invariants
+
+**Execution remains 29/29 distinct and 60/60 physical copies**, Arasaka 14/14 and 30/30, Merc 15/15 and 30/30. No new card revisions or mechanics; all 53 prior immutable revisions remain unchanged. The [exact reference manifests](../tests/fixtures/demo-reference-manifests.v1.json) and [44 regression tests](../tests/demo-format.test.ts) now independently count the physical products, audit printings, check canonical composition hashes and resolve a content bundle containing only the 29 real cards. Constructed stays 40–50 main/exactly 3 Legends with current RAM/copy/identity rules; both 27-main products fail only MAIN_DECK_SIZE.
+
+**DIRECT PLAY CONFIRMED; DEMO_STARTER: NOT ADMITTED.** Official product statements confirm intended independent play, but demo panels/current guide and formal rules explicitly disagree on setup order with no sourced precedence. References remain REFERENCE_ONLY. Overtime is explicitly included and remains a separate full-match blocker. Engine artifact and wire contracts are unchanged. No production catalog seeding or harness changes. The existing Viktor local printing ID and captured official demo UUID are both retained as provenance debt; immutable revision 1 is preserved. See [demo-format-report.md](demo-format-report.md).
