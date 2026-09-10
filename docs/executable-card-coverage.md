@@ -699,3 +699,88 @@ The shared bounded scope validates each **complete** metadata/effect shape and r
 The [combined legal replay](../tests/fixtures/value-conditions-replay.v1.json) uses22 actions/22 strategic positions/97 events, seed value-46 and unchanged constructed rules: D8 goes7→8, Street Cred11→12, Industrial draws, then Field Operator draws and remains READY+Lag at turn3 MAIN. The separately executed legal ODD branch chooses0, leaves Street Cred11 and draws for neither card. No headline state/RNG patches. Mongo publishes/reads both revisions; PostgreSQL reloads both complete branches. All24 preserved original replay families/816 decisions retain semantic payloads. Python adds only one replay name. See [value-conditions-report.md](value-conditions-report.md).
 
 Measured combined coverage becomes **25/29 distinct, 53/60 copies**: Arasaka10/14 and23/30; Merc15/15 and30/30. All47 prior immutable revisions remain, with2 real additions and no new synthetic revision. Four Arasaka cards/7 copies remain blocked. Exact physical27+3 teaching lists remain unchanged and invalid under constructed40–50 main/exactly3 Legends. Engine0.4.0-value-conditions-1; wire v1 schemas expand additively and TrainingAttempt is unchanged.
+
+
+## TARGETED_DEFEAT_V1 — Minotaur
+
+Immutable application CardId **minotaur**, revision **1**, execution **SUPPORTED / TARGETED_DEFEAT_V1**. Complete captured text:
+
+> {Play} If you have more ☆ (Street Cred) than a Rival, defeat a rival Unit with power 5 or less.
+
+Unit, Red RAM2, cost7, power9, unsellable, classifications Arasaka / Drone / Militech. No additional executable clauses, raw keywords, subname, flavor text or reminder text. PLAY markup on Minotaur normalizes to WHEN_PLAYED; the Program uses its existing WHEN_PLAYED effect metadata without becoming a Unit trigger. All captured printings were reviewed, including rarity, artist, set, number and image references. No applicable captured erratum.
+
+| Printing UUID | Set | Number | Rarity | Artist |
+|---|---|---|---|---|
+| 19587d4f-6d47-44fe-b4da-99743e2742f7 | embracingpowerretailstarterdeck | 003 | Uncommon | CD Projekt Red |
+| a8dd2d7b-88b8-4b15-b4dd-e3aa3757bb25 | embracingpowerbetastarterdeck | β003 | Uncommon | CD Projekt Red |
+| 6e023192-0834-4d6f-935a-e5d6d4d6eff0 | arasakademodeck | 002 | Uncommon | CD Projekt Red |
+
+Source UUID: **066641c5-acc2-45f4-ba67-16a8d20cce73**. Local raw-byte SHA-256: **84df69b3fffeb73e7a26d6db8ec1975fbab70ff46de48c5d6186ee4069ddd18c**. Canonical captured-record hash: **b04720d22b6dc916ddf6175cae97a284635b9a8ab63eaadb910c7cc1edc98c83**. Immutable normalized revision hash: **eaa4cd993d6614f334b87970195d77f837ef8cf5602c932328c521427ef77b62**. [Narrow official source check](https://api.netdeck.gg/api/cards/cyberpunk/minotaur) SHA-256: **0848801c56b8b78e22162ca90219c95f0bac6a0bf3d2a9421a3fad67e0673468**. All gameplay fields and printing identities agree with the local capture. The retail starter Over the Edge collector number is exactly `10`; it has not been padded to `010`.
+
+Complete records and all four captured errata: [targeted-defeat-card-sources.v1.json](../tests/fixtures/targeted-defeat-card-sources.v1.json). Explicit normalization: [targeted-defeat-fixture.ts](../tests/targeted-defeat-fixture.ts). This is implementation review, not human-certified gold. No corpus refresh.
+
+The reusable DEFEAT_UNIT primitive uses current effective Unit, current controller and the same effectivePower calculation exposed by RulesView. Minotaur's separate resolution-time Street Cred condition gates a RIVAL selector with reference power≤5. Over the Edge uses ANY, including friendly Units, with reference power≤at least one currently controlled, rolled D20 Gig's currentValue. No D20 produces no targets, including power0. Neither effect asks for a separate D20 choice. Negative derived power remains negative but is referenced as0 under2.10.1; Null is never coerced.
+
+Mandatory target choices resolve internally for one eligible Unit; zero eligible Units resolves as much as possible without failing play. Multiple targets create genuine TARGET_SELECTION. The shared semantic defeatCards operation produces CARD_DEFEATED, owner-controlled Trash ordering, shared departure, Gear detach/follow, field Legend removal and post-movement DEFEATED discovery. The victim owner chooses order even when the effect belongs to the rival. Original Unit PLAY/Program context stays suspended during this choice. Newly pending Dexter DEFEATED work waits for the current source effect; Over the Edge immediately enters Trash after its own effect and before Dexter's draw. There is no nested stack or direct Trash substitute.
+
+The focused suite contains118 checks, including current power/D20/control, Null-aware conditions, self-targeting, invalid continuations, stale action IDs, field Goro/V, Gear, Dexter/EMPTY_DRAW, hashes/privacy and constructed policy. Minotaur later attacks with normal Arasaka history and Saburo9→10. A public-lifetime validator gap is fixed: Floor It's modifier remains on a defeated reviewed field Legend in Removed until turn end, although Removed is not a legal Unit target. Both legal headlines start from constructed setup; Over the Edge rolls the five earlier dice before D20. Mongo publishes/reads both revisions; PostgreSQL persists both complete traces, including cross-controller owner order. See [targeted-defeat-report.md](targeted-defeat-report.md).
+
+## TARGETED_DEFEAT_V1 — Over the Edge
+
+Immutable application CardId **over-the-edge**, revision **1**, execution **SUPPORTED / TARGETED_DEFEAT_V1**. Complete captured text:
+
+> Defeat a Unit with power equal to or less than the value of a friendly d20.
+
+Program, Red RAM2, cost3, powerNull, sellable, classifications Merc. No additional executable clauses, raw keywords, subname, flavor text or reminder text. PLAY markup on Minotaur normalizes to WHEN_PLAYED; the Program uses its existing WHEN_PLAYED effect metadata without becoming a Unit trigger. All captured printings were reviewed, including rarity, artist, set, number and image references. No applicable captured erratum.
+
+| Printing UUID | Set | Number | Rarity | Artist |
+|---|---|---|---|---|
+| f1cf4133-45ef-4de5-abfc-757de1613731 | welcometonightcityretail | 034 | Common | Roberto Ricci |
+| 6213bf57-92d7-4a64-8d80-948ba53b8d80 | welcometonightcitybeta | β034 | Common | Roberto Ricci |
+| 9e5a152e-6105-44a4-8db0-9cbf6cda2252 | embracingpowerretailstarterdeck | 10 | Common | Roberto Ricci |
+| de9b7361-6d1c-4a27-bcfb-50ec7a78e518 | embracingpowerbetastarterdeck | β010 | Common | Roberto Ricci |
+| cf48d5e6-21d2-4d17-a731-5dc9091c6cd1 | arasakademodeck | 007 | Common | Roberto Ricci |
+
+Source UUID: **144c3559-3518-4c01-b9e6-af42b7166661**. Local raw-byte SHA-256: **86803baacbdccd9ab6395321b3b5a814fccd510c7421a612bf655a68cb62205c**. Canonical captured-record hash: **6106fd2f01f12f873ad05d05d468885cb9b1d3cb752b8b67753fef2bee4d48cc**. Immutable normalized revision hash: **c76eff1582840113ee3a87c61fd2742137e33664c4e28c92f24caf1180e4bd26**. [Narrow official source check](https://api.netdeck.gg/api/cards/cyberpunk/over-the-edge) SHA-256: **aadc165a75fce928dc0538ee0090ad82cca6d6eaa2b5a087780bd74815118cf6**. All gameplay fields and printing identities agree with the local capture. The retail starter Over the Edge collector number is exactly `10`; it has not been padded to `010`.
+
+Complete records and all four captured errata: [targeted-defeat-card-sources.v1.json](../tests/fixtures/targeted-defeat-card-sources.v1.json). Explicit normalization: [targeted-defeat-fixture.ts](../tests/targeted-defeat-fixture.ts). This is implementation review, not human-certified gold. No corpus refresh.
+
+The reusable DEFEAT_UNIT primitive uses current effective Unit, current controller and the same effectivePower calculation exposed by RulesView. Minotaur's separate resolution-time Street Cred condition gates a RIVAL selector with reference power≤5. Over the Edge uses ANY, including friendly Units, with reference power≤at least one currently controlled, rolled D20 Gig's currentValue. No D20 produces no targets, including power0. Neither effect asks for a separate D20 choice. Negative derived power remains negative but is referenced as0 under2.10.1; Null is never coerced.
+
+Mandatory target choices resolve internally for one eligible Unit; zero eligible Units resolves as much as possible without failing play. Multiple targets create genuine TARGET_SELECTION. The shared semantic defeatCards operation produces CARD_DEFEATED, owner-controlled Trash ordering, shared departure, Gear detach/follow, field Legend removal and post-movement DEFEATED discovery. The victim owner chooses order even when the effect belongs to the rival. Original Unit PLAY/Program context stays suspended during this choice. Newly pending Dexter DEFEATED work waits for the current source effect; Over the Edge immediately enters Trash after its own effect and before Dexter's draw. There is no nested stack or direct Trash substitute.
+
+The focused suite contains118 checks, including current power/D20/control, Null-aware conditions, self-targeting, invalid continuations, stale action IDs, field Goro/V, Gear, Dexter/EMPTY_DRAW, hashes/privacy and constructed policy. Minotaur later attacks with normal Arasaka history and Saburo9→10. A public-lifetime validator gap is fixed: Floor It's modifier remains on a defeated reviewed field Legend in Removed until turn end, although Removed is not a legal Unit target. Both legal headlines start from constructed setup; Over the Edge rolls the five earlier dice before D20. Mongo publishes/reads both revisions; PostgreSQL persists both complete traces, including cross-controller owner order. See [targeted-defeat-report.md](targeted-defeat-report.md).
+
+Measured demo execution becomes **27/29 distinct, 56/60 copies**: Arasaka12/14 and26/30; Merc15/15 and30/30. All49 previous immutable content revisions remain; exactly2 complete real revisions are added, no new synthetic revision. Corporate Surveillance3 and Goro — Losing His Way1 remain blocked. Physical27+3 teaching lists and constructed40–50 main/exactly3 Legends remain unchanged. Engine0.4.0-targeted-defeat-1; wire v1 expands additively and TrainingAttempt is unchanged.
+
+## TARGETED_SPEND_V1 — Corporate Surveillance
+
+Immutable application CardId **corporate-surveillance**, revision **1**, execution **SUPPORTED / TARGETED_SPEND_V1**. Complete captured text:
+
+> Spend a rival Unit with cost 4 or less.
+
+Program, Green RAM1, cost2, Null power, sellable, Corpo. No subname, other executable clause, raw keyword, flavor or reminder text. All five printings are Uncommon, artist John Liew. The complete source record, images/printing metadata and all four captured CMS errata were reviewed. None of those errata applies to this card.
+
+| Printing UUID | Set | Collector number |
+|---|---|---|
+| d3dc7194-a545-4588-9702-b094c27ce359 | welcometonightcityretail | 097 |
+| 539138ff-af5a-47e3-abf0-cc772eaa8b9e | welcometonightcitybeta | β097 |
+| 8a13760d-050c-4a9c-bc44-f6b5796bb9f2 | embracingpowerretailstarterdeck | 020 |
+| e9d18fa1-0069-4b22-b64e-a75d2e30158a | embracingpowerbetastarterdeck | β020 |
+| af658f81-5214-4f56-ba8a-782a4419e366 | arasakademodeck | 014 |
+
+Source UUID: **71fb410b-b56e-42b2-a793-4c49e935b9f1**. Arasaka Demo014 printing: **af658f81-5214-4f56-ba8a-782a4419e366**. Local raw-byte SHA-256: **2be0e1ec6474d85c2c3fa210fb2132a4558b8f8084e1ef65b4bf978e8d45da9a**. Canonical captured-record hash: **27108509430c3b14ac8430798287a6f490733b5178ede31d674aea68345ef448**. Normalized immutable revision hash: **cf4fcc88977b4239b5cbb72181690fe5195b813d3f69832f6deb33b84adde82c**. [Narrow live official card check](https://api.netdeck.gg/api/cards/cyberpunk/corporate-surveillance) SHA-256: **4cdeabc9336cfbc20ae244251f5e646d2119b205e1d303123315baddf3d889d3**. Gameplay and printing identities agree with the local capture; signed image URLs are transport metadata. See [complete source fixture](../tests/fixtures/targeted-spend-card-source.v1.json) and [normalization](../tests/targeted-spend-fixture.ts). This is implementation review, not human-certified gold; no corpus refresh.
+
+[The rules fixture](../tests/fixtures/targeted-spend-rules.v1.json) pins **206 exact rule nodes and 8 complete FAQ records**, with local raw/processed rules and errata hashes and narrow live checks. Corporate FAQ **4496adf7-0641-4c06-a1f7-6eb120c075bf** permits play with no rival Unit. FAQ **00513475-b873-4eec-b582-c8bb969fe1e5** explicitly permits choosing an already-SPENT Unit. Two Lag FAQs corroborate the action restrictions. Four Faceplate FAQs are reviewed only to document the future timing boundary; Faceplate and WHEN_SPENT remain unsupported. [Official FAQs](https://api.netdeck.gg/api/faqs/cyberpunk).
+
+The selector reuses the CONTROLLED/RIVAL/ANY relationship type, current controller, public battlefield presence and effective UNIT typing. This complete card admits only RIVAL with cost≤4. Read-only getNumericCost preserves nonnumeric costs as null; getReferencedCost applies only the explicit Legend DASH exception in3.11.2.3, referencing it as0. Generic Null is not0. A DASH Legend remains unpayable, unmodifiable and unplayable to the field. Numeric printed cost is the characteristic used here: payment adjustments do not alter it under3.11.1.2, and payment contribution, Gear cost, power and classification do not substitute for it. [Official rules](https://api.netdeck.gg/api/cyberpunk/comprehensive-rules).
+
+Typed SPEND_UNIT calls the narrow semantic spendUnitForEffect operation. A READY target becomes SPENT, emitting CARD_SPENT with EFFECT cause/source/effect identity; an already-SPENT target is selectable but emits no second spend fact. CARD_TARGET_SELECTED records either choice. The same physical instance retains zone, owner, controller, face, revision, Gear, modifiers and Lag. Lag restricts attack/Spend-icon activation, not being spent externally. No target movement, CARD_DEFEATED, owner Trash order, Gear detachment or DEFEATED draw is produced. Existing payment/attack/Blocker/Spend-icon protocols remain unchanged; future WHEN_SPENT discovery belongs at the actual transition and needs a separate timing review.
+
+The existing Program continuation pays cost2, resolves with zero targets, automatically selects a sole target, or offers a mandatory source-controller choice among multiple targets. It completes its effect, moves only the Program to Trash and resumes MAIN. Normal next-turn readiness restores the spent Unit; no persistent cannot-attack marker is added. A stale readiness-based action ID rejects even though a freshly enumerated already-SPENT choice is legal. Full-shape and external continuation validation reject old scopes, missing clauses, wrong source/actor/cost/relationship and defeat-specific fields.
+
+[79 focused tests](../tests/targeted-spend.test.ts) cover real cost2/3/4/5/7, rival/current-controller filtering, equipped Field Operator and Dexter, Lag, Blocker, normal readiness, invalid states/actions, observations, hashes, wire and constructed validation. Real field Goro/V are effective LEGEND+UNIT but cost5 excludes them. A trusted semantic-operation test spends a real equipped field Legend without claiming Corporate can select cost5. Query-only synthetic cost4/Null field Legends and numeric-zero Unit prove cost filtering; they are explicitly unsupported, fail executable state validation and do not change any real card's cost or enter the default content bundle.
+
+The [legal headline](../tests/fixtures/targeted-spend-replay.v1.json) uses constructed setup, legal rolls/sells/plays and seed `defeat-0`: **44 actions, 44 strategic positions, 173 events including setup**, ending turn7 MAIN. Rival real Dexter and Swordwise both cost3 and are READY; Corporate spends equipped Dexter, preserves Mandibular Upgrade and leaves Swordwise READY. No state/RNG patches. Compared with Minotaur defeating Dexter, Corporate produces no defeat movement or draw. Mongo publishes/reads the immutable revision and PostgreSQL reloads every transition of the complete trace.
+
+Current demo coverage is **28/29 distinct, 59/60 physical copies**: Arasaka13/14 and29/30; Merc15/15 and30/30. All51 prior immutable revisions remain unchanged and exactly one real revision is added, yielding52 in this test bundle. Only **Goro Takemura — Losing His Way (1 copy)** remains blocked. The physical27-main +3-Legend lists and constructed40–50-main/exactly3-Legends policy remain unchanged. Engine **0.4.0-targeted-spend-1**, additive wire v1, byte-unchanged TrainingAttempt. All27 prior replay families/943 original decisions retain semantic payloads under new pins. See [targeted-spend-report.md](targeted-spend-report.md).

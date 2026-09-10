@@ -1,3 +1,5 @@
+import { resolveSpendTarget } from "./targeted-spend";
+import { activateTriggerBatch, type PreparedTriggerBatch } from "./trigger-resolution";
 import { recordPlayedCard } from "./trigger-resolution";
 import { triggersEnabled } from "./trigger-support";
 import { actionReturnContext, finishAction } from "./action-return";
@@ -25,8 +27,9 @@ export function offerPlayChoice(m: TurnMutation) {
     m.emit({ kind: "PHASE_CHANGED", step });
     return success(null);
 }
-function finishPlay(m: TurnMutation, sourceId: CardInstanceId) {
+function finishPlay(m: TurnMutation, sourceId: CardInstanceId, aftermath?: PreparedTriggerBatch | null) {
     if (m.state.objects.cards[sourceId].zone.zone === "RESOLVING_PROGRAM") moveCardLocation(m, sourceId, "TRASH");
+    if (!m.state.match.outcome && aftermath) return activateTriggerBatch(m, aftermath, true);
     if (!m.state.match.outcome && triggersEnabled(m.context) && m.state.resolution.playContinuation?.kind === "PLAY" && ["UNIT", "GEAR"].includes(revisionOf(m.state, sourceId, m.context)!.type)) return recordPlayedCard(m, sourceId);
     if (!m.state.match.outcome) return finishAction(m);
     return success(null);
@@ -41,7 +44,7 @@ function resolveChain(m: TurnMutation): Result<null> {
         const result = registry.resolve(m, current.effect);
         if (!result.ok) return result;
         // A forced target/amount may have resumed and finished the chain synchronously.
-        if (current.effect.kind === "ADJUST_GIG_UP_TO" && current.effect.direction === "INCREASE" && s.resolution.current !== current) return success(null);
+        if ((current.effect.kind === "DEFEAT_UNIT" || current.effect.kind === "ADJUST_GIG_UP_TO" && current.effect.direction === "INCREASE") && s.resolution.current !== current) return success(null);
         if (s.resolution.choice) return success(null);
         m.emit({ kind: "EFFECT_RESOLVED", effectId: current.id });
         if (s.match.outcome) return finishPlay(m, sourceId);
@@ -49,6 +52,13 @@ function resolveChain(m: TurnMutation): Result<null> {
         s.resolution.current = s.resolution.pending.shift() ?? null;
     }
     return finishPlay(m, sourceId);
+}
+/** Finish the current Program primitive, then its lifecycle before resolving newly pending work. */
+export function completePlayEffect(m: TurnMutation, aftermath?: PreparedTriggerBatch | null): Result<null> {
+    const r = m.state.resolution, current = r.current!, c = r.playContinuation!;
+    m.emit({ kind: "EFFECT_RESOLVED", effectId: current.id });
+    r.choice = null; c.effectIndex++; r.current = r.pending.shift() ?? null;
+    return r.current ? resolveChain(m) : finishPlay(m, c.sourceId, aftermath);
 }
 function beginEffects(m: TurnMutation): Result<null> {
     const s = m.state, c = s.resolution.playContinuation!, r = revisionOf(s, c.sourceId, m.context)!, a = r.mechanics.abilities[0];
@@ -113,6 +123,11 @@ export function continuePlay(m: TurnMutation, index: number): Result<null> {
         // 11.20.2: play requirements are fulfilled only after equipping, not merely after payment.
         m.emit({ kind: "CARD_PLAYED", cardInstanceId: c.sourceId });
         return finishPlay(m, c.sourceId);
+    }
+    if (s.resolution.current?.effect.kind === "SPEND_UNIT") {
+        if (option.kind !== "CARD") return failure("INVALID_SPEND_TARGET", "Choose an enumerated Unit");
+        const spent = resolveSpendTarget(m, option.cardInstanceId);
+        return spent.ok ? completePlayEffect(m) : spent;
     }
     if (s.resolution.current?.effect.kind === "POWER_UNTIL_END_OF_TURN") {
         if (option.kind !== "CARD") return failure("INVALID_POWER_TARGET", "Choose an enumerated rival Unit");

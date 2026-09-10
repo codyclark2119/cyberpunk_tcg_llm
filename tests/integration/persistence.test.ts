@@ -1,3 +1,7 @@
+import { spendContext, surveillance } from "../targeted-spend-fixture";
+import { targetedSpendReplay } from "../targeted-spend-replay";
+import { targetedContext, targetedCards } from "../targeted-defeat-fixture";
+import { minotaurReplay, overTheEdgeReplay } from "../targeted-defeat-replay";
 import { valueContext, valueCards } from "../value-conditions-fixture";
 import { valueConditionsReplay } from "../value-conditions-replay";
 import { saburoContext, saburo } from "../saburo-fixture";
@@ -81,7 +85,7 @@ test("Mongo revisions: concurrent replay, conflict, history, projection ordering
         assert.equal((await repo.publish(rich)).status, "PUBLISHED");
         assert.equal((await repo.findRevision(cards[0].id, cards[0].revision))?.schemaVersion, 1);
         assert.deepEqual(await repo.findRevision(rich.id, rich.revision), rich);
-        for (const revision of [...restrictionCards, ...triggerCards, mandibular, kiroshi, evelyn, delamain, dyingNight, fieldLegend, goro, yorinobu, saburo, ...valueCards]) {
+        for (const revision of [...restrictionCards, ...triggerCards, mandibular, kiroshi, evelyn, delamain, dyingNight, fieldLegend, goro, yorinobu, saburo, ...valueCards, ...targetedCards, surveillance]) {
             assert.equal((await repo.publish(revision)).status, "PUBLISHED");
             assert.deepEqual(await repo.findRevision(revision.id, revision.revision), revision);
             assert.equal((await repo.publish(revision)).status, "REPLAY");
@@ -707,6 +711,74 @@ test("Postgres ledger: running, conflict, replay, transactional rollback and sta
             assert.equal(history.filter(e => e.payload.kind === "GIG_VALUE_CHANGED").length, mode === "EVEN" ? 1 : 0);
             assert.equal(history.filter(e => e.payload.kind === "GIG_ADJUSTMENT_DECLINED").length, mode === "ODD" ? 1 : 0);
         }
+        // Both legal targeted-defeat traces, including the victim owner's cross-controller
+        // Trash order. Every command resumes from persisted state, with no setup patches.
+        const defeatCtx = targetedContext();
+        for (const trace of [minotaurReplay(), overTheEdgeReplay()]) {
+            const initialized = unwrap(createGameWithEvents({ ...trace.initialization, matchId: randomUUID(), players: [actor, otherActor] }, defeatCtx));
+            assert.equal((await match.create(initialized.state, initialized.events)).ok, true);
+            let state = initialized.state; const history = [...initialized.events]; let targets = 0, orders = 0, defeatedDraws = 0;
+            for (const step of trace.steps) {
+                const stored = await match.find(state.match.id); assert.ok(stored); assert.deepEqual(stored, state);
+                const command = { actorId: stored.timing.actingPlayer, action: step.action.action }, next = unwrap(applyAction(stored, command, defeatCtx));
+                assert.deepEqual(next, unwrap(applyAction(state, command, defeatCtx))); assert.equal((await match.save(next.state, stored.match.version, next.events)).ok, true);
+                state = next.state; history.push(...next.events); const loaded = await match.find(state.match.id); assert.ok(loaded); assert.deepEqual(loaded, state);
+                assert.equal(hashReplayState(loaded), hashReplayState(state)); assert.equal(hashPosition(loaded), step.positionHash);
+                assert.deepEqual(unwrap(listLegalActions(loaded, loaded.timing.actingPlayer, defeatCtx)), unwrap(listLegalActions(state, state.timing.actingPlayer, defeatCtx)));
+                for (const viewer of loaded.match.playerOrder) {
+                    const actual: DeepReadonly<PlayerObservation> = unwrap(observe(loaded, viewer, defeatCtx)), expected: DeepReadonly<PlayerObservation> = unwrap(observe(state, viewer, defeatCtx));
+                    assert.deepEqual(actual, expected); assert.equal(hashObservation(actual), hashObservation(expected));
+                }
+                if (loaded.resolution.targetedDefeatContinuation?.phase === "TARGET") { targets++; assert.equal(loaded.timing.actingPlayer,actor); assert.equal(loaded.resolution.current?.sourceId,trace.source); }
+                if (loaded.resolution.targetedDefeatContinuation?.phase === "ORDER") { orders++; assert.equal(loaded.timing.actingPlayer,otherActor); assert.equal(loaded.resolution.current?.sourceId,trace.source); assert.equal(loaded.resolution.defeatContinuation?.defeats[0].targetId,trace.target); }
+                const events=next.events.map(e=>e.payload), defeat=events.findIndex(e=>e.kind === "CARD_DEFEATED" && e.cardInstanceId === trace.target);
+                if(defeat>=0) {
+                    const moved=events.findIndex(e=>e.kind === "CARD_MOVED" && e.cardInstanceId === trace.target && e.to.zone === "TRASH"), pending=events.findIndex(e=>e.kind === "EFFECT_PENDING" && e.sourceId === trace.target), draw=events.findIndex(e=>e.kind === "CARD_MOVED" && e.from.zone === "DECK" && e.to.zone === "HAND");
+                    assert.ok(defeat < moved && moved < pending && pending < draw);
+                    defeatedDraws+=events.filter(e=>e.kind === "CARD_MOVED" && e.from.zone === "DECK" && e.to.zone === "HAND").length;
+                    if(trace.mode === "OVER_THE_EDGE") { const programTrash=events.findIndex(e=>e.kind === "CARD_MOVED" && e.cardInstanceId === trace.source && e.to.zone === "TRASH"); assert.ok(pending < programTrash && programTrash < draw); }
+                }
+                assert.deepEqual(await match.history(loaded.match.id), history); state = loaded;
+            }
+            assert.equal(targets,1); assert.equal(orders,1); assert.equal(defeatedDraws,2);
+            assert.equal(state.objects.cards[trace.target].zone.zone,"TRASH"); assert.equal(state.objects.cards[trace.gear].zone.zone,"TRASH"); assert.deepEqual(state.objects.cards[trace.target].attachments,[]);
+            assert.equal(state.objects.cards[trace.source].zone.zone,trace.mode === "MINOTAUR" ? "BATTLEFIELD" : "TRASH");
+            assert.equal(state.timing.step,"MAIN"); assert.equal(state.timing.actingPlayer,actor); assert.equal(state.resolution.targetedDefeatContinuation,undefined);
+        }
+        // Complete legal Corporate Surveillance trace: source payment, strategic target,
+        // same physical equipped Unit spent in place and ordinary Program completion.
+        const spendCtx = spendContext(), spendTrace = targetedSpendReplay();
+        const spendInitial = unwrap(createGameWithEvents({ ...spendTrace.initialization, matchId: randomUUID(), players: [actor, otherActor] }, spendCtx));
+        assert.equal((await match.create(spendInitial.state, spendInitial.events)).ok, true);
+        let spendState = spendInitial.state; const spendHistory = [...spendInitial.events]; let spendPayments = 0, spendTargets = 0, effectSpends = 0;
+        for (const step of spendTrace.steps) {
+            const stored = await match.find(spendState.match.id); assert.ok(stored); assert.deepEqual(stored, spendState);
+            const command = { actorId: stored.timing.actingPlayer, action: step.action.action }, next = unwrap(applyAction(stored, command, spendCtx));
+            assert.deepEqual(next, unwrap(applyAction(spendState, command, spendCtx))); assert.equal((await match.save(next.state, stored.match.version, next.events)).ok, true);
+            spendState = next.state; spendHistory.push(...next.events); const loaded = await match.find(spendState.match.id); assert.ok(loaded); assert.deepEqual(loaded, spendState);
+            assert.equal(hashReplayState(loaded), hashReplayState(spendState)); assert.equal(hashPosition(loaded), step.positionHash);
+            assert.deepEqual(unwrap(listLegalActions(loaded, loaded.timing.actingPlayer, spendCtx)), unwrap(listLegalActions(spendState, spendState.timing.actingPlayer, spendCtx)));
+            for (const viewer of loaded.match.playerOrder) {
+                const actual: DeepReadonly<PlayerObservation> = unwrap(observe(loaded, viewer, spendCtx)), expected: DeepReadonly<PlayerObservation> = unwrap(observe(spendState, viewer, spendCtx));
+                assert.deepEqual(actual, expected); assert.equal(hashObservation(actual), hashObservation(expected));
+            }
+            if (loaded.resolution.playContinuation?.sourceId === spendTrace.source && loaded.resolution.playContinuation.phase === "PAYMENT") spendPayments++;
+            if (loaded.resolution.current?.effect.kind === "SPEND_UNIT") {
+                spendTargets++; assert.equal(loaded.timing.actingPlayer, actor); assert.equal(loaded.timing.step, "TARGET_SELECTION"); assert.equal(loaded.objects.cards[spendTrace.source].zone.zone, "RESOLVING_PROGRAM");
+                assert.equal(loaded.resolution.defeatContinuation, undefined); assert.equal(loaded.resolution.targetedDefeatContinuation, undefined);
+            }
+            const events = next.events.map(e=>e.payload), spent = events.find(e=>e.kind === "CARD_SPENT" && e.cause?.kind === "EFFECT");
+            if (spent) {
+                effectSpends++; assert.deepEqual(events.map(e=>e.kind), ["CARD_TARGET_SELECTED", "CARD_SPENT", "EFFECT_RESOLVED", "CARD_MOVED", "PHASE_CHANGED"]);
+                assert.deepEqual(loaded.objects.cards[spendTrace.target], {...stored.objects.cards[spendTrace.target], readiness: "SPENT"});
+                assert.deepEqual(loaded.objects.cards[spendTrace.gear], stored.objects.cards[spendTrace.gear]);
+                assert.equal(loaded.objects.cards[spendTrace.source].zone.zone, "TRASH"); assert.equal(loaded.timing.step, "MAIN"); assert.equal(loaded.timing.actingPlayer,actor);
+            }
+            assert.deepEqual(await match.history(loaded.match.id), spendHistory); spendState=loaded;
+        }
+        assert.ok(spendPayments>0); assert.equal(spendTargets,1); assert.equal(effectSpends,1);
+        assert.equal(spendHistory.some(e=>e.payload.kind === "CARD_DEFEATED" || e.payload.kind === "GEAR_DETACHED"),false);
+        assert.equal(spendState.objects.cards[spendTrace.target].zone.zone,"BATTLEFIELD"); assert.equal(spendState.objects.cards[spendTrace.target].readiness,"SPENT");
         // Inject an event insert failure AFTER the state UPDATE to verify transaction rollback.
         await pool.query("CREATE FUNCTION reject_test_event() RETURNS trigger LANGUAGE plpgsql AS $$ BEGIN RAISE EXCEPTION 'event insert failure'; END $$");
         await pool.query("CREATE TRIGGER reject_test_event BEFORE INSERT ON match_events FOR EACH ROW EXECUTE FUNCTION reject_test_event()");

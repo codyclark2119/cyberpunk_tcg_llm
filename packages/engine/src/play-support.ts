@@ -1,4 +1,6 @@
+import { hasTargetedDefeatMetadata, supportsTargetedDefeatCard } from "./targeted-defeat-support";
 import { hasValueConditionMetadata, supportsValueConditionCard } from "./value-conditions-support";
+import { supportsTargetedSpendCard } from "./targeted-spend-support";
 import { supportsFieldLegend } from "./field-legend-support";
 import { supportsEndTurnCard } from "./end-turn-support";
 import { supportsOrderedAttackCard } from "./ordered-effects-support";
@@ -18,7 +20,9 @@ export function revisionOf(state: GameState, id: CardInstanceId, context: Engine
 }
 /** Admission certifies only these reviewed shapes, never catalog legality or arbitrary metadata. */
 export function supportsPlay(card: DeepReadonly<CardRevisionSnapshot> | undefined, context: EngineContext) {
+    if (card && hasTargetedDefeatMetadata(card)) return supportsTargetedDefeatCard(card, context);
     if (card && hasValueConditionMetadata(card)) return supportsValueConditionCard(card, context);
+    if (card?.execution?.scope === "TARGETED_SPEND_V1") return supportsTargetedSpendCard(card, context);
     if (playEnabled(context) && card?.execution?.scope === "FIELD_LEGENDS_V1") return supportsFieldLegend(card, context);
     if (playEnabled(context) && card?.execution?.scope === "END_TURN_HISTORY_V1") return supportsEndTurnCard(card, context);
     if (playEnabled(context) && card?.execution?.scope === "ATTACK_ORDERED_EFFECTS_V1") return supportsOrderedAttackCard(card, context);

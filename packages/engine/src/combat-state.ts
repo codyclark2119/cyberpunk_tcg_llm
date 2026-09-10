@@ -19,7 +19,7 @@ export function validateCombatState(state: GameState, context: EngineContext) {
     if (combatEnabled(context) && (!gearEnabled(context) || !playEnabled(context) || context.content.ruleset.gameplay?.turnSlice?.callEffects !== "REVIEWED_CALL_V1")) return failure("UNSUPPORTED_COMBAT_POLICY", "Reviewed attack initiation requires the reviewed play, Gear and CALL policies");
     if (restrictionsEnabled(context) && !combatResolutionEnabled(context)) return failure("UNSUPPORTED_RESTRICTIONS_POLICY", "Restrictions/prevention require reviewed complete combat resolution");
     if (combatResolutionEnabled(context) && !reactEnabled(context)) return failure("UNSUPPORTED_COMBAT_RESOLUTION_POLICY", "Combat resolution requires reviewed React");
-    if (r.triggerContinuation) return success(null); // Dedicated trigger-state validator owns the paused historical stage.
+    if (r.triggerContinuation || r.targetedDefeatContinuation) return success(null); // Dedicated trigger-state validator owns the paused historical stage.
     const outcome = validateCombatOutcome(state, context);
     if (!outcome.ok) return outcome;
     if (c.stage === "GIG_STEAL_SELECTION" || c.stage === "DEFEAT_ORDER_SELECTION") return outcome;

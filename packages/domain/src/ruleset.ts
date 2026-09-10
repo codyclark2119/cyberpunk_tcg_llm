@@ -7,6 +7,8 @@ export const FormatPolicySchema = z.strictObject({
     legendUniqueness: z.enum(["CARD_ID", "DECKBUILDING_IDENTITY"])
 });
 export const TurnSlicePolicySchema = z.strictObject({
+    targetedSpend: z.literal("TARGETED_SPEND_V1").optional(),
+    targetedDefeat: z.literal("TARGETED_DEFEAT_V1").optional(),
     valueConditions: z.literal("VALUE_CONDITIONS_V1").optional(),
     attackingAura: z.literal("ATTACKING_AURA_V1").optional(),
     firstAttackHistory: z.literal("FIRST_ATTACK_HISTORY_V1").optional(),

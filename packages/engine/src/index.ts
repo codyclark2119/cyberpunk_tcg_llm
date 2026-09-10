@@ -1,3 +1,6 @@
+import { targetedSpendEnabled } from "./targeted-spend-support";
+import { continueTargetedDefeat } from "./targeted-defeat";
+import { targetedDefeatEnabled } from "./targeted-defeat-support";
 import { valueConditionsEnabled } from "./value-conditions-support";
 import { attackingAuraEnabled } from "./attacking-aura-support";
 import { firstAttackHistoryEnabled } from "./first-attack-support";
@@ -113,6 +116,8 @@ export function listLegalActions(state: GameState, actor: PlayerId, context: Eng
                     return `Steal ${gig.dieType} (${gig.id}, current ${gig.roll.kind === "ROLLED" ? gig.roll.currentValue : "unrolled"})`;
                 }
                 if (option.kind === "AMOUNT" && state.resolution.current?.effect.kind === "ADJUST_GIG_UP_TO" && state.resolution.current.effect.direction === "INCREASE") return option.amount === 0 ? "Increase by 0 (no adjustment)" : `Increase by ${option.amount}`;
+                if (state.resolution.current?.effect.kind === "SPEND_UNIT" && option.kind === "CARD") return `Spend ${view.getRevision(option.cardInstanceId)?.displayName} (${option.cardInstanceId}, cost ${view.getReferencedCost(option.cardInstanceId)}, ${state.objects.cards[option.cardInstanceId].readiness.toLowerCase()})`;
+                if (state.resolution.targetedDefeatContinuation && option.kind === "CARD") return state.resolution.targetedDefeatContinuation.phase === "ORDER" ? `Next in your Trash: ${view.getRevision(option.cardInstanceId)?.displayName} (${option.cardInstanceId})` : `Defeat ${view.getRevision(option.cardInstanceId)?.displayName} (${option.cardInstanceId}, power ${view.getEffectivePower(option.cardInstanceId)})`;
                 if (state.resolution.triggerContinuation) {
                     if (option.kind === "EDDIE_SLOT") return `Ready Eddie ${option.slot + 1}`;
                     if (option.kind === "LEGEND_SLOT") return `Look at friendly face-down Legend slot ${option.slot + 1}`;
@@ -142,7 +147,7 @@ export function listLegalActions(state: GameState, actor: PlayerId, context: Eng
     };
     // Full PositionHash includes secrets; new private-look bundles bind model action IDs to
     // the entitled observation instead. Old bundle protocols remain byte-compatible.
-    const projected = (valueConditionsEnabled(context) || attackingAuraEnabled(context) || firstAttackHistoryEnabled(context) || fieldLegendsEnabled(context) || delayedEffectsEnabled(context) || privateInformationEnabled(context) || orderedEffectsEnabled(context) || endTurnEnabled(context)) ? observe(state, actor, context) : null;
+    const projected = (targetedSpendEnabled(context) || targetedDefeatEnabled(context) || valueConditionsEnabled(context) || attackingAuraEnabled(context) || firstAttackHistoryEnabled(context) || fieldLegendsEnabled(context) || delayedEffectsEnabled(context) || privateInformationEnabled(context) || orderedEffectsEnabled(context) || endTurnEnabled(context)) ? observe(state, actor, context) : null;
     if (projected && !projected.ok) return projected;
     const actionIdentity = projected?.ok ? { version: 2, observationHash: hashObservation(projected.value), seat: state.players[actor].seat } : { version: 1, positionHash: hashPosition(state), seat: state.players[actor].seat };
     const observableAction = (a: GameAction) => a.action.kind === "CALL_LEGEND" && projected?.ok ? { kind: a.action.kind, slot: state.players[actor].zones.LEGENDS.indexOf(a.action.cardInstanceId) } : a.action;
@@ -239,6 +244,7 @@ export function applyAction(state: GameState, action: GameAction, context: Engin
                 break;
             }
             case "CHOOSE": {
+                if (s.resolution.targetedDefeatContinuation) { const result = continueTargetedDefeat(mutation, action.action.optionIndices[0]); if (!result.ok) return result; break; }
                 if (s.resolution.triggerContinuation) { const result = continueTrigger(mutation, action.action.optionIndices[0]); if (!result.ok) return result; break; }
                 if (s.resolution.gigStealContinuation || s.resolution.defeatContinuation) {
                     const result = s.resolution.gigStealContinuation ? continueGigSteal(mutation, action.action.optionIndices[0]) : continueDefeatOrder(mutation, action.action.optionIndices[0]);

@@ -1,3 +1,6 @@
+import { validateTargetedDefeatState } from "./targeted-defeat-state";
+import { validateTargetedSpendMetadata } from "./targeted-spend-support";
+import { validateTargetedDefeatMetadata } from "./targeted-defeat-support";
 import { validateValueConditionMetadata } from "./value-conditions-support";
 import { validateAttackingAuraMetadata } from "./attacking-aura-support";
 import { validateFirstAttackMetadata } from "./first-attack-support";
@@ -88,6 +91,8 @@ export function validateState(input: unknown, context: EngineContext): Result<Ga
         if (!visit(id, new Set()))
             return failure("ATTACHMENT_CYCLE", "Attachments cannot form cycles");
     }
+    const spendMetadata = validateTargetedSpendMetadata(s, context); if (!spendMetadata.ok) return spendMetadata;
+    const targetedMetadata = validateTargetedDefeatMetadata(s, context); if (!targetedMetadata.ok) return targetedMetadata;
     const valueMetadata = validateValueConditionMetadata(s, context); if (!valueMetadata.ok) return valueMetadata;
     const auraMetadata = validateAttackingAuraMetadata(s, context); if (!auraMetadata.ok) return auraMetadata;
     const firstMetadata = validateFirstAttackMetadata(s, context); if (!firstMetadata.ok) return firstMetadata;
@@ -138,6 +143,7 @@ export function validateState(input: unknown, context: EngineContext): Result<Ga
         return failure("UNSTABLE_DECISION", "Decision state cannot contain unresolved work");
     if ("targetId" in s.timing.combat && [s.timing.combat.attackerId, s.timing.combat.targetId, s.timing.combat.blockerId].some(id => id !== null && !Object.hasOwn(s.objects.cards, id)))
         return failure("INVALID_COMBAT_REFERENCE", "Combat objects must resolve");
+    const targeted = validateTargetedDefeatState(s, context); if (!targeted.ok) return targeted;
     const triggers = validateTriggerState(s, context);
     if (!triggers.ok) return triggers;
     const returning = validateActionReturn(s, context);
@@ -155,7 +161,7 @@ export function validateState(input: unknown, context: EngineContext): Result<Ga
     }
     if (slice && !s.setup) {
         const step = s.timing.step;
-        if (ids.length !== 2 || !s.timing.firstPlayer || !ids.includes(s.timing.firstPlayer) || !step || (!["RIVAL_REACT", "COMBAT_RESOLUTION_PENDING", "DEFEAT_ORDER_SELECTION", "TRIGGER_RESOLUTION"].includes(s.timing.combat.stage) && s.timing.actingPlayer !== s.timing.activePlayer))
+        if (ids.length !== 2 || !s.timing.firstPlayer || !ids.includes(s.timing.firstPlayer) || !step || (!["RIVAL_REACT", "COMBAT_RESOLUTION_PENDING", "DEFEAT_ORDER_SELECTION", "TRIGGER_RESOLUTION"].includes(s.timing.combat.stage) && !s.resolution.targetedDefeatContinuation && !s.resolution.triggerContinuation?.effectDefeats && !(s.resolution.triggerContinuation?.origin.kind === "DEFEAT" && s.resolution.triggerContinuation.origin.effectSource) && s.timing.actingPlayer !== s.timing.activePlayer))
             return failure("INVALID_TURN_STATE", "Turn slice requires two players, first player and an active decision actor");
         if (s.timing.turn < 1 || s.timing.activePlayer !== ids[(s.players[s.timing.firstPlayer].seat + s.timing.turn - 1) % ids.length])
             return failure("INVALID_TURN_ORDER", "Active player must follow first-player and turn order");

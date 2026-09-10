@@ -7,11 +7,12 @@ export const ZoneRefSchema = z.strictObject({ playerId: PlayerIdSchema, zone: Zo
 export const KeywordSchema = z.enum(["GO_SOLO", "QUICK", "BLOCKER", "ADRENALINE"]);
 export const TriggerSchema = z.enum(["WHEN_SOLD", "WHEN_CALLED", "WHEN_PLAYED", "WHEN_ATTACKING", "WHEN_DEFEATED", "WHEN_FIGHT_WON", "WHEN_CARD_PLAYED", "WHEN_OWN_TURN_ENDS", "WHEN_UNIT_ATTACKS"]);
 export const EquipTargetSchema = z.strictObject({ kind: z.literal("FRIENDLY_UNIT_OR_FACE_UP_LEGEND") });
+export const TargetRelationshipSchema = z.enum(["CONTROLLED", "RIVAL", "ANY"]);
 export const TargetSelectorSchema = z.discriminatedUnion("kind", [
     EquipTargetSchema,
     z.strictObject({ kind: z.literal("SELF") }),
-    z.strictObject({ kind: z.literal("CARDS"), zone: ZoneSchema, relation: z.enum(["CONTROLLED", "RIVAL", "ANY"]), keyword: KeywordSchema.optional() }),
-    z.strictObject({ kind: z.literal("GIGS"), relation: z.enum(["CONTROLLED", "RIVAL", "ANY"]) })
+    z.strictObject({ kind: z.literal("CARDS"), zone: ZoneSchema, relation: TargetRelationshipSchema, keyword: KeywordSchema.optional() }),
+    z.strictObject({ kind: z.literal("GIGS"), relation: TargetRelationshipSchema })
 ]);
 export const NamedUnitConditionSchema = z.strictObject({ kind: z.literal("SUBJECT_IS_UNIT_NAMED"), identity: z.literal("V") });
 export const ConditionSchema = z.discriminatedUnion("kind", [
@@ -73,7 +74,17 @@ export const ReadyEddiesEffectSchema = z.strictObject({ kind: z.literal("READY_E
     when: z.strictObject({ timing: z.literal("RESOLUTION"), condition: NamedUnitConditionSchema }).optional() });
 export const RegisterEndTurnEffectSchema = z.strictObject({ kind: z.literal("REGISTER_END_TURN_EFFECT"),
     effect: ReadyEddiesEffectSchema.extend({ count: z.literal(2), when: z.strictObject({ timing: z.literal("RESOLUTION"), condition: NamedUnitConditionSchema }) }) });
+export const SpendUnitTargetSchema = z.strictObject({ kind: z.literal("UNITS"), relation: TargetRelationshipSchema, costAtMost: z.literal(4) });
+export type SpendUnitTarget = z.infer<typeof SpendUnitTargetSchema>;
+export const SpendUnitEffectSchema = z.strictObject({ kind: z.literal("SPEND_UNIT"), target: SpendUnitTargetSchema });
+export const DefeatUnitTargetSchema = z.strictObject({ kind: z.literal("UNITS"), relation: TargetRelationshipSchema,
+    power: z.discriminatedUnion("kind", [z.strictObject({ kind: z.literal("AT_MOST"), value: z.literal(5) }), z.strictObject({ kind: z.literal("CONTROLLED_GIG_VALUE"), dieType: z.literal("D20") })]) });
+export type DefeatUnitTarget = z.infer<typeof DefeatUnitTargetSchema>;
+export const DefeatUnitEffectSchema = z.strictObject({ kind: z.literal("DEFEAT_UNIT"), target: DefeatUnitTargetSchema,
+    when: z.strictObject({ timing: z.literal("RESOLUTION"), condition: z.strictObject({ kind: z.literal("STREET_CRED_GREATER_THAN_RIVAL") }) }).optional() });
 export const EffectSchema = z.discriminatedUnion("kind", [
+    SpendUnitEffectSchema,
+    DefeatUnitEffectSchema,
     ReadyEddiesEffectSchema,
     RegisterEndTurnEffectSchema,
     z.strictObject({ kind: z.literal("DECREASE_GIG_UP_TO"), target: z.strictObject({ kind: z.literal("GIGS"), relation: z.literal("ANY") }), maximum: z.literal(2) }),

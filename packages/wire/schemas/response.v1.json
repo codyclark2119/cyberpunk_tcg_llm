@@ -1356,9 +1356,52 @@
                             "UNSUPPORTED"
                           ]
                         },
+                        "targetedDefeatContinuation": {
+                          "type": "object",
+                          "properties": {
+                            "phase": {
+                              "type": "string",
+                              "enum": [
+                                "TARGET",
+                                "ORDER"
+                              ]
+                            }
+                          },
+                          "required": [
+                            "phase"
+                          ],
+                          "additionalProperties": false
+                        },
                         "triggerContinuation": {
                           "type": "object",
                           "properties": {
+                            "effectDefeats": {
+                              "minItems": 1,
+                              "maxItems": 1,
+                              "type": "array",
+                              "items": {
+                                "type": "object",
+                                "properties": {
+                                  "targetId": {
+                                    "type": "string",
+                                    "minLength": 1,
+                                    "maxLength": 200,
+                                    "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$"
+                                  },
+                                  "defeatedBy": {
+                                    "type": "string",
+                                    "minLength": 1,
+                                    "maxLength": 200,
+                                    "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$"
+                                  }
+                                },
+                                "required": [
+                                  "targetId",
+                                  "defeatedBy"
+                                ],
+                                "additionalProperties": false
+                              }
+                            },
                             "origin": {
                               "oneOf": [
                                 {
@@ -1628,6 +1671,12 @@
                                     "kind": {
                                       "type": "string",
                                       "const": "DEFEAT"
+                                    },
+                                    "effectSource": {
+                                      "type": "string",
+                                      "minLength": 1,
+                                      "maxLength": 200,
+                                      "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$"
                                     },
                                     "defeated": {
                                       "minItems": 1,
@@ -2308,6 +2357,151 @@
                                 },
                                 "effect": {
                                   "oneOf": [
+                                    {
+                                      "type": "object",
+                                      "properties": {
+                                        "kind": {
+                                          "type": "string",
+                                          "const": "SPEND_UNIT"
+                                        },
+                                        "target": {
+                                          "type": "object",
+                                          "properties": {
+                                            "kind": {
+                                              "type": "string",
+                                              "const": "UNITS"
+                                            },
+                                            "relation": {
+                                              "type": "string",
+                                              "enum": [
+                                                "CONTROLLED",
+                                                "RIVAL",
+                                                "ANY"
+                                              ]
+                                            },
+                                            "costAtMost": {
+                                              "type": "number",
+                                              "const": 4
+                                            }
+                                          },
+                                          "required": [
+                                            "kind",
+                                            "relation",
+                                            "costAtMost"
+                                          ],
+                                          "additionalProperties": false
+                                        }
+                                      },
+                                      "required": [
+                                        "kind",
+                                        "target"
+                                      ],
+                                      "additionalProperties": false
+                                    },
+                                    {
+                                      "type": "object",
+                                      "properties": {
+                                        "kind": {
+                                          "type": "string",
+                                          "const": "DEFEAT_UNIT"
+                                        },
+                                        "target": {
+                                          "type": "object",
+                                          "properties": {
+                                            "kind": {
+                                              "type": "string",
+                                              "const": "UNITS"
+                                            },
+                                            "relation": {
+                                              "type": "string",
+                                              "enum": [
+                                                "CONTROLLED",
+                                                "RIVAL",
+                                                "ANY"
+                                              ]
+                                            },
+                                            "power": {
+                                              "oneOf": [
+                                                {
+                                                  "type": "object",
+                                                  "properties": {
+                                                    "kind": {
+                                                      "type": "string",
+                                                      "const": "AT_MOST"
+                                                    },
+                                                    "value": {
+                                                      "type": "number",
+                                                      "const": 5
+                                                    }
+                                                  },
+                                                  "required": [
+                                                    "kind",
+                                                    "value"
+                                                  ],
+                                                  "additionalProperties": false
+                                                },
+                                                {
+                                                  "type": "object",
+                                                  "properties": {
+                                                    "kind": {
+                                                      "type": "string",
+                                                      "const": "CONTROLLED_GIG_VALUE"
+                                                    },
+                                                    "dieType": {
+                                                      "type": "string",
+                                                      "const": "D20"
+                                                    }
+                                                  },
+                                                  "required": [
+                                                    "kind",
+                                                    "dieType"
+                                                  ],
+                                                  "additionalProperties": false
+                                                }
+                                              ]
+                                            }
+                                          },
+                                          "required": [
+                                            "kind",
+                                            "relation",
+                                            "power"
+                                          ],
+                                          "additionalProperties": false
+                                        },
+                                        "when": {
+                                          "type": "object",
+                                          "properties": {
+                                            "timing": {
+                                              "type": "string",
+                                              "const": "RESOLUTION"
+                                            },
+                                            "condition": {
+                                              "type": "object",
+                                              "properties": {
+                                                "kind": {
+                                                  "type": "string",
+                                                  "const": "STREET_CRED_GREATER_THAN_RIVAL"
+                                                }
+                                              },
+                                              "required": [
+                                                "kind"
+                                              ],
+                                              "additionalProperties": false
+                                            }
+                                          },
+                                          "required": [
+                                            "timing",
+                                            "condition"
+                                          ],
+                                          "additionalProperties": false
+                                        }
+                                      },
+                                      "required": [
+                                        "kind",
+                                        "target"
+                                      ],
+                                      "additionalProperties": false
+                                    },
                                     {
                                       "type": "object",
                                       "properties": {
@@ -4163,6 +4357,151 @@
                                     "properties": {
                                       "kind": {
                                         "type": "string",
+                                        "const": "SPEND_UNIT"
+                                      },
+                                      "target": {
+                                        "type": "object",
+                                        "properties": {
+                                          "kind": {
+                                            "type": "string",
+                                            "const": "UNITS"
+                                          },
+                                          "relation": {
+                                            "type": "string",
+                                            "enum": [
+                                              "CONTROLLED",
+                                              "RIVAL",
+                                              "ANY"
+                                            ]
+                                          },
+                                          "costAtMost": {
+                                            "type": "number",
+                                            "const": 4
+                                          }
+                                        },
+                                        "required": [
+                                          "kind",
+                                          "relation",
+                                          "costAtMost"
+                                        ],
+                                        "additionalProperties": false
+                                      }
+                                    },
+                                    "required": [
+                                      "kind",
+                                      "target"
+                                    ],
+                                    "additionalProperties": false
+                                  },
+                                  {
+                                    "type": "object",
+                                    "properties": {
+                                      "kind": {
+                                        "type": "string",
+                                        "const": "DEFEAT_UNIT"
+                                      },
+                                      "target": {
+                                        "type": "object",
+                                        "properties": {
+                                          "kind": {
+                                            "type": "string",
+                                            "const": "UNITS"
+                                          },
+                                          "relation": {
+                                            "type": "string",
+                                            "enum": [
+                                              "CONTROLLED",
+                                              "RIVAL",
+                                              "ANY"
+                                            ]
+                                          },
+                                          "power": {
+                                            "oneOf": [
+                                              {
+                                                "type": "object",
+                                                "properties": {
+                                                  "kind": {
+                                                    "type": "string",
+                                                    "const": "AT_MOST"
+                                                  },
+                                                  "value": {
+                                                    "type": "number",
+                                                    "const": 5
+                                                  }
+                                                },
+                                                "required": [
+                                                  "kind",
+                                                  "value"
+                                                ],
+                                                "additionalProperties": false
+                                              },
+                                              {
+                                                "type": "object",
+                                                "properties": {
+                                                  "kind": {
+                                                    "type": "string",
+                                                    "const": "CONTROLLED_GIG_VALUE"
+                                                  },
+                                                  "dieType": {
+                                                    "type": "string",
+                                                    "const": "D20"
+                                                  }
+                                                },
+                                                "required": [
+                                                  "kind",
+                                                  "dieType"
+                                                ],
+                                                "additionalProperties": false
+                                              }
+                                            ]
+                                          }
+                                        },
+                                        "required": [
+                                          "kind",
+                                          "relation",
+                                          "power"
+                                        ],
+                                        "additionalProperties": false
+                                      },
+                                      "when": {
+                                        "type": "object",
+                                        "properties": {
+                                          "timing": {
+                                            "type": "string",
+                                            "const": "RESOLUTION"
+                                          },
+                                          "condition": {
+                                            "type": "object",
+                                            "properties": {
+                                              "kind": {
+                                                "type": "string",
+                                                "const": "STREET_CRED_GREATER_THAN_RIVAL"
+                                              }
+                                            },
+                                            "required": [
+                                              "kind"
+                                            ],
+                                            "additionalProperties": false
+                                          }
+                                        },
+                                        "required": [
+                                          "timing",
+                                          "condition"
+                                        ],
+                                        "additionalProperties": false
+                                      }
+                                    },
+                                    "required": [
+                                      "kind",
+                                      "target"
+                                    ],
+                                    "additionalProperties": false
+                                  },
+                                  {
+                                    "type": "object",
+                                    "properties": {
+                                      "kind": {
+                                        "type": "string",
                                         "const": "READY_EDDIES"
                                       },
                                       "player": {
@@ -6004,6 +6343,151 @@
                               },
                               "effect": {
                                 "oneOf": [
+                                  {
+                                    "type": "object",
+                                    "properties": {
+                                      "kind": {
+                                        "type": "string",
+                                        "const": "SPEND_UNIT"
+                                      },
+                                      "target": {
+                                        "type": "object",
+                                        "properties": {
+                                          "kind": {
+                                            "type": "string",
+                                            "const": "UNITS"
+                                          },
+                                          "relation": {
+                                            "type": "string",
+                                            "enum": [
+                                              "CONTROLLED",
+                                              "RIVAL",
+                                              "ANY"
+                                            ]
+                                          },
+                                          "costAtMost": {
+                                            "type": "number",
+                                            "const": 4
+                                          }
+                                        },
+                                        "required": [
+                                          "kind",
+                                          "relation",
+                                          "costAtMost"
+                                        ],
+                                        "additionalProperties": false
+                                      }
+                                    },
+                                    "required": [
+                                      "kind",
+                                      "target"
+                                    ],
+                                    "additionalProperties": false
+                                  },
+                                  {
+                                    "type": "object",
+                                    "properties": {
+                                      "kind": {
+                                        "type": "string",
+                                        "const": "DEFEAT_UNIT"
+                                      },
+                                      "target": {
+                                        "type": "object",
+                                        "properties": {
+                                          "kind": {
+                                            "type": "string",
+                                            "const": "UNITS"
+                                          },
+                                          "relation": {
+                                            "type": "string",
+                                            "enum": [
+                                              "CONTROLLED",
+                                              "RIVAL",
+                                              "ANY"
+                                            ]
+                                          },
+                                          "power": {
+                                            "oneOf": [
+                                              {
+                                                "type": "object",
+                                                "properties": {
+                                                  "kind": {
+                                                    "type": "string",
+                                                    "const": "AT_MOST"
+                                                  },
+                                                  "value": {
+                                                    "type": "number",
+                                                    "const": 5
+                                                  }
+                                                },
+                                                "required": [
+                                                  "kind",
+                                                  "value"
+                                                ],
+                                                "additionalProperties": false
+                                              },
+                                              {
+                                                "type": "object",
+                                                "properties": {
+                                                  "kind": {
+                                                    "type": "string",
+                                                    "const": "CONTROLLED_GIG_VALUE"
+                                                  },
+                                                  "dieType": {
+                                                    "type": "string",
+                                                    "const": "D20"
+                                                  }
+                                                },
+                                                "required": [
+                                                  "kind",
+                                                  "dieType"
+                                                ],
+                                                "additionalProperties": false
+                                              }
+                                            ]
+                                          }
+                                        },
+                                        "required": [
+                                          "kind",
+                                          "relation",
+                                          "power"
+                                        ],
+                                        "additionalProperties": false
+                                      },
+                                      "when": {
+                                        "type": "object",
+                                        "properties": {
+                                          "timing": {
+                                            "type": "string",
+                                            "const": "RESOLUTION"
+                                          },
+                                          "condition": {
+                                            "type": "object",
+                                            "properties": {
+                                              "kind": {
+                                                "type": "string",
+                                                "const": "STREET_CRED_GREATER_THAN_RIVAL"
+                                              }
+                                            },
+                                            "required": [
+                                              "kind"
+                                            ],
+                                            "additionalProperties": false
+                                          }
+                                        },
+                                        "required": [
+                                          "timing",
+                                          "condition"
+                                        ],
+                                        "additionalProperties": false
+                                      }
+                                    },
+                                    "required": [
+                                      "kind",
+                                      "target"
+                                    ],
+                                    "additionalProperties": false
+                                  },
                                   {
                                     "type": "object",
                                     "properties": {
@@ -9873,9 +10357,52 @@
                             "UNSUPPORTED"
                           ]
                         },
+                        "targetedDefeatContinuation": {
+                          "type": "object",
+                          "properties": {
+                            "phase": {
+                              "type": "string",
+                              "enum": [
+                                "TARGET",
+                                "ORDER"
+                              ]
+                            }
+                          },
+                          "required": [
+                            "phase"
+                          ],
+                          "additionalProperties": false
+                        },
                         "triggerContinuation": {
                           "type": "object",
                           "properties": {
+                            "effectDefeats": {
+                              "minItems": 1,
+                              "maxItems": 1,
+                              "type": "array",
+                              "items": {
+                                "type": "object",
+                                "properties": {
+                                  "targetId": {
+                                    "type": "string",
+                                    "minLength": 1,
+                                    "maxLength": 200,
+                                    "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$"
+                                  },
+                                  "defeatedBy": {
+                                    "type": "string",
+                                    "minLength": 1,
+                                    "maxLength": 200,
+                                    "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$"
+                                  }
+                                },
+                                "required": [
+                                  "targetId",
+                                  "defeatedBy"
+                                ],
+                                "additionalProperties": false
+                              }
+                            },
                             "origin": {
                               "oneOf": [
                                 {
@@ -10145,6 +10672,12 @@
                                     "kind": {
                                       "type": "string",
                                       "const": "DEFEAT"
+                                    },
+                                    "effectSource": {
+                                      "type": "string",
+                                      "minLength": 1,
+                                      "maxLength": 200,
+                                      "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$"
                                     },
                                     "defeated": {
                                       "minItems": 1,
@@ -10825,6 +11358,151 @@
                                 },
                                 "effect": {
                                   "oneOf": [
+                                    {
+                                      "type": "object",
+                                      "properties": {
+                                        "kind": {
+                                          "type": "string",
+                                          "const": "SPEND_UNIT"
+                                        },
+                                        "target": {
+                                          "type": "object",
+                                          "properties": {
+                                            "kind": {
+                                              "type": "string",
+                                              "const": "UNITS"
+                                            },
+                                            "relation": {
+                                              "type": "string",
+                                              "enum": [
+                                                "CONTROLLED",
+                                                "RIVAL",
+                                                "ANY"
+                                              ]
+                                            },
+                                            "costAtMost": {
+                                              "type": "number",
+                                              "const": 4
+                                            }
+                                          },
+                                          "required": [
+                                            "kind",
+                                            "relation",
+                                            "costAtMost"
+                                          ],
+                                          "additionalProperties": false
+                                        }
+                                      },
+                                      "required": [
+                                        "kind",
+                                        "target"
+                                      ],
+                                      "additionalProperties": false
+                                    },
+                                    {
+                                      "type": "object",
+                                      "properties": {
+                                        "kind": {
+                                          "type": "string",
+                                          "const": "DEFEAT_UNIT"
+                                        },
+                                        "target": {
+                                          "type": "object",
+                                          "properties": {
+                                            "kind": {
+                                              "type": "string",
+                                              "const": "UNITS"
+                                            },
+                                            "relation": {
+                                              "type": "string",
+                                              "enum": [
+                                                "CONTROLLED",
+                                                "RIVAL",
+                                                "ANY"
+                                              ]
+                                            },
+                                            "power": {
+                                              "oneOf": [
+                                                {
+                                                  "type": "object",
+                                                  "properties": {
+                                                    "kind": {
+                                                      "type": "string",
+                                                      "const": "AT_MOST"
+                                                    },
+                                                    "value": {
+                                                      "type": "number",
+                                                      "const": 5
+                                                    }
+                                                  },
+                                                  "required": [
+                                                    "kind",
+                                                    "value"
+                                                  ],
+                                                  "additionalProperties": false
+                                                },
+                                                {
+                                                  "type": "object",
+                                                  "properties": {
+                                                    "kind": {
+                                                      "type": "string",
+                                                      "const": "CONTROLLED_GIG_VALUE"
+                                                    },
+                                                    "dieType": {
+                                                      "type": "string",
+                                                      "const": "D20"
+                                                    }
+                                                  },
+                                                  "required": [
+                                                    "kind",
+                                                    "dieType"
+                                                  ],
+                                                  "additionalProperties": false
+                                                }
+                                              ]
+                                            }
+                                          },
+                                          "required": [
+                                            "kind",
+                                            "relation",
+                                            "power"
+                                          ],
+                                          "additionalProperties": false
+                                        },
+                                        "when": {
+                                          "type": "object",
+                                          "properties": {
+                                            "timing": {
+                                              "type": "string",
+                                              "const": "RESOLUTION"
+                                            },
+                                            "condition": {
+                                              "type": "object",
+                                              "properties": {
+                                                "kind": {
+                                                  "type": "string",
+                                                  "const": "STREET_CRED_GREATER_THAN_RIVAL"
+                                                }
+                                              },
+                                              "required": [
+                                                "kind"
+                                              ],
+                                              "additionalProperties": false
+                                            }
+                                          },
+                                          "required": [
+                                            "timing",
+                                            "condition"
+                                          ],
+                                          "additionalProperties": false
+                                        }
+                                      },
+                                      "required": [
+                                        "kind",
+                                        "target"
+                                      ],
+                                      "additionalProperties": false
+                                    },
                                     {
                                       "type": "object",
                                       "properties": {
@@ -12680,6 +13358,151 @@
                                     "properties": {
                                       "kind": {
                                         "type": "string",
+                                        "const": "SPEND_UNIT"
+                                      },
+                                      "target": {
+                                        "type": "object",
+                                        "properties": {
+                                          "kind": {
+                                            "type": "string",
+                                            "const": "UNITS"
+                                          },
+                                          "relation": {
+                                            "type": "string",
+                                            "enum": [
+                                              "CONTROLLED",
+                                              "RIVAL",
+                                              "ANY"
+                                            ]
+                                          },
+                                          "costAtMost": {
+                                            "type": "number",
+                                            "const": 4
+                                          }
+                                        },
+                                        "required": [
+                                          "kind",
+                                          "relation",
+                                          "costAtMost"
+                                        ],
+                                        "additionalProperties": false
+                                      }
+                                    },
+                                    "required": [
+                                      "kind",
+                                      "target"
+                                    ],
+                                    "additionalProperties": false
+                                  },
+                                  {
+                                    "type": "object",
+                                    "properties": {
+                                      "kind": {
+                                        "type": "string",
+                                        "const": "DEFEAT_UNIT"
+                                      },
+                                      "target": {
+                                        "type": "object",
+                                        "properties": {
+                                          "kind": {
+                                            "type": "string",
+                                            "const": "UNITS"
+                                          },
+                                          "relation": {
+                                            "type": "string",
+                                            "enum": [
+                                              "CONTROLLED",
+                                              "RIVAL",
+                                              "ANY"
+                                            ]
+                                          },
+                                          "power": {
+                                            "oneOf": [
+                                              {
+                                                "type": "object",
+                                                "properties": {
+                                                  "kind": {
+                                                    "type": "string",
+                                                    "const": "AT_MOST"
+                                                  },
+                                                  "value": {
+                                                    "type": "number",
+                                                    "const": 5
+                                                  }
+                                                },
+                                                "required": [
+                                                  "kind",
+                                                  "value"
+                                                ],
+                                                "additionalProperties": false
+                                              },
+                                              {
+                                                "type": "object",
+                                                "properties": {
+                                                  "kind": {
+                                                    "type": "string",
+                                                    "const": "CONTROLLED_GIG_VALUE"
+                                                  },
+                                                  "dieType": {
+                                                    "type": "string",
+                                                    "const": "D20"
+                                                  }
+                                                },
+                                                "required": [
+                                                  "kind",
+                                                  "dieType"
+                                                ],
+                                                "additionalProperties": false
+                                              }
+                                            ]
+                                          }
+                                        },
+                                        "required": [
+                                          "kind",
+                                          "relation",
+                                          "power"
+                                        ],
+                                        "additionalProperties": false
+                                      },
+                                      "when": {
+                                        "type": "object",
+                                        "properties": {
+                                          "timing": {
+                                            "type": "string",
+                                            "const": "RESOLUTION"
+                                          },
+                                          "condition": {
+                                            "type": "object",
+                                            "properties": {
+                                              "kind": {
+                                                "type": "string",
+                                                "const": "STREET_CRED_GREATER_THAN_RIVAL"
+                                              }
+                                            },
+                                            "required": [
+                                              "kind"
+                                            ],
+                                            "additionalProperties": false
+                                          }
+                                        },
+                                        "required": [
+                                          "timing",
+                                          "condition"
+                                        ],
+                                        "additionalProperties": false
+                                      }
+                                    },
+                                    "required": [
+                                      "kind",
+                                      "target"
+                                    ],
+                                    "additionalProperties": false
+                                  },
+                                  {
+                                    "type": "object",
+                                    "properties": {
+                                      "kind": {
+                                        "type": "string",
                                         "const": "READY_EDDIES"
                                       },
                                       "player": {
@@ -14521,6 +15344,151 @@
                               },
                               "effect": {
                                 "oneOf": [
+                                  {
+                                    "type": "object",
+                                    "properties": {
+                                      "kind": {
+                                        "type": "string",
+                                        "const": "SPEND_UNIT"
+                                      },
+                                      "target": {
+                                        "type": "object",
+                                        "properties": {
+                                          "kind": {
+                                            "type": "string",
+                                            "const": "UNITS"
+                                          },
+                                          "relation": {
+                                            "type": "string",
+                                            "enum": [
+                                              "CONTROLLED",
+                                              "RIVAL",
+                                              "ANY"
+                                            ]
+                                          },
+                                          "costAtMost": {
+                                            "type": "number",
+                                            "const": 4
+                                          }
+                                        },
+                                        "required": [
+                                          "kind",
+                                          "relation",
+                                          "costAtMost"
+                                        ],
+                                        "additionalProperties": false
+                                      }
+                                    },
+                                    "required": [
+                                      "kind",
+                                      "target"
+                                    ],
+                                    "additionalProperties": false
+                                  },
+                                  {
+                                    "type": "object",
+                                    "properties": {
+                                      "kind": {
+                                        "type": "string",
+                                        "const": "DEFEAT_UNIT"
+                                      },
+                                      "target": {
+                                        "type": "object",
+                                        "properties": {
+                                          "kind": {
+                                            "type": "string",
+                                            "const": "UNITS"
+                                          },
+                                          "relation": {
+                                            "type": "string",
+                                            "enum": [
+                                              "CONTROLLED",
+                                              "RIVAL",
+                                              "ANY"
+                                            ]
+                                          },
+                                          "power": {
+                                            "oneOf": [
+                                              {
+                                                "type": "object",
+                                                "properties": {
+                                                  "kind": {
+                                                    "type": "string",
+                                                    "const": "AT_MOST"
+                                                  },
+                                                  "value": {
+                                                    "type": "number",
+                                                    "const": 5
+                                                  }
+                                                },
+                                                "required": [
+                                                  "kind",
+                                                  "value"
+                                                ],
+                                                "additionalProperties": false
+                                              },
+                                              {
+                                                "type": "object",
+                                                "properties": {
+                                                  "kind": {
+                                                    "type": "string",
+                                                    "const": "CONTROLLED_GIG_VALUE"
+                                                  },
+                                                  "dieType": {
+                                                    "type": "string",
+                                                    "const": "D20"
+                                                  }
+                                                },
+                                                "required": [
+                                                  "kind",
+                                                  "dieType"
+                                                ],
+                                                "additionalProperties": false
+                                              }
+                                            ]
+                                          }
+                                        },
+                                        "required": [
+                                          "kind",
+                                          "relation",
+                                          "power"
+                                        ],
+                                        "additionalProperties": false
+                                      },
+                                      "when": {
+                                        "type": "object",
+                                        "properties": {
+                                          "timing": {
+                                            "type": "string",
+                                            "const": "RESOLUTION"
+                                          },
+                                          "condition": {
+                                            "type": "object",
+                                            "properties": {
+                                              "kind": {
+                                                "type": "string",
+                                                "const": "STREET_CRED_GREATER_THAN_RIVAL"
+                                              }
+                                            },
+                                            "required": [
+                                              "kind"
+                                            ],
+                                            "additionalProperties": false
+                                          }
+                                        },
+                                        "required": [
+                                          "timing",
+                                          "condition"
+                                        ],
+                                        "additionalProperties": false
+                                      }
+                                    },
+                                    "required": [
+                                      "kind",
+                                      "target"
+                                    ],
+                                    "additionalProperties": false
+                                  },
                                   {
                                     "type": "object",
                                     "properties": {
@@ -17140,6 +18108,48 @@
                             "properties": {
                               "kind": {
                                 "type": "string",
+                                "const": "DEFEAT_TARGET_SELECTED"
+                              },
+                              "effectId": {
+                                "type": "string",
+                                "minLength": 1
+                              },
+                              "sourceId": {
+                                "type": "string",
+                                "minLength": 1,
+                                "maxLength": 200,
+                                "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$"
+                              },
+                              "targetId": {
+                                "type": "string",
+                                "minLength": 1,
+                                "maxLength": 200,
+                                "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$"
+                              },
+                              "controllerId": {
+                                "type": "string",
+                                "format": "uuid",
+                                "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+                              },
+                              "forced": {
+                                "type": "boolean"
+                              }
+                            },
+                            "required": [
+                              "kind",
+                              "effectId",
+                              "sourceId",
+                              "targetId",
+                              "controllerId",
+                              "forced"
+                            ],
+                            "additionalProperties": false
+                          },
+                          {
+                            "type": "object",
+                            "properties": {
+                              "kind": {
+                                "type": "string",
                                 "const": "CARD_DEFEATED"
                               },
                               "cardInstanceId": {
@@ -17954,6 +18964,48 @@
                             "properties": {
                               "kind": {
                                 "type": "string",
+                                "const": "CARD_TARGET_SELECTED"
+                              },
+                              "effectId": {
+                                "type": "string",
+                                "minLength": 1
+                              },
+                              "sourceId": {
+                                "type": "string",
+                                "minLength": 1,
+                                "maxLength": 200,
+                                "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$"
+                              },
+                              "targetId": {
+                                "type": "string",
+                                "minLength": 1,
+                                "maxLength": 200,
+                                "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$"
+                              },
+                              "controllerId": {
+                                "type": "string",
+                                "format": "uuid",
+                                "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+                              },
+                              "forced": {
+                                "type": "boolean"
+                              }
+                            },
+                            "required": [
+                              "kind",
+                              "effectId",
+                              "sourceId",
+                              "targetId",
+                              "controllerId",
+                              "forced"
+                            ],
+                            "additionalProperties": false
+                          },
+                          {
+                            "type": "object",
+                            "properties": {
+                              "kind": {
+                                "type": "string",
                                 "const": "CARD_SPENT"
                               },
                               "cardInstanceId": {
@@ -17961,6 +19013,31 @@
                                 "minLength": 1,
                                 "maxLength": 200,
                                 "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$"
+                              },
+                              "cause": {
+                                "type": "object",
+                                "properties": {
+                                  "kind": {
+                                    "type": "string",
+                                    "const": "EFFECT"
+                                  },
+                                  "sourceId": {
+                                    "type": "string",
+                                    "minLength": 1,
+                                    "maxLength": 200,
+                                    "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$"
+                                  },
+                                  "effectId": {
+                                    "type": "string",
+                                    "minLength": 1
+                                  }
+                                },
+                                "required": [
+                                  "kind",
+                                  "sourceId",
+                                  "effectId"
+                                ],
+                                "additionalProperties": false
                               }
                             },
                             "required": [

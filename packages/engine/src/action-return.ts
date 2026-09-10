@@ -13,7 +13,7 @@ export function validateActionReturn(state: GameState, context: EngineContext) {
     if (!continuation) return destination ? failure("INVALID_RETURN_CONTEXT", "Return context requires an unfinished action") : success(null);
     if (state.timing.combat.stage === "RIVAL_REACT") {
         if (!reactEnabled(context) || destination?.kind !== "RIVAL_REACT" || state.timing.actingPlayer === state.timing.activePlayer) return failure("INVALID_RETURN_CONTEXT", "Defender continuation must explicitly return to React");
-    } else if (state.timing.combat.stage !== "NONE" || (destination && destination.kind !== "MAIN") || state.timing.actingPlayer !== state.timing.activePlayer) return failure("INVALID_RETURN_CONTEXT", "Noncombat continuation must return to active-player MAIN");
+    } else if (state.timing.combat.stage !== "NONE" || (destination && destination.kind !== "MAIN") || (state.timing.actingPlayer !== state.timing.activePlayer && state.resolution.targetedDefeatContinuation?.phase !== "ORDER")) return failure("INVALID_RETURN_CONTEXT", "Noncombat continuation must return to active-player MAIN");
     return success(null);
 }
 export function finishAction(m: TurnMutation) {

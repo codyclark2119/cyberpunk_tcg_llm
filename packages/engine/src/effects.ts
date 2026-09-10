@@ -1,3 +1,5 @@
+import { beginTargetedSpend } from "./targeted-spend";
+import { beginTargetedDefeat } from "./targeted-defeat";
 import { createFightPrevention } from "./fight-prevention";
 import { powerTargets } from "./react-queries";
 import { applyTemporaryPower } from "./temporary-power";
@@ -31,6 +33,8 @@ export class HandlerRegistry {
     }
     };
     resolve(m: TurnMutation, effect: Effect): Result<null> {
+        if (effect.kind === "SPEND_UNIT") return beginTargetedSpend(m);
+        if (effect.kind === "DEFEAT_UNIT") return beginTargetedDefeat(m);
         if (effect.kind === "CREATE_NEXT_RIVAL_FIGHT_PREVENTION") return createFightPrevention(m);
         if (effect.kind === "POWER_UNTIL_END_OF_TURN") return this.primitives.POWER_UNTIL_END_OF_TURN(m);
         if (effect.kind === "ADJUST_GIG_UP_TO") return this.primitives.ADJUST_GIG_UP_TO(m);

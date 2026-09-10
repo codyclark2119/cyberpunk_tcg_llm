@@ -1,3 +1,5 @@
+import { listDefeatableUnits, controlledGigValuesByDieType } from "./targeted-defeat-queries";
+import type { DefeatUnitTarget } from "@tcg/domain";
 import { getDelayedEffectsForTurn } from "./delayed-effects";
 import { readyableEddieSlots } from "./eddie-ready";
 import { getDiscardableCards } from "./discard";
@@ -18,6 +20,9 @@ import { attachedGear, attachmentHost, gearEnabled, legalEquipHosts } from "./at
 import { testCondition } from "./conditions";
 import { supportsCall } from "./effect-support";
 import { paymentSources, paymentValue, paymentCandidates, validatePayment } from "./payment";
+import { numericCost, referencedCost } from "./cost-value";
+import { listSpendUnitTargets } from "./targeted-spend-queries";
+import type { SpendUnitTarget } from "@tcg/domain";
 import { type GameState, type PlayerId, type CardInstanceId, type GigInstanceId, type Condition, type TargetSelector, type PaymentSource, type Cost, type Keyword } from "@tcg/domain";
 import { type EngineContext, validateState, freeze } from "./state";
 /** Construct from a validated/frozen state. Selectors never mutate authoritative objects. */
@@ -42,6 +47,11 @@ export class RulesView {
     getControlledGigs(id: PlayerId) { return Object.values(this.state.objects.gigs).filter(g => g.controllerId === id && g.location.zone === "GIGS").sort((a, b) => a.id < b.id ? -1 : 1); }
     hasControlledGigWithCurrentValueAtLeast(id: PlayerId, minimum: number) { return this.testCondition(id, { kind: "GIG_VALUE_AT_LEAST", minimum }); }
     isStreetCredEven(id: PlayerId) { return this.testCondition(id, { kind: "STREET_CRED_IS_EVEN" }); }
+    listDefeatableUnits(id: PlayerId, target: DefeatUnitTarget) { return listDefeatableUnits(this.state, id, target, this.context); }
+    getNumericCost(id: CardInstanceId) { return numericCost(this.state, id, this.context); }
+    getReferencedCost(id: CardInstanceId) { return referencedCost(this.state, id, this.context); }
+    listSpendUnitTargets(actor: PlayerId, target: SpendUnitTarget) { return listSpendUnitTargets(this.state, actor, target, this.context); }
+    getControlledD20Values(id: PlayerId) { return controlledGigValuesByDieType(this.state, id, "D20"); }
     getStreetCred(id: PlayerId) { return this.getControlledGigs(id).reduce((n, g) => n + (g.roll.kind === "ROLLED" ? g.roll.currentValue : 0), 0); }
     testCondition(id: PlayerId, condition: Condition, sourceId?: CardInstanceId): boolean {
         return testCondition(this.state, id, condition, this.context, sourceId);

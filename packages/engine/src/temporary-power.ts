@@ -4,6 +4,7 @@ import type { TurnMutation } from "./turn";
 import { cardRevision, effectiveCardTypes } from "./characteristics";
 import { reactEnabled, supportsReactPlay } from "./react-support";
 import { combatResolutionEnabled } from "./combat-resolution-policy";
+import { supportsFieldLegend } from "./field-legend-support";
 import { powerTargets } from "./react-queries";
 
 export function applyTemporaryPower(m: TurnMutation, targetId: CardInstanceId) {
@@ -35,7 +36,11 @@ export function validateTemporaryPower(state: GameState, context: EngineContext)
     if (!reactEnabled(context) || !modifiers.length || new Set(modifiers.map(x => x.sourceId)).size !== modifiers.length || canonicalSerialize(modifiers) !== canonicalSerialize([...modifiers].sort((a, b) => a.sourceId < b.sourceId ? -1 : 1))) return failure("INVALID_TEMPORARY_POWER", "Nonempty canonical reviewed modifiers with distinct physical sources required");
     for (const x of modifiers) {
         const source = state.objects.cards[x.sourceId], target = state.objects.cards[x.targetId], r = cardRevision(state, x.sourceId, context);
-        if (x.expires.turn !== state.timing.turn || !source || !supportsReactPlay(r, context).ok || r?.type !== "PROGRAM" || !["TRASH", "RESOLVING_PROGRAM"].includes(source.zone.zone) || !target || !(combatResolutionEnabled(context) ? ["BATTLEFIELD", "TRASH", "REMOVED"] : ["BATTLEFIELD"]).includes(target.zone.zone) || !effectiveCardTypes(state, x.targetId, context).includes("UNIT")) return failure("INVALID_TEMPORARY_POWER", "Modifier must reference a played reviewed Program, current public Unit under the reviewed zone lifecycle and current turn");
+        // Public removal does not expire a duration (5.3.2.2). A reviewed field Legend
+        // loses its effective Unit type in Removed; the existing modifier still tracks
+        // that physical card until turn end. This does not make it a new Unit target.
+        const removedFieldLegend = target?.face === "UP" && target.zone.zone === "REMOVED" && supportsFieldLegend(cardRevision(state, x.targetId, context), context).ok;
+        if (x.expires.turn !== state.timing.turn || !source || !supportsReactPlay(r, context).ok || r?.type !== "PROGRAM" || !["TRASH", "RESOLVING_PROGRAM"].includes(source.zone.zone) || !target || !(combatResolutionEnabled(context) ? ["BATTLEFIELD", "TRASH", "REMOVED"] : ["BATTLEFIELD"]).includes(target.zone.zone) || !(effectiveCardTypes(state, x.targetId, context).includes("UNIT") || removedFieldLegend)) return failure("INVALID_TEMPORARY_POWER", "Modifier must reference a played reviewed Program, current public Unit under the reviewed zone lifecycle and current turn");
     }
     return success(null);
 }

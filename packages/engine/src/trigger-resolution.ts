@@ -1,3 +1,5 @@
+import { beginTargetedDefeat } from "./targeted-defeat";
+import type { PendingEffect, DefeatInstruction } from "@tcg/domain";
 import { effectiveCardTypes } from "./characteristics";
 import { registerEndTurnEffect } from "./delayed-effects";
 import { delayedSubjectTypes } from "./delayed-effects";
@@ -35,21 +37,42 @@ function resume(m: TurnMutation, origin: TriggerOrigin): Result<null> {
     if (origin.kind === "PLAY") return finishAction(m);
     if (origin.kind === "ATTACK" && "target" in combat && combat.target) { m.state.timing.combat = { ...combat, stage: "ATTACK_EFFECTS" }; return finishAttackEffects(m); }
     if (origin.kind === "FIGHT") return completeFightResult(m, origin.result);
-    if (origin.kind === "DEFEAT") return finishCombat(m);
+    if (origin.kind === "DEFEAT") return origin.effectSource ? finishAction(m) : finishCombat(m);
     return failure("INVALID_TRIGGER_RETURN", "Trigger batch must return to its original reviewed stage");
+}
+export type PreparedTriggerBatch = { origin: TriggerOrigin; ordinal: number; bindings: TriggerBinding[]; pending: PendingEffect[] };
+/** Creation of pending work is separate from resolution, so a Program can finish before it starts. */
+export function prepareTriggerBatch(m: TurnMutation, origin: TriggerOrigin, captured?: readonly TriggerBinding[]): PreparedTriggerBatch | null {
+    const bindings = [...(captured ?? discoverTriggers(m.state, origin, m.context))].sort((a, b) => a.sourceId < b.sourceId ? -1 : a.sourceId > b.sourceId ? 1 : a.abilityId < b.abilityId ? -1 : 1);
+    if (!bindings.length) return null;
+    const ordinal = ++m.state.turnHistory!.triggeredBatches, sequence = m.state.match.eventSequence;
+    const pending = bindings.map(b => PendingEffectSchema.parse(pendingTrigger(m.state, b, ordinal, sequence, m.context)));
+    return { origin, ordinal, bindings, pending };
+}
+export function activateTriggerBatch(m: TurnMutation, batch: PreparedTriggerBatch, alreadyAnnounced = false): Result<null> {
+    const { origin, ordinal, bindings, pending } = batch;
+    m.state.resolution = { stage: "DISCOVER_TRIGGERS", current: null, pending: pending.map(e => PendingEffectSchema.parse(e)), discovered: [], choice: null, triggerContinuation: { origin: TriggerOriginSchema.parse(origin), ordinal, bindings: bindings.map(b => TriggerBindingSchema.parse(b)), resolvedIds: [], phase: "SELECT" } };
+    const combat = m.state.timing.combat;
+    if (origin.kind !== "PLAY" && origin.kind !== "END_TURN" && "target" in combat && combat.target) m.state.timing.combat = { ...combat, stage: "TRIGGER_RESOLUTION" };
+    if (!alreadyAnnounced) for (const e of pending) m.emit({ kind: "EFFECT_PENDING", effectId: e.id, sourceId: e.sourceId! });
+    return advanceTriggers(m);
 }
 export function beginTriggers(m: TurnMutation, origin: TriggerOrigin, captured?: readonly TriggerBinding[]): Result<null> {
     if (!triggersEnabled(m.context)) return failure("UNSUPPORTED_TRIGGERS", "Trigger policy required");
-    if (m.state.resolution.triggerContinuation) return failure("UNSUPPORTED_NESTED_TRIGGERS", "No admitted primitive triggers another supported effect; nested scheduling requires its own review");
-    const bindings = [...(captured ?? discoverTriggers(m.state, origin, m.context))].sort((a, b) => a.sourceId < b.sourceId ? -1 : a.sourceId > b.sourceId ? 1 : a.abilityId < b.abilityId ? -1 : 1);
-    if (!bindings.length) return resume(m, origin);
-    const ordinal = ++m.state.turnHistory!.triggeredBatches, sequence = m.state.match.eventSequence;
-    const pending = bindings.map(b => PendingEffectSchema.parse(pendingTrigger(m.state, b, ordinal, sequence, m.context)));
-    m.state.resolution = { stage: "DISCOVER_TRIGGERS", current: null, pending, discovered: [], choice: null, triggerContinuation: { origin: TriggerOriginSchema.parse(origin), ordinal, bindings: bindings.map(b => TriggerBindingSchema.parse(b)), resolvedIds: [], phase: "SELECT" } };
-    const combat = m.state.timing.combat;
-    if (origin.kind !== "PLAY" && origin.kind !== "END_TURN" && "target" in combat && combat.target) m.state.timing.combat = { ...combat, stage: "TRIGGER_RESOLUTION" };
-    for (const e of pending) m.emit({ kind: "EFFECT_PENDING", effectId: e.id, sourceId: e.sourceId! });
-    return advanceTriggers(m);
+    if (m.state.resolution.triggerContinuation) return failure("UNSUPPORTED_NESTED_TRIGGERS", "Begin a batch only after the current batch; targeted defeat appends pending work without a stack");
+    const batch = prepareTriggerBatch(m, origin, captured);
+    return batch ? activateTriggerBatch(m, batch) : resume(m, origin);
+}
+/** 10.14: append newly pending DEFEATED bindings to this batch; finish its current ability first. */
+export function appendDefeatedTriggers(m: TurnMutation, defeats: readonly DefeatInstruction[], captured: readonly TriggerBinding[]) {
+    const c = m.state.resolution.triggerContinuation!;
+    c.effectDefeats = [...defeats];
+    const sequence = m.state.match.eventSequence;
+    for (const b of captured) {
+        c.bindings.push(TriggerBindingSchema.parse(b));
+        const e = PendingEffectSchema.parse(pendingTrigger(m.state, b, c.ordinal, sequence, m.context));
+        m.state.resolution.pending.push(e); m.emit({ kind: "EFFECT_PENDING", effectId: e.id, sourceId: e.sourceId! });
+    }
 }
 function offer(m: TurnMutation): Result<null> {
     const choice = triggerChoice(m.state, m.context), c = m.state.resolution.triggerContinuation!;
@@ -60,7 +83,7 @@ function offer(m: TurnMutation): Result<null> {
     m.emit({ kind: "PHASE_CHANGED", step });
     return success(null);
 }
-function completed(m: TurnMutation): Result<null> {
+export function completed(m: TurnMutation): Result<null> {
     const current = m.state.resolution.current!, c = m.state.resolution.triggerContinuation!;
     if (!current.primitiveIndex && current.trigger?.kind === "WHEN_ATTACKING" && supportsDelayedAttackGear(cardRevision(m.state, current.sourceId!, m.context), m.context).ok) {
         const binding = c.bindings.find(b => b.sourceId === current.sourceId && b.abilityId === current.trigger?.abilityId)!;
@@ -94,6 +117,7 @@ export function advanceTriggers(m: TurnMutation): Result<null> {
     m.state.timing.actingPlayer = r.current.controllerId;
     r.stage = "RESOLVE_EFFECT"; r.choice = null;
     const e = r.current.effect;
+    if (e.kind === "DEFEAT_UNIT") { c.phase = "TARGET"; return beginTargetedDefeat(m); }
     if (e.kind === "REGISTER_END_TURN_EFFECT") { const result = registerEndTurnEffect(m); return result.ok ? completed(m) : result; }
     if (e.kind === "READY_EDDIES") {
         const current = r.current, a = cardRevision(m.state, current.sourceId!, m.context)!.mechanics.abilities.find(a => a.id === current.trigger!.abilityId)!;

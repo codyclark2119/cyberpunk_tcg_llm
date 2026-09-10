@@ -1,3 +1,4 @@
+import { listSpendUnitTargets } from "./targeted-spend-queries";
 import { gigAdjustmentOptions } from "./gig-value";
 import { powerTargets } from "./react-queries";
 import { legalEquipHosts } from "./attachments";
@@ -24,6 +25,9 @@ export function playChoice(state: GameState, context: EngineContext): PendingCho
     } else if (c.phase === "EQUIP") {
         kind = "TARGET";
         options = legalEquipHosts(state, c.sourceId, context).map(cardInstanceId => ({ kind: "CARD", cardInstanceId }));
+    } else if (state.resolution.current?.effect.kind === "SPEND_UNIT") {
+        kind = "TARGET";
+        options = listSpendUnitTargets(state, c.actorId, state.resolution.current.effect.target, context).map(cardInstanceId => ({ kind: "CARD", cardInstanceId }));
     } else if (state.resolution.current?.effect.kind === "POWER_UNTIL_END_OF_TURN") {
         kind = "TARGET";
         options = powerTargets(state, c.actorId, context).map(cardInstanceId => ({ kind: "CARD", cardInstanceId }));
@@ -43,7 +47,7 @@ export function validatePlayState(state: GameState, context: EngineContext) {
     const resolving = Object.values(state.objects.cards).filter(c => c.zone.zone === "RESOLVING_PROGRAM");
     if (!c) return resolving.length || (state.timing.step === "AMOUNT_SELECTION" && !state.resolution.triggerContinuation) ? failure("INVALID_PLAY_CONTINUATION", "Resolving Programs and amount choices require a continuation") : success(null);
     const source = state.objects.cards[c.sourceId], revision = revisionOf(state, c.sourceId, context), ability = revision?.mechanics.abilities[0];
-    if (!supportsPlay(revision, context).ok || !source || c.kind !== "PLAY" || c.actorId !== state.timing.actingPlayer || source.controllerId !== c.actorId || source.zone.playerId !== c.actorId || source.face !== "UP" || (revision?.type === "GEAR" ? undefined : ability?.id) !== c.abilityId || state.setup || (state.timing.combat.stage !== "NONE" && (state.timing.combat.stage !== "RIVAL_REACT" || revision?.type !== "PROGRAM" || !revision.mechanics.keywords.includes("QUICK"))) || state.match.outcome || state.resolution.searchContinuation || state.resolution.callContinuation || state.resolution.discovered.length || state.resolution.stage !== "CHOICE")
+    if (!supportsPlay(revision, context).ok || !source || c.kind !== "PLAY" || c.actorId !== (state.resolution.targetedDefeatContinuation?.phase === "ORDER" ? state.timing.activePlayer : state.timing.actingPlayer) || source.controllerId !== c.actorId || source.zone.playerId !== c.actorId || source.face !== "UP" || (revision?.type === "GEAR" ? undefined : ability?.id) !== c.abilityId || state.setup || (state.timing.combat.stage !== "NONE" && (state.timing.combat.stage !== "RIVAL_REACT" || revision?.type !== "PROGRAM" || !revision.mechanics.keywords.includes("QUICK"))) || state.match.outcome || state.resolution.searchContinuation || state.resolution.callContinuation || state.resolution.discovered.length || state.resolution.stage !== "CHOICE")
         return failure("INVALID_PLAY_CONTINUATION", "Play source, scope, actor or exclusive decision state invalid");
     const cost = revision!.printedCost;
     if (cost.kind !== "EDDIES" || new Set(c.selectedSources.map(p => p.cardInstanceId)).size !== c.selectedSources.length || c.selectedSources.reduce((n, p) => n + paymentValue(state, context, p), 0) + c.remainingCost !== cost.amount)
@@ -56,12 +60,17 @@ export function validatePlayState(state: GameState, context: EngineContext) {
         if (revision!.type !== "GEAR" || source.readiness !== "READY" || source.zone.zone !== "HAND" || c.remainingCost !== 0 || c.effectIndex !== 0 || c.abilityId || c.targetGigId || current || state.resolution.pending.length || resolving.length || state.timing.step !== "TARGET_SELECTION" || !legalEquipHosts(state, c.sourceId, context).length)
             return failure("INVALID_EQUIP_CONTINUATION", "Paid Gear, source area, current host set and target decision must agree");
     } else {
-        if (revision!.type !== "PROGRAM" || source.zone.zone !== "RESOLVING_PROGRAM" || resolving.length !== 1 || c.remainingCost !== 0 || c.effectIndex !== 0 || (current?.effect.kind !== "ADJUST_GIG_UP_TO" && current?.effect.kind !== "POWER_UNTIL_END_OF_TURN") || current.id !== playEffectId(state) || current.sourceId !== c.sourceId || current.controllerId !== c.actorId || canonicalSerialize(current.effect) !== canonicalSerialize(ability!.effects[0]) || state.resolution.pending.length !== ability!.effects.length - 1)
+        if (revision!.type !== "PROGRAM" || source.zone.zone !== "RESOLVING_PROGRAM" || resolving.length !== 1 || c.remainingCost !== 0 || c.effectIndex !== 0 || (current?.effect.kind !== "SPEND_UNIT" && current?.effect.kind !== "DEFEAT_UNIT" && current?.effect.kind !== "ADJUST_GIG_UP_TO" && current?.effect.kind !== "POWER_UNTIL_END_OF_TURN") || current.id !== playEffectId(state) || current.sourceId !== c.sourceId || current.controllerId !== c.actorId || canonicalSerialize(current.effect) !== canonicalSerialize(ability!.effects[0]) || state.resolution.pending.length !== ability!.effects.length - 1)
             return failure("INVALID_PROGRAM_EFFECT", "Resolving Program and current primitive must match its pinned ordered ability");
         for (const [index, effect] of state.resolution.pending.entries()) {
             if (effect.id !== playEffectId(state, index + 1) || effect.sourceId !== c.sourceId || effect.controllerId !== c.actorId || effect.causedBySequence !== current.causedBySequence || canonicalSerialize(effect.effect) !== canonicalSerialize(ability!.effects[index + 1])) return failure("INVALID_PROGRAM_EFFECT", "Remaining primitive chain differs from the pinned ability");
         }
-        if (current.effect.kind === "POWER_UNTIL_END_OF_TURN") {
+        if (current.effect.kind === "SPEND_UNIT") {
+            if (c.targetGigId || state.timing.step !== "TARGET_SELECTION" || listSpendUnitTargets(state, c.actorId, current.effect.target, context).length < 2 || state.resolution.targetedDefeatContinuation || state.resolution.defeatContinuation || state.resolution.gigStealContinuation || state.resolution.triggerContinuation || state.resolution.legendEntryContinuation)
+                return failure("INVALID_SPEND_CONTINUATION", "Only current strategic Unit targets and the original Program continuation may pause; no defeat work");
+        } else if (current.effect.kind === "DEFEAT_UNIT") {
+            if (!state.resolution.targetedDefeatContinuation || c.targetGigId) return failure("INVALID_TARGETED_DEFEAT", "Program defeat needs its bounded continuation");
+        } else if (current.effect.kind === "POWER_UNTIL_END_OF_TURN") {
             if (c.targetGigId || powerTargets(state, c.actorId, context).length < 2 || state.timing.step !== "TARGET_SELECTION") return failure("INVALID_POWER_TARGET", "Only strategic current rival-Unit choices pause the power primitive");
         } else {
             const targets = adjustmentTargets(state);
@@ -75,6 +84,7 @@ export function validatePlayState(state: GameState, context: EngineContext) {
         }
     }
     if (revision?.type === "GEAR" && !legalEquipHosts(state, c.sourceId, context).length) return failure("NO_EQUIP_HOST", "Gear play requires an eligible host throughout payment");
+    if (state.resolution.targetedDefeatContinuation) return success(null); // Dedicated validator checks the exact current target/owner order.
     const expected = playChoice(state, context);
     if (!expected.options.length || (current?.effect.kind === "ADJUST_GIG_UP_TO" && current.effect.direction === "INCREASE" && expected.options.length < 2) || canonicalSerialize(expected) !== canonicalSerialize(state.resolution.choice)) return failure("INVALID_PLAY_CHOICE", "Choice must exactly match current engine targets, amounts or payment sources");
     return success(null);
