@@ -1,6 +1,7 @@
 import { z } from "zod";
 import { GameStateSchema, LegalActionSchema, ModelChoiceSchema, HashSchema, ContentBundleManifestSchema, canonicalSerialize, hashCanonical, failure, success, type GameState, type PlayerId } from "@tcg/domain";
 import { listLegalActions, resolveActionId, applyAction, observe, PlayerObservationSchema, hashReplayState, hashPosition, hashObservation, type EngineContext } from "@tcg/engine";
+import { buildModelInputV2 } from "@tcg/engine/public-actions";
 export const TrainingPositionSchema = z.strictObject({
     schemaVersion: z.literal(2), positionId: z.string().min(1), engineVersion: z.string(), engineArtifactHash: HashSchema,
     manifest: ContentBundleManifestSchema, contentManifestHash: HashSchema, state: GameStateSchema, stateHash: HashSchema,
@@ -57,8 +58,13 @@ export function exportAttempts(attempts: readonly TrainingAttempt[]): string {
     return attempts.map(input => { const a = TrainingAttemptSchema.parse(input); if (ids.has(a.attemptId))
         throw new Error("Duplicate attempt ID"); ids.add(a.attemptId); return canonicalSerialize(a); }).join("\n") + (attempts.length ? "\n" : "");
 }
-/** The only model-facing training payload. Full positions are private replay artifacts. */
+/** Legacy model-facing projection retained for replay/backward compatibility. */
 export function modelInput(position: TrainingPosition) { return { observation: position.observation, legalActions: position.legalActions.map(a => ({ actionId: a.actionId, descriptor: a.descriptor })) }; }
+/** Versioned public agent contract. Projection is Node/engine-owned; Python and models never rebuild it. */
+export function modelInputV2(position: TrainingPosition, context: EngineContext) {
+    const actor = position.state.match.playerOrder[position.actingSeat];
+    return buildModelInputV2(position.state, actor, context);
+}
 
 /** Revalidate imported positions against the actual bundle before using labels or prompts. */
 export function validateTrainingPosition(input: unknown, context: EngineContext) {

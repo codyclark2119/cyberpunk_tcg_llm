@@ -9,3 +9,4 @@ export * from "./repositories";
 export * from "./canonical";
 export * from "./mechanics";
 export * from "./content";
+export * from "./public-actions";
