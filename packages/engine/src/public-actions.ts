@@ -5,6 +5,8 @@ import {
     PublicChoiceOptionV2Schema,
     failure,
     success,
+    type CardInstanceId,
+    type DeepReadonly,
     type GameState,
     type LegalAction,
     type PlayerId
@@ -19,15 +21,16 @@ export const ModelInputV2Schema = z.strictObject({
     legalActions: z.array(ModelLegalActionV2Schema)
 });
 export type ModelInputV2 = z.infer<typeof ModelInputV2Schema>;
+type PublicObservation = DeepReadonly<PlayerObservation>;
 
-function observedCards(observation: PlayerObservation) {
+function observedCards(observation: PublicObservation) {
     return observation.players.flatMap(player => player.cards);
 }
-function cardRef(observation: PlayerObservation, cardInstanceId: string) {
+function cardRef(observation: PublicObservation, cardInstanceId: CardInstanceId) {
     const card = observedCards(observation).find(candidate => candidate.publicId === cardInstanceId);
     return card ? success({ kind: "CARD" as const, publicId: card.publicId }) : failure("UNPROJECTABLE_PUBLIC_ACTION", "Card action source is not public to this viewer");
 }
-function zoneSlotRef(state: GameState, observation: PlayerObservation, cardInstanceId: string, zone: "EDDIES" | "LEGENDS") {
+function zoneSlotRef(state: GameState, observation: PublicObservation, cardInstanceId: CardInstanceId, zone: "EDDIES" | "LEGENDS") {
     const card = state.objects.cards[cardInstanceId];
     if (!card || card.zone.zone !== zone) return failure("UNPROJECTABLE_PUBLIC_ACTION", `Expected ${zone} source`);
     const player = state.players[card.zone.playerId];
@@ -38,21 +41,21 @@ function zoneSlotRef(state: GameState, observation: PlayerObservation, cardInsta
     if (!observedCards(observation).some(candidate => candidate.publicId === publicId)) return failure("UNPROJECTABLE_PUBLIC_ACTION", `${zone} slot is not public to this viewer`);
     return success({ kind: "ZONE_SLOT" as const, seat: player.seat, zone, slot });
 }
-function gigRef(observation: PlayerObservation, gigId: string) {
+function gigRef(observation: PublicObservation, gigId: string) {
     const visible = observation.players.some(player => player.gigs.some(gig => gig.id === gigId));
     return visible ? success({ kind: "GIG" as const, gigId }) : failure("UNPROJECTABLE_PUBLIC_ACTION", "Gig is not public to this viewer");
 }
-function paymentRef(state: GameState, observation: PlayerObservation, cardInstanceId: string, kind: "EDDIE" | "LEGEND") {
+function paymentRef(state: GameState, observation: PublicObservation, cardInstanceId: CardInstanceId, kind: "EDDIE" | "LEGEND") {
     if (kind === "EDDIE") return zoneSlotRef(state, observation, cardInstanceId, "EDDIES");
     const visible = cardRef(observation, cardInstanceId);
     return visible.ok ? visible : zoneSlotRef(state, observation, cardInstanceId, "LEGENDS");
 }
-function slotChoice(observation: PlayerObservation, zone: "EDDIES" | "LEGENDS", slot: number) {
+function slotChoice(observation: PublicObservation, zone: "EDDIES" | "LEGENDS", slot: number) {
     const viewer = observation.players.find(player => player.seat === observation.viewerSeat);
     if (!viewer || viewer.counts[zone] <= slot) return failure("UNPROJECTABLE_PUBLIC_ACTION", `${zone} slot is outside the public zone count`);
     return success({ kind: "ZONE_SLOT" as const, seat: observation.viewerSeat, zone, slot });
 }
-function projectChoiceOption(state: GameState, observation: PlayerObservation, action: LegalAction) {
+function projectChoiceOption(state: GameState, observation: PublicObservation, action: LegalAction) {
     if (action.action.kind !== "CHOOSE") return failure("UNPROJECTABLE_PUBLIC_ACTION", "Expected CHOOSE action");
     const choice = state.resolution.choice, index = action.action.optionIndices[0];
     if (!choice || index === undefined || index < 0 || index >= choice.options.length) return failure("UNPROJECTABLE_PUBLIC_ACTION", "Choice option is not available");
@@ -81,7 +84,7 @@ function projectChoiceOption(state: GameState, observation: PlayerObservation, a
     return failure("UNPROJECTABLE_PUBLIC_ACTION", "Unsupported public choice option");
 }
 
-export function projectPublicLegalActionsV2(state: GameState, observation: PlayerObservation, legalActions: readonly LegalAction[]) {
+export function projectPublicLegalActionsV2(state: GameState, observation: PublicObservation, legalActions: readonly LegalAction[]) {
     const projected: z.infer<typeof ModelLegalActionV2Schema>[] = [];
     for (const action of legalActions) {
         const label = action.descriptor.label;
