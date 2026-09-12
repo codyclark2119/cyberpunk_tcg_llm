@@ -78,6 +78,7 @@ function projectChoiceOption(state: GameState, observation: PlayerObservation, a
                 : failure("UNPROJECTABLE_PUBLIC_ACTION", "Effect choice is not present in the public trigger projection");
         case "PAYMENT": return paymentRef(state, observation, option.source.cardInstanceId, option.source.kind);
     }
+    return failure("UNPROJECTABLE_PUBLIC_ACTION", "Unsupported public choice option");
 }
 
 export function projectPublicLegalActionsV2(state: GameState, observation: PlayerObservation, legalActions: readonly LegalAction[]) {
