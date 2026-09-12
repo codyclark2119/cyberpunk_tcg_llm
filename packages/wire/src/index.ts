@@ -3,7 +3,8 @@
 import { z } from "zod";
 import { ContentBundleSchema, GameStateSchema, PlayerIdSchema, HashSchema, LegalActionSchema, GameEventSchema, GameActionSchema, failure } from "@tcg/domain";
 import { createGameWithEvents, CreateGameInputSchema, validateState, listLegalActions, resolveActionId, validateAction, applyAction, observe, hashReplayState, hashPosition, hashObservation, PlayerObservationSchema } from "@tcg/engine";
-const StateRequestSchema = z.strictObject({ schemaVersion: z.literal(1), requestId: z.string().min(1), op: z.enum(["validateState", "listLegalActions", "validateAction", "applyAction", "observe", "hash"]), content: ContentBundleSchema, state: GameStateSchema, actorId: PlayerIdSchema, actionId: HashSchema.optional() });
+import { buildModelInputV2, ModelInputV2Schema } from "@tcg/engine/public-actions";
+const StateRequestSchema = z.strictObject({ schemaVersion: z.literal(1), requestId: z.string().min(1), op: z.enum(["validateState", "listLegalActions", "validateAction", "applyAction", "observe", "hash", "modelInput"]), content: ContentBundleSchema, state: GameStateSchema, actorId: PlayerIdSchema, actionId: HashSchema.optional() });
 export const WireRequestSchema = z.discriminatedUnion("op", [StateRequestSchema, z.strictObject({ schemaVersion: z.literal(1), requestId: z.string().min(1), op: z.literal("createGame"), content: ContentBundleSchema, initialization: CreateGameInputSchema })]);
 const ErrorSchema = z.strictObject({ code: z.string(), message: z.string(), path: z.string().optional() });
 export const WireResponseSchema = z.discriminatedUnion("ok", [
@@ -14,6 +15,7 @@ export const WireResponseSchema = z.discriminatedUnion("ok", [
             z.strictObject({ kind: z.literal("action"), action: GameActionSchema }),
             z.strictObject({ kind: z.literal("transition"), state: GameStateSchema, events: z.array(GameEventSchema), stateHash: HashSchema }),
             z.strictObject({ kind: z.literal("observation"), observation: PlayerObservationSchema }),
+            z.strictObject({ kind: z.literal("modelInput"), modelInput: ModelInputV2Schema }),
             z.strictObject({ kind: z.literal("hashes"), stateHash: HashSchema, positionHash: HashSchema, observationHash: HashSchema })
         ]) })
 ]);
@@ -44,6 +46,11 @@ export function handleRequest(input: unknown) {
         case "observe": {
             const o = observe(valid.value, r.actorId, context);
             result = o.ok ? { ok: true, value: { kind: "observation", observation: o.value } } : o;
+            break;
+        }
+        case "modelInput": {
+            const m = buildModelInputV2(valid.value, r.actorId, context);
+            result = m.ok ? { ok: true, value: { kind: "modelInput", modelInput: m.value } } : m;
             break;
         }
         case "hash": {
