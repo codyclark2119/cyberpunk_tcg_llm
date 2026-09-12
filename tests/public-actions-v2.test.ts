@@ -4,6 +4,7 @@ import { canonicalSerialize } from "@tcg/domain";
 import { listLegalActions, resolveActionId } from "@tcg/engine";
 import { buildModelInputV2 } from "@tcg/engine/public-actions";
 import { modelInputV2 } from "@tcg/training-harness";
+import { handleRequest } from "@tcg/wire";
 import { demoStarterContext } from "./demo-starter-fixture";
 import { demoMatchReplay } from "./demo-match-replay";
 import { unwrap } from "./turn-replay";
@@ -55,4 +56,24 @@ test("hidden Legend and Eddie choices use public slots while training delegates 
     }
     assert.equal(sawLegendSlot, true);
     assert.equal(sawEddieSlot, true);
+});
+
+test("wire modelInput returns exactly the engine-owned v2 public projection", () => {
+    for (const position of trace.positions.slice(0, 12)) {
+        const actor = position.state.match.playerOrder[position.actingSeat];
+        const direct = unwrap(buildModelInputV2(position.state, actor, context));
+        const response = handleRequest({
+            schemaVersion: 1,
+            requestId: `model-input-${position.positionId}`,
+            op: "modelInput",
+            content: context.content,
+            state: position.state,
+            actorId: actor
+        });
+        assert.equal(response.ok, true);
+        if (!response.ok) continue;
+        assert.equal(response.value.kind, "modelInput");
+        if (response.value.kind !== "modelInput") continue;
+        assert.deepEqual(response.value.modelInput, direct);
+    }
 });
