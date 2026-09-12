@@ -1,6 +1,8 @@
 # Executable card coverage — reviewed play, Gear, attack and defender React
 
-**Successor review (September 10, 2026): [Reboot multiplicity](reboot-multiplicity-report.md) remains SOURCE BLOCKED.** Fresh official card, all five printings, FAQ, rules and errata do not uniquely settle overlap consumption. The single-copy runtime and suppression guard remain unchanged; all three exact prefixes are preserved and the matrix remains paused. Historical findings below retain their original scope.
+**Current successor (September 10, 2026): [Reboot Model A implementation and resumed matrix](reboot-multiplicity-implementation-report.md).** The supplied ruling permits a redundant second physical Reboot; all matching occurrences consume in the same qualifying fight. The engine is now `0.4.0-reboot-multiplicity-1`. See the successor report for the completed matrix gates and remaining descriptor-contract blocker. The earlier source-blocked findings and initial 6/9 matrix results below are historical.
+
+**Historical source review (September 10, 2026): [Reboot multiplicity](reboot-multiplicity-report.md) remains SOURCE BLOCKED.** Fresh official card, all five printings, FAQ, rules and errata do not uniquely settle overlap consumption. The single-copy runtime and suppression guard remain unchanged; all three exact prefixes are preserved and the matrix remains paused. Historical findings below retain their original scope.
 
 **Matrix review (September 10, 2026):** [Demo match matrix and self-play readiness](demo-match-matrix-report.md) reviewed nine exact coordinates: six completed, three reached overlapping Reboot. Full-game expansion stopped; unattended self-play is **BLOCKED** pending source semantics. The original verified headline, 29-card roster and 60 physical copies remain unchanged.
 
