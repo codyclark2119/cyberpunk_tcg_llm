@@ -266,7 +266,7 @@ test("unsupported draw policy rejects atomically instead of guessing a transitio
         assert.equal(result.errors[0].code, "UNSUPPORTED_EMPTY_DRAW");
     assert.equal(JSON.stringify(empty), before);
 });
-test("empty Fixers skip Gig choice; overtime stops only after two consecutive empty starts", () => {
+test("legacy UNSUPPORTED policy: empty Fixers skip Gig choice and stop after two consecutive starts", () => {
     let state = unwrap(createGame(input, context));
     let emptyTurns = 0;
     for (let n = 0; n < 20; n++) {

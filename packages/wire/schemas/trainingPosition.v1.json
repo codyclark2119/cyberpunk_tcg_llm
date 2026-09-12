@@ -240,6 +240,20 @@
               "minimum": 0,
               "maximum": 2147483647
             },
+            "overtime": {
+              "type": "object",
+              "properties": {
+                "startedAfterTurn": {
+                  "type": "integer",
+                  "minimum": 2,
+                  "maximum": 9007199254740991
+                }
+              },
+              "required": [
+                "startedAfterTurn"
+              ],
+              "additionalProperties": false
+            },
             "outcome": {
               "type": "object",
               "properties": {
@@ -257,7 +271,8 @@
                   "type": "string",
                   "enum": [
                     "EMPTY_DRAW",
-                    "START_TURN_GIGS"
+                    "START_TURN_GIGS",
+                    "OVERTIME_GIGS"
                   ]
                 }
               },
@@ -2176,6 +2191,67 @@
                     "expires"
                   ],
                   "additionalProperties": false
+                },
+                "appliedPreventions": {
+                  "minItems": 2,
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "properties": {
+                      "kind": {
+                        "type": "string",
+                        "const": "PREVENT_NEXT_RIVAL_FIGHT_DEFEAT"
+                      },
+                      "id": {
+                        "type": "string",
+                        "pattern": "^[a-f0-9]{64}$"
+                      },
+                      "sourceId": {
+                        "type": "string",
+                        "minLength": 1,
+                        "maxLength": 200,
+                        "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$"
+                      },
+                      "controllerId": {
+                        "type": "string",
+                        "format": "uuid",
+                        "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+                      },
+                      "createdTurn": {
+                        "type": "integer",
+                        "exclusiveMinimum": 0,
+                        "maximum": 9007199254740991
+                      },
+                      "expires": {
+                        "type": "object",
+                        "properties": {
+                          "kind": {
+                            "type": "string",
+                            "const": "END_OF_TURN"
+                          },
+                          "turn": {
+                            "type": "integer",
+                            "exclusiveMinimum": 0,
+                            "maximum": 9007199254740991
+                          }
+                        },
+                        "required": [
+                          "kind",
+                          "turn"
+                        ],
+                        "additionalProperties": false
+                      }
+                    },
+                    "required": [
+                      "kind",
+                      "id",
+                      "sourceId",
+                      "controllerId",
+                      "createdTurn",
+                      "expires"
+                    ],
+                    "additionalProperties": false
+                  }
                 },
                 "defeats": {
                   "minItems": 1,
@@ -8906,6 +8982,42 @@
     "observation": {
       "type": "object",
       "properties": {
+        "overtime": {
+          "oneOf": [
+            {
+              "type": "object",
+              "properties": {
+                "status": {
+                  "type": "string",
+                  "const": "NORMAL"
+                },
+                "qualifyingTurnStarts": {
+                  "type": "integer",
+                  "minimum": 0,
+                  "maximum": 2
+                }
+              },
+              "required": [
+                "status",
+                "qualifyingTurnStarts"
+              ],
+              "additionalProperties": false
+            },
+            {
+              "type": "object",
+              "properties": {
+                "status": {
+                  "type": "string",
+                  "const": "ACTIVE"
+                }
+              },
+              "required": [
+                "status"
+              ],
+              "additionalProperties": false
+            }
+          ]
+        },
         "format": {
           "type": "string",
           "const": "DEMO_STARTER_V1"
@@ -9029,7 +9141,8 @@
               "type": "string",
               "enum": [
                 "EMPTY_DRAW",
-                "START_TURN_GIGS"
+                "START_TURN_GIGS",
+                "OVERTIME_GIGS"
               ]
             }
           },

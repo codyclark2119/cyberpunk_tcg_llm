@@ -1,0 +1,736 @@
+{
+  "schemaVersion": 1,
+  "status": "SOURCE_BLOCKED",
+  "reviewedAt": "2026-09-10",
+  "publisher": "Weird Co. / Cyberpunk TCG",
+  "authority": "cyberpunktcg.com official pages; their Netdeck-powered card, rules, FAQ and errata feeds. Other games/community speculation excluded.",
+  "scope": "Focused fresh Reboot source review only; no corpus refresh, runtime change or matrix continuation.",
+  "supersedesReview": "demo-matrix-reboot-review.v1.json",
+  "preservedFiles": {
+    "tests/fixtures/combat-restrictions-card-sources.v1.json": "728ac5138cd90b8f09fd32b66e819e6909c1c47e53e8e1f46b957e95182950f6",
+    "tests/fixtures/combat-restrictions-rules.v1.json": "06b1f6ccb1987af2a899c377081e6362b2822bc250c949a450a8732778fe8013",
+    "tests/fixtures/demo-matrix-reboot-review.v1.json": "60a20d2f529ecf2fdd5f3021ed2fb77de5aceda433fe6d51e863a2208b69868b",
+    "tests/fixtures/demo-match-matrix.v1.json": "acb86914affda81a8890ccc44e4f87d08188ea49c3d418b22ccc84f305faf062",
+    "tests/fixtures/demo-matrix-position-review.v1.json": "504b0cdeee513e917931b952e26d1e5742428ef79cd6f2e80326313d2411f71c",
+    "tests/fixtures/demo-matrix-overlap-replay.v1.json": "c352d1ae938b7b0d7ae5ce404aced7e68cfcdf41c22b9a4845cf7e4ba5c1dca7",
+    "tests/demo-match-policy.ts": "10ed8f35f9e9df49f29638ea30ae34193c6f2fc9ea25c99d84f019f8c5a61d1c",
+    "tests/demo-matrix-policy.ts": "1172f63828eae73bd4b8cff5a00fe59c0019c162861d7445061e63e4d38b854e",
+    "tests/demo-match-replay.ts": "d36cc16cbd5257e1f040b6e4f367fcb7adb012e4a99266dc8c697a2763076de6",
+    "tests/demo-matrix-config.ts": "e200fe6b2c278ac937c274877fb63f735358cac29050123d2451888ebc5ce2f2"
+  },
+  "runtime": {
+    "engine": {
+      "version": "0.4.0-overtime-1",
+      "artifactHash": "d79422b2512215c41bddbf17945ee061c660a5b04a845ea000b7dce6fdcd877d"
+    },
+    "ruleset": {
+      "id": "beta",
+      "version": "demo-overtime-1",
+      "hash": "0cf3dcd40766cd4b699e16842a0b6a66d3b1ecdf9b678986bf7686139dc800ab"
+    },
+    "contentManifestHash": "108d71feb46f427987016bd4935ab2dd563581861eee13c11a155ee9409cb6f2",
+    "cardId": "reboot-optics",
+    "revision": 1,
+    "revisionHash": "dbc84769ae27e11b67d34f83ed7d1be60b96d794289f65544b624265b86e1243"
+  },
+  "retrievals": [
+    {
+      "file": "card.html",
+      "url": "https://cyberpunktcg.com/cards/reboot-optics",
+      "retrievedAt": "2026-09-10T14:50:53.151846+00:00",
+      "status": 200,
+      "resolvedUrl": "https://cyberpunktcg.com/cards/reboot-optics",
+      "bytes": 41466,
+      "sha256": "2e300b4ac3ff774e47c0b47cc94bddd00b07b067a0aefb715eccbe884d91f3d6",
+      "lastModified": "Tue, 08 Sep 2026 20:46:29 GMT",
+      "contentType": "text/html"
+    },
+    {
+      "file": "rules.html",
+      "url": "https://cyberpunktcg.com/comprehensive-rules",
+      "retrievedAt": "2026-09-10T14:50:53.152169+00:00",
+      "status": 200,
+      "resolvedUrl": "https://cyberpunktcg.com/comprehensive-rules",
+      "bytes": 2186,
+      "sha256": "0c4cad5c46252e63829f6b4c607e451febc1fc461a996ab9fd3aa30d4a2e88fb",
+      "lastModified": "Tue, 08 Sep 2026 20:46:29 GMT",
+      "contentType": "text/html"
+    },
+    {
+      "file": "errata.html",
+      "url": "https://cyberpunktcg.com/errata",
+      "retrievedAt": "2026-09-10T14:50:53.152261+00:00",
+      "status": 200,
+      "resolvedUrl": "https://cyberpunktcg.com/errata",
+      "bytes": 32470,
+      "sha256": "5a90b75c355d2c090b2041d7f019721a240bcf291c734dbf1db50378a9306bdf",
+      "lastModified": "Tue, 08 Sep 2026 20:46:29 GMT",
+      "contentType": "text/html"
+    },
+    {
+      "file": "rules.json",
+      "url": "https://api.netdeck.gg/api/cyberpunk/comprehensive-rules",
+      "retrievedAt": "2026-09-10T14:50:53.152346+00:00",
+      "status": 200,
+      "resolvedUrl": "https://api.netdeck.gg/api/cyberpunk/comprehensive-rules",
+      "bytes": 377458,
+      "sha256": "b1e36a820eefa70885cee00b2116b55077dd90565554f81400bc1700e6cbe06a",
+      "lastModified": "Tue, 01 Sep 2026 19:28:10 GMT",
+      "contentType": "application/json; charset=utf-8"
+    },
+    {
+      "file": "faqs.json",
+      "url": "https://api.netdeck.gg/api/faqs/cyberpunk",
+      "retrievedAt": "2026-09-10T14:50:53.152412+00:00",
+      "status": 200,
+      "resolvedUrl": "https://api.netdeck.gg/api/faqs/cyberpunk",
+      "bytes": 239149,
+      "sha256": "a053078e5e26b4e8e1cbcb5945f2905fd861588d9f81fd971542fd5605b79a04",
+      "lastModified": null,
+      "contentType": "application/json; charset=utf-8"
+    },
+    {
+      "file": "card.json",
+      "url": "https://api.netdeck.gg/api/cards/cyberpunk/reboot-optics",
+      "retrievedAt": "2026-09-10T14:51:45.084751+00:00",
+      "status": 200,
+      "resolvedUrl": "https://api.netdeck.gg/api/cards/cyberpunk/reboot-optics",
+      "bytes": 5805,
+      "sha256": "902cc2bdc1909cc745d6e119084604653d030da8f025cb42bd9d0d89e402f5a4",
+      "lastModified": null,
+      "contentType": "application/json; charset=utf-8"
+    },
+    {
+      "file": "rules-faq.html",
+      "url": "https://cyberpunktcg.com/rules-faq",
+      "retrievedAt": "2026-09-10T14:51:45.085121+00:00",
+      "status": 200,
+      "resolvedUrl": "https://cyberpunktcg.com/rules-faq",
+      "bytes": 2186,
+      "sha256": "0c4cad5c46252e63829f6b4c607e451febc1fc461a996ab9fd3aa30d4a2e88fb",
+      "lastModified": "Tue, 08 Sep 2026 20:46:29 GMT",
+      "contentType": "text/html"
+    },
+    {
+      "file": "printing-fb096d3f-48eb-47c0-a065-81b39691e12f.webp",
+      "url": "https://dstcynss47vun.cloudfront.net/prod/cyberpunk/portal/fb096d3f-48eb-47c0-a065-81b39691e12f/render-mpvme4x3.webp",
+      "signedUrl": true,
+      "retrievedAt": "2026-09-10T14:56:41.903300+00:00",
+      "status": 200,
+      "bytes": 115848,
+      "sha256": "cdb5a01cb50091c0a3968d0862e30a089c18bc48fdcc848a7cddc3387c1d9ac4",
+      "lastModified": "Mon, 01 Jun 2026 19:47:12 GMT"
+    },
+    {
+      "file": "printing-06570cd2-25fc-4c5e-86e1-cba8000edc97.webp",
+      "url": "https://dstcynss47vun.cloudfront.net/prod/cyberpunk/portal/06570cd2-25fc-4c5e-86e1-cba8000edc97/render-mpvk8xn1.webp",
+      "signedUrl": true,
+      "retrievedAt": "2026-09-10T14:56:41.903640+00:00",
+      "status": 200,
+      "bytes": 115950,
+      "sha256": "9e76f27e5730abdf588b84250566c1791d433342739933c52d18a0e40045a008",
+      "lastModified": "Mon, 01 Jun 2026 18:47:10 GMT"
+    },
+    {
+      "file": "printing-270c2b70-35fb-4d47-b1c0-3df11141f880.webp",
+      "url": "https://dstcynss47vun.cloudfront.net/prod/cyberpunk/portal/270c2b70-35fb-4d47-b1c0-3df11141f880/render-mqfcuf4j.webp",
+      "signedUrl": true,
+      "retrievedAt": "2026-09-10T14:56:41.903737+00:00",
+      "status": 200,
+      "bytes": 115710,
+      "sha256": "e4dcac09e9bd59ec062f38c42479fa61166dce93d76845078d8245e05f974b6f",
+      "lastModified": "Mon, 15 Jun 2026 15:15:19 GMT"
+    },
+    {
+      "file": "printing-f393f463-2e62-4d77-aaf4-ed1bafaee8c5.webp",
+      "url": "https://dstcynss47vun.cloudfront.net/prod/cyberpunk/portal/f393f463-2e62-4d77-aaf4-ed1bafaee8c5/render-mpwcbi4p.webp",
+      "signedUrl": true,
+      "retrievedAt": "2026-09-10T14:56:41.903808+00:00",
+      "status": 200,
+      "bytes": 115850,
+      "sha256": "79361f99985634f605053cea42c5e2892cb4fce24ecc8de8cc96382f7f042a29",
+      "lastModified": "Tue, 02 Jun 2026 07:52:59 GMT"
+    },
+    {
+      "file": "printing-7a8acee6-f460-4d2d-aaa3-3d057ef7c36c.webp",
+      "url": "https://dstcynss47vun.cloudfront.net/prod/cyberpunk/portal/7a8acee6-f460-4d2d-aaa3-3d057ef7c36c/render-mqfcr2zn.webp",
+      "signedUrl": true,
+      "retrievedAt": "2026-09-10T14:56:41.903868+00:00",
+      "status": 200,
+      "bytes": 118774,
+      "sha256": "a8812097d40a57e7632149bcb3f8a8fd12119142a948d2b0e89e7886b7e61caf",
+      "lastModified": "Mon, 15 Jun 2026 15:12:43 GMT"
+    },
+    {
+      "file": "errata.json",
+      "url": "https://api.netdeck.gg/api/cyberpunk/content/query",
+      "signedUrl": false,
+      "retrievedAt": "2026-09-10T14:56:41.903922+00:00",
+      "status": 200,
+      "bytes": 4105,
+      "sha256": "7daccd21432f93f70237b4a0844debc9671c1326d6979af73bf0d7862b67c5a9",
+      "lastModified": null
+    }
+  ],
+  "retrievalNotes": [
+    "Official rules and FAQ HTML are SPA shells; full data were read from their JSON endpoints.",
+    "Unsigned printing URLs initially returned 403; retry with the current card API signed image_url succeeded for all five; temporary signing parameters are omitted from recorded image URLs.",
+    "Errata feed used a read-only CMS query: POST body {\"params\":{\"content_type\":\"cyberpunkPage\",\"fields.slug\":\"errata\",\"include\":3}}."
+  ],
+  "comparisons": {
+    "normalization": "Parse JSON; remove query only from signed HTTPS image URLs containing Signature= or Key-Pair-Id=. Preserve every other field and array order. Raw SHA-256 is distinct from canonical parsed-content identity.",
+    "card": {
+      "localFile": "cyberpunk_llm/data/raw/cards/reboot-optics.json",
+      "localSha256": "5e75a4492e9c5375c7dd24bfa5de6dbe9046d0ed50bacbf93a3525466362c9b9",
+      "normalizedEqual": true,
+      "canonicalHash": "26beb709278092f79d4809e436f1db5ff74c754872bd74605106faef399044ac"
+    },
+    "rules": {
+      "localFile": "cyberpunk_llm/data/raw/comprehensive_rules.json",
+      "localSha256": "054d2d2a4664e5b560304e0962e71b195467ad097cc4c62b2698fc57467a28dd",
+      "parsedEqual": true,
+      "canonicalHash": "55aa051534f75871d0124b1bc76f2e59f1123410f674a95cd3fa2b1eba3e3d79",
+      "nodeCount": 713,
+      "updatedAt": "2026-09-01T19:28:10.028Z"
+    },
+    "faq": {
+      "previousCaptureSha256": "3a482c2be10191762d946259e9c958fc0eb1a340615a01fac18f6f7c36ab49d1",
+      "normalizedEqual": true,
+      "canonicalHash": "19935d5b41b564af40c25e737e2b4e0a38998422a33627fe985e21241b4a2356",
+      "total": 270,
+      "updatedAt": "2026-09-08T20:55:01.135Z"
+    },
+    "errata": {
+      "localFile": "cyberpunk_llm/data/raw/errata.json",
+      "localSha256": "1203a6c268c94d9d670a9cc145f739957fd018fa23eab86628bac94984ce1d75",
+      "parsedEqual": true,
+      "canonicalHash": "4ab87efc61a5083aeb0f393d2cdd5a2c956c1bf0cbfd920714cc03f4b38e3433",
+      "blockUpdatedAt": "2026-09-07T06:54:35.485Z",
+      "entriesReviewed": [
+        "Johnny Silverhand: Never Stop Fighting (Beta Iconic Rare)",
+        "Kiroshi Optics",
+        "Nocturne OP55N1",
+        "Judy Álvarez: Nothing to Doubt"
+      ],
+      "matchingRebootEntries": []
+    }
+  },
+  "card": {
+    "completeNormalizedRecord": {
+      "id": "ad13a7bc-c49d-4166-8a9c-965e7bfa9b8f",
+      "external_id": "cb-reboot-optics",
+      "name": "Reboot Optics",
+      "subname": null,
+      "display_name": "Reboot Optics",
+      "slug": "reboot-optics",
+      "rules_text": "{Quick} The next time a rival Unit fights this turn, it doesn't defeat the opposing friendly Unit.",
+      "flavor_text": null,
+      "printing_id": "fb096d3f-48eb-47c0-a065-81b39691e12f",
+      "set": {
+        "code": "welcometonightcityretail",
+        "name": "Welcome to Night City — Retail"
+      },
+      "rarity": "Common",
+      "image_url": "https://dstcynss47vun.cloudfront.net/prod/cyberpunk/portal/fb096d3f-48eb-47c0-a065-81b39691e12f/render-mpvme4x3.webp",
+      "source_image_url": "https://dstcynss47vun.cloudfront.net/prod/cyberpunk/portal/fb096d3f-48eb-47c0-a065-81b39691e12f/render-mpvme4x3.webp",
+      "color": "Blue",
+      "card_type": "Program",
+      "is_eddiable": true,
+      "classifications": [
+        "Quickhack"
+      ],
+      "keywords": [],
+      "cost": 2,
+      "power": null,
+      "ram": 2,
+      "artist": "Miguel Valderrama",
+      "print_number": "136",
+      "printings": [
+        {
+          "id": "fb096d3f-48eb-47c0-a065-81b39691e12f",
+          "collector_number": "136",
+          "image_url": "https://dstcynss47vun.cloudfront.net/prod/cyberpunk/portal/fb096d3f-48eb-47c0-a065-81b39691e12f/render-mpvme4x3.webp",
+          "source_image_url": "https://dstcynss47vun.cloudfront.net/prod/cyberpunk/portal/fb096d3f-48eb-47c0-a065-81b39691e12f/render-mpvme4x3.webp",
+          "set": {
+            "code": "welcometonightcityretail",
+            "name": "Welcome to Night City — Retail"
+          },
+          "rarity": "Common",
+          "finish": null,
+          "artist": "Miguel Valderrama"
+        },
+        {
+          "id": "06570cd2-25fc-4c5e-86e1-cba8000edc97",
+          "collector_number": "β136",
+          "image_url": "https://dstcynss47vun.cloudfront.net/prod/cyberpunk/portal/06570cd2-25fc-4c5e-86e1-cba8000edc97/render-mpvk8xn1.webp",
+          "source_image_url": "https://dstcynss47vun.cloudfront.net/prod/cyberpunk/portal/06570cd2-25fc-4c5e-86e1-cba8000edc97/render-mpvk8xn1.webp",
+          "set": {
+            "code": "welcometonightcitybeta",
+            "name": "Welcome to Night City — Beta"
+          },
+          "rarity": "Common",
+          "finish": null,
+          "artist": "Miguel Valderrama"
+        },
+        {
+          "id": "270c2b70-35fb-4d47-b1c0-3df11141f880",
+          "collector_number": "020",
+          "image_url": "https://dstcynss47vun.cloudfront.net/prod/cyberpunk/portal/270c2b70-35fb-4d47-b1c0-3df11141f880/render-mqfcuf4j.webp",
+          "source_image_url": "https://dstcynss47vun.cloudfront.net/prod/cyberpunk/portal/270c2b70-35fb-4d47-b1c0-3df11141f880/render-mqfcuf4j.webp",
+          "set": {
+            "code": "theheistretailstarterdeck",
+            "name": "The Heist — Retail Starter Deck"
+          },
+          "rarity": "Common",
+          "finish": null,
+          "artist": "Miguel Valderrama"
+        },
+        {
+          "id": "f393f463-2e62-4d77-aaf4-ed1bafaee8c5",
+          "collector_number": "β020",
+          "image_url": "https://dstcynss47vun.cloudfront.net/prod/cyberpunk/portal/f393f463-2e62-4d77-aaf4-ed1bafaee8c5/render-mpwcbi4p.webp",
+          "source_image_url": "https://dstcynss47vun.cloudfront.net/prod/cyberpunk/portal/f393f463-2e62-4d77-aaf4-ed1bafaee8c5/render-mpwcbi4p.webp",
+          "set": {
+            "code": "theheistbetastarterdeck",
+            "name": "The Heist — Beta Starter Deck"
+          },
+          "rarity": "Common",
+          "finish": null,
+          "artist": "Miguel Valderrama"
+        },
+        {
+          "id": "7a8acee6-f460-4d2d-aaa3-3d057ef7c36c",
+          "collector_number": "015",
+          "image_url": "https://dstcynss47vun.cloudfront.net/prod/cyberpunk/portal/7a8acee6-f460-4d2d-aaa3-3d057ef7c36c/render-mqfcr2zn.webp",
+          "source_image_url": "https://dstcynss47vun.cloudfront.net/prod/cyberpunk/portal/7a8acee6-f460-4d2d-aaa3-3d057ef7c36c/render-mqfcr2zn.webp",
+          "set": {
+            "code": "mercdemodeck",
+            "name": "Merc Demo Deck"
+          },
+          "rarity": "Common",
+          "finish": null,
+          "artist": "Miguel Valderrama"
+        }
+      ],
+      "selected_printing_id": "fb096d3f-48eb-47c0-a065-81b39691e12f",
+      "legality": "legal"
+    },
+    "executionMetadata": {
+      "scope": "COMBAT_RESTRICTIONS_V1",
+      "status": "SUPPORTED"
+    },
+    "mechanics": {
+      "keywords": [
+        "QUICK"
+      ],
+      "abilities": [
+        {
+          "id": "next-rival-fight-prevention@1",
+          "trigger": "WHEN_PLAYED",
+          "conditions": [],
+          "cost": {
+            "kind": "NONE"
+          },
+          "effects": [
+            {
+              "kind": "CREATE_NEXT_RIVAL_FIGHT_PREVENTION"
+            }
+          ]
+        }
+      ],
+      "modifiers": []
+    },
+    "sellProfile": {
+      "allowed": true,
+      "baseEddieValue": 1
+    },
+    "immutableRevisionUnchanged": true
+  },
+  "printingReview": [
+    {
+      "id": "fb096d3f-48eb-47c0-a065-81b39691e12f",
+      "setCode": "welcometonightcityretail",
+      "collectorNumber": "136",
+      "result": "Visual review: same Quick next-rival-fight text, Program/Quickhack, blue RAM 2, cost 2 and Sell icon; no extra restriction or consumption text."
+    },
+    {
+      "id": "06570cd2-25fc-4c5e-86e1-cba8000edc97",
+      "setCode": "welcometonightcitybeta",
+      "collectorNumber": "β136",
+      "result": "Visual review: same Quick next-rival-fight text, Program/Quickhack, blue RAM 2, cost 2 and Sell icon; no extra restriction or consumption text."
+    },
+    {
+      "id": "270c2b70-35fb-4d47-b1c0-3df11141f880",
+      "setCode": "theheistretailstarterdeck",
+      "collectorNumber": "020",
+      "result": "Visual review: same Quick next-rival-fight text, Program/Quickhack, blue RAM 2, cost 2 and Sell icon; no extra restriction or consumption text."
+    },
+    {
+      "id": "f393f463-2e62-4d77-aaf4-ed1bafaee8c5",
+      "setCode": "theheistbetastarterdeck",
+      "collectorNumber": "β020",
+      "result": "Visual review: same Quick next-rival-fight text, Program/Quickhack, blue RAM 2, cost 2 and Sell icon; no extra restriction or consumption text."
+    },
+    {
+      "id": "7a8acee6-f460-4d2d-aaa3-3d057ef7c36c",
+      "setCode": "mercdemodeck",
+      "collectorNumber": "015",
+      "result": "Visual review: same Quick next-rival-fight text, Program/Quickhack, blue RAM 2, cost 2 and Sell icon; no extra restriction or consumption text."
+    }
+  ],
+  "rulesReviewed": [
+    {
+      "id": "1.7.2.1",
+      "stableAnchor": "rule-3dabc665-1d56-5362-ac53-52558a94d3f3",
+      "text": "Pieces you control are considered “friendly” pieces."
+    },
+    {
+      "id": "1.7.2.2",
+      "stableAnchor": "rule-926e29f1-28ec-5b44-8122-9b1993b1b355",
+      "text": "Pieces your Rival controls are considered “rival” pieces."
+    },
+    {
+      "id": "2.6",
+      "stableAnchor": "rule-249b130a-a6ae-5a34-a1c1-72fac6288797",
+      "text": "If an effect on a card allows or requires you to do something but another effect prevents it, the preventing effect always takes precedence.\n\n> **EXAMPLE:** A Rival plays a Unit with [ADRENALINE], which allows it to attack the turn it’s played. But a friendly Unit’s card text reads “Rival Units can't attack the turn they're played.” The preventing of the attack takes precedence, so the rival Unit can’t attack this turn."
+    },
+    {
+      "id": "8.16.2",
+      "stableAnchor": "rule-03982c0b-0739-5805-abe5-4a8cb1ccdc42",
+      "text": "Remove effects that last “this turn” and variations thereof."
+    },
+    {
+      "id": "9.19",
+      "stableAnchor": "rule-ec31f1aa-ce52-56f5-994b-976159630a9f",
+      "text": "After resolving all effects triggered by the fight, resolve the fight’s result."
+    },
+    {
+      "id": "9.19.1",
+      "stableAnchor": "rule-a4b426bb-bc68-5f77-a1d4-35f6c6bde900",
+      "text": "When a Unit loses a fight, the opposing Unit defeats it as a result."
+    },
+    {
+      "id": "9.19.1.1",
+      "stableAnchor": "rule-e51e925a-5b8d-5935-9a70-30c1a9c86458",
+      "text": "When a Unit is defeated, its owner moves it to their trash."
+    },
+    {
+      "id": "9.19.2",
+      "stableAnchor": "rule-47755a0b-c4f0-5c10-a437-a8988ec7f83f",
+      "text": "A Unit with 0 power cannot defeat a Unit as the result of a fight."
+    },
+    {
+      "id": "9.19.3",
+      "stableAnchor": "rule-e0437823-1553-56b9-b683-49f87134c97d",
+      "text": "If an effect prevents a Unit from being defeated in a fight, it is still a loser that has lost the fight, it only ignores the resulting defeat."
+    },
+    {
+      "id": "10.1",
+      "stableAnchor": "rule-c219ebad-8ed1-56b8-a35f-73ca6412537b",
+      "text": "An effect is card text that affects the game. Card text is the source of effects."
+    },
+    {
+      "id": "10.1.2",
+      "stableAnchor": "rule-1eee554a-2ad4-59e6-9542-47c4046de6a4",
+      "text": "Each separate paragraph on a card is considered a single effect."
+    },
+    {
+      "id": "10.1.4",
+      "stableAnchor": "rule-e56ed385-9b53-5b7e-a026-567e4ec6dc29",
+      "text": "If you control the source of an effect, it is considered “your” effect. You are the one who resolves it."
+    },
+    {
+      "id": "10.2",
+      "stableAnchor": "rule-6b8f9b42-8aa3-55da-b138-5d08abd5e28b",
+      "text": "To “resolve” an effect, follow the instructions of that effect in the order they appear."
+    },
+    {
+      "id": "10.2.1",
+      "stableAnchor": "rule-e4980f30-535f-5d56-af07-6463dd07c656",
+      "text": "Always resolve as much of an effect as possible. See [GOLDEN RULES](#rule-68b314b6-4bba-5507-b8f0-929a8baff26d) > [Resolve as Much as Possible](#rule-a1137877-3824-5786-bc49-9ca22d5054ba)."
+    },
+    {
+      "id": "10.2.2",
+      "stableAnchor": "rule-c1a81d95-1ab1-5e2c-9a25-6c150f1f2fde",
+      "text": "If an effect instructs both players to act at the same time, the turn player performs their actions first, followed by their Rival."
+    },
+    {
+      "id": "10.2.3",
+      "stableAnchor": "rule-ba829cde-068c-5a6c-8bf6-9361a2115ae3",
+      "text": "Once an effect starts resolving, you cannot play cards, activate effects, or resolve other pending effects until the current effect finishes resolving."
+    },
+    {
+      "id": "10.3",
+      "stableAnchor": "rule-4e258414-b0ae-53c4-97d3-e33df227d07b",
+      "text": "An effect may include conditions. A “condition” is a requirement that must be true for an effect to apply, become pending, and resolve. (Conditions are often “if” or “when” clauses.)"
+    },
+    {
+      "id": "10.3.1",
+      "stableAnchor": "rule-7131180b-c8fe-584c-b173-068e40487e45",
+      "text": "If a condition is false, do not apply its corresponding effect."
+    },
+    {
+      "id": "10.3.3",
+      "stableAnchor": "rule-b6370cc1-5a38-5e8f-b95a-96142d534b25",
+      "text": "A condition within an effect’s resolution is checked when that part of the effect resolves."
+    },
+    {
+      "id": "10.4",
+      "stableAnchor": "rule-34cadb6a-0e7e-56bd-9599-a2b3f1f6b24f",
+      "text": "There are four types of effects: triggered effects, activated effects, permanent effects, and replacement effects."
+    },
+    {
+      "id": "10.4.1",
+      "stableAnchor": "rule-4735d48b-8a62-5e61-a4e9-240fad301797",
+      "text": "A “triggered effect” becomes pending when its trigger condition is met."
+    },
+    {
+      "id": "10.4.3",
+      "stableAnchor": "rule-c5316d39-f7f3-54ef-bef1-c9b1f608aeda",
+      "text": "A “persistent effect” continuously applies while its conditions (if any) are met."
+    },
+    {
+      "id": "10.4.4",
+      "stableAnchor": "rule-16e13945-7a99-5343-916d-32f7aa03102d",
+      "text": "A “replacement effect” replaces one game action or process with another."
+    },
+    {
+      "id": "10.6",
+      "stableAnchor": "rule-57d0bfe8-9057-54f2-b4b3-f66bd463a437",
+      "text": "An effect is “invalid” if it cannot apply according to its text, the game rules, or the current game state."
+    },
+    {
+      "id": "10.6.1",
+      "stableAnchor": "rule-2e69b1fb-d715-56b0-92e7-193fcd6205f3",
+      "text": "If all of an effect is invalid, ignore that effect."
+    },
+    {
+      "id": "10.6.2",
+      "stableAnchor": "rule-0528a360-ee57-5639-889e-ca40eb7f6d1b",
+      "text": "If part of an effect is invalid, ignore the invalid part and resolve as much of the remaining effect as possible."
+    },
+    {
+      "id": "10.10",
+      "stableAnchor": "rule-1d42cb6e-adf4-578e-81b6-6640a93ea601",
+      "text": "If an effect becomes invalid after it activates or becomes pending, still resolve as much of the effect as possible."
+    },
+    {
+      "id": "10.11",
+      "stableAnchor": "rule-b3b1dfc5-d8f3-5e31-a4a8-312381cb88b4",
+      "text": "A “pending” effect is an effect that is waiting to resolve."
+    },
+    {
+      "id": "10.12",
+      "stableAnchor": "rule-73aaaba0-4ad8-5a17-8a2b-fbfef8b44cb6",
+      "text": "If you have multiple pending effects, you may resolve them in any order."
+    },
+    {
+      "id": "10.13",
+      "stableAnchor": "rule-7efe9c08-6370-57fd-8f25-cdba7841252c",
+      "text": "If both players control pending effects at the same time, the turn player resolves all their pending effects before their Rival resolves all of theirs."
+    },
+    {
+      "id": "10.14",
+      "stableAnchor": "rule-ed24f25b-1fdd-5a69-a719-ca9dcdfb5c2e",
+      "text": "If a new effect triggers while resolving one, the new effect enters pending too. Finish resolving the current pending effect before resolving any new pending effects."
+    },
+    {
+      "id": "10.15",
+      "stableAnchor": "rule-dcfa1f54-b387-5591-b1a4-c3bd3980a13f",
+      "text": "Once an effect is pending, later changes to the game state do not stop that effect from resolving (unless the effect includes a condition that must be true during resolution)."
+    },
+    {
+      "id": "10.15.1",
+      "stableAnchor": "rule-57944814-ddbe-5b6d-86f0-99561a9714f4",
+      "text": "If a pending effect includes a condition that must be true during resolution, that condition must still be true when the effect resolves."
+    },
+    {
+      "id": "10.16.1",
+      "stableAnchor": "rule-1764baec-eb76-5451-ab53-fde747ce4b51",
+      "text": "A triggered effect becomes pending when (and only if) its trigger condition is met."
+    },
+    {
+      "id": "10.16.2",
+      "stableAnchor": "rule-923aa8e8-7c26-5cd7-a8ba-e460359c74b9",
+      "text": "If multiple triggered effects trigger at the same time, they all become pending."
+    },
+    {
+      "id": "10.17",
+      "stableAnchor": "rule-d6f4f0ec-fd6e-506a-a0f0-178b60e75432",
+      "text": "Triggered effects may use timing labels such as [ATTACK], [CALL], [PLAY], or [DEFEATED], or timing text such as “when,” “at the start of,” “at the end of,” and variations thereof. See [TERMS](#rule-d3031204-40a4-51fb-930c-feb00b9d3192) > [Trigger Keywords](#rule-1e209da6-0bd1-5b07-9aff-71f536048aac)."
+    },
+    {
+      "id": "10.21",
+      "stableAnchor": "rule-76a8a196-457e-576f-8e50-c45868d76d21",
+      "text": "Once an activated effect is activated, it resolves even if its source leaves the area it was in."
+    },
+    {
+      "id": "10.22",
+      "stableAnchor": "rule-4177d336-cd77-5ccc-8b37-4f4294651e83",
+      "text": "A persistent effect continuously applies while it is active."
+    },
+    {
+      "id": "10.22.1",
+      "stableAnchor": "rule-da2cbcd4-3394-5281-8ff9-70a55bbdaf72",
+      "text": "A persistent effect is not activated."
+    },
+    {
+      "id": "10.22.2",
+      "stableAnchor": "rule-d6535522-a621-5cc2-a51c-16c3aa968a7d",
+      "text": "A persistent effect never becomes pending."
+    },
+    {
+      "id": "10.22.3",
+      "stableAnchor": "rule-b27f7dfb-74dc-532f-b3a3-941a0a75db93",
+      "text": "A persistent effect applies only while its source is in the area where that effect is active."
+    },
+    {
+      "id": "10.23",
+      "stableAnchor": "rule-6925e714-9ab6-537f-9f6e-032ec7fb0d05",
+      "text": "If a persistent effect has a duration, it applies only for that duration.\n\n> **EXAMPLE:** A Unit's effect text reads \"Other friendly Units have +2 power while attacking.” The Unit only gains +2 from the moment the Unit attacks until the attack ends."
+    },
+    {
+      "id": "10.23.1",
+      "stableAnchor": "rule-375719e7-104c-503f-bab9-81da967292cc",
+      "text": "When a persistent effect’s duration ends, that effect stops applying immediately once there are no other pending effects."
+    },
+    {
+      "id": "10.24",
+      "stableAnchor": "rule-9d86d6a1-cdb3-5ead-9739-432d5c37b5b4",
+      "text": "A replacement effect replaces one action or process with another. (They often use “would” and “instead.”)\n\n> **EXAMPLE:** A friendly Unit inherits the effect text from a Gear that reads \"If this Unit would be defeated, defeat its \"DEADMAN TRANSMITTER\" instead.” The effect “defeat [this Unit’s] \"DEADMAN TRANSMITTER\"” replaces the game process of defeating the Unit."
+    },
+    {
+      "id": "10.25",
+      "stableAnchor": "rule-0fba57c7-034f-54ab-9e75-4a1ed2e22df3",
+      "text": "A replacement effect applies before (and instead of) the action or process it replaces. The replaced action or process does not occur at all."
+    },
+    {
+      "id": "10.26",
+      "stableAnchor": "rule-ed3da26f-ba87-50fd-ad4a-4caa26c66b3c",
+      "text": "If a replacement effect is optional, the player who controls that replacement effect may choose not to apply it."
+    },
+    {
+      "id": "10.27",
+      "stableAnchor": "rule-70953021-9c2f-5d5c-9cb9-ca253cf95820",
+      "text": "If it’s not possible to perform the replacement, that replacement effect cannot be applied."
+    },
+    {
+      "id": "10.28",
+      "stableAnchor": "rule-783fea6c-f051-522f-a726-09f3e45b53f8",
+      "text": "If one or more replacement effects could apply to the same action or process, apply mandatory replacement effects before optional replacement effects."
+    },
+    {
+      "id": "10.28.1",
+      "stableAnchor": "rule-75207e41-2cd1-5b5b-b266-a6497797e331",
+      "text": "If multiple mandatory replacement effects could apply to the same action or process, the affected player (or the controller of the affected card) chooses which one to apply."
+    },
+    {
+      "id": "10.28.2",
+      "stableAnchor": "rule-a66e3600-b445-5c5b-b911-5f31f703c235",
+      "text": "If multiple optional replacement effects are chosen to apply to the same action or process, the affected player (or the controller of the affected card) chooses which one to apply."
+    },
+    {
+      "id": "10.29",
+      "stableAnchor": "rule-fae2e3c5-1657-5769-9ae8-5053b3b312db",
+      "text": "After a replacement effect is applied, check whether any other replacement effects can still apply to the new action or process."
+    },
+    {
+      "id": "10.29.1",
+      "stableAnchor": "rule-08ee013c-c193-508b-9d04-73ca7cf30615",
+      "text": "Once a replacement effect has been applied to an action or process, that same replacement effect cannot apply to that same action or process again."
+    },
+    {
+      "id": "10.30",
+      "stableAnchor": "rule-c5110662-a274-5193-96a4-183148936592",
+      "text": "A replacement effect from a game mechanic supersedes mandatory replacement effects."
+    },
+    {
+      "id": "10.31",
+      "stableAnchor": "rule-8a3e8673-80c4-54bd-b699-2020465faca8",
+      "text": "If an effect instructs a player to choose, select, or otherwise make a choice, that choice is made when the effect instructs the player to make that choice."
+    },
+    {
+      "id": "10.33",
+      "stableAnchor": "rule-2d0107be-686a-528d-bbad-8a803e0f91d8",
+      "text": "If an effect instructs multiple players to make choices at the same time, the turn player makes their choices first, followed by their Rival."
+    }
+  ],
+  "faqRecords": [
+    {
+      "id": "3bfca564-d31f-46c6-b15c-88c7e6f31f5e",
+      "scope": "game",
+      "question": "When I have mulitple [ATTACK] effects that activate and go into pending at the same time. Can I choose any order to resolve them?",
+      "answer": "Yes",
+      "published_at": "2026-09-04T22:57:19.946Z",
+      "cardId": null
+    },
+    {
+      "id": "d05760ef-d02e-4be9-9cda-aee7a2fe196f",
+      "scope": "game",
+      "question": "If a Unit or Legend with [DEFEATED] would be defeated but is prevented by an effect. Will I still get the [DEFEATED] effect?",
+      "answer": "No",
+      "published_at": "2026-09-04T22:57:19.946Z",
+      "cardId": null
+    },
+    {
+      "id": "e18d31dd-7ee1-4494-8098-a72db45bfa2d",
+      "scope": "card",
+      "question": "If my Unit loses a fight but isn't defeated due to this effect, does it still count as losing the fight?",
+      "answer": "Yes.",
+      "published_at": "2026-09-04T22:57:19.946Z",
+      "cardId": "ad13a7bc-c49d-4166-8a9c-965e7bfa9b8f"
+    }
+  ],
+  "rebootFaqIds": [
+    "e18d31dd-7ee1-4494-8098-a72db45bfa2d"
+  ],
+  "sourceSearch": {
+    "domains": [
+      "cyberpunktcg.com",
+      "netdeck.gg"
+    ],
+    "terms": [
+      "Reboot Optics",
+      "two Reboot Optics",
+      "multiple Reboot Optics",
+      "multiple next-time effects",
+      "multiple prevention effects",
+      "replacement ordering",
+      "same event replacement",
+      "redundant prevention",
+      "next rival Unit fight"
+    ],
+    "method": "Publisher-site search plus search across all 270 current FAQ entries and all 713 rule nodes. Read the complete effects chapter and relevant fight/cleanup provisions.",
+    "result": "No specific overlap ruling located; no general next-time consumption provision identifies the redundant effect outcome.",
+    "limitations": "Public indexed sources and published feeds only. No private publisher/Discord ruling obtained; absence of a located ruling is not proof that none exists anywhere. Two unqualified searches returned unrelated Cyberpunk 2077/game and optics material, which was discarded."
+  },
+  "models": [
+    {
+      "id": "A",
+      "outcome": "Both consume at the first qualifying fight; none remains.",
+      "support": "Natural event-bound reading of next time; preserves current single-copy consumption even if no defeat would occur.",
+      "missing": "Explicit rule for multiple redundant future fight effects consuming together; their classification and any ordering."
+    },
+    {
+      "id": "B",
+      "outcome": "One consumes; one remains for a later qualifying fight.",
+      "support": "Potential replacement-recheck interpretation if redundant unused prevention retains its duration.",
+      "missing": "Authority for that retained duration and which occurrence is used. Applying only on attempted defeat contradicts existing single-copy behavior and cannot be assumed."
+    },
+    {
+      "id": "C",
+      "outcome": "A rules-defined player orders applicable effects, then applicability is rechecked.",
+      "support": "10.28.1/10.29 if mandatory replacements; 10.12/10.13 if pending effects.",
+      "missing": "Classification and replaced process, choice actor and whether the unused occurrence expires at the first fight. Ordering alone does not answer consumption."
+    },
+    {
+      "id": "D",
+      "outcome": "Another explicitly ruled result.",
+      "support": null,
+      "missing": "No such source located."
+    }
+  ],
+  "decision": "No unique sourced overlap outcome. Retain singleton validation, second-play guard and suppressed-interaction detector; no new choice, event, policy, hash or card revision; broad matrix paused.",
+  "publisherQuestion": "If two Reboot Optics have resolved in the same turn before any rival Unit fights, what happens on the next qualifying fight? Are both effects consumed by that same fight, or does one remain for a later fight? If only one applies, who determines which effect is used?",
+  "publisherQuestionSent": false
+}

@@ -1,3 +1,4 @@
+import { enterOvertimeAfterTurn, overtimeEnabled } from "./overtime";
 import { delayedEffectsEnabled } from "./delayed-effect-support";
 import { takeEndTurnOrigin } from "./delayed-effects";
 import { failure } from "@tcg/domain";
@@ -7,8 +8,8 @@ import { endTurnEnabled } from "./end-turn-support";
 import { expireTemporaryPower } from "./temporary-power";
 import { expireFightPreventions } from "./fight-prevention";
 export function endTurn(m: TurnMutation) {
-    // Retain the unsupported-overtime preflight: no partially committed turn-ending action.
-    if ((m.state.timing.emptyFixerStarts ?? 0) >= 2) return failure("UNSUPPORTED_OVERTIME", "Two consecutive starts with both Fixers empty; overtime requires a reviewed implementation");
+    // Historical policy pins retain their atomic preflight; supported overtime waits for all end work.
+    if (!overtimeEnabled(m.context) && (m.state.timing.emptyFixerStarts ?? 0) >= 2) return failure("UNSUPPORTED_OVERTIME", "Two consecutive starts with both Fixers empty; overtime requires a reviewed implementation");
     m.phase("TURN_END");
     return endTurnEnabled(m.context) || delayedEffectsEnabled(m.context) ? beginTriggers(m, takeEndTurnOrigin(m)) : finishEndTurn(m);
 }
@@ -23,6 +24,7 @@ export function finishEndTurn(m: TurnMutation) {
         }
     expireTemporaryPower(m); expireFightPreventions(m);
     m.emit({ kind: "TURN_ENDED", playerId: actor, turn: s.timing.turn });
+    if (enterOvertimeAfterTurn(m)) return { ok: true as const, value: null };
     s.timing.activePlayer = s.match.playerOrder[(s.players[actor].seat + 1) % s.match.playerOrder.length]; s.timing.turn++;
     return m.startTurn(); // Resets the complete current-turn history and CALL/SELL usage exactly here.
 }

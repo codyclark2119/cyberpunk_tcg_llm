@@ -6,7 +6,8 @@ import { combatResolutionEnabled } from "./combat-resolution-policy";
 import { reactEnabled } from "./react-support";
 import { gearEnabled } from "./attachments";
 import { z } from "zod";
-import { FirstPlayerRollPairSchema, KeywordSchema, FightResultSchema, TriggerBindingSchema, CardReferenceSchema, TemporaryPowerModifierSchema, TurnStepSchema, ObservationHashSchema, PlayerIdSchema, ZoneSchema, GigInstanceStateSchema, hashCanonical, failure, success, type GameState, type PlayerId } from "@tcg/domain";
+import { overtimeEnabled } from "./overtime";
+import { OvertimeObservationSchema, FirstPlayerRollPairSchema, KeywordSchema, FightResultSchema, TriggerBindingSchema, CardReferenceSchema, TemporaryPowerModifierSchema, TurnStepSchema, ObservationHashSchema, PlayerIdSchema, ZoneSchema, GigInstanceStateSchema, hashCanonical, failure, success, type GameState, type PlayerId } from "@tcg/domain";
 import { validateState, freeze, type EngineContext } from "./state";
 import { RulesView } from "./view";
 const visibleCard = z.strictObject({
@@ -14,10 +15,11 @@ const visibleCard = z.strictObject({
     knownToSeats: z.array(z.number().int().nonnegative()).optional(),
     rememberedContent: CardReferenceSchema.optional(), effectiveKeywords: z.array(KeywordSchema).optional(), restrictions: z.array(z.enum(["CANNOT_ATTACK", "CANNOT_BE_BLOCKED"])).optional(), publicId: z.string(), zone: ZoneSchema, ownerSeat: z.number().int(), controllerSeat: z.number().int(), face: z.enum(["UP", "DOWN"]), readiness: z.enum(["READY", "SPENT"]), lagging: z.boolean().optional(), attachments: z.array(z.string()).optional(), effectivePower: z.number().int().nullable().optional(), content: CardReferenceSchema.optional(), damage: z.number().int(), counters: z.record(z.string(), z.number().int()) });
 export const PlayerObservationSchema = z.strictObject({
+    overtime: OvertimeObservationSchema.optional(),
     format: z.literal("DEMO_STARTER_V1").optional(),
     firstPlayerRolls: z.array(FirstPlayerRollPairSchema).min(1).optional(),
     selectedSeat: z.number().int().min(0).max(1).optional(),
-    schemaVersion: z.literal(1), viewerSeat: z.number().int(), turn: z.number().int(), activeSeat: z.number().int(), actingSeat: z.number().int(), window: z.enum(["EDDIE_READY_SELECTION", "DISCARD_SELECTION", "TRIGGER_ORDER_SELECTION", "OPTIONAL_TRIGGER_SELECTION","GIG_STEAL_SELECTION", "DEFEAT_ORDER_SELECTION", "SETUP", "MAIN", "CHOOSE_GIG", "PAYMENT_SELECTION", "TARGET_SELECTION", "AMOUNT_SELECTION", "ATTACK_TARGET_SELECTION", "RIVAL_REACT", "COMBAT_RESOLUTION_PENDING", "RESOLVING", "FINISHED"]), resolutionStage: z.string(), step: TurnStepSchema.optional(), outcome: z.strictObject({ winnerSeat: z.number().int(), reason: z.enum(["EMPTY_DRAW", "START_TURN_GIGS"]) }).optional(),
+    schemaVersion: z.literal(1), viewerSeat: z.number().int(), turn: z.number().int(), activeSeat: z.number().int(), actingSeat: z.number().int(), window: z.enum(["EDDIE_READY_SELECTION", "DISCARD_SELECTION", "TRIGGER_ORDER_SELECTION", "OPTIONAL_TRIGGER_SELECTION","GIG_STEAL_SELECTION", "DEFEAT_ORDER_SELECTION", "SETUP", "MAIN", "CHOOSE_GIG", "PAYMENT_SELECTION", "TARGET_SELECTION", "AMOUNT_SELECTION", "ATTACK_TARGET_SELECTION", "RIVAL_REACT", "COMBAT_RESOLUTION_PENDING", "RESOLVING", "FINISHED"]), resolutionStage: z.string(), step: TurnStepSchema.optional(), outcome: z.strictObject({ winnerSeat: z.number().int(), reason: z.enum(["EMPTY_DRAW", "START_TURN_GIGS", "OVERTIME_GIGS"]) }).optional(),
     combat: z.strictObject({ stage: z.enum(["TRIGGER_RESOLUTION","ATTACK_TARGET_SELECTION", "RIVAL_REACT", "COMBAT_RESOLUTION_PENDING", "GIG_STEAL_SELECTION", "DEFEAT_ORDER_SELECTION"]), attackerId: z.string(), attackingSeat: z.number().int(), defendingSeat: z.number().int(), target: z.discriminatedUnion("kind", [z.strictObject({ kind: z.literal("CARD"), cardInstanceId: z.string() }), z.strictObject({ kind: z.literal("GIG_AREA"), playerSeat: z.number().int() })]).nullable() }).optional(),
     unsupportedCapabilities: z.array(z.enum(["UNSUPPORTED_RIVAL_REACT", "UNSUPPORTED_COMBAT_RESOLUTION"])).optional(),
     gigSteal: z.strictObject({ selectedIds: z.array(z.string()), remaining: z.number().int().positive() }).optional(),
@@ -69,6 +71,7 @@ export function observe(state: GameState, actor: PlayerId, context: EngineContex
         ...(state.resolution.triggerContinuation.origin.kind === "FIGHT" ? { fightResult: state.resolution.triggerContinuation.origin.result } : {})
     } : {};
     return success(freeze(PlayerObservationSchema.parse({ schemaVersion: 1, ...triggerObservation,
+        ...(overtimeEnabled(context) && !state.setup ? { overtime: state.match.overtime ? { status: "ACTIVE" } : { status: "NORMAL", qualifyingTurnStarts: state.timing.emptyFixerStarts } } : {}),
         ...(state.match.format ? { format: state.match.format, firstPlayerRolls: state.firstPlayerRolls,
             selectedSeat: state.firstPlayerRolls!.at(-1)![0] > state.firstPlayerRolls!.at(-1)![1] ? 0 : 1 } : {}),
         ...(state.delayedEffects ? { delayedEffects: state.delayedEffects.map(d => ({ sourceId: d.sourceId, source: d.source, subjectId: d.subjectId, controllerSeat: seat(d.controllerId), createdTurn: d.createdTurn, timing: "END_OF_TURN", condition: "SUBJECT_IS_UNIT_NAMED_V", readyCount: 2 })) } : {}),

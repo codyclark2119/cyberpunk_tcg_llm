@@ -229,10 +229,10 @@ test("constructed keeps binary selection, old event shape and no Demo observatio
     const forged = GameStateSchema.parse(result.state); forged.firstPlayerRolls = [[1, 2]];
     failureCode(validateState(forged, ctx), "UNSUPPORTED_SETUP_ROLLS");
 });
-test("only real reviewed immutable revisions; new ruleset keeps overtime UNSUPPORTED and source conflict historical", () => {
+test("only real reviewed immutable revisions; new ruleset supports standard overtime and source conflict historical", () => {
     assert.equal(context.content.cards.length, 29);
     for (const e of demoReferences.flatMap(m => m.entries)) assert.equal(hashCanonical(context.content.cards.find(c => c.id === e.cardId)), e.revisionHash);
-    assert.equal(context.content.ruleset.gameplay!.turnSlice!.overtime, "UNSUPPORTED");
+    assert.equal(context.content.ruleset.gameplay!.turnSlice!.overtime, "STANDARD_OVERTIME_V1");
     assert.equal(policy.authority, "APPLICATION_DECISION"); assert.equal(policy.sourceConflict, "HISTORICALLY_UNRESOLVED");
     for (const [name, hash] of Object.entries(policy.reviewArtifacts)) assert.equal(createHash("sha256").update(readFileSync("tests/fixtures/" + name)).digest("hex"), hash);
 });

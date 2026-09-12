@@ -1,5 +1,7 @@
 # Combat restrictions and prevention milestone
 
+**Successor review (September 10, 2026): [Reboot multiplicity](reboot-multiplicity-report.md) remains SOURCE BLOCKED.** Fresh official card, all five printings, FAQ, rules and errata do not uniquely settle overlap consumption. The single-copy runtime and suppression guard remain unchanged; all three exact prefixes are preserved and the matrix remains paused. Historical findings below retain their original scope.
+
 Implemented the bounded `COMBAT_RESTRICTIONS_V1` milestone on 2026-09-08. Reboot Optics prevents the relevant friendly defeat without changing fight results; Corpo Security cannot attack but can Block; MT0D12 Flathead conditionally forbids blocking while preserving other reactions. Psycho Squad and Emergency Atlus are admitted as ordinary Units. All nine prior replay families remain green, with three new checked-in families and a legal expiration branch. No commit, staging or push was performed.
 
 ## Runtime

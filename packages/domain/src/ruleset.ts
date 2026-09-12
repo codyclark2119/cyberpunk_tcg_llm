@@ -37,7 +37,7 @@ export const TurnSlicePolicySchema = z.strictObject({
     startTurnGigWinCount: z.number().int().positive(),
     setup: z.enum(["AGREED_FIRST_PLAYER_DECLINED_MULLIGANS_AND_CUTS", "ENGINE_SETUP_V1"]),
     callEffects: z.enum(["SINGLE_UNCONDITIONAL_DRAW", "REVIEWED_CALL_V1"]),
-    overtime: z.literal("UNSUPPORTED")
+    overtime: z.enum(["UNSUPPORTED", "STANDARD_OVERTIME_V1"])
 });
 export const GameplayPolicySchema = z.strictObject({
     initialization: z.enum(["UNSUPPORTED", "ORDERED_FIXTURE", "TURN_SLICE_V1"]),
@@ -59,6 +59,9 @@ export const RulesetSchema = z.strictObject({
         legendCount: z.number().int().nonnegative(), maxCopies: z.number().int().positive()
     })
 }).superRefine((rules, ctx) => {
+    if (rules.gameplay?.turnSlice?.overtime === "STANDARD_OVERTIME_V1" &&
+        (rules.gameplay.initialization !== "TURN_SLICE_V1" || rules.gameplay.turnSlice.startTurnGigWinCount !== 7))
+        ctx.addIssue({ code: "custom", message: "Standard overtime requires the reviewed two-player turn slice and seven-Gig win policy" });
     if (rules.demoStarter || rules.formats?.DEMO_STARTER_V1) {
         if (!rules.demoStarter || hashCanonical(rules.formats?.CONSTRUCTED ?? null) !== hashCanonical({ mainDeck: { min: 40, max: 50 }, legendCount: 3, maxCopies: 3, legendUniqueness: "DECKBUILDING_IDENTITY" }) || hashCanonical(rules.formats?.DEMO_STARTER_V1 ?? null) !== hashCanonical(demoDeckPolicy) ||
             rules.gameplay?.initialization !== "TURN_SLICE_V1" || rules.gameplay.turnSlice?.setup !== "ENGINE_SETUP_V1" ||

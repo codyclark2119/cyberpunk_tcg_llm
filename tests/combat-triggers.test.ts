@@ -54,7 +54,7 @@ function combat(attacking = SWORDWISE, defending = DEXTER, gear = 1, extraMantis
 const pass = (s: GameState) => act(s, a => a.action.kind === "PASS_REACT");
 function asMain(s: GameState) { const next = GameStateSchema.parse(s); next.timing.combat = { stage: "NONE" }; next.timing.actingPlayer = active; next.timing.step = "MAIN"; next.timing.window = "MAIN"; return unwrap(validateState(next, context)); }
 function playProgram(s: GameState, card = REBOOT) {
-    const d = GameStateSchema.parse(s), source = Object.values(d.objects.cards).find(c => c.cardId === card && c.controllerId === s.timing.actingPlayer)!.id;
+    const d = GameStateSchema.parse(s), source = Object.values(d.objects.cards).find(c => c.cardId === card && c.controllerId === s.timing.actingPlayer && !s.fightPreventions?.some(e => e.sourceId === c.id))!.id;
     relocate(d, source, "HAND");
     const first = act(unwrap(validateState(d, context)), a => a.action.kind === "PLAY_CARD" && a.action.cardInstanceId === source); let state = first.state; const events = [...first.events];
     while (state.timing.step === "PAYMENT_SELECTION") { const next = choose(state); state = next.state; events.push(...next.events); }
@@ -321,4 +321,19 @@ for (const [name, replay] of [["satori-replay", satori], ["defeated-replay", def
         assert.deepEqual(response.value.events, step.events); assert.equal(response.value.stateHash, step.stateHash); state = response.value.state;
     }
     assert.deepEqual(state, replay.finalState); assert.equal(state.timing.window, "MAIN"); assert.ok(replay.positions.every(p => p.legalActions.length > 1));
+});
+
+test("multiplicity: protected Dexter has no DEFEATED trigger while the truthful Satori win still draws", () => {
+    const p = combat(), one = playProgram(p.state), two = playProgram(one.state), result = pass(two.state);
+    assert.equal(two.state.fightPreventions!.length, 2);
+    assert.notEqual(one.source, two.source);
+    assert.equal(result.events.filter(e => e.payload.kind === "FIGHT_PREVENTION_CONSUMED").length, 2);
+    assert.equal(result.events.filter(e => e.payload.kind === "FIGHT_DEFEAT_PREVENTED").length, 1);
+    assert.equal(result.events.some(e => e.payload.kind === "CARD_DEFEATED" && e.payload.cardInstanceId === p.defender), false);
+    assert.equal(result.events.some(e => e.payload.kind === "EFFECT_PENDING" && e.payload.sourceId === p.defender), false);
+    assert.equal(draws(result.events).length, 1);
+    const single = pass(one.state);
+    assert.deepEqual(result.events.find(e => e.payload.kind === "FIGHT_RESULT")!.payload, single.events.find(e => e.payload.kind === "FIGHT_RESULT")!.payload);
+    assert.equal(result.state.objects.cards[p.defender].zone.zone, "BATTLEFIELD");
+    assert.ok(pass(p.state).events.some(e => e.payload.kind === "CARD_DEFEATED" && e.payload.cardInstanceId === p.defender));
 });

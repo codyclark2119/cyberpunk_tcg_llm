@@ -4,6 +4,7 @@ import { resolve } from "node:path";
 import { z } from "zod";
 import { ContentBundleSchema, GameActionSchema, GameEventSchema, GameStateSchema, LegalActionSchema, PlayerIdSchema, canonicalSerialize, createContentBundle, type GameState, type LegalAction, type Result } from "@tcg/domain";
 import { CreateGameInputSchema, PlayerObservationSchema, applyAction, createGameWithEvents, listLegalActions, observe, type ActionResult } from "@tcg/engine";
+import { demoStarterContext } from "../tests/demo-starter-fixture";
 import { engineIdentity } from "./engine-identity";
 /** Audit untouched pre-milestone payloads. Regenerated hashes cannot prove compatibility.
  * Usage: node --import tsx scripts/audit-replay-compatibility.ts /path/to/preserved-replays
@@ -20,17 +21,20 @@ const semanticActions = (actions: LegalAction[]) => actions.map(({ actorId, acti
 let decisions = 0;
 for (const name of files) {
     const original = schema.parse(JSON.parse(readFileSync(resolve(baseline, name), "utf8")));
-    const context = { content: createContentBundle(original.content.ruleset, original.content.cards, engineIdentity()) };
-    const repin = (s: GameState) => ({ ...s, match: { ...s.match, engineVersion: context.content.manifest.engine.version, engineArtifactHash: context.content.manifest.engine.artifactHash, contentManifestHash: context.content.manifestHash } });
-    const initialized = unwrap(createGameWithEvents(original.initialization, context)); let state: GameState = initialized.state;
-    assert.deepEqual(state, repin(original.initialized.state), `${name}: initial state`);
-    assert.deepEqual(initialized.events, original.initialized.events, `${name}: initial events`);
-    for (const [i, step] of original.steps.entries()) {
-        assert.deepEqual(semanticActions(unwrap(listLegalActions(state, step.actorId, context))), semanticActions(step.legalActions), `${name}: legal actions/descriptors ${i}`);
-        assert.deepEqual(unwrap(observe(state, step.actorId, context)), step.observation, `${name}: observation ${i}`);
-        const next: ActionResult = unwrap(applyAction(state, step.action, context)); assert.deepEqual(next.events, step.events, `${name}: events ${i}`); state = next.state; decisions++;
+    const originalContext = { content: createContentBundle(original.content.ruleset, original.content.cards, engineIdentity()) };
+    const contexts = name === "demo-setup-replay.v1.json" ? [originalContext, demoStarterContext()] : [originalContext];
+    for (const [policyIndex, context] of contexts.entries()) {
+        const repin = (s: GameState) => ({ ...s, match: { ...s.match, rulesetVersion: context.content.ruleset.version, rulesetHash: context.content.manifest.ruleset.hash, engineVersion: context.content.manifest.engine.version, engineArtifactHash: context.content.manifest.engine.artifactHash, contentManifestHash: context.content.manifestHash } });
+        const initialized = unwrap(createGameWithEvents(original.initialization, context)); let state: GameState = initialized.state;
+        assert.deepEqual(state, repin(original.initialized.state), `${name}: initial state`);
+        assert.deepEqual(initialized.events, original.initialized.events, `${name}: initial events`);
+        for (const [i, step] of original.steps.entries()) {
+            assert.deepEqual(semanticActions(unwrap(listLegalActions(state, step.actorId, context))), semanticActions(step.legalActions), `${name}: legal actions/descriptors ${i}`);
+            assert.deepEqual(unwrap(observe(state, step.actorId, context)), step.observation, `${name}: observation ${i}`);
+            const next: ActionResult = unwrap(applyAction(state, step.action, context)); assert.deepEqual(next.events, step.events, `${name}: events ${i}`); state = next.state; if (policyIndex === 0) decisions++;
+        }
+        assert.deepEqual(state, repin(original.finalState), `${name}: final state`);
+        process.stdout.write(`${name}: ${original.steps.length} original decisions preserved${policyIndex ? " also under current supported Demo overtime policy" : ""}\n`);
     }
-    assert.deepEqual(state, repin(original.finalState), `${name}: final state`);
-    process.stdout.write(`${name}: ${original.steps.length} original decisions preserved\n`);
 }
 process.stdout.write(`PASS: ${files.length} original families, ${decisions} original decisions; semantic legal actions/descriptors, observations, events and final states unchanged under new pins\n`);

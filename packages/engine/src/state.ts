@@ -25,6 +25,7 @@ import { validateCombatState } from "./combat-state";
 import { gearEnabled, validateGearAttachments } from "./attachments";
 import { validatePlayState } from "./play-state";
 import { validateSearchState } from "./search-state";
+import { validateOvertimeState } from "./overtime";
 import { validateDemoState } from "./demo-state";
 import { validateSetupState } from "./setup-state";
 import { paymentSources, paymentValue, paymentCandidates } from "./payment";
@@ -204,6 +205,7 @@ export function validateState(input: unknown, context: EngineContext): Result<Ga
                 return failure("INVALID_PAYMENT_OPTIONS", "Choice options must exactly match eligible payment continuations");
         }
     }
+    const overtime = validateOvertimeState(s, context); if (!overtime.ok) return overtime;
     const entry = validateLegendEntryState(s, context); if (!entry.ok) return entry;
     const play = validatePlayState(s, context);
     if (!play.ok) return play;

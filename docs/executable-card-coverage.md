@@ -1,6 +1,10 @@
 # Executable card coverage — reviewed play, Gear, attack and defender React
 
-**Current implementation (September 10, 2026):** [DEMO_STARTER_V1 implementation report](demo-starter-report.md) admits only the fixed Arasaka/Merc pair, in either seat, using Comprehensive Rules setup order and literal opposed d20. This is the user's **application policy decision**. The publisher source conflict remains historically unresolved. Exact initialization is supported; overtime remains UNSUPPORTED and a full exact match is NOT YET VERIFIED. The review findings below retain their historical meaning.
+**Successor review (September 10, 2026): [Reboot multiplicity](reboot-multiplicity-report.md) remains SOURCE BLOCKED.** Fresh official card, all five printings, FAQ, rules and errata do not uniquely settle overlap consumption. The single-copy runtime and suppression guard remain unchanged; all three exact prefixes are preserved and the matrix remains paused. Historical findings below retain their original scope.
+
+**Matrix review (September 10, 2026):** [Demo match matrix and self-play readiness](demo-match-matrix-report.md) reviewed nine exact coordinates: six completed, three reached overlapping Reboot. Full-game expansion stopped; unattended self-play is **BLOCKED** pending source semantics. The original verified headline, 29-card roster and 60 physical copies remain unchanged.
+
+**Current verification (September 10, 2026):** [The first exact Arasaka-vs-Merc Demo match](exact-demo-match-report.md) is **VERIFIED — one deterministic legal game**, with every-action PostgreSQL reload, generic Python traversal and both-viewer privacy checks. Reference execution remains 29/29 cards and 60/60 copies; exact Demo legality/initialization and standard overtime remain supported. Exhaustive all-game interaction proof is **NOT CLAIMED**. Historical findings below retain their original scope.
 
 This is an implementation review of a small local capture, **not human-certified gold data, full official card coverage, or a corpus refresh**. The application still validates its four original catalog fixtures. The experimental replay bundles explicitly pin the reviewed revisions below and use synthetic support decks.
 

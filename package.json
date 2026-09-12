@@ -13,13 +13,14 @@
     "infra:up": "docker compose up -d --wait",
     "infra:down": "docker compose down",
     "test": "node --import tsx --test tests/*.test.ts",
-    "test:integration": "node --import tsx --test tests/integration/*.test.ts",
+    "test:integration": "node --import tsx --test --test-concurrency=1 tests/integration/*.test.ts",
     "codegen": "graphql-codegen --config codegen.ts",
     "db:migrate": "node --import tsx scripts/migrate-postgres.ts",
     "mongo:seed": "node --import tsx scripts/seed-mongo.ts",
     "training:demo": "node --import tsx scripts/training-demo.ts",
     "engine:worker": "node --import tsx scripts/engine-worker.ts",
-    "contracts:export": "node --import tsx scripts/export-wire-schemas.ts"
+    "contracts:export": "node --import tsx scripts/export-wire-schemas.ts",
+    "test:matrix": "node --import tsx scripts/generate-demo-match-matrix.ts"
   },
   "dependencies": {
     "@next/env": "16.3.4"

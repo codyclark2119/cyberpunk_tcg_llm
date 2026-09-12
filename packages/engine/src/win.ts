@@ -1,3 +1,4 @@
+import { controlledGigCount, overtimeEnabled } from "./overtime";
 import { failure, success, type GameState, type PlayerId, type Result } from "@tcg/domain";
 import { validateState, type EngineContext } from "./state";
 /** Checkpoints are explicit; handlers never implement their own victory arithmetic. */
@@ -7,6 +8,7 @@ export function evaluateWinConditions(state: GameState, context: EngineContext, 
         return valid;
     const policy = context.content.ruleset.gameplay;
     if (policy?.turnSlice) {
+        if (overtimeEnabled(context) && state.match.overtime) return success(state.match.playerOrder.filter(id => controlledGigCount(state, id) >= 7));
         if (checkpoint !== "TURN_START")
             return success([]);
         const actor = state.timing.activePlayer;

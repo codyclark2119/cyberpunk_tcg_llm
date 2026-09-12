@@ -1,0 +1,27 @@
+{
+  "schemaVersion": 1,
+  "status": "RESOLVED",
+  "model": "A_BOTH_CONSUME",
+  "ruling": "If two Reboot Optics effects are outstanding, they are consumed by that same qualifying fight, making playing two before the fight redundant.",
+  "provenance": {
+    "source": "User-supplied ruling in milestone request",
+    "receivedDate": "2026-09-10",
+    "attachmentSha256": "3282e6a7952af47b0b96a7fcc527035996c2b4c8c12ce87a6f5b64a0424f9892",
+    "publisherResponse": null,
+    "note": "No publisher response, author, URL or timestamp was supplied. Do not attribute this user-supplied authority to a separately verified publisher ruling."
+  },
+  "supersedes": "reboot-multiplicity-source-review.v1.json",
+  "historicalReport": "docs/reboot-multiplicity-report.md",
+  "semantics": {
+    "consume": "Every matching occurrence at the same qualifying fight, even without any defeat",
+    "remainingMatchingOccurrences": 0,
+    "orderingChoice": false,
+    "singleCopyUnchanged": true,
+    "expiry": "Each unused occurrence at end of the current turn"
+  },
+  "card": {
+    "id": "reboot-optics",
+    "revision": 1,
+    "revisionHash": "dbc84769ae27e11b67d34f83ed7d1be60b96d794289f65544b624265b86e1243"
+  }
+}

@@ -1,3 +1,4 @@
+import { checkOvertimeVictory } from "./overtime";
 import { attackConditionPowerEnabled } from "./attack-condition-power-support";
 import { targetedSpendEnabled } from "./targeted-spend-support";
 import { continueTargetedDefeat } from "./targeted-defeat";
@@ -14,8 +15,6 @@ import { orderedEffectsEnabled } from "./ordered-effects-support";
 import { observe, hashObservation } from "./observation";
 import { privateInformationEnabled } from "./private-look-support";
 import { continueTrigger } from "./trigger-resolution";
-import { createsFightPrevention } from "./restriction-support";
-import { cardRevision } from "./characteristics";
 import { combatResolutionEnabled } from "./combat-resolution-policy";
 import { continueGigSteal, continueDefeatOrder, resolveCombat } from "./combat-resolution";
 import { transferGigs } from "./gig-transfer";
@@ -173,7 +172,6 @@ export function validateAction(state: GameState, input: GameAction, context: Eng
     if (!checked.ok) return checked;
     if (state.timing.combat.stage === "COMBAT_RESOLUTION_PENDING") return failure(combatResolutionEnabled(context) ? "AUTOMATIC_COMBAT_RESOLUTION_REQUIRED" : "UNSUPPORTED_COMBAT_RESOLUTION", "PASS_REACT resolves combat automatically; use advanceResolutionWithEvents to resume a trusted pending boundary without dropping its event batch. Earlier policy pins stop here");
     if (state.timing.combat.stage === "RIVAL_REACT" && !reactEnabled(context)) return failure("UNSUPPORTED_RIVAL_REACT", "Attack initiation is complete; defender reactions are not implemented and cannot be auto-passed");
-    if (action.data.action.kind === "PLAY_CARD" && state.fightPreventions?.length && createsFightPrevention(cardRevision(state, action.data.action.cardInstanceId, context))) return failure("UNSUPPORTED_MULTIPLE_FIGHT_PREVENTIONS", "Overlapping next-fight preventions need a separate review; no second outstanding effect is currently executable");
     const legal = listLegalActions(state, action.data.actorId, context);
     if (!legal.ok)
         return legal;
@@ -203,7 +201,7 @@ export function applyAction(state: GameState, action: GameAction, context: Engin
                 s.players[actor].gigs.GIGS.push(gig.id);
                 gig.location = { playerId: actor, zone: "GIGS" };
                 mutation.emit({ kind: "GIG_DIE_ROLLED", gigInstanceId: gig.id, dieType: gig.dieType, rawValue: rolled.rawValue, rngCounter: counter });
-                mutation.phase("MAIN");
+                if (!checkOvertimeVictory(mutation)) mutation.phase("MAIN");
                 break;
             }
             case "PASS_REACT": {

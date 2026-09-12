@@ -2,7 +2,7 @@ import { RulesetSchema, createContentBundle, demoStarterPolicy, demoDeckPolicy }
 import { demoReferenceContext, referenceInput } from "./demo-format-fixture";
 export function demoStarterContext() {
     const base = demoReferenceContext().content;
-    const ruleset = RulesetSchema.parse({ ...base.ruleset, version: "demo-format-1", demoStarter: demoStarterPolicy,
+    const ruleset = RulesetSchema.parse({ ...base.ruleset, version: "demo-overtime-1", gameplay: { ...base.ruleset.gameplay, turnSlice: { ...base.ruleset.gameplay!.turnSlice, overtime: "STANDARD_OVERTIME_V1" } }, demoStarter: demoStarterPolicy,
         formats: { ...base.ruleset.formats, DEMO_STARTER_V1: demoDeckPolicy } });
     return { content: createContentBundle(ruleset, base.cards, base.manifest.engine) };
 }

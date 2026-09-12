@@ -1,0 +1,23 @@
+{
+  "bounds": {
+    "seeds": 16,
+    "actions": 1200,
+    "turns": 100
+  },
+  "attempts": [
+    {
+      "seed": "exact-demo-match-0",
+      "status": "TERMINATED",
+      "actions": 244,
+      "turn": 14,
+      "outcome": {
+        "winnerId": "00000000-0000-4000-8000-000000000001",
+        "loserId": "00000000-0000-4000-8000-000000000004",
+        "reason": "START_TURN_GIGS"
+      }
+    }
+  ],
+  "policy": "DEMO_MATCH_POLICY_V1",
+  "seedRange": "exact-demo-match-0 through exact-demo-match-15, stop on first complete game or first engine/admission gap",
+  "selection": "First candidate terminated; accepted provisionally for full privacy/persistence/determinism gates. No failed candidates or alternate policies."
+}

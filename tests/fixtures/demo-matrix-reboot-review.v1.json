@@ -1,0 +1,58 @@
+{
+  "schemaVersion": 1,
+  "status": "SOURCE_BLOCKER",
+  "sourceRefresh": false,
+  "cardSourceFixture": "combat-restrictions-card-sources.v1.json",
+  "rulesSourceFixture": "combat-restrictions-rules.v1.json",
+  "rulesSha256": "054d2d2a4664e5b560304e0962e71b195467ad097cc4c62b2698fc57467a28dd",
+  "faq": {
+    "url": "https://api.netdeck.gg/api/faqs/cyberpunk",
+    "captureSha256": "3a482c2be10191762d946259e9c958fc0eb1a340615a01fac18f6f7c36ab49d1",
+    "total": 270,
+    "relevantRecords": [
+      {
+        "id": "d05760ef-d02e-4be9-9cda-aee7a2fe196f",
+        "scope": "game",
+        "question": "If a Unit or Legend with [DEFEATED] would be defeated but is prevented by an effect. Will I still get the [DEFEATED] effect?",
+        "answer": "No",
+        "sort_order": 2100,
+        "published_at": "2026-09-04T22:57:19.946Z",
+        "cardId": null
+      },
+      {
+        "id": "e18d31dd-7ee1-4494-8098-a72db45bfa2d",
+        "scope": "card",
+        "question": "If my Unit loses a fight but isn't defeated due to this effect, does it still count as losing the fight?",
+        "answer": "Yes.",
+        "sort_order": 100,
+        "published_at": "2026-09-04T22:57:19.946Z",
+        "cardId": "ad13a7bc-c49d-4166-8a9c-965e7bfa9b8f"
+      }
+    ]
+  },
+  "reviewedRules": [
+    "2.6",
+    "8.16.2",
+    "9.19.3",
+    "10.6",
+    "10.21",
+    "10.22",
+    "10.23",
+    "10.24",
+    "10.25",
+    "10.26",
+    "10.27",
+    "10.28",
+    "10.28.1",
+    "10.29",
+    "10.29.1"
+  ],
+  "supported": "Single next rival fight prevention leaves win/loss intact; independent of Program source in Trash; expires this turn. FAQ confirms loss remains and prevented defeat does not trigger DEFEATED.",
+  "unresolved": [
+    "Whether both independent next-time effects consume on the same upcoming fight",
+    "Whether one remains for a later fight",
+    "Whether affected controller orders effects",
+    "Whether a redundant prevention is consumed after the first prevents defeat"
+  ],
+  "decision": "No pinned source specifically settles overlap. Replacement ordering rules do not establish whether these next-fight effects are replacements of defeat versus simultaneous fight-duration preventions. Keep explicit unsupported detector; do not guess."
+}

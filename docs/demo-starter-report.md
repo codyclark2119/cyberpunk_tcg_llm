@@ -1,5 +1,7 @@
 # DEMO_STARTER_V1 — fixed-pair format and deterministic setup
 
+**Current verification (September 10, 2026):** [The first exact Arasaka-vs-Merc Demo match](exact-demo-match-report.md) is **VERIFIED — one deterministic legal game**, with every-action PostgreSQL reload, generic Python traversal and both-viewer privacy checks. Reference execution remains 29/29 cards and 60/60 copies; exact Demo legality/initialization and standard overtime remain supported. Exhaustive all-game interaction proof is **NOT CLAIMED**. Historical findings below retain their original scope.
+
 ## Runtime
 
 Implemented September 10, 2026 (America/Chicago). Application **0.3.0**, Node **v22.13.0**, npm **10.9.2**, Next.js **16.3.4**. Required Node PATH was used for every Node gate. Engine **0.4.0-demo-format-1**, artifact `ca419cb84b72328771c13abb0452a4049c79f071611b5e43277866f2fa291b72`. Ruleset `beta@demo-format-1`, ruleset hash `feb45d82e5c6f6d7b6be99bb6d08a3d6bbc8b878245d2b811f44149670de289e`.

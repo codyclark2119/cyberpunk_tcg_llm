@@ -88,6 +88,18 @@ export class PostgresMatchRepository implements MatchRepository {
     private completeBatch(events: readonly GameEvent[], previous: number, next: number) {
         return next >= previous && events.length === next - previous && events.every((event, i) => GameEventSchema.safeParse(event).success && event.sequence === previous + i + 1);
     }
+    /** Entry is an audited transition, not a replaceable JSONB flag. Engine validation owns gameplay legality. */
+    private overtimeBatch(previous: GameState | undefined, next: GameState, events: readonly GameEvent[]) {
+        const before = previous?.match.overtime, after = next.match.overtime;
+        const entries = events.filter(e => e.payload.kind === "OVERTIME_STARTED");
+        if (before) return after?.startedAfterTurn === before.startedAfterTurn && entries.length === 0;
+        if (!after) return entries.length === 0;
+        if (!previous || previous.match.outcome || previous.timing.emptyFixerStarts !== 2 ||
+            after.startedAfterTurn !== previous.timing.turn || entries.length !== 1) return false;
+        const entry = entries[0];
+        return entry.payload.kind === "OVERTIME_STARTED" && entry.payload.turn === after.startedAfterTurn &&
+            events.some(e => e.sequence < entry.sequence && e.payload.kind === "TURN_ENDED" && e.payload.turn === after.startedAfterTurn);
+    }
     private async readEvents(client: PoolClient, id: MatchId): Promise<GameEvent[]> {
         const result = await client.query("SELECT sequence,payload FROM match_events WHERE match_id=$1 ORDER BY sequence", [id]);
         return result.rows.map(row => GameEventSchema.parse(row));
@@ -100,6 +112,8 @@ export class PostgresMatchRepository implements MatchRepository {
         state = GameStateSchema.parse(state);
         if (!this.completeBatch(events, 0, state.match.eventSequence))
             return failure("INCOMPLETE_EVENT_BATCH", "Creation requires all initialization events starting at sequence one");
+        if (!this.overtimeBatch(undefined, state, events))
+            return failure("INVALID_OVERTIME_EVENT_BATCH", "New matches cannot start in overtime or claim an entry event");
         if (state.match.version !== 0)
             return failure("INVALID_VERSION", "Initial state version must be zero; setup may already have emitted events");
         return transaction(this.pool, async (client) => {
@@ -128,6 +142,8 @@ export class PostgresMatchRepository implements MatchRepository {
                 return failure("INCOMPLETE_MATCH_HISTORY", "Existing setup/gameplay history is incomplete; explicit recovery required");
             if (!this.completeBatch(events, previous.match.eventSequence, state.match.eventSequence))
                 return failure("INCOMPLETE_EVENT_BATCH", "Save requires the exact contiguous new event batch");
+            if (!this.overtimeBatch(previous, state, events))
+                return failure("INVALID_OVERTIME_EVENT_BATCH", "Overtime entry must match the completed qualifying turn; an active entry cannot change or disappear");
             const updated = await client.query(`UPDATE matches SET state=$3::jsonb,state_version=state_version+1 WHERE id=$1 AND state_version=$2 AND ruleset_id=$4 AND ruleset_version=$5 AND state->'match'->'cards'=$3::jsonb->'match'->'cards' AND state->'match'->'playerOrder'=$3::jsonb->'match'->'playerOrder' AND state->'match'->'rulesetHash'=$3::jsonb->'match'->'rulesetHash' AND state->'match'->'engineVersion'=$3::jsonb->'match'->'engineVersion' AND state->'match'->'contentManifestHash'=$3::jsonb->'match'->'contentManifestHash' AND state->'match'->'engineArtifactHash'=$3::jsonb->'match'->'engineArtifactHash' AND state->'match'->'format' IS NOT DISTINCT FROM $3::jsonb->'match'->'format' AND state->'firstPlayerRolls' IS NOT DISTINCT FROM $3::jsonb->'firstPlayerRolls' RETURNING id`, [state.match.id, expectedVersion, JSON.stringify(state), state.match.rulesetId, state.match.rulesetVersion]);
             if (updated.rowCount !== 1) return failure("STALE_OR_INCOMPATIBLE_STATE", "Match is stale or pinned content/players changed");
             await this.appendEvents(client, state, events);

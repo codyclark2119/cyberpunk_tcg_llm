@@ -199,11 +199,11 @@ test("Reboot uses the Blocker-replaced participants and leaves the originally at
     assert.equal(final.objects.cards[block.cardInstanceId].cardId, CORPO); assert.equal(final.objects.cards[block.cardInstanceId].zone.zone, "BATTLEFIELD");
     assert.equal(events.some(e => e.payload.kind === "GIG_STOLEN"), false);
 });
-test("overlapping Reboot creation and duplicate/stale/forged prevention records reject explicitly and atomically", () => {
+test("second Reboot is legal while duplicate/stale/forged records reject atomically", () => {
     const p = armed(), next = GameStateSchema.parse(p.state), second = Object.values(next.objects.cards).find(c => c.cardId === REBOOT && c.controllerId === rival && c.id !== p.source)!.id;
     relocate(next, second, "HAND"); const hash = hashReplayState(next);
-    assert.equal(legal(next).some(a => a.action.kind === "PLAY_CARD" && a.action.cardInstanceId === second), false);
-    fail(applyAction(next, { actorId: rival, action: { kind: "PLAY_CARD", cardInstanceId: second } }, context), "UNSUPPORTED_MULTIPLE_FIGHT_PREVENTIONS");
+    assert.equal(legal(next).some(a => a.action.kind === "PLAY_CARD" && a.action.cardInstanceId === second), true);
+    assert.ok(applyAction(next, { actorId: rival, action: { kind: "PLAY_CARD", cardInstanceId: second } }, context).ok);
     for (const mutate of [
         (s: ReturnType<typeof GameStateSchema.parse>) => { s.fightPreventions!.push(s.fightPreventions![0]); },
         (s: ReturnType<typeof GameStateSchema.parse>) => { s.fightPreventions![0].id = "0".repeat(64); },
@@ -304,4 +304,90 @@ for (const [name, replay] of [["prevention-replay", prevention], ["permissions-r
     }
     assert.deepEqual(state, replay.finalState); assert.equal(state.timing.window, "MAIN"); assert.ok(replay.positions.every(p => p.legalActions.length > 1));
     assert.equal(replay.positions.some(p => p.state.timing.combat.stage === "COMBAT_RESOLUTION_PENDING"), false);
+});
+
+
+/** Trusted focused arrangement of the second physical Program; exact Demo prefixes are tested separately. */
+function secondPrevention(p: ReturnType<typeof armed>) {
+    const draft = GameStateSchema.parse(p.state);
+    const source = Object.values(draft.objects.cards).find(c => c.cardId === REBOOT && c.controllerId === rival && c.id !== p.source)!.id;
+    relocate(draft, source, "HAND");
+    const before = unwrap(validateState(draft, context));
+    const played = playProgram(before, source);
+    assert.equal(played.state.fightPreventions!.length, 2);
+    assert.equal(played.state.objects.cards[source].zone.zone, "TRASH");
+    assert.equal(played.state.resolution.choice, null);
+    return { ...p, ...played, second: source };
+}
+for (const [label, args, prevented] of [
+    ["friendly loses", [PSYCHO, CORPO], 1],
+    ["friendly wins redundantly", [ATLUS, PSYCHO], 0],
+    ["zero-zero fight", [SWORDWISE, CORPO, 0, 0, 3, 2], 0],
+    ["positive tie with owner ordering", [ATLUS, PSYCHO, 1], 1]
+] as const) test(`multiplicity: both consume on ${label}`, () => {
+    const p = secondPrevention(armed(args[0], args[1], args[2] ?? 0, args[3] ?? 0, args[4] ?? 0, args[5] ?? 0)), before = hashReplayState(p.state), result = pass(p.state);
+    assert.equal(hashReplayState(p.state), before);
+    const consumed = result.events.filter(e => e.payload.kind === "FIGHT_PREVENTION_CONSUMED").map(e => e.payload.kind === "FIGHT_PREVENTION_CONSUMED" ? e.payload.effectId : "");
+    assert.deepEqual(consumed, p.state.fightPreventions!.map(e => e.id));
+    assert.equal(result.events.filter(e => e.payload.kind === "FIGHT_RESULT").length, 1);
+    assert.equal(result.events.filter(e => e.payload.kind === "FIGHT_DEFEAT_PREVENTED").length, prevented);
+    assert.equal(result.state.fightPreventions, undefined);
+    assert.equal(result.events.some(e => e.payload.kind === "CARD_DEFEATED" && e.payload.cardInstanceId === p.defender), false);
+    const completed = finish(result.state);
+    assert.equal(completed.state.objects.cards[p.defender].zone.zone, "BATTLEFIELD");
+    if (label === "friendly wins redundantly" || label === "positive tie with owner ordering") assert.equal(completed.state.objects.cards[p.attacker].zone.zone, "TRASH");
+    if (label === "positive tie with owner ordering") {
+        assert.equal(result.state.resolution.defeatContinuation!.appliedPrevention, undefined);
+        assert.deepEqual(result.state.resolution.defeatContinuation!.appliedPreventions, p.state.fightPreventions);
+        assert.ok(handleRequest({ schemaVersion: 1, requestId: randomUUID(), op: "validateState", content: context.content, state: result.state, actorId: result.state.timing.actingPlayer }).ok);
+        for (const mutate of [
+            (s: ReturnType<typeof GameStateSchema.parse>) => { s.resolution.defeatContinuation!.appliedPrevention = s.resolution.defeatContinuation!.appliedPreventions![0]; },
+            (s: ReturnType<typeof GameStateSchema.parse>) => { s.resolution.defeatContinuation!.appliedPreventions!.push(s.resolution.defeatContinuation!.appliedPreventions![0]); },
+            (s: ReturnType<typeof GameStateSchema.parse>) => { s.fightPreventions = GameStateSchema.parse(p.state).fightPreventions; },
+            (s: ReturnType<typeof GameStateSchema.parse>) => { s.resolution.defeatContinuation!.appliedPreventions!.reverse(); }
+        ]) { const draft = GameStateSchema.parse(result.state); mutate(draft); fail(validateState(draft, context)); }
+    }
+});
+test("multiplicity: no-fight Gig steal retains both and end-turn expires each", () => {
+    const p = secondPrevention(armed()), draft = GameStateSchema.parse(p.state);
+    draft.timing.combat = { stage: "RIVAL_REACT", attackerId: p.attacker, attackingPlayerId: active, target: { kind: "GIG_AREA", playerId: rival } };
+    const first = pass(unwrap(validateState(draft, context))), after = finish(first.state);
+    assert.deepEqual(after.state.fightPreventions, p.state.fightPreventions);
+    assert.equal([...first.events, ...after.events].some(e => e.payload.kind === "FIGHT_PREVENTION_CONSUMED"), false);
+    const ended = act(after.state, a => a.action.kind === "END_TURN");
+    assert.equal(ended.state.fightPreventions, undefined);
+    assert.deepEqual(ended.events.filter(e => e.payload.kind === "FIGHT_PREVENTION_EXPIRED").map(e => e.payload.kind === "FIGHT_PREVENTION_EXPIRED" ? e.payload.effectId : ""), p.state.fightPreventions!.map(e => e.id));
+});
+test("multiplicity: later same-turn fight has no protection", () => {
+    const p = secondPrevention(armed()), first = pass(p.state), draft = GameStateSchema.parse(first.state);
+    const attacker = Object.values(draft.objects.cards).find(c => c.cardId === PSYCHO && c.controllerId === active && c.id !== p.attacker)!.id;
+    relocate(draft, attacker, "BATTLEFIELD"); draft.objects.cards[attacker].readiness = "SPENT";
+    draft.timing.combat = { stage: "RIVAL_REACT", attackerId: attacker, attackingPlayerId: active, target: { kind: "CARD", cardInstanceId: p.defender } };
+    draft.timing.actingPlayer = rival; draft.timing.window = "RIVAL_REACT"; draft.timing.step = "RIVAL_REACT";
+    const result = pass(unwrap(validateState(draft, context)));
+    assert.ok(result.events.some(e => e.payload.kind === "CARD_DEFEATED" && e.payload.cardInstanceId === p.defender));
+    assert.equal(result.events.some(e => e.payload.kind === "FIGHT_PREVENTION_CONSUMED"), false);
+});
+test("multiplicity: Blocker-created fight consumes both", () => {
+    const p = secondPrevention(armed()), draft = GameStateSchema.parse(p.state);
+    draft.objects.cards[p.defender].readiness = "READY";
+    draft.timing.combat = { stage: "RIVAL_REACT", attackerId: p.attacker, attackingPlayerId: active, target: { kind: "GIG_AREA", playerId: rival } };
+    const blocked = act(unwrap(validateState(draft, context)), a => a.action.kind === "DECLARE_BLOCKER" && a.action.cardInstanceId === p.defender);
+    const fought = pass(blocked.state);
+    assert.equal(fought.events.filter(e => e.payload.kind === "FIGHT_PREVENTION_CONSUMED").length, 2);
+});
+test("multiplicity: public counts/hashes differ and state generation is canonically ordered", () => {
+    const two = secondPrevention(armed()), zero = GameStateSchema.parse(two.state), single = GameStateSchema.parse(two.state);
+    delete zero.fightPreventions; single.fightPreventions = [single.fightPreventions![0]];
+    // Isolate the occurrence collection: payment, zones and every other state field are identical.
+    const states = [unwrap(validateState(zero, context)), unwrap(validateState(single, context)), two.state];
+    assert.equal(new Set(states.map(hashPosition)).size, 3);
+    for (const actor of [active, rival]) {
+        const views = states.map(s => unwrap(observe(s, actor, context)));
+        assert.deepEqual(views.map(o => o.fightPreventions?.length ?? 0), [0, 1, 2]);
+        assert.equal(new Set(views.map(hashCanonical)).size, 3);
+    }
+    assert.deepEqual(two.state.fightPreventions!.map(e => e.id), two.state.fightPreventions!.map(e => e.id).sort());
+    const reversed = GameStateSchema.parse(two.state); reversed.fightPreventions!.reverse(); fail(validateState(reversed, context));
+    const invalid = GameStateSchema.parse(two.state); invalid.fightPreventions![1].sourceId = invalid.fightPreventions![0].sourceId; fail(validateState(invalid, context));
 });

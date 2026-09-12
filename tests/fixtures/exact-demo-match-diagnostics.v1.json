@@ -1,0 +1,788 @@
+{
+  "eventCounts": {
+    "FIRST_PLAYER_ROLLED": 1,
+    "FIRST_PLAYER_DETERMINED": 1,
+    "FIRST_PLAYER_CHOSEN": 1,
+    "SETUP_SHUFFLED": 4,
+    "SETUP_CUT": 4,
+    "SETUP_LEGEND_SPENT": 2,
+    "FIXER_PREPARED": 2,
+    "CARD_MOVED": 79,
+    "MULLIGAN_DECLARED": 2,
+    "GAME_SETUP_COMPLETED": 1,
+    "PHASE_CHANGED": 239,
+    "TURN_STARTED": 14,
+    "GIG_DIE_ROLLED": 12,
+    "CARD_SOLD": 12,
+    "CARD_REVEALED": 22,
+    "PAYMENT_MADE": 29,
+    "CARD_PLAYED": 23,
+    "QUALIFYING_PLAY_RECORDED": 7,
+    "LAG_REMOVED": 17,
+    "TURN_ENDED": 13,
+    "EFFECT_PENDING": 22,
+    "GIG_TARGET_SELECTED": 4,
+    "GIG_VALUE_CHANGED": 3,
+    "EFFECT_RESOLVED": 22,
+    "CONDITION_EVALUATED": 9,
+    "LEGEND_CALLED": 6,
+    "CARD_READIED": 79,
+    "GEAR_ATTACHED": 3,
+    "ATTACK_TARGET_SELECTED": 27,
+    "ATTACKER_SPENT": 27,
+    "ATTACK_DECLARED": 27,
+    "TRIGGER_ORDER_SELECTED": 17,
+    "RIVAL_REACT_OPENED": 34,
+    "BLOCKER_SPENT": 5,
+    "BLOCKER_DECLARED": 5,
+    "RIVAL_REACT_CLOSED": 27,
+    "COMBAT_RESOLUTION_PENDING": 27,
+    "FIGHT_STARTED": 5,
+    "FIGHT_RESULT": 5,
+    "DEFEAT_TRASH_ORDER_SELECTED": 6,
+    "CARD_DEFEATED": 5,
+    "ATTACK_ENDED": 27,
+    "GO_SOLO_ACTIVATED": 2,
+    "GEAR_DETACHED": 1,
+    "SEARCH_REMAINDER_BOTTOMED": 1,
+    "CARD_TARGET_SELECTED": 1,
+    "CARD_SPENT": 1,
+    "GIG_STEAL_STARTED": 22,
+    "GIG_STEAL_SELECTED": 21,
+    "GIG_CONTROL_CHANGED": 21,
+    "GIG_STOLEN": 21,
+    "LEGEND_LOOKED_AT": 2,
+    "OPTIONAL_TRIGGER_ACCEPTED": 2,
+    "GIG_ADJUSTMENT_DECLINED": 1,
+    "CARD_DISCARDED": 1,
+    "GAME_ENDED": 1
+  },
+  "participation": [
+    {
+      "cardId": "viktor-vektor-sit-down-and-relax",
+      "name": "Viktor Vektor: Sit Down and Relax",
+      "type": "LEGEND",
+      "copies": 1,
+      "drawn": 0,
+      "played": 0,
+      "called": 1,
+      "effectsPending": 1,
+      "effectsResolved": 1,
+      "unseenCopies": 0
+    },
+    {
+      "cardId": "afterparty-at-lizzie-s",
+      "name": "Afterparty at Lizzie's",
+      "type": "PROGRAM",
+      "copies": 2,
+      "drawn": 1,
+      "played": 0,
+      "called": 0,
+      "effectsPending": 0,
+      "effectsResolved": 0,
+      "unseenCopies": 0
+    },
+    {
+      "cardId": "mantis-blades",
+      "name": "Mantis Blades",
+      "type": "GEAR",
+      "copies": 3,
+      "drawn": 1,
+      "played": 0,
+      "called": 0,
+      "effectsPending": 0,
+      "effectsResolved": 0,
+      "unseenCopies": 1
+    },
+    {
+      "cardId": "swordwise-huscle",
+      "name": "Swordwise Huscle",
+      "type": "UNIT",
+      "copies": 2,
+      "drawn": 1,
+      "played": 1,
+      "called": 0,
+      "effectsPending": 0,
+      "effectsResolved": 0,
+      "unseenCopies": 1
+    },
+    {
+      "cardId": "floor-it",
+      "name": "Floor It",
+      "type": "PROGRAM",
+      "copies": 3,
+      "drawn": 2,
+      "played": 0,
+      "called": 0,
+      "effectsPending": 0,
+      "effectsResolved": 0,
+      "unseenCopies": 0
+    },
+    {
+      "cardId": "secondhand-bombus",
+      "name": "Secondhand Bombus",
+      "type": "UNIT",
+      "copies": 2,
+      "drawn": 1,
+      "played": 1,
+      "called": 0,
+      "effectsPending": 0,
+      "effectsResolved": 0,
+      "unseenCopies": 1
+    },
+    {
+      "cardId": "reboot-optics",
+      "name": "Reboot Optics",
+      "type": "PROGRAM",
+      "copies": 2,
+      "drawn": 0,
+      "played": 0,
+      "called": 0,
+      "effectsPending": 0,
+      "effectsResolved": 0,
+      "unseenCopies": 2
+    },
+    {
+      "cardId": "corpo-security",
+      "name": "Corpo Security",
+      "type": "UNIT",
+      "copies": 3,
+      "drawn": 2,
+      "played": 2,
+      "called": 0,
+      "effectsPending": 0,
+      "effectsResolved": 0,
+      "unseenCopies": 1
+    },
+    {
+      "cardId": "mt0d12-flathead",
+      "name": "MT0D12 Flathead",
+      "type": "UNIT",
+      "copies": 1,
+      "drawn": 0,
+      "played": 0,
+      "called": 0,
+      "effectsPending": 0,
+      "effectsResolved": 0,
+      "unseenCopies": 0
+    },
+    {
+      "cardId": "psycho-squad",
+      "name": "Psycho Squad",
+      "type": "UNIT",
+      "copies": 3,
+      "drawn": 3,
+      "played": 3,
+      "called": 0,
+      "effectsPending": 0,
+      "effectsResolved": 0,
+      "unseenCopies": 0
+    },
+    {
+      "cardId": "emergency-atlus",
+      "name": "Emergency Atlus",
+      "type": "UNIT",
+      "copies": 3,
+      "drawn": 1,
+      "played": 1,
+      "called": 0,
+      "effectsPending": 0,
+      "effectsResolved": 0,
+      "unseenCopies": 2
+    },
+    {
+      "cardId": "satori-sword-of-saburo",
+      "name": "Satori: Sword of Saburo",
+      "type": "GEAR",
+      "copies": 3,
+      "drawn": 2,
+      "played": 0,
+      "called": 0,
+      "effectsPending": 0,
+      "effectsResolved": 0,
+      "unseenCopies": 1
+    },
+    {
+      "cardId": "dexter-deshawn-one-last-chance",
+      "name": "Dexter DeShawn: One Last Chance",
+      "type": "UNIT",
+      "copies": 1,
+      "drawn": 1,
+      "played": 1,
+      "called": 0,
+      "effectsPending": 1,
+      "effectsResolved": 1,
+      "unseenCopies": 0
+    },
+    {
+      "cardId": "jackie-welles-pour-one-out-for-me",
+      "name": "Jackie Welles: Pour One Out For Me",
+      "type": "LEGEND",
+      "copies": 1,
+      "drawn": 0,
+      "played": 0,
+      "called": 1,
+      "effectsPending": 2,
+      "effectsResolved": 2,
+      "unseenCopies": 0
+    },
+    {
+      "cardId": "mandibular-upgrade",
+      "name": "Mandibular Upgrade",
+      "type": "GEAR",
+      "copies": 2,
+      "drawn": 2,
+      "played": 1,
+      "called": 0,
+      "effectsPending": 0,
+      "effectsResolved": 0,
+      "unseenCopies": 0
+    },
+    {
+      "cardId": "kiroshi-optics",
+      "name": "Kiroshi Optics",
+      "type": "GEAR",
+      "copies": 3,
+      "drawn": 3,
+      "played": 2,
+      "called": 0,
+      "effectsPending": 8,
+      "effectsResolved": 8,
+      "unseenCopies": 0
+    },
+    {
+      "cardId": "evelyn-parker-scheming-siren",
+      "name": "Evelyn Parker: Scheming Siren",
+      "type": "UNIT",
+      "copies": 3,
+      "drawn": 2,
+      "played": 2,
+      "called": 0,
+      "effectsPending": 3,
+      "effectsResolved": 3,
+      "unseenCopies": 0
+    },
+    {
+      "cardId": "delamain-cab",
+      "name": "Delamain Cab",
+      "type": "UNIT",
+      "copies": 3,
+      "drawn": 1,
+      "played": 1,
+      "called": 0,
+      "effectsPending": 0,
+      "effectsResolved": 0,
+      "unseenCopies": 2
+    },
+    {
+      "cardId": "dying-night-v-s-pistol",
+      "name": "Dying Night: V's Pistol",
+      "type": "GEAR",
+      "copies": 2,
+      "drawn": 2,
+      "played": 0,
+      "called": 0,
+      "effectsPending": 0,
+      "effectsResolved": 0,
+      "unseenCopies": 0
+    },
+    {
+      "cardId": "v-corporate-exile",
+      "name": "V: Corporate Exile",
+      "type": "LEGEND",
+      "copies": 1,
+      "drawn": 0,
+      "played": 1,
+      "called": 1,
+      "effectsPending": 0,
+      "effectsResolved": 0,
+      "unseenCopies": 0
+    },
+    {
+      "cardId": "goro-takemura-hands-unclean",
+      "name": "Goro Takemura: Hands Unclean",
+      "type": "LEGEND",
+      "copies": 1,
+      "drawn": 0,
+      "played": 1,
+      "called": 1,
+      "effectsPending": 0,
+      "effectsResolved": 0,
+      "unseenCopies": 0
+    },
+    {
+      "cardId": "yorinobu-arasaka-embracing-destruction",
+      "name": "Yorinobu Arasaka: Embracing Destruction",
+      "type": "LEGEND",
+      "copies": 1,
+      "drawn": 0,
+      "played": 0,
+      "called": 1,
+      "effectsPending": 1,
+      "effectsResolved": 1,
+      "unseenCopies": 0
+    },
+    {
+      "cardId": "saburo-arasaka-stubborn-patriarch",
+      "name": "Saburo Arasaka: Stubborn Patriarch",
+      "type": "LEGEND",
+      "copies": 1,
+      "drawn": 0,
+      "played": 0,
+      "called": 1,
+      "effectsPending": 0,
+      "effectsResolved": 0,
+      "unseenCopies": 0
+    },
+    {
+      "cardId": "industrial-assembly",
+      "name": "Industrial Assembly",
+      "type": "PROGRAM",
+      "copies": 3,
+      "drawn": 2,
+      "played": 1,
+      "called": 0,
+      "effectsPending": 2,
+      "effectsResolved": 2,
+      "unseenCopies": 1
+    },
+    {
+      "cardId": "field-operator",
+      "name": "Field Operator",
+      "type": "UNIT",
+      "copies": 3,
+      "drawn": 2,
+      "played": 2,
+      "called": 0,
+      "effectsPending": 2,
+      "effectsResolved": 2,
+      "unseenCopies": 1
+    },
+    {
+      "cardId": "minotaur",
+      "name": "Minotaur",
+      "type": "UNIT",
+      "copies": 1,
+      "drawn": 0,
+      "played": 0,
+      "called": 0,
+      "effectsPending": 0,
+      "effectsResolved": 0,
+      "unseenCopies": 1
+    },
+    {
+      "cardId": "over-the-edge",
+      "name": "Over the Edge",
+      "type": "PROGRAM",
+      "copies": 2,
+      "drawn": 2,
+      "played": 1,
+      "called": 0,
+      "effectsPending": 1,
+      "effectsResolved": 1,
+      "unseenCopies": 0
+    },
+    {
+      "cardId": "corporate-surveillance",
+      "name": "Corporate Surveillance",
+      "type": "PROGRAM",
+      "copies": 3,
+      "drawn": 1,
+      "played": 1,
+      "called": 0,
+      "effectsPending": 1,
+      "effectsResolved": 1,
+      "unseenCopies": 2
+    },
+    {
+      "cardId": "goro-takemura-losing-his-way",
+      "name": "Goro Takemura: Losing His Way",
+      "type": "UNIT",
+      "copies": 1,
+      "drawn": 1,
+      "played": 1,
+      "called": 0,
+      "effectsPending": 0,
+      "effectsResolved": 0,
+      "unseenCopies": 0
+    }
+  ],
+  "resources": [
+    {
+      "seat": 0,
+      "manifest": "ARASAKA_DEMO_V1",
+      "deck": 11,
+      "hand": 0,
+      "trash": 5,
+      "field": 7,
+      "eddies": 5,
+      "legends": [
+        {
+          "face": "UP",
+          "readiness": "SPENT"
+        },
+        {
+          "face": "UP",
+          "readiness": "SPENT"
+        }
+      ],
+      "removed": 0,
+      "gigs": 7,
+      "fixers": 0,
+      "streetCred": 17
+    },
+    {
+      "seat": 1,
+      "manifest": "MERC_DEMO_V1",
+      "deck": 9,
+      "hand": 0,
+      "trash": 5,
+      "field": 7,
+      "eddies": 7,
+      "legends": [
+        {
+          "face": "UP",
+          "readiness": "READY"
+        },
+        {
+          "face": "UP",
+          "readiness": "READY"
+        }
+      ],
+      "removed": 0,
+      "gigs": 5,
+      "fixers": 0,
+      "streetCred": 28
+    }
+  ],
+  "turns": [
+    {
+      "turn": 1,
+      "activeSeat": 1,
+      "rolls": [
+        {
+          "kind": "GIG_DIE_ROLLED",
+          "gigInstanceId": "p1-D12",
+          "dieType": "D12",
+          "rawValue": 2,
+          "rngCounter": 58
+        }
+      ],
+      "mainActions": [
+        "Sell Floor It",
+        "Play Evelyn Parker: Scheming Siren",
+        "END_TURN"
+      ],
+      "attacks": 0,
+      "transfers": 0,
+      "endEffects": [],
+      "overtime": 0
+    },
+    {
+      "turn": 2,
+      "activeSeat": 0,
+      "rolls": [
+        {
+          "kind": "GIG_DIE_ROLLED",
+          "gigInstanceId": "p0-D12",
+          "dieType": "D12",
+          "rawValue": 6,
+          "rngCounter": 59
+        }
+      ],
+      "mainActions": [
+        "Sell Industrial Assembly",
+        "Play Corpo Security",
+        "Play Industrial Assembly",
+        "Call face-down Legend 1",
+        "END_TURN"
+      ],
+      "attacks": 0,
+      "transfers": 0,
+      "endEffects": [],
+      "overtime": 0
+    },
+    {
+      "turn": 3,
+      "activeSeat": 1,
+      "rolls": [
+        {
+          "kind": "GIG_DIE_ROLLED",
+          "gigInstanceId": "p1-D10",
+          "dieType": "D10",
+          "rawValue": 6,
+          "rngCounter": 60
+        }
+      ],
+      "mainActions": [
+        "Sell Mandibular Upgrade",
+        "Play Delamain Cab",
+        "Play Mandibular Upgrade",
+        "Attack with Evelyn Parker: Scheming Siren",
+        "END_TURN"
+      ],
+      "attacks": 1,
+      "transfers": 0,
+      "endEffects": [],
+      "overtime": 0
+    },
+    {
+      "turn": 4,
+      "activeSeat": 0,
+      "rolls": [
+        {
+          "kind": "GIG_DIE_ROLLED",
+          "gigInstanceId": "p0-D10",
+          "dieType": "D10",
+          "rawValue": 5,
+          "rngCounter": 61
+        }
+      ],
+      "mainActions": [
+        "Sell Over the Edge",
+        "Go Solo with Goro Takemura: Hands Unclean",
+        "Attack with Goro Takemura: Hands Unclean",
+        "END_TURN"
+      ],
+      "attacks": 1,
+      "transfers": 0,
+      "endEffects": [],
+      "overtime": 0
+    },
+    {
+      "turn": 5,
+      "activeSeat": 1,
+      "rolls": [
+        {
+          "kind": "GIG_DIE_ROLLED",
+          "gigInstanceId": "p1-D8",
+          "dieType": "D8",
+          "rawValue": 3,
+          "rngCounter": 62
+        }
+      ],
+      "mainActions": [
+        "Sell Floor It",
+        "Play Psycho Squad",
+        "Play Kiroshi Optics",
+        "Call face-down Legend 1",
+        "END_TURN"
+      ],
+      "attacks": 0,
+      "transfers": 0,
+      "endEffects": [],
+      "overtime": 0
+    },
+    {
+      "turn": 6,
+      "activeSeat": 0,
+      "rolls": [
+        {
+          "kind": "GIG_DIE_ROLLED",
+          "gigInstanceId": "p0-D8",
+          "dieType": "D8",
+          "rawValue": 3,
+          "rngCounter": 66
+        }
+      ],
+      "mainActions": [
+        "Sell Satori: Sword of Saburo",
+        "Play Field Operator",
+        "Play Corporate Surveillance",
+        "Attack with Goro Takemura: Hands Unclean",
+        "END_TURN"
+      ],
+      "attacks": 1,
+      "transfers": 1,
+      "endEffects": [],
+      "overtime": 0
+    },
+    {
+      "turn": 7,
+      "activeSeat": 1,
+      "rolls": [
+        {
+          "kind": "GIG_DIE_ROLLED",
+          "gigInstanceId": "p1-D6",
+          "dieType": "D6",
+          "rawValue": 3,
+          "rngCounter": 67
+        }
+      ],
+      "mainActions": [
+        "Sell Dying Night: V's Pistol",
+        "Play Kiroshi Optics",
+        "Play Psycho Squad",
+        "Call face-down Legend 2",
+        "Attack with Psycho Squad",
+        "END_TURN"
+      ],
+      "attacks": 1,
+      "transfers": 0,
+      "endEffects": [],
+      "overtime": 0
+    },
+    {
+      "turn": 8,
+      "activeSeat": 0,
+      "rolls": [
+        {
+          "kind": "GIG_DIE_ROLLED",
+          "gigInstanceId": "p0-D6",
+          "dieType": "D6",
+          "rawValue": 2,
+          "rngCounter": 68
+        }
+      ],
+      "mainActions": [
+        "Sell Satori: Sword of Saburo",
+        "Play Emergency Atlus",
+        "Play Field Operator",
+        "Attack with Field Operator",
+        "Attack with Goro Takemura: Hands Unclean",
+        "END_TURN"
+      ],
+      "attacks": 2,
+      "transfers": 2,
+      "endEffects": [],
+      "overtime": 0
+    },
+    {
+      "turn": 9,
+      "activeSeat": 1,
+      "rolls": [
+        {
+          "kind": "GIG_DIE_ROLLED",
+          "gigInstanceId": "p1-D4",
+          "dieType": "D4",
+          "rawValue": 2,
+          "rngCounter": 69
+        }
+      ],
+      "mainActions": [
+        "Go Solo with V: Corporate Exile",
+        "Sell Afterparty at Lizzie's",
+        "Play Evelyn Parker: Scheming Siren",
+        "Attack with Psycho Squad",
+        "Attack with Psycho Squad",
+        "Attack with V: Corporate Exile",
+        "END_TURN"
+      ],
+      "attacks": 3,
+      "transfers": 3,
+      "endEffects": [],
+      "overtime": 0
+    },
+    {
+      "turn": 10,
+      "activeSeat": 0,
+      "rolls": [
+        {
+          "kind": "GIG_DIE_ROLLED",
+          "gigInstanceId": "p0-D4",
+          "dieType": "D4",
+          "rawValue": 2,
+          "rngCounter": 70
+        }
+      ],
+      "mainActions": [
+        "Sell Mantis Blades",
+        "Play Goro Takemura: Losing His Way",
+        "Play Over the Edge",
+        "Attack with Emergency Atlus",
+        "Attack with Field Operator",
+        "Attack with Field Operator",
+        "Attack with Goro Takemura: Hands Unclean",
+        "END_TURN"
+      ],
+      "attacks": 4,
+      "transfers": 4,
+      "endEffects": [],
+      "overtime": 0
+    },
+    {
+      "turn": 11,
+      "activeSeat": 1,
+      "rolls": [
+        {
+          "kind": "GIG_DIE_ROLLED",
+          "gigInstanceId": "p1-D20",
+          "dieType": "D20",
+          "rawValue": 7,
+          "rngCounter": 71
+        }
+      ],
+      "mainActions": [
+        "Sell Dying Night: V's Pistol",
+        "Play Psycho Squad",
+        "Attack with Evelyn Parker: Scheming Siren",
+        "Play Secondhand Bombus",
+        "Attack with Psycho Squad",
+        "Attack with Psycho Squad",
+        "Attack with V: Corporate Exile",
+        "END_TURN"
+      ],
+      "attacks": 4,
+      "transfers": 3,
+      "endEffects": [],
+      "overtime": 0
+    },
+    {
+      "turn": 12,
+      "activeSeat": 0,
+      "rolls": [
+        {
+          "kind": "GIG_DIE_ROLLED",
+          "gigInstanceId": "p0-D20",
+          "dieType": "D20",
+          "rawValue": 2,
+          "rngCounter": 72
+        }
+      ],
+      "mainActions": [
+        "Play Corpo Security",
+        "Play Swordwise Huscle",
+        "Call face-down Legend 1",
+        "Attack with Emergency Atlus",
+        "Attack with Field Operator",
+        "Attack with Field Operator",
+        "Attack with Goro Takemura: Hands Unclean",
+        "Attack with Goro Takemura: Losing His Way",
+        "END_TURN"
+      ],
+      "attacks": 5,
+      "transfers": 4,
+      "endEffects": [],
+      "overtime": 0
+    },
+    {
+      "turn": 13,
+      "activeSeat": 1,
+      "rolls": [],
+      "mainActions": [
+        "Sell Kiroshi Optics",
+        "Attack with Evelyn Parker: Scheming Siren",
+        "Play Dexter DeShawn: One Last Chance",
+        "Attack with Psycho Squad",
+        "Attack with Psycho Squad",
+        "Attack with Psycho Squad",
+        "Attack with V: Corporate Exile",
+        "END_TURN"
+      ],
+      "attacks": 5,
+      "transfers": 4,
+      "endEffects": [],
+      "overtime": 1
+    },
+    {
+      "turn": 14,
+      "activeSeat": 0,
+      "rolls": [],
+      "mainActions": [],
+      "attacks": 0,
+      "transfers": 0,
+      "endEffects": [],
+      "overtime": 2
+    }
+  ]
+}

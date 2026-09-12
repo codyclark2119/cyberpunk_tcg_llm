@@ -1,5 +1,7 @@
 # First demo match: execution coverage roadmap
 
+**Matrix review (September 10, 2026):** [Demo match matrix and self-play readiness](demo-match-matrix-report.md) reviewed nine exact coordinates: six completed, three reached overlapping Reboot. Full-game expansion stopped; unattended self-play is **BLOCKED** pending source semantics. The original verified headline, 29-card roster and 60 physical copies remain unchanged.
+
 These are the user-supplied physical reference lists, preserved exactly: **27 main cards + 3 Legends = 30 total per deck**. Merc Psycho Squad is **3 copies**. Official constructed remains **40–50 main cards**. The explicit **DEMO_STARTER_V1** policy now admits only one exact Arasaka deck and one exact Merc deck, in either seat. No padding or arbitrary 27-card construction is admitted.
 
 All **29 distinct cards** have local raw captures and demo printing metadata. “Executable revision” means an implementation-reviewed application revision, distinct from the harness's display/text normalization. CardIds are stable slugs, never demo collector numbers. Earlier card-mechanic replays use constructed-size synthetic support decks. The new **demo-setup** contract fixture uses only the exact 29 real revisions and stops before normal gameplay. Neither category is human-certified gold data. The per-card rows retain their historical execution-scope descriptions; current format readiness is recorded below.
@@ -67,7 +69,7 @@ The legal 55-action headline uses three blind CALLs, real Saburo/Yorinobu/Hands 
 
 The user's application policy selects Comprehensive Rules setup ordering, retaining physical opposed-d20 selection. One exact Arasaka and one exact Merc deck are required; either seat assignment works. Both still fail default/explicit constructed MAIN_DECK_SIZE. Setup seed `demo-setup-14` rolls 20–20 then 12–11; p0 chooses SECOND, so p1's two leftmost Legends are spent. The six-action contract trace proves cuts, six-card hands and the first whole-hand mulligan, then stops at the second mulligan before turn 1.
 
-**Overtime: UNSUPPORTED. Full exact match: NOT YET VERIFIED.** Existing card interaction limits remain. Next: **CYBERPUNK TCG — OVERTIME EXECUTION**. See the [current implementation report](demo-starter-report.md).
+**Overtime: SUPPORTED — STANDARD_OVERTIME_V1. First exact Arasaka-vs-Merc Demo match: VERIFIED — one deterministic legal game. Exhaustive all-game interaction proof: NOT CLAIMED.** Seed `exact-demo-match-0` ends on global turn 14 with an Arasaka normal seven-Gig victory after 244 actions, 195 strategic positions and 975 events. Both observations are audited throughout; PostgreSQL resumes every action and Python replays by actionId. Both Reboot copies remain undrawn, so overlap is still a known interaction limit. The standalone setup and overtime traces remain unchanged. Next: **DEMO MATCH MATRIX + SELF-PLAY READINESS REVIEW**, not performed here. See the [exact match report](exact-demo-match-report.md).
 
 ## Historical DEMO_STARTER source review outcome
 
@@ -79,7 +81,7 @@ The product reminders/current gameplay guide expressly put shuffling before firs
 
 [Reference manifests](../tests/fixtures/demo-reference-manifests.v1.json) now pin all 60 physical copies and their printing provenance; [44 focused tests](../tests/demo-format.test.ts) calculate counts, resolve exactly 29 real supported revisions, preserve all 53 prior revisions, and reject both exact lists under default/explicit constructed. Both pass existing RAM/copy/Legend checks; only MAIN_DECK_SIZE fails. The real-only bundle is deterministic and contains no synthetic support.
 
-At that historical review, the next step was to resolve setup precedence before admission. The subsequent user decision supplies application authority; it does not alter those source findings. Overtime is explicitly present in the demo instructions and remains an independent unsupported full-match boundary. No exact teaching match was played. See the [complete format report](demo-format-report.md) and [source fixture](../tests/fixtures/demo-format-sources.v1.json).
+At that historical review, the next step was to resolve setup precedence before admission. The subsequent user decision supplies application authority; it does not alter those source findings. Overtime was explicitly present in the demo instructions and remained an independent unsupported full-match boundary at that review; its later implementation is linked above. No exact teaching match was played. See the [complete format report](demo-format-report.md) and [source fixture](../tests/fixtures/demo-format-sources.v1.json).
 
 The final card's complete three-printing source and all four captured errata are pinned in [attack-condition-power-card-source.v1.json](../tests/fixtures/attack-condition-power-card-source.v1.json). The [rules fixture](../tests/fixtures/attack-condition-power-rules.v1.json) contains 362 complete rule nodes and 3 FAQs. Narrow live gameplay/printing checks agree with local data; parsed live rules equal the local snapshot. No corpus refresh occurred. Earlier milestone reports retain their historical baselines.
 

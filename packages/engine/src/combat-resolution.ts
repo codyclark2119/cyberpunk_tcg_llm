@@ -65,18 +65,21 @@ function advanceGigSteal(m: TurnMutation) {
         continuation.selected.push(g.id);
         m.emit({ kind: "GIG_STEAL_SELECTED", gigInstanceId: g.id, attackerId: c.attackerId, forced: true });
     }
-    const transferred = transferGigs(m, continuation.selected, c.attackingPlayerId);
-    if (!transferred.ok) return transferred;
-    // 9.23.5 all moves precede each stolen fact / future 9.23.6 trigger discovery.
-    for (const id of [...continuation.selected].sort()) {
-        const g = m.state.objects.gigs[id];
-        if (g.roll.kind !== "ROLLED") return failure("INVALID_GIG_STEAL", "Rolled Gig required");
-        m.emit({ kind: "GIG_STOLEN", gigInstanceId: id, fromPlayer: c.target.playerId, toPlayer: c.attackingPlayerId, currentValue: g.roll.currentValue, attackerId: c.attackerId });
-        if (endTurnEnabled(m.context)) {
-            const steals = m.state.turnHistory!.gigsStolenByUnit ??= {};
-            steals[c.attackerId] = (steals[c.attackerId] ?? 0) + 1;
+    const defendingPlayer = c.target.playerId;
+    const transferred = transferGigs(m, continuation.selected, c.attackingPlayerId, () => {
+        // 9.23.5 all moves precede each stolen fact / future 9.23.6 trigger discovery.
+        for (const id of [...continuation.selected].sort()) {
+            const g = m.state.objects.gigs[id];
+            if (g.roll.kind !== "ROLLED") throw new Error("Validated transfer must contain rolled Gigs");
+            m.emit({ kind: "GIG_STOLEN", gigInstanceId: id, fromPlayer: defendingPlayer, toPlayer: c.attackingPlayerId, currentValue: g.roll.currentValue, attackerId: c.attackerId });
+            if (endTurnEnabled(m.context)) {
+                const steals = m.state.turnHistory!.gigsStolenByUnit ??= {};
+                steals[c.attackerId] = (steals[c.attackerId] ?? 0) + 1;
+            }
         }
-    }
+    });
+    if (!transferred.ok) return transferred;
+    if (m.state.match.outcome) return success(null);
     return finishCombat(m);
 }
 export function continueGigSteal(m: TurnMutation, index: number) {

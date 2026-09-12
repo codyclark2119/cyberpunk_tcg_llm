@@ -2,6 +2,11 @@ import { z } from "zod";
 import { CardReferenceSchema } from "./card";
 import { MatchIdSchema, PlayerIdSchema, RulesetIdSchema, RulesetVersionSchema, GameStateVersionSchema, GameEventSequenceSchema, CommandIdSchema, CardInstanceIdSchema, GigInstanceIdSchema } from "./identity";
 import { AttackTargetSchema, ZoneRefSchema, EffectSchema, PendingChoiceSchema, PaymentSourceSchema } from "./mechanics";
+export const OvertimeStateSchema = z.strictObject({ startedAfterTurn: z.number().int().min(2) });
+export const OvertimeObservationSchema = z.discriminatedUnion("status", [
+    z.strictObject({ status: z.literal("NORMAL"), qualifyingTurnStarts: z.number().int().min(0).max(2) }),
+    z.strictObject({ status: z.literal("ACTIVE") })
+]);
 export const HashSchema = z.string().regex(/^[a-f0-9]{64}$/);
 export const DieTypeSchema = z.enum(["D4", "D6", "D8", "D10", "D12", "D20"]);
 export const CardInstanceStateSchema = CardReferenceSchema.extend({
@@ -86,7 +91,7 @@ export const ResolutionStateSchema = z.strictObject({
     triggerContinuation: TriggerContinuationSchema.optional(),
     returnTo: ActionReturnContextSchema.optional(),
     gigStealContinuation: z.strictObject({ selected: z.array(GigInstanceIdSchema), remaining: z.number().int().positive() }).optional(),
-    defeatContinuation: z.strictObject({ fightResult: FightResultSchema.optional(), appliedPrevention: FightPreventionSchema.optional(), defeats: z.array(DefeatInstructionSchema).min(1), orders: z.array(z.strictObject({ targetId: CardInstanceIdSchema, cardIds: z.array(CardInstanceIdSchema) })) }).optional(),
+    defeatContinuation: z.strictObject({ fightResult: FightResultSchema.optional(), appliedPrevention: FightPreventionSchema.optional(), appliedPreventions: z.array(FightPreventionSchema).min(2).optional(), defeats: z.array(DefeatInstructionSchema).min(1), orders: z.array(z.strictObject({ targetId: CardInstanceIdSchema, cardIds: z.array(CardInstanceIdSchema) })) }).optional(),
     legendEntryContinuation: z.strictObject({ mode: z.enum(["GO_SOLO", "PLAY"]), actorId: PlayerIdSchema, sourceId: CardInstanceIdSchema, remainingCost: z.number().int().positive(), selectedSources: z.array(PaymentSourceSchema) }).optional(),
     playContinuation: z.strictObject({ kind: z.enum(["PLAY", "ACTIVATE"]), actorId: PlayerIdSchema, sourceId: CardInstanceIdSchema, abilityId: z.string().min(1).optional(), phase: z.enum(["PAYMENT", "EFFECT", "EQUIP"]), remainingCost: z.number().int().nonnegative(), selectedSources: z.array(PaymentSourceSchema), effectIndex: z.number().int().nonnegative(), targetGigId: GigInstanceIdSchema.optional() }).optional(),
     searchContinuation: z.strictObject({ looked: z.array(CardInstanceIdSchema), selected: z.array(CardInstanceIdSchema) }).optional(),
@@ -108,7 +113,8 @@ export const GameStateSchema = z.strictObject({
     firstPlayerRolls: z.array(FirstPlayerRollPairSchema).min(1).optional(),
     schemaVersion: z.literal(2),
     match: z.strictObject({ format: z.literal("DEMO_STARTER_V1").optional(), id: MatchIdSchema, version: GameStateVersionSchema, eventSequence: GameEventSequenceSchema,
-        outcome: z.strictObject({ winnerId: PlayerIdSchema, loserId: PlayerIdSchema, reason: z.enum(["EMPTY_DRAW", "START_TURN_GIGS"]) }).optional(),
+        overtime: OvertimeStateSchema.optional(),
+        outcome: z.strictObject({ winnerId: PlayerIdSchema, loserId: PlayerIdSchema, reason: z.enum(["EMPTY_DRAW", "START_TURN_GIGS", "OVERTIME_GIGS"]) }).optional(),
         rulesetId: RulesetIdSchema, rulesetVersion: RulesetVersionSchema, rulesetHash: HashSchema, contentManifestHash: HashSchema,
         engineVersion: z.string().min(1), engineArtifactHash: HashSchema, cards: z.array(CardReferenceSchema), playerOrder: z.array(PlayerIdSchema).min(1) }),
     timing: TimingStateSchema, players: z.record(PlayerIdSchema, PlayerStateSchema),
@@ -205,7 +211,8 @@ export const EventPayloadSchema = z.discriminatedUnion("kind", [
     z.strictObject({ kind: z.literal("LEGEND_CALLED"), cardInstanceId: CardInstanceIdSchema }),
     z.strictObject({ kind: z.literal("EFFECT_PENDING"), effectId: z.string(), sourceId: CardInstanceIdSchema }),
     z.strictObject({ kind: z.literal("EFFECT_RESOLVED"), effectId: z.string() }),
-    z.strictObject({ kind: z.literal("GAME_ENDED"), winnerId: PlayerIdSchema, loserId: PlayerIdSchema, reason: z.enum(["EMPTY_DRAW", "START_TURN_GIGS"]) }),
+    z.strictObject({ kind: z.literal("OVERTIME_STARTED"), turn: z.number().int().min(2) }),
+    z.strictObject({ kind: z.literal("GAME_ENDED"), winnerId: PlayerIdSchema, loserId: PlayerIdSchema, reason: z.enum(["EMPTY_DRAW", "START_TURN_GIGS", "OVERTIME_GIGS"]) }),
     z.strictObject({ kind: z.literal("CARD_DISCARDED"), cardInstanceId: CardInstanceIdSchema, playerId: PlayerIdSchema, sourceId: CardInstanceIdSchema, effectId: HashSchema, forced: z.boolean() }),
     z.strictObject({ kind: z.literal("CARD_MOVED"), cardInstanceId: CardInstanceIdSchema, from: ZoneRefSchema, to: ZoneRefSchema }),
     z.strictObject({ kind: z.literal("CARD_SOLD"), cardInstanceId: CardInstanceIdSchema, value: z.number().int().nonnegative() }),
