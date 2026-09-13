@@ -98,7 +98,10 @@ function candidateDifferences(candidate: EngineCardCandidateV1, card: CardRevisi
     same("colors", candidate.catalog.colors, card.colors);
     same("classifications", candidate.catalog.classifications, card.tags);
     same("sellable", candidate.catalog.sellable, card.sellProfile.allowed);
-    same("rulesText", candidate.rulesSource.rendered, card.rulesText);
+    // Reviewed engine snapshots intentionally preserve the raw API markup in
+    // both rulesText and sourceMarkup. The bridge's rendered form is for
+    // retrieval/model display only and is not source identity.
+    same("rulesText", candidate.rulesSource.markup, card.rulesText);
     same("sourceMarkup", candidate.rulesSource.markup, card.sourceMarkup);
     return differences;
 }
