@@ -2,6 +2,8 @@ import { z } from "zod";
 import { CardColorSchema, CardRevisionSnapshotSchema, CardTypeSchema, type CardRevisionSnapshot } from "./card";
 import { CardIdSchema, HashSchema } from "./identity";
 
+const FORBIDDEN_AUTHORITY_FIELDS = ["revision", "mechanics", "execution", "reviewed", "status"] as const;
+const ForbiddenAuthoritySchema = z.enum(FORBIDDEN_AUTHORITY_FIELDS);
 export const EngineCandidateManifestV1Schema = z.strictObject({
     schemaVersion: z.literal(1),
     kind: z.literal("CYBERPUNK_ENGINE_CANDIDATES_V1"),
@@ -9,18 +11,17 @@ export const EngineCandidateManifestV1Schema = z.strictObject({
     recordCount: z.number().int().nonnegative(),
     errataCount: z.number().int().nonnegative(),
     catalogSha256: HashSchema,
-    forbiddenAuthority: z.tuple([
-        z.literal("revision"),
-        z.literal("mechanics"),
-        z.literal("execution"),
-        z.literal("reviewed"),
-        z.literal("status")
-    ]),
+    forbiddenAuthority: z.array(ForbiddenAuthoritySchema).length(FORBIDDEN_AUTHORITY_FIELDS.length),
     source: z.strictObject({
         cardDatabasePath: z.string().min(1), cardDatabaseSha256: HashSchema,
         cardIndexPath: z.string().min(1), cardIndexSha256: HashSchema,
         errataPath: z.string().min(1), errataSha256: HashSchema
     })
+}).superRefine((manifest, context) => {
+    const expected = [...FORBIDDEN_AUTHORITY_FIELDS].sort();
+    const actual = [...new Set(manifest.forbiddenAuthority)].sort();
+    if (JSON.stringify(actual) !== JSON.stringify(expected))
+        context.addIssue({ code: "custom", message: "forbiddenAuthority must contain the exact V1 authority boundary" });
 });
 export type EngineCandidateManifestV1 = z.infer<typeof EngineCandidateManifestV1Schema>;
 
@@ -74,10 +75,8 @@ export const EngineCardCandidateV1Schema = z.strictObject({
 });
 export type EngineCardCandidateV1 = z.infer<typeof EngineCardCandidateV1Schema>;
 
-const KEYWORD_HINTS = new Map([
-    ["Go Solo", "GO_SOLO"], ["Quick", "QUICK"], ["Blocker", "BLOCKER"], ["Adrenaline", "ADRENALINE"]
-] as const);
-const TIMING_HINTS = new Set(["Call", "Play", "Attack"]);
+const KEYWORD_HINTS = new Set<string>(["Go Solo", "Quick", "Blocker", "Adrenaline"]);
+const TIMING_HINTS = new Set<string>(["Call", "Play", "Attack"]);
 
 export type CandidateReview = {
     cardId: string;
@@ -108,7 +107,7 @@ function candidateDifferences(candidate: EngineCardCandidateV1, card: CardRevisi
 export function reviewEngineCandidateV1(candidateInput: unknown, reviewedCards: readonly CardRevisionSnapshot[]): CandidateReview {
     const candidate = EngineCardCandidateV1Schema.parse(candidateInput);
     const unsupportedHints = unique([
-        ...candidate.rulesSource.keywordHints.filter(h => !KEYWORD_HINTS.has(h as never)).map(h => `keyword:${h}`),
+        ...candidate.rulesSource.keywordHints.filter(h => !KEYWORD_HINTS.has(h)).map(h => `keyword:${h}`),
         ...candidate.rulesSource.timingTriggerHints.filter(h => !TIMING_HINTS.has(h)).map(h => `timing:${h}`)
     ]);
     const sameId = reviewedCards.filter(card => card.id === candidate.identityCandidate.cardId);
