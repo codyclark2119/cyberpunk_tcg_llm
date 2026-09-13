@@ -1,11 +1,12 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { CardIdSchema, CardRevisionSnapshotSchema, createContentBundle, hashCanonical } from "@tcg/domain";
+import { CardRevisionSnapshotSchema, createContentBundle, hashCanonical } from "@tcg/domain";
 import { createGameWithEvents } from "@tcg/engine";
 import { supportsPlay } from "../packages/engine/src/play-support";
 import { noncombatContext, noncombatInput, AFTERPARTY } from "./noncombat-fixture";
 
-export const DELAMAIN_RIDESHARE = CardIdSchema.parse("delamain-rideshare-ai");
+export const DELAMAIN_RIDESHARE = "delamain-rideshare-ai";
+const BLUE_SUPPORT = "api-admission-blue-support";
 
 const source = {
     artist: "Łukasz Wiktorzak",
@@ -85,7 +86,30 @@ export const delamainRideshare = CardRevisionSnapshotSchema.parse({
 
 function context() {
     const base = noncombatContext();
-    return { content: createContentBundle(base.content.ruleset, [...base.content.cards, delamainRideshare], base.content.manifest.engine) };
+    const blueBase = base.content.cards.find(card => card.id === "dev-legend-blue");
+    assert.ok(blueBase);
+    const blueSupport = CardRevisionSnapshotSchema.parse({
+        ...blueBase,
+        schemaVersion: 2,
+        id: BLUE_SUPPORT,
+        revision: 1,
+        status: "ACTIVE",
+        name: "API Admission Blue Support",
+        subtitle: "",
+        displayName: "API Admission Blue Support",
+        deckbuildingIdentity: BLUE_SUPPORT,
+        ram: { BLUE: 3 },
+        execution: { scope: "NONCOMBAT_SLICE_V1", status: "SUPPORTED" },
+        printings: [{ id: "api-admission-blue-support-print", setCode: "DEV", collectorNumber: "A01", source: "Synthetic test support" }],
+        provenance: {
+            source: "Synthetic Blue RAM 3 support Legend for API admission test; not a real card",
+            sourceHash: hashCanonical({ fixture: BLUE_SUPPORT, ram: 3 }),
+            effectiveAt: "2026-09-13",
+            errata: [],
+            reviewed: true
+        }
+    });
+    return { content: createContentBundle(base.content.ruleset, [...base.content.cards, blueSupport, delamainRideshare], base.content.manifest.engine) };
 }
 
 test("API Admission Batch V1 pins Delamain Rideshare source facts and admits simple play-draw semantics", () => {
@@ -111,11 +135,12 @@ test("simple play-draw admission fails closed if review or semantic shape change
     }
 });
 
-test("authoritative game initialization accepts the admitted API-driven revision", () => {
+test("authoritative game initialization accepts the admitted API-driven revision in a RAM-legal deck", () => {
     const ctx = context();
     const input = noncombatInput("api-admission-batch-v1");
     input.decks = input.decks.map(deck => ({
         ...deck,
+        legends: deck.legends.map(id => id === "dev-legend-red" ? BLUE_SUPPORT : id),
         main: deck.main.map(id => id === AFTERPARTY ? DELAMAIN_RIDESHARE : id)
     }));
     const created = createGameWithEvents(input, ctx);
