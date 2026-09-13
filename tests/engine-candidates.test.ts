@@ -39,7 +39,7 @@ function candidateFromReviewed() {
         },
         rulesSource: {
             markup: card.sourceMarkup,
-            rendered: card.rulesText,
+            rendered: card.rulesText.replaceAll("{", "[").replaceAll("}", "]"),
             keywordHints: [],
             referencedKeywordHints: [],
             timingTriggerHints: []
@@ -75,14 +75,21 @@ test("candidate manifest pins source-only authority boundary independent of fiel
     assert.equal(manifest.authority, "SOURCE_CANDIDATES_ONLY");
 });
 
-test("candidate review distinguishes exact source match, drift and no admission", () => {
+test("rendered retrieval text does not create source drift, but raw markup changes do", () => {
     const exact = candidateFromReviewed();
     assert.equal(reviewEngineCandidateV1(exact, reviewed).status, "SOURCE_MATCH");
+
+    const displayOnly = structuredClone(exact);
+    displayOnly.rulesSource.rendered += " display-only change";
+    assert.equal(reviewEngineCandidateV1(displayOnly, reviewed).status, "SOURCE_MATCH");
+
     const drifted = structuredClone(exact);
-    drifted.rulesSource.rendered += " changed";
+    drifted.rulesSource.markup += " changed";
     const drift = reviewEngineCandidateV1(drifted, reviewed);
     assert.equal(drift.status, "SOURCE_DRIFT");
     assert.ok(drift.differences.includes("rulesText"));
+    assert.ok(drift.differences.includes("sourceMarkup"));
+
     const fresh = structuredClone(exact);
     fresh.sourceCardSlug = "not-yet-reviewed";
     fresh.identityCandidate.cardId = CardIdSchema.parse("not-yet-reviewed");
