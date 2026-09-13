@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { CardRevisionSnapshotSchema } from "@tcg/domain";
+import { CardIdSchema, CardRevisionSnapshotSchema } from "@tcg/domain";
 import { demoReferenceContext } from "./demo-format-fixture";
 import { EngineCandidateManifestV1Schema, EngineCardCandidateV1Schema, reviewEngineCandidateV1 } from "../scripts/lib/engine-candidates";
 
@@ -85,7 +85,7 @@ test("candidate review distinguishes exact source match, drift and no admission"
     assert.ok(drift.differences.includes("rulesText"));
     const fresh = structuredClone(exact);
     fresh.sourceCardSlug = "not-yet-reviewed";
-    fresh.identityCandidate.cardId = "not-yet-reviewed";
+    fresh.identityCandidate.cardId = CardIdSchema.parse("not-yet-reviewed");
     assert.equal(reviewEngineCandidateV1(fresh, reviewed).status, "NOT_ADMITTED");
 });
 
