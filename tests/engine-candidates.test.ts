@@ -87,8 +87,7 @@ test("rendered retrieval text does not create source drift, but raw markup chang
     drifted.rulesSource.markup += " changed";
     const drift = reviewEngineCandidateV1(drifted, reviewed);
     assert.equal(drift.status, "SOURCE_DRIFT");
-    assert.ok(drift.differences.includes("rulesText"));
-    assert.ok(drift.differences.includes("sourceMarkup"));
+    assert.deepEqual(drift.differences, ["sourceMarkup"]);
 
     const fresh = structuredClone(exact);
     fresh.sourceCardSlug = "not-yet-reviewed";
