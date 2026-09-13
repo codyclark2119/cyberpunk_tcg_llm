@@ -76,7 +76,7 @@ export const EngineCardCandidateV1Schema = z.strictObject({
 export type EngineCardCandidateV1 = z.infer<typeof EngineCardCandidateV1Schema>;
 
 const KEYWORD_HINTS = new Set<string>(["Go Solo", "Quick", "Blocker", "Adrenaline"]);
-const TIMING_HINTS = new Set<string>(["Call", "Play", "Attack"]);
+const TIMING_HINTS = new Set<string>(["Call", "Play", "Attack", "Defeated"]);
 
 export type CandidateReview = {
     cardId: string;
