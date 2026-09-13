@@ -1,11 +1,11 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { CardRevisionSnapshotSchema, createContentBundle, hashCanonical } from "@tcg/domain";
+import { CardIdSchema, CardRevisionSnapshotSchema, createContentBundle, hashCanonical } from "@tcg/domain";
 import { createGameWithEvents } from "@tcg/engine";
 import { supportsPlay } from "../packages/engine/src/play-support";
 import { noncombatContext, noncombatInput, AFTERPARTY } from "./noncombat-fixture";
 
-export const DELAMAIN_RIDESHARE = "delamain-rideshare-ai";
+export const DELAMAIN_RIDESHARE = CardIdSchema.parse("delamain-rideshare-ai");
 
 const source = {
     artist: "Łukasz Wiktorzak",
