@@ -6,6 +6,7 @@ import { reactContext, reactInput, FLOOR_IT, BOMBUS, VIKTOR } from "./react-fixt
 import { KERRY } from "./noncombat-fixture";
 import { MANTIS } from "./gear-fixture";
 import { unwrap } from "./turn-replay";
+import { selectReplayAction } from "./replay-selection";
 /** Normal setup, real Unit/Lag/equip turns and one unresolved attack. No state/RNG patches. */
 export function reactReplay(seed = "combat-attack-46", context = reactContext(), branch: "REACT" | "FIGHT" | "GIG" = "REACT") {
     const initialization = reactInput(seed), initialized = unwrap(createGameWithEvents(initialization, context));
@@ -13,7 +14,7 @@ export function reactReplay(seed = "combat-attack-46", context = reactContext(),
     const steps: ReturnType<typeof import("./turn-replay").turnReplay>["steps"] = [], positions: TrainingPosition[] = [];
     const take = (predicate: (a: LegalAction) => boolean) => {
         const actorId = state.timing.actingPlayer, legalActions = unwrap(listLegalActions(state, actorId, context)), observation = unwrap(observe(state, actorId, context));
-        const selected = legalActions.find(predicate);
+        const selected = selectReplayAction(legalActions, predicate);
         if (!selected) throw new Error(`Missing React replay action at ${state.timing.turn}/${state.timing.step}: hand ${state.players[actorId].zones.HAND.map(id => state.objects.cards[id].cardId).join(", ")}`);
         if (legalActions.length > 1) positions.push(unwrap(generatePosition(state, actorId, context, `react-${steps.length}`)));
         const action = { actorId, action: selected.action }, result = unwrap(applyAction(state, action, context));
@@ -43,12 +44,12 @@ export function reactReplay(seed = "combat-attack-46", context = reactContext(),
     take(a => a.action.kind === "DECLARE_ATTACK" && a.action.cardInstanceId === attacker);
     take(a => a.action.kind === "CHOOSE" && (() => { const o = state.resolution.choice!.options[a.action.optionIndices[0]]; return o.kind === "ATTACK_TARGET" && o.target.kind === (branch === "GIG" ? "GIG_AREA" : "CARD"); })());
     if (branch !== "GIG") {
-    take(a => a.action.kind === "CALL_LEGEND" && state.objects.cards[a.action.cardInstanceId].cardId === VIKTOR);
-    while (state.timing.step === "PAYMENT_SELECTION") take(a => a.action.kind === "CHOOSE");
-    while (state.resolution.searchContinuation) take(a => a.action.kind === "CHOOSE" && (() => { const o = state.resolution.choice!.options[a.action.optionIndices[0]]; return o.kind === "CARD"; })());
-    play(FLOOR_IT);
-    if (state.timing.step === "TARGET_SELECTION") take(a => a.action.kind === "CHOOSE" && (() => { const o = state.resolution.choice!.options[a.action.optionIndices[0]]; return o.kind === "CARD" && o.cardInstanceId === attacker; })());
-    take(a => a.action.kind === "DECLARE_BLOCKER");
+        take(a => a.action.kind === "CALL_LEGEND" && state.objects.cards[a.action.cardInstanceId].cardId === VIKTOR);
+        while (state.timing.step === "PAYMENT_SELECTION") take(a => a.action.kind === "CHOOSE");
+        while (state.resolution.searchContinuation) take(a => a.action.kind === "CHOOSE" && (() => { const o = state.resolution.choice!.options[a.action.optionIndices[0]]; return o.kind === "CARD"; })());
+        play(FLOOR_IT);
+        if (state.timing.step === "TARGET_SELECTION") take(a => a.action.kind === "CHOOSE" && (() => { const o = state.resolution.choice!.options[a.action.optionIndices[0]]; return o.kind === "CARD" && o.cardInstanceId === attacker; })());
+        take(a => a.action.kind === "DECLARE_BLOCKER");
     }
     take(a => a.action.kind === "PASS_REACT");
     while (state.resolution.gigStealContinuation || state.resolution.defeatContinuation) take(a => a.action.kind === "CHOOSE" && a.action.optionIndices[0] === 0);
