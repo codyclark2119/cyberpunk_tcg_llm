@@ -3,6 +3,7 @@ import { createGameWithEvents, applyAction, listLegalActions, observe, hashRepla
 import { generatePosition, type TrainingPosition } from "@tcg/training-harness";
 import { noncombatContext, noncombatInput, AFTERPARTY, KERRY } from "./noncombat-fixture";
 import { unwrap } from "./turn-replay";
+import { selectReplayAction } from "./replay-selection";
 /** Every state is reached by real legal actions; seed fixes opening draws, not a mutation of a shuffled deck. */
 export function noncombatReplay() {
     const context = noncombatContext(), initialization = noncombatInput("noncombat-play-34"), initialized = unwrap(createGameWithEvents(initialization, context));
@@ -10,7 +11,7 @@ export function noncombatReplay() {
     const steps: ReturnType<typeof import("./turn-replay").turnReplay>["steps"] = [], positions: TrainingPosition[] = [];
     const take = (predicate: (a: LegalAction) => boolean) => {
         const actorId = state.timing.actingPlayer, legalActions = unwrap(listLegalActions(state, actorId, context)), observation = unwrap(observe(state, actorId, context));
-        const selected = legalActions.find(predicate);
+        const selected = selectReplayAction(legalActions, predicate);
         if (!selected) throw new Error(`Missing noncombat replay action at ${state.timing.turn}/${state.timing.step}`);
         if (legalActions.length > 1) positions.push(unwrap(generatePosition(state, actorId, context, `noncombat-${steps.length}`)));
         const action = { actorId, action: selected.action }, result = unwrap(applyAction(state, action, context));
