@@ -1,12 +1,12 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { CardRevisionSnapshotSchema, createContentBundle, hashCanonical } from "@tcg/domain";
+import { CardIdSchema, CardRevisionSnapshotSchema, createContentBundle, hashCanonical } from "@tcg/domain";
 import { createGameWithEvents } from "@tcg/engine";
 import { supportsPlay } from "../packages/engine/src/play-support";
 import { noncombatContext, noncombatInput, AFTERPARTY } from "./noncombat-fixture";
 
-export const DELAMAIN_RIDESHARE = "delamain-rideshare-ai";
-const BLUE_SUPPORT = "api-admission-blue-support";
+export const DELAMAIN_RIDESHARE = CardIdSchema.parse("delamain-rideshare-ai");
+const BLUE_SUPPORT = CardIdSchema.parse("api-admission-blue-support");
 
 const source = {
     artist: "Łukasz Wiktorzak",
@@ -112,6 +112,11 @@ function context() {
     return { content: createContentBundle(base.content.ruleset, [...base.content.cards, blueSupport, delamainRideshare], base.content.manifest.engine) };
 }
 
+function assertRejected(candidate: unknown, ctx: ReturnType<typeof context>) {
+    const parsed = CardRevisionSnapshotSchema.parse(candidate);
+    assert.equal(supportsPlay(parsed, ctx).ok, false);
+}
+
 test("API Admission Batch V1 pins Delamain Rideshare source facts and admits simple play-draw semantics", () => {
     const ctx = context();
     assert.equal(delamainRideshare.provenance.sourceHash, hashCanonical(source));
@@ -122,17 +127,22 @@ test("API Admission Batch V1 pins Delamain Rideshare source facts and admits sim
 
 test("simple play-draw admission fails closed if review or semantic shape changes", () => {
     const ctx = context();
-    for (const mutate of [
-        (c: any) => { c.provenance.reviewed = false; },
-        (c: any) => { delete c.mechanics.abilities[0].trigger; },
-        (c: any) => { c.mechanics.abilities[0].effects[0].count = 1; },
-        (c: any) => { c.mechanics.abilities[0].conditions = [{ kind: "GIG_COUNT", minimum: 1 }]; }
-    ]) {
-        const copy: any = structuredClone(delamainRideshare);
-        mutate(copy);
-        const parsed = CardRevisionSnapshotSchema.parse(copy);
-        assert.equal(supportsPlay(parsed, ctx).ok, false);
-    }
+    const ability = delamainRideshare.mechanics.abilities[0];
+    assert.ok(ability);
+
+    assertRejected({ ...delamainRideshare, provenance: { ...delamainRideshare.provenance, reviewed: false } }, ctx);
+    assertRejected({
+        ...delamainRideshare,
+        mechanics: { ...delamainRideshare.mechanics, abilities: [{ ...ability, trigger: undefined }] }
+    }, ctx);
+    assertRejected({
+        ...delamainRideshare,
+        mechanics: { ...delamainRideshare.mechanics, abilities: [{ ...ability, effects: [{ kind: "DRAW", count: 1 }] }] }
+    }, ctx);
+    assertRejected({
+        ...delamainRideshare,
+        mechanics: { ...delamainRideshare.mechanics, abilities: [{ ...ability, conditions: [{ kind: "GIG_COUNT", minimum: 1 }] }] }
+    }, ctx);
 });
 
 test("authoritative game initialization accepts the admitted API-driven revision in a RAM-legal deck", () => {
