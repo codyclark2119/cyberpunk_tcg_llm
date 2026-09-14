@@ -2,6 +2,7 @@ import { type GameState, type GameAction, type Result } from "@tcg/domain";
 import { createGameWithEvents, applyAction, listLegalActions, observe, hashReplayState, hashObservation, hashPosition } from "@tcg/engine";
 import { generatePosition } from "@tcg/training-harness";
 import { turnContext, turnInput } from "./turn-fixture";
+import { selectReplayAction } from "./replay-selection";
 export function unwrap<T>(r: Result<T>): T { if (!r.ok)
     throw new Error(JSON.stringify(r.errors)); return r.value; }
 export function turnReplay() {
@@ -11,7 +12,7 @@ export function turnReplay() {
     const sequence: GameAction["action"]["kind"][] = ["ROLL_GIG", "SELL_CARD", "CALL_LEGEND", "CHOOSE", "END_TURN", "ROLL_GIG", "END_TURN"];
     const steps = sequence.map((kind, index) => {
         const actorId = state.timing.actingPlayer, legalActions = unwrap(listLegalActions(state, actorId, context)), observation = unwrap(observe(state, actorId, context));
-        const selected = legalActions.find(a => {
+        const selected = selectReplayAction(legalActions, a => {
             if (a.action.kind !== kind)
                 return false;
             if (index === 0 && (a.action.kind !== "ROLL_GIG" || !a.action.gigInstanceId.endsWith("D8")))
