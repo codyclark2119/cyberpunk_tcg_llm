@@ -48,7 +48,7 @@ const counts = reviews.reduce<Record<string, number>>((out, review) => {
     out[review.status] = (out[review.status] ?? 0) + 1;
     return out;
 }, {});
-const reviewedIds = new Set(reviewedCards.map(card => card.id));
+const reviewedIds = new Set<string>(reviewedCards.map(card => card.id));
 const reviewedProblems = reviews.filter(review => reviewedIds.has(review.cardId) && ["SOURCE_DRIFT", "UNSUPPORTED_HINT"].includes(review.status));
 const result = {
     schemaVersion: 1,
