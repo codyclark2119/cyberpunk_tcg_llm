@@ -7,6 +7,7 @@ import { delamainReplay } from "./end-turn-history-replay";
 import { fieldLegendContext } from "./field-legends-fixture";
 import { vDyingNightReplay } from "./field-legends-replay";
 import { unwrap } from "./turn-replay";
+import { selectReplayAction } from "./replay-selection";
 export function repinOvertime(input: GameState, context: EngineContext) {
     const s = GameStateSchema.parse(input), b = context.content;
     Object.assign(s.match, { rulesetId: b.ruleset.id, rulesetVersion: b.ruleset.version, rulesetHash: b.manifest.ruleset.hash,
@@ -31,7 +32,7 @@ export function arrangeGigs(input: GameState, p0Count = 6, returnedD20 = false) 
 }
 export const overtimeActions = (s: GameState, c: EngineContext) => unwrap(listLegalActions(s, s.timing.actingPlayer, c));
 export function overtimeTake(s: GameState, c: EngineContext, predicate: (a: LegalAction) => boolean) {
-    const action = overtimeActions(s, c).find(predicate); assert.ok(action, `Missing action ${s.timing.turn}/${s.timing.step}`);
+    const action = selectReplayAction(overtimeActions(s, c), predicate); assert.ok(action, `Missing action ${s.timing.turn}/${s.timing.step}`);
     return unwrap(applyAction(s, { actorId: action.actorId, action: action.action }, c));
 }
 export const overtimeChoose = (s: GameState, c: EngineContext) => overtimeTake(s, c, a => a.action.kind === "CHOOSE" && a.action.optionIndices[0] === 0);
