@@ -3,13 +3,14 @@ import { createGameWithEvents, applyAction, listLegalActions, observe, hashRepla
 import { generatePosition, type TrainingPosition } from "@tcg/training-harness";
 import { gearContext, gearInput, MANTIS, VIKTOR, ROYCE } from "./gear-fixture";
 import { unwrap } from "./turn-replay";
+import { selectReplayAction } from "./replay-selection";
 export function gearReplay() {
     const context = gearContext(), initialization = gearInput("gear-equip-44"), initialized = unwrap(createGameWithEvents(initialization, context));
     let state: GameState = initialized.state;
     const steps: ReturnType<typeof import("./turn-replay").turnReplay>["steps"] = [], positions: TrainingPosition[] = [], searchedGear: CardInstanceId[] = [];
     const take = (predicate: (a: LegalAction) => boolean) => {
         const actorId = state.timing.actingPlayer, legalActions = unwrap(listLegalActions(state, actorId, context)), observation = unwrap(observe(state, actorId, context));
-        const selected = legalActions.find(predicate);
+        const selected = selectReplayAction(legalActions, predicate);
         if (!selected) throw new Error(`Missing Gear replay action at ${state.timing.turn}/${state.timing.step}`);
         if (legalActions.length > 1) positions.push(unwrap(generatePosition(state, actorId, context, `gear-${steps.length}`)));
         const action = { actorId, action: selected.action }, result = unwrap(applyAction(state, action, context));
