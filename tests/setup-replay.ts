@@ -3,6 +3,7 @@ import { createGameWithEvents, applyAction, listLegalActions, observe, hashRepla
 import { generatePosition } from "@tcg/training-harness";
 import { setupContext, setupInput } from "./setup-fixture";
 import { unwrap } from "./turn-replay";
+import { selectReplayAction } from "./replay-selection";
 export function setupReplay() {
     const context = setupContext(), input = setupInput(), initialized = unwrap(createGameWithEvents(input, context));
     let state: GameState = initialized.state;
@@ -12,7 +13,7 @@ export function setupReplay() {
         const actorId = state.timing.actingPlayer, legalActions = unwrap(listLegalActions(state, actorId, context));
         const observation = unwrap(observe(state, actorId, context));
         positions.push(unwrap(generatePosition(state, actorId, context, `setup-${i}`)));
-        const selected = legalActions.find(a => a.action.kind === "CHOOSE" && a.action.optionIndices[0] === optionIndex)!;
+        const selected = selectReplayAction(legalActions, a => a.action.kind === "CHOOSE" && a.action.optionIndices[0] === optionIndex)!;
         const action = { actorId, action: selected.action }, result = unwrap(applyAction(state, action, context));
         state = result.state;
         steps.push({ actorId, action, actionId: selected.actionId, legalActions, observation, events: result.events, stateHash: hashReplayState(state), positionHash: hashPosition(state), observationHash: hashObservation(unwrap(observe(state, state.timing.actingPlayer, context))), step: state.timing.step });
@@ -20,7 +21,7 @@ export function setupReplay() {
     for (const kind of ["ROLL_GIG", "CALL_LEGEND", "END_TURN"] as const) {
         const actorId = state.timing.actingPlayer, legalActions = unwrap(listLegalActions(state, actorId, context));
         const observation = unwrap(observe(state, actorId, context));
-        const selected = legalActions.find(a => a.action.kind === kind)!;
+        const selected = selectReplayAction(legalActions, a => a.action.kind === kind)!;
         const action = { actorId, action: selected.action }, result = unwrap(applyAction(state, action, context));
         state = result.state;
         steps.push({ actorId, action, actionId: selected.actionId, legalActions, observation, events: result.events, stateHash: hashReplayState(state), positionHash: hashPosition(state), observationHash: hashObservation(unwrap(observe(state, state.timing.actingPlayer, context))), step: state.timing.step });
