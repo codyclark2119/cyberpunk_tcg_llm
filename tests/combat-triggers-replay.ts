@@ -5,6 +5,7 @@ import { triggersContext, triggersInput, SATORI, DEXTER, JACKIE } from "./combat
 import { PSYCHO } from "./combat-restrictions-fixture";
 import { SWORDWISE } from "./combat-fixture";
 import { unwrap } from "./turn-replay";
+import { selectReplayAction } from "./replay-selection";
 export type TriggerReplayKind = "SATORI" | "DEFEATED" | "FIRST_BLUE";
 /** Legal setup/turns only, pinned seeds. Synthetic constructed support decks, never padded demo lists. */
 export function triggerReplay(kind: TriggerReplayKind, seed: string, collectPositions = true) {
@@ -13,7 +14,7 @@ export function triggerReplay(kind: TriggerReplayKind, seed: string, collectPosi
     const steps: ReturnType<typeof import("./turn-replay").turnReplay>["steps"] = [], positions: TrainingPosition[] = [];
     const take = (predicate: (a: LegalAction) => boolean) => {
         const actorId = state.timing.actingPlayer, legalActions = unwrap(listLegalActions(state, actorId, context));
-        const selected = legalActions.find(predicate);
+        const selected = selectReplayAction(legalActions, predicate);
         if (!selected) throw new Error(`Missing ${kind} action at ${state.timing.turn}/${state.timing.step}`);
         const observation = unwrap(observe(state, actorId, context));
         if (collectPositions && legalActions.length > 1) positions.push(unwrap(generatePosition(state, actorId, context, `${kind.toLowerCase()}-${steps.length}`)));
@@ -46,8 +47,6 @@ export function triggerReplay(kind: TriggerReplayKind, seed: string, collectPosi
     const finish = () => {
         take(a => a.action.kind === "PASS_REACT");
         while (state.resolution.choice) {
-            // This headline needs the original D6 steal to establish Dexter's >=10 difference.
-            // Select the gameplay intent explicitly; artifact-dependent actionId ordering is not a fixture policy.
             if (kind === "DEFEATED" && state.resolution.gigStealContinuation) choose(o => o.kind === "GIG" && o.gigInstanceId === "p0-D6");
             else choose(() => true);
         }
