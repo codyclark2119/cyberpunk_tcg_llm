@@ -11,6 +11,7 @@ import { demoStarterContext } from "./demo-starter-fixture";
 import { createDemoMatchPolicy } from "./demo-matrix-policy";
 import { assertNoSuppressedDemoInteraction } from "./demo-match-replay";
 import { unwrap } from "./turn-replay";
+import { engineIdentity } from "../scripts/engine-identity";
 import review from "./fixtures/reboot-multiplicity-source-review.v1.json";
 import reproducers from "./fixtures/reboot-multiplicity-reproducers.v1.json";
 import originalSources from "./fixtures/combat-restrictions-card-sources.v1.json";
@@ -24,7 +25,7 @@ function historical(state: GameState): GameState {
 test("focused source successor preserves original card, FAQ, rules, matrix and descriptor evidence", () => {
     for (const [file, sha256] of Object.entries(review.preservedFiles).filter(([file]) => !["tests/demo-match-replay.ts", "tests/fixtures/demo-matrix-overlap-replay.v1.json"].includes(file)))
         assert.equal(createHash("sha256").update(readFileSync(file)).digest("hex"), sha256, file);
-    assert.equal(context.content.manifest.engine.version, "0.4.0-reboot-multiplicity-1");
+    assert.equal(context.content.manifest.engine.version, engineIdentity().version);
     assert.deepEqual(context.content.manifest.ruleset, review.runtime.ruleset);
     assert.notEqual(context.content.manifestHash, review.runtime.contentManifestHash);
     const card = context.content.cards.find(c => c.id === "reboot-optics")!;
