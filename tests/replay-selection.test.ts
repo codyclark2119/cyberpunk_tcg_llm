@@ -12,7 +12,7 @@ function sell(cardInstanceId: typeof firstCard, actionId: string): LegalAction {
         actorId,
         actionId,
         action: { kind: "SELL_CARD", cardInstanceId },
-        descriptor: { category: "SELL_CARD", label: `Sell ${cardInstanceId}`, refs: [] }
+        descriptor: { kind: "SELL_CARD", label: `Sell ${cardInstanceId}` }
     };
 }
 
