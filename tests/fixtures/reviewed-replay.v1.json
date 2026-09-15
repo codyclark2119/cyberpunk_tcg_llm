@@ -8024,11 +8024,11 @@
           "kind": "CHOOSE",
           "choiceId": "2a55fac014fa7af5ba33b981772b52488d86acc6ac7bbd4fb8ce52f39c5c0686",
           "optionIndices": [
-            2
+            1
           ]
         }
       },
-      "actionId": "14f82004e3b33982a313ff9508339ecc54f4e7d7df542d39738b7b9fd52ad4ec",
+      "actionId": "87843f1d351e9ebbde8d7dda979daf991e8d99b0bf2d4b0fc38d9cf75ec38edc",
       "legalActions": [
         {
           "actorId": "00000000-0000-4000-8000-000000000001",
@@ -8504,9 +8504,9 @@
           }
         }
       ],
-      "stateHash": "e94de05cacecc41f5e03ba49916959badaf0559b540f5f7a131b08df1ad3defa",
-      "positionHash": "27e6dc03425e6b1c42886d81ffed7e260d5685e1069d9a4be5b828342e2f6483",
-      "observationHash": "7169fd96f2d05c698754e6bda0ecbe60c7a268aaa573976b58f394416e341d99",
+      "stateHash": "d3b50fcd45bf315fb67556296debb4c0901a0d2b617bc636ddf56382f6b885cb",
+      "positionHash": "321df0670fd95d7fc8d92a2865cafe91bc056500f4a7e6cd1a53fd72035d28a0",
+      "observationHash": "0365b246cf909e735af30d1410a717e3ea258b5e7adb993c66de133204effdc3",
       "step": "TARGET_SELECTION"
     },
     {
@@ -8515,39 +8515,39 @@
         "actorId": "00000000-0000-4000-8000-000000000001",
         "action": {
           "kind": "CHOOSE",
-          "choiceId": "ca4f98040990e694cfc0b9dcd5a675f2c4fdfaf8ad1a9201428f21200098ea99",
+          "choiceId": "a5f4703de0d435db259d9a709929b18578a222b05db7a22c31796072e086bf0d",
           "optionIndices": [
             1
           ]
         }
       },
-      "actionId": "0a216bd2f17305800d1610645c3da55449d2b0c009dd10ca76391a117a20b575",
+      "actionId": "b3837873f0213035f37d0a71e3e540f9d1ce2b7a471356bd6c8f655269fa2a1b",
       "legalActions": [
         {
           "actorId": "00000000-0000-4000-8000-000000000001",
           "action": {
             "kind": "CHOOSE",
-            "choiceId": "ca4f98040990e694cfc0b9dcd5a675f2c4fdfaf8ad1a9201428f21200098ea99",
+            "choiceId": "a5f4703de0d435db259d9a709929b18578a222b05db7a22c31796072e086bf0d",
             "optionIndices": [
-              1
+              4
             ]
           },
-          "actionId": "0a216bd2f17305800d1610645c3da55449d2b0c009dd10ca76391a117a20b575",
+          "actionId": "40837d06f77784d72fc7bf9138d5c3a733d9b8d9603fc2f6acbee678e9b9a1c6",
           "descriptor": {
             "kind": "CHOOSE",
-            "label": "Reveal and take Slice Card 12"
+            "label": "Reveal and take Slice Card 2"
           }
         },
         {
           "actorId": "00000000-0000-4000-8000-000000000001",
           "action": {
             "kind": "CHOOSE",
-            "choiceId": "ca4f98040990e694cfc0b9dcd5a675f2c4fdfaf8ad1a9201428f21200098ea99",
+            "choiceId": "a5f4703de0d435db259d9a709929b18578a222b05db7a22c31796072e086bf0d",
             "optionIndices": [
               2
             ]
           },
-          "actionId": "116c1c38bf335c3cf2d1bc113af4e2fb7c515c9a70a1f8921b227a2c07331a19",
+          "actionId": "854a9fd678c0bdfe7556fc7a92bef4ee7b251058f4b15f267f3738b537f218b0",
           "descriptor": {
             "kind": "CHOOSE",
             "label": "Reveal and take Slice Card 10"
@@ -8557,27 +8557,12 @@
           "actorId": "00000000-0000-4000-8000-000000000001",
           "action": {
             "kind": "CHOOSE",
-            "choiceId": "ca4f98040990e694cfc0b9dcd5a675f2c4fdfaf8ad1a9201428f21200098ea99",
-            "optionIndices": [
-              0
-            ]
-          },
-          "actionId": "2b6660d1cde10e3335874190ffebef567a101b62cb5524ac35f8ab507a15fee2",
-          "descriptor": {
-            "kind": "CHOOSE",
-            "label": "Take no more Gears"
-          }
-        },
-        {
-          "actorId": "00000000-0000-4000-8000-000000000001",
-          "action": {
-            "kind": "CHOOSE",
-            "choiceId": "ca4f98040990e694cfc0b9dcd5a675f2c4fdfaf8ad1a9201428f21200098ea99",
+            "choiceId": "a5f4703de0d435db259d9a709929b18578a222b05db7a22c31796072e086bf0d",
             "optionIndices": [
               3
             ]
           },
-          "actionId": "4b3238eb75e86cd7788d621365f9a32f9c0c391dbf110227553895bb52d06a2f",
+          "actionId": "9cc2984e0f157ae958c0939abc317863ef7b6c16f09b01a95bdceffdcffd1e66",
           "descriptor": {
             "kind": "CHOOSE",
             "label": "Reveal and take Slice Card 12"
@@ -8587,15 +8572,30 @@
           "actorId": "00000000-0000-4000-8000-000000000001",
           "action": {
             "kind": "CHOOSE",
-            "choiceId": "ca4f98040990e694cfc0b9dcd5a675f2c4fdfaf8ad1a9201428f21200098ea99",
+            "choiceId": "a5f4703de0d435db259d9a709929b18578a222b05db7a22c31796072e086bf0d",
             "optionIndices": [
-              4
+              1
             ]
           },
-          "actionId": "4bb8726fa77bb214abfaceeed286d89af8bff6d35a8e253f7daf746052fde8d1",
+          "actionId": "b3837873f0213035f37d0a71e3e540f9d1ce2b7a471356bd6c8f655269fa2a1b",
           "descriptor": {
             "kind": "CHOOSE",
-            "label": "Reveal and take Slice Card 2"
+            "label": "Reveal and take Slice Card 1"
+          }
+        },
+        {
+          "actorId": "00000000-0000-4000-8000-000000000001",
+          "action": {
+            "kind": "CHOOSE",
+            "choiceId": "a5f4703de0d435db259d9a709929b18578a222b05db7a22c31796072e086bf0d",
+            "optionIndices": [
+              0
+            ]
+          },
+          "actionId": "d30d8c8a0a85e1fa2c067bf7334bb595132976ea2e3caa24db8315b3b0890fd5",
+          "descriptor": {
+            "kind": "CHOOSE",
+            "label": "Take no more Gears"
           }
         }
       ],
@@ -8966,7 +8966,7 @@
           }
         ],
         "choice": {
-          "id": "ca4f98040990e694cfc0b9dcd5a675f2c4fdfaf8ad1a9201428f21200098ea99",
+          "id": "a5f4703de0d435db259d9a709929b18578a222b05db7a22c31796072e086bf0d",
           "actorSeat": 0,
           "kind": "TARGET",
           "min": 1,
@@ -8978,14 +8978,14 @@
           "sequence": 59,
           "payload": {
             "kind": "CARD_REVEALED",
-            "cardInstanceId": "p0-c7"
+            "cardInstanceId": "p0-c40"
           }
         },
         {
           "sequence": 60,
           "payload": {
             "kind": "CARD_MOVED",
-            "cardInstanceId": "p0-c7",
+            "cardInstanceId": "p0-c40",
             "from": {
               "playerId": "00000000-0000-4000-8000-000000000001",
               "zone": "DECK"
@@ -9000,14 +9000,14 @@
           "sequence": 61,
           "payload": {
             "kind": "CARD_REVEALED",
-            "cardInstanceId": "p0-c40"
+            "cardInstanceId": "p0-c7"
           }
         },
         {
           "sequence": 62,
           "payload": {
             "kind": "CARD_MOVED",
-            "cardInstanceId": "p0-c40",
+            "cardInstanceId": "p0-c7",
             "from": {
               "playerId": "00000000-0000-4000-8000-000000000001",
               "zone": "DECK"
@@ -9046,9 +9046,9 @@
           }
         }
       ],
-      "stateHash": "b3123e4dde9e078aa761fc05678576ea2c9a2341ab1b5681e3502d067cc19b88",
-      "positionHash": "f04ca763a0d2d852980ceb50db234fafaed174f17e9ca3a626dff896b29b3f0d",
-      "observationHash": "4cb7529bdb82f9d35c944db60da7e1f05d2d95675602b18650dce6eb2612e2e6",
+      "stateHash": "b43702be13588eaa6be072e3295efd6bb2ba9a204f13f6587d8653d0c7040eea",
+      "positionHash": "c0621e39c876a57f6a20723fd447cb13caa58cc0a0bfa3d86dd3bbcc66ae2f88",
+      "observationHash": "159987b9337d2523cd911e8914ec47c11c1535a66263bcfccc83076f6eb65820",
       "step": "MAIN"
     }
   ],
@@ -36682,7 +36682,7 @@
               "p0-c10"
             ],
             "selected": [
-              "p0-c7"
+              "p0-c40"
             ]
           },
           "current": {
@@ -36700,7 +36700,7 @@
           "pending": [],
           "discovered": [],
           "choice": {
-            "id": "ca4f98040990e694cfc0b9dcd5a675f2c4fdfaf8ad1a9201428f21200098ea99",
+            "id": "a5f4703de0d435db259d9a709929b18578a222b05db7a22c31796072e086bf0d",
             "actorId": "00000000-0000-4000-8000-000000000001",
             "kind": "TARGET",
             "options": [
@@ -36710,7 +36710,7 @@
               },
               {
                 "kind": "CARD",
-                "cardInstanceId": "p0-c40"
+                "cardInstanceId": "p0-c7"
               },
               {
                 "kind": "CARD",
@@ -36737,7 +36737,7 @@
           "counter": 129
         }
       },
-      "stateHash": "e94de05cacecc41f5e03ba49916959badaf0559b540f5f7a131b08df1ad3defa",
+      "stateHash": "d3b50fcd45bf315fb67556296debb4c0901a0d2b617bc636ddf56382f6b885cb",
       "observation": {
         "schemaVersion": 1,
         "viewerSeat": 0,
@@ -37105,41 +37105,41 @@
           }
         ],
         "choice": {
-          "id": "ca4f98040990e694cfc0b9dcd5a675f2c4fdfaf8ad1a9201428f21200098ea99",
+          "id": "a5f4703de0d435db259d9a709929b18578a222b05db7a22c31796072e086bf0d",
           "actorSeat": 0,
           "kind": "TARGET",
           "min": 1,
           "max": 1
         }
       },
-      "observationHash": "7169fd96f2d05c698754e6bda0ecbe60c7a268aaa573976b58f394416e341d99",
+      "observationHash": "0365b246cf909e735af30d1410a717e3ea258b5e7adb993c66de133204effdc3",
       "actingSeat": 0,
       "legalActions": [
         {
           "actorId": "00000000-0000-4000-8000-000000000001",
           "action": {
             "kind": "CHOOSE",
-            "choiceId": "ca4f98040990e694cfc0b9dcd5a675f2c4fdfaf8ad1a9201428f21200098ea99",
+            "choiceId": "a5f4703de0d435db259d9a709929b18578a222b05db7a22c31796072e086bf0d",
             "optionIndices": [
-              1
+              4
             ]
           },
-          "actionId": "0a216bd2f17305800d1610645c3da55449d2b0c009dd10ca76391a117a20b575",
+          "actionId": "40837d06f77784d72fc7bf9138d5c3a733d9b8d9603fc2f6acbee678e9b9a1c6",
           "descriptor": {
             "kind": "CHOOSE",
-            "label": "Reveal and take Slice Card 12"
+            "label": "Reveal and take Slice Card 2"
           }
         },
         {
           "actorId": "00000000-0000-4000-8000-000000000001",
           "action": {
             "kind": "CHOOSE",
-            "choiceId": "ca4f98040990e694cfc0b9dcd5a675f2c4fdfaf8ad1a9201428f21200098ea99",
+            "choiceId": "a5f4703de0d435db259d9a709929b18578a222b05db7a22c31796072e086bf0d",
             "optionIndices": [
               2
             ]
           },
-          "actionId": "116c1c38bf335c3cf2d1bc113af4e2fb7c515c9a70a1f8921b227a2c07331a19",
+          "actionId": "854a9fd678c0bdfe7556fc7a92bef4ee7b251058f4b15f267f3738b537f218b0",
           "descriptor": {
             "kind": "CHOOSE",
             "label": "Reveal and take Slice Card 10"
@@ -37149,27 +37149,12 @@
           "actorId": "00000000-0000-4000-8000-000000000001",
           "action": {
             "kind": "CHOOSE",
-            "choiceId": "ca4f98040990e694cfc0b9dcd5a675f2c4fdfaf8ad1a9201428f21200098ea99",
-            "optionIndices": [
-              0
-            ]
-          },
-          "actionId": "2b6660d1cde10e3335874190ffebef567a101b62cb5524ac35f8ab507a15fee2",
-          "descriptor": {
-            "kind": "CHOOSE",
-            "label": "Take no more Gears"
-          }
-        },
-        {
-          "actorId": "00000000-0000-4000-8000-000000000001",
-          "action": {
-            "kind": "CHOOSE",
-            "choiceId": "ca4f98040990e694cfc0b9dcd5a675f2c4fdfaf8ad1a9201428f21200098ea99",
+            "choiceId": "a5f4703de0d435db259d9a709929b18578a222b05db7a22c31796072e086bf0d",
             "optionIndices": [
               3
             ]
           },
-          "actionId": "4b3238eb75e86cd7788d621365f9a32f9c0c391dbf110227553895bb52d06a2f",
+          "actionId": "9cc2984e0f157ae958c0939abc317863ef7b6c16f09b01a95bdceffdcffd1e66",
           "descriptor": {
             "kind": "CHOOSE",
             "label": "Reveal and take Slice Card 12"
@@ -37179,19 +37164,34 @@
           "actorId": "00000000-0000-4000-8000-000000000001",
           "action": {
             "kind": "CHOOSE",
-            "choiceId": "ca4f98040990e694cfc0b9dcd5a675f2c4fdfaf8ad1a9201428f21200098ea99",
+            "choiceId": "a5f4703de0d435db259d9a709929b18578a222b05db7a22c31796072e086bf0d",
             "optionIndices": [
-              4
+              1
             ]
           },
-          "actionId": "4bb8726fa77bb214abfaceeed286d89af8bff6d35a8e253f7daf746052fde8d1",
+          "actionId": "b3837873f0213035f37d0a71e3e540f9d1ce2b7a471356bd6c8f655269fa2a1b",
           "descriptor": {
             "kind": "CHOOSE",
-            "label": "Reveal and take Slice Card 2"
+            "label": "Reveal and take Slice Card 1"
+          }
+        },
+        {
+          "actorId": "00000000-0000-4000-8000-000000000001",
+          "action": {
+            "kind": "CHOOSE",
+            "choiceId": "a5f4703de0d435db259d9a709929b18578a222b05db7a22c31796072e086bf0d",
+            "optionIndices": [
+              0
+            ]
+          },
+          "actionId": "d30d8c8a0a85e1fa2c067bf7334bb595132976ea2e3caa24db8315b3b0890fd5",
+          "descriptor": {
+            "kind": "CHOOSE",
+            "label": "Take no more Gears"
           }
         }
       ],
-      "positionHash": "27e6dc03425e6b1c42886d81ffed7e260d5685e1069d9a4be5b828342e2f6483",
+      "positionHash": "321df0670fd95d7fc8d92a2865cafe91bc056500f4a7e6cd1a53fd72035d28a0",
       "provenance": {
         "generator": "manual-fixture",
         "revision": "1",
@@ -37358,8 +37358,8 @@
             "p0-c28",
             "p0-c33",
             "p0-c9",
-            "p0-c7",
-            "p0-c40"
+            "p0-c40",
+            "p0-c7"
           ],
           "BATTLEFIELD": [],
           "TRASH": [],
@@ -39176,5 +39176,5 @@
       "counter": 131
     }
   },
-  "finalStateHash": "b3123e4dde9e078aa761fc05678576ea2c9a2341ab1b5681e3502d067cc19b88"
+  "finalStateHash": "b43702be13588eaa6be072e3295efd6bb2ba9a204f13f6587d8653d0c7040eea"
 }
