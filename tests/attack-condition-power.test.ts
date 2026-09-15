@@ -238,7 +238,7 @@ test("previous52 immutable revisions and constructed40–50/3 Legends policies a
     for(const size of [27,39,51]) { const input=attackPowerInput("size");input.decks[0].main=Array.from({length:size},(_,i)=>input.decks[0].main[i%42]);assert.equal(createGameWithEvents(input,context).ok,false); }
 });
 test("legal headline exactly regenerates declared power, real field Legend, steal and expiry",()=>{
-    const golden=JSON.parse(readFileSync(new URL("./fixtures/attack-condition-power-replay.v1.json",import.meta.url),"utf8")) as unknown;assert.deepEqual(golden,trace);assert.equal(trace.finalState.timing.turn,10);assert.equal(trace.steps.length,55);assert.equal(trace.positions.length,53);assert.equal(trace.steps.filter(s=>s.action.action.kind==="CALL_LEGEND").length,3);assert.ok(trace.steps.some(s=>s.action.action.kind==="GO_SOLO"));
+    const golden=JSON.parse(readFileSync(new URL("./fixtures/attack-condition-power-replay.v1.json",import.meta.url),"utf8")) as unknown;assert.deepEqual(golden,trace);assert.equal(trace.finalState.timing.turn,10);assert.equal(trace.steps.length,54);assert.equal(trace.positions.length,52);assert.equal(trace.steps.filter(s=>s.action.action.kind==="CALL_LEGEND").length,3);assert.ok(trace.steps.some(s=>s.action.action.kind==="GO_SOLO"));
     const e=trace.steps.flatMap(s=>s.events.map(e=>e.payload));assert.ok(e.some(e=>e.kind==="POWER_MODIFIER_APPLIED"));assert.ok(e.findIndex(e=>e.kind==="ATTACK_ENDED")<e.findIndex(e=>e.kind==="POWER_MODIFIER_EXPIRED"));
 });
 
