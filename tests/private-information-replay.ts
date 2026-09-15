@@ -3,6 +3,7 @@ import { applyAction, createGameWithEvents, hashObservation, hashPosition, hashR
 import { generatePosition, type TrainingPosition } from "@tcg/training-harness";
 import { privateContext, privateInput, KIROSHI } from "./private-information-fixture";
 import { PSYCHO } from "./combat-restrictions-fixture";
+import { selectReplayAction } from "./replay-selection";
 import { unwrap } from "./turn-replay";
 /** Actual setup and legal actions, with deterministic semantic choices. Never patches state or RNG. */
 export function privateReplay(seed: string, collectPositions = true, callAfter = true) {
@@ -10,7 +11,7 @@ export function privateReplay(seed: string, collectPositions = true, callAfter =
     let state: GameState = initialized.state;
     const steps: ReturnType<typeof import("./turn-replay").turnReplay>["steps"] = [], positions: TrainingPosition[] = [];
     const take = (predicate: (a: LegalAction) => boolean) => {
-        const actorId = state.timing.actingPlayer, legalActions = unwrap(listLegalActions(state, actorId, context)), selected = legalActions.find(predicate);
+        const actorId = state.timing.actingPlayer, legalActions = unwrap(listLegalActions(state, actorId, context)), selected = selectReplayAction(legalActions, predicate);
         if (!selected) throw new Error(`Missing private-look action at ${state.timing.turn}/${state.timing.step}`);
         const observation = unwrap(observe(state, actorId, context));
         if (collectPositions && legalActions.length > 1) positions.push(unwrap(generatePosition(state, actorId, context, `private-look-${steps.length}`)));
