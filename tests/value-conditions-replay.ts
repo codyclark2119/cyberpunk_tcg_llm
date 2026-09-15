@@ -3,12 +3,13 @@ import { applyAction, createGameWithEvents, hashObservation, hashPosition, hashR
 import { generatePosition, type TrainingPosition } from "@tcg/training-harness";
 import { valueContext, valueInput, INDUSTRIAL, FIELD_OPERATOR } from "./value-conditions-fixture";
 import { unwrap } from "./turn-replay";
+import { selectReplayAction } from "./replay-selection";
 /** Constructed legal actions only; ODD is a fully legal alternative choice path used in focused/persistence tests. */
 export function valueConditionsReplay(seed = "value-46", mode: "EVEN" | "ODD" = "EVEN", collectPositions = true) {
     const context = valueContext(), initialization = valueInput(seed), initialized = unwrap(createGameWithEvents(initialization, context)); let state: GameState = initialized.state;
     const steps: ReturnType<typeof import("./turn-replay").turnReplay>["steps"] = [], positions: TrainingPosition[] = [];
     const take = (predicate: (a: LegalAction) => boolean) => {
-        const actorId = state.timing.actingPlayer, legalActions = unwrap(listLegalActions(state, actorId, context)), selected = legalActions.find(predicate);
+        const actorId = state.timing.actingPlayer, legalActions = unwrap(listLegalActions(state, actorId, context)), selected = selectReplayAction(legalActions, predicate);
         if (!selected) throw new Error("Missing value replay action at " + state.timing.turn + "/" + state.timing.step);
         const observation = unwrap(observe(state, actorId, context)); if (collectPositions && legalActions.length > 1) positions.push(unwrap(generatePosition(state, actorId, context, "value-" + steps.length)));
         const action = { actorId, action: selected.action }, next = unwrap(applyAction(state, action, context)); state = next.state;

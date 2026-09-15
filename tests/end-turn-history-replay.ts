@@ -3,13 +3,14 @@ import { applyAction, createGameWithEvents, hashObservation, hashPosition, hashR
 import { generatePosition, type TrainingPosition } from "@tcg/training-harness";
 import { endTurnContext, endTurnInput, DELAMAIN } from "./end-turn-history-fixture";
 import { unwrap } from "./turn-replay";
+import { selectReplayAction } from "./replay-selection";
 /** Legal setup/player actions only, including paying with actual sold Eddies. */
 export function endTurnReplay(seed: string, collectPositions = true) {
     const context = endTurnContext(), initialization = endTurnInput(seed), initialized = unwrap(createGameWithEvents(initialization, context));
     let state: GameState = initialized.state;
     const steps: ReturnType<typeof import("./turn-replay").turnReplay>["steps"] = [], positions: TrainingPosition[] = [];
     const take = (predicate: (a: LegalAction) => boolean) => {
-        const actorId = state.timing.actingPlayer, legalActions = unwrap(listLegalActions(state, actorId, context)), selected = legalActions.find(predicate);
+        const actorId = state.timing.actingPlayer, legalActions = unwrap(listLegalActions(state, actorId, context)), selected = selectReplayAction(legalActions, predicate);
         if (!selected) throw new Error(`Missing end-turn action at ${state.timing.turn}/${state.timing.step}`);
         const observation = unwrap(observe(state, actorId, context));
         if (collectPositions && legalActions.length > 1) positions.push(unwrap(generatePosition(state, actorId, context, `end-turn-${steps.length}`)));
@@ -32,7 +33,7 @@ export function endTurnReplay(seed: string, collectPositions = true) {
     take(a => a.action.kind === "DECLARE_ATTACK" && state.objects.cards[a.action.cardInstanceId].cardId === DELAMAIN);
     take(a => a.action.kind === "PASS_REACT");
     while (state.resolution.choice) take(a => a.action.kind === "CHOOSE" && a.action.optionIndices[0] === 0);
-    play(); // Spend both sold Eddies; this second Delamain has no steal history.
+    play();
     const beforeEndTurn = state; end(); const pendingEndTurn = state;
     if (state.timing.step !== "EDDIE_READY_SELECTION") throw new Error("Headline requires strategic Eddie readiness");
     take(a => a.action.kind === "CHOOSE" && a.action.optionIndices[0] === 0);

@@ -3,6 +3,7 @@ import { createGameWithEvents, applyAction, listLegalActions, observe, hashRepla
 import { generatePosition, type TrainingPosition } from "@tcg/training-harness";
 import { overtimeContext, overtimeInput } from "./overtime-fixture";
 import { unwrap } from "./turn-replay";
+import { selectReplayAction } from "./replay-selection";
 /** Constructed support only. Every transition comes from legal enumeration; no state/RNG/card patches. */
 export function overtimeReplay() {
     const context = overtimeContext(), input = overtimeInput(), initialized = unwrap(createGameWithEvents(input, context));
@@ -10,7 +11,7 @@ export function overtimeReplay() {
     const steps: ReturnType<typeof import("./turn-replay").turnReplay>["steps"] = [], positions: TrainingPosition[] = [], boundaries: Record<string, GameState> = {};
     const actions = () => unwrap(listLegalActions(state, state.timing.actingPlayer, context));
     function take(predicate: (a: LegalAction) => boolean) {
-        const actorId = state.timing.actingPlayer, legalActions = actions(), selected = legalActions.find(predicate);
+        const actorId = state.timing.actingPlayer, legalActions = actions(), selected = selectReplayAction(legalActions, predicate);
         if (!selected) throw new Error(`Expected legal overtime action at ${state.timing.turn}/${state.timing.step}`);
         const observation = unwrap(observe(state, actorId, context));
         if (!state.setup || state.setup.stage === "FIRST_PLAYER" || state.setup.stage === "MULLIGAN")

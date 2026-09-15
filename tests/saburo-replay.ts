@@ -5,13 +5,16 @@ import { saburoContext, saburoInput, SABURO } from "./saburo-fixture";
 import { YORINOBU } from "./yorinobu-fixture";
 import { GORO } from "./goro-fixture";
 import { unwrap } from "./turn-replay";
+import { selectReplayAction } from "./replay-selection";
 /** Setup and legal actions only. CALLs choose public slots 1, 2 and 3 without inspecting hidden identities. */
 export function saburoReplay(seed = "saburo-1", collectPositions = true) {
+    // Reviewed scenario dice, one Gig roll per turn. Pinned so canonical selection cannot change the trajectory.
+    const SABURO_DICE = ["D8", "D6", "D6", "D12", "D10", "D10", "D12"] as const;
     const context = saburoContext(), initialization = saburoInput(seed), initialized = unwrap(createGameWithEvents(initialization, context));
     let state: GameState = initialized.state;
     const steps: ReturnType<typeof import("./turn-replay").turnReplay>["steps"] = [], positions: TrainingPosition[] = [];
     const take = (predicate: (a: LegalAction) => boolean) => {
-        const actorId = state.timing.actingPlayer, legalActions = unwrap(listLegalActions(state, actorId, context)), selected = legalActions.find(predicate);
+        const actorId = state.timing.actingPlayer, legalActions = unwrap(listLegalActions(state, actorId, context)), selected = selectReplayAction(legalActions, predicate);
         if (!selected) throw new Error("Missing Saburo replay action at " + state.timing.turn + "/" + state.timing.step);
         const observation = unwrap(observe(state, actorId, context));
         if (collectPositions && legalActions.length > 1) positions.push(unwrap(generatePosition(state, actorId, context, "saburo-" + steps.length)));
@@ -23,7 +26,7 @@ export function saburoReplay(seed = "saburo-1", collectPositions = true) {
     const actor = state.timing.activePlayer, rival = state.match.playerOrder.find(p => p !== actor)!;
     const legend = state.players[actor].zones.LEGENDS[0], host = state.players[actor].zones.LEGENDS[1], yorinobu = state.players[actor].zones.LEGENDS[2];
     const choice = () => state.resolution.choice;
-    const roll = () => take(a => a.action.kind === "ROLL_GIG");
+    const roll = () => take(a => a.action.kind === "ROLL_GIG" && a.action.gigInstanceId.endsWith("-" + SABURO_DICE[state.timing.turn - 1]));
     const end = () => take(a => a.action.kind === "END_TURN");
     const sell = () => take(a => a.action.kind === "SELL_CARD" && state.objects.cards[a.action.cardInstanceId].cardId !== "mantis-blades");
     const pay = (preferSaburo = false) => { while (choice()?.kind === "PAYMENT") {

@@ -3,13 +3,14 @@ import { applyAction, createGameWithEvents, hashObservation, hashPosition, hashR
 import { generatePosition, type TrainingPosition } from "@tcg/training-harness";
 import { orderedContext, orderedInput, EVELYN } from "./attack-ordered-effects-fixture";
 import { unwrap } from "./turn-replay";
+import { selectReplayAction } from "./replay-selection";
 /** Constructed setup and actual enumerated player actions only. No state/RNG edits. */
 export function orderedReplay(seed: string, collectPositions = true) {
     const context = orderedContext(), initialization = orderedInput(seed), initialized = unwrap(createGameWithEvents(initialization, context));
     let state: GameState = initialized.state;
     const steps: ReturnType<typeof import("./turn-replay").turnReplay>["steps"] = [], positions: TrainingPosition[] = [];
     const take = (predicate: (a: LegalAction) => boolean) => {
-        const actorId = state.timing.actingPlayer, legalActions = unwrap(listLegalActions(state, actorId, context)), selected = legalActions.find(predicate);
+        const actorId = state.timing.actingPlayer, legalActions = unwrap(listLegalActions(state, actorId, context)), selected = selectReplayAction(legalActions, predicate);
         if (!selected) throw new Error(`Missing ordered-effect action at ${state.timing.turn}/${state.timing.step}`);
         const observation = unwrap(observe(state, actorId, context));
         if (collectPositions && legalActions.length > 1) positions.push(unwrap(generatePosition(state, actorId, context, `ordered-${steps.length}`)));

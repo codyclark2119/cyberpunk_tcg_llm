@@ -6,13 +6,14 @@ import { V } from "./field-legends-fixture";
 import { SATORI } from "./combat-triggers-fixture";
 import { MANTIS } from "./gear-fixture";
 import { unwrap } from "./turn-replay";
+import { selectReplayAction } from "./replay-selection";
 /** Setup and legal actions only. Both CALLs choose public slot 1 without inspecting hidden identities. */
 export function goroReplay(seed = "goro-26", collectPositions = true) {
     const context = goroContext(), initialization = goroInput(seed), initialized = unwrap(createGameWithEvents(initialization, context));
     let state: GameState = initialized.state;
     const steps: ReturnType<typeof import("./turn-replay").turnReplay>["steps"] = [], positions: TrainingPosition[] = [];
     const take = (predicate: (a: LegalAction) => boolean) => {
-        const actorId = state.timing.actingPlayer, legalActions = unwrap(listLegalActions(state, actorId, context)), selected = legalActions.find(predicate);
+        const actorId = state.timing.actingPlayer, legalActions = unwrap(listLegalActions(state, actorId, context)), selected = selectReplayAction(legalActions, predicate);
         if (!selected) throw new Error("Missing Goro replay action at " + state.timing.turn + "/" + state.timing.step);
         const observation = unwrap(observe(state, actorId, context));
         if (collectPositions && legalActions.length > 1) positions.push(unwrap(generatePosition(state, actorId, context, "goro-" + steps.length)));
@@ -45,7 +46,7 @@ export function goroReplay(seed = "goro-26", collectPositions = true) {
     if (state.timing.step === "ATTACK_TARGET_SELECTION") choose(state.resolution.choice!.options.findIndex(o => o.kind === "ATTACK_TARGET" && o.target.kind === "GIG_AREA"));
     take(a => a.action.kind === "PASS_REACT"); while (state.resolution.choice) choose(); const afterAttack = state;
     end(); roll(); sell(); take(a => a.action.kind === "GO_SOLO" && a.action.cardInstanceId === enemy); pay();
-    end(); roll(); end(); roll(); // Goro naturally readies on its own turn 7, then remains ready for turn 8.
+    end(); roll(); end(); roll();
     take(a => a.action.kind === "DECLARE_ATTACK" && a.action.cardInstanceId === enemy);
     if (state.timing.step === "ATTACK_TARGET_SELECTION") choose(state.resolution.choice!.options.findIndex(o => o.kind === "ATTACK_TARGET" && o.target.kind === "GIG_AREA"));
     const beforeBlocker = state;

@@ -5,6 +5,7 @@ import { combatContext, combatInput, SWORDWISE } from "./combat-fixture";
 import { KERRY } from "./noncombat-fixture";
 import { MANTIS } from "./gear-fixture";
 import { unwrap } from "./turn-replay";
+import { selectReplayAction } from "./replay-selection";
 /** Normal setup, real Unit/Lag/equip turns and one unresolved attack. No state/RNG patches. */
 export function combatReplay(seed = "combat-attack-46") {
     const context = combatContext(), initialization = combatInput(seed), initialized = unwrap(createGameWithEvents(initialization, context));
@@ -12,7 +13,7 @@ export function combatReplay(seed = "combat-attack-46") {
     const steps: ReturnType<typeof import("./turn-replay").turnReplay>["steps"] = [], positions: TrainingPosition[] = [];
     const take = (predicate: (a: LegalAction) => boolean) => {
         const actorId = state.timing.actingPlayer, legalActions = unwrap(listLegalActions(state, actorId, context)), observation = unwrap(observe(state, actorId, context));
-        const selected = legalActions.find(predicate);
+        const selected = selectReplayAction(legalActions, predicate);
         if (!selected) throw new Error(`Missing combat replay action at ${state.timing.turn}/${state.timing.step}`);
         if (legalActions.length > 1) positions.push(unwrap(generatePosition(state, actorId, context, `combat-${steps.length}`)));
         const action = { actorId, action: selected.action }, result = unwrap(applyAction(state, action, context));

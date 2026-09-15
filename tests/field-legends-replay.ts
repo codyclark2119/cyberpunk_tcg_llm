@@ -4,13 +4,14 @@ import { generatePosition, type TrainingPosition } from "@tcg/training-harness";
 import { fieldLegendContext, fieldLegendInput, V } from "./field-legends-fixture";
 import { DYING_NIGHT } from "./delayed-effects-fixture";
 import { unwrap } from "./turn-replay";
+import { selectReplayAction } from "./replay-selection";
 /** Legal setup and actions only. CALL always chooses public slot 1; the frozen seed makes it V. */
 export function fieldLegendReplay(seed: string, collectPositions = true) {
     const context = fieldLegendContext(), initialization = fieldLegendInput(seed), initialized = unwrap(createGameWithEvents(initialization, context));
     let state: GameState = initialized.state;
     const steps: ReturnType<typeof import("./turn-replay").turnReplay>["steps"] = [], positions: TrainingPosition[] = [];
     const take = (predicate: (a: LegalAction) => boolean) => {
-        const actorId = state.timing.actingPlayer, legalActions = unwrap(listLegalActions(state, actorId, context)), selected = legalActions.find(predicate);
+        const actorId = state.timing.actingPlayer, legalActions = unwrap(listLegalActions(state, actorId, context)), selected = selectReplayAction(legalActions, predicate);
         if (!selected) throw new Error(`Missing field-Legend action at ${state.timing.turn}/${state.timing.step}`);
         const observation = unwrap(observe(state, actorId, context));
         if (collectPositions && legalActions.length > 1) positions.push(unwrap(generatePosition(state, actorId, context, `field-legends-${steps.length}`)));
