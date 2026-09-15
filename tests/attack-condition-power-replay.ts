@@ -3,6 +3,7 @@ import { applyAction, createGameWithEvents, hashObservation, hashPosition, hashR
 import { generatePosition, type TrainingPosition } from "@tcg/training-harness";
 import { attackPowerContext, attackPowerInput, LOSING } from "./attack-condition-power-fixture";
 import { GORO } from "./goro-fixture";
+import { selectReplayAction } from "./replay-selection";
 import { unwrap } from "./turn-replay";
 /** Legal setup/actions only, including blind CALL slots. No trusted state-arrangement imports. */
 export function attackConditionPowerReplay(seed = "saburo-1", collectPositions = true) {
@@ -10,7 +11,7 @@ export function attackConditionPowerReplay(seed = "saburo-1", collectPositions =
     const steps: ReturnType<typeof import("./turn-replay").turnReplay>["steps"] = [], positions: TrainingPosition[] = [];
     const legal = () => unwrap(listLegalActions(state, state.timing.actingPlayer, context));
     const take = (predicate: (a: LegalAction) => boolean) => {
-        const actorId = state.timing.actingPlayer, legalActions = legal(), selected = legalActions.find(predicate);
+        const actorId = state.timing.actingPlayer, legalActions = legal(), selected = selectReplayAction(legalActions, predicate);
         if (!selected) throw new Error("Missing attack-power replay action at " + state.timing.turn + "/" + state.timing.step);
         const observation = unwrap(observe(state, actorId, context));
         if (collectPositions && legalActions.length > 1) positions.push(unwrap(generatePosition(state, actorId, context, "attack-power-" + steps.length)));
@@ -47,7 +48,6 @@ export function attackConditionPowerReplay(seed = "saburo-1", collectPositions =
     take(a => a.action.kind === "DECLARE_ATTACK" && a.action.cardInstanceId === source);
     if (state.timing.step === "ATTACK_TARGET_SELECTION") choose(state.resolution.choice!.options.findIndex(o => o.kind === "ATTACK_TARGET" && o.target.kind === "GIG_AREA"));
     const pendingAttack = state;
-    // Choose Losing before the independently captured Yorinobu effect, then resolve ordinary choices.
     const first = state.resolution.choice?.options.findIndex(o => o.kind === "EFFECT" && state.resolution.pending.some(e => e.id === o.effectId && e.sourceId === source));
     if (first !== undefined && first >= 0) choose(first);
     const boosted = state;
