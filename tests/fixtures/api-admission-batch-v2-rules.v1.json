@@ -1,0 +1,57 @@
+{
+  "source": "Pinned local comprehensive rules; implementation review, not human-certified gold",
+  "sha256": "054d2d2a4664e5b560304e0962e71b195467ad097cc4c62b2698fc57467a28dd",
+  "processedSha256": "1f299c9cbe2657c9d088ae4b3a812b85e46c3fd2659579229635959c59a20e19",
+  "errataSha256": "1203a6c268c94d9d670a9cc145f739957fd018fa23eab86628bac94984ce1d75",
+  "processedErrataSha256": "16304146074363480e2c22639c9799b9d4302118c669e85e9f475b4a1bf6a340",
+  "rules": [
+    {
+      "id": "2.6",
+      "text": "2.6. If an effect on a card allows or requires you to do something but another effect prevents it, the preventing effect always takes precedence.\n\n> **EXAMPLE:** A Rival plays a Unit with [ADRENALINE], which allows it to attack the turn it’s played. But a friendly Unit’s card text reads “Rival Units can't attack the turn they're played.” The preventing of the attack takes precedence, so the rival Unit can’t attack this turn."
+    },
+    {
+      "id": "4.7",
+      "text": "4.7. Units enter the field with Lag. See Lag."
+    },
+    {
+      "id": "5.6.4",
+      "text": "5.6.4. Units and Legends enter the field with a condition called “Lag.” See Lag."
+    },
+    {
+      "id": "8.14.1",
+      "text": "8.14.1. You cannot activate [Spend Icon] effects on Lagging Units. See Lag."
+    },
+    {
+      "id": "9.3.1.1",
+      "text": "9.3.1.1. Lagging Units can’t attack. See Lag."
+    },
+    {
+      "id": "11.3",
+      "text": "11.3. ### Lag"
+    },
+    {
+      "id": "11.3.1",
+      "text": "11.3.1. Lag is a condition applied to Units when they enter the field. Units with Lag are also called “lagging.”"
+    },
+    {
+      "id": "11.3.2",
+      "text": "11.3.2. At the end of each turn, all Units lose the “Lag” condition."
+    },
+    {
+      "id": "11.23",
+      "text": "11.23. ### [ADRENALINE]"
+    },
+    {
+      "id": "11.23.1",
+      "text": "11.23.1. The [ADRENALINE] keyword is shorthand for “This Unit can attack the turn it's played.”"
+    },
+    {
+      "id": "11.23.2",
+      "text": "11.23.2. Units with [ADRENALINE] may attack even if they’re lagging. All other criteria for valid attack targets still apply. See ATTACK, FIGHT, AND STEAL > Declare the Attack."
+    }
+  ],
+  "decisions": {
+    "adrenaline": "Printed [ADRENALINE] only removes the lagging attack prohibition (9.3.1.1, 11.23.2). The Unit still enters with Lag (4.7, 5.6.4, 11.3.1), Lag still blocks Spend-icon effects (8.14.1), Lag is still removed at end of turn (11.3.2), and every other attack criterion, restriction and preventing effect still applies (2.6, 11.23.2).",
+    "policy": "Executable only under the explicit ADRENALINE_V1 ruleset policy on the reviewed ordinary-Unit shape; source keyword hints are diagnostics and never create mechanics."
+  }
+}

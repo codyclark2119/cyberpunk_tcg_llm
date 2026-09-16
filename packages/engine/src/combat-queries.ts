@@ -4,10 +4,14 @@ import { getAttackRestrictions } from "./combat-permissions";
 import { combatEnabled } from "./attack-support";
 import { cardRevision, effectiveCardTypes } from "./characteristics";
 import { supportsPlay } from "./play-support";
+import { adrenalineEnabled } from "./restriction-support";
+import { effectiveKeywords } from "./capabilities";
 export function isUnitForGameplay(state: GameState, id: CardInstanceId, context: EngineContext) { return effectiveCardTypes(state, id, context).includes("UNIT"); }
+/** 11.23.2: Units with [ADRENALINE] may attack while lagging; Lag itself and every other attack criterion still apply. */
+export function laggingAttackPermitted(state: GameState, id: CardInstanceId, context: EngineContext) { return adrenalineEnabled(context) && effectiveKeywords(state, id, context).includes("ADRENALINE"); }
 export function attackSourceValid(state: GameState, actor: PlayerId, id: CardInstanceId, context: EngineContext) {
     const c = state.objects.cards[id];
-    return Boolean(combatEnabled(context) && c && c.controllerId === actor && c.zone.playerId === actor && c.zone.zone === "BATTLEFIELD" && c.face === "UP" && isUnitForGameplay(state, id, context) && supportsPlay(cardRevision(state, id, context), context).ok && (!c.statuses.includes("LAG") || c.statuses.includes("GO_SOLO")) && !getAttackRestrictions(state, id, context).length);
+    return Boolean(combatEnabled(context) && c && c.controllerId === actor && c.zone.playerId === actor && c.zone.zone === "BATTLEFIELD" && c.face === "UP" && isUnitForGameplay(state, id, context) && supportsPlay(cardRevision(state, id, context), context).ok && (!c.statuses.includes("LAG") || c.statuses.includes("GO_SOLO") || laggingAttackPermitted(state, id, context)) && !getAttackRestrictions(state, id, context).length);
 }
 /** 9.3.2: target the nonempty area, never a die to steal. No readiness requirement on the attacker here. */
 export function listAttackTargets(state: GameState, attackerId: CardInstanceId, actor: PlayerId, context: EngineContext): AttackTarget[] {
