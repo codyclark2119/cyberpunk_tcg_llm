@@ -1,4 +1,4 @@
-import { hashCanonical, type DefeatUnitTarget, type GameState, type PendingChoice, type PlayerId } from "@tcg/domain";
+import { hashCanonical, type DefeatTarget, type GameState, type PendingChoice, type PlayerId } from "@tcg/domain";
 import type { EngineContext } from "./state";
 import { effectivePower } from "./characteristics";
 import { referencedPower } from "./combat-resolution-policy";
@@ -9,8 +9,9 @@ export function controlledGigValuesByDieType(state: GameState, actor: PlayerId, 
     return Object.values(state.objects.gigs).filter(g => g.controllerId === actor && g.location.zone === "GIGS" && g.dieType === dieType).flatMap(g => g.roll.kind === "ROLLED" ? [g.roll.currentValue] : []);
 }
 /** Uses the same characteristics as RulesView, without recursively validating a pending state. */
-export function listDefeatableUnits(state: GameState, actor: PlayerId, target: DefeatUnitTarget, context: EngineContext) {
-    if (!targetedDefeatEnabled(context)) return [];
+export function listDefeatableUnits(state: GameState, actor: PlayerId, target: DefeatTarget, context: EngineContext) {
+    // Deliberately Unit-only until Gear target/React validation and the shared dispatcher land together.
+    if (target.kind !== "UNITS" || !targetedDefeatEnabled(context)) return [];
     const values = target.power.kind === "AT_MOST" ? [target.power.value] : controlledGigValuesByDieType(state, actor, target.power.dieType);
     if (!values.length) return []; // Absence is not a zero-valued D20.
     return Object.values(state.objects.cards).filter(c => {

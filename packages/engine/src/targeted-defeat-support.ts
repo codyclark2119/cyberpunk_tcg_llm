@@ -15,7 +15,9 @@ export function supportsTargetedDefeatCard(card: DeepReadonly<CardRevisionSnapsh
         return failure("UNSUPPORTED_TARGETED_DEFEAT", "Entire reviewed metadata, condition and distinct target/power shape required");
     return success(null);
 }
-export function hasTargetedDefeatMetadata(card: DeepReadonly<CardRevisionSnapshot>) { return card.execution?.scope === "TARGETED_DEFEAT_V1" || card.mechanics.abilities.some(a => a.effects.some(e => e.kind === "DEFEAT_UNIT")); }
+// Keep the catch-all during the foundation slice, including malformed/empty new-scope sources.
+// Partition only when validateState registers the replacement Gear validator and its lifecycle is complete.
+export function hasTargetedDefeatMetadata(card: DeepReadonly<CardRevisionSnapshot>) { return card.execution?.scope === "TARGETED_DEFEAT_V1" || card.execution?.scope === "TARGETED_GEAR_DEFEAT_V1" || card.mechanics.abilities.some(a => a.effects.some(e => e.kind === "DEFEAT_UNIT")); }
 export function validateTargetedDefeatMetadata(state: GameState, context: EngineContext) {
     for (const c of Object.values(state.objects.cards)) { const r = context.content.cards.find(r => r.id === c.cardId && r.revision === c.revision); if (r && hasTargetedDefeatMetadata(r)) { const v = supportsTargetedDefeatCard(r, context); if (!v.ok) return v; } }
     return success(null);

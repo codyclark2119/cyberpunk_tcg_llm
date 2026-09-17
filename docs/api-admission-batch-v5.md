@@ -4,7 +4,7 @@
 
 This is the amended implementation contract for draft PR #10. It incorporates the review of `0cf8619463958e3e31e42ad87e6feb37feda9e51`, based on post-V4 master `3efe0f72b0f8f04c1268b87633fbba4fdf7c269f`.
 
-The branch is documentation-only. Runtime remains `0.4.0-api-admission-4`; no V5 runtime, source-evidence fixture, test, generated artifact, or verification result is claimed here.
+The first schema/admission-foundation slice is now present: exact Gear vocabulary, reserved scope/policy, a shape-review predicate, and fail-closed foundation tests. Runtime identity advances to `0.4.0-api-admission-5` because schemas/runtime inputs changed. **Gear execution remains disabled**; no Detonate revision, target/React lifecycle, source-evidence capture, regenerated baseline, or passing project gate is claimed. See `api-admission-batch-v5-implementation-status.md` for the precise implemented/pending split.
 
 The initial contract understated the work. A Gear selector alone is insufficient: current targeted-defeat validation is active-player/noncombat-only, its admission gate excludes Quick, its metadata detector claims every `DEFEAT_UNIT`, and the shared defeat target gate rejects all Gear. These are explicit V5 implementation requirements, not properties the current engine already supplies.
 
@@ -68,7 +68,7 @@ Hidden areas, face-down cards, Trash, Removed, and invalid/unattached arrangemen
 
 ### Defeated Gear destination: explicit reviewed inference
 
-The reviewed corpus does not supply a general definition of defeat or a direct destination rule for defeated Gear. Rule 9.19.1.1 is about a Unit in fight resolution; 11.19.x describes the Unit-scoped `[DEFEATED]` trigger. Neither may be quoted as a literal Gear-to-Trash rule.
+No rule matching the reviewer's documented search supplied a general defeat definition or a direct defeated-Gear destination. The review used regex searches over the 713-node processed `rules.jsonl`: rules containing `defeat` outside the 9.19 subtree, the full 5.7 and 11.6 subtrees, and 4.10–4.12. This is a thorough pattern/subtree review, not a line-by-line audit of all 713 nodes or proof that no differently worded rule exists. Rule 9.19.1.1 is about a Unit in fight resolution; 11.19.x describes the Unit-scoped `[DEFEATED]` trigger. Neither may be quoted as a literal Gear-to-Trash rule.
 
 For this capability, adopt the explicit reviewed decision that the defeated Gear moves alone to its owner's Trash and detaches, leaving its host and sibling Gear in place. Its basis is 11.6.1.2 together with the Unit defeat destination convention in 9.19.1.1 and the departure/detachment rule in 4.12.1. This is a bounded implementation inference, not an official publisher ruling or a new general defeat definition.
 
@@ -80,7 +80,8 @@ Record it in the V5 evidence fixture's `decisions` block, separate from exact ru
   "classification": "REVIEWED_INFERENCE",
   "ruleIds": ["11.6.1.2", "9.19.1.1", "4.12.1"],
   "decision": "For this admitted effect, move the defeated Gear alone to its owner's Trash and detach it; keep its host and sibling Gear in place.",
-  "limitation": "The captured rules do not state a defeated-Gear destination directly. This is not a quotation, publisher ruling, or general defeat rule."
+  "reviewMethod": "Reviewer-reported regex/subtree search over 713 processed rules nodes; defeat matches outside 9.19, full 5.7 and 11.6, and 4.10–4.12; not an exhaustive line-by-line audit.",
+  "limitation": "No rule matching that reviewed search directly covers defeated-Gear destination. This is not a quotation, publisher ruling, general defeat rule, or claim of exhaustive absence."
 }
 ```
 
@@ -98,6 +99,8 @@ The power-reference and Legends-area conclusions should also have recorded rule 
 | `defeatSupport` in `packages/engine/src/defeat.ts` | Requires a face-up effective battlefield Unit and supported play semantics. | Add reviewed Gear target support for both `BATTLEFIELD` and `LEGENDS`, without making those Gear legal Unit attack targets. |
 | `supportsReactPlay` in `packages/engine/src/react-support.ts` | Its existing Program branch is Floor It's exact Quick/power-minus-one/draw shape. | Add narrow Gear-capability delegation at the React/play admission boundary; retain existing branches unchanged. |
 | `listDefeatableUnits` / `targetedDefeatChoice` in `packages/engine/src/targeted-defeat-queries.ts` | Unit-only selector feeds enumeration and validation. | Introduce one typed target dispatcher shared by enumeration, continuation revalidation, and owner-order validation. |
+| `validateCombatState` in `packages/engine/src/combat-state.ts` | Its ordinary React-continuation branch permits only `PAYMENT_SELECTION`/`TARGET_SELECTION`, not `DEFEAT_ORDER_SELECTION`; an earlier return delegates states with trigger/targeted-defeat continuations. | Preserve forced single-Gear ordering and explicitly enforce the equivalent stage/actor/locked-attack invariants in the delegated Gear validator. Do not rely on the bypassed ordinary branch or silently add multi-card React ordering. |
+| `validateState` in `packages/engine/src/state.ts` | Registers `validateTargetedDefeatMetadata` in the ordered metadata chain before continuation validation. | Register/invoke the new Gear metadata validator here before partitioning ownership; prove hidden, empty-ability, wrong-scope, and mixed sources cannot escape. |
 
 Also audit `play-support.ts`, `play-state.ts`, `targeted-defeat.ts`, `effects.ts`, `action-return.ts`, `combat-state.ts`, and trigger state/completion validators for scope, target-type, actor, and saved-return assumptions. This is a required integration audit, not a claim that every file needs a change. Retain the existing shared departure implementation unless a focused proof demonstrates an actual defect.
 
@@ -147,13 +150,15 @@ Do not put two indistinguishable `DEFEAT_UNIT` alternatives into the outer effec
 
 ## Separate admission and metadata ownership
 
-Use proposed execution scope and opt-in policy `TARGETED_GEAR_DEFEAT_V1` (policy field `targetedGearDefeat`). These names are contract choices, not existing runtime fields. Do not extend the two-card acceptance predicate of `TARGETED_DEFEAT_V1` to allow Quick.
+Use the separate execution scope and opt-in policy `TARGETED_GEAR_DEFEAT_V1` (policy field `targetedGearDefeat`). The foundation slice reserves these schema fields and provides `reviewTargetedGearDefeatShape`; a successful shape review is not executable admission. `supportsPlay` and `supportsReactPlay` do not delegate to it yet. Do not extend the two-card acceptance predicate of `TARGETED_DEFEAT_V1` to allow Quick.
 
 The new source gate must require reviewed provenance, supported execution under the new scope, Program type, RED only, RAM RED 2, numeric cost 1, sellable true, Quickhack classification, no numeric Program power, executable keywords exactly `["QUICK"]`, and exactly the one unconditional `WHEN_PLAYED` Gear-target effect above. Reject activation, guard, inheritance, equip, restrictions, modifiers, extra abilities/effects/keywords, alternative relations, conditions, and thresholds. Preserve source/canonical keyword metadata according to existing authored-revision conventions.
 
 Explicitly check the required play, Gear, React, combat-resolution, trigger-scheduler, and applicable transitive ruleset dependencies. Test removal of each required dependency. A new execution scope by itself must not enable runtime behavior; old rulesets must not acquire Gear defeat by loading new vocabulary.
 
 Metadata validation must cover hidden source instances too. The old detector must retain explicit ownership of `TARGETED_DEFEAT_V1` and Unit-target effects; a new detector must own the Gear scope and Gear-target effects. A wrong-scope or mixed card must fail a complete validator, not evade validation because both detectors skipped it. Do not merely return false for all Gear metadata in the old detector without installing and invoking its replacement.
+
+The registration point is **`validateState` in `packages/engine/src/state.ts`**, next to the existing `validateTargetedDefeatMetadata` call. Register the replacement Gear metadata validator and partition the old detector in the same integration change. During this foundation slice the old catch-all is deliberately retained and additionally claims the reserved Gear scope even when its ability array is empty; its unchanged acceptance gate rejects that scope. This interim rejection path is not the completed Gear validator. A direct hidden-state reload test pins the current fail-closed behavior.
 
 Require explicit regressions that unchanged Minotaur and Over the Edge still pass their original gate, while adding Quick, a Gear target, or threshold 2 to either still fails. Floor It and other existing Quick paths must remain unchanged as well.
 
@@ -200,9 +205,15 @@ During target selection, the timing step/window is `TARGET_SELECTION`, not an id
 
 For the Gear capability only, replace the blanket active-player/noncombat assumptions in both `validateTargetedDefeatState` and `validateEffectDefeatFacts` with the explicit appropriate origin case. Bind source, effect, `playContinuation.actorId`, controller, saved return, and combat identity. Keep the old Unit-scoped assumptions intact and reject forged controller/return/source-zone/attack associations. Do not accept any arbitrary non-active source merely because combat stage is React.
 
+Use `validateActionReturn` in `packages/engine/src/action-return.ts` as the established **bounded-exception precedent**: its noncombat branch permits a non-active actor only for `targetedDefeatContinuation?.phase === "ORDER"`. That exception is phase-specific and is not a general React permission. Follow the same explicit origin/phase checks for V5; do not copy the Main owner-order exception into React or invent a parallel return protocol.
+
 Completion must finish the Program's effect and Trash lifecycle, process only admitted aftermath, and return to the same defender React decision. It must not advance the turn, reset the attack, change its declared participants/locked target, grant the attacker reaction priority, or automatically pass React. Removing Gear must update live host power and granted capabilities before any later fight. Validate the stored origin after movement too; fixing only the target pause is insufficient.
 
-Single-card owner ordering is forced, so its event may name the active player's Gear owner without transferring strategic React priority to that player. Any temporary actor handling must restore the actual effect controller consistently with existing validation. No general multi-owner React ordering capability is added.
+**Named invariant: `V5_REACT_FORCED_GEAR_ORDER`.** The ordinary continuation branch of `validateCombatState` (`combat-state.ts`) allows only `PAYMENT_SELECTION` and `TARGET_SELECTION`. A persisted `DEFEAT_ORDER_SELECTION` is not part of the existing defender Program-continuation contract. A single Gear has no attached Gear, so its one-card owner order must resolve synchronously; it must never expose a strategic owner-order state or transfer the acting decision to the active player. Assert the forced owner-attributed event and absence of an externally returned order-selection state.
+
+Important validator control flow: `validateCombatState` returns early when `triggerContinuation` or `targetedDefeatContinuation` is present. Its later stage/attacker/locked-target checks therefore do not protect those paused states automatically. The dedicated Gear continuation validator must enforce the equivalent invariants explicitly, including the stage restriction and a valid unchanged locked attack. If Gear defeat ever expands to multi-card batches or multiple simultaneous targets, treat paused React ordering as a new capability requiring review, not an already supported consequence of shared owner ordering.
+
+Any temporary actor handling must restore the actual effect controller consistently with these validators. No general multi-owner React ordering capability is added.
 
 Require zero-target, forced one-target, and strategic multi-target Main/React paths. A React proof with at least two legal targets must pause, serialize/reload, validate, resume the chosen action, finish departure, and return correctly. Testing only the automatic single-target path can miss the original validator defect.
 
@@ -221,11 +232,13 @@ The V5 suite must directly prove:
 9. The target filter references the Gear instance's effective power, independently of high/low or temporarily modified host power.
 10. Stale/forged target sets reject through the shared dispatcher at enumeration and resolution/validation, not merely in one UI path.
 11. Only the chosen Gear detaches/moves; host and sibling Gear remain; the one-card forced Trash-order event names its owner.
-12. Removing attacker's Gear during React changes later combat power or inherited capabilities without defeating the host or inventing a fight result during the spell.
+12. Removing attacker's Gear during React changes later combat power or inherited capabilities **and the attack survives**: the returned state is the same defender `RIVAL_REACT`, attacker remains spent, attacker/locked-target identities are unchanged, the locked target remains in `listAttackTargets`, and `validateState` succeeds. The spell must not defeat the host, reset/end the attack, or invent a fight result. Check paused-state attack validity explicitly because `validateCombatState` delegates those states.
 13. No host/inherited `[DEFEATED]` trigger, fight-win event, or fight-prevention consumption is manufactured by Gear defeat.
 14. Every public target action projects through Descriptor V2, round-trips via actionId, and exposes no hidden identity.
 15. Deterministic legal replay selection independent of opaque actionId order, with trusted arrangements labelled separately from legal paid-play trajectories.
 16. Prior Minotaur, Over the Edge, Floor It, Reboot, attachment, and relevant inherited-effect behavior remains compatible with preserved decisions.
+17. `V5_REACT_FORCED_GEAR_ORDER`: one owner-attributed forced order, no persisted `DEFEAT_ORDER_SELECTION`, no strategic actor transfer, and explicit rejection of a forged order-phase React state.
+18. The registered `validateState` metadata chain, not only a direct source-gate call, rejects hidden/mixed/wrong-scope/empty new-scope sources; disabling the new validator after ownership partition must be caught by the corresponding test.
 
 All scenarios must execute; no conditional assertion that silently skips a required case. Where current Gear revisions produce no defeated-trigger aftermath, exercise the bounded fact validator through clearly labelled validator tests rather than inventing a real Gear trigger or claiming a nonexistent reachable pause.
 
@@ -237,12 +250,12 @@ Each mutant must fail a named behavioral assertion, not a syntax/import/setup/ha
 
 ## Engine identity and verification plan
 
-Current documentation-only identity stays `0.4.0-api-admission-4`. The planned implementation identity is `0.4.0-api-admission-5`; advance it only with the runtime/schema change and derive the artifact hash from the completed runtime tree. Do not prefill hashes or manually repin generated files.
+The foundation schema/runtime change advances identity to `0.4.0-api-admission-5`; no final artifact hash is claimed while implementation is incomplete. Existing generated schemas and replay pins are intentionally not regenerated in this slice. Derive the final artifact hash after the lifecycle implementation settles. Do not prefill hashes or manually repin generated files.
 
-The following commands are future implementation gates; the V5 test file does not exist in this documentation-only revision:
+The current foundation loop uses the new file below. Full `api-admission-batch-v5.test.ts` gameplay coverage remains to be implemented; a green foundation run does not prove Detonate play or React behavior:
 
 ```bash
-node --import tsx --test --test-concurrency=1 tests/api-admission-batch-v5.test.ts
+node --import tsx --test --test-concurrency=1 tests/api-admission-batch-v5-foundation.test.ts
 npm run typecheck
 npm run lint
 npm run validate:cards
@@ -278,4 +291,4 @@ No Valentino Guerrera/rule 9.26.3 target-legality lifecycle, Octant cost reducti
 
 Keep PR #10 draft until Detonate has pinned evidence and an explicit immutable revision; the reviewed destination decision is recorded honestly; both target areas and own-power semantics are tested; new React validation and old admission isolation pass; generated outputs are reproducible; preserved replays, matrix, Descriptor V2, full tests, configured integration, typecheck, lint, card validation, build, and diff checks all pass.
 
-This amendment changes the contract only. None of those implementation or verification gates is claimed completed.
+The first foundation slice implements vocabulary and isolated shape review only, with execution deliberately closed. Ten foundation tests are authored, not claimed executed here. No complete V5 gameplay, mutation, evidence-capture, regeneration, matrix, or full-repository gate is claimed completed.

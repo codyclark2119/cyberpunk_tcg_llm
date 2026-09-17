@@ -83,7 +83,13 @@ export const SpendUnitEffectSchema = z.strictObject({ kind: z.literal("SPEND_UNI
 export const DefeatUnitTargetSchema = z.strictObject({ kind: z.literal("UNITS"), relation: TargetRelationshipSchema,
     power: z.discriminatedUnion("kind", [z.strictObject({ kind: z.literal("AT_MOST"), value: z.literal(5) }), z.strictObject({ kind: z.literal("CONTROLLED_GIG_VALUE"), dieType: z.literal("D20") })]) });
 export type DefeatUnitTarget = z.infer<typeof DefeatUnitTargetSchema>;
-export const DefeatUnitEffectSchema = z.strictObject({ kind: z.literal("DEFEAT_UNIT"), target: DefeatUnitTargetSchema,
+// Preserve the Unit selectors and historical effect discriminator. Vocabulary is not execution admission.
+export const DefeatGearTargetSchema = z.strictObject({ kind: z.literal("GEAR"), relation: z.literal("RIVAL"),
+    power: z.strictObject({ kind: z.literal("AT_MOST"), value: z.literal(2) }) });
+export type DefeatGearTarget = z.infer<typeof DefeatGearTargetSchema>;
+export const DefeatTargetSchema = z.discriminatedUnion("kind", [DefeatUnitTargetSchema, DefeatGearTargetSchema]);
+export type DefeatTarget = z.infer<typeof DefeatTargetSchema>;
+export const DefeatUnitEffectSchema = z.strictObject({ kind: z.literal("DEFEAT_UNIT"), target: DefeatTargetSchema,
     when: z.strictObject({ timing: z.literal("RESOLUTION"), condition: z.strictObject({ kind: z.literal("STREET_CRED_GREATER_THAN_RIVAL") }) }).optional() });
 export const EffectSchema = z.discriminatedUnion("kind", [
     SpendUnitEffectSchema,
