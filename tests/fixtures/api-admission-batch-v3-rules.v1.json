@@ -1,0 +1,98 @@
+{
+  "source": "Pinned local comprehensive rules; implementation review, not human-certified gold",
+  "sha256": "054d2d2a4664e5b560304e0962e71b195467ad097cc4c62b2698fc57467a28dd",
+  "processedSha256": "1f299c9cbe2657c9d088ae4b3a812b85e46c3fd2659579229635959c59a20e19",
+  "errataSha256": "1203a6c268c94d9d670a9cc145f739957fd018fa23eab86628bac94984ce1d75",
+  "processedErrataSha256": "16304146074363480e2c22639c9799b9d4302118c669e85e9f475b4a1bf6a340",
+  "rules": [
+    {
+      "id": "2.6",
+      "text": "2.6. If an effect on a card allows or requires you to do something but another effect prevents it, the preventing effect always takes precedence.\n\n> **EXAMPLE:** A Rival plays a Unit with [ADRENALINE], which allows it to attack the turn it’s played. But a friendly Unit’s card text reads “Rival Units can't attack the turn they're played.” The preventing of the attack takes precedence, so the rival Unit can’t attack this turn."
+    },
+    {
+      "id": "4.2.1",
+      "text": "4.2.1. Legends on the field are both Units and Legends."
+    },
+    {
+      "id": "4.7",
+      "text": "4.7. Units enter the field with Lag. See Lag."
+    },
+    {
+      "id": "5.6.4",
+      "text": "5.6.4. Units and Legends enter the field with a condition called “Lag.” See Lag."
+    },
+    {
+      "id": "9.1",
+      "text": "9.1. “Attack” is a game action in which you spend a friendly ready Unit to attack a valid target, which results in the friendly Unit fighting or stealing."
+    },
+    {
+      "id": "9.3",
+      "text": "9.3. To attack, you must declare the attack by completing these steps in order."
+    },
+    {
+      "id": "9.3.1",
+      "text": "9.3.1. Choose a friendly ready Unit in the field area that can attack."
+    },
+    {
+      "id": "9.3.1.1",
+      "text": "9.3.1.1. Lagging Units can’t attack. See Lag."
+    },
+    {
+      "id": "9.3.2",
+      "text": "9.3.2. Choose a valid attack target for that Unit."
+    },
+    {
+      "id": "9.3.2.1",
+      "text": "9.3.2.1. A spent rival Unit is a valid attack target."
+    },
+    {
+      "id": "9.3.2.2",
+      "text": "9.3.2.2. A rival Gig area containing one or more Gigs is a valid attack target. (An empty Gig area is not a valid attack target.)"
+    },
+    {
+      "id": "9.3.2.3",
+      "text": "9.3.2.3. Card effects may add to, remove, or restrict a Unit’s valid attack targets."
+    },
+    {
+      "id": "9.3.2.3.1",
+      "text": "9.3.2.3.1. An effect that allows a Unit to attack only grants the specific permission described by that effect and does not remove other attack restrictions."
+    },
+    {
+      "id": "9.3.2.4",
+      "text": "9.3.2.4. If there are no valid targets, you cannot attack."
+    },
+    {
+      "id": "9.26",
+      "text": "9.26. An attack ends if any of the following are true:"
+    },
+    {
+      "id": "9.26.3",
+      "text": "9.26.3. The attack target is no longer a legal attack target for the attacking Unit."
+    },
+    {
+      "id": "11.3",
+      "text": "11.3. ### Lag"
+    },
+    {
+      "id": "11.3.1",
+      "text": "11.3.1. Lag is a condition applied to Units when they enter the field. Units with Lag are also called “lagging.”"
+    },
+    {
+      "id": "11.3.2",
+      "text": "11.3.2. At the end of each turn, all Units lose the “Lag” condition."
+    },
+    {
+      "id": "11.23.1",
+      "text": "11.23.1. The [ADRENALINE] keyword is shorthand for “This Unit can attack the turn it's played.”"
+    },
+    {
+      "id": "11.23.2",
+      "text": "11.23.2. Units with [ADRENALINE] may attack even if they’re lagging. All other criteria for valid attack targets still apply. See ATTACK, FIGHT, AND STEAL > Declare the Attack."
+    }
+  ],
+  "decisions": {
+    "targetRestriction": "A printed restriction removes only the rival Gig area from this Unit's valid attack targets (9.3.2.2, 9.3.2.3). Spent rival Units stay valid (9.3.2.1), and when no valid target remains the Unit cannot attack at all (9.3.2.4). The restriction is unconditional, so a locked target can never stop being legal mid-attack (9.26.3).",
+    "attackPrevention": "A rival source prevents Units that entered the field this turn from attacking. The engine reads 'entered the field this turn' as the Lag condition, which is applied on entry and removed at end of turn (4.7, 5.6.4, 11.3.1, 11.3.2); field Legends are Units too (4.2.1). Prevention takes precedence over any permission, including printed [ADRENALINE] and Go Solo (2.6, 11.23.1, 11.23.2) - this is the worked example in rule 2.6 itself.",
+    "policy": "Each capability is executable only under its own explicit reviewed ruleset policy (ATTACK_TARGET_RESTRICTIONS_V1, ATTACK_PREVENTION_V1) on a complete reviewed shape; source keyword hints are diagnostics and never create mechanics."
+  }
+}
