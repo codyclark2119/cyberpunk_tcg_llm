@@ -34,6 +34,8 @@ export const ConditionSchema = z.discriminatedUnion("kind", [
 ]);
 export const CombatRestrictionSchema = z.discriminatedUnion("kind", [
     z.strictObject({ kind: z.literal("CANNOT_ATTACK") }),
+    // 9.3.2.2/9.3.2.3: removes only the rival Gig area from this Unit's valid attack targets.
+    z.strictObject({ kind: z.literal("CANNOT_ATTACK_GIG_AREA") }),
     z.strictObject({ kind: z.literal("CANNOT_BE_BLOCKED"), condition: z.strictObject({ kind: z.literal("STREET_CRED_LESS_THAN_RIVAL") }) })
 ]);
 export type CombatRestriction = z.infer<typeof CombatRestrictionSchema>;
@@ -118,6 +120,8 @@ export const AbilitySchema = z.strictObject({ id: z.string().min(1), trigger: Tr
 export const ContinuousModifierSchema = z.discriminatedUnion("kind", [
     z.strictObject({ kind: z.literal("FRIENDLY_ARASAKA_ATTACKING_UNIT_POWER"), amount: z.literal(1) }),
     z.strictObject({ kind: z.literal("GRANT_KEYWORD_TO_HOST"), keyword: z.literal("BLOCKER") }),
+    // 2.6/11.3.1: prevents rival Units that entered the field this turn (lagging) from attacking.
+    z.strictObject({ kind: z.literal("RIVAL_LAGGING_UNITS_CANNOT_ATTACK") }),
     z.strictObject({ kind: z.literal("GRANT_PRINTED_POWER_TO_HOST") }),
     z.strictObject({ kind: z.literal("POWER_PER_EQUIPPED_GEAR_DURING_OWN_TURN"), amount: z.number().int() }),
     z.strictObject({ kind: z.literal("POWER"), target: TargetSelectorSchema, amount: z.number().int(), requiresFaceUp: z.boolean() }),

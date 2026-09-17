@@ -4,6 +4,7 @@ import { validateTargetedSpendMetadata } from "./targeted-spend-support";
 import { validateTargetedDefeatMetadata } from "./targeted-defeat-support";
 import { validateValueConditionMetadata } from "./value-conditions-support";
 import { validateAttackingAuraMetadata } from "./attacking-aura-support";
+import { validateAttackPreventionMetadata } from "./attack-prevention-support";
 import { validateFirstAttackMetadata } from "./first-attack-support";
 import { validateFirstAttackHistory } from "./first-attack-history";
 import { validateFieldLegendMetadata } from "./field-legend-support";
@@ -100,6 +101,7 @@ export function validateState(input: unknown, context: EngineContext): Result<Ga
     const targetedMetadata = validateTargetedDefeatMetadata(s, context); if (!targetedMetadata.ok) return targetedMetadata;
     const valueMetadata = validateValueConditionMetadata(s, context); if (!valueMetadata.ok) return valueMetadata;
     const auraMetadata = validateAttackingAuraMetadata(s, context); if (!auraMetadata.ok) return auraMetadata;
+    const preventionMetadata = validateAttackPreventionMetadata(s, context); if (!preventionMetadata.ok) return preventionMetadata;
     const firstMetadata = validateFirstAttackMetadata(s, context); if (!firstMetadata.ok) return firstMetadata;
     const firstHistory = validateFirstAttackHistory(s, context); if (!firstHistory.ok) return firstHistory;
     const fieldMetadata = validateFieldLegendMetadata(s, context); if (!fieldMetadata.ok) return fieldMetadata;

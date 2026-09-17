@@ -1,0 +1,426 @@
+{
+  "source": "API Content Bridge V1 capture from cyberpunk_tcg_ai master af9e0e1; implementation-reviewed, not human-certified gold",
+  "candidateManifest": {
+    "kind": "CYBERPUNK_ENGINE_CANDIDATES_V1",
+    "schemaVersion": 1,
+    "recordCount": 151,
+    "errataCount": 4,
+    "catalogSha256": "b96ca8d583ab087148c9ed3563379e6c42fd9e729188a042215bb503a8879c3d"
+  },
+  "errataSha256": "1203a6c268c94d9d670a9cc145f739957fd018fa23eab86628bac94984ce1d75",
+  "processedErrataSha256": "16304146074363480e2c22639c9799b9d4302118c669e85e9f475b4a1bf6a340",
+  "matchingErrata": [],
+  "records": [
+    {
+      "source": "cyberpunk_tcg_ai/data/raw/cards/ruthless-lowlife.json",
+      "rawSha256": "c855e362bfa1d0981611149765e71c2acc9b1512d6a599e4348fd6c371162c0c",
+      "record": {
+        "artist": "Jeffrey Alan Love",
+        "card_type": "Unit",
+        "classifications": [
+          "Ganger",
+          "Maelstrom"
+        ],
+        "color": "Red",
+        "cost": 2,
+        "display_name": "Ruthless Lowlife",
+        "external_id": "cb-ruthless-lowlife",
+        "flavor_text": null,
+        "id": "fee335a7-2546-48a5-9bb8-b0886014ce66",
+        "image_url": "https://dstcynss47vun.cloudfront.net/prod/cyberpunk/portal/e1b674d0-4ac7-4523-be19-809308871d49/render-mpvls72n.webp",
+        "is_eddiable": false,
+        "keywords": [],
+        "legality": "legal",
+        "name": "Ruthless Lowlife",
+        "power": 4,
+        "print_number": "017",
+        "printing_id": "e1b674d0-4ac7-4523-be19-809308871d49",
+        "printings": [
+          {
+            "artist": "Jeffrey Alan Love",
+            "collector_number": "017",
+            "finish": null,
+            "id": "e1b674d0-4ac7-4523-be19-809308871d49",
+            "image_url": "https://dstcynss47vun.cloudfront.net/prod/cyberpunk/portal/e1b674d0-4ac7-4523-be19-809308871d49/render-mpvls72n.webp",
+            "rarity": "Common",
+            "set": {
+              "code": "welcometonightcityretail",
+              "name": "Welcome to Night City — Retail"
+            },
+            "source_image_url": "https://dstcynss47vun.cloudfront.net/prod/cyberpunk/portal/e1b674d0-4ac7-4523-be19-809308871d49/render-mpvls72n.webp"
+          },
+          {
+            "artist": "Jeffrey Alan Love",
+            "collector_number": "β017",
+            "finish": null,
+            "id": "23cfc17c-3fab-475b-9a1a-838b98e09bb8",
+            "image_url": "https://dstcynss47vun.cloudfront.net/prod/cyberpunk/portal/23cfc17c-3fab-475b-9a1a-838b98e09bb8/render-mpvki54p.webp",
+            "rarity": "Common",
+            "set": {
+              "code": "welcometonightcitybeta",
+              "name": "Welcome to Night City — Beta"
+            },
+            "source_image_url": "https://dstcynss47vun.cloudfront.net/prod/cyberpunk/portal/23cfc17c-3fab-475b-9a1a-838b98e09bb8/render-mpvki54p.webp"
+          },
+          {
+            "artist": "Jeffrey Alan Love",
+            "collector_number": "004",
+            "finish": null,
+            "id": "c4806b05-6476-4c67-95a5-fc9c4ce2aaa2",
+            "image_url": "https://dstcynss47vun.cloudfront.net/prod/cyberpunk/portal/c4806b05-6476-4c67-95a5-fc9c4ce2aaa2/render-mpwbwqjq.webp",
+            "rarity": "Common",
+            "set": {
+              "code": "embracingpowerretailstarterdeck",
+              "name": "Embracing Power — Retail Starter Deck"
+            },
+            "source_image_url": "https://dstcynss47vun.cloudfront.net/prod/cyberpunk/portal/c4806b05-6476-4c67-95a5-fc9c4ce2aaa2/render-mpwbwqjq.webp"
+          },
+          {
+            "artist": "Jeffrey Alan Love",
+            "collector_number": "β004",
+            "finish": null,
+            "id": "9c59c8d2-586a-4845-b969-43be1fd3b388",
+            "image_url": "https://dstcynss47vun.cloudfront.net/prod/cyberpunk/portal/9c59c8d2-586a-4845-b969-43be1fd3b388/render-mpwbkz8n.webp",
+            "rarity": "Common",
+            "set": {
+              "code": "embracingpowerbetastarterdeck",
+              "name": "Embracing Power — Beta Starter Deck"
+            },
+            "source_image_url": "https://dstcynss47vun.cloudfront.net/prod/cyberpunk/portal/9c59c8d2-586a-4845-b969-43be1fd3b388/render-mpwbkz8n.webp"
+          }
+        ],
+        "ram": 1,
+        "rarity": "Common",
+        "rules_text": "This Unit can only attack rival Units. (It can't attack Gig areas.)",
+        "selected_printing_id": "e1b674d0-4ac7-4523-be19-809308871d49",
+        "set": {
+          "code": "welcometonightcityretail",
+          "name": "Welcome to Night City — Retail"
+        },
+        "slug": "ruthless-lowlife",
+        "source_image_url": "https://dstcynss47vun.cloudfront.net/prod/cyberpunk/portal/e1b674d0-4ac7-4523-be19-809308871d49/render-mpvls72n.webp",
+        "subname": null
+      },
+      "processedSource": "cyberpunk_tcg_ai/data/processed/card_database.jsonl",
+      "processedRecord": {
+        "id": "ruthless-lowlife",
+        "external_id": "cb-ruthless-lowlife",
+        "name": "Ruthless Lowlife",
+        "subname": null,
+        "display_name": "Ruthless Lowlife",
+        "card_type": "Unit",
+        "color": "Red",
+        "cost": 2,
+        "power": 4,
+        "ram": 1,
+        "is_eddiable": false,
+        "classifications": [
+          "Ganger",
+          "Maelstrom"
+        ],
+        "keywords": [],
+        "keywords_referenced": [],
+        "timing_triggers": [],
+        "text": "This Unit can only attack rival Units. (It can't attack Gig areas.)",
+        "text_markup": "This Unit can only attack rival Units. (It can't attack Gig areas.)",
+        "flavor_text": null,
+        "rarity": "Common",
+        "set": "Welcome to Night City — Retail",
+        "set_code": "welcometonightcityretail",
+        "print_number": "017",
+        "artist": "Jeffrey Alan Love",
+        "legality": "legal",
+        "image_url": "https://dstcynss47vun.cloudfront.net/prod/cyberpunk/portal/e1b674d0-4ac7-4523-be19-809308871d49/render-mpvls72n.webp",
+        "printings": [
+          {
+            "collector_number": "017",
+            "rarity": "Common",
+            "finish": null,
+            "artist": "Jeffrey Alan Love",
+            "set": "Welcome to Night City — Retail",
+            "set_code": "welcometonightcityretail",
+            "image_url": "https://dstcynss47vun.cloudfront.net/prod/cyberpunk/portal/e1b674d0-4ac7-4523-be19-809308871d49/render-mpvls72n.webp"
+          },
+          {
+            "collector_number": "β017",
+            "rarity": "Common",
+            "finish": null,
+            "artist": "Jeffrey Alan Love",
+            "set": "Welcome to Night City — Beta",
+            "set_code": "welcometonightcitybeta",
+            "image_url": "https://dstcynss47vun.cloudfront.net/prod/cyberpunk/portal/23cfc17c-3fab-475b-9a1a-838b98e09bb8/render-mpvki54p.webp"
+          },
+          {
+            "collector_number": "004",
+            "rarity": "Common",
+            "finish": null,
+            "artist": "Jeffrey Alan Love",
+            "set": "Embracing Power — Retail Starter Deck",
+            "set_code": "embracingpowerretailstarterdeck",
+            "image_url": "https://dstcynss47vun.cloudfront.net/prod/cyberpunk/portal/c4806b05-6476-4c67-95a5-fc9c4ce2aaa2/render-mpwbwqjq.webp"
+          },
+          {
+            "collector_number": "β004",
+            "rarity": "Common",
+            "finish": null,
+            "artist": "Jeffrey Alan Love",
+            "set": "Embracing Power — Beta Starter Deck",
+            "set_code": "embracingpowerbetastarterdeck",
+            "image_url": "https://dstcynss47vun.cloudfront.net/prod/cyberpunk/portal/9c59c8d2-586a-4845-b969-43be1fd3b388/render-mpwbkz8n.webp"
+          }
+        ]
+      },
+      "candidate": {
+        "catalog": {
+          "artist": "Jeffrey Alan Love",
+          "classifications": [
+            "Ganger",
+            "Maelstrom"
+          ],
+          "collectorNumber": "017",
+          "colors": [
+            "RED"
+          ],
+          "cost": 2,
+          "imageUrl": "https://dstcynss47vun.cloudfront.net/prod/cyberpunk/portal/e1b674d0-4ac7-4523-be19-809308871d49/render-mpvls72n.webp",
+          "legality": "legal",
+          "power": 4,
+          "ram": 1,
+          "rarity": "Common",
+          "sellable": false,
+          "setCode": "welcometonightcityretail",
+          "setName": "Welcome to Night City — Retail",
+          "type": "UNIT"
+        },
+        "errata": [],
+        "identityCandidate": {
+          "cardId": "ruthless-lowlife",
+          "deckbuildingIdentity": "Ruthless Lowlife",
+          "displayName": "Ruthless Lowlife",
+          "subtitle": ""
+        },
+        "printings": [
+          {
+            "artist": "Jeffrey Alan Love",
+            "collectorNumber": "017",
+            "finish": null,
+            "imageUrl": "https://dstcynss47vun.cloudfront.net/prod/cyberpunk/portal/e1b674d0-4ac7-4523-be19-809308871d49/render-mpvls72n.webp",
+            "rarity": "Common",
+            "setCode": "welcometonightcityretail",
+            "setName": "Welcome to Night City — Retail"
+          },
+          {
+            "artist": "Jeffrey Alan Love",
+            "collectorNumber": "β017",
+            "finish": null,
+            "imageUrl": "https://dstcynss47vun.cloudfront.net/prod/cyberpunk/portal/23cfc17c-3fab-475b-9a1a-838b98e09bb8/render-mpvki54p.webp",
+            "rarity": "Common",
+            "setCode": "welcometonightcitybeta",
+            "setName": "Welcome to Night City — Beta"
+          },
+          {
+            "artist": "Jeffrey Alan Love",
+            "collectorNumber": "004",
+            "finish": null,
+            "imageUrl": "https://dstcynss47vun.cloudfront.net/prod/cyberpunk/portal/c4806b05-6476-4c67-95a5-fc9c4ce2aaa2/render-mpwbwqjq.webp",
+            "rarity": "Common",
+            "setCode": "embracingpowerretailstarterdeck",
+            "setName": "Embracing Power — Retail Starter Deck"
+          },
+          {
+            "artist": "Jeffrey Alan Love",
+            "collectorNumber": "β004",
+            "finish": null,
+            "imageUrl": "https://dstcynss47vun.cloudfront.net/prod/cyberpunk/portal/9c59c8d2-586a-4845-b969-43be1fd3b388/render-mpwbkz8n.webp",
+            "rarity": "Common",
+            "setCode": "embracingpowerbetastarterdeck",
+            "setName": "Embracing Power — Beta Starter Deck"
+          }
+        ],
+        "rulesSource": {
+          "keywordHints": [],
+          "markup": "This Unit can only attack rival Units. (It can't attack Gig areas.)",
+          "referencedKeywordHints": [],
+          "rendered": "This Unit can only attack rival Units. (It can't attack Gig areas.)",
+          "timingTriggerHints": []
+        },
+        "schemaVersion": 1,
+        "sourceCardSlug": "ruthless-lowlife",
+        "sourceRecordHash": "c7f630092620a29b09e0652f163669265c949b0fc68f680c6d295303892a74f3"
+      }
+    },
+    {
+      "source": "cyberpunk_tcg_ai/data/raw/cards/maxtac-suppression-team.json",
+      "rawSha256": "377883175175754ca4c818dd234d5fcb08eb9ab3f7ee370fda0f6aa8eb8abd6b",
+      "record": {
+        "artist": "ADIA",
+        "card_type": "Unit",
+        "classifications": [
+          "NCPD"
+        ],
+        "color": "Yellow",
+        "cost": 5,
+        "display_name": "MaxTac Suppression Team",
+        "external_id": "cb-maxtac-suppression-team",
+        "flavor_text": null,
+        "id": "95840ebd-d00a-49ff-b4e5-e2064cfc13a9",
+        "image_url": "https://dstcynss47vun.cloudfront.net/prod/cyberpunk/portal/47f55164-e5da-494e-9d55-02bd0b7f97c1/render-mpvlzqaa.webp",
+        "is_eddiable": false,
+        "keywords": [],
+        "legality": "legal",
+        "name": "MaxTac Suppression Team",
+        "power": 7,
+        "print_number": "050",
+        "printing_id": "47f55164-e5da-494e-9d55-02bd0b7f97c1",
+        "printings": [
+          {
+            "artist": "ADIA",
+            "collector_number": "050",
+            "finish": null,
+            "id": "47f55164-e5da-494e-9d55-02bd0b7f97c1",
+            "image_url": "https://dstcynss47vun.cloudfront.net/prod/cyberpunk/portal/47f55164-e5da-494e-9d55-02bd0b7f97c1/render-mpvlzqaa.webp",
+            "rarity": "Common",
+            "set": {
+              "code": "welcometonightcityretail",
+              "name": "Welcome to Night City — Retail"
+            },
+            "source_image_url": "https://dstcynss47vun.cloudfront.net/prod/cyberpunk/portal/47f55164-e5da-494e-9d55-02bd0b7f97c1/render-mpvlzqaa.webp"
+          },
+          {
+            "artist": "ADIA",
+            "collector_number": "β050",
+            "finish": null,
+            "id": "03849cd8-c3d8-4741-ae9e-d85cd9bb488d",
+            "image_url": "https://dstcynss47vun.cloudfront.net/prod/cyberpunk/portal/03849cd8-c3d8-4741-ae9e-d85cd9bb488d/render-mpv4jjus.webp",
+            "rarity": "Common",
+            "set": {
+              "code": "welcometonightcitybeta",
+              "name": "Welcome to Night City — Beta"
+            },
+            "source_image_url": "https://dstcynss47vun.cloudfront.net/prod/cyberpunk/portal/03849cd8-c3d8-4741-ae9e-d85cd9bb488d/render-mpv4jjus.webp"
+          }
+        ],
+        "ram": 1,
+        "rarity": "Common",
+        "rules_text": "Rival Units can't attack the turn they're played.",
+        "selected_printing_id": "47f55164-e5da-494e-9d55-02bd0b7f97c1",
+        "set": {
+          "code": "welcometonightcityretail",
+          "name": "Welcome to Night City — Retail"
+        },
+        "slug": "maxtac-suppression-team",
+        "source_image_url": "https://dstcynss47vun.cloudfront.net/prod/cyberpunk/portal/47f55164-e5da-494e-9d55-02bd0b7f97c1/render-mpvlzqaa.webp",
+        "subname": null
+      },
+      "processedSource": "cyberpunk_tcg_ai/data/processed/card_database.jsonl",
+      "processedRecord": {
+        "id": "maxtac-suppression-team",
+        "external_id": "cb-maxtac-suppression-team",
+        "name": "MaxTac Suppression Team",
+        "subname": null,
+        "display_name": "MaxTac Suppression Team",
+        "card_type": "Unit",
+        "color": "Yellow",
+        "cost": 5,
+        "power": 7,
+        "ram": 1,
+        "is_eddiable": false,
+        "classifications": [
+          "NCPD"
+        ],
+        "keywords": [],
+        "keywords_referenced": [],
+        "timing_triggers": [],
+        "text": "Rival Units can't attack the turn they're played.",
+        "text_markup": "Rival Units can't attack the turn they're played.",
+        "flavor_text": null,
+        "rarity": "Common",
+        "set": "Welcome to Night City — Retail",
+        "set_code": "welcometonightcityretail",
+        "print_number": "050",
+        "artist": "ADIA",
+        "legality": "legal",
+        "image_url": "https://dstcynss47vun.cloudfront.net/prod/cyberpunk/portal/47f55164-e5da-494e-9d55-02bd0b7f97c1/render-mpvlzqaa.webp",
+        "printings": [
+          {
+            "collector_number": "050",
+            "rarity": "Common",
+            "finish": null,
+            "artist": "ADIA",
+            "set": "Welcome to Night City — Retail",
+            "set_code": "welcometonightcityretail",
+            "image_url": "https://dstcynss47vun.cloudfront.net/prod/cyberpunk/portal/47f55164-e5da-494e-9d55-02bd0b7f97c1/render-mpvlzqaa.webp"
+          },
+          {
+            "collector_number": "β050",
+            "rarity": "Common",
+            "finish": null,
+            "artist": "ADIA",
+            "set": "Welcome to Night City — Beta",
+            "set_code": "welcometonightcitybeta",
+            "image_url": "https://dstcynss47vun.cloudfront.net/prod/cyberpunk/portal/03849cd8-c3d8-4741-ae9e-d85cd9bb488d/render-mpv4jjus.webp"
+          }
+        ]
+      },
+      "candidate": {
+        "catalog": {
+          "artist": "ADIA",
+          "classifications": [
+            "NCPD"
+          ],
+          "collectorNumber": "050",
+          "colors": [
+            "YELLOW"
+          ],
+          "cost": 5,
+          "imageUrl": "https://dstcynss47vun.cloudfront.net/prod/cyberpunk/portal/47f55164-e5da-494e-9d55-02bd0b7f97c1/render-mpvlzqaa.webp",
+          "legality": "legal",
+          "power": 7,
+          "ram": 1,
+          "rarity": "Common",
+          "sellable": false,
+          "setCode": "welcometonightcityretail",
+          "setName": "Welcome to Night City — Retail",
+          "type": "UNIT"
+        },
+        "errata": [],
+        "identityCandidate": {
+          "cardId": "maxtac-suppression-team",
+          "deckbuildingIdentity": "MaxTac Suppression Team",
+          "displayName": "MaxTac Suppression Team",
+          "subtitle": ""
+        },
+        "printings": [
+          {
+            "artist": "ADIA",
+            "collectorNumber": "050",
+            "finish": null,
+            "imageUrl": "https://dstcynss47vun.cloudfront.net/prod/cyberpunk/portal/47f55164-e5da-494e-9d55-02bd0b7f97c1/render-mpvlzqaa.webp",
+            "rarity": "Common",
+            "setCode": "welcometonightcityretail",
+            "setName": "Welcome to Night City — Retail"
+          },
+          {
+            "artist": "ADIA",
+            "collectorNumber": "β050",
+            "finish": null,
+            "imageUrl": "https://dstcynss47vun.cloudfront.net/prod/cyberpunk/portal/03849cd8-c3d8-4741-ae9e-d85cd9bb488d/render-mpv4jjus.webp",
+            "rarity": "Common",
+            "setCode": "welcometonightcitybeta",
+            "setName": "Welcome to Night City — Beta"
+          }
+        ],
+        "rulesSource": {
+          "keywordHints": [],
+          "markup": "Rival Units can't attack the turn they're played.",
+          "referencedKeywordHints": [],
+          "rendered": "Rival Units can't attack the turn they're played.",
+          "timingTriggerHints": []
+        },
+        "schemaVersion": 1,
+        "sourceCardSlug": "maxtac-suppression-team",
+        "sourceRecordHash": "426752a46c09c2fdb803dda42ebe353a51be4ef97dd969593cf95854e1818a53"
+      }
+    }
+  ]
+}

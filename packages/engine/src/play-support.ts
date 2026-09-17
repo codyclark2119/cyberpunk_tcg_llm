@@ -7,6 +7,7 @@ import { supportsEndTurnCard } from "./end-turn-support";
 import { supportsOrderedAttackCard } from "./ordered-effects-support";
 import { supportsTriggerCard } from "./trigger-support";
 import { supportsRestrictedPlay } from "./restriction-support";
+import { supportsAttackPreventionUnit } from "./attack-prevention-support";
 import { isReactDecision, supportsReactPlay } from "./react-support";
 import { supportsAttackPlay } from "./attack-support";
 import { supportsGear, legalEquipHosts } from "./attachments";
@@ -28,6 +29,7 @@ export function supportsPlay(card: DeepReadonly<CardRevisionSnapshot> | undefine
     if (playEnabled(context) && card?.execution?.scope === "FIELD_LEGENDS_V1") return supportsFieldLegend(card, context);
     if (playEnabled(context) && card?.execution?.scope === "END_TURN_HISTORY_V1") return supportsEndTurnCard(card, context);
     if (playEnabled(context) && card?.execution?.scope === "ATTACK_ORDERED_EFFECTS_V1") return supportsOrderedAttackCard(card, context);
+    if (playEnabled(context) && card?.execution?.scope === "ATTACK_PREVENTION_V1" && card.type === "UNIT") return supportsAttackPreventionUnit(card, context);
     if (playEnabled(context) && card?.execution?.scope === "COMBAT_TRIGGERS_V1" && card.type !== "LEGEND") return supportsTriggerCard(card, context);
     if (playEnabled(context) && card?.execution?.scope === "GEAR_DELAYED_ATTACK_V1" && card.type === "GEAR") return supportsGear(card, context);
     if (playEnabled(context) && card?.execution?.scope === "GEAR_PRIVATE_LOOK_V1" && card.type === "GEAR") return supportsGear(card, context);
