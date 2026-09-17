@@ -1,57 +1,129 @@
 # API Admission Batch V5 — Detonate / reviewed Gear defeat
 
+## Status and review correction
+
+This is the amended implementation contract for draft PR #10. It incorporates the review of `0cf8619463958e3e31e42ad87e6feb37feda9e51`, based on post-V4 master `3efe0f72b0f8f04c1268b87633fbba4fdf7c269f`.
+
+The branch is documentation-only. Runtime remains `0.4.0-api-admission-4`; no V5 runtime, source-evidence fixture, test, generated artifact, or verification result is claimed here.
+
+The initial contract understated the work. A Gear selector alone is insufficient: current targeted-defeat validation is active-player/noncombat-only, its admission gate excludes Quick, its metadata detector claims every `DEFEAT_UNIT`, and the shared defeat target gate rejects all Gear. These are explicit V5 implementation requirements, not properties the current engine already supplies.
+
 ## Summary
 
 Batch V5 targets one API candidate:
 
-- `detonate` — RED Program, cost 1, RAM 2, sellable
+- `detonate` — RED Program, cost 1, RAM 2, sellable;
 - printed text: `{Quick} Defeat a rival Gear with power 2 or less.`
 
-The engine already has reviewed targeted defeat, target choices, Gear attachments, owner Trash ordering, defeat events, trigger discovery after defeat, public action projection and Quick React play. The missing capability is a narrowly reviewed Gear target shape.
-
-This milestone should extend the typed defeat selector and reuse the existing defeat lifecycle rather than add a second Gear-destruction path.
-
-## Why Detonate
-
-Compared with the remaining unadmitted candidates, Detonate requires one bounded capability extension:
+Reuse the existing target-choice, defeat, attachment/departure, Program completion, and public-action machinery. Add a narrowly reviewed Gear capability and the continuation validation needed to use that machinery during an existing defender React window. Do not add a second destruction pipeline or a new timing window.
 
 ```text
-reviewed Quick Program
-→ choose rival Gear with printed/effective power <= 2
-→ existing defeat pipeline
-→ detach/move defeated Gear correctly
+reviewed Quick Program / separate Gear-defeat capability
+→ Main or defender React play and payment
+→ choose eligible rival Gear in BATTLEFIELD or LEGENDS
+→ reference that Gear's own effective power, at most 2
+→ shared effect-defeat / detach / owner-Trash processing
+→ complete the Program and return to the captured Main or React context
 ```
 
-It does not require:
+## Source facts and authority boundary
 
-- a new timing window;
-- hidden-area selection;
-- cost modification;
-- conditional attack-target permissions;
-- generic MOVE_CARD;
-- arbitrary scripting;
-- Python-owned rules.
+Pin the raw record, processed record, engine candidate, printings, manifest hashes, matching errata, and relevant rules from the reviewed AI snapshot:
 
-## Source facts
+```text
+repository: codyclark2119/cyberpunk_tcg_ai
+commit: af9e0e1dd93b7eb77db5883bdd18809c8446d856
+raw card: data/raw/cards/detonate.json
+candidate catalog: data/engine-candidates/card-catalog.v1.jsonl
+rules: data/processed/rules.jsonl
+```
 
-Pin the API Content Bridge evidence for `detonate` from the reviewed AI corpus. Expected source facts:
+Expected source facts: Program; Red; cost 1; RAM Red 2; sellable; Quickhack classification; no numeric Program power; retail collector number 031; the printed text above. Confirm the matching-errata result from that snapshot rather than assuming an empty join.
 
-- type: Program
-- color: Red
-- printed cost: 1
-- RAM: Red 2
-- sellable: true
-- classification: Quickhack
-- power: none
-- retail collector number: 031
-- source rules text: `{Quick} Defeat a rival Gear with power 2 or less.`
-- no matching errata unless the pinned corpus proves otherwise
+Source and candidate records remain evidence only. Explicitly author the immutable executable revision. Do not rewrite captured source keyword arrays to manufacture Quick metadata: preserve the raw source and author `mechanics.keywords: ["QUICK"]` using the established revision convention. No runtime English parsing, CardId dispatch, or source-hint-to-mechanics conversion.
 
-Source and candidate records remain evidence only. Executable mechanics must be authored explicitly in the engine revision.
+## Rules review: conclusions and evidence classification
 
-## Intended mechanics
+The following conclusions incorporate the reviewer's analysis of the pinned corpus. Preserve the cited records in the V5 evidence capture; the conclusions are not a substitute for those records or a live corpus refresh.
 
-The immutable reviewed revision should encode one unconditional play effect:
+### Gear power reference
+
+Use the candidate Gear's own power, not its host's power.
+
+- 3.17.3.2 specifies printed Gear power.
+- 3.17.3.3 permits modification only by effects specifically targeting the Gear.
+- 3.17.2, 3.17.3.1, and 11.6.5 make Gear power contribute to the host, not the reverse.
+
+The selector must obtain `effectivePower(state, gearId, context)`, reject a null/non-numeric reference, and compare `referencedPower(power) <= 2`. Do not read the host's effective power or substitute `revision.power` for the authoritative characteristic query. The query returns printed Gear power under the current capabilities, but keeps a future explicitly supported Gear-targeted modifier expressible without changing this selector contract.
+
+The clamp is currently a no-op for the reviewed nonnegative Gear values. Do not infer general Gear-modification support from using the query.
+
+### Gear in the Legends area
+
+A rival face-up Gear attached to a face-up Legend in `LEGENDS` is an eligible target, as is an eligible Gear on a battlefield host. Do not conflate Gear targeting with targeting the Legend itself.
+
+Rules basis: 4.10.2 permits both equip areas; 1.7.2 establishes rival control in the rival's areas; 11.6.1.2 contemplates Gear defeat and names the relevant areas; 5.7.4 establishes Legends-area visibility while the face-down-Legend restriction does not hide its face-up Gear. Detonate supplies no narrower area qualifier. This conclusion uses the combined rules review, not equip legality alone.
+
+Hidden areas, face-down cards, Trash, Removed, and invalid/unattached arrangements are not new V5 target areas. Existing attachment/state validation still applies.
+
+### Defeated Gear destination: explicit reviewed inference
+
+The reviewed corpus does not supply a general definition of defeat or a direct destination rule for defeated Gear. Rule 9.19.1.1 is about a Unit in fight resolution; 11.19.x describes the Unit-scoped `[DEFEATED]` trigger. Neither may be quoted as a literal Gear-to-Trash rule.
+
+For this capability, adopt the explicit reviewed decision that the defeated Gear moves alone to its owner's Trash and detaches, leaving its host and sibling Gear in place. Its basis is 11.6.1.2 together with the Unit defeat destination convention in 9.19.1.1 and the departure/detachment rule in 4.12.1. This is a bounded implementation inference, not an official publisher ruling or a new general defeat definition.
+
+Record it in the V5 evidence fixture's `decisions` block, separate from exact rule excerpts. Required decision content, with field names adapted to the established evidence format:
+
+```json
+{
+  "id": "DEFEATED_GEAR_TO_OWNER_TRASH_V1",
+  "classification": "REVIEWED_INFERENCE",
+  "ruleIds": ["11.6.1.2", "9.19.1.1", "4.12.1"],
+  "decision": "For this admitted effect, move the defeated Gear alone to its owner's Trash and detach it; keep its host and sibling Gear in place.",
+  "limitation": "The captured rules do not state a defeated-Gear destination directly. This is not a quotation, publisher ruling, or general defeat rule."
+}
+```
+
+The power-reference and Legends-area conclusions should also have recorded rule references and review rationale. Evidence reproduction must verify the captured records and retain the distinction between their exact text and authored decisions.
+
+## Confirmed current-engine blockers
+
+| Boundary | Current behavior at the reviewed base | Required V5 change |
+|---|---|---|
+| `validateTargetedDefeatState` in `packages/engine/src/targeted-defeat-state.ts` | Requires the effect controller to be the active player and combat stage `NONE`; accepts only the old source gate. | Add a capability-gated defender React case, preserving the old Unit case and exact source/continuation checks. |
+| `validateEffectDefeatFacts` in the same file | Requires the effect source controller to be the active player and to pass the old source gate. | Validate Gear-effect aftermath against its actual caster and captured resolution context, without accepting arbitrary non-active sources. |
+| `supportsTargetedDefeatCard` in `packages/engine/src/targeted-defeat-support.ts` | Requires empty catalog/executable keyword arrays and exact Minotaur/Over the Edge shapes. | Preserve this gate. Add a separate Gear source gate rather than granting Quick to old shapes. |
+| `hasTargetedDefeatMetadata` in the same file | Claims every card containing `DEFEAT_UNIT`. | Partition metadata ownership by explicit scope and target discriminator; wrong-scope or mixed metadata must still reject. |
+| `DefeatUnitTargetSchema` in `packages/domain/src/mechanics.ts` | Unit `AT_MOST` threshold is `z.literal(5)`. | Keep it unchanged and add a separate `GEAR` member with literal threshold 2. |
+| `defeatSupport` in `packages/engine/src/defeat.ts` | Requires a face-up effective battlefield Unit and supported play semantics. | Add reviewed Gear target support for both `BATTLEFIELD` and `LEGENDS`, without making those Gear legal Unit attack targets. |
+| `supportsReactPlay` in `packages/engine/src/react-support.ts` | Its existing Program branch is Floor It's exact Quick/power-minus-one/draw shape. | Add narrow Gear-capability delegation at the React/play admission boundary; retain existing branches unchanged. |
+| `listDefeatableUnits` / `targetedDefeatChoice` in `packages/engine/src/targeted-defeat-queries.ts` | Unit-only selector feeds enumeration and validation. | Introduce one typed target dispatcher shared by enumeration, continuation revalidation, and owner-order validation. |
+
+Also audit `play-support.ts`, `play-state.ts`, `targeted-defeat.ts`, `effects.ts`, `action-return.ts`, `combat-state.ts`, and trigger state/completion validators for scope, target-type, actor, and saved-return assumptions. This is a required integration audit, not a claim that every file needs a change. Retain the existing shared departure implementation unless a focused proof demonstrates an actual defect.
+
+## Chosen schema direction
+
+Use a `kind`-discriminated target union: unchanged `UNITS` and new `GEAR`. Keep the existing serialized effect kind `DEFEAT_UNIT` for compatibility; document that historical wire name instead of renaming existing payloads or adding generic `DEFEAT_CARD`.
+
+Conceptual schema extension:
+
+```ts
+const DefeatGearTargetSchema = z.strictObject({
+  kind: z.literal("GEAR"),
+  relation: z.literal("RIVAL"),
+  power: z.strictObject({
+    kind: z.literal("AT_MOST"),
+    value: z.literal(2)
+  })
+});
+
+const DefeatTargetSchema = z.discriminatedUnion("kind", [
+  DefeatUnitTargetSchema, // unchanged: literal 5 or controlled D20 value
+  DefeatGearTargetSchema
+]);
+```
+
+The explicitly authored Detonate effect becomes:
 
 ```ts
 {
@@ -59,7 +131,7 @@ The immutable reviewed revision should encode one unconditional play effect:
   cost: { kind: "NONE" },
   conditions: [],
   effects: [{
-    kind: "DEFEAT_CARD",
+    kind: "DEFEAT_UNIT", // preserved historical effect discriminator
     target: {
       kind: "GEAR",
       relation: "RIVAL",
@@ -69,158 +141,105 @@ The immutable reviewed revision should encode one unconditional play effect:
 }
 ```
 
-The exact domain shape may instead generalize the existing `DEFEAT_UNIT` target union if that produces a smaller and clearer schema change. Prefer preserving existing serialized Unit defeat shapes byte-for-byte.
+No condition, additional target family, threshold range, or arbitrary card-type destruction is admitted. The Gear branch must reject the old effect's optional `when` metadata, even if retained in the shared schema for backward compatibility. Preserve all old Unit payload values and their serialization; later engine/content hash changes are a separate artifact concern.
 
-Do not create a Detonate-specific runtime handler and do not dispatch on `cardId`.
+Do not put two indistinguishable `DEFEAT_UNIT` alternatives into the outer effect-kind discriminator. Generalize the target inside that effect and retain complete source/semantic admission checks.
 
-## Target semantics
+## Separate admission and metadata ownership
 
-A legal Detonate target must be:
+Use proposed execution scope and opt-in policy `TARGETED_GEAR_DEFEAT_V1` (policy field `targetedGearDefeat`). These names are contract choices, not existing runtime fields. Do not extend the two-card acceptance predicate of `TARGETED_DEFEAT_V1` to allow Quick.
 
-- a rival Gear;
-- face-up and in a public active area where that physical Gear is currently a legal game object;
-- power 2 or less under the rules used for Gear power references;
-- still legal when the target choice resolves.
+The new source gate must require reviewed provenance, supported execution under the new scope, Program type, RED only, RAM RED 2, numeric cost 1, sellable true, Quickhack classification, no numeric Program power, executable keywords exactly `["QUICK"]`, and exactly the one unconditional `WHEN_PLAYED` Gear-target effect above. Reject activation, guard, inheritance, equip, restrictions, modifiers, extra abilities/effects/keywords, alternative relations, conditions, and thresholds. Preserve source/canonical keyword metadata according to existing authored-revision conventions.
 
-The implementation must explicitly settle and test whether Gear attached to a face-up Legend in the Legends area is a legal target under the pinned comprehensive rules. Do not infer this from Gear equip legality alone.
+Explicitly check the required play, Gear, React, combat-resolution, trigger-scheduler, and applicable transitive ruleset dependencies. Test removal of each required dependency. A new execution scope by itself must not enable runtime behavior; old rulesets must not acquire Gear defeat by loading new vocabulary.
 
-No Unit, Legend, Program, face-down card, friendly Gear, hidden card, or over-limit Gear may be offered.
+Metadata validation must cover hidden source instances too. The old detector must retain explicit ownership of `TARGETED_DEFEAT_V1` and Unit-target effects; a new detector must own the Gear scope and Gear-target effects. A wrong-scope or mixed card must fail a complete validator, not evade validation because both detectors skipped it. Do not merely return false for all Gear metadata in the old detector without installing and invoking its replacement.
 
-## Power semantics
+Require explicit regressions that unchanged Minotaur and Over the Edge still pass their original gate, while adding Quick, a Gear target, or threshold 2 to either still fails. Floor It and other existing Quick paths must remain unchanged as well.
 
-Detonate says `Gear with power 2 or less`.
+## Target enumeration and power semantics
 
-Before implementation is certified, pin the relevant rule records and prove whether this reference uses the Gear's own current power or another derived characteristic. The existing Gear model keeps printed Gear power separate from the host's effective Unit/Legend power; do not accidentally compare against host power.
+The shared typed selector must use the effect controller as the relation reference, not the active player. In React these differ. It must return only currently supported, rival-controlled, face-up Gear in `BATTLEFIELD` or `LEGENDS` whose own referenced effective power is at most 2. Preserve existing ownership/attachment validation and fail closed on unsupported ownership changes.
 
-A Gear's host modifiers must not silently change the target filter unless the comprehensive rules explicitly say they modify that Gear's own power.
+Use that same target dispatcher in choice construction, `continueTargetedDefeat`, and `validateTargetedDefeatState`, including selected-target/owner-order revalidation. Do not leave a Unit-only `listDefeatableUnits` call on the validation path after broadening enumeration. Retaining a Unit-only wrapper for older callers is acceptable if it delegates without broadening their semantics.
+
+Zero is included. The reviewed Gear values identified in the review are Mandibular Upgrade 0, Kiroshi Optics 1, and Mantis Blades, Satori, and Dying Night 2. Use unchanged captured revisions and a clearly synthetic over-limit fixture when needed; do not edit a real Gear's printed stats. The existing `gear-replay.v1.json` Legends-area Mantis provides an exact-threshold regression candidate.
+
+Host power, host temporary modifiers, sibling Gear, readiness, and unrelated printed host restrictions must not change the Gear's own threshold. A null power reference is not silently treated as zero.
 
 ## Defeat lifecycle
 
-Reuse the existing typed defeat operation and attachment/departure processing.
+Reuse `defeatCards` and `processDeparture` after extending their admission/validation boundaries, not a second move-to-Trash implementation.
 
 Required behavior:
 
-- emit target selection through the existing public CARD choice path;
-- emit the normal defeat fact before movement;
-- detach the Gear from its host;
-- move the defeated Gear to its owner's Trash;
-- keep the host in its current area;
-- do not move sibling Gear;
-- preserve owner/controller ordering semantics;
-- discover any admitted `WHEN_DEFEATED` triggers only through the normal scheduler;
-- do not fabricate a fight result.
+- emit the existing target-selection and effect-defeat facts;
+- preserve the normal defeat-before-movement ordering;
+- move and detach only the chosen Gear, applying the reviewed destination decision;
+- retain its host, sibling Gear, host area/readiness, and unrelated state;
+- attribute the shared forced one-card Trash order to the Gear's owner;
+- do not manufacture a strategic order prompt for a one-card Gear batch;
+- keep unsupported cross-owner/control-change movement rejected rather than guessing a destination;
+- preserve last-valid trigger binding capture and enqueue only after departure processing;
+- do not fabricate a host `[DEFEATED]` trigger because its Gear was removed;
+- do not reinterpret an inherited host ability as the Gear's own defeated trigger;
+- emit no fight result or fight-win facts and do not consume fight-only prevention.
 
-Defeating Gear is an effect defeat, not combat.
+`processDeparture` already finds a Gear's host, moves its own batch, detaches it, and leaves siblings in place. Its Legend-removal step is type-gated; defeating a Gear on a Legend must not remove the Legend. Preserve the existing operation's ordering rather than impose a new detach-before-move protocol.
 
-## React / Quick behavior
+## React / Quick capability work
 
-Detonate's printed Quick keyword means the same reviewed card must be playable:
+Main and React must have the same Gear-target semantics, but their actor and continuation invariants are different. Supporting the second case is new validation work, not merely passing `QUICK` through a keyword check.
 
-- during its controller's normal Main phase; and
-- during an eligible rival React window under the existing Quick Program path.
+| Resolution origin | Caster | Combat state | Saved return |
+|---|---|---|---|
+| Main | Active player | `NONE` | `MAIN` |
+| Existing defender React | Defending/non-active player | `RIVAL_REACT` with the same attack identity | `RIVAL_REACT` |
 
-The new Gear target selector must behave identically in either window except for the surrounding return context.
+During target selection, the timing step/window is `TARGET_SELECTION`, not an idle React decision. Validate it as an unfinished Program action with its saved return context; do not require `isReactDecision()` to be true while the continuation is paused.
 
-No new reaction priority or timing protocol is introduced.
+For the Gear capability only, replace the blanket active-player/noncombat assumptions in both `validateTargetedDefeatState` and `validateEffectDefeatFacts` with the explicit appropriate origin case. Bind source, effect, `playContinuation.actorId`, controller, saved return, and combat identity. Keep the old Unit-scoped assumptions intact and reject forged controller/return/source-zone/attack associations. Do not accept any arbitrary non-active source merely because combat stage is React.
 
-## Admission gate
+Completion must finish the Program's effect and Trash lifecycle, process only admitted aftermath, and return to the same defender React decision. It must not advance the turn, reset the attack, change its declared participants/locked target, grant the attacker reaction priority, or automatically pass React. Removing Gear must update live host power and granted capabilities before any later fight. Validate the stored origin after movement too; fixing only the target pause is insufficient.
 
-Keep admission exact to the reviewed shape. At minimum require:
+Single-card owner ordering is forced, so its event may name the active player's Gear owner without transferring strategic React priority to that player. Any temporary actor handling must restore the actual effect controller consistently with existing validation. No general multi-owner React ordering capability is added.
 
-- reviewed provenance;
-- execution status `SUPPORTED`;
-- a dedicated reviewed scope or an explicit narrow extension of `TARGETED_DEFEAT_V1`;
-- Program type;
-- RED only;
-- RAM RED 2;
-- printed cost 1;
-- sellable true;
-- classification `Quickhack`;
-- Quick keyword and no unrelated keyword;
-- exactly one unconditional `WHEN_PLAYED` ability;
-- no activation, guard, inherited ability, modifier, restriction or equip metadata;
-- exactly one Gear-defeat effect;
-- relation exactly `RIVAL`;
-- threshold exactly `2`.
-
-Nearby variants must fail closed:
-
-- friendly Gear;
-- any Gear;
-- Unit target;
-- threshold 1/3/arbitrary;
-- conditional defeat;
-- extra effect/ability/keyword/modifier;
-- missing Quick;
-- unreviewed provenance;
-- unsupported execution status.
-
-## Domain/schema design
-
-Prefer the smallest typed generalization.
-
-Two acceptable directions:
-
-1. Generalize the existing defeat effect target into a discriminated union containing the existing Unit selectors plus a Gear selector.
-2. Introduce a dedicated Gear-defeat effect if doing so materially reduces ambiguity and preserves old contracts more clearly.
-
-Whichever design is selected:
-
-- old Unit defeat JSON remains accepted unchanged;
-- arbitrary card-type defeat is not admitted;
-- target enumeration remains engine-owned;
-- model-visible choices remain public descriptors only;
-- the model still selects only `actionId`.
+Require zero-target, forced one-target, and strategic multi-target Main/React paths. A React proof with at least two legal targets must pause, serialize/reload, validate, resume the chosen action, finish departure, and return correctly. Testing only the automatic single-target path can miss the original validator defect.
 
 ## Focused proofs
 
-Batch V5 tests should prove:
+The V5 suite must directly prove:
 
-1. source/candidate hashes and no errata drift;
-2. exact semantic admission and nearby fail-closed mutations;
-3. Main-phase Quick Program play/payment/target/defeat;
-4. React-window Quick play and return to the interrupted attack correctly;
-5. target set includes every legal rival Gear and excludes all non-Gear/friendly/hidden/over-limit objects;
-6. target legality is rederived at resolution;
-7. attached Gear defeat detaches only that Gear and leaves the host/siblings in place;
-8. Gear hosted by a field Unit behaves correctly;
-9. Gear hosted by a face-up Legends-area Legend is tested according to the pinned rule conclusion;
-10. owner/controller and Trash ordering remain valid;
-11. effect defeat emits no fight result;
-12. public observation/Descriptor V2 reveals no hidden identity;
-13. repeated replay generation is independent of opaque actionId ordering;
-14. prior Minotaur / Over the Edge targeted-defeat behavior remains semantically unchanged.
+1. Raw/processed/candidate hashes, printings, errata join, exact rules records, and separately classified reviewed decisions.
+2. Exact new semantic admission, opt-in dependency checks, and rejection of hidden/mixed/wrong-scope metadata.
+3. Unchanged Minotaur/Over the Edge admission and old Unit payload serialization; their Quick/Gear/threshold-2 mutations remain rejected.
+4. Main play, payment, no-target completion, forced target, and multi-target choice through authoritative actions.
+5. Defender-owned Quick React play with at least two Gear targets, persisted target pause, resume, shared defeat, Program Trash, and exact React return.
+6. Zero/one-target React completion; no turn/attack/priority reset and no automatic pass.
+7. Forged active-caster, effect-controller, saved-return, attack identity, and post-movement source facts reject rather than weakening old validators.
+8. Both battlefield and Legends-area Gear targets, including exact-threshold Mantis and zero-power Mandibular; friendly/non-Gear/hidden/inactive-area/over-limit targets excluded.
+9. The target filter references the Gear instance's effective power, independently of high/low or temporarily modified host power.
+10. Stale/forged target sets reject through the shared dispatcher at enumeration and resolution/validation, not merely in one UI path.
+11. Only the chosen Gear detaches/moves; host and sibling Gear remain; the one-card forced Trash-order event names its owner.
+12. Removing attacker's Gear during React changes later combat power or inherited capabilities without defeating the host or inventing a fight result during the spell.
+13. No host/inherited `[DEFEATED]` trigger, fight-win event, or fight-prevention consumption is manufactured by Gear defeat.
+14. Every public target action projects through Descriptor V2, round-trips via actionId, and exposes no hidden identity.
+15. Deterministic legal replay selection independent of opaque actionId order, with trusted arrangements labelled separately from legal paid-play trajectories.
+16. Prior Minotaur, Over the Edge, Floor It, Reboot, attachment, and relevant inherited-effect behavior remains compatible with preserved decisions.
+
+All scenarios must execute; no conditional assertion that silently skips a required case. Where current Gear revisions produce no defeated-trigger aftermath, exercise the bounded fact validator through clearly labelled validator tests rather than inventing a real Gear trigger or claiming a nonexistent reachable pause.
 
 ## Mutation checks
 
-At minimum catch deliberate mutations that:
+Catch deliberate mutations that widen relation/type/area/threshold, exclude zero power or Legends-area Gear, compare host instead of Gear power, bypass the new scope or provenance, accidentally admit Quick on old Unit-defeat shapes, skip detach/movement, move the host/siblings, permit stale targets, reinstate active-player-only React validation, or accept a forged caster/return context.
 
-- widen Gear relation from rival to any;
-- remove the power threshold;
-- change threshold 2;
-- allow Unit targets;
-- skip Gear detachment;
-- move the host with the defeated Gear;
-- omit defeat movement;
-- remove Quick admission;
-- bypass reviewed provenance;
-- permit stale target choices.
+Each mutant must fail a named behavioral assertion, not a syntax/import/setup/hash error. Restore exact original bytes and rerun the unmodified focused suite. Keep runtime writers, generators, and matrix/descriptor jobs stopped during mutations.
 
-Each mutant must fail the named behavioral assertion, not merely crash/import-fail.
+## Engine identity and verification plan
 
-## Engine identity
+Current documentation-only identity stays `0.4.0-api-admission-4`. The planned implementation identity is `0.4.0-api-admission-5`; advance it only with the runtime/schema change and derive the artifact hash from the completed runtime tree. Do not prefill hashes or manually repin generated files.
 
-Planned next version:
-
-```text
-0.4.0-api-admission-5
-```
-
-Do not claim the final artifact hash until the runtime tree is complete.
-
-## Verification plan
-
-Fast loop:
+The following commands are future implementation gates; the V5 test file does not exist in this documentation-only revision:
 
 ```bash
 node --import tsx --test --test-concurrency=1 tests/api-admission-batch-v5.test.ts
@@ -230,13 +249,15 @@ npm run validate:cards
 git diff --check
 ```
 
-After runtime and focused mutation tests are settled:
+After source capture/check, focused tests, and mutations pass and runtime is settled:
 
 ```bash
 npm run contracts:export
-# regenerate authoritative replay fixtures twice and require byte identity
+# Audit frozen pre-V5 replay decisions; regenerate authoritative fixtures twice.
+# Preserve designated historical evidence and review hash/order/semantic diffs.
 npm run test:matrix
 npm run test:matrix -- --check
+# Run both matrix-dependent reviews and their checks against finalized traces.
 npm run review:descriptor-v2
 npm run review:descriptor-v2 -- --check
 npm test
@@ -245,43 +266,16 @@ npm run build
 git diff --check
 ```
 
-Preserve the current Demo regression target unless an investigated rules change proves otherwise:
+Require actual integration execution with configured test databases and zero skips; an exit-0 all-skipped run is not evidence. Record observed counts, not copied earlier totals. Do not run trace writers concurrently with matrix/descriptor readers.
 
-```text
-192 / 192 supported terminal
-118 START_TURN_GIGS
-69  OVERTIME_GIGS
-5   EMPTY_DRAW
-```
+Existing Demo regression target: 192/192 supported terminal; 118 START_TURN_GIGS, 69 OVERTIME_GIGS, 5 EMPTY_DRAW. Descriptor V2 requires zero duplicate descriptors, unprojectable actions, action-set mismatches, and privacy failures. These are requirements, not V5 results.
 
-Descriptor V2 must retain zero duplicate descriptors, unprojectable actions, action-set mismatches and privacy failures.
+Old Unit payload compatibility does not mean entire regenerated fixtures remain byte-identical after the eventual identity bump. Distinguish preserved payload values from expected hash/list-order changes, and investigate any semantic difference.
 
-Audit preserved pre-V5 replay decisions before accepting regenerated fixtures. Classify generated changes as hash-only, order-only, or semantic.
+## Non-goals and merge criteria
 
-## Non-goals
+No Valentino Guerrera/rule 9.26.3 target-legality lifecycle, Octant cost reduction, generic MOVE_CARD, arbitrary Gear/card-type defeat, hidden-area targeting, new reaction priority, general cross-owner movement, Python rules, or bulk admission. Do not silently broaden V4's retained source-lifetime limitation.
 
-This PR does not implement:
+Keep PR #10 draft until Detonate has pinned evidence and an explicit immutable revision; the reviewed destination decision is recorded honestly; both target areas and own-power semantics are tested; new React validation and old admission isolation pass; generated outputs are reproducible; preserved replays, matrix, Descriptor V2, full tests, configured integration, typecheck, lint, card validation, build, and diff checks all pass.
 
-- Valentino Guerrera's changing attack-target permissions;
-- rule 9.26.3 lifecycle work;
-- Octant cost reduction;
-- generic MOVE_CARD;
-- arbitrary Gear destruction;
-- hidden-area Gear targeting;
-- generic card-type selectors;
-- runtime English parsing;
-- source-hint-to-mechanics conversion;
-- bulk admission.
-
-## Merge criteria
-
-Keep the PR draft until:
-
-- Detonate has an immutable reviewed revision backed by pinned source evidence;
-- Gear target-area and power-reference semantics are explicitly supported by rules evidence;
-- old Unit targeted-defeat shapes remain compatible;
-- all focused and mutation tests pass;
-- generated contracts/fixtures are deterministic;
-- preserved replay semantics remain compatible;
-- matrix and Descriptor V2 gates remain clean;
-- full unit/integration/typecheck/lint/card-validation/build/diff gates pass.
+This amendment changes the contract only. None of those implementation or verification gates is claimed completed.
