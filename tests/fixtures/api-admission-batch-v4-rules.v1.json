@@ -1,0 +1,95 @@
+{
+  "authority": "EVIDENCE_ONLY",
+  "projection": "Exact id/text fields from the pinned processed rules records; no wording corrections.",
+  "rules": [
+    {
+      "id": "3.17.2",
+      "text": "3.17.2. A Unit or Legend’s power is equal to the power printed on the card plus the power of its equipped Gear and any current effect modifiers."
+    },
+    {
+      "id": "3.17.4",
+      "text": "3.17.4. “Base power” refers to the printed power on a Legend, Unit, or Gear, separate from any applied or inherited modifiers."
+    },
+    {
+      "id": "3.18.1.2.2.1",
+      "text": "3.18.1.2.2.1. Reminder text is not effect text, and does not influence gameplay."
+    },
+    {
+      "id": "4.2.1",
+      "text": "4.2.1. Legends on the field are both Units and Legends."
+    },
+    {
+      "id": "4.7",
+      "text": "4.7. Units enter the field with Lag. See Lag."
+    },
+    {
+      "id": "5.3.1.1",
+      "text": "5.3.1.1. Face-up cards in a public area are known to all players. You can look at information on all face-up cards at any time."
+    },
+    {
+      "id": "5.3.2.2",
+      "text": "5.3.2.2. If a card enters a hidden area, ignore any information on the card and remove any existing modifiers attached to it."
+    },
+    {
+      "id": "5.4.2",
+      "text": "5.4.2. Your hand is a hidden area, but you can freely view its contents and change the order of cards in it."
+    },
+    {
+      "id": "8.16.1",
+      "text": "8.16.1. Resolve effects that occur “at the end of your turn,” “at the end of each turn,” and variations thereof."
+    },
+    {
+      "id": "8.16.2",
+      "text": "8.16.2. Remove effects that last “this turn” and variations thereof."
+    },
+    {
+      "id": "9.19.1",
+      "text": "9.19.1. When a Unit loses a fight, the opposing Unit defeats it as a result."
+    },
+    {
+      "id": "9.19.1.1",
+      "text": "9.19.1.1. When a Unit is defeated, its owner moves it to their trash."
+    },
+    {
+      "id": "9.23.2.1",
+      "text": "9.23.2.1. If the attacking Unit has 0 power, it steals 0 Gigs."
+    },
+    {
+      "id": "9.23.2.2",
+      "text": "9.23.2.2. If the attacking Unit has 1 or more power, it steals X Gigs (rounded down) according to this formula, where P = the attacking Unit’s power.\n\n`X = (P / 10) + 1)`\n\n> **EXAMPLE:** A Unit with 1 to 9 power steals 1 Gig. A Unit with 10 to 19 power steals 2 Gigs. Continue this pattern for higher power values."
+    },
+    {
+      "id": "9.29",
+      "text": "9.29. After an attack ends and all effects and pending effects for the current timing window have resolved, remove effects that last “while attacking,” “while stealing,” “while fighting” and variations thereof. The turn player’s Main Phase continues."
+    },
+    {
+      "id": "10.2.1",
+      "text": "10.2.1. Always resolve as much of an effect as possible. See GOLDEN RULES > Resolve as Much as Possible."
+    },
+    {
+      "id": "10.2.3",
+      "text": "10.2.3. Once an effect starts resolving, you cannot play cards, activate effects, or resolve other pending effects until the current effect finishes resolving."
+    },
+    {
+      "id": "10.4.1",
+      "text": "10.4.1. A “triggered effect” becomes pending when its trigger condition is met."
+    },
+    {
+      "id": "10.7",
+      "text": "10.7. If an effect requires a target or choice with no legal options, the effect is invalid and the controlling player does not make a choice."
+    },
+    {
+      "id": "10.10.1",
+      "text": "10.10.1. If resolving a pending effect requires information about a game piece that is no longer valid, use the information from when the piece was last valid."
+    }
+  ],
+  "rulesHash": "05f7dd389b919e40cca4bb00b700516ff9016c57729b94fd08d548f8f6237752",
+  "schemaVersion": 1,
+  "source": {
+    "commit": "af9e0e1dd93b7eb77db5883bdd18809c8446d856",
+    "gitBlob": "5d8343c6fa8a596e354a2868a8bd511a6b04ca0e",
+    "path": "data/processed/rules.jsonl",
+    "repository": "codyclark2119/cyberpunk_tcg_ai",
+    "sha256": "1f299c9cbe2657c9d088ae4b3a812b85e46c3fd2659579229635959c59a20e19"
+  }
+}

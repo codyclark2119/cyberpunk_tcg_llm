@@ -1,6 +1,7 @@
 import { hasAttackConditionPowerMetadata, supportsAttackConditionPowerCard } from "./attack-condition-power-support";
 import { hasTargetedDefeatMetadata, supportsTargetedDefeatCard } from "./targeted-defeat-support";
 import { hasValueConditionMetadata, supportsValueConditionCard } from "./value-conditions-support";
+import { hasFriendlyPlayPowerMetadata, supportsFriendlyPlayPowerUnit } from "./friendly-play-power-support";
 import { supportsTargetedSpendCard } from "./targeted-spend-support";
 import { supportsFieldLegend } from "./field-legend-support";
 import { supportsEndTurnCard } from "./end-turn-support";
@@ -22,6 +23,7 @@ export function revisionOf(state: GameState, id: CardInstanceId, context: Engine
 }
 /** Admission certifies only reviewed semantic shapes, never catalog legality or arbitrary metadata. */
 export function supportsPlay(card: DeepReadonly<CardRevisionSnapshot> | undefined, context: EngineContext) {
+    if (card && hasFriendlyPlayPowerMetadata(card)) return supportsFriendlyPlayPowerUnit(card, context);
     if (card && hasAttackConditionPowerMetadata(card)) return supportsAttackConditionPowerCard(card, context);
     if (card && hasTargetedDefeatMetadata(card)) return supportsTargetedDefeatCard(card, context);
     if (card && hasValueConditionMetadata(card)) return supportsValueConditionCard(card, context);

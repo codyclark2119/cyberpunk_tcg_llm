@@ -6,6 +6,7 @@ import { readyableEddieSlots } from "./eddie-ready";
 import { testCondition } from "./conditions";
 import { getDiscardableCards } from "./discard";
 import { privateLookTargets } from "./private-knowledge";
+import { friendlyPowerTargets } from "./friendly-play-power-queries";
 import { hashCanonical, type GameState, type CardInstanceId, type TriggerBinding, type TriggerOrigin, type PendingChoice, type PendingEffect } from "@tcg/domain";
 import type { EngineContext } from "./state";
 import { cardRevision } from "./characteristics";
@@ -76,7 +77,14 @@ export function triggerChoice(state: GameState, context: EngineContext): Pending
     else if (c.phase === "READY") { kind = "READY_EDDIE"; options = readyableEddieSlots(state, actorId).filter(slot => !c.selectedEddieSlots?.includes(slot)).map(slot => ({ kind: "EDDIE_SLOT", slot })); }
     else if (c.phase === "DISCARD") { kind = "DISCARD"; options = getDiscardableCards(state, actorId).map(cardInstanceId => ({ kind: "CARD", cardInstanceId })); }
     else if (c.phase === "OPTIONAL") { kind = "OPTIONAL"; options = [{ kind: "CONFIRM", confirmed: true }, { kind: "CONFIRM", confirmed: false }]; }
-    else if (c.phase === "TARGET") { kind = "TARGET"; options = current?.effect.kind === "LOOK_AT_FRIENDLY_FACE_DOWN_LEGEND" ? privateLookTargets(state, actorId, context).map(slot => ({ kind: "LEGEND_SLOT", slot })) : triggerGigTargets(state).map(gigInstanceId => ({ kind: "GIG", gigInstanceId })); }
+    else if (c.phase === "TARGET") {
+        kind = "TARGET";
+        options = current?.effect.kind === "LOOK_AT_FRIENDLY_FACE_DOWN_LEGEND"
+            ? privateLookTargets(state, actorId, context).map(slot => ({ kind: "LEGEND_SLOT", slot }))
+            : current?.effect.kind === "POWER_UNTIL_END_OF_TURN" && current.effect.target.kind === "FRIENDLY_UNIT"
+                ? friendlyPowerTargets(state, actorId, context).map(cardInstanceId => ({ kind: "CARD", cardInstanceId }))
+                : triggerGigTargets(state).map(gigInstanceId => ({ kind: "GIG", gigInstanceId }));
+    }
     else {
         kind = "AMOUNT"; const g = state.objects.gigs[c.targetGigId!], value = g.roll.kind === "ROLLED" ? g.roll.currentValue : 0;
         options = current?.effect.kind === "ADJUST_GIG_UP_TO"

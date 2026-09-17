@@ -328,6 +328,10 @@
                           "type": "string",
                           "const": "ATTACK_PREVENTION_V1"
                         },
+                        "friendlyPlayPower": {
+                          "type": "string",
+                          "const": "FRIENDLY_PLAY_POWER_V1"
+                        },
                         "gearCapabilities": {
                           "type": "string",
                           "const": "GEAR_CAPABILITIES_V1"
@@ -2101,7 +2105,8 @@
                                             "type": "string",
                                             "enum": [
                                               "RIVAL_UNIT",
-                                              "SOURCE_SUBJECT"
+                                              "SOURCE_SUBJECT",
+                                              "FRIENDLY_UNIT"
                                             ]
                                           }
                                         },
@@ -5136,6 +5141,83 @@
                       },
                       "amount": {
                         "type": "number",
+                        "const": 2
+                      },
+                      "origin": {
+                        "type": "object",
+                        "properties": {
+                          "effectId": {
+                            "type": "string",
+                            "pattern": "^[a-f0-9]{64}$"
+                          },
+                          "abilityId": {
+                            "type": "string",
+                            "minLength": 1
+                          },
+                          "ordinal": {
+                            "type": "integer",
+                            "exclusiveMinimum": 0,
+                            "maximum": 9007199254740991
+                          }
+                        },
+                        "required": [
+                          "effectId",
+                          "abilityId",
+                          "ordinal"
+                        ],
+                        "additionalProperties": false
+                      }
+                    },
+                    "required": [
+                      "kind",
+                      "sourceId",
+                      "targetId",
+                      "expires",
+                      "amount",
+                      "origin"
+                    ],
+                    "additionalProperties": false
+                  },
+                  {
+                    "type": "object",
+                    "properties": {
+                      "kind": {
+                        "type": "string",
+                        "const": "POWER"
+                      },
+                      "sourceId": {
+                        "type": "string",
+                        "minLength": 1,
+                        "maxLength": 200,
+                        "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$"
+                      },
+                      "targetId": {
+                        "type": "string",
+                        "minLength": 1,
+                        "maxLength": 200,
+                        "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$"
+                      },
+                      "expires": {
+                        "type": "object",
+                        "properties": {
+                          "kind": {
+                            "type": "string",
+                            "const": "END_OF_TURN"
+                          },
+                          "turn": {
+                            "type": "integer",
+                            "exclusiveMinimum": 0,
+                            "maximum": 9007199254740991
+                          }
+                        },
+                        "required": [
+                          "kind",
+                          "turn"
+                        ],
+                        "additionalProperties": false
+                      },
+                      "amount": {
+                        "type": "number",
                         "const": 5
                       },
                       "origin": {
@@ -6930,7 +7012,8 @@
                                       "type": "string",
                                       "enum": [
                                         "RIVAL_UNIT",
-                                        "SOURCE_SUBJECT"
+                                        "SOURCE_SUBJECT",
+                                        "FRIENDLY_UNIT"
                                       ]
                                     }
                                   },
@@ -8955,7 +9038,8 @@
                                     "type": "string",
                                     "enum": [
                                       "RIVAL_UNIT",
-                                      "SOURCE_SUBJECT"
+                                      "SOURCE_SUBJECT",
+                                      "FRIENDLY_UNIT"
                                     ]
                                   }
                                 },
@@ -10976,7 +11060,8 @@
                                     "type": "string",
                                     "enum": [
                                       "RIVAL_UNIT",
-                                      "SOURCE_SUBJECT"
+                                      "SOURCE_SUBJECT",
+                                      "FRIENDLY_UNIT"
                                     ]
                                   }
                                 },
@@ -12989,6 +13074,10 @@
                           "type": "string",
                           "const": "ATTACK_PREVENTION_V1"
                         },
+                        "friendlyPlayPower": {
+                          "type": "string",
+                          "const": "FRIENDLY_PLAY_POWER_V1"
+                        },
                         "gearCapabilities": {
                           "type": "string",
                           "const": "GEAR_CAPABILITIES_V1"
@@ -14762,7 +14851,8 @@
                                             "type": "string",
                                             "enum": [
                                               "RIVAL_UNIT",
-                                              "SOURCE_SUBJECT"
+                                              "SOURCE_SUBJECT",
+                                              "FRIENDLY_UNIT"
                                             ]
                                           }
                                         },
