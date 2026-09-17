@@ -35,8 +35,11 @@ export const jonin = CardRevisionSnapshotSchema.parse({
 });
 export function batchV4Context(engine?: Parameters<typeof createContentBundle>[2]) {
     const base = batchV3Context(engine);
+    // Batch V3 supplies combat restrictions, not trigger scheduling. Jonin's PLAY
+    // effect requires the scheduler explicitly; do not relax the runtime support gate.
     const ruleset = RulesetSchema.parse({ ...base.content.ruleset, version: "api-admission-batch-v4-1",
-        gameplay: { ...base.content.ruleset.gameplay, turnSlice: { ...base.content.ruleset.gameplay!.turnSlice, friendlyPlayPower: "FRIENDLY_PLAY_POWER_V1" } } });
+        gameplay: { ...base.content.ruleset.gameplay, turnSlice: { ...base.content.ruleset.gameplay!.turnSlice,
+            combatTriggers: "COMBAT_TRIGGERS_V1", friendlyPlayPower: "FRIENDLY_PLAY_POWER_V1" } } });
     return { content: createContentBundle(ruleset, [...base.content.cards, jonin], engine ?? base.content.manifest.engine) };
 }
 export function batchV4Input(seed: string) {
