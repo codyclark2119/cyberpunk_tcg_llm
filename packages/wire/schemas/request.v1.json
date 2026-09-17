@@ -320,6 +320,14 @@
                           "type": "string",
                           "const": "ADRENALINE_V1"
                         },
+                        "attackTargetRestrictions": {
+                          "type": "string",
+                          "const": "ATTACK_TARGET_RESTRICTIONS_V1"
+                        },
+                        "attackPrevention": {
+                          "type": "string",
+                          "const": "ATTACK_PREVENTION_V1"
+                        },
                         "gearCapabilities": {
                           "type": "string",
                           "const": "GEAR_CAPABILITIES_V1"
@@ -858,6 +866,7 @@
                           "FIELD_LEGENDS_V1",
                           "FIRST_ATTACK_HISTORY_V1",
                           "ATTACKING_AURA_V1",
+                          "ATTACK_PREVENTION_V1",
                           "VALUE_CONDITIONS_V1",
                           "ATTACK_CONDITION_POWER_V1",
                           "TARGETED_SPEND_V1",
@@ -891,6 +900,19 @@
                                 "kind": {
                                   "type": "string",
                                   "const": "CANNOT_ATTACK"
+                                }
+                              },
+                              "required": [
+                                "kind"
+                              ],
+                              "additionalProperties": false
+                            },
+                            {
+                              "type": "object",
+                              "properties": {
+                                "kind": {
+                                  "type": "string",
+                                  "const": "CANNOT_ATTACK_GIG_AREA"
                                 }
                               },
                               "required": [
@@ -3350,6 +3372,19 @@
                               "required": [
                                 "kind",
                                 "keyword"
+                              ],
+                              "additionalProperties": false
+                            },
+                            {
+                              "type": "object",
+                              "properties": {
+                                "kind": {
+                                  "type": "string",
+                                  "const": "RIVAL_LAGGING_UNITS_CANNOT_ATTACK"
+                                }
+                              },
+                              "required": [
+                                "kind"
                               ],
                               "additionalProperties": false
                             },
@@ -12946,6 +12981,14 @@
                           "type": "string",
                           "const": "ADRENALINE_V1"
                         },
+                        "attackTargetRestrictions": {
+                          "type": "string",
+                          "const": "ATTACK_TARGET_RESTRICTIONS_V1"
+                        },
+                        "attackPrevention": {
+                          "type": "string",
+                          "const": "ATTACK_PREVENTION_V1"
+                        },
                         "gearCapabilities": {
                           "type": "string",
                           "const": "GEAR_CAPABILITIES_V1"
@@ -13484,6 +13527,7 @@
                           "FIELD_LEGENDS_V1",
                           "FIRST_ATTACK_HISTORY_V1",
                           "ATTACKING_AURA_V1",
+                          "ATTACK_PREVENTION_V1",
                           "VALUE_CONDITIONS_V1",
                           "ATTACK_CONDITION_POWER_V1",
                           "TARGETED_SPEND_V1",
@@ -13517,6 +13561,19 @@
                                 "kind": {
                                   "type": "string",
                                   "const": "CANNOT_ATTACK"
+                                }
+                              },
+                              "required": [
+                                "kind"
+                              ],
+                              "additionalProperties": false
+                            },
+                            {
+                              "type": "object",
+                              "properties": {
+                                "kind": {
+                                  "type": "string",
+                                  "const": "CANNOT_ATTACK_GIG_AREA"
                                 }
                               },
                               "required": [
@@ -15976,6 +16033,19 @@
                               "required": [
                                 "kind",
                                 "keyword"
+                              ],
+                              "additionalProperties": false
+                            },
+                            {
+                              "type": "object",
+                              "properties": {
+                                "kind": {
+                                  "type": "string",
+                                  "const": "RIVAL_LAGGING_UNITS_CANNOT_ATTACK"
+                                }
+                              },
+                              "required": [
+                                "kind"
                               ],
                               "additionalProperties": false
                             },

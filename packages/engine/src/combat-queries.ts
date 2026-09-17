@@ -1,6 +1,6 @@
 import { canonicalSerialize, type AttackTarget, type CardInstanceId, type GameState, type PlayerId } from "@tcg/domain";
 import type { EngineContext } from "./state";
-import { getAttackRestrictions } from "./combat-permissions";
+import { currentCombatRestrictions, getAttackRestrictions } from "./combat-permissions";
 import { combatEnabled } from "./attack-support";
 import { cardRevision, effectiveCardTypes } from "./characteristics";
 import { supportsPlay } from "./play-support";
@@ -20,7 +20,8 @@ export function listAttackTargets(state: GameState, attackerId: CardInstanceId, 
     const rival = state.match.playerOrder.find(id => id !== actor);
     if (!rival) return [];
     const cards: AttackTarget[] = Object.values(state.objects.cards).filter(c => c.controllerId === rival && c.zone.playerId === rival && c.zone.zone === "BATTLEFIELD" && c.face === "UP" && c.readiness === "SPENT" && isUnitForGameplay(state, c.id, context)).map(c => ({ kind: "CARD", cardInstanceId: c.id }));
-    if (Object.values(state.objects.gigs).some(g => g.controllerId === rival && g.location.playerId === rival && g.location.zone === "GIGS" && g.roll.kind === "ROLLED")) cards.push({ kind: "GIG_AREA", playerId: rival });
+    // 9.3.2.3: a printed restriction removes the Gig area from this Unit's valid targets; rival Units remain valid.
+    if (!currentCombatRestrictions(state, attackerId, context).some(x => x.kind === "CANNOT_ATTACK_GIG_AREA") && Object.values(state.objects.gigs).some(g => g.controllerId === rival && g.location.playerId === rival && g.location.zone === "GIGS" && g.roll.kind === "ROLLED")) cards.push({ kind: "GIG_AREA", playerId: rival });
     return cards.sort((a, b) => canonicalSerialize(a) < canonicalSerialize(b) ? -1 : 1);
 }
 export function isAttackEligible(state: GameState, actor: PlayerId, id: CardInstanceId, context: EngineContext) {

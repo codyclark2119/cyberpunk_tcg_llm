@@ -13,7 +13,7 @@ import { RulesView } from "./view";
 const visibleCard = z.strictObject({
     effectiveTypes: z.array(z.enum(["LEGEND", "UNIT", "GEAR", "PROGRAM"])).optional(), goSolo: z.literal(true).optional(),
     knownToSeats: z.array(z.number().int().nonnegative()).optional(),
-    rememberedContent: CardReferenceSchema.optional(), effectiveKeywords: z.array(KeywordSchema).optional(), restrictions: z.array(z.enum(["CANNOT_ATTACK", "CANNOT_BE_BLOCKED"])).optional(), publicId: z.string(), zone: ZoneSchema, ownerSeat: z.number().int(), controllerSeat: z.number().int(), face: z.enum(["UP", "DOWN"]), readiness: z.enum(["READY", "SPENT"]), lagging: z.boolean().optional(), attachments: z.array(z.string()).optional(), effectivePower: z.number().int().nullable().optional(), content: CardReferenceSchema.optional(), damage: z.number().int(), counters: z.record(z.string(), z.number().int()) });
+    rememberedContent: CardReferenceSchema.optional(), effectiveKeywords: z.array(KeywordSchema).optional(), restrictions: z.array(z.enum(["CANNOT_ATTACK", "CANNOT_ATTACK_GIG_AREA", "CANNOT_BE_BLOCKED"])).optional(), publicId: z.string(), zone: ZoneSchema, ownerSeat: z.number().int(), controllerSeat: z.number().int(), face: z.enum(["UP", "DOWN"]), readiness: z.enum(["READY", "SPENT"]), lagging: z.boolean().optional(), attachments: z.array(z.string()).optional(), effectivePower: z.number().int().nullable().optional(), content: CardReferenceSchema.optional(), damage: z.number().int(), counters: z.record(z.string(), z.number().int()) });
 export const PlayerObservationSchema = z.strictObject({
     overtime: OvertimeObservationSchema.optional(),
     format: z.literal("DEMO_STARTER_V1").optional(),
