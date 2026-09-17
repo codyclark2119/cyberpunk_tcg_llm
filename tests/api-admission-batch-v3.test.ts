@@ -5,8 +5,8 @@ import { CardRevisionSnapshotSchema, GameStateSchema, RulesetSchema, canonicalSe
 import { createGameWithEvents, observe, resolveActionId } from "@tcg/engine";
 import { buildModelInputV2 } from "@tcg/engine/public-actions";
 import { supportsPlay } from "../packages/engine/src/play-support";
-import { supportsRestrictedPlay } from "../packages/engine/src/restriction-support";
-import { supportsAttackPreventionUnit } from "../packages/engine/src/attack-prevention-support";
+import { attackTargetRestrictionsEnabled, supportsRestrictedPlay } from "../packages/engine/src/restriction-support";
+import { attackPreventionEnabled, supportsAttackPreventionUnit } from "../packages/engine/src/attack-prevention-support";
 import { currentCombatRestrictions, getAttackRestrictions, imposedAttackPrevention } from "../packages/engine/src/combat-permissions";
 import { attackSourceValid, isAttackEligible, laggingAttackPermitted, listAttackTargets } from "../packages/engine/src/combat-queries";
 import { RIDING_NOMAD, batchV2Context } from "./api-admission-batch-v2-fixture";
@@ -32,6 +32,11 @@ function withoutPolicy(flag: "attackTargetRestrictions" | "attackPrevention") {
 }
 const getNoTargets = () => (builtNoTargets ??= withoutPolicy("attackTargetRestrictions"));
 const getNoPrevention = () => (builtNoPrevention ??= withoutPolicy("attackPrevention"));
+function withoutRestrictionsPolicy() {
+    const ruleset = RulesetSchema.parse(getContext().content.ruleset);
+    delete ruleset.gameplay!.turnSlice!.combatRestrictions;
+    return { content: { ...getContext().content, ruleset } } as unknown as ReturnType<typeof batchV3Context>;
+}
 const controlled = (state: GameState, actor: string, cardId: string, ready?: "READY" | "SPENT") =>
     Object.values(state.objects.cards).find(c => c.cardId === cardId && c.controllerId === actor && c.zone.zone === "BATTLEFIELD" && c.face === "UP" && (!ready || c.readiness === ready));
 const readyUnit = (state: GameState, actor: string, cardId: string) =>
@@ -234,6 +239,13 @@ test("prevention tracks the source leaving the field and the end-of-turn Lag rem
     const maxtac = controlled(step.before, rival, MAXTAC_SUPPRESSION)!;
     noSource.objects.cards[maxtac.id].face = "DOWN";
     assert.deepEqual(imposedAttackPrevention(noSource, nomad.id, getContext()), [], "a hidden source imposes nothing");
+    // A source that actually leaves the field, not merely one that is hidden.
+    const departed = GameStateSchema.parse(step.before), owner = departed.objects.cards[maxtac.id].controllerId;
+    departed.players[owner].zones.BATTLEFIELD = departed.players[owner].zones.BATTLEFIELD!.filter(id => id !== maxtac.id);
+    (departed.players[owner].zones.TRASH ??= []).push(maxtac.id);
+    departed.objects.cards[maxtac.id].zone = { playerId: owner, zone: "TRASH" };
+    assert.equal(departed.objects.cards[maxtac.id].zone.zone, "TRASH");
+    assert.deepEqual(imposedAttackPrevention(departed, nomad.id, getContext()), [], "a source that has left the field imposes nothing");
 });
 
 test("Batch V3 Units in hand stay hidden from the rival except while publicly declared for payment", () => {
@@ -279,4 +291,21 @@ test("the Batch V3 replay is deterministic and independent of actionId ordering"
     assert.notDeepEqual(perturbed.steps.map(s => s.actionId), getReplay().steps.map(s => s.actionId));
     assert.deepEqual(perturbed.steps.map(s => [s.actorId, s.action.action]), getReplay().steps.map(s => [s.actorId, s.action.action]));
     assert.deepEqual(perturbed.attacks, getReplay().attacks);
+});
+
+test("ATTACK_PREVENTION_V1 depends on COMBAT_RESTRICTIONS_V1 and fails closed without it", () => {
+    // attackPreventionEnabled() requires restrictionsEnabled(); this pins that dependency so it
+    // cannot be lost if the two capabilities are ever composed independently.
+    const noRestrictions = withoutRestrictionsPolicy();
+    assert.equal(noRestrictions.content.ruleset.gameplay?.turnSlice?.attackPrevention, "ATTACK_PREVENTION_V1", "the prevention policy is still set");
+    assert.equal(noRestrictions.content.ruleset.gameplay?.turnSlice?.combatRestrictions, undefined);
+    assert.equal(attackPreventionEnabled(noRestrictions), false, "the prevention policy alone does not enable the capability");
+    assert.equal(attackTargetRestrictionsEnabled(noRestrictions), false, "the target-restriction policy alone does not either");
+    for (const card of batchV3Cards) {
+        assert.equal(supportsAttackPreventionUnit(card, noRestrictions).ok, false, card.id);
+        assert.equal(supportsRestrictedPlay(card, noRestrictions).ok, false, card.id);
+        assert.equal(supportsPlay(card, noRestrictions).ok, false, card.id);
+    }
+    const step = getReplay().steps.find(s => mainDecision(s) && controlled(s.before, s.actorId, RIDING_NOMAD));
+    if (step) assert.deepEqual(imposedAttackPrevention(step.before, controlled(step.before, step.actorId, RIDING_NOMAD)!.id, noRestrictions), [], "no imposition without the base policy");
 });
