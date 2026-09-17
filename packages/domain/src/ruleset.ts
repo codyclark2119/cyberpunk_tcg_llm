@@ -22,6 +22,8 @@ export const TurnSlicePolicySchema = z.strictObject({
     adrenaline: z.literal("ADRENALINE_V1").optional(),
     attackTargetRestrictions: z.literal("ATTACK_TARGET_RESTRICTIONS_V1").optional(),
     attackPrevention: z.literal("ATTACK_PREVENTION_V1").optional(),
+    // Requires cardPlay, combatTriggers, combatRestrictions, react and combatResolution; admission checks the full dependency set.
+    friendlyPlayPower: z.literal("FRIENDLY_PLAY_POWER_V1").optional(),
     gearCapabilities: z.literal("GEAR_CAPABILITIES_V1").optional(),
     combatTriggers: z.literal("COMBAT_TRIGGERS_V1").optional(),
     combatResolution: z.strictObject({

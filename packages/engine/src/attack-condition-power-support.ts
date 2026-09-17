@@ -9,7 +9,8 @@ export function supportsAttackConditionPowerCard(card: DeepReadonly<CardRevision
     return success(null);
 }
 export function hasAttackConditionPowerMetadata(card: DeepReadonly<CardRevisionSnapshot>) {
-    return card.execution?.scope === "ATTACK_CONDITION_POWER_V1" || card.mechanics.abilities.some(a => a.conditions.some(c => c.kind === "ALL_FRIENDLY_LEGENDS_FACE_UP") || a.effects.some(e => e.kind === "POWER_UNTIL_END_OF_TURN" && (e.target.kind === "SOURCE_SUBJECT" || e.amount !== -1) || e.kind === "CONDITIONAL_DRAW" && e.condition.kind === "ALL_FRIENDLY_LEGENDS_FACE_UP" || e.kind === "DISCARD_CARDS" && e.when?.condition.kind === "ALL_FRIENDLY_LEGENDS_FACE_UP"));
+    // FRIENDLY_UNIT has its own complete metadata validator, including rejection of every non-+2 shape.
+    return card.execution?.scope === "ATTACK_CONDITION_POWER_V1" || card.mechanics.abilities.some(a => a.conditions.some(c => c.kind === "ALL_FRIENDLY_LEGENDS_FACE_UP") || a.effects.some(e => e.kind === "POWER_UNTIL_END_OF_TURN" && (e.target.kind === "SOURCE_SUBJECT" || e.amount !== -1 && e.target.kind !== "FRIENDLY_UNIT") || e.kind === "CONDITIONAL_DRAW" && e.condition.kind === "ALL_FRIENDLY_LEGENDS_FACE_UP" || e.kind === "DISCARD_CARDS" && e.when?.condition.kind === "ALL_FRIENDLY_LEGENDS_FACE_UP"));
 }
 export function validateAttackConditionPowerMetadata(state: GameState, context: EngineContext) {
     for (const c of Object.values(state.objects.cards)) {

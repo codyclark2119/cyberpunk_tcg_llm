@@ -9,6 +9,7 @@ import { endTurnEnabled } from "./end-turn-support";
 import { firstAttackHistoryEnabled, supportsFirstAttackLegend } from "./first-attack-support";
 import { isFirstArasakaAttack } from "./first-attack-history";
 import { supportsOrderedTriggerSource } from "./ordered-effects-support";
+import { supportsFriendlyPlayPowerUnit } from "./friendly-play-power-support";
 import { testCondition } from "./conditions";
 import { canonicalSerialize, failure, success, type GameState, type FightResult, type TriggerBinding } from "@tcg/domain";
 import type { EngineContext } from "./state";
@@ -81,7 +82,16 @@ export function validateTriggerState(state: GameState, context: EngineContext) {
     const rivalHasResolved = c.resolvedIds.some(id => !activeIds.includes(id));
     if ((r.current && r.current.controllerId !== state.timing.activePlayer || rivalHasResolved) && activeIds.some(id => !c.resolvedIds.includes(id))) return failure("INVALID_TRIGGER_PRIORITY", "Turn player's pending effects precede the rival's");
     if (c.phase === "SELECT" ? Boolean(r.current) || nextTriggerGroup(state).length < 2 : !r.current) return failure("INVALID_TRIGGER_PHASE", "Ordering is strategic only with multiple eligible effects; effect choices require a current effect");
-    if (c.phase !== "SELECT" && (!r.current || !["DEFEAT_UNIT", "READY_EDDIES", "DISCARD_CARDS", "DECREASE_GIG_UP_TO", "ADJUST_GIG_UP_TO", "OPTIONAL_DECREASE_FRIENDLY_GIG_THEN_DRAW_IF_MIN", "LOOK_AT_FRIENDLY_FACE_DOWN_LEGEND"].includes(r.current.effect.kind))) return failure("INVALID_TRIGGER_PHASE", "Only reviewed adjustment/look/discard/ready primitives pause for choices");
+    if (c.phase !== "SELECT" && (!r.current || !["DEFEAT_UNIT", "READY_EDDIES", "DISCARD_CARDS", "DECREASE_GIG_UP_TO", "ADJUST_GIG_UP_TO", "OPTIONAL_DECREASE_FRIENDLY_GIG_THEN_DRAW_IF_MIN", "LOOK_AT_FRIENDLY_FACE_DOWN_LEGEND", "POWER_UNTIL_END_OF_TURN"].includes(r.current.effect.kind))) return failure("INVALID_TRIGGER_PHASE", "Only reviewed adjustment/look/discard/ready/power primitives pause for choices");
+    if (r.current?.effect.kind === "POWER_UNTIL_END_OF_TURN") {
+        const source = r.current.sourceId && state.objects.cards[r.current.sourceId];
+        if (c.phase !== "TARGET" || r.current.effect.target.kind !== "FRIENDLY_UNIT" || r.current.effect.amount !== 2
+            || c.origin.kind !== "PLAY" || r.current.trigger?.kind !== "WHEN_PLAYED"
+            || !source || source.face !== "UP" || source.zone.zone !== "BATTLEFIELD"
+            || c.origin.subjectId !== source.id || r.current.trigger.subjectId !== source.id
+            || !supportsFriendlyPlayPowerUnit(cardRevision(state, source.id, context), context).ok)
+            return failure("INVALID_POWER_CONTINUATION", "Only the reviewed friendly+2 PLAY trigger may pause for a Unit target");
+    }
     if ((c.phase === "READY" || r.current?.effect.kind === "READY_EDDIES") && (c.phase !== "READY" || r.current?.effect.kind !== "READY_EDDIES" || c.origin.kind !== "END_TURN")) return failure("INVALID_READY_CONTINUATION", "Ready choices require their pending end-turn ability");
     if (c.selectedEddieSlots && (c.phase !== "READY" || r.current?.effect.kind !== "READY_EDDIES" || r.current.effect.count !== 2 || c.selectedEddieSlots.some(slot => !readyableEddieSlots(state, r.current!.controllerId).includes(slot))))
         return failure("INVALID_READY_SELECTION", "Only a count2 ready choice may hold one still-spent public slot");

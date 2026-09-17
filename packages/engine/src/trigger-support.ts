@@ -7,11 +7,13 @@ import { supportsEndTurnCard } from "./end-turn-support";
 import { supportsOrderedAttackCard } from "./ordered-effects-support";
 import { supportsPrivateLookGear, privateInformationEnabled } from "./private-look-support";
 import { supportsAttackPlay } from "./attack-support";
+import { hasFriendlyPlayPowerMetadata, supportsFriendlyPlayPowerUnit } from "./friendly-play-power-support";
 import { canonicalSerialize, failure, success, type CardRevisionSnapshot, type DeepReadonly } from "@tcg/domain";
 import type { EngineContext } from "./state";
 export function triggersEnabled(context: EngineContext) { return context.content.ruleset.gameplay?.turnSlice?.combatTriggers === "COMBAT_TRIGGERS_V1"; }
 /** Complete shapes, not card-name matching. The bundle must still pin explicitly reviewed immutable revisions. */
 export function supportsTriggerCard(card: DeepReadonly<CardRevisionSnapshot> | undefined, context: EngineContext) {
+    if (card && hasFriendlyPlayPowerMetadata(card)) return supportsFriendlyPlayPowerUnit(card, context);
     if (!triggersEnabled(context) || !card || !card.provenance.reviewed || card.execution?.scope !== "COMBAT_TRIGGERS_V1" || card.execution.status !== "SUPPORTED" || card.mechanics.keywords.length || card.mechanics.restrictions?.length)
         return failure("UNSUPPORTED_TRIGGER_CARD", "Explicit reviewed trigger scope and complete supported mechanics required");
     const m = card.mechanics;

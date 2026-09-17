@@ -10,6 +10,9 @@ import { discardCard, getDiscardableCards } from "./discard";
 import { testCondition } from "./conditions";
 import { supportsOrderedTriggerSource } from "./ordered-effects-support";
 import { grantLegendKnowledge, privateLookTargets } from "./private-knowledge";
+import { friendlyPowerTargets } from "./friendly-play-power-queries";
+import { supportsFriendlyPlayPowerUnit } from "./friendly-play-power-support";
+import { applyTemporaryPower } from "./temporary-power";
 import { PendingEffectSchema, TriggerBindingSchema, TriggerOriginSchema, failure, success, type CardInstanceId, type Result, type TriggerBinding, type TriggerOrigin } from "@tcg/domain";
 import type { TurnMutation } from "./turn";
 import { cardRevision } from "./characteristics";
@@ -117,6 +120,13 @@ export function advanceTriggers(m: TurnMutation): Result<null> {
     m.state.timing.actingPlayer = r.current.controllerId;
     r.stage = "RESOLVE_EFFECT"; r.choice = null;
     const e = r.current.effect;
+    if (e.kind === "POWER_UNTIL_END_OF_TURN" && e.target.kind === "FRIENDLY_UNIT") {
+        if (e.amount !== 2 || !r.current.sourceId || r.current.trigger?.kind !== "WHEN_PLAYED"
+            || c.origin.kind !== "PLAY" || !supportsFriendlyPlayPowerUnit(cardRevision(m.state, r.current.sourceId, m.context), m.context).ok)
+            return failure("INVALID_POWER_SOURCE", "Friendly power requires its reviewed PLAY trigger");
+        if (!friendlyPowerTargets(m.state, r.current.controllerId, m.context).length) return completed(m);
+        c.phase = "TARGET"; return offer(m);
+    }
     if (e.kind === "DEFEAT_UNIT") { c.phase = "TARGET"; return beginTargetedDefeat(m); }
     if (e.kind === "REGISTER_END_TURN_EFFECT") { const result = registerEndTurnEffect(m); return result.ok ? completed(m) : result; }
     if (e.kind === "READY_EDDIES") {
@@ -183,6 +193,12 @@ export function continueTrigger(m: TurnMutation, index: number, forced = false):
         c.phase = "TARGET"; return offer(m);
     }
     if (c.phase === "TARGET") {
+        if (current.effect.kind === "POWER_UNTIL_END_OF_TURN") {
+            if (current.effect.target.kind !== "FRIENDLY_UNIT" || current.effect.amount !== 2 || option.kind !== "CARD")
+                return failure("INVALID_POWER_TARGET", "Choose a friendly Unit for the reviewed PLAY power effect");
+            const applied = applyTemporaryPower(m, option.cardInstanceId, forced);
+            return applied.ok ? completed(m) : applied;
+        }
         if (current.effect.kind === "LOOK_AT_FRIENDLY_FACE_DOWN_LEGEND") {
             if (option.kind !== "LEGEND_SLOT") return failure("INVALID_LOOK_TARGET", "Choose a public Legend slot");
             const learned = grantLegendKnowledge(m, current.controllerId, option.slot);

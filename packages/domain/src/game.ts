@@ -75,6 +75,7 @@ const TemporaryPowerBaseSchema = z.strictObject({ kind: z.literal("POWER"), sour
 // Older one-shot Program payloads remain byte-compatible; repeated triggered buffs need occurrence identity.
 export const TemporaryPowerModifierSchema = z.discriminatedUnion("amount", [
     TemporaryPowerBaseSchema.extend({ amount: z.literal(-1) }),
+    TemporaryPowerBaseSchema.extend({ amount: z.literal(2), origin: z.strictObject({ effectId: HashSchema, abilityId: z.string().min(1), ordinal: z.number().int().positive() }) }),
     TemporaryPowerBaseSchema.extend({ amount: z.literal(5), origin: z.strictObject({ effectId: HashSchema, abilityId: z.string().min(1), ordinal: z.number().int().positive() }) })
 ]);
 export type TemporaryPowerModifier = z.infer<typeof TemporaryPowerModifierSchema>;

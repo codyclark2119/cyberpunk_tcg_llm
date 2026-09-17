@@ -17,6 +17,8 @@ export class HandlerRegistry {
     readonly primitives = {
     POWER_UNTIL_END_OF_TURN: (m: TurnMutation): Result<null> => {
         const current = m.state.resolution.current!;
+        if (current.effect.kind === "POWER_UNTIL_END_OF_TURN" && current.effect.target.kind === "FRIENDLY_UNIT")
+            return failure("INVALID_POWER_CONTINUATION", "Friendly PLAY power targets are resolved by the trigger scheduler, never a Program continuation");
         if (current.effect.kind === "POWER_UNTIL_END_OF_TURN" && current.effect.target.kind === "SOURCE_SUBJECT") {
             const source = current.sourceId && m.context.content.cards.find(c => c.id === m.state.objects.cards[current.sourceId!].cardId && c.revision === m.state.objects.cards[current.sourceId!].revision);
             const a = source?.mechanics.abilities.find(a => a.id === current.trigger?.abilityId);
