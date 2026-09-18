@@ -70,10 +70,19 @@ test("V5 foundation shape review is semantic and does not confer execution suppo
     renamed.name = "Another Synthetic Probe"; renamed.rulesText = "No English interpretation"; renamed.sourceMarkup = "No English interpretation";
     assert.equal(reviewTargetedGearDefeatShape(renamed, context).ok, true);
     for (const card of [probe, renamed]) {
-        assert.equal(supportsTargetedDefeatCard(card, context).ok, false);
-        assert.equal(supportsPlay(card, context).ok, false, "V5_EXECUTION_REMAINS_CLOSED");
-        assert.equal(supportsReactPlay(card, context).ok, false, "V5_REACT_REMAINS_CLOSED");
+        assert.equal(supportsTargetedDefeatCard(card, context).ok, false, "the two-card Unit gate never admits Gear defeat");
+        assert.equal(supportsPlay(card, context).ok, true, "V5_MAIN_EXECUTION_OPEN");
+        assert.equal(supportsReactPlay(card, context).ok, true, "V5_REACT_EXECUTION_OPEN");
     }
+    // Negative forgeries: the capability is admitted by complete shape, never by scope alone.
+    const forged = CardRevisionSnapshotSchema.parse(probe);
+    forged.mechanics.abilities[0].effects = [{ kind: "DEFEAT_UNIT", target: { kind: "GEAR", relation: "RIVAL", power: { kind: "AT_MOST", value: 2 } }, when: { timing: "RESOLUTION", condition: { kind: "STREET_CRED_GREATER_THAN_RIVAL" } } }];
+    assert.equal(supportsPlay(forged, context).ok, false, "V5_FORGED_SHAPE_CLOSED");
+    assert.equal(supportsReactPlay(forged, context).ok, false, "V5_FORGED_SHAPE_CLOSED");
+    const noPolicy = RulesetSchema.parse(context.content.ruleset);
+    delete noPolicy.gameplay!.turnSlice!.targetedGearDefeat;
+    assert.equal(supportsPlay(probe, contextFor(probe, noPolicy)).ok, false, "V5_CAPABILITY_GATED");
+    assert.equal(supportsReactPlay(probe, contextFor(probe, noPolicy)).ok, false, "V5_CAPABILITY_GATED");
 });
 
 test("V5 foundation does not relax Minotaur or Over the Edge admission", () => {
@@ -149,10 +158,17 @@ test("V5 foundation detectors retain coverage for empty, mixed and wrong-scope G
     const mixed = CardRevisionSnapshotSchema.parse(probe);
     mixed.mechanics.abilities[0].effects.push({ kind: "DEFEAT_UNIT", target: { kind: "UNITS", relation: "RIVAL", power: { kind: "AT_MOST", value: 5 } } });
     for (const card of [probe, empty, wrong, mixed]) {
-        assert.equal(hasTargetedGearDefeatMetadata(card), true);
-        assert.equal(hasTargetedDefeatMetadata(card), true, "V5_NO_METADATA_OWNERSHIP_GAP");
-        assert.equal(supportsPlay(card, context).ok, false);
+        // Every Gear-scoped or Gear-target source is owned by the new detector; none falls between the two.
+        assert.equal(hasTargetedGearDefeatMetadata(card), true, "V5_NO_METADATA_OWNERSHIP_GAP");
+        assert.ok(hasTargetedGearDefeatMetadata(card) || hasTargetedDefeatMetadata(card), "V5_NO_METADATA_OWNERSHIP_GAP");
     }
+    // The old detector relinquished the Gear scope but still owns every Unit-target defeat effect.
+    assert.equal(hasTargetedDefeatMetadata(probe), false, "Unit detector no longer claims pure Gear sources");
+    assert.equal(hasTargetedDefeatMetadata(mixed), true, "a mixed card is still claimed by both complete gates");
+    for (const card of targetedCards) assert.equal(hasTargetedDefeatMetadata(card), true, "Unit ownership is unchanged");
+    // Only the complete reviewed shape executes; malformed and wrong-scope sources stay closed.
+    assert.equal(supportsPlay(probe, context).ok, true);
+    for (const card of [empty, wrong, mixed]) assert.equal(supportsPlay(card, context).ok, false, "malformed Gear metadata stays closed");
 });
 
 test("V5 foundation validateState rejects hidden new-scope sources through the registered metadata chain", () => {
@@ -165,9 +181,13 @@ test("V5 foundation validateState rejects hidden new-scope sources through the r
         assert.ok(id); assert.equal(state.objects.cards[id].face, "DOWN");
         state.objects.cards[id].cardId = card.id; state.objects.cards[id].revision = card.revision;
         const result = validateState(JSON.parse(JSON.stringify(state)), ctx);
-        assert.equal(result.ok, false, "V5_HIDDEN_SOURCE_REJECTED");
-        if (result.ok) throw new Error("Unimplemented source unexpectedly accepted");
-        assert.ok(result.errors.some(e => e.code === "UNSUPPORTED_TARGETED_DEFEAT"), JSON.stringify(result.errors));
+        if (card === probe) {
+            assert.equal(result.ok, true, "V5_VALID_HIDDEN_SOURCE_ACCEPTED");
+        } else {
+            assert.equal(result.ok, false, "V5_MALFORMED_HIDDEN_SOURCE_REJECTED");
+            if (result.ok) throw new Error("Malformed hidden source unexpectedly accepted");
+            assert.ok(result.errors.some(e => e.code === "UNSUPPORTED_TARGETED_GEAR_DEFEAT_SHAPE"), JSON.stringify(result.errors));
+        }
     }
 });
 
@@ -176,7 +196,10 @@ test("V5 foundation cannot initialize a gameplay deck just because the Gear shap
     assert.equal(createGameWithEvents(input, context).ok, true, "Existing deck remains admitted");
     const changed = { ...input, decks: input.decks.map((d, index) => index ? d : { ...d, main: d.main.map(id => id === OVER_THE_EDGE ? probe.id : id) }) };
     assert.ok(changed.decks[0].main.includes(probe.id), "The negative deck must actually contain the probe");
-    assert.equal(createGameWithEvents(changed, context).ok, false, "V5_EXECUTION_REMAINS_CLOSED");
+    assert.equal(createGameWithEvents(changed, context).ok, true, "V5_REVIEWED_SHAPE_ADMITTED");
+    const broken = CardRevisionSnapshotSchema.parse(probe); broken.mechanics.abilities = [];
+    const brokenDeck = { ...input, decks: input.decks.map((d, index) => index ? d : { ...d, main: d.main.map(id => id === OVER_THE_EDGE ? broken.id : id) }) };
+    assert.equal(createGameWithEvents(brokenDeck, contextFor(broken)).ok, false, "V5_MALFORMED_SHAPE_REJECTED");
 });
 
 test("V5 foundation legacy Unit enumeration rejects Gear targets instead of silently broadening", () => {

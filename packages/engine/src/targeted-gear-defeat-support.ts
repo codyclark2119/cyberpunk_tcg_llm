@@ -1,4 +1,4 @@
-import { canonicalSerialize, failure, success, type CardRevisionSnapshot, type DeepReadonly } from "@tcg/domain";
+import { canonicalSerialize, failure, success, type CardRevisionSnapshot, type DeepReadonly, type GameState } from "@tcg/domain";
 import type { EngineContext } from "./state";
 
 /** Dependency review only. The foundation slice does NOT enable a Gear gameplay handler. */
@@ -40,5 +40,20 @@ export function reviewTargetedGearDefeatShape(card: DeepReadonly<CardRevisionSna
         sellProfile: card.sellProfile, keywords: m.keywords, effects: a.effects };
     if (canonicalSerialize(actual) !== canonicalSerialize(expected))
         return failure("UNSUPPORTED_TARGETED_GEAR_DEFEAT_SHAPE", "Exact Quick/rival-Gear/at-most-two metadata required, with no conditional or extra effect");
+    return success(null);
+}
+
+/** Execution admission: the complete reviewed shape under its own explicit opt-in policy.
+ * Separate from supportsTargetedDefeatCard so the two-card Unit gate keeps its keyword restrictions.
+ */
+export function supportsTargetedGearDefeatCard(card: DeepReadonly<CardRevisionSnapshot> | undefined, context: EngineContext) {
+    return reviewTargetedGearDefeatShape(card, context);
+}
+/** Registered in validateState beside validateTargetedDefeatMetadata; hidden sources are covered too. */
+export function validateTargetedGearDefeatMetadata(state: GameState, context: EngineContext) {
+    for (const c of Object.values(state.objects.cards)) {
+        const r = context.content.cards.find(r => r.id === c.cardId && r.revision === c.revision);
+        if (r && hasTargetedGearDefeatMetadata(r)) { const v = supportsTargetedGearDefeatCard(r, context); if (!v.ok) return v; }
+    }
     return success(null);
 }

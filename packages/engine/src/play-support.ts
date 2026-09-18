@@ -1,5 +1,6 @@
 import { hasAttackConditionPowerMetadata, supportsAttackConditionPowerCard } from "./attack-condition-power-support";
 import { hasTargetedDefeatMetadata, supportsTargetedDefeatCard } from "./targeted-defeat-support";
+import { hasTargetedGearDefeatMetadata, supportsTargetedGearDefeatCard } from "./targeted-gear-defeat-support";
 import { hasValueConditionMetadata, supportsValueConditionCard } from "./value-conditions-support";
 import { hasFriendlyPlayPowerMetadata, supportsFriendlyPlayPowerUnit } from "./friendly-play-power-support";
 import { supportsTargetedSpendCard } from "./targeted-spend-support";
@@ -25,6 +26,7 @@ export function revisionOf(state: GameState, id: CardInstanceId, context: Engine
 export function supportsPlay(card: DeepReadonly<CardRevisionSnapshot> | undefined, context: EngineContext) {
     if (card && hasFriendlyPlayPowerMetadata(card)) return supportsFriendlyPlayPowerUnit(card, context);
     if (card && hasAttackConditionPowerMetadata(card)) return supportsAttackConditionPowerCard(card, context);
+    if (card && hasTargetedGearDefeatMetadata(card)) return supportsTargetedGearDefeatCard(card, context);
     if (card && hasTargetedDefeatMetadata(card)) return supportsTargetedDefeatCard(card, context);
     if (card && hasValueConditionMetadata(card)) return supportsValueConditionCard(card, context);
     if (card?.execution?.scope === "TARGETED_SPEND_V1") return supportsTargetedSpendCard(card, context);
