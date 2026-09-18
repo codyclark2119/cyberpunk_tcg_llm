@@ -1,5 +1,6 @@
 import { failure, success, type CardRevisionSnapshot, type DeepReadonly, type GameState, type PlayerId } from "@tcg/domain";
 import type { EngineContext } from "./state";
+import { supportsTargetedGearDefeatCard } from "./targeted-gear-defeat-support";
 
 export function reactEnabled(context: EngineContext) { return context.content.ruleset.gameplay?.turnSlice?.react === "COMBAT_REACT_V1"; }
 /** React is a defender decision, never a priority exchange or an interruptible continuation. */
@@ -9,6 +10,8 @@ export function isReactDecision(state: GameState, actor: PlayerId, context: Engi
 }
 /** Full reviewed executable shapes. Keyword presence alone never certifies a card. */
 export function supportsReactPlay(card: DeepReadonly<CardRevisionSnapshot> | undefined, context: EngineContext) {
+    // Quick Gear defeat reaches its own complete gate; existing React branches are unchanged.
+    if (reactEnabled(context) && card?.execution?.scope === "TARGETED_GEAR_DEFEAT_V1") return supportsTargetedGearDefeatCard(card, context);
     if (!reactEnabled(context) || !card || card.mechanics.abilities.some(a => a.inherited || a.guard) || card.execution?.scope !== "COMBAT_REACT_V1" || card.execution.status !== "SUPPORTED" || card.printedCost.kind !== "EDDIES" || card.mechanics.restrictions?.length || card.mechanics.equip || card.mechanics.modifiers.length)
         return failure("UNSUPPORTED_REACT_CARD", "Reviewed React execution scope, cost and complete mechanics required");
     const m = card.mechanics;

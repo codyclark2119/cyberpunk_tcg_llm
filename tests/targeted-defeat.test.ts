@@ -30,6 +30,8 @@ const minCard = targetedCards.find(c => c.id === MINOTAUR)!, edgeCard = targeted
 const minEffect = minCard.mechanics.abilities[0].effects[0], edgeEffect = edgeCard.mechanics.abilities[0].effects[0];
 assert.ok(minEffect.kind === "DEFEAT_UNIT" && edgeEffect.kind === "DEFEAT_UNIT");
 const minTarget = minEffect.target, edgeTarget = edgeEffect.target;
+// Both reviewed legacy effects select Units; narrow before the Unit-only RulesView wrapper.
+assert.ok(minTarget.kind === "UNITS" && edgeTarget.kind === "UNITS");
 const base = fund(clearField(mino.beforeSource, context), context);
 const targets = (s: GameState, mode: "MINOTAUR" | "OVER_THE_EDGE" = "MINOTAUR") => new RulesView(s, context).listDefeatableUnits(actor, mode === "MINOTAUR" ? minTarget : edgeTarget);
 const payloads = (r: ReturnType<typeof playCard>) => r.events.map(e => e.payload);

@@ -35,7 +35,7 @@ function advanceOwnerOrder(m: TurnMutation): Result<null> {
         m.emit({ kind: "DEFEAT_TRASH_ORDER_SELECTED", targetId: order.targetId, cardInstanceId: option.cardInstanceId, ownerId: choice.actorId, forced: true });
     }
     const current = r.current!, defeats = r.defeatContinuation!.defeats;
-    const result = defeatCards(m, defeats, r.defeatContinuation!.orders);
+    const result = defeatCards(m, defeats, r.defeatContinuation!.orders, current.effect.kind === "DEFEAT_UNIT" && current.effect.target.kind === "GEAR");
     if (!result.ok) return result;
     delete r.defeatContinuation; delete r.targetedDefeatContinuation; r.choice = null;
     m.state.timing.actingPlayer = current.controllerId;

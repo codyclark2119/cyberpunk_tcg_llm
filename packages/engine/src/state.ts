@@ -2,6 +2,7 @@ import { validateTargetedDefeatState } from "./targeted-defeat-state";
 import { validateAttackConditionPowerMetadata } from "./attack-condition-power-support";
 import { validateTargetedSpendMetadata } from "./targeted-spend-support";
 import { validateTargetedDefeatMetadata } from "./targeted-defeat-support";
+import { validateTargetedGearDefeatMetadata } from "./targeted-gear-defeat-support";
 import { validateValueConditionMetadata } from "./value-conditions-support";
 import { validateAttackingAuraMetadata } from "./attacking-aura-support";
 import { validateAttackPreventionMetadata } from "./attack-prevention-support";
@@ -99,6 +100,7 @@ export function validateState(input: unknown, context: EngineContext): Result<Ga
     const attackPowerMetadata = validateAttackConditionPowerMetadata(s, context); if (!attackPowerMetadata.ok) return attackPowerMetadata;
     const spendMetadata = validateTargetedSpendMetadata(s, context); if (!spendMetadata.ok) return spendMetadata;
     const targetedMetadata = validateTargetedDefeatMetadata(s, context); if (!targetedMetadata.ok) return targetedMetadata;
+    const gearDefeatMetadata = validateTargetedGearDefeatMetadata(s, context); if (!gearDefeatMetadata.ok) return gearDefeatMetadata;
     const valueMetadata = validateValueConditionMetadata(s, context); if (!valueMetadata.ok) return valueMetadata;
     const auraMetadata = validateAttackingAuraMetadata(s, context); if (!auraMetadata.ok) return auraMetadata;
     const preventionMetadata = validateAttackPreventionMetadata(s, context); if (!preventionMetadata.ok) return preventionMetadata;

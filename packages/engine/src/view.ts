@@ -1,6 +1,6 @@
 import { areAllFriendlyLegendsFaceUp } from "./legend-face-condition";
-import { listDefeatableUnits, controlledGigValuesByDieType } from "./targeted-defeat-queries";
-import type { DefeatUnitTarget } from "@tcg/domain";
+import { listDefeatableUnits, listDefeatTargets, controlledGigValuesByDieType } from "./targeted-defeat-queries";
+import type { DefeatTarget, DefeatUnitTarget } from "@tcg/domain";
 import { getDelayedEffectsForTurn } from "./delayed-effects";
 import { readyableEddieSlots } from "./eddie-ready";
 import { getDiscardableCards } from "./discard";
@@ -49,6 +49,7 @@ export class RulesView {
     hasControlledGigWithCurrentValueAtLeast(id: PlayerId, minimum: number) { return this.testCondition(id, { kind: "GIG_VALUE_AT_LEAST", minimum }); }
     isStreetCredEven(id: PlayerId) { return this.testCondition(id, { kind: "STREET_CRED_IS_EVEN" }); }
     listDefeatableUnits(id: PlayerId, target: DefeatUnitTarget) { return listDefeatableUnits(this.state, id, target, this.context); }
+    listDefeatTargets(id: PlayerId, target: DefeatTarget) { return listDefeatTargets(this.state, id, target, this.context); }
     areAllFriendlyLegendsFaceUp(playerId: PlayerId) { return areAllFriendlyLegendsFaceUp(this.state, playerId, this.context); }
     getNumericCost(id: CardInstanceId) { return numericCost(this.state, id, this.context); }
     getReferencedCost(id: CardInstanceId) { return referencedCost(this.state, id, this.context); }
