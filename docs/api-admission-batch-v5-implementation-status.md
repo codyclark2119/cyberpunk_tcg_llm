@@ -1,114 +1,97 @@
-# Batch V5 implementation status — capability slice
+# Batch V5 implementation status — Detonate evidence and legal-replay slice
 
-Second code slice on draft PR #10, against the contract at
-`5323666dde0ce0c3dc506cd138cf5ce9cf026647`. It implements the reviewed Gear-defeat
-**capability**. It is still **not** a Detonate admission: no real CardId, pinned source
-evidence, evidence fixture or catalog publication is introduced. Tests use an explicitly
-synthetic probe (`v5-gear-defeat-probe`).
+PR #10 (**merged** at `f4562acd84e6e4f31dee0285fe97f9eaa6fe4ee8`) delivered the reviewed
+Gear-defeat **runtime capability**. This branch,
+`review/api-admission-batch-v5-detonate`, adds the follow-on slice: the real Detonate
+immutable revision, its pinned source evidence, and legal Main/React replay coverage.
 
-## Implemented in this slice
+The two are deliberately separate. Nothing in this slice changes a hashed runtime input:
+engine identity remains `0.4.0-api-admission-5` with artifact hash
+`e5bcf81771ad6430ad8bc16d5f8508b35c0d77e3dc96b6f6264ddea4e2366c06`, exactly as merged.
 
-- **Gear-aware selector.** `listDefeatableGear` enumerates rival, face-up, attached,
-  reviewed Gear in `BATTLEFIELD` **and** `LEGENDS` whose own referenced effective power is
-  at most 2. `listDefeatTargets` is the single typed dispatcher used by choice
-  construction, resolution and continuation revalidation; `listDefeatableUnits` stays
-  Unit-only and is no longer on the Gear validation path.
-- **Metadata ownership partitioned and registered.** `hasTargetedDefeatMetadata` now owns
-  only `TARGETED_DEFEAT_V1` and Unit-target effects; `hasTargetedGearDefeatMetadata` owns
-  the Gear scope and Gear-target effects; `validateTargetedGearDefeatMetadata` is
-  registered in `state.ts::validateState` beside the Unit validator. A mixed card is
-  claimed by both and must satisfy both complete gates. Nothing falls between them.
-- **Explicit Gear opt-in through the shared defeat pipeline.** `defeatCards` takes an
-  `allowGear` flag threaded only from the effect path when the target discriminator is
-  `GEAR`. `defeatSupport` stays strictly Unit-only, so the two fight call sites keep the
-  narrower predicate; `gearDefeatSupport`/`effectDefeatSupport` are separate.
-- **Bounded defender-React origin.** `validDefeatOrigin`/`validAftermathOrigin` replace the
-  blanket active-player + `combat.stage === "NONE"` assumptions in
-  `validateTargetedDefeatState` and `validateEffectDefeatFacts`. Main keeps its historical
-  origin exactly. The React origin is admitted only for the Gear capability and binds
-  caster, acting player, `playContinuation.actorId`, saved `RIVAL_REACT` return and attack
-  identity. The shared `validGearReactOrigin` rechecks the delegated combat invariants:
-  active attacking player, supported spent attacker, actual defending actor, and current
-  locked-target legality. Gear aftermath checks its Main/React origin before the legacy
-  active-player shortcut. No arbitrary source is admitted because combat is in React.
-- **Admission dispatch.** `supportsPlay` and `supportsReactPlay` route the new scope to
-  `supportsTargetedGearDefeatCard`; Floor It's exact React branch and the two-card Unit
-  gate are untouched. `initialization.ts` adds the scope to its reviewed list so the card
-  can enter a deck.
-- **`RulesView.listDefeatTargets`** added beside the Unit-only accessor.
+## Already merged in PR #10 (runtime capability)
 
-## Proven by execution
+Gear target schema and `TARGETED_GEAR_DEFEAT_V1`; the `targetedGearDefeat` policy; the
+Gear-aware selector and shared `listDefeatTargets` dispatcher; metadata ownership split
+with `validateState` registration; the explicit Gear opt-in through `defeatCards`;
+battlefield and Legends-area Gear support; Main and bounded defender-React continuation
+validation; the forced one-card owner Trash order; stale/forged target rejection; and
+host/sibling retention with live host-power update.
 
-`tests/api-admission-batch-v5.test.ts` (9 top-level tests plus 22 subtests) and the
-converted foundation suite (10) pass **41/41**, with zero failures or skips. Verified behaviours:
+## Added by this slice
 
-- Main play pauses with a genuine multi-target choice; only the chosen Gear moves; host and
-  sibling Gear are retained; the defeat fact precedes movement; the one-card owner order is
-  forced and owner-attributed; no fight fact is emitted.
-- **Own Gear power, never the host's.** A battlefield host at effective power 7 still
-  yields its power-2 Gear; a Legends-area Legend host has `null` power and its power-2 Gear
-  is still eligible. Zero-power Gear is included; the threshold boundary is inclusive.
-- **Legends-area Gear is a legal target** and its host Legend remains in `LEGENDS`, face-up
-  and not removed.
-- **Defender React**: persisted two-target pause, `returnTo` `RIVAL_REACT`, the paused state
-  validates, survives serialization and independent revalidation, resumes, emits
-  `RIVAL_REACT_OPENED`, and leaves the attack, attacker and locked target unchanged.
-- Forged choices and stale targets are rejected `INVALID_DEFEAT_TARGET` through
-  `validateState`, not only at enumeration. Friendly Gear is never offered.
-- Paused React reload rejects ready, missing, Gear and lagging attackers; unrelated attacking
-  players; missing/friendly locked targets; forged effect/continuation actors; and missing or
-  wrong saved return contexts. The positive return also checks the spent attacker, defending
-  actor, still-valid locked target, and exactly one owner-attributed forced Gear order.
-- **Validator-only aftermath coverage:** valid Main and defender-React effect-defeat facts
-  pass; forged active React casters and invalid attack origins reject. These fixtures call
-  `validateEffectDefeatFacts` directly with an empty binding batch. Current Gear has no own
-  `DEFEATED` trigger, so this does not claim a reachable persisted React trigger pause.
-- A single eligible Gear resolves synchronously with no strategic prompt.
-- The capability is policy-gated; vocabulary alone enables nothing.
+- **The immutable reviewed Detonate revision.** CardId `detonate`, revision 1; Program,
+  RED, cost 1, RAM RED 2; sellable `Quickhack`, collector number 031; no numeric Program
+  power. Raw source keywords remain `[]`; the executable `["QUICK"]` keyword is authored
+  explicitly, never parsed from text. One unconditional `WHEN_PLAYED` effect:
+  `DEFEAT_UNIT` with target `{ kind: "GEAR", relation: "RIVAL", power: { kind: "AT_MOST", value: 2 } }`,
+  under execution scope `TARGETED_GEAR_DEFEAT_V1`.
+- **Three new evidence fixtures only** — `api-admission-batch-v5-detonate-source.v1.json`,
+  `-card-sources.v1.json`, `-rules.v1.json` — plus the capture/verify scripts that produce
+  and re-check them. No existing generated fixture, wire schema, matrix or replay baseline
+  is touched.
+- **Legal replay helpers.** `batchV5Replay("MAIN")` (seed `legal-v5-5`) legally plays and
+  pays Detonate against two attached rival Gear. `batchV5Replay("REACT")` (seed
+  `legal-v5-3`) declares an attack, has the defender play Detonate during `RIVAL_REACT`,
+  pauses on a persisted two-target choice, reloads, resolves, and returns to the same React
+  decision. Selection is semantic, never by opaque actionId order.
+- **Descriptor V2 / privacy coverage** for the new target actions, and evidence-drift tests.
 
-## Mutation results
+## Evidence, independently verified
 
-Eight mutants, **8/8 caught**, each failing named behavioural assertions; all files restored
-byte-exactly (SHA-256 verified) with a green baseline before and after:
-relation widened to any; threshold boundary excluded; host power substituted for own Gear
-power; `LEGENDS` dropped from the area filter; React origin removed; capability policy
-ignored; metadata ownership un-partitioned; detach skipped on departure.
+Source commit `af9e0e1dd93b7eb77db5883bdd18809c8446d856`; raw
+`data/raw/cards/detonate.json`, git blob `cce28a602b8c645e62d637d70f6fa717499df646`,
+SHA-256 `23b8734ca36627e9ec88ee00c06bf7a6f24154ebf8d3d6e5fa72f4c7424eba8b`; raw record hash
+`6d9353061811cacef33e1082cc46fdf0cf827b62d930043284f9924784007418`; processed record hash
+`aeaf918462702fb4d4a84ae8939607472b008fb388e6b0e5fe15911dd33f8582`, which the bridge
+candidate's `sourceRecordHash` re-derives; candidate hash
+`3c03e9f500602742f8a71531983b589e4220f5a7b9372115173d60fd0c54be60`; catalog SHA-256
+`b96ca8d583ab087148c9ed3563379e6c42fd9e729188a042215bb503a8879c3d`; rules
+`data/processed/rules.jsonl`, blob `5d8343c6fa8a596e354a2868a8bd511a6b04ca0e`, 36 selected
+records with projection hash
+`5331d2e400f10a119a1065e9e7ac9747c806e783a030d3437a6fa468de805755`. `matchingErrata` is
+empty. The blobs, SHA-256 and AI HEAD were recomputed directly against the checkout rather
+than taken from the capture report.
 
-The validation correction adds two further guard mutants, **2/2 caught**: weakening the
-paused React origin fails `V5_REACT_REJECTS_MISSING_ATTACKER`; restoring the active-caster
-aftermath shortcut fails `V5_AFTERMATH_REJECTS_ACTIVE_CASTER`. The runtime file was restored
-byte-exactly after each mutation, with **24/24** passing regression tests before and after.
+Three decisions are recorded separately from exact rule text, with rule ids and limitation
+clauses: `GEAR_OWN_EFFECTIVE_POWER_V1` and `LEGENDS_AREA_GEAR_TARGET_V1` as
+`REVIEWED_RULE_INTERPRETATION`, and `DEFEATED_GEAR_TO_OWNER_TRASH_V1` as
+`REVIEWED_INFERENCE` on the 11.6.1.2 / 9.19.1.1 / 4.12.1 basis. None of the evidence files
+contains any `forbiddenAuthority` field.
 
-## Gates run here
+## Gates run on this slice
 
-`node --test` on both V5 suites (41/41), `npm run typecheck` (exit 0, 0 diagnostics),
-`npm run lint` (exit 0, 0 errors, 2 pre-existing `_label` warnings), `git diff --check`
-(clean). An additional **27/27** selected legacy Unit-defeat/Quick/combat checks pass with
-zero failures or skips. That selection covers Minotaur/Over the Edge owner ordering and
-Dexter aftermath, their forged continuations, Floor It in Main/React, and combat invariants:
+| Gate | Result |
+|---|---|
+| Source verifier | `SOURCE_MATCH`, 36 rules, 3 decisions, no matching errata |
+| Evidence capture `--check` | `EVIDENCE_MATCH`, `repeatedCaptureIdentical: true` |
+| Six focused V5 suites (serial) | **73 / 73**, 0 fail / 0 skip / 0 todo |
+| Selected legacy compatibility checks | **27 / 27**, 0 fail / 0 skipped |
+| `npm run typecheck` | exit 0, 0 diagnostics |
+| `npm run lint` | exit 0, 0 errors (2 pre-existing `_label` warnings) |
+| `git diff --check` | clean |
 
-```bash
-node --import tsx --test --test-concurrency=1 \
-  --test-name-pattern='legal headline preserves|rejects external defeat continuation|Quick pays ordinary|Quick is also legal|closed and open combat invariants' \
-  tests/targeted-defeat.test.ts tests/react.test.ts
-```
+### Correction made while running these gates
 
-**Deliberately not run:** `npm test`, `npm run test:integration`, `contracts:export`,
-`test:matrix`, `review:descriptor-v2` and any fixture regeneration. The generated baseline
-remains on pre-V5 pins by design.
+The legal-replay determinism test originally asserted that perturbing the engine artifact
+hash *must* change opaque action IDs. That invariant is false on this path:
+`listLegalActions` binds version-2 action IDs to the entitled observation rather than the
+position hash whenever a projecting policy is enabled (`targetedDefeat` is one), and that
+binding is deliberately pin-independent. Measurement confirmed the pin reaches
+`state.match.engineArtifactHash` while the tokens are unchanged, and that the pre-existing
+V4 replay — which takes the position-hash path — still changes tokens under the identical
+perturbation, so the merged engine has not regressed. The assertion now proves the
+perturbation actually took effect via the differing state pin and pins the version-2
+binding itself, so a silent switch back to position-hash tokens fails the test.
 
-Engine identity is `0.4.0-api-admission-5`; the artifact hash is now
-`e5bcf81771ad6430ad8bc16d5f8508b35c0d77e3dc96b6f6264ddea4e2366c06`. No baseline has been
-regenerated against it and no fixture hash was hand-edited.
+## Deliberately deferred
 
-## Still required
+`npm test`, `npm run test:integration`, `npm run build`, `contracts:export`,
+`test:matrix` (and its `--check`), the matrix-dependent reviews, and the full
+`review:descriptor-v2` corpus regeneration are **not** run here, by instruction. The
+existing generated baseline remains on its pre-V5 pins and is untouched; because this slice
+changes no hashed runtime input, it neither worsens nor repairs that staleness. Those gates,
+together with preserved-replay compatibility classification, remain required before merge.
 
-- The real Detonate immutable revision with pinned raw/processed/candidate/printing/errata
-  evidence, and the `DEFEATED_GEAR_TO_OWNER_TRASH_V1` decision recorded as
-  `REVIEWED_INFERENCE` with its 11.6.1.2 / 9.19.1.1 / 4.12.1 basis and its limitation clause.
-- Legal-path replay coverage alongside the labelled trusted arrangements used here.
-- Descriptor V2 projection and privacy proofs for the new target actions.
-- The full contract/fixture regeneration, repeatability, preserved-replay compatibility,
-  matrix, Descriptor V2, unit, integration and build gates on the final commit.
-
-Keep PR #10 draft.
+PR #10 is merged. This branch is prepared for review as a new draft PR and must not be
+merged without the deferred gates above.
