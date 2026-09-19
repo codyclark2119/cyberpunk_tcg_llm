@@ -35,7 +35,121 @@ jobs:
 
           git diff --name-only "${{ github.event.pull_request.base.sha }}...HEAD" > /tmp/pr-files.txt
           cat /tmp/pr-files.txt
-          if grep -Eq '^(tests/fixtures/|packages/wire/schemas/)' /tmp/pr-files.txt; then
+          if grep -Eq '^(packages/wire/schemas/|tests/fixtures/([^/]*-replay\.v1\.json|[^/]*matrix[^/]*\.json|[^/]*coverage[^/]*\.json|[^/]*review[^/]*\.json|wire-golden\.v1\.json|deck-differential\.v1\.json|reboot-multiplicity-acceptance\.v1\.json))
+            echo "baseline=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "baseline=false" >> "$GITHUB_OUTPUT"
+          fi
+
+  validate:
+    name: Changed tests, static, and build validation
+    needs: scope
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Use Node 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Typecheck
+        run: npm run typecheck
+
+      - name: Lint
+        run: npm run lint
+
+      - name: Validate cards
+        run: npm run validate:cards
+
+      - name: Run changed top-level tests
+        if: github.event_name == 'pull_request'
+        shell: bash
+        run: |
+          set -euo pipefail
+          mapfile -t tests < <(
+            git diff --name-only "${{ github.event.pull_request.base.sha }}...HEAD"               | grep -E '^tests/[^/]+\.test\.ts$' || true
+          )
+          if (( ${#tests[@]} == 0 )); then
+            echo "No changed top-level test files."
+          else
+            printf 'Running changed tests:\n%s\n' "${tests[*]}"
+            node --import tsx --test --test-concurrency=1 --test-reporter=tap "${tests[@]}"
+          fi
+
+      - name: Full unit suite for generated-baseline validation
+        if: needs.scope.outputs.baseline == 'true'
+        run: npm test
+
+      - name: Build
+        run: npm run build
+
+      - name: Check PR diff whitespace
+        if: github.event_name == 'pull_request'
+        run: git diff --check "${{ github.event.pull_request.base.sha }}...HEAD"
+
+  integration:
+    name: Database integration validation
+    needs: scope
+    if: needs.scope.outputs.baseline == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: cyberpunk_tcg
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres -d cyberpunk_tcg"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 20
+      mongo:
+        image: mongo:7
+        ports:
+          - 27017:27017
+        options: >-
+          --health-cmd "mongosh --quiet --eval 'quit(db.adminCommand({ ping: 1 }).ok ? 0 : 1)'"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 20
+    env:
+      TEST_DATABASE_URL: postgresql://postgres:postgres@127.0.0.1:5432/cyberpunk_tcg
+      TEST_MONGODB_URI: mongodb://127.0.0.1:27017
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Use Node 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run integration tests with zero skips
+        shell: bash
+        run: |
+          set -o pipefail
+          node --import tsx --test --test-concurrency=1 --test-reporter=tap tests/integration/*.test.ts | tee integration.tap
+          grep -Eq '^# tests [1-9][0-9]*$' integration.tap
+          grep -q '^# fail 0$' integration.tap
+          grep -q '^# skipped 0$' integration.tap
+ /tmp/pr-files.txt; then
             echo "baseline=true" >> "$GITHUB_OUTPUT"
           else
             echo "baseline=false" >> "$GITHUB_OUTPUT"
