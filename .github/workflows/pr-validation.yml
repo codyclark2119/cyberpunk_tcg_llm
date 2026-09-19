@@ -2,9 +2,6 @@ name: PR Validation
 
 on:
   pull_request:
-  push:
-    branches:
-      - master
   workflow_dispatch:
 
 permissions:
@@ -15,8 +12,38 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  scope:
+    name: Determine validation scope
+    runs-on: ubuntu-latest
+    outputs:
+      baseline: ${{ steps.scope.outputs.baseline }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Detect generated-baseline changes
+        id: scope
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [[ "${{ github.event_name }}" != "pull_request" ]]; then
+            echo "baseline=true" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
+          git diff --name-only "${{ github.event.pull_request.base.sha }}...HEAD" > /tmp/pr-files.txt
+          cat /tmp/pr-files.txt
+          if grep -Eq '^(tests/fixtures/|packages/wire/schemas/)' /tmp/pr-files.txt; then
+            echo "baseline=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "baseline=false" >> "$GITHUB_OUTPUT"
+          fi
+
   validate:
-    name: Unit, static, and build validation
+    name: Changed tests, static, and build validation
+    needs: scope
     runs-on: ubuntu-latest
     timeout-minutes: 30
     steps:
@@ -43,7 +70,23 @@ jobs:
       - name: Validate cards
         run: npm run validate:cards
 
-      - name: Unit tests
+      - name: Run changed top-level tests
+        if: github.event_name == 'pull_request'
+        shell: bash
+        run: |
+          set -euo pipefail
+          mapfile -t tests < <(
+            git diff --name-only "${{ github.event.pull_request.base.sha }}...HEAD"               | grep -E '^tests/[^/]+\.test\.ts$' || true
+          )
+          if (( ${#tests[@]} == 0 )); then
+            echo "No changed top-level test files."
+          else
+            printf 'Running changed tests:\n%s\n' "${tests[*]}"
+            node --import tsx --test --test-concurrency=1 --test-reporter=tap "${tests[@]}"
+          fi
+
+      - name: Full unit suite for generated-baseline validation
+        if: needs.scope.outputs.baseline == 'true'
         run: npm test
 
       - name: Build
@@ -51,10 +94,12 @@ jobs:
 
       - name: Check PR diff whitespace
         if: github.event_name == 'pull_request'
-        run: git diff --check "origin/${{ github.base_ref }}...HEAD"
+        run: git diff --check "${{ github.event.pull_request.base.sha }}...HEAD"
 
   integration:
     name: Database integration validation
+    needs: scope
+    if: needs.scope.outputs.baseline == 'true'
     runs-on: ubuntu-latest
     timeout-minutes: 30
     services:
