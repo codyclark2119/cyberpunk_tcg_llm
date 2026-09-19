@@ -13,11 +13,16 @@ const SEEDS = { MAIN: "legal-v5-5", REACT: "legal-v5-3" } as const;
  * The immutable real Detonate revision is used with existing constructed support.
  * Semantic action selection never depends on opaque actionId ordering.
  * Reloading the genuine two-target pause is part of the trajectory itself. */
-export function batchV5Replay(mode: BatchV5Mode, seed: string = SEEDS[mode], context: EngineContext = batchV5Context()) {
+export function batchV5Replay(mode: BatchV5Mode, seed: string = SEEDS[mode], context: EngineContext = batchV5Context(),
+    options: { actionOrder?: "ENGINE" | "REVERSED" } = {}) {
     const initialization = batchV5Input(seed), initialized = must(createGameWithEvents(initialization, context));
     let state = initialized.state;
     const steps: BatchV5Step[] = [];
-    const legal = () => must(listLegalActions(state, state.timing.actingPlayer, context));
+    const legal = () => {
+        const actions = must(listLegalActions(state, state.timing.actingPlayer, context));
+        // Test-only order perturbation: preserve every authoritative action/token and never mutate the engine list.
+        return options.actionOrder === "REVERSED" ? [...actions].reverse() : actions;
+    };
     const available = (predicate: (a: LegalAction) => boolean) => legal().some(predicate);
     const take = (predicate: (a: LegalAction) => boolean) => {
         const before = state, legalActions = legal(), selected = selectReplayAction(legalActions, predicate);

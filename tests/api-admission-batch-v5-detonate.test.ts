@@ -1,5 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
+import { ZodError } from "zod";
 import { CardRevisionSnapshotSchema, GameStateSchema, RulesetSchema, canonicalSerialize, createContentBundle, hashCanonical } from "@tcg/domain";
 import { createGameWithEvents, RulesView, validateState } from "@tcg/engine";
 import { supportsPlay } from "../packages/engine/src/play-support";
@@ -23,8 +24,8 @@ const configured = (opts: Parameters<typeof arrange>[0] = {}) => arrange({ ...op
 test("V5 Detonate revision preserves source facts and explicitly authors Quick Gear defeat", () => {
     assert.equal(detonate.id, "detonate"); assert.equal(detonate.revision, 1);
     assert.equal(detonate.provenance.sourceHash, DETONATE_SOURCE_PIN.recordHash);
-    assert.equal(hashCanonical(source), DETONATE_SOURCE_PIN.recordHash);
     assert.deepEqual(source.keywords, [], "V5_RAW_KEYWORDS_UNCHANGED");
+    assert.equal(hashCanonical(source), DETONATE_SOURCE_PIN.recordHash);
     assert.deepEqual(detonate.keywords, []);
     assert.deepEqual(detonate.mechanics.keywords, ["QUICK"], "V5_QUICK_EXPLICITLY_AUTHORED");
     assert.equal(detonate.type, "PROGRAM"); assert.equal(detonate.power, undefined);
@@ -130,29 +131,37 @@ test("V5 React Gear defeat preserves fight prevention and does not fire its host
 });
 
 
-test("V5 real hidden Detonate instances cannot evade the registered metadata validators", () => {
+test("V5 unreviewed Detonate is rejected specifically at the content-bundle boundary", () => {
+    // A valid reviewed bundle is the positive control; unrelated construction errors are not evidence.
+    assert.doesNotThrow(() => createContentBundle(context.content.ruleset, context.content.cards, context.content.manifest.engine));
+    const forged = CardRevisionSnapshotSchema.parse(detonate);
+    forged.provenance.reviewed = false;
+    assert.throws(
+        () => createContentBundle(context.content.ruleset, context.content.cards.map(c => c.id === DETONATE ? forged : c), context.content.manifest.engine),
+        (error: unknown) => error instanceof ZodError && error.issues.length === 1
+            && error.issues.every(issue => issue.code === "custom" && issue.path.length === 0
+                && issue.message === "Bundle requires unique reviewed card revisions"),
+        "V5_REAL_UNREVIEWED_REJECTED_AT_BUNDLE_BOUNDARY"
+    );
+});
+
+const hiddenVariants: [string, (c: ReturnType<typeof CardRevisionSnapshotSchema.parse>) => void, string][] = [
+    ["EMPTY", c => { c.mechanics.abilities = []; }, "UNSUPPORTED_TARGETED_GEAR_DEFEAT_SHAPE"],
+    ["WRONG_SCOPE", c => { c.execution!.scope = "NONCOMBAT_PLAY_V1"; }, "UNSUPPORTED_TARGETED_GEAR_DEFEAT_SHAPE"],
+    ["MIXED", c => { c.mechanics.abilities[0].effects.push({ kind: "DEFEAT_UNIT", target: { kind: "UNITS", relation: "RIVAL", power: { kind: "AT_MOST", value: 5 } } }); }, "UNSUPPORTED_TARGETED_DEFEAT"]
+];
+for (const [name, mutate, expectedCode] of hiddenVariants) test(`V5 hidden Detonate ${name} reaches and is rejected by registered state validation`, () => {
     const initial = unwrap(createGameWithEvents(batchV5Input("v5-hidden-admission"), context)).state;
+    assert.equal(validateState(initial, context).ok, true, "V5_REAL_HIDDEN_VALID_CONTROL");
     assert.ok(Object.values(initial.objects.cards).some(c => c.cardId === DETONATE && c.zone.zone === "DECK"));
-    const variants: [string, (c: ReturnType<typeof CardRevisionSnapshotSchema.parse>) => void][] = [
-        ["EMPTY", c => { c.mechanics.abilities = []; }],
-        ["WRONG_SCOPE", c => { c.execution!.scope = "NONCOMBAT_PLAY_V1"; }],
-        ["MIXED", c => { c.mechanics.abilities[0].effects.push({ kind: "DEFEAT_UNIT", target: { kind: "UNITS", relation: "RIVAL", power: { kind: "AT_MOST", value: 5 } } }); }],
-        ["UNREVIEWED", c => { c.provenance.reviewed = false; }]
-    ];
-    for (const [name, mutate] of variants) {
-        const forged = CardRevisionSnapshotSchema.parse(detonate); mutate(forged);
-        // Bundle construction is itself fail-closed: ContentBundleSchema rejects unreviewed
-        // revisions before any state exists, so a throw here is an equally valid rejection.
-        let content: ReturnType<typeof createContentBundle> | null = null;
-        try { content = createContentBundle(context.content.ruleset, context.content.cards.map(c => c.id === DETONATE ? forged : c), context.content.manifest.engine); }
-        catch { content = null; }
-        if (!content) continue;
-        const state = GameStateSchema.parse(initial);
-        state.match.contentManifestHash = content.manifestHash;
-        const result = validateState(JSON.parse(JSON.stringify(state)), { content });
-        assert.equal(result.ok, false, `V5_REAL_HIDDEN_${name}_REJECTED`);
-        if (!result.ok) assert.ok(result.errors.some(e => ["UNSUPPORTED_TARGETED_DEFEAT", "UNSUPPORTED_TARGETED_GEAR_DEFEAT_SHAPE"].includes(e.code)), JSON.stringify(result.errors));
-    }
+    const forged = CardRevisionSnapshotSchema.parse(detonate); mutate(forged);
+    // These are schema-valid reviewed bundles: construction MUST succeed. Never swallow a throw.
+    const content = createContentBundle(context.content.ruleset, context.content.cards.map(c => c.id === DETONATE ? forged : c), context.content.manifest.engine);
+    const state = GameStateSchema.parse(initial);
+    state.match.contentManifestHash = content.manifestHash;
+    const result = validateState(JSON.parse(JSON.stringify(state)), { content });
+    assert.equal(result.ok, false, `V5_REAL_HIDDEN_${name}_REJECTED`);
+    if (!result.ok) assert.ok(result.errors.some(e => e.code === expectedCode), JSON.stringify(result.errors));
 });
 
 test("V5 a one-Gear React defeat cannot persist a strategic owner-order phase", () => {

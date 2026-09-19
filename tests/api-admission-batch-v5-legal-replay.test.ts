@@ -64,7 +64,7 @@ for (const mode of ["MAIN", "REACT"] as const) {
         }
     });
 
-    test(`real Detonate ${mode} replay is repeatable and independent of opaque actionId order`, () => {
+    test(`real Detonate ${mode} replay is repeatable and its V2 tokens are engine-pin-independent`, () => {
         const first = replay(mode), repeated = batchV5Replay(mode, first.seed, first.context);
         assert.equal(repeated.finalStateHash, first.finalStateHash, "V5_REAL_DETERMINISTIC_REPLAY");
         assert.deepEqual(repeated.steps.map(s => s.actionId), first.steps.map(s => s.actionId));
@@ -78,6 +78,33 @@ for (const mode of ["MAIN", "REACT"] as const) {
         assert.deepEqual(perturbed.steps.map(s => s.actionId), first.steps.map(s => s.actionId), "V5_REAL_V2_TOKENS_BIND_TO_ENTITLED_OBSERVATION");
         assert.deepEqual(perturbed.steps.map(s => s.action), first.steps.map(s => s.action), "V5_REAL_SEMANTIC_SELECTION_STABLE");
         assert.deepEqual(perturbed.steps.map(s => s.events), first.steps.map(s => s.events), "V5_REAL_EVENTS_STABLE");
+    });
+
+    test(`real Detonate ${mode} replay preserves its full trajectory with reversed legal-action lists`, () => {
+        const first = replay(mode);
+        const reversed = batchV5Replay(mode, first.seed, first.context, { actionOrder: "REVERSED" });
+        assert.equal(reversed.steps.length, first.steps.length, "V5_REAL_REVERSED_STEP_COUNT");
+        // A broad roll predicate must actually face multiple matches, not only unique choices.
+        assert.ok(first.steps.some(step => step.action.action.kind === "ROLL_GIG"
+            && step.legalActions.filter(a => a.action.kind === "ROLL_GIG").length > 1), "V5_REAL_MULTIPLE_ROLL_MATCHES_EXERCISED");
+        let changedOrders = 0;
+        for (const [index, original] of first.steps.entries()) {
+            const changed = reversed.steps[index];
+            assert.ok(changed);
+            const ids = original.legalActions.map(a => a.actionId);
+            const reversedIds = changed.legalActions.map(a => a.actionId);
+            assert.deepEqual(reversedIds, [...ids].reverse(), "V5_REAL_ACTION_ORDER_REVERSED");
+            if (ids.length > 1) {
+                assert.notDeepEqual(reversedIds, ids, "V5_REAL_ORDER_PERTURBATION_APPLIED");
+                changedOrders++;
+            }
+        }
+        assert.ok(changedOrders > 0, "V5_REAL_NONTRIVIAL_ORDER_PERTURBATION");
+        assert.deepEqual(reversed.steps.map(s => s.action), first.steps.map(s => s.action), "V5_REAL_REVERSED_SEMANTIC_SELECTION_STABLE");
+        assert.deepEqual(reversed.steps.map(s => s.events), first.steps.map(s => s.events), "V5_REAL_REVERSED_EVENTS_STABLE");
+        assert.deepEqual(reversed.steps.map(s => s.before), first.steps.map(s => s.before), "V5_REAL_REVERSED_STATES_STABLE");
+        assert.deepEqual(reversed.finalState, first.finalState, "V5_REAL_REVERSED_FINAL_STATE_STABLE");
+        assert.equal(reversed.finalStateHash, first.finalStateHash, "V5_REAL_REVERSED_FINAL_HASH_STABLE");
     });
 }
 
