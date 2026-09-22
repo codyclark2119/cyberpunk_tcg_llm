@@ -137,3 +137,82 @@ jobs:
           path: ${{ runner.temp }}/pr-validation-integration.tap
           if-no-files-found: warn
           retention-days: 14
+
+
+  ai:
+    name: AI harness validation
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    env:
+      PYTHONDONTWRITEBYTECODE: "1"
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Use Python 3.12
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Use Node 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install engine dependencies
+        run: npm ci
+
+      - name: Compile Python sources
+        run: python -m compileall -q games harness scripts
+
+      - name: Test Cyberpunk corpus and ingestion
+        run: |
+          set -euo pipefail
+          python scripts/test_cyberpunk.py 2>&1 | tee "$RUNNER_TEMP/ai-cyberpunk.log"
+          grep -q '^all 89 tests passed$' "$RUNNER_TEMP/ai-cyberpunk.log"
+
+      - name: Test generic harness core
+        run: |
+          set -euo pipefail
+          python scripts/test_harness_core.py 2>&1 | tee "$RUNNER_TEMP/ai-harness-core.log"
+          grep -q '^48 tests passed$' "$RUNNER_TEMP/ai-harness-core.log"
+
+      - name: Test engine candidate bridge
+        run: |
+          set -euo pipefail
+          python scripts/test_engine_candidates.py 2>&1 | tee "$RUNNER_TEMP/ai-engine-candidates.log"
+          grep -q '^PASS 3/3$' "$RUNNER_TEMP/ai-engine-candidates.log"
+
+      - name: Validate community deck rules and negative controls
+        run: |
+          set -euo pipefail
+          python scripts/check_deck_rules.py --negative-control 2>&1 | tee "$RUNNER_TEMP/ai-deck-rules.log"
+          grep -q 'agree:    272/272' "$RUNNER_TEMP/ai-deck-rules.log"
+          grep -q 'reproduce budget AND usage exactly: 272/272' "$RUNNER_TEMP/ai-deck-rules.log"
+          if grep -q '<-- LOOK' "$RUNNER_TEMP/ai-deck-rules.log"; then
+            echo "A deck-rule negative control did not fire through its intended rule." >&2
+            exit 1
+          fi
+
+      - name: Test Python to authoritative engine boundary
+        run: |
+          set -euo pipefail
+          python scripts/test_engine_adapter.py --app-root . 2>&1 | tee "$RUNNER_TEMP/ai-engine-adapter.log"
+
+      - name: Preserve AI validation evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: ai-validation-${{ github.run_id }}-${{ github.run_attempt }}
+          path: |
+            ${{ runner.temp }}/ai-cyberpunk.log
+            ${{ runner.temp }}/ai-harness-core.log
+            ${{ runner.temp }}/ai-engine-candidates.log
+            ${{ runner.temp }}/ai-deck-rules.log
+            ${{ runner.temp }}/ai-engine-adapter.log
+          if-no-files-found: warn
+          retention-days: 14
