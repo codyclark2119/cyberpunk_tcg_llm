@@ -10,3 +10,13 @@ coverage
 
 **/.next/
 *.tsbuildinfo
+
+# Python / AI harness
+.venv/
+mlx_env/
+__pycache__/
+*.py[cod]
+models/*
+!models/.gitkeep
+*.npz
+.DS_Store
