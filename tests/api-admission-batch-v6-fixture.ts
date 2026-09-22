@@ -54,6 +54,11 @@ export function batchV6Context(engine?: Parameters<typeof createContentBundle>[2
 export function batchV6Input(seed: string) {
     const base = batchV5Input(seed);
     return { ...base, decks: base.decks.map(deck => ({
-        ...deck, main: deck.main.map(id => id === "slice-card-6" ? TRUST_NO_ONE : id)
+        ...deck,
+        // Only the existing Blue-supported constructed deck receives Trust No One.
+        // Do not invent or replace Legend capacity merely to admit this card.
+        main: deck.legends.includes("restriction-blue-support")
+            ? deck.main.map(id => id === "slice-card-6" ? TRUST_NO_ONE : id)
+            : deck.main
     })) };
 }

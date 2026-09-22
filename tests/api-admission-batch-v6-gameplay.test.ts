@@ -30,7 +30,9 @@ function configured(entries: readonly [Side, Die, number][]) {
     return { ...a, state: withGigs(a.state, context, values) };
 }
 function resolveTrust(a: ReturnType<typeof configured>, targetId: string, amount: number) {
-    let { state, events } = playCard(a.state, context, TRUST_NO_ONE);
+    const played = playCard(a.state, context, TRUST_NO_ONE);
+    let state = played.state;
+    const events = [...played.events];
     if (state.resolution.choice?.kind === "TARGET") {
         const next = pick(state, context, option => option.kind === "GIG" && option.gigInstanceId === targetId);
         state = next.state; events.push(...next.events);
@@ -82,10 +84,11 @@ test("V6 preserves every V5 immutable revision while adding exactly one reviewed
 
 test("V6 real-card decks require the explicit min-Gig Program policy", () => {
     const input = batchV6Input("v6-admission");
-    for (const deck of input.decks) {
-        assert.equal(deck.main.length, 42);
-        assert.equal(deck.main.filter(id => id === TRUST_NO_ONE).length, 3);
-    }
+    for (const deck of input.decks) assert.equal(deck.main.length, 42);
+    const admitted = input.decks.filter(deck => deck.main.includes(TRUST_NO_ONE));
+    assert.equal(admitted.length, 1);
+    assert.equal(admitted[0].legends.includes("restriction-blue-support"), true);
+    assert.equal(admitted[0].main.filter(id => id === TRUST_NO_ONE).length, 3);
     assert.equal(createGameWithEvents(input, context).ok, true);
     const rules = RulesetSchema.parse(context.content.ruleset);
     delete rules.gameplay!.turnSlice!.minGigProgram;
@@ -164,7 +167,9 @@ test("V6 min condition uses current control rather than original ownership", () 
     assert.equal(transferred.objects.gigs[stolenMin].ownerId, a.rival);
     assert.equal(transferred.objects.gigs[stolenMin].controllerId, a.actor);
 
-    let { state, events } = playCard(transferred, context, TRUST_NO_ONE);
+    const played = playCard(transferred, context, TRUST_NO_ONE);
+    let state = played.state;
+    const events = [...played.events];
     if (state.resolution.choice?.kind === "TARGET") {
         const next = pick(state, context, option => option.kind === "GIG" && option.gigInstanceId === rivalTarget);
         state = next.state; events.push(...next.events);
