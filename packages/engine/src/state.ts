@@ -4,6 +4,7 @@ import { validateTargetedSpendMetadata } from "./targeted-spend-support";
 import { validateTargetedDefeatMetadata } from "./targeted-defeat-support";
 import { validateTargetedGearDefeatMetadata } from "./targeted-gear-defeat-support";
 import { validateValueConditionMetadata } from "./value-conditions-support";
+import { validateMinGigProgramMetadata } from "./min-gig-program-support";
 import { validateAttackingAuraMetadata } from "./attacking-aura-support";
 import { validateAttackPreventionMetadata } from "./attack-prevention-support";
 import { validateFirstAttackMetadata } from "./first-attack-support";
@@ -101,6 +102,7 @@ export function validateState(input: unknown, context: EngineContext): Result<Ga
     const spendMetadata = validateTargetedSpendMetadata(s, context); if (!spendMetadata.ok) return spendMetadata;
     const targetedMetadata = validateTargetedDefeatMetadata(s, context); if (!targetedMetadata.ok) return targetedMetadata;
     const gearDefeatMetadata = validateTargetedGearDefeatMetadata(s, context); if (!gearDefeatMetadata.ok) return gearDefeatMetadata;
+    const minGigMetadata = validateMinGigProgramMetadata(s, context); if (!minGigMetadata.ok) return minGigMetadata;
     const valueMetadata = validateValueConditionMetadata(s, context); if (!valueMetadata.ok) return valueMetadata;
     const auraMetadata = validateAttackingAuraMetadata(s, context); if (!auraMetadata.ok) return auraMetadata;
     const preventionMetadata = validateAttackPreventionMetadata(s, context); if (!preventionMetadata.ok) return preventionMetadata;

@@ -19,7 +19,7 @@ export function offerPlayChoice(m: TurnMutation) {
     m.state.resolution.choice = choice;
     const effect = m.state.resolution.current?.effect;
     // Only new directional effects adopt forced target/zero-magnitude resolution; preserve old replay protocols.
-    if (effect?.kind === "ADJUST_GIG_UP_TO" && effect.direction === "INCREASE" && choice.options.length === 1) return continuePlay(m, 0);
+    if (effect?.kind === "ADJUST_GIG_UP_TO" && effect.direction !== undefined && choice.options.length === 1) return continuePlay(m, 0);
     m.state.resolution.stage = "CHOICE";
     const step = choice.kind === "PAYMENT" ? "PAYMENT_SELECTION" : choice.kind === "TARGET" ? "TARGET_SELECTION" : "AMOUNT_SELECTION";
     m.state.timing.step = step;
@@ -44,7 +44,7 @@ function resolveChain(m: TurnMutation): Result<null> {
         const result = registry.resolve(m, current.effect);
         if (!result.ok) return result;
         // A forced target/amount may have resumed and finished the chain synchronously.
-        if ((current.effect.kind === "DEFEAT_UNIT" || current.effect.kind === "ADJUST_GIG_UP_TO" && current.effect.direction === "INCREASE") && s.resolution.current !== current) return success(null);
+        if ((current.effect.kind === "DEFEAT_UNIT" || current.effect.kind === "ADJUST_GIG_UP_TO" && current.effect.direction !== undefined) && s.resolution.current !== current) return success(null);
         if (s.resolution.choice) return success(null);
         m.emit({ kind: "EFFECT_RESOLVED", effectId: current.id });
         if (s.match.outcome) return finishPlay(m, sourceId);

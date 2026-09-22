@@ -14,6 +14,7 @@ export const TurnSlicePolicySchema = z.strictObject({
     // Reserved V5 capability; parsing this opt-in does not enable the unfinished Gear lifecycle.
     targetedGearDefeat: z.literal("TARGETED_GEAR_DEFEAT_V1").optional(),
     valueConditions: z.literal("VALUE_CONDITIONS_V1").optional(),
+    minGigProgram: z.literal("MIN_GIG_PROGRAM_V1").optional(),
     attackingAura: z.literal("ATTACKING_AURA_V1").optional(),
     firstAttackHistory: z.literal("FIRST_ATTACK_HISTORY_V1").optional(),
     fieldLegends: z.literal("FIELD_LEGENDS_V1").optional(),

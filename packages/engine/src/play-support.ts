@@ -2,6 +2,7 @@ import { hasAttackConditionPowerMetadata, supportsAttackConditionPowerCard } fro
 import { hasTargetedDefeatMetadata, supportsTargetedDefeatCard } from "./targeted-defeat-support";
 import { hasTargetedGearDefeatMetadata, supportsTargetedGearDefeatCard } from "./targeted-gear-defeat-support";
 import { hasValueConditionMetadata, supportsValueConditionCard } from "./value-conditions-support";
+import { hasMinGigProgramMetadata, supportsMinGigProgramCard } from "./min-gig-program-support";
 import { hasFriendlyPlayPowerMetadata, supportsFriendlyPlayPowerUnit } from "./friendly-play-power-support";
 import { supportsTargetedSpendCard } from "./targeted-spend-support";
 import { supportsFieldLegend } from "./field-legend-support";
@@ -28,6 +29,7 @@ export function supportsPlay(card: DeepReadonly<CardRevisionSnapshot> | undefine
     if (card && hasAttackConditionPowerMetadata(card)) return supportsAttackConditionPowerCard(card, context);
     if (card && hasTargetedGearDefeatMetadata(card)) return supportsTargetedGearDefeatCard(card, context);
     if (card && hasTargetedDefeatMetadata(card)) return supportsTargetedDefeatCard(card, context);
+    if (card && hasMinGigProgramMetadata(card)) return supportsMinGigProgramCard(card, context);
     if (card && hasValueConditionMetadata(card)) return supportsValueConditionCard(card, context);
     if (card?.execution?.scope === "TARGETED_SPEND_V1") return supportsTargetedSpendCard(card, context);
     if (playEnabled(context) && card?.execution?.scope === "FIELD_LEGENDS_V1") return supportsFieldLegend(card, context);

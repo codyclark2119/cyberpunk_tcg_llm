@@ -23,9 +23,11 @@ export function gigAdjustmentOptions(gig: GameState["objects"]["gigs"][GigInstan
     if (gig.roll.kind !== "ROLLED") return [];
     const value = gig.roll.currentValue, maximum = Number(gig.dieType.slice(1));
     if (effect.direction === "INCREASE") return Array.from({ length: Math.min(effect.maximum, maximum - value) + 1 }, (_, amount) => ({ kind: "AMOUNT", amount }));
+    if (effect.direction === "DECREASE") return Array.from({ length: Math.min(effect.maximum, value - 1) + 1 }, (_, amount) => ({ kind: "AMOUNT", amount }));
     return [...(value > 1 ? [{ kind: "MODE" as const, mode: "DECREASE_1" }] : []), { kind: "MODE", mode: "KEEP" }, ...(value < maximum ? [{ kind: "MODE" as const, mode: "INCREASE_1" }] : [])];
 }
 export function gigAdjustmentDelta(effect: Extract<Effect, { kind: "ADJUST_GIG_UP_TO" }>, option: ChoiceOption): number | null {
     if (effect.direction === "INCREASE") return option.kind === "AMOUNT" && Number.isInteger(option.amount) && option.amount >= 0 && option.amount <= effect.maximum ? option.amount : null;
+    if (effect.direction === "DECREASE") return option.kind === "AMOUNT" && Number.isInteger(option.amount) && option.amount >= 0 && option.amount <= effect.maximum ? -option.amount : null;
     return option.kind === "MODE" ? option.mode === "KEEP" ? 0 : option.mode === "DECREASE_1" ? -1 : option.mode === "INCREASE_1" ? 1 : null : null;
 }

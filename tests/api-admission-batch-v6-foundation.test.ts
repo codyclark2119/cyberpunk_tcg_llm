@@ -4,17 +4,18 @@ import { CardRevisionSnapshotSchema, ConditionSchema, EffectSchema, hashCanonica
 import { supportsPlay } from "../packages/engine/src/play-support";
 import { INDUSTRIAL, valueCards, valueContext } from "./value-conditions-fixture";
 
-// Executable documentation of the unchanged V5 boundary, not proof of future V6 gameplay.
-// Replace the negative future-vocabulary cases with exact positive/negative admission cases
-// only when the complete Program continuation and its registered validator are implemented.
+// Boundary coverage shared with the executable V6 slice. The historical dedicated
+// decrease-by-two primitive stays narrow while the new directional Program vocabulary
+// is admitted only through the complete MIN_GIG_PROGRAM_V1 validator.
 test("V6 foundation: historical decrease-by-two payload remains exact and decrease-by-three is not admitted vocabulary", () => {
     const old = { kind: "DECREASE_GIG_UP_TO", target: { kind: "GIGS", relation: "ANY" }, maximum: 2 };
     assert.deepEqual(EffectSchema.parse(old), old);
     assert.equal(EffectSchema.safeParse({ ...old, maximum: 3 }).success, false);
 });
-test("V6 foundation: the proposed directional Program selector is not silently accepted by the old adjustment schema", () => {
+test("V6 foundation: directional decrease-by-three is explicit vocabulary while legacy shapes stay distinct", () => {
     const proposed = { kind: "ADJUST_GIG_UP_TO", target: { kind: "GIGS", relation: "ANY" }, maximum: 3, direction: "DECREASE" };
-    assert.equal(EffectSchema.safeParse(proposed).success, false);
+    assert.deepEqual(EffectSchema.parse(proposed), proposed);
+    assert.equal(EffectSchema.safeParse({ ...proposed, maximum: 2 }).success, false);
     const industrial = { ...proposed, maximum: 4, direction: "INCREASE" };
     assert.deepEqual(EffectSchema.parse(industrial), industrial);
 });
