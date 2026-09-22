@@ -130,7 +130,7 @@ function assertFullWorkflow(source) {
   assert.doesNotMatch(source, /baseline_regex|needs\.scope|mapfile -t tests|No changed top-level test files/);
   const jobs = source.split(/^jobs:\n/m)[1];
   assert.ok(jobs, "jobs must exist");
-  assert.deepEqual([...jobs.matchAll(/^  ([\w-]+):$/gm)].map(match => match[1]), ["validate", "integration"]);
+  assert.deepEqual([...jobs.matchAll(/^  ([\w-]+):$/gm)].map(match => match[1]), ["validate", "integration", "ai"]);
   assert.doesNotMatch(jobs, /^    (?:if|needs|continue-on-error|strategy|uses):/m,
     "Full jobs must not depend on scope, another job, or a conditional");
   for (const name of ["Full unit suite with execution evidence", "Run integration tests with zero skips"]) {
@@ -148,6 +148,13 @@ function assertFullWorkflow(source) {
   assert.match(jobs, /assert-test-summary\.mjs "\$RUNNER_TEMP\/pr-validation-integration\.tap" --minimum-tests 12/);
   assert.match(jobs, /TEST_DATABASE_URL: postgresql:/);
   assert.match(jobs, /TEST_MONGODB_URI: mongodb:/);
+  for (const command of [
+    "python scripts/test_cyberpunk.py",
+    "python scripts/test_harness_core.py",
+    "python scripts/test_engine_candidates.py",
+    "python scripts/check_deck_rules.py --negative-control",
+    "python scripts/test_engine_adapter.py --app-root .",
+  ]) assert.ok(jobs.includes(command), `${command} must remain in full CI`);
 }
 
 test("workflow executes complete suites without any changed-path selector", () => assertFullWorkflow(workflow));

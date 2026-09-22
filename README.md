@@ -170,3 +170,29 @@ node scripts/smoke-web.mjs unavailable
 Integration tests create and remove randomized test databases/schemas, never application tables. They skip if explicit test URLs are missing; supply both to verify both adapters. HTTP smoke tests start and stop a temporary production server on port 3011; Mongo mode expects the development fixtures to have been seeded. Stop an old pre-refactor dev process and restart with the root `npm run dev` command after this directory move.
 
 See [the implementation report](docs/phase1-report.md) for changed files, verification results and remaining work.
+
+## AI harness and source corpus
+
+This repository is now the authoritative monorepo for both the deterministic
+Cyberpunk TCG engine and the Python AI/training harness. The deterministic
+TypeScript engine remains the sole authority for rules, legality, private game
+state, and legal-action enumeration. Python receives public observations plus
+engine-enumerated public legal descriptors and selects only an actionId.
+
+The former `codyclark2119/cyberpunk_tcg_ai` snapshot is imported at its last
+source commit. Its paths remain usable in-place: `data/`, `games/`,
+`harness/`, `eval/`, `configs/`, `models/`, Python CLIs under
+`scripts/`, and `requirements.txt`.
+
+Offline AI checks:
+
+```bash
+python scripts/test_cyberpunk.py
+python scripts/test_harness_core.py
+python scripts/test_engine_candidates.py
+python scripts/test_engine_adapter.py --app-root .
+```
+
+The historical source README and conventions are retained under
+`docs/ai-source/`. See `docs/migration/cyberpunk_tcg_ai-import.md` for the
+exact source commit and history-preservation details.
