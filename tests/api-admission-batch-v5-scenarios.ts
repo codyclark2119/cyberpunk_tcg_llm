@@ -3,7 +3,7 @@ import { applyAction, validateState, type EngineContext } from "@tcg/engine";
 import { targetedCards, targetedContext, OVER_THE_EDGE } from "./targeted-defeat-fixture";
 import { minotaurReplay } from "./targeted-defeat-replay";
 import { clearField, fund, field, equip, payOnly } from "./targeted-defeat-focused";
-import { placeCard } from "./value-conditions-focused";
+import { placeCard, pick } from "./value-conditions-focused";
 import { unwrap } from "./turn-replay";
 
 /** Deliberately synthetic. This slice proves the capability, not a Detonate admission:
@@ -40,7 +40,7 @@ function repinned(context: EngineContext) {
 }
 export type Arranged = { state: GameState; actor: PlayerId; rival: PlayerId; hostId: CardInstanceId; gearIds: CardInstanceId[]; sourceId: CardInstanceId; context: EngineContext };
 /** Trusted arrangement from a validated boundary: an equipped rival host and the Program in hand. */
-export function arrange(opts: { context?: EngineContext; gear?: string[]; host?: string; onLegend?: boolean; caster?: "ACTOR" | "RIVAL"; friendlyGear?: string } = {}): Arranged {
+export function arrange(opts: { context?: EngineContext; sourceCard?: string; gear?: string[]; host?: string; onLegend?: boolean; caster?: "ACTOR" | "RIVAL"; friendlyGear?: string } = {}): Arranged {
     const context = opts.context ?? v5Context();
     const { state, actor, rival } = repinned(context);
     const caster = opts.caster === "RIVAL" ? rival : actor, owner = caster === actor ? rival : actor;
@@ -58,7 +58,7 @@ export function arrange(opts: { context?: EngineContext; gear?: string[]; host?:
     const gearIds: CardInstanceId[] = [];
     for (const g of opts.gear ?? ["mantis-blades", "satori-sword-of-saburo"]) { const e = equip(s, context, g, hostId); s = e.state; gearIds.push(e.id); }
     if (opts.friendlyGear) { const own = field(s, context, "corpo-security", caster); s = own.state; const e = equip(s, context, opts.friendlyGear, own.id); s = e.state; gearIds.push(e.id); }
-    const placed = placeCard(s, context, V5_PROBE_ID, caster); s = placed.state;
+    const placed = placeCard(s, context, opts.sourceCard ?? V5_PROBE_ID, caster); s = placed.state;
     if (caster !== actor) s = fund(s, context, caster);
     return { state: s, actor, rival, hostId, gearIds, sourceId: placed.id, context };
 }
@@ -70,6 +70,11 @@ export function castProgram(a: Arranged, casterId?: PlayerId) {
 }
 /** Declares the arranged attack so the defender holds an open React window. */
 export function openReact(a: Arranged) {
-    const r = unwrap(applyAction(a.state, { actorId: a.actor, action: { kind: "DECLARE_ATTACK", cardInstanceId: a.hostId } }, a.context));
-    return r.state;
+    let state = unwrap(applyAction(a.state, { actorId: a.actor, action: { kind: "DECLARE_ATTACK", cardInstanceId: a.hostId } }, a.context)).state;
+    // Declaring can pause on the attacker's own work first (attack-target selection, or an
+    // attacker trigger such as Dexter's). Settle those so the defender's React window is open;
+    // stop as soon as the React stage is reached so the defender's own decisions are untouched.
+    for (let guard = 0; state.resolution.choice && state.timing.combat.stage !== "RIVAL_REACT" && guard < 20; guard++)
+        state = pick(state, a.context, () => true).state;
+    return state;
 }

@@ -1,0 +1,202 @@
+{
+  "authority": "EVIDENCE_ONLY",
+  "decisions": [
+    {
+      "classification": "REVIEWED_RULE_INTERPRETATION",
+      "decision": "For this admitted effect, reference the target Gear instance's own effective power and require referencedPower(power) <= 2; never substitute the host's power or bypass the authoritative query with revision.power.",
+      "id": "GEAR_OWN_EFFECTIVE_POWER_V1",
+      "limitation": "The current reviewed Gear powers are nonnegative, so the reference clamp is a no-op. This decision does not admit general Gear modifiers or treat a null power reference as zero.",
+      "reviewMethod": "Review of the pinned Gear power rules: Gear contributes power to its host, while only an effect specifically targeting the Gear may modify the Gear's power.",
+      "ruleIds": [
+        "3.17.3.2",
+        "3.17.3.3",
+        "3.17.2",
+        "3.17.3.1",
+        "11.6.5"
+      ]
+    },
+    {
+      "classification": "REVIEWED_RULE_INTERPRETATION",
+      "decision": "For this admitted effect, rival face-up Gear attached to a face-up Legend in LEGENDS is eligible when its own referenced effective power is at most 2, as is eligible Gear attached to a battlefield host.",
+      "id": "LEGENDS_AREA_GEAR_TARGET_V1",
+      "limitation": "This decision targets the Gear, not its host Legend. Hidden, face-down, unattached, invalid, Trash and Removed arrangements remain excluded.",
+      "reviewMethod": "Combined review of the pinned equip areas, controller relation, Gear defeat and public Legends-area rules, together with Detonate's unqualified rival-Gear text; not equip legality alone.",
+      "ruleIds": [
+        "4.10.2",
+        "1.7.2",
+        "11.6.1.2",
+        "5.7.4",
+        "5.7.4.1"
+      ]
+    },
+    {
+      "classification": "REVIEWED_INFERENCE",
+      "decision": "For this admitted effect, move the defeated Gear alone to its owner's Trash and detach it; keep its host and sibling Gear in place.",
+      "id": "DEFEATED_GEAR_TO_OWNER_TRASH_V1",
+      "limitation": "No rule matching that reviewed search directly covers defeated-Gear destination. This is not a quotation, publisher ruling, general defeat rule, or claim of exhaustive absence.",
+      "reviewMethod": "Reviewer-reported regex/subtree search over 713 processed rules nodes; defeat matches outside 9.19, full 5.7 and 11.6, and 4.10–4.12; not an exhaustive line-by-line audit.",
+      "ruleIds": [
+        "11.6.1.2",
+        "9.19.1.1",
+        "4.12.1"
+      ]
+    }
+  ],
+  "decisionsHash": "4901d6f0e8a9f221839bbdd761b51144f4293f8e576f65390f37d77319e6cddf",
+  "projection": "Exact id/text fields from the pinned processed rules records; no wording corrections. Authored decisions are separate from these excerpts.",
+  "rules": [
+    {
+      "id": "1.7.2",
+      "text": "1.7.2. You “control” the pieces currently in your friendly Gig area, field, Legends area, and Eddies area. You’re the “controller” of these pieces, even if you’re not the owner."
+    },
+    {
+      "id": "1.7.2.1",
+      "text": "1.7.2.1. Pieces you control are considered “friendly” pieces."
+    },
+    {
+      "id": "1.7.2.2",
+      "text": "1.7.2.2. Pieces your Rival controls are considered “rival” pieces."
+    },
+    {
+      "id": "3.17.2",
+      "text": "3.17.2. A Unit or Legend’s power is equal to the power printed on the card plus the power of its equipped Gear and any current effect modifiers."
+    },
+    {
+      "id": "3.17.3",
+      "text": "3.17.3. A Gear’s power modifies the Unit or Legend it is equipped to."
+    },
+    {
+      "id": "3.17.3.1",
+      "text": "3.17.3.1. Units and Legends inherit power from Gears equipped to them."
+    },
+    {
+      "id": "3.17.3.2",
+      "text": "3.17.3.2. A Gear’s power is equal to the power printed on the card."
+    },
+    {
+      "id": "3.17.3.3",
+      "text": "3.17.3.3. A Gear’s power is not modified by card effects, unless the effect specifically targets the Gear."
+    },
+    {
+      "id": "3.17.4",
+      "text": "3.17.4. “Base power” refers to the printed power on a Legend, Unit, or Gear, separate from any applied or inherited modifiers."
+    },
+    {
+      "id": "4.10",
+      "text": "4.10. To play a Gear, reveal the card to your Rival, pay its cost, and equip it to a friendly Unit or friendly face-up Legend. See Equip."
+    },
+    {
+      "id": "4.10.1",
+      "text": "4.10.1. By default, a Gear can be equipped to a friendly Unit or friendly face-up Legend."
+    },
+    {
+      "id": "4.10.2",
+      "text": "4.10.2. You can only equip Gear to a card in the field or Legends area."
+    },
+    {
+      "id": "4.11.1",
+      "text": "4.11.1. The top textbox contains effects for the Gear. These effects are relevant when you play the Gear, and generally not relevant after a Gear is equipped."
+    },
+    {
+      "id": "4.11.2",
+      "text": "4.11.2. Effects described in the top textbox apply to the Gear itself, and are not inherited by the Unit or Legend it’s equipped to.\n\n> **EXAMPLE:** A Gear’s top text box contains the reminder text “*(Equip to a friendly Unit or face-up Legend.)*” You equip this Gear to a friendly Unit. That Gear cannot be equipped to another friendly Unit, nor face-up Legend."
+    },
+    {
+      "id": "4.11.3",
+      "text": "4.11.3. The bottom textbox contains effects inherited by the Unit or Legend the Gear is equipped to. Read the bottom textbox as if it's printed on that Unit or Legend."
+    },
+    {
+      "id": "4.11.3.1",
+      "text": "4.11.3.1. Effects described in a Gear card’s bottom textbox apply only to the Unit or Legend the Gear is equipped to, not the Gear itself."
+    },
+    {
+      "id": "4.12",
+      "text": "4.12. When a Legend or Unit moves to a different area (field, trash, hand, etc.), all of its equipped Gear moves with it."
+    },
+    {
+      "id": "4.12.1",
+      "text": "4.12.1. When a Gear moves with a Unit or Legend to an area outside of the field or Legends area, the Gear isn’t equipped to the Unit or Legend in that area.\n\n> **EXAMPLE:** An equipped Unit has the effect “At the end of your turn, return this Unit to its owner's hand.” When you move the Unit to your hand, you also move its equipped Gear to your hand. Once the cards are in your hand, the Gear is no longer equipped to the Unit. So, if you play the Unit from your hand next turn, the Gear does not move with it."
+    },
+    {
+      "id": "4.12.2",
+      "text": "4.12.2. If an equipped Legend moves to an area outside of the Field or Legends area, the Gear follows the Legend to the new area. The Gear is no longer equipped in the new area, so it stays there when you remove the Legend from play."
+    },
+    {
+      "id": "5.7.4",
+      "text": "5.7.4. The Legends area is a public area. Players can count the number of cards any player has in this area and read them at any time."
+    },
+    {
+      "id": "5.7.4.1",
+      "text": "5.7.4.1. The face-down Legends in this area are hidden. You cannot look at them unless specified otherwise."
+    },
+    {
+      "id": "9.10",
+      "text": "9.10. You may activate any effects with the [QUICK] keyword as a reaction. See TERMS > Effect Keywords > QUICK."
+    },
+    {
+      "id": "9.10.1",
+      "text": "9.10.1. If an effect on a Program in your hand has the [QUICK] keyword, you may play that Program as a reaction."
+    },
+    {
+      "id": "9.19.1",
+      "text": "9.19.1. When a Unit loses a fight, the opposing Unit defeats it as a result."
+    },
+    {
+      "id": "9.19.1.1",
+      "text": "9.19.1.1. When a Unit is defeated, its owner moves it to their trash."
+    },
+    {
+      "id": "9.19.3",
+      "text": "9.19.3. If an effect prevents a Unit from being defeated in a fight, it is still a loser that has lost the fight, it only ignores the resulting defeat."
+    },
+    {
+      "id": "11.6.1",
+      "text": "11.6.1. “Equip” is a game action in which you attach a Gear to a Unit or Legend by placing the card beneath it. When you do, the Gear becomes “equipped to” that card. See CARD TYPES > Gear."
+    },
+    {
+      "id": "11.6.1.2",
+      "text": "11.6.1.2. Gear stays equipped unless it (or the Unit/Legend it’s equipped to) is defeated or moves outside of the Legends area or field."
+    },
+    {
+      "id": "11.6.4",
+      "text": "11.6.4. Units and Legends inherit all effects in the bottom textbox of their equipped Gears."
+    },
+    {
+      "id": "11.6.5",
+      "text": "11.6.5. Units and Legends gain the power of their equipped Gears."
+    },
+    {
+      "id": "11.19.1",
+      "text": "11.19.1. The [DEFEATED] trigger is shorthand for ”When this Unit is defeated, [...]”"
+    },
+    {
+      "id": "11.19.2",
+      "text": "11.19.2. The effect attached to the [DEFEATED] trigger enters pending when the Unit has been declared defeated and is moved to trash."
+    },
+    {
+      "id": "11.26.1",
+      "text": "11.26.1. The [QUICK] keyword is shorthand for “You may also activate this effect (or play this Program) as a reaction to a rival Unit’s attack.”"
+    },
+    {
+      "id": "11.26.1.1",
+      "text": "11.26.1.1. A card with the [QUICK] keyword alongside no other effect text means the card can be played during the React Step by paying its cost."
+    },
+    {
+      "id": "11.26.1.2",
+      "text": "11.26.1.2. A card with the [QUICK] keyword alongside other effect text means “While this card is face-up on the field, you can use this effect during the React Step by paying its cost.”"
+    },
+    {
+      "id": "11.26.2",
+      "text": "11.26.2. You may activate a [QUICK] effect as an action during your Main Phase or as a reaction during the React Step of your Rival’s attack action."
+    }
+  ],
+  "rulesHash": "5331d2e400f10a119a1065e9e7ac9747c806e783a030d3437a6fa468de805755",
+  "schemaVersion": 1,
+  "source": {
+    "commit": "af9e0e1dd93b7eb77db5883bdd18809c8446d856",
+    "gitBlob": "5d8343c6fa8a596e354a2868a8bd511a6b04ca0e",
+    "path": "data/processed/rules.jsonl",
+    "repository": "codyclark2119/cyberpunk_tcg_ai",
+    "sha256": "1f299c9cbe2657c9d088ae4b3a812b85e46c3fd2659579229635959c59a20e19"
+  }
+}
