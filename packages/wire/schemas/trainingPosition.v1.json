@@ -2704,23 +2704,82 @@
                               "const": "DEFEAT_UNIT"
                             },
                             "target": {
-                              "type": "object",
-                              "properties": {
-                                "kind": {
-                                  "type": "string",
-                                  "const": "UNITS"
+                              "oneOf": [
+                                {
+                                  "type": "object",
+                                  "properties": {
+                                    "kind": {
+                                      "type": "string",
+                                      "const": "UNITS"
+                                    },
+                                    "relation": {
+                                      "type": "string",
+                                      "enum": [
+                                        "CONTROLLED",
+                                        "RIVAL",
+                                        "ANY"
+                                      ]
+                                    },
+                                    "power": {
+                                      "oneOf": [
+                                        {
+                                          "type": "object",
+                                          "properties": {
+                                            "kind": {
+                                              "type": "string",
+                                              "const": "AT_MOST"
+                                            },
+                                            "value": {
+                                              "type": "number",
+                                              "const": 5
+                                            }
+                                          },
+                                          "required": [
+                                            "kind",
+                                            "value"
+                                          ],
+                                          "additionalProperties": false
+                                        },
+                                        {
+                                          "type": "object",
+                                          "properties": {
+                                            "kind": {
+                                              "type": "string",
+                                              "const": "CONTROLLED_GIG_VALUE"
+                                            },
+                                            "dieType": {
+                                              "type": "string",
+                                              "const": "D20"
+                                            }
+                                          },
+                                          "required": [
+                                            "kind",
+                                            "dieType"
+                                          ],
+                                          "additionalProperties": false
+                                        }
+                                      ]
+                                    }
+                                  },
+                                  "required": [
+                                    "kind",
+                                    "relation",
+                                    "power"
+                                  ],
+                                  "additionalProperties": false
                                 },
-                                "relation": {
-                                  "type": "string",
-                                  "enum": [
-                                    "CONTROLLED",
-                                    "RIVAL",
-                                    "ANY"
-                                  ]
-                                },
-                                "power": {
-                                  "oneOf": [
-                                    {
+                                {
+                                  "type": "object",
+                                  "properties": {
+                                    "kind": {
+                                      "type": "string",
+                                      "const": "GEAR"
+                                    },
+                                    "relation": {
+                                      "type": "string",
+                                      "const": "RIVAL"
+                                    },
+                                    "power": {
                                       "type": "object",
                                       "properties": {
                                         "kind": {
@@ -2729,7 +2788,7 @@
                                         },
                                         "value": {
                                           "type": "number",
-                                          "const": 5
+                                          "const": 2
                                         }
                                       },
                                       "required": [
@@ -2737,34 +2796,16 @@
                                         "value"
                                       ],
                                       "additionalProperties": false
-                                    },
-                                    {
-                                      "type": "object",
-                                      "properties": {
-                                        "kind": {
-                                          "type": "string",
-                                          "const": "CONTROLLED_GIG_VALUE"
-                                        },
-                                        "dieType": {
-                                          "type": "string",
-                                          "const": "D20"
-                                        }
-                                      },
-                                      "required": [
-                                        "kind",
-                                        "dieType"
-                                      ],
-                                      "additionalProperties": false
                                     }
-                                  ]
+                                  },
+                                  "required": [
+                                    "kind",
+                                    "relation",
+                                    "power"
+                                  ],
+                                  "additionalProperties": false
                                 }
-                              },
-                              "required": [
-                                "kind",
-                                "relation",
-                                "power"
-                              ],
-                              "additionalProperties": false
+                              ]
                             },
                             "when": {
                               "type": "object",
@@ -4730,23 +4771,82 @@
                             "const": "DEFEAT_UNIT"
                           },
                           "target": {
-                            "type": "object",
-                            "properties": {
-                              "kind": {
-                                "type": "string",
-                                "const": "UNITS"
+                            "oneOf": [
+                              {
+                                "type": "object",
+                                "properties": {
+                                  "kind": {
+                                    "type": "string",
+                                    "const": "UNITS"
+                                  },
+                                  "relation": {
+                                    "type": "string",
+                                    "enum": [
+                                      "CONTROLLED",
+                                      "RIVAL",
+                                      "ANY"
+                                    ]
+                                  },
+                                  "power": {
+                                    "oneOf": [
+                                      {
+                                        "type": "object",
+                                        "properties": {
+                                          "kind": {
+                                            "type": "string",
+                                            "const": "AT_MOST"
+                                          },
+                                          "value": {
+                                            "type": "number",
+                                            "const": 5
+                                          }
+                                        },
+                                        "required": [
+                                          "kind",
+                                          "value"
+                                        ],
+                                        "additionalProperties": false
+                                      },
+                                      {
+                                        "type": "object",
+                                        "properties": {
+                                          "kind": {
+                                            "type": "string",
+                                            "const": "CONTROLLED_GIG_VALUE"
+                                          },
+                                          "dieType": {
+                                            "type": "string",
+                                            "const": "D20"
+                                          }
+                                        },
+                                        "required": [
+                                          "kind",
+                                          "dieType"
+                                        ],
+                                        "additionalProperties": false
+                                      }
+                                    ]
+                                  }
+                                },
+                                "required": [
+                                  "kind",
+                                  "relation",
+                                  "power"
+                                ],
+                                "additionalProperties": false
                               },
-                              "relation": {
-                                "type": "string",
-                                "enum": [
-                                  "CONTROLLED",
-                                  "RIVAL",
-                                  "ANY"
-                                ]
-                              },
-                              "power": {
-                                "oneOf": [
-                                  {
+                              {
+                                "type": "object",
+                                "properties": {
+                                  "kind": {
+                                    "type": "string",
+                                    "const": "GEAR"
+                                  },
+                                  "relation": {
+                                    "type": "string",
+                                    "const": "RIVAL"
+                                  },
+                                  "power": {
                                     "type": "object",
                                     "properties": {
                                       "kind": {
@@ -4755,7 +4855,7 @@
                                       },
                                       "value": {
                                         "type": "number",
-                                        "const": 5
+                                        "const": 2
                                       }
                                     },
                                     "required": [
@@ -4763,34 +4863,16 @@
                                       "value"
                                     ],
                                     "additionalProperties": false
-                                  },
-                                  {
-                                    "type": "object",
-                                    "properties": {
-                                      "kind": {
-                                        "type": "string",
-                                        "const": "CONTROLLED_GIG_VALUE"
-                                      },
-                                      "dieType": {
-                                        "type": "string",
-                                        "const": "D20"
-                                      }
-                                    },
-                                    "required": [
-                                      "kind",
-                                      "dieType"
-                                    ],
-                                    "additionalProperties": false
                                   }
-                                ]
+                                },
+                                "required": [
+                                  "kind",
+                                  "relation",
+                                  "power"
+                                ],
+                                "additionalProperties": false
                               }
-                            },
-                            "required": [
-                              "kind",
-                              "relation",
-                              "power"
-                            ],
-                            "additionalProperties": false
+                            ]
                           },
                           "when": {
                             "type": "object",
@@ -6752,23 +6834,82 @@
                             "const": "DEFEAT_UNIT"
                           },
                           "target": {
-                            "type": "object",
-                            "properties": {
-                              "kind": {
-                                "type": "string",
-                                "const": "UNITS"
+                            "oneOf": [
+                              {
+                                "type": "object",
+                                "properties": {
+                                  "kind": {
+                                    "type": "string",
+                                    "const": "UNITS"
+                                  },
+                                  "relation": {
+                                    "type": "string",
+                                    "enum": [
+                                      "CONTROLLED",
+                                      "RIVAL",
+                                      "ANY"
+                                    ]
+                                  },
+                                  "power": {
+                                    "oneOf": [
+                                      {
+                                        "type": "object",
+                                        "properties": {
+                                          "kind": {
+                                            "type": "string",
+                                            "const": "AT_MOST"
+                                          },
+                                          "value": {
+                                            "type": "number",
+                                            "const": 5
+                                          }
+                                        },
+                                        "required": [
+                                          "kind",
+                                          "value"
+                                        ],
+                                        "additionalProperties": false
+                                      },
+                                      {
+                                        "type": "object",
+                                        "properties": {
+                                          "kind": {
+                                            "type": "string",
+                                            "const": "CONTROLLED_GIG_VALUE"
+                                          },
+                                          "dieType": {
+                                            "type": "string",
+                                            "const": "D20"
+                                          }
+                                        },
+                                        "required": [
+                                          "kind",
+                                          "dieType"
+                                        ],
+                                        "additionalProperties": false
+                                      }
+                                    ]
+                                  }
+                                },
+                                "required": [
+                                  "kind",
+                                  "relation",
+                                  "power"
+                                ],
+                                "additionalProperties": false
                               },
-                              "relation": {
-                                "type": "string",
-                                "enum": [
-                                  "CONTROLLED",
-                                  "RIVAL",
-                                  "ANY"
-                                ]
-                              },
-                              "power": {
-                                "oneOf": [
-                                  {
+                              {
+                                "type": "object",
+                                "properties": {
+                                  "kind": {
+                                    "type": "string",
+                                    "const": "GEAR"
+                                  },
+                                  "relation": {
+                                    "type": "string",
+                                    "const": "RIVAL"
+                                  },
+                                  "power": {
                                     "type": "object",
                                     "properties": {
                                       "kind": {
@@ -6777,7 +6918,7 @@
                                       },
                                       "value": {
                                         "type": "number",
-                                        "const": 5
+                                        "const": 2
                                       }
                                     },
                                     "required": [
@@ -6785,34 +6926,16 @@
                                       "value"
                                     ],
                                     "additionalProperties": false
-                                  },
-                                  {
-                                    "type": "object",
-                                    "properties": {
-                                      "kind": {
-                                        "type": "string",
-                                        "const": "CONTROLLED_GIG_VALUE"
-                                      },
-                                      "dieType": {
-                                        "type": "string",
-                                        "const": "D20"
-                                      }
-                                    },
-                                    "required": [
-                                      "kind",
-                                      "dieType"
-                                    ],
-                                    "additionalProperties": false
                                   }
-                                ]
+                                },
+                                "required": [
+                                  "kind",
+                                  "relation",
+                                  "power"
+                                ],
+                                "additionalProperties": false
                               }
-                            },
-                            "required": [
-                              "kind",
-                              "relation",
-                              "power"
-                            ],
-                            "additionalProperties": false
+                            ]
                           },
                           "when": {
                             "type": "object",
