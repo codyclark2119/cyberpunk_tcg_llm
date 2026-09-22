@@ -1,7 +1,11 @@
 name: PR Validation
 
+# Full acceptance is intentionally independent of changed paths, including docs.
+# No source/helper/schema change can hide behind a generated-fixture classifier.
 on:
   pull_request:
+  push:
+    branches: [master]
   workflow_dispatch:
 
 permissions:
@@ -11,41 +15,13 @@ concurrency:
   group: pr-validation-${{ github.event.pull_request.number || github.ref }}
   cancel-in-progress: true
 
+defaults:
+  run:
+    shell: bash
+
 jobs:
-  scope:
-    name: Determine validation scope
-    runs-on: ubuntu-latest
-    outputs:
-      baseline: ${{ steps.scope.outputs.baseline }}
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
-
-      - name: Detect generated-baseline changes
-        id: scope
-        shell: bash
-        run: |
-          set -euo pipefail
-          if [[ "${{ github.event_name }}" != "pull_request" ]]; then
-            echo "baseline=true" >> "$GITHUB_OUTPUT"
-            exit 0
-          fi
-
-          git diff --name-only "${{ github.event.pull_request.base.sha }}...HEAD" > /tmp/pr-files.txt
-          cat /tmp/pr-files.txt
-
-          baseline_regex='^(packages/wire/schemas/|tests/fixtures/([^/]*-replay\.v1\.json|[^/]*matrix[^/]*\.json|[^/]*coverage[^/]*\.json|[^/]*review[^/]*\.json|wire-golden\.v1\.json|deck-differential\.v1\.json|reboot-multiplicity-acceptance\.v1\.json))$'
-          if grep -Eq "$baseline_regex" /tmp/pr-files.txt; then
-            echo "baseline=true" >> "$GITHUB_OUTPUT"
-          else
-            echo "baseline=false" >> "$GITHUB_OUTPUT"
-          fi
-
   validate:
-    name: Changed tests, static, and build validation
-    needs: scope
+    name: Unit, static, and build validation
     runs-on: ubuntu-latest
     timeout-minutes: 30
     steps:
@@ -53,12 +29,16 @@ jobs:
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
+          persist-credentials: false
 
       - name: Use Node 22
         uses: actions/setup-node@v4
         with:
           node-version: 22
           cache: npm
+
+      - name: Test CI execution guards
+        run: node --test .github/scripts/*.test.mjs
 
       - name: Install dependencies
         run: npm ci
@@ -72,37 +52,32 @@ jobs:
       - name: Validate cards
         run: npm run validate:cards
 
-      - name: Run changed top-level tests
-        if: github.event_name == 'pull_request'
-        shell: bash
+      - name: Full unit suite with execution evidence
         run: |
           set -euo pipefail
-          mapfile -t tests < <(
-            git diff --name-only "${{ github.event.pull_request.base.sha }}...HEAD" \
-              | grep -E '^tests/[^/]+\.test\.ts$' || true
-          )
-          if (( ${#tests[@]} == 0 )); then
-            echo "No changed top-level test files."
-          else
-            printf 'Running changed tests:\n%s\n' "${tests[*]}"
-            node --import tsx --test --test-concurrency=1 --test-reporter=tap "${tests[@]}"
-          fi
-
-      - name: Full unit suite for generated-baseline validation
-        if: needs.scope.outputs.baseline == 'true'
-        run: npm test
+          npm test 2>&1 | tee "$RUNNER_TEMP/pr-validation-unit.tap"
+          node .github/scripts/assert-test-summary.mjs "$RUNNER_TEMP/pr-validation-unit.tap"
 
       - name: Build
         run: npm run build
 
       - name: Check PR diff whitespace
         if: github.event_name == 'pull_request'
-        run: git diff --check "${{ github.event.pull_request.base.sha }}...HEAD"
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+        run: git diff --check "$BASE_SHA...HEAD"
+
+      - name: Preserve unit execution evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: unit-tap-${{ github.run_id }}-${{ github.run_attempt }}
+          path: ${{ runner.temp }}/pr-validation-unit.tap
+          if-no-files-found: warn
+          retention-days: 14
 
   integration:
     name: Database integration validation
-    needs: scope
-    if: needs.scope.outputs.baseline == 'true'
     runs-on: ubuntu-latest
     timeout-minutes: 30
     services:
@@ -134,6 +109,8 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+        with:
+          persist-credentials: false
 
       - name: Use Node 22
         uses: actions/setup-node@v4
@@ -145,10 +122,18 @@ jobs:
         run: npm ci
 
       - name: Run integration tests with zero skips
-        shell: bash
         run: |
-          set -o pipefail
-          node --import tsx --test --test-concurrency=1 --test-reporter=tap tests/integration/*.test.ts | tee integration.tap
-          grep -Eq '^# tests [1-9][0-9]*$' integration.tap
-          grep -q '^# fail 0$' integration.tap
-          grep -q '^# skipped 0$' integration.tap
+          set -euo pipefail
+          : "${TEST_DATABASE_URL:?TEST_DATABASE_URL must be set}"
+          : "${TEST_MONGODB_URI:?TEST_MONGODB_URI must be set}"
+          npm run test:integration 2>&1 | tee "$RUNNER_TEMP/pr-validation-integration.tap"
+          node .github/scripts/assert-test-summary.mjs "$RUNNER_TEMP/pr-validation-integration.tap" --minimum-tests 12
+
+      - name: Preserve integration execution evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: integration-tap-${{ github.run_id }}-${{ github.run_attempt }}
+          path: ${{ runner.temp }}/pr-validation-integration.tap
+          if-no-files-found: warn
+          retention-days: 14
