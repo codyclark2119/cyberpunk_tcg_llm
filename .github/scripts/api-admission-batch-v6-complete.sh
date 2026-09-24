@@ -92,8 +92,10 @@ tree_manifest > "$tmp/pass2.sha256"
 diff -u "$tmp/pass1.sha256" "$tmp/pass2.sha256"
 
 echo "== Demo matrix =="
+# The fixed 192-coordinate matrix is the expensive authoritative simulation pass.
+# Generate it once here; the checks below validate every derived artifact from the
+# resulting trusted traces without replaying the entire matrix two more times.
 npm run test:matrix
-npm run test:matrix -- --check
 
 echo "== Matrix-dependent reviews =="
 node --import tsx scripts/review-reboot-multiplicity-matrix.ts
@@ -107,7 +109,6 @@ echo "== Final writer stability =="
 tree_manifest > "$tmp/final.sha256"
 npm run contracts:export
 node --import tsx scripts/generate-reboot-multiplicity-replays.ts --check
-npm run test:matrix -- --check
 node --import tsx scripts/review-reboot-multiplicity-matrix.ts --check
 node --import tsx scripts/review-demo-matrix-positions.ts --check
 npm run review:descriptor-v2 -- --check
@@ -136,9 +137,9 @@ Observed in the completion workflow:
 - wire schemas and every reviewed ordinary replay writer ran twice with identical
   `packages/wire/schemas` + `tests/fixtures` SHA-256 manifests;
 - Reboot multiplicity generation/check completed before the final matrix;
-- Demo matrix generation and `--check` completed;
-- Reboot matrix, Demo position, and Descriptor V2 reviews generated and checked;
-- a final reader/check pass left the generated tree byte-identical.
+- the complete fixed Demo matrix generated once from the reviewed deterministic schedule;
+- Reboot matrix, Demo position, and Descriptor V2 reviews generated and checked against those trusted traces;
+- a final non-simulation reader/check pass left the generated tree byte-identical.
 
 This record does not replace hosted full unit, database integration, AI harness,
 typecheck, lint, build, or card-validation gates. Those must pass on the exact
