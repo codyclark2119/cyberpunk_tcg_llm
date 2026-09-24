@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+# V6 baseline regeneration trigger: refresh generated artifacts after runtime admission landed.
 set -euo pipefail
 
 BRANCH="${BRANCH:-review/api-admission-batch-v6-foundation}"
