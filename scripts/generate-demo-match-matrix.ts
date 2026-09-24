@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import { mkdirSync, writeFileSync, readFileSync } from "node:fs";
 import { spawn } from "node:child_process";
 import { hashCanonical } from "@tcg/domain";
-import { DEMO_MATRIX_CONFIG, matrixCoordinates, coordinateId } from "../tests/demo-matrix-config";
+import { DEMO_MATRIX_CONFIG, matrixCoordinates, coordinateId, type MatrixCoordinate } from "../tests/demo-matrix-config";
 import { demoMatrixReplay } from "../tests/demo-matrix-replay";
 import { summarizeMatrixTrace, aggregateMatrix, type MatrixSummary } from "../tests/demo-matrix-metrics";
 import { demoStarterContext } from "../tests/demo-starter-fixture";
