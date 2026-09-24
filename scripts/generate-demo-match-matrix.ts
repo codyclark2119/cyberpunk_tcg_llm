@@ -1,5 +1,6 @@
 import assert from "node:assert/strict";
 import { mkdirSync, writeFileSync, readFileSync } from "node:fs";
+import { spawn } from "node:child_process";
 import { hashCanonical } from "@tcg/domain";
 import { DEMO_MATRIX_CONFIG, matrixCoordinates, coordinateId } from "../tests/demo-matrix-config";
 import { demoMatrixReplay } from "../tests/demo-matrix-replay";
@@ -16,18 +17,50 @@ function promote(family:string,trace:ReturnType<typeof demoMatrixReplay>,purpose
     if(promotions.some(p=>p.family===family))return;
     const bytes=artifact(`tests/fixtures/${family}.v1.json`,trace);promotions.push({family,coordinate:coordinateId(trace.coordinate),purpose,actions:trace.steps.length,bytes});
 }
+const concurrency=Math.max(1,Math.min(8,Number.parseInt(process.env.DEMO_MATRIX_CONCURRENCY??"1",10)||1));
+const tracePath=(coordinate:MatrixCoordinate)=>`${directory}/${coordinateId(coordinate)}.json`;
+const runtimePath=(coordinate:MatrixCoordinate)=>`${directory}/${coordinateId(coordinate)}.runtime.json`;
+async function generateParallel(coordinates:readonly MatrixCoordinate[]) {
+    let next=0;
+    async function worker() {
+        while(next<coordinates.length) {
+            const index=next++,coordinate=coordinates[index];
+            await new Promise<void>((resolve,reject)=>{
+                const child=spawn(process.execPath,["--import","tsx","scripts/generate-demo-match-matrix-coordinate.ts",JSON.stringify(coordinate)],{
+                    env:{...process.env,DEMO_MATRIX_TRACE_DIR:directory},stdio:["ignore","ignore","inherit"]
+                });
+                child.once("error",reject);
+                child.once("exit",code=>code===0?resolve():reject(new Error(`Matrix coordinate ${coordinateId(coordinate)} exited ${code}`)));
+            });
+        }
+    }
+    await Promise.all(Array.from({length:Math.min(concurrency,coordinates.length)},()=>worker()));
+}
+async function main() {
 for(const branch of ["base","variant"] as const) {
     if(stopped)break;
-    for(const coordinate of matrixCoordinates(branch)) {
-        const start=performance.now(),trace=demoMatrixReplay(coordinate,{context}),elapsedMs=performance.now()-start;
+    const coordinates=matrixCoordinates(branch);
+    if(concurrency>1) await generateParallel(coordinates);
+    for(const coordinate of coordinates) {
+        const start=performance.now();
+        const trace=concurrency>1
+            ? JSON.parse(readFileSync(tracePath(coordinate),"utf8")) as ReturnType<typeof demoMatrixReplay>
+            : demoMatrixReplay(coordinate,{context});
+        const elapsedMs=concurrency>1
+            ? (JSON.parse(readFileSync(runtimePath(coordinate),"utf8")) as {elapsedMs:number}).elapsedMs
+            : performance.now()-start;
         const summary=summarizeMatrixTrace(trace);summaries.push(summary);
         runtimeMetrics.push({coordinate:coordinateId(coordinate),elapsedMs,actionsPerSecond:trace.steps.length/(elapsedMs/1000),rssBytes:process.memoryUsage().rss});
-        writeFileSync(`${directory}/${coordinateId(coordinate)}.json`,JSON.stringify(trace));
+        if(concurrency===1)writeFileSync(tracePath(coordinate),JSON.stringify(trace));
+        assert.equal(hashCanonical(trace.content),bundleBefore);
         console.log(JSON.stringify({coordinate:coordinateId(coordinate),status:summary.status,actions:summary.actions,positions:summary.positions,turn:summary.turns,terminal:summary.terminal?.reason,failure:summary.failure?.code,elapsedMs}));
         if(summary.terminal?.reason==="EMPTY_DRAW")promote("demo-matrix-empty-draw-replay",trace,"First exact matrix empty-draw terminal");
         if(summary.terminal?.reason==="OVERTIME_GIGS")promote("demo-matrix-overtime-replay",trace,"First exact matrix overtime terminal; also reversed seats");
         if(summary.failure)promote("demo-matrix-successor-gap-replay",trace,"First successor matrix gap; preserve diagnostic prefix without bypassing it");
-        if(trace.failure){const code=trace.failure.code;gaps.set(code,(gaps.get(code)??0)+1);if(trace.failure.classification!=="KNOWN_UNSUPPORTED"||(gaps.get(code)??0)>=DEMO_MATRIX_CONFIG.stop.sameKnownGapConfirmations){stopped=true;break;}}
+        if(trace.failure){
+            if(concurrency>1)throw new Error(`Parallel matrix mode encountered ${trace.failure.classification} at ${coordinateId(coordinate)}; rerun serially to preserve stop semantics`);
+            const code=trace.failure.code;gaps.set(code,(gaps.get(code)??0)+1);if(trace.failure.classification!=="KNOWN_UNSUPPORTED"||(gaps.get(code)??0)>=DEMO_MATRIX_CONFIG.stop.sameKnownGapConfirmations){stopped=true;break;}
+        }
     }
     if(branch==="base"&&summaries.some(r=>r.status!=="SUPPORTED_TERMINAL"))stopped=true;
 }
@@ -47,4 +80,6 @@ const matrix={...identity,matrixHash:hashCanonical(identity)};
 artifact("tests/fixtures/demo-match-matrix-reboot.v1.json",matrix);artifact("tests/fixtures/demo-match-coverage-reboot.v1.json",coverage);
 // Nondeterministic measurements stay separate from canonical identities and exact regeneration gates.
 writeFileSync(`${directory}/runtime.json`,JSON.stringify(runtimeMetrics,null,2)+"\n");
-console.log(JSON.stringify({attempted:coverage.attempted,completed:coverage.completed,classifications:coverage.classifications,matrixHash:matrix.matrixHash,setupAudits:setupAudit.length,promotions}));
+console.log(JSON.stringify({attempted:coverage.attempted,completed:coverage.completed,classifications:coverage.classifications,matrixHash:matrix.matrixHash,setupAudits:setupAudit.length,promotions,concurrency}));
+}
+main().catch(error=>{console.error(error);process.exitCode=1;});

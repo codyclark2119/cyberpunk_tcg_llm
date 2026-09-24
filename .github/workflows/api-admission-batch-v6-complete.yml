@@ -16,6 +16,7 @@ jobs:
     env:
       BRANCH: review/api-admission-batch-v6-foundation
       BASELINE_SHA: 1aaba357f46e83296419c1871fac3c28ea70dcff
+      DEMO_MATRIX_CONCURRENCY: "4"
     steps:
       - name: Checkout V6 branch
         uses: actions/checkout@v4
