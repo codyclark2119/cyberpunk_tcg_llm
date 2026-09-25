@@ -1,6 +1,12 @@
-# Cyberpunk TCG Online — Phase 1
+# Cyberpunk TCG Online
 
-A versioned content platform and headless engine foundation. The four bundled cards are development fixtures, not official card data. A headless turn slice supports validated initialization, ready/draw, Gig choice, SELL, CALL/payment and multiple turns through offline Python interop. Full gameplay, authentication, matchmaking and WebSockets remain unimplemented.
+A monorepo for a Cyberpunk TCG platform and its AI harness:
+
+- **Deterministic TypeScript engine** (`packages/engine`): the sole authority for rules, legality, hidden state, RNG and legal-action enumeration. It plays the fixed Arasaka-vs-Merc Demo format end to end, and all 192 games of its deterministic match matrix reach supported terminals. Further cards enter only through reviewed, immutable revisions (API admission batches V1–V6).
+- **Web platform** (`apps/web`, `packages/graphql`, `packages/persistence`): Next.js and Apollo over versioned Mongo content and a PostgreSQL command ledger. The web catalog still serves the four development fixture cards; engine-admitted revisions are exercised by tests and replays, not yet published to it.
+- **Python AI harness** (`games/`, `harness/`, `data/`): rules Q&A over the official rules and card corpus, with retrieval, a rubric-based judge and LoRA fine-tuning on Apple Silicon via MLX. For gameplay it receives public observations and engine-enumerated legal actions, and returns only an `actionId`.
+
+Browser gameplay, authentication, matchmaking and WebSockets are not implemented. Working rules for both halves are in [CLAUDE.md](CLAUDE.md); the documentation index is [docs/README.md](docs/README.md).
 
 ## Workspace and dependencies
 
@@ -11,10 +17,15 @@ packages/engine/src/           deterministic headless engine API
 packages/graphql/src/          SDL, operations, generated types, thin Apollo resolvers, pagination
 packages/persistence/src/      fixture, Mongo, PostgreSQL adapters and environment validation
 packages/training-harness/src/  training position schemas, candidate evaluation, JSONL import/export
-scripts/                       root environment launcher, codegen/setup/validation/demo tools
-tests/                         pure tests and dependency checks
+scripts/                       Node tools (setup, validation, replay writers, reviews) and Python CLIs
+tests/                         pure tests, dependency checks and committed replay fixtures
 tests/integration/             isolated Mongo/PostgreSQL integration tests
 db/postgres/migrations/         forward SQL migrations
+games/cyberpunk/               Python game layer: markup, cards, errata, chunking, prompts, engine adapter
+harness/core/                  game-agnostic Python harness: JSONL I/O, retrieval, judge, SFT, calibration
+data/                          dated source snapshot: raw API captures, processed corpus, engine candidates
+eval/ configs/ models/         evaluation runs, configs and local model weights (weights are gitignored)
+docs/                          milestone reports and admission records, indexed in docs/README.md
 ```
 
 Dependency direction:
@@ -24,6 +35,7 @@ Dependency direction:
 - Persistence implements domain repository contracts and maps database envelopes to canonical models.
 - Engine depends only on domain and Zod. Domain depends only on Zod and Node's deterministic SHA-256 primitive. Neither imports React, Next, Apollo, GraphQL, database drivers, networking, or WebSockets.
 - Training harness depends on domain and engine. It has no database or model-provider integration.
+- The Python harness reaches the engine only through the JSONL worker (`scripts/engine-worker.ts`, wrapped by `games/cyberpunk/engine_adapter.py`). Nothing under `harness/` imports from `games/`.
 
 `npm test` checks package manifests and source imports to enforce these boundaries. Shared packages export TypeScript source and are transpiled by Next/tsx. They are private workspaces, not published libraries. The current headless runtime is Node.js; browser-only/WASM packaging would need a hashing adapter.
 
@@ -37,7 +49,7 @@ cp .env.example .env.local
 npm run dev
 ```
 
-Use a supported modern Node runtime. This refactor was verified with Node 26.8.1 and npm 11.19.0; the lockfile pins resolved dependencies.
+Use the Node version pinned in `.nvmrc` (`nvm use`); CI runs the same version. The lockfile pins resolved dependencies.
 
 ### Fixture-only mode
 
@@ -68,7 +80,7 @@ Configured but unavailable Mongo produces an actionable error, never a silent fi
 
 Compose remains infrastructure-only: PostgreSQL 16 and MongoDB 7, loopback ports, named volumes, healthchecks. `npm run infra:down` preserves volumes. If ports are occupied, use `POSTGRES_PORT=5433 MONGO_PORT=27018 npm run infra:up` and change the connection URLs accordingly. Compose reads `.env`, not `.env.local`; shell overrides work for both.
 
-The preexisting containers on ports 5432/27017 were kept. The additional Compose services from stabilization use ports 5433/27018. Choose one pair consistently. Setup scripts use the app's root environment; integration tests use explicit `TEST_*` URLs instead.
+Setup scripts use the app's root environment; integration tests use explicit `TEST_*` URLs instead.
 
 ### Previously applied SQL
 
@@ -124,7 +136,7 @@ The reusable command ledger scopes idempotency keys by actor:
 
 The normalized schema-2 engine consumes a pinned `ContentBundle`, validates object/zone references, and returns frozen states. Semantic actions are separate from command metadata; models select engine-generated action IDs. Training positions and individual attempts are separate records. The offline JSONL worker and small Python adapter share this same engine.
 
-See [First turn slice](docs/turn-slice-report.md) for the current playable subset and replay evidence. See [Pre-gameplay contracts](docs/pre-gameplay-contracts.md) for ownership, supported primitives, hidden observations, hashing, migration instructions, protocol usage and explicitly unsupported rules.
+The [documentation index](docs/README.md) lists the milestone reports behind each engine capability, the Demo format and match matrix, and every card admission batch.
 
 ```bash
 npm run --silent training:demo
@@ -161,38 +173,45 @@ npm run lint
 npm run validate:cards
 npm test
 npm run build
-TEST_MONGODB_URI=mongodb://127.0.0.1:27018 TEST_DATABASE_URL=postgres://postgres:postgres@127.0.0.1:5433/cyberpunk_tcg npm run test:integration
+TEST_MONGODB_URI=mongodb://127.0.0.1:27017 TEST_DATABASE_URL=postgres://postgres:postgres@127.0.0.1:5432/cyberpunk_tcg npm run test:integration
 node scripts/smoke-web.mjs fixture
 node scripts/smoke-web.mjs mongo
 node scripts/smoke-web.mjs unavailable
 ```
 
-Integration tests create and remove randomized test databases/schemas, never application tables. They skip if explicit test URLs are missing; supply both to verify both adapters. HTTP smoke tests start and stop a temporary production server on port 3011; Mongo mode expects the development fixtures to have been seeded. Stop an old pre-refactor dev process and restart with the root `npm run dev` command after this directory move.
+Integration tests create and remove randomized test databases/schemas, never application tables. They skip if explicit test URLs are missing; supply both to verify both adapters. Use the ports Compose was started with. HTTP smoke tests start and stop a temporary production server on port 3011; Mongo mode expects the development fixtures to have been seeded.
 
-See [the implementation report](docs/phase1-report.md) for changed files, verification results and remaining work.
+PR Validation runs the unit, integration and AI suites on every pull request and rejects skipped tests; `master` requires all three. See [CI validation](docs/ci-validation.md).
 
-## AI harness and source corpus
+## Regenerating the engine baseline
 
-This repository is now the authoritative monorepo for both the deterministic
-Cyberpunk TCG engine and the Python AI/training harness. The deterministic
-TypeScript engine remains the sole authority for rules, legality, private game
-state, and legal-action enumeration. Python receives public observations plus
-engine-enumerated public legal descriptors and selects only an actionId.
-
-The former `codyclark2119/cyberpunk_tcg_ai` snapshot is imported at its last
-source commit. Its paths remain usable in-place: `data/`, `games/`,
-`harness/`, `eval/`, `configs/`, `models/`, Python CLIs under
-`scripts/`, and `requirements.txt`.
-
-Offline AI checks:
+Replays, wire schemas and matrix reviews pin the engine identity from `scripts/engine-identity.ts`: a version string plus a hash of the domain, engine and wire sources, the engine worker, the identity script itself and `package-lock.json`. Changing any of those makes the committed baseline stale, and CI fails until it is regenerated:
 
 ```bash
-python scripts/test_cyberpunk.py
-python scripts/test_harness_core.py
-python scripts/test_engine_candidates.py
-python scripts/test_engine_adapter.py --app-root .
+npm run baseline:regenerate -- --preserved <last commit before the runtime change>
 ```
 
-The historical source README and conventions are retained under
-`docs/ai-source/`. See `docs/migration/cyberpunk_tcg_ai-import.md` for the
-exact source commit and history-preservation details.
+This runs every replay writer, the 192-game Demo matrix and its reviews, then confirms the tree is byte-stable. It never commits. Review the diff (version/hash pins and legal-action order are expected to change; chosen actions, events and final states should not, unless the engine change intends it), run the gates, and commit the regeneration separately.
+
+## AI harness
+
+Model work needs Apple Silicon and MLX:
+
+```bash
+python3 -m venv mlx_env && source mlx_env/bin/activate
+pip install -r requirements.txt
+```
+
+The offline checks need only `fastapi` from that list, no GPU and no network. CI runs all of them:
+
+```bash
+python scripts/test_cyberpunk.py                       # corpus and ingestion
+python scripts/test_harness_core.py                    # harness/core
+python scripts/test_engine_candidates.py               # engine candidate bridge
+python scripts/check_deck_rules.py --negative-control  # deck rules against 272 public decks
+python scripts/test_engine_adapter.py                  # Python-to-engine boundary
+```
+
+`data/` is a dated snapshot of the official card API. The fetch/ingest pipeline, errata handling, deckbuilding and archetype tooling, and the rules for refreshing the snapshot are in [CLAUDE.md](CLAUDE.md), with full detail in [the original harness README](docs/ai-source/README.legacy.md).
+
+The harness was imported from `codyclark2119/cyberpunk_tcg_ai`, now archived, at its last source commit; see [the import record](docs/migration/cyberpunk_tcg_ai-import.md).
