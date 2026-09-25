@@ -9,9 +9,10 @@ jobs. Runtime-only, shared-helper-only, dependency-only, evidence-only and
 wire-schema-only changes all receive the same complete validation.
 
 Running full checks for docs-only changes is intentional: the small scheduling
-saving is not worth another default-pass classification boundary. The two jobs
-are independent, so a static/unit failure cannot silently prevent the database
-job from reporting its own result.
+saving is not worth another default-pass classification boundary. The three jobs
+are independent, so a failure in one cannot silently prevent the others from
+reporting their own results. Every job uses the Node version pinned in `.nvmrc`;
+bump it deliberately rather than tracking the latest 22.x release implicitly.
 
 ## Gates
 
@@ -21,6 +22,13 @@ job from reporting its own result.
 - **Database integration validation**: fresh PostgreSQL 16 and MongoDB 7 services,
   explicit disposable connection configuration, and the complete
   `npm run test:integration` suite with a minimum of 12 tests.
+- **AI harness validation**: Python 3.12 with only `fastapi` installed, a compile
+  check of `games/`, `harness/` and `scripts/`, the corpus/ingestion suite
+  (`test_cyberpunk.py`), the generic harness suite (`test_harness_core.py`), the
+  engine-candidate bridge, community deck rules with negative controls, and the
+  Python-to-engine adapter boundary against the committed Demo matrix fixture.
+  These steps assert exact pass lines (for example `all 89 tests passed`), so
+  adding or removing a Python test also updates the expected line here.
 
 Both suite commands are piped to TAP logs using `set -euo pipefail`. A nonzero
 command remains a failure even if it prints plausible successful output. The
@@ -52,13 +60,14 @@ CI does not regenerate fixtures to make tests pass. It validates the checked-out
 candidate. A stale baseline is a real failed check and must be corrected by an
 explicitly reviewed regeneration commit, never by skipping the relevant tests.
 
-The full 192-game matrix, its trace regeneration, and the full Descriptor V2
-corpus review remain deliberate milestone gates, not automatic jobs in this
-workflow. This PR changes no engine source, immutable revision, fixed Demo deck,
-source evidence, generated schema/fixture, dependency manifest or lockfile.
+After an engine identity change, regenerate locally with
+`npm run baseline:regenerate -- --preserved <last pre-change commit>` and commit
+the result separately. The full 192-game matrix, its trace regeneration, and the
+full Descriptor V2 corpus review run there, as deliberate milestone gates, not as
+automatic jobs in this workflow.
 
-A GitHub workflow is not itself a branch-protection rule. Repository rulesets
-should require both named validation jobs if merge enforcement is desired;
-this change does not alter administration settings or grant write permissions.
-Only PR diff whitespace checking is event-specific. Manual runs still execute
-both complete suites; pushes to `master` validate the actual post-merge tree.
+The `master: require PR Validation` repository ruleset requires a pull request and
+all three named jobs before merge, and blocks force-pushes and deletion of
+`master`. Only PR diff whitespace checking is event-specific. Manual runs still
+execute every complete suite; pushes to `master` validate the actual post-merge
+tree.
