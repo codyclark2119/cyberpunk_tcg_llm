@@ -153,6 +153,7 @@ function assertFullWorkflow(source) {
     "python scripts/test_harness_core.py",
     "python scripts/test_engine_candidates.py",
     "python scripts/test_sim_bot.py",
+    "python scripts/test_sim_mlx.py",
     "python scripts/check_deck_rules.py --negative-control",
     "python scripts/test_engine_adapter.py --app-root .",
   ]) assert.ok(jobs.includes(command), `${command} must remain in full CI`);
