@@ -1,12 +1,12 @@
 # Engine Candidate Admission V1
 
-This review tooling consumes the non-authoritative `CYBERPUNK_ENGINE_CANDIDATES_V1` export from the sibling `cyberpunk_tcg_ai` repository.
+This review tooling consumes the non-authoritative `CYBERPUNK_ENGINE_CANDIDATES_V1` export that the Python AI harness in this repository writes with `scripts/export_engine_candidates.py`.
 
 It does **not** admit cards into gameplay, assign immutable revisions, synthesize mechanics, or alter engine content manifests.
 
 ## Input
 
-The AI repository exports:
+The AI harness exports:
 
 ```text
 data/engine-candidates/card-catalog.v1.jsonl
@@ -20,7 +20,7 @@ The manifest must declare `authority: SOURCE_CANDIDATES_ONLY`, contain the exact
 - `data/raw/cards/_index.json`,
 - `data/processed/errata.jsonl`.
 
-The review CLI verifies all four hashes when pointed at the sibling repository's `data/engine-candidates` directory.
+The review CLI verifies all four hashes. It reads `data/engine-candidates` in this repository unless `--candidate-dir` points elsewhere.
 
 ## Review classifications
 
@@ -47,19 +47,16 @@ Parser hints such as `Go Solo`, `Blocker`, `Call`, or `Defeated` are diagnostic 
 
 ## Running
 
-From the engine repository:
+From the repository root:
 
 ```bash
-npm run review:engine-candidates -- \
-  --candidate-dir /path/to/cyberpunk_tcg_ai/data/engine-candidates
+npm run review:engine-candidates
 ```
 
 For a stricter check of already-reviewed CardIds:
 
 ```bash
-npm run review:engine-candidates -- \
-  --candidate-dir /path/to/cyberpunk_tcg_ai/data/engine-candidates \
-  --strict-reviewed
+npm run review:engine-candidates -- --strict-reviewed
 ```
 
 `--strict-reviewed` exits non-zero when an already-reviewed CardId reports source drift or an unsupported source hint. `NOT_ADMITTED` is expected for cards that have not yet received an explicit engine review.

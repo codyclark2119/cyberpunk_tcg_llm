@@ -1,6 +1,7 @@
 import { createHash } from "node:crypto";
 import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
+import { fileURLToPath } from "node:url";
 import { CardRevisionSnapshotSchema } from "@tcg/domain";
 import { demoReferenceContext } from "../tests/demo-format-fixture";
 import { EngineCandidateManifestV1Schema, EngineCardCandidateV1Schema, reviewEngineCandidateCatalogV1 } from "./lib/engine-candidates";
@@ -17,9 +18,8 @@ function readJsonl(path: string) {
     return readFileSync(path, "utf8").split(/\r?\n/).filter(Boolean).map(line => JSON.parse(line));
 }
 
-const candidateDirArg = arg("--candidate-dir");
-if (!candidateDirArg) throw new Error("Usage: npm run review:engine-candidates -- --candidate-dir /path/to/cyberpunk_tcg_ai/data/engine-candidates [--strict-reviewed]");
-const candidateDir = resolve(candidateDirArg);
+// Usage: npm run review:engine-candidates -- [--candidate-dir data/engine-candidates] [--strict-reviewed]
+const candidateDir = resolve(arg("--candidate-dir") ?? fileURLToPath(new URL("../data/engine-candidates", import.meta.url)));
 const aiRoot = resolve(candidateDir, "../..");
 const manifestPath = resolve(candidateDir, "manifest.v1.json");
 const catalogPath = resolve(candidateDir, "card-catalog.v1.jsonl");

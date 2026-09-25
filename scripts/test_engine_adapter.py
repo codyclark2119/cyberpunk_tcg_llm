@@ -2,10 +2,10 @@
 """Offline smoke/integration tests for the TypeScript engine adapter.
 
 Usage:
-    python scripts/test_engine_adapter.py --app-root ../cyberpunk-tcg-online
+    python scripts/test_engine_adapter.py [--app-root .]
 
-The test consumes the sibling app's regenerated Demo matrix fixture. It does
-not duplicate any game rules in Python.
+The test consumes the committed Demo matrix fixture and drives this
+repository's Node engine worker. It does not duplicate any game rules in Python.
 """
 
 from __future__ import annotations
@@ -37,7 +37,7 @@ def load_probe(app_root: Path):
 
 def main() -> int:
     parser = argparse.ArgumentParser()
-    parser.add_argument("--app-root", required=True, type=Path)
+    parser.add_argument("--app-root", default=REPO_ROOT, type=Path)
     parser.add_argument("--node", default="node")
     args = parser.parse_args()
     app_root = args.app_root.resolve()
