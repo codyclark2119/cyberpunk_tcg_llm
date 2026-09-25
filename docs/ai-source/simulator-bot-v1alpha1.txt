@@ -1,0 +1,395 @@
+# External Bot Developer Guide
+
+This guide is for developers building HTTP bots for Cyberpunk TCG Sim.
+
+For server-side registration, see [BOT_SERVER_SETUP.md](BOT_SERVER_SETUP.md).
+
+## Status
+
+Current API version: `v1alpha1`
+
+External bot support uses an allowlisted HTTP model:
+
+1. You host a bot service.
+2. The server operator registers your bot URL and profile.
+3. Players choose your bot from Play Vs AI.
+4. The game server sends decision requests to your service.
+
+The public game server remains authoritative. Your bot never sends raw game actions directly to a room.
+
+## Contract
+
+Your service must implement:
+
+- `POST /ready`
+- `POST /sync`
+
+The contract is intentionally small:
+
+- the game server sends a bot-visible state snapshot
+- the game server sends a normalized list of legal actions for that exact moment
+- your bot replies with the `actionId` of one action from that list
+- the game server validates and applies the selected action
+
+Bots do not need to know internal engine objects or construct raw game actions.
+
+## Profile To Send The Server Operator
+
+Give the server operator:
+
+```json
+{
+  "botId": "community.my-bot",
+  "name": "My Bot",
+  "url": "https://bot.example/cyberpunk",
+  "author": "Your Name",
+  "version": "0.1.0",
+  "license": "MIT",
+  "description": "Short strategy summary.",
+  "timeoutMs": 3000,
+  "apiVersions": ["v1alpha1"]
+}
+```
+
+Your `url` can include a path. If the operator registers `https://bot.example/cyberpunk`, the game server calls:
+
+- `POST https://bot.example/cyberpunk/ready`
+- `POST https://bot.example/cyberpunk/sync`
+
+## Endpoint: `POST /ready`
+
+`/ready` is the compatibility and health endpoint. Implement it even if your bot does not need setup time.
+
+Request:
+
+```json
+{
+  "apiVersion": "v1alpha1",
+  "game": "cyberpunk-tcg-sim",
+  "check": "ready"
+}
+```
+
+Ready response:
+
+```json
+{
+  "ok": true,
+  "ready": true,
+  "botId": "community.my-bot",
+  "name": "My Bot",
+  "version": "0.1.0",
+  "apiVersions": ["v1alpha1"]
+}
+```
+
+Temporarily unavailable response:
+
+```json
+{
+  "ok": true,
+  "ready": false,
+  "reason": "Model is loading"
+}
+```
+
+## Endpoint: `POST /sync`
+
+`/sync` is the decision endpoint. The match loop calls it when your bot must choose an action.
+
+Request:
+
+```json
+{
+  "apiVersion": "v1alpha1",
+  "event": "state_sync",
+  "requestId": "2d3c1fd8-2f2c-4bb4-90fe-63dc8c6f23f2",
+  "matchId": "ABC123",
+  "sequence": 17,
+  "status": "acting",
+  "playerId": "player2",
+  "botId": "community.my-bot",
+  "deadlineMs": 3000,
+  "prompt": "Player 2 may play cards, sell once, call a Legend, or start attacking.",
+  "waitReason": null,
+  "turn": {
+    "number": 4,
+    "round": 2,
+    "step": "play",
+    "stage": "player_turn"
+  },
+  "pending": null,
+  "snapshot": {
+    "game": {},
+    "players": {},
+    "controls": {}
+  },
+  "legalActions": [
+    {
+      "actionId": "act_001",
+      "source": "die",
+      "label": "ROLL D12",
+      "type": "roll_die",
+      "payload": {
+        "dieId": "die_player2_1"
+      },
+      "sourceDieId": "die_player2_1"
+    },
+    {
+      "actionId": "act_002",
+      "source": "primary",
+      "label": "END TURN",
+      "type": "end_turn",
+      "payload": {}
+    }
+  ],
+  "possibleActions": [
+    {
+      "actionId": "act_001",
+      "source": "die",
+      "label": "ROLL D12",
+      "type": "roll_die",
+      "payload": {
+        "dieId": "die_player2_1"
+      },
+      "sourceDieId": "die_player2_1"
+    },
+    {
+      "actionId": "act_002",
+      "source": "primary",
+      "label": "END TURN",
+      "type": "end_turn",
+      "payload": {}
+    }
+  ],
+  "metadata": {
+    "rulesVersion": "current-server-version",
+    "roomMode": "solo",
+    "turnNumber": 4,
+    "turnStep": "play"
+  }
+}
+```
+
+`legalActions` and `possibleActions` are the same list. `possibleActions` exists as a friendlier alias for external bots.
+
+## `/sync` Request Fields
+
+| Field | Meaning |
+| --- | --- |
+| `apiVersion` | API version. Current value is `v1alpha1`. |
+| `event` | Current event type. Decision requests use `state_sync`. |
+| `requestId` | Unique id for logs and idempotency. |
+| `matchId` | Match or room id. Use this as the key for per-match memory. |
+| `sequence` | Increasing bot request number within the match. |
+| `status` | `acting`, `waiting`, or `finished`. Current live decisions are sent as `acting`. |
+| `playerId` | Seat controlled by the bot, usually `player2`. |
+| `botId` | Bot profile id configured on the game server. |
+| `deadlineMs` | Maximum expected decision time for this request. |
+| `prompt` | Human-readable prompt for the current decision. |
+| `waitReason` | Reason the bot is waiting, when status is `waiting`. |
+| `turn` | Small turn summary for heuristics and logging. |
+| `pending` | Current pending choice summary, or `null`. |
+| `snapshot` | Bot-visible state snapshot. Treat it as read-only, additive JSON. |
+| `legalActions` | Legal actions for this exact request. |
+| `possibleActions` | Alias of `legalActions`. |
+| `metadata` | Extra server metadata. Bots should tolerate new keys. |
+
+## State Snapshot
+
+`snapshot` contains only information visible to the bot seat. It may include public match data, the bot player's known cards, opponent public information, prompts, controls, and other bot-visible objects.
+
+Use `snapshot` for scoring and memory, but do not depend on it to prove whether an action is legal. The action list is the source of truth.
+
+Treat snapshot fields as additive:
+
+- ignore unknown fields
+- tolerate missing optional fields
+- never expect opponent hidden information
+- never require raw engine objects
+
+## Legal Action Objects
+
+Each action has:
+
+| Field | Meaning |
+| --- | --- |
+| `actionId` | Stable id for this request. Return this value to choose the action. |
+| `source` | Where the action came from, for example `setup`, `primary`, `pending`, `die`, or `card`. |
+| `label` | Human-readable label. Useful for logs and simple heuristics. |
+| `type` | Action category. Useful for bot strategy. |
+| `payload` | Server-provided payload. Do not edit or return it. |
+| `sourceCardId` | Present when the action came from a card. |
+| `sourceCardName` | Present when the action came from a card. |
+| `sourceZone` | Present when the action came from a card zone. |
+| `sourceDieId` | Present when the action came from a die. |
+| `pendingType` | Present for some pending-choice actions. |
+
+Action ids are only valid for the request that contained them. Do not cache an `actionId` and reuse it later.
+
+## `/sync` Response
+
+When `status` is `acting`, return one legal `actionId`:
+
+```json
+{
+  "ok": true,
+  "actionId": "act_001"
+}
+```
+
+Optional debug information is allowed:
+
+```json
+{
+  "ok": true,
+  "actionId": "act_001",
+  "requestId": "2d3c1fd8-2f2c-4bb4-90fe-63dc8c6f23f2",
+  "debug": {
+    "summary": "Rolled the available die before ending the turn."
+  }
+}
+```
+
+If your service receives a non-acting request, acknowledge it without choosing an action:
+
+```json
+{
+  "ok": true,
+  "actionId": null
+}
+```
+
+To reject a request:
+
+```json
+{
+  "ok": false,
+  "error": "Unsupported apiVersion."
+}
+```
+
+## Failure Behavior
+
+The server protects the match from bot failures.
+
+The server may use a safe fallback action when:
+
+- the bot times out
+- the bot returns invalid JSON
+- the bot returns `ok: false`
+- the bot returns an unknown `actionId`
+- the selected action is no longer applicable when the server resolves it
+
+If no safe fallback action can be applied, the server may concede for the bot seat. External bots should always choose quickly from the current `legalActions` list.
+
+## Minimal JavaScript Bot
+
+```js
+import http from "node:http";
+
+const PORT = Number.parseInt(process.env.PORT ?? "3100", 10);
+
+function sendJson(res, statusCode, payload) {
+  const body = JSON.stringify(payload);
+
+  res.writeHead(statusCode, {
+    "content-type": "application/json; charset=utf-8",
+    "content-length": Buffer.byteLength(body),
+  });
+  res.end(body);
+}
+
+function readJson(req) {
+  return new Promise((resolve, reject) => {
+    let body = "";
+
+    req.setEncoding("utf8");
+    req.on("data", (chunk) => {
+      body += chunk;
+    });
+    req.on("end", () => {
+      try {
+        resolve(body.trim() ? JSON.parse(body) : {});
+      } catch (error) {
+        reject(error);
+      }
+    });
+    req.on("error", reject);
+  });
+}
+
+function chooseAction(request) {
+  const actions = Array.isArray(request.legalActions)
+    ? request.legalActions
+    : Array.isArray(request.possibleActions)
+      ? request.possibleActions
+      : [];
+
+  return (
+    actions.find((action) => action.type === "roll_die")
+    ?? actions.find((action) => action.type === "play_card")
+    ?? actions.find((action) => action.type === "end_turn")
+    ?? actions[0]
+    ?? null
+  );
+}
+
+const server = http.createServer(async (req, res) => {
+  try {
+    if (req.method === "POST" && req.url === "/ready") {
+      await readJson(req);
+      sendJson(res, 200, {
+        ok: true,
+        ready: true,
+        botId: "community.simple-bot",
+        name: "Simple Bot",
+        version: "0.1.0",
+        apiVersions: ["v1alpha1"],
+      });
+      return;
+    }
+
+    if (req.method === "POST" && req.url === "/sync") {
+      const request = await readJson(req);
+      const action = chooseAction(request);
+
+      sendJson(res, 200, action
+        ? { ok: true, actionId: action.actionId }
+        : { ok: true, actionId: null });
+      return;
+    }
+
+    sendJson(res, 404, { ok: false, error: "Not found." });
+  } catch {
+    sendJson(res, 400, { ok: false, error: "Invalid request." });
+  }
+});
+
+server.listen(PORT, "0.0.0.0", () => {
+  console.log(`Simple Bot listening on ${PORT}`);
+});
+```
+
+## Development Checklist
+
+Before giving a bot to players, verify:
+
+- `POST /ready` returns JSON with `ok: true`
+- `POST /sync` returns within `deadlineMs`
+- every acting response chooses an `actionId` from the current request
+- the bot tolerates unknown snapshot fields
+- the bot does not require opponent hidden information
+- the bot handles empty action lists without crashing
+- logs include `requestId`, `matchId`, and selected `actionId`
+
+## Compatibility Notes
+
+`v1alpha1` may gain new fields over time. Existing fields should keep their meaning where possible, but external bots should be defensive JSON clients.
+
+The safest bot architecture is:
+
+1. read `possibleActions` or `legalActions`
+2. score those actions using labels, types, payloads, and the visible snapshot
+3. return exactly one current `actionId`
+4. store long-term memory by `matchId`, not by transient object ids

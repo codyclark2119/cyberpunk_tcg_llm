@@ -164,7 +164,7 @@ jobs:
           cache: npm
 
       - name: Install Python CI dependencies
-        run: python -m pip install --disable-pip-version-check fastapi
+        run: python -m pip install --disable-pip-version-check fastapi httpx
 
       - name: Install engine dependencies
         run: npm ci
@@ -189,6 +189,12 @@ jobs:
           set -euo pipefail
           python scripts/test_engine_candidates.py 2>&1 | tee "$RUNNER_TEMP/ai-engine-candidates.log"
           grep -q '^PASS 3/3$' "$RUNNER_TEMP/ai-engine-candidates.log"
+
+      - name: Test external simulator bot contract
+        run: |
+          set -euo pipefail
+          python scripts/test_sim_bot.py 2>&1 | tee "$RUNNER_TEMP/ai-sim-bot.log"
+          grep -q '^PASS simulator bot: 29/29$' "$RUNNER_TEMP/ai-sim-bot.log"
 
       - name: Validate community deck rules and negative controls
         run: |
@@ -217,5 +223,6 @@ jobs:
             ${{ runner.temp }}/ai-engine-candidates.log
             ${{ runner.temp }}/ai-deck-rules.log
             ${{ runner.temp }}/ai-engine-adapter.log
+            ${{ runner.temp }}/ai-sim-bot.log
           if-no-files-found: warn
           retention-days: 14
