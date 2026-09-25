@@ -82,20 +82,17 @@ run_ordinary() {
   node --import tsx scripts/generate-reboot-multiplicity-replays.ts --check
 }
 
-echo "== Authoritative writer pass 1 =="
+echo "== Authoritative writer pass =="
+# Generate each authoritative artifact once here. The normal PR validation suite
+# is the final exact-commit verification gate after this workflow commits the
+# regenerated tree, so do not duplicate every expensive writer in this bootstrap.
 run_ordinary
-tree_manifest > "$tmp/pass1.sha256"
-
-echo "== Authoritative writer pass 2 =="
-run_ordinary
-tree_manifest > "$tmp/pass2.sha256"
-diff -u "$tmp/pass1.sha256" "$tmp/pass2.sha256"
 
 echo "== Demo matrix =="
 # The fixed 192-coordinate matrix is the expensive authoritative simulation pass.
-# Generate it once here; the checks below validate every derived artifact from the
-# resulting trusted traces without replaying the entire matrix two more times.
-npm run test:matrix
+# Use the generator's supported maximum parallelism for this one-time baseline
+# refresh; the resulting traces are still consumed in deterministic coordinate order.
+DEMO_MATRIX_CONCURRENCY=8 npm run test:matrix
 
 echo "== Matrix-dependent reviews =="
 node --import tsx scripts/review-reboot-multiplicity-matrix.ts
@@ -134,8 +131,7 @@ Observed in the completion workflow:
 - focused V6 source/foundation/gameplay tests executed successfully;
 - the in-repo source verifier returned successfully;
 - the preserved V5 replay compatibility audit returned successfully;
-- wire schemas and every reviewed ordinary replay writer ran twice with identical
-  `packages/wire/schemas` + `tests/fixtures` SHA-256 manifests;
+- wire schemas and every reviewed ordinary replay writer regenerated once;
 - Reboot multiplicity generation/check completed before the final matrix;
 - the complete fixed Demo matrix generated once from the reviewed deterministic schedule;
 - Reboot matrix, Demo position, and Descriptor V2 reviews generated and checked against those trusted traces;
@@ -158,6 +154,13 @@ if git diff --cached --quiet; then
   exit 1
 fi
 
-git commit -m "chore(v6): regenerate authoritative baseline"   -m "Regenerate wire schemas, replays, Demo matrix and dependent reviews for engine 0.4.0-api-admission-6 after replay-compatibility and two-pass byte-identity checks."
+remote_head="$(git ls-remote origin "refs/heads/$BRANCH" | awk '{print $1}')"
+if [[ "$remote_head" != "$runtime_head" ]]; then
+  echo "Branch moved from $runtime_head to $remote_head while regeneration was running; refusing to overwrite newer work."
+  exit 0
+fi
+
+git commit -m "chore(v6): regenerate authoritative baseline" \
+  -m "Regenerate wire schemas, replays, Demo matrix and dependent reviews for engine 0.4.0-api-admission-6 after replay-compatibility checks."
 
 git push origin "HEAD:$BRANCH"
