@@ -116,6 +116,7 @@ export function listLegalActions(state: GameState, actor: PlayerId, context: Eng
                     return `Steal ${gig.dieType} (${gig.id}, current ${gig.roll.kind === "ROLLED" ? gig.roll.currentValue : "unrolled"})`;
                 }
                 if (option.kind === "AMOUNT" && state.resolution.current?.effect.kind === "ADJUST_GIG_UP_TO" && state.resolution.current.effect.direction === "INCREASE") return option.amount === 0 ? "Increase by 0 (no adjustment)" : `Increase by ${option.amount}`;
+                if (option.kind === "AMOUNT" && state.resolution.current?.effect.kind === "ADJUST_GIG_UP_TO" && state.resolution.current.effect.direction === "DECREASE") return option.amount === 0 ? "Decrease by 0 (no adjustment)" : `Decrease by ${option.amount}`;
                 if (state.resolution.current?.effect.kind === "SPEND_UNIT" && option.kind === "CARD") return `Spend ${view.getRevision(option.cardInstanceId)?.displayName} (${option.cardInstanceId}, cost ${view.getReferencedCost(option.cardInstanceId)}, ${state.objects.cards[option.cardInstanceId].readiness.toLowerCase()})`;
                 if (state.resolution.targetedDefeatContinuation && option.kind === "CARD") return state.resolution.targetedDefeatContinuation.phase === "ORDER" ? `Next in your Trash: ${view.getRevision(option.cardInstanceId)?.displayName} (${option.cardInstanceId})` : `Defeat ${view.getRevision(option.cardInstanceId)?.displayName} (${option.cardInstanceId}, power ${view.getEffectivePower(option.cardInstanceId)})`;
                 if (state.resolution.triggerContinuation) {

@@ -15,7 +15,7 @@ export function supportsValueConditionCard(card: DeepReadonly<CardRevisionSnapsh
     return success(null);
 }
 export function hasValueConditionMetadata(card: DeepReadonly<CardRevisionSnapshot>) {
-    return card.execution?.scope === "VALUE_CONDITIONS_V1" || card.mechanics.abilities.some(a => a.conditions.some(c => c.kind === "STREET_CRED_IS_EVEN") || a.effects.some(e => e.kind === "ADJUST_GIG_UP_TO" && (e.maximum !== 1 || e.direction !== undefined) || e.kind === "CONDITIONAL_DRAW" && e.condition.kind === "STREET_CRED_IS_EVEN" || e.kind === "DISCARD_CARDS" && e.when?.condition.kind === "STREET_CRED_IS_EVEN"));
+    return card.execution?.scope === "VALUE_CONDITIONS_V1" || card.mechanics.abilities.some(a => a.conditions.some(c => c.kind === "STREET_CRED_IS_EVEN") || a.effects.some(e => e.kind === "ADJUST_GIG_UP_TO" && e.direction !== "DECREASE" && (e.maximum !== 1 || e.direction !== undefined) || e.kind === "CONDITIONAL_DRAW" && e.condition.kind === "STREET_CRED_IS_EVEN" || e.kind === "DISCARD_CARDS" && e.when?.condition.kind === "STREET_CRED_IS_EVEN"));
 }
 /** Hidden/unused physical sources also fail closed; no old-scope silent omission. */
 export function validateValueConditionMetadata(state: GameState, context: EngineContext) {

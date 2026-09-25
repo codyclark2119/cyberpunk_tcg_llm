@@ -86,6 +86,6 @@ export function validatePlayState(state: GameState, context: EngineContext) {
     if (revision?.type === "GEAR" && !legalEquipHosts(state, c.sourceId, context).length) return failure("NO_EQUIP_HOST", "Gear play requires an eligible host throughout payment");
     if (state.resolution.targetedDefeatContinuation) return success(null); // Dedicated validator checks the exact current target/owner order.
     const expected = playChoice(state, context);
-    if (!expected.options.length || (current?.effect.kind === "ADJUST_GIG_UP_TO" && current.effect.direction === "INCREASE" && expected.options.length < 2) || canonicalSerialize(expected) !== canonicalSerialize(state.resolution.choice)) return failure("INVALID_PLAY_CHOICE", "Choice must exactly match current engine targets, amounts or payment sources");
+    if (!expected.options.length || (current?.effect.kind === "ADJUST_GIG_UP_TO" && current.effect.direction !== undefined && expected.options.length < 2) || canonicalSerialize(expected) !== canonicalSerialize(state.resolution.choice)) return failure("INVALID_PLAY_CHOICE", "Choice must exactly match current engine targets, amounts or payment sources");
     return success(null);
 }
