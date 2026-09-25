@@ -3429,13 +3429,20 @@
                                 },
                                 {
                                   "type": "number",
+                                  "const": 3
+                                },
+                                {
+                                  "type": "number",
                                   "const": 4
                                 }
                               ]
                             },
                             "direction": {
                               "type": "string",
-                              "const": "INCREASE"
+                              "enum": [
+                                "INCREASE",
+                                "DECREASE"
+                              ]
                             }
                           },
                           "required": [
@@ -5496,13 +5503,20 @@
                               },
                               {
                                 "type": "number",
+                                "const": 3
+                              },
+                              {
+                                "type": "number",
                                 "const": 4
                               }
                             ]
                           },
                           "direction": {
                             "type": "string",
-                            "const": "INCREASE"
+                            "enum": [
+                              "INCREASE",
+                              "DECREASE"
+                            ]
                           }
                         },
                         "required": [
@@ -7559,13 +7573,20 @@
                               },
                               {
                                 "type": "number",
+                                "const": 3
+                              },
+                              {
+                                "type": "number",
                                 "const": 4
                               }
                             ]
                           },
                           "direction": {
                             "type": "string",
-                            "const": "INCREASE"
+                            "enum": [
+                              "INCREASE",
+                              "DECREASE"
+                            ]
                           }
                         },
                         "required": [

@@ -292,6 +292,10 @@
                           "type": "string",
                           "const": "VALUE_CONDITIONS_V1"
                         },
+                        "minGigProgram": {
+                          "type": "string",
+                          "const": "MIN_GIG_PROGRAM_V1"
+                        },
                         "attackingAura": {
                           "type": "string",
                           "const": "ATTACKING_AURA_V1"
@@ -876,6 +880,7 @@
                           "ATTACKING_AURA_V1",
                           "ATTACK_PREVENTION_V1",
                           "VALUE_CONDITIONS_V1",
+                          "MIN_GIG_PROGRAM_V1",
                           "ATTACK_CONDITION_POWER_V1",
                           "TARGETED_SPEND_V1",
                           "TARGETED_DEFEAT_V1",
@@ -2207,13 +2212,20 @@
                                           },
                                           {
                                             "type": "number",
+                                            "const": 3
+                                          },
+                                          {
+                                            "type": "number",
                                             "const": 4
                                           }
                                         ]
                                       },
                                       "direction": {
                                         "type": "string",
-                                        "const": "INCREASE"
+                                        "enum": [
+                                          "INCREASE",
+                                          "DECREASE"
+                                        ]
                                       }
                                     },
                                     "required": [
@@ -7155,13 +7167,20 @@
                                     },
                                     {
                                       "type": "number",
+                                      "const": 3
+                                    },
+                                    {
+                                      "type": "number",
                                       "const": 4
                                     }
                                   ]
                                 },
                                 "direction": {
                                   "type": "string",
-                                  "const": "INCREASE"
+                                  "enum": [
+                                    "INCREASE",
+                                    "DECREASE"
+                                  ]
                                 }
                               },
                               "required": [
@@ -9222,13 +9241,20 @@
                                   },
                                   {
                                     "type": "number",
+                                    "const": 3
+                                  },
+                                  {
+                                    "type": "number",
                                     "const": 4
                                   }
                                 ]
                               },
                               "direction": {
                                 "type": "string",
-                                "const": "INCREASE"
+                                "enum": [
+                                  "INCREASE",
+                                  "DECREASE"
+                                ]
                               }
                             },
                             "required": [
@@ -11285,13 +11311,20 @@
                                   },
                                   {
                                     "type": "number",
+                                    "const": 3
+                                  },
+                                  {
+                                    "type": "number",
                                     "const": 4
                                   }
                                 ]
                               },
                               "direction": {
                                 "type": "string",
-                                "const": "INCREASE"
+                                "enum": [
+                                  "INCREASE",
+                                  "DECREASE"
+                                ]
                               }
                             },
                             "required": [
@@ -13207,6 +13240,10 @@
                           "type": "string",
                           "const": "VALUE_CONDITIONS_V1"
                         },
+                        "minGigProgram": {
+                          "type": "string",
+                          "const": "MIN_GIG_PROGRAM_V1"
+                        },
                         "attackingAura": {
                           "type": "string",
                           "const": "ATTACKING_AURA_V1"
@@ -13791,6 +13828,7 @@
                           "ATTACKING_AURA_V1",
                           "ATTACK_PREVENTION_V1",
                           "VALUE_CONDITIONS_V1",
+                          "MIN_GIG_PROGRAM_V1",
                           "ATTACK_CONDITION_POWER_V1",
                           "TARGETED_SPEND_V1",
                           "TARGETED_DEFEAT_V1",
@@ -15122,13 +15160,20 @@
                                           },
                                           {
                                             "type": "number",
+                                            "const": 3
+                                          },
+                                          {
+                                            "type": "number",
                                             "const": 4
                                           }
                                         ]
                                       },
                                       "direction": {
                                         "type": "string",
-                                        "const": "INCREASE"
+                                        "enum": [
+                                          "INCREASE",
+                                          "DECREASE"
+                                        ]
                                       }
                                     },
                                     "required": [
