@@ -22,11 +22,12 @@ bump it deliberately rather than tracking the latest 22.x release implicitly.
 - **Database integration validation**: fresh PostgreSQL 16 and MongoDB 7 services,
   explicit disposable connection configuration, and the complete
   `npm run test:integration` suite with a minimum of 12 tests.
-- **AI harness validation**: Python 3.12 with only `fastapi` installed, a compile
+- **AI harness validation**: Python 3.12 with `fastapi` and `httpx` installed, a compile
   check of `games/`, `harness/` and `scripts/`, the corpus/ingestion suite
   (`test_cyberpunk.py`), the generic harness suite (`test_harness_core.py`), the
   engine-candidate bridge, community deck rules with negative controls, and the
-  Python-to-engine adapter boundary against the committed Demo matrix fixture.
+  Python-to-engine adapter boundary against the committed Demo matrix fixture,
+  and the external simulator HTTP contract (`test_sim_bot.py`, 29/29 tests).
   These steps assert exact pass lines (for example `all 89 tests passed`), so
   adding or removing a Python test also updates the expected line here.
 

@@ -4,7 +4,7 @@ A monorepo for a Cyberpunk TCG platform and its AI harness:
 
 - **Deterministic TypeScript engine** (`packages/engine`): the sole authority for rules, legality, hidden state, RNG and legal-action enumeration. It plays the fixed Arasaka-vs-Merc Demo format end to end, and all 192 games of its deterministic match matrix reach supported terminals. Further cards enter only through reviewed, immutable revisions (API admission batches V1–V6).
 - **Web platform** (`apps/web`, `packages/graphql`, `packages/persistence`): Next.js and Apollo over versioned Mongo content and a PostgreSQL command ledger. The web catalog still serves the four development fixture cards; engine-admitted revisions are exercised by tests and replays, not yet published to it.
-- **Python AI harness** (`games/`, `harness/`, `data/`): rules Q&A over the official rules and card corpus, with retrieval, a rubric-based judge and LoRA fine-tuning on Apple Silicon via MLX. For gameplay it receives public observations and engine-enumerated legal actions, and returns only an `actionId`.
+- **Python AI harness** (`games/`, `harness/`, `data/`): rules Q&A over the official rules and card corpus, with retrieval, a rubric-based judge and LoRA fine-tuning on Apple Silicon via MLX. For gameplay it receives public observations and engine-enumerated legal actions, and returns only an `actionId`. A portable [external simulator bot](docs/simulator-bot.md) implements `POST /ready` and `POST /sync` with a deterministic baseline and an asynchronous policy hook.
 
 Browser gameplay, authentication, matchmaking and WebSockets are not implemented. Working rules for both halves are in [CLAUDE.md](CLAUDE.md); the documentation index is [docs/README.md](docs/README.md).
 
@@ -36,6 +36,7 @@ Dependency direction:
 - Engine depends only on domain and Zod. Domain depends only on Zod and Node's deterministic SHA-256 primitive. Neither imports React, Next, Apollo, GraphQL, database drivers, networking, or WebSockets.
 - Training harness depends on domain and engine. It has no database or model-provider integration.
 - The Python harness reaches the engine only through the JSONL worker (`scripts/engine-worker.ts`, wrapped by `games/cyberpunk/engine_adapter.py`). Nothing under `harness/` imports from `games/`.
+- External simulator requests use `games/cyberpunk/sim_bot.py` and the simulator's own offered action IDs. That service does not run the local engine or translate the simulator's JSON into `ModelInputV2`.
 
 `npm test` checks package manifests and source imports to enforce these boundaries. Shared packages export TypeScript source and are transpiled by Next/tsx. They are private workspaces, not published libraries. The current headless runtime is Node.js; browser-only/WASM packaging would need a hashing adapter.
 
@@ -202,16 +203,33 @@ python3 -m venv mlx_env && source mlx_env/bin/activate
 pip install -r requirements.txt
 ```
 
-The offline checks need only `fastapi` from that list, no GPU and no network. CI runs all of them:
+The offline checks need `fastapi` and `httpx`, no GPU and no network after dependency installation. CI runs all of them:
 
 ```bash
+python -m pip install fastapi httpx
 python scripts/test_cyberpunk.py                       # corpus and ingestion
 python scripts/test_harness_core.py                    # harness/core
 python scripts/test_engine_candidates.py               # engine candidate bridge
 python scripts/check_deck_rules.py --negative-control  # deck rules against 272 public decks
 python scripts/test_engine_adapter.py                  # Python-to-engine boundary
+python scripts/test_sim_bot.py                         # external simulator HTTP contract
 ```
 
 `data/` is a dated snapshot of the official card API. The fetch/ingest pipeline, errata handling, deckbuilding and archetype tooling, and the rules for refreshing the snapshot are in [CLAUDE.md](CLAUDE.md), with full detail in [the original harness README](docs/ai-source/README.legacy.md).
 
 The harness was imported from `codyclark2119/cyberpunk_tcg_ai`, now archived, at its last source commit; see [the import record](docs/migration/cyberpunk_tcg_ai-import.md).
+
+### External simulator bot
+
+This service runs on Linux, macOS or Windows without MLX or a local database:
+
+```bash
+python -m pip install -r requirements-bot.txt
+python scripts/serve_sim_bot.py --port 3100 --base-path /cyberpunk
+```
+
+The simulator calls `/cyberpunk/ready` and `/cyberpunk/sync`. The initial chooser
+is a deterministic smoke-play baseline, not a trained gameplay model. It always
+selects a current offered ID on a valid acting request and acknowledges waiting
+or finished requests without choosing. See [the service guide](docs/simulator-bot.md)
+for registration, hosting, policy integration, deadlines and validation limits.
