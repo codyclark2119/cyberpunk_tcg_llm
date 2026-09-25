@@ -26,15 +26,15 @@ jobs:
     timeout-minutes: 30
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
         with:
           fetch-depth: 0
           persist-credentials: false
 
-      - name: Use Node 22
-        uses: actions/setup-node@v4
+      - name: Use Node from .nvmrc
+        uses: actions/setup-node@v7
         with:
-          node-version: 22
+          node-version-file: .nvmrc
           cache: npm
 
       - name: Test CI execution guards
@@ -69,7 +69,7 @@ jobs:
 
       - name: Preserve unit execution evidence
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: unit-tap-${{ github.run_id }}-${{ github.run_attempt }}
           path: ${{ runner.temp }}/pr-validation-unit.tap
@@ -108,14 +108,14 @@ jobs:
       TEST_MONGODB_URI: mongodb://127.0.0.1:27017
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
         with:
           persist-credentials: false
 
-      - name: Use Node 22
-        uses: actions/setup-node@v4
+      - name: Use Node from .nvmrc
+        uses: actions/setup-node@v7
         with:
-          node-version: 22
+          node-version-file: .nvmrc
           cache: npm
 
       - name: Install dependencies
@@ -131,7 +131,7 @@ jobs:
 
       - name: Preserve integration execution evidence
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: integration-tap-${{ github.run_id }}-${{ github.run_attempt }}
           path: ${{ runner.temp }}/pr-validation-integration.tap
@@ -147,20 +147,20 @@ jobs:
       PYTHONDONTWRITEBYTECODE: "1"
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
         with:
           fetch-depth: 0
           persist-credentials: false
 
       - name: Use Python 3.12
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@v7
         with:
           python-version: "3.12"
 
-      - name: Use Node 22
-        uses: actions/setup-node@v4
+      - name: Use Node from .nvmrc
+        uses: actions/setup-node@v7
         with:
-          node-version: 22
+          node-version-file: .nvmrc
           cache: npm
 
       - name: Install Python CI dependencies
@@ -208,7 +208,7 @@ jobs:
 
       - name: Preserve AI validation evidence
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: ai-validation-${{ github.run_id }}-${{ github.run_attempt }}
           path: |
