@@ -164,3 +164,8 @@ git commit -m "chore(v6): regenerate authoritative baseline" \
   -m "Regenerate wire schemas, replays, Demo matrix and dependent reviews for engine 0.4.0-api-admission-6 after replay-compatibility checks."
 
 git push origin "HEAD:$BRANCH"
+
+# Pushes made with GITHUB_TOKEN do not recursively trigger Actions workflows.
+# Explicit workflow_dispatch is the supported exception, so validate the exact
+# generated-baseline commit rather than leaving the PR red on the bootstrap SHA.
+gh workflow run pr-validation.yml --ref "$BRANCH"
