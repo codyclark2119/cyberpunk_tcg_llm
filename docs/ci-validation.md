@@ -28,6 +28,9 @@ bump it deliberately rather than tracking the latest 22.x release implicitly.
   engine-candidate bridge, community deck rules with negative controls, and the
   Python-to-engine adapter boundary against the committed Demo matrix fixture,
   and the external simulator HTTP contract (`test_sim_bot.py`, 29/29 tests).
+  The local inference boundary (`test_sim_mlx.py`, 29/29 tests) uses real Python
+  subprocesses and injected tokenizers/generators. It requires no MLX or weights;
+  actual Metal inference, latency and gameplay quality are Mac-side checks.
   These steps assert exact pass lines (for example `all 89 tests passed`), so
   adding or removing a Python test also updates the expected line here.
 

@@ -232,7 +232,7 @@ class BotService:
 
 
 def build_app(service: BotService | None = None, *, base_path: str = "",
-              max_body_bytes: int = 2 * 1024 * 1024):
+              max_body_bytes: int = 2 * 1024 * 1024, lifespan=None):
     """Build the optional FastAPI transport without loading MLX or local engine data."""
     # Lazy imports keep the existing offline corpus/engine clients lightweight.
     from fastapi import FastAPI, Request
@@ -246,7 +246,8 @@ def build_app(service: BotService | None = None, *, base_path: str = "",
         raise ValueError("max_body_bytes must be a positive integer")
     prefix = base_path.rstrip("/")
     service = service or BotService()
-    app = FastAPI(title=service.profile.name, docs_url=None, redoc_url=None, openapi_url=None)
+    app = FastAPI(title=service.profile.name, docs_url=None, redoc_url=None, openapi_url=None,
+                  lifespan=lifespan)
 
     async def read_json(request):
         data = bytearray()

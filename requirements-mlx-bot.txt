@@ -1,0 +1,5 @@
+# Native Apple Silicon Python 3.12. MLX-LM API checked against this release;
+# actual Metal performance and the resolved environment must be checked on Mac.
+-r requirements-bot.txt
+mlx-lm[train]==0.31.3
+huggingface-hub>=1.0,<2

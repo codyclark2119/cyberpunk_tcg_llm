@@ -196,6 +196,12 @@ jobs:
           python scripts/test_sim_bot.py 2>&1 | tee "$RUNNER_TEMP/ai-sim-bot.log"
           grep -q '^PASS simulator bot: 29/29$' "$RUNNER_TEMP/ai-sim-bot.log"
 
+      - name: Test local MLX worker boundary without model weights
+        run: |
+          set -euo pipefail
+          python scripts/test_sim_mlx.py 2>&1 | tee "$RUNNER_TEMP/ai-sim-mlx.log"
+          grep -q '^PASS local MLX bot: 29/29$' "$RUNNER_TEMP/ai-sim-mlx.log"
+
       - name: Validate community deck rules and negative controls
         run: |
           set -euo pipefail
@@ -224,5 +230,6 @@ jobs:
             ${{ runner.temp }}/ai-deck-rules.log
             ${{ runner.temp }}/ai-engine-adapter.log
             ${{ runner.temp }}/ai-sim-bot.log
+            ${{ runner.temp }}/ai-sim-mlx.log
           if-no-files-found: warn
           retention-days: 14
