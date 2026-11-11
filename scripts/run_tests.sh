@@ -13,14 +13,12 @@
 #   --fail-fast   stop at the first failing step (default: run every step and
 #                 report all failures at the end)
 #   --no-infra    do not run `npm run infra:up` before the integration suite;
-#                 the databases must already be reachable
+#                 the database must already be reachable
 #   --list        print step names with their tier and exit
 #   -h, --help    print this help and exit
 #
 # Environment:
 #   PYTHON              Python interpreter (default: python3, else python)
-#   TEST_DATABASE_URL   integration PostgreSQL URL; defaults to the
-#                       docker-compose service on POSTGRES_PORT (default 5432)
 #   TEST_MONGODB_URI    integration MongoDB URI; defaults to the docker-compose
 #                       service on MONGO_PORT (default 27017)
 #   RUN_TESTS_BASE      base ref for the whitespace diff check
@@ -72,7 +70,7 @@ py-assistant-tools   | quick | "$PY" scripts/test_assistant_tools.py           |
 py-assistant-decks   | quick | "$PY" scripts/test_assistant_deck_tools.py      | line:PASS assistant deck tools: 12/12
 py-assistant-loop    | quick | "$PY" scripts/test_assistant_loop.py            | line:PASS assistant loop: 16/16
 deck-rules           | full  | "$PY" scripts/check_deck_rules.py --negative-control | contains:agree:    272/272;;contains:reproduce budget AND usage exactly: 272/272;;absent:<-- LOOK
-integration          | full  | prepare_integration && npm run test:integration | tap:12
+integration          | full  | prepare_integration && npm run test:integration | tap:3
 '
 # ============================================================================
 
@@ -200,25 +198,19 @@ wait_for_url() {
 
 prepare_integration() {
   local defaulted=0
-  if [ -z "${TEST_DATABASE_URL:-}" ]; then
-    export TEST_DATABASE_URL="postgresql://postgres:postgres@127.0.0.1:${POSTGRES_PORT:-5432}/cyberpunk_tcg"
-    defaulted=1
-  fi
   if [ -z "${TEST_MONGODB_URI:-}" ]; then
     export TEST_MONGODB_URI="mongodb://127.0.0.1:${MONGO_PORT:-27017}"
     defaulted=1
   fi
-  echo "TEST_DATABASE_URL=$TEST_DATABASE_URL"
   echo "TEST_MONGODB_URI=$TEST_MONGODB_URI"
   if [ "$NO_INFRA" = 1 ]; then
     echo "--no-infra: not starting docker compose services"
   elif [ "$defaulted" = 1 ]; then
-    # docker compose up --wait blocks until both healthchecks pass.
+    # docker compose up --wait blocks until the Mongo healthcheck passes.
     npm run infra:up
   else
-    echo "both URLs set explicitly: not starting docker compose services"
+    echo "TEST_MONGODB_URI set explicitly: not starting docker compose services"
   fi
-  wait_for_url "$TEST_DATABASE_URL" 60
   wait_for_url "$TEST_MONGODB_URI" 60
 }
 

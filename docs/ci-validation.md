@@ -32,7 +32,7 @@ scripts/run_tests.sh --list          # step names and tiers
 - **Full tier**: every quick step plus the build, `git diff --check` against the
   merge-base with `origin/master` (override with `RUN_TESTS_BASE`), community deck
   rules with negative controls (272/272, and no negative control may print
-  `<-- LOOK`), and the database integration suite with at least 12 tests.
+  `<-- LOOK`), and the Mongo integration suite with at least 3 tests.
 
 By default every selected step runs and all failures are reported at the end;
 `--fail-fast` stops at the first. Exit status is 0 only when every selected step
@@ -49,7 +49,7 @@ Node suites are checked by `scripts/validation/assert-test-summary.mjs`: one com
 final TAP summary, positive test and plan counts, every test passed, and zero
 failures, cancellations, skips and todos. A nonzero command stays a failure even if it
 prints plausible output, and a skipped or empty run is never acceptance evidence. The
-integration minimum of 12 is a floor: adding tests needs no change, but reducing the
+integration minimum of 3 is a floor: adding tests needs no change, but reducing the
 suite requires reviewing the floor. The guard's own regression tests (real Node-runner
 and CLI subprocesses, the exit-zero skipped case, malformed, partial and concatenated
 logs) run as the first quick step and need no installed dependencies:
@@ -58,16 +58,16 @@ logs) run as the first quick step and need no installed dependencies:
 node --test scripts/validation/*.test.mjs
 ```
 
-## Docker and the integration databases
+## Docker and the integration database
 
-Only the full tier's integration step needs databases. When `TEST_DATABASE_URL` or
-`TEST_MONGODB_URI` is unset, it points the missing one at the `docker-compose.yml`
-service on `POSTGRES_PORT` (default 5432) or `MONGO_PORT` (default 27017) and runs
-`npm run infra:up` (`docker compose up -d --wait`, PostgreSQL 16 and MongoDB 7). When
-both URLs are set, or with `--no-infra`, it starts nothing and waits for the databases
-to be reachable. So a machine without Docker can run the quick tier, single steps, or
-the full tier with `--no-infra` against databases it already has. Integration tests create and remove randomized
-databases and schemas; the credentials belong only to disposable test databases.
+Only the full tier's integration step needs a database. When `TEST_MONGODB_URI` is
+unset, it points it at the `docker-compose.yml` service on `MONGO_PORT` (default 27017)
+and runs `npm run infra:up` (`docker compose up -d --wait`, MongoDB 7). When the URI is
+set, or with `--no-infra`, it starts nothing and waits for the database to be
+reachable. So a machine without Docker can run the quick tier, single steps, or the
+full tier with `--no-infra` against a Mongo it already has. Integration tests create
+and remove randomized databases. PostgreSQL and its integration tests were retired on
+2026-11-11 (see the README); the floor dropped from 12 to 3 with them.
 
 ## Pre-push hook
 
@@ -87,7 +87,7 @@ an action id only; the command line is built server-side from a fixed allowlist.
 
 `.github/workflows/manual-validation.yml` has only a `workflow_dispatch` trigger, with
 a `tier` input (`quick`, the default, or `full`). Its one job on `ubuntu-latest`
-starts PostgreSQL 16 and MongoDB 7 service containers, sets up Node from `.nvmrc` and
+starts a MongoDB 7 service container, sets up Node from `.nvmrc` and
 Python 3.12, installs `fastapi` and `httpx`, runs `npm ci`, then
 `scripts/run_tests.sh --no-infra` (plus `--quick` for the quick tier). The step logs
 are uploaded on success and failure and kept for 14 days. The workflow contains no
