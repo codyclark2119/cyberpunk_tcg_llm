@@ -7,9 +7,9 @@ rules, legal actions and transitions; each seat's policy (the deterministic
 ``baseline`` or a local ``mlx`` model) only picks one engine-offered actionId.
 
 Each match is written as a JSONL record under local/matches/ (gitignored): a
-match header with seed, decks and engine identity, one row per decision with
-the offered count, chosen actionId, selection reason and elapsed ms, and a
-result row. The local play UI (scripts/play_local.py) reads those records and
+match header with seed, decks, engine identity and each seat's decision budget,
+one row per decision with the offered count, chosen actionId, selection reason,
+failure code (error) and elapsed ms, and a result row. The local play UI (scripts/play_local.py) reads those records and
 can launch this script as its bot-vs-bot job.
 
 Decks and format are whatever the engine's createGame accepts. By default the
@@ -19,7 +19,10 @@ anything else. Match i uses seed <--seed>-<i>; with two baseline seats the same
 seed always replays the same game.
 
 An mlx seat needs native arm64 Python on Apple Silicon and a downloaded model
-(see docs/local-mlx-bot.md). Nothing here downloads, fetches or serves.
+(see docs/local-mlx-bot.md). Its per-decision budget is --budget-ms (default
+10,000 ms; docs/local-time-budget.md): local play has no external deadline, so
+the budget only bounds how long a seat may think before the baseline answers.
+Nothing here downloads, fetches or serves.
 """
 
 from __future__ import annotations
@@ -39,21 +42,24 @@ from games.cyberpunk.engine_adapter import EngineWorker
 from games.cyberpunk.local_match import (DEFAULT_MAX_DECISIONS, DEFAULT_MAX_TURNS, DEFAULT_OUTPUT_DIR,
                                          load_default_setup, load_setup_file, play_match, summarize,
                                          write_match_record)
-from games.cyberpunk.sim_bot import PolicyRunner
-from games.cyberpunk.sim_mlx import DEFAULT_MODEL, MLXPolicy, make_worker
+from games.cyberpunk.sim_bot import DEFAULT_DECISION_BUDGET_MS, PolicyRunner, check_budget_ms
+from games.cyberpunk.sim_mlx import DEFAULT_MODEL, MLXPolicy, make_worker, watchdog_seconds
 
 POLICIES = ("baseline", "mlx")
 
 
 async def run(args, setup):
-    worker = None
+    worker = policy = None
     if "mlx" in args.policy:
-        worker = make_worker(args.model, adapter=args.adapter)
+        worker = make_worker(args.model, adapter=args.adapter,
+                             response_timeout=watchdog_seconds(args.budget_ms))
         print("Loading and warming the local model...", file=sys.stderr)
         await worker.start()
+        # One policy for both seats: they share the worker and its restart allowance.
+        policy = MLXPolicy(worker)
     try:
-        runners = [PolicyRunner(MLXPolicy(worker)) if name == "mlx" else PolicyRunner()
-                   for name in args.policy]
+        runners = [PolicyRunner(policy, max_decision_ms=args.budget_ms) if name == "mlx"
+                   else PolicyRunner(max_decision_ms=args.budget_ms) for name in args.policy]
         records = []
         with EngineWorker(REPO_ROOT, node=args.node) as engine:
             for index in range(args.matches):
@@ -71,7 +77,7 @@ async def run(args, setup):
             await worker.close()
     summary = summarize(records)
     print(json.dumps({"setupSource": setup.source, "engine": dict(setup.engine),
-                      "policies": list(args.policy), **summary}, indent=2))
+                      "policies": list(args.policy), "budgetMs": args.budget_ms, **summary}, indent=2))
     return 0 if summary["statuses"].get("engine_error", 0) == 0 else 1
 
 
@@ -86,12 +92,18 @@ def main():
     parser.add_argument("--force", action="store_true", help="replace existing match records")
     parser.add_argument("--max-decisions", type=int, default=DEFAULT_MAX_DECISIONS)
     parser.add_argument("--max-turns", type=int, default=DEFAULT_MAX_TURNS)
+    parser.add_argument("--budget-ms", type=int, default=DEFAULT_DECISION_BUDGET_MS,
+                        help=f"per-decision budget for an mlx seat (default {DEFAULT_DECISION_BUDGET_MS})")
     parser.add_argument("--model", default=DEFAULT_MODEL, help="local model for an mlx seat")
     parser.add_argument("--adapter", help="optional LoRA adapter for an mlx seat")
     parser.add_argument("--node", default="node")
     args = parser.parse_args()
     if args.matches < 1 or args.max_decisions < 1 or args.max_turns < 0:
         parser.error("--matches and --max-decisions must be positive, --max-turns nonnegative")
+    try:
+        check_budget_ms(args.budget_ms)
+    except ValueError as exc:
+        parser.error(f"--budget-ms: {exc}")
     if "mlx" in args.policy and (platform.system() != "Darwin" or platform.machine() != "arm64"):
         parser.error("An mlx seat requires native arm64 Python on Apple Silicon macOS")
     if not args.output_dir.is_absolute():

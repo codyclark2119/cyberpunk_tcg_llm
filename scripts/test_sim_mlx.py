@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 """Portable regression tests for local MLX orchestration, without model weights.
 
-Real subprocesses exercise deadlines, cancellation, busy handling, protocol faults
-and shutdown. Injected tokenizers/generators cover prompt limits and output parsing.
+Real subprocesses exercise deadlines, late answers after a timeout, cancellation,
+busy handling, restarts, protocol faults and shutdown. Injected tokenizers/generators cover prompt limits and output parsing.
 These tests do not claim that Metal inference or gameplay strength was measured.
 """
 
@@ -28,7 +28,7 @@ sys.path.insert(0, str(REPO_ROOT))
 sys.path.insert(0, str(REPO_ROOT / "scripts"))
 
 from games.cyberpunk.sim_bot import Decision, PolicyRunner
-from games.cyberpunk.sim_mlx import MLXPolicy, local_path, make_worker
+from games.cyberpunk.sim_mlx import MLXPolicy, local_path, make_worker, watchdog_seconds
 from games.cyberpunk.sim_prompt import build_choice_messages, parse_choice
 from harness.core.local_worker import LocalWorker, MAX_LINE_BYTES, PROTOCOL, WorkerError
 from benchmark_sim_bot import measure, summarize
@@ -44,10 +44,22 @@ def fake_worker(mode):
         emit({"event": "ready", "ok": False})
         return
     emit({"event": "ready", "ok": True})
+    marker = os.environ.get("FAKE_WORKER_MARKER")
+    if mode == "crash_once" and marker and os.path.exists(marker):
+        mode = "good"  # The restarted process behaves.
     for line in sys.stdin:
         message = json.loads(line)
-        if mode == "crash":
+        if mode == "crash" or mode == "crash_once":
+            if marker:
+                Path(marker).touch()
             return
+        if mode == "late_first":
+            # Request 1 answers choice 0 after the budget; every later one answers choice 1.
+            if message["id"] == 1:
+                time.sleep(0.3)
+            emit({"id": message["id"], "ok": True,
+                  "text": '{"choice":0}' if message["id"] == 1 else '{"choice":1}'})
+            continue
         if mode == "hang":
             time.sleep(20)
         if mode == "slow" or (mode == "slow_first" and message["id"] == 1):
@@ -162,31 +174,95 @@ async def test_action_mapping_is_request_local_across_reordering():
         assert (await runner.choose(body(match_id="other", legal_actions=actions))).action_id == "fresh-next-match"
 
 
-async def test_deadline_returns_fallback_and_drains_late_reply_before_reuse():
-    async with running("slow_first") as worker:
-        runner = PolicyRunner(MLXPolicy(worker))
-        result = await runner.choose(body(deadline_ms=30))
-        assert result.action_id == "smoke-roll" and worker.busy
-        # While the GPU is busy, another match falls back without queueing.
-        other = body(match_id="other", legal_actions=[{"actionId": "fresh-a"}, {"actionId": "fresh-b"}])
-        assert (await runner.choose(other)).action_id == "fresh-a"
-        assert worker._serial == 1
-        await worker.wait_idle()
-        assert (await runner.choose(other)).action_id == "fresh-b"
-        assert worker._serial == 2
+def fresh(n):
+    return body(request_id=f"fresh-{n}", sequence=n + 1,
+                legal_actions=[{"actionId": f"fresh-{n}-a"}, {"actionId": f"fresh-{n}-b"}])
 
 
-async def test_caller_cancellation_preserves_worker_until_response_drained():
+async def test_one_slow_answer_costs_one_timeout_then_model_choices_not_a_cascade():
+    # The 2026-11-11 Mac run: one timeout was followed by a run of worker_busy fallbacks.
     async with running("slow_first") as worker:
+        runner = PolicyRunner(MLXPolicy(worker), max_decision_ms=100)
+        first = await runner.choose(body())
+        assert (first.action_id, first.reason, first.error) == ("smoke-roll", "timeout_fallback", "timeout")
+        assert worker.busy  # Still generating the late answer.
+        later = [await runner.choose(fresh(n)) for n in range(4)]
+        assert [s.reason for s in later] == ["policy"] * 4 and all(s.error is None for s in later), later
+        assert [s.action_id for s in later] == [f"fresh-{n}-b" for n in range(4)]
+        assert worker._serial == 5 and worker.late_replies_discarded == 1
+
+
+async def test_late_answer_is_never_applied_to_the_next_decision():
+    async with running("late_first") as worker:
+        runner = PolicyRunner(MLXPolicy(worker), max_decision_ms=100)
+        assert (await runner.choose(body())).reason == "timeout_fallback"
+        # Request 1's late reply says choice 0; the next decision must get its own (choice 1).
+        nxt = await runner.choose(fresh(0))
+        assert (nxt.action_id, nxt.reason) == ("fresh-0-b", "policy")
+        assert worker.last_reply["id"] == 2 and worker.late_replies_discarded == 1
+
+
+async def test_request_after_abandoned_exchange_waits_and_gets_its_own_reply():
+    # Without the policy's prepare step, the worker itself drains the abandoned exchange.
+    async with running("late_first") as worker:
         task = asyncio.create_task(worker.request({"messages": []}))
         while not worker.busy:
             await asyncio.sleep(0)
         task.cancel()
         await expect_error(task, asyncio.CancelledError)
         assert worker.busy and worker.available
-        await expect_error(worker.request({"messages": []}))
-        await worker.wait_idle()
-        assert (await worker.request({"messages": []}))["id"] == 2
+        reply = await worker.request({"messages": []})
+        assert reply["id"] == 2 and reply["text"] == '{"choice":1}'
+        assert worker.late_replies_discarded == 1
+
+
+async def test_dead_worker_restarts_once_per_match_and_is_recorded():
+    with tempfile.TemporaryDirectory() as directory:
+        os.environ["FAKE_WORKER_MARKER"] = str(Path(directory) / "crashed")
+        try:
+            async with running("crash_once") as worker:
+                policy = MLXPolicy(worker)
+                runner = PolicyRunner(policy)
+                runner.begin_match()
+                first = await runner.choose(body())
+                assert (first.reason, first.error, first.worker_event) == (
+                    "policy_error_fallback", "worker_unavailable", None)
+                second = await runner.choose(body())
+                assert (second.reason, second.error, second.worker_event) == ("policy", None, "worker_restarted")
+                assert worker.restarts == 1 and worker._serial == 2
+        finally:
+            del os.environ["FAKE_WORKER_MARKER"]
+    async with running("crash") as worker:
+        runner = PolicyRunner(MLXPolicy(worker))
+        runner.begin_match()
+        events = [await runner.choose(body()) for _ in range(3)]
+        assert [s.worker_event for s in events] == [None, "worker_restarted", None]
+        assert all(s.reason == "policy_error_fallback" for s in events)
+        assert [s.error for s in events] == ["worker_unavailable"] * 3
+        assert worker.restarts == 1
+        runner.begin_match()  # A new match gets one more restart.
+        assert (await runner.choose(body())).worker_event == "worker_restarted" and worker.restarts == 2
+
+
+async def test_failure_codes_name_why_each_fallback_happened():
+    async with running("invalid") as worker:
+        assert (await PolicyRunner(MLXPolicy(worker)).choose(body())).error == "invalid_output"
+    async with running("error") as worker:
+        assert (await PolicyRunner(MLXPolicy(worker)).choose(body())).error == "prompt_too_large"
+    async with running("slow") as worker:
+        # Two live callers still never queue on one worker: the second is told it is busy.
+        policy = MLXPolicy(worker)
+        a, b = await asyncio.gather(PolicyRunner(policy).choose(body()),
+                                    PolicyRunner(policy).choose(fresh(0)))
+        assert {a.error, b.error} == {None, "worker_busy"}
+    async with running() as worker:
+        await worker.close()
+        selection = await PolicyRunner(MLXPolicy(worker)).choose(body())
+        assert (selection.error, selection.worker_event) == ("worker_unavailable", None)
+
+
+async def test_watchdog_follows_the_budget():
+    assert watchdog_seconds(10_000) == 30.0 and watchdog_seconds(20_000) == 60.0
 
 
 async def test_parallel_calls_never_queue_multiple_generations():
@@ -372,6 +448,7 @@ async def test_benchmark_separates_model_decisions_from_fast_fallbacks():
         summary = summarize(rows)
         assert summary["fallbacks"] == 2 and not summary["allModelDecisions"]
         assert all(row["selection"] == "timeout_fallback" and row["inferenceMs"] == 170 for row in rows)
+        assert all(row["error"] == "timeout" for row in rows) and summary["errors"] == {"timeout": 2}
         assert "snapshot" not in json.dumps(rows) and "text" not in json.dumps(rows)
 
 
@@ -380,6 +457,15 @@ async def test_benchmark_does_not_reuse_metrics_when_deadline_already_expired():
         rows = await measure(worker, [body(), body(deadline_ms=0.000001)], 1)
         assert rows[0]["promptTokens"] == 123
         assert rows[1]["selection"] == "deadline_fallback" and "promptTokens" not in rows[1]
+        assert rows[1]["error"] == "deadline_exceeded" and rows[0]["error"] is None
+
+
+async def test_benchmark_budget_is_configurable():
+    async with running("slow") as worker:
+        rows = await measure(worker, [body(deadline_ms=None)], 1, budget_ms=60)
+        assert rows[0]["selection"] == "timeout_fallback"
+        rows = await measure(worker, [body(deadline_ms=None)], 1, budget_ms=2000)
+        assert rows[0]["selection"] == "policy"
 
 
 async def run_tests():

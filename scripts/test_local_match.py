@@ -25,7 +25,7 @@ sys.path.insert(0, str(REPO_ROOT))
 from games.cyberpunk.engine_adapter import EngineWorker
 from games.cyberpunk.local_match import (MatchSetup, load_default_setup, load_setup_file, play_match,
                                          summarize, write_match_record)
-from games.cyberpunk.sim_bot import PolicyRunner, baseline_action_id
+from games.cyberpunk.sim_bot import DEFAULT_DECISION_BUDGET_MS, PolicyRunner, baseline_action_id
 
 FORBIDDEN_KEYS = ("actorId", "choiceId", "optionIndices", "cardInstanceId", "sourceInstanceId", "rng")
 CTX: dict = {}
@@ -158,6 +158,50 @@ async def test_failing_and_slow_policies_fall_back():
                          ["mlx", "mlx"], max_decisions=12)
     reasons = {row["seat"]: row["reason"] for row in rows[1:-1]}
     assert reasons == {0: "policy_error_fallback", 1: "timeout_fallback"}, reasons
+    # Each fallback says why, next to the reason, and the result row counts them.
+    errors = {row["seat"]: row["error"] for row in rows[1:-1]}
+    assert errors == {0: "policy_error", 1: "timeout"}, errors
+    counts = {"policy_error": sum(1 for row in rows[1:-1] if row["seat"] == 0),
+              "timeout": sum(1 for row in rows[1:-1] if row["seat"] == 1)}
+    assert rows[-1]["errors"] == counts and rows[-1]["workerRestarts"] == 0
+    assert summarize([rows])["errors"] == counts and summarize([rows])["workerRestarts"] == 0
+
+
+async def test_budget_is_configurable_and_recorded_in_the_header():
+    async def first(decision):
+        return decision.legal_actions[0]["actionId"]
+
+    rows, _ = await play(CTX["setup"].for_seed("test-budget"),
+                         [PolicyRunner(), PolicyRunner(first, max_decision_ms=1234)],
+                         ["baseline", "mlx"], max_decisions=4)
+    header = rows[0]
+    assert header["schemaVersion"] == 2 and header["budgetMs"] == 1234
+    assert header["seats"] == [{"seat": 0, "policy": "baseline", "budgetMs": None},
+                               {"seat": 1, "policy": "mlx", "budgetMs": 1234}]
+    rows, _ = await play(CTX["setup"].for_seed("test-budget-default"), [PolicyRunner(first), PolicyRunner(first)],
+                         ["mlx", "mlx"], max_decisions=2)
+    assert rows[0]["budgetMs"] == DEFAULT_DECISION_BUDGET_MS
+    assert all(row["error"] is None and row["workerEvent"] is None for row in rows[1:-1])
+
+
+async def test_slow_seat_times_out_once_then_its_choices_apply():
+    # A policy that blows the budget once (the late answer is dropped) and then answers.
+    calls = []
+
+    async def slow_once(decision):
+        calls.append(decision.request_id)
+        if len(calls) == 1:
+            await asyncio.sleep(0.5)
+        return decision.legal_actions[-1]["actionId"]
+
+    rows, offered = await play(CTX["setup"].for_seed("test-slow-once"),
+                               [PolicyRunner(), PolicyRunner(slow_once, max_decision_ms=100)],
+                               ["baseline", "mlx"], max_decisions=40)
+    seat1 = [(row, d) for row, d in zip(rows[1:-1], offered) if row["seat"] == 1]
+    assert len(seat1) > 2
+    assert [row["reason"] for row, _ in seat1] == ["timeout_fallback"] + ["policy"] * (len(seat1) - 1)
+    assert seat1[0][0]["error"] == "timeout"
+    assert all(row["actionId"] == d.legal_actions[-1]["actionId"] for row, d in seat1[1:])
 
 
 async def test_turn_cap_and_engine_errors_end_with_a_result_row():
@@ -188,7 +232,8 @@ async def test_record_round_trips_without_hidden_state():
     assert header["engine"] == dict(CTX["setup"].engine) and header["seed"] == "test-local-match"
     assert header["decks"] == CTX["setup"].initialization["decks"]
     assert set(rows[1]) == {"kind", "index", "turn", "step", "seat", "playerId", "policy", "offered",
-                            "actionId", "label", "reason", "elapsedMs", "stateHash"}
+                            "actionId", "label", "reason", "error", "workerEvent", "elapsedMs",
+                            "stateHash"}
     text = "\n".join(json.dumps(row) for row in rows)
     for key in (*FORBIDDEN_KEYS, "state", "events", "hand"):
         assert f'"{key}"' not in text, key

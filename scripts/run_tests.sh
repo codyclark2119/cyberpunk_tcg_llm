@@ -61,10 +61,10 @@ py-compile           | quick | "$PY" -m compileall -q games harness scripts    |
 py-cyberpunk         | quick | "$PY" scripts/test_cyberpunk.py                 | line:all 89 tests passed
 py-harness-core      | quick | "$PY" scripts/test_harness_core.py              | line:48 tests passed
 py-engine-candidates | quick | "$PY" scripts/test_engine_candidates.py         | line:PASS 3/3
-py-sim-bot           | quick | "$PY" scripts/test_sim_bot.py                   | line:PASS policy layer: 24/24
-py-sim-mlx           | quick | "$PY" scripts/test_sim_mlx.py                   | line:PASS local MLX bot: 27/27
+py-sim-bot           | quick | "$PY" scripts/test_sim_bot.py                   | line:PASS policy layer: 27/27
+py-sim-mlx           | quick | "$PY" scripts/test_sim_mlx.py                   | line:PASS local MLX bot: 32/32
 py-engine-adapter    | quick | "$PY" scripts/test_engine_adapter.py --app-root . | -
-py-local-match       | quick | "$PY" scripts/test_local_match.py               | line:PASS local match runner: 12/12
+py-local-match       | quick | "$PY" scripts/test_local_match.py               | line:PASS local match runner: 14/14
 py-validation-console| quick | "$PY" scripts/test_validation_console.py        | line:PASS validation console: 8/8
 py-play-app          | quick | "$PY" scripts/test_play_app.py                  | line:PASS local play UI: 12/12
 py-assistant-tools   | quick | "$PY" scripts/test_assistant_tools.py           | line:PASS assistant tools: 14/14

@@ -9,8 +9,10 @@ the local model to choose in each. That is a timing and protocol measurement,
 not a gameplay strength evaluation. Pass --requests with JSONL of decision
 records (camelCase Decision fields, such as requestId, playerId, legalActions;
 other keys are ignored) to measure saved positions instead.
-Reports contain timing, selection source and token counts, never prompts/snapshots
-or generated text. No network connection or model download occurs here.
+The per-decision budget is --budget-ms (default 10,000 ms, the local-play
+default; docs/local-time-budget.md); pass a smaller one to see how many
+positions a tighter budget would lose. Reports contain timing, selection
+source, failure code and token counts, never prompts/snapshots or generated text. No network connection or model download occurs here.
 """
 
 from __future__ import annotations
@@ -31,8 +33,9 @@ sys.path.insert(0, str(REPO_ROOT))
 
 from games.cyberpunk.engine_adapter import EngineWorker
 from games.cyberpunk.local_match import load_default_setup, play_match
-from games.cyberpunk.sim_bot import PolicyRunner, decision_from_record
-from games.cyberpunk.sim_mlx import DEFAULT_MODEL, MLXPolicy, local_path, make_worker
+from games.cyberpunk.sim_bot import (DEFAULT_DECISION_BUDGET_MS, PolicyRunner, check_budget_ms,
+                                     decision_from_record)
+from games.cyberpunk.sim_mlx import DEFAULT_MODEL, MLXPolicy, local_path, make_worker, watchdog_seconds
 from games.cyberpunk.sim_prompt import PROMPT_VERSION
 from harness.core.io import read_jsonl, write_jsonl_atomic
 
@@ -62,17 +65,18 @@ async def engine_decisions(args):
 def summarize(rows):
     times = sorted(row["elapsedMs"] for row in rows)
     selections = dict(collections.Counter(row["selection"] for row in rows))
+    errors = dict(collections.Counter(row["error"] for row in rows if row.get("error")))
     def percentile(fraction):
         return times[max(0, math.ceil(len(times) * fraction) - 1)]
-    return {"kind": "summary", "decisions": len(rows), "selections": selections,
+    return {"kind": "summary", "decisions": len(rows), "selections": selections, "errors": errors,
             "modelDecisions": selections.get("policy", 0),
             "fallbacks": len(rows) - selections.get("policy", 0),
             "p50Ms": percentile(0.5), "p95Ms": percentile(0.95), "maxMs": times[-1],
             "allModelDecisions": selections.get("policy", 0) == len(rows)}
 
 
-async def measure(worker, decisions, repeat):
-    runner = PolicyRunner(MLXPolicy(worker))
+async def measure(worker, decisions, repeat, budget_ms=DEFAULT_DECISION_BUDGET_MS):
+    runner = PolicyRunner(MLXPolicy(worker), max_decision_ms=budget_ms)
     rows = []
     for iteration in range(repeat):
         for index, decision in enumerate(decisions):
@@ -81,7 +85,8 @@ async def measure(worker, decisions, repeat):
             worker.last_reply = None
             selection = await runner.choose(decision)
             row = {"kind": "decision", "case": index, "repeat": iteration,
-                   "selection": selection.reason, "elapsedMs": selection.elapsed_ms}
+                   "selection": selection.reason, "error": selection.error,
+                   "elapsedMs": selection.elapsed_ms}
             # A model timeout is already recorded. Drain its bounded exchange so
             # later cases measure inference instead of inheriting a busy slot.
             await worker.wait_idle()
@@ -106,13 +111,14 @@ async def run(args):
     if not decisions:
         raise ValueError("Benchmark requires at least one valid decision record.")
     worker = make_worker(args.model, adapter=args.adapter,
-                         max_prompt_tokens=args.max_prompt_tokens, max_tokens=args.max_tokens)
+                         max_prompt_tokens=args.max_prompt_tokens, max_tokens=args.max_tokens,
+                         response_timeout=watchdog_seconds(args.budget_ms))
     try:
         print("Loading and warming the local model...", file=sys.stderr)
         started = time.monotonic()
         await worker.start()
         startup_ms = round((time.monotonic() - started) * 1000, 2)
-        rows = await measure(worker, decisions, args.repeat)
+        rows = await measure(worker, decisions, args.repeat, args.budget_ms)
     finally:
         await worker.close()
     metadata = {"kind": "metadata", "promptVersion": PROMPT_VERSION,
@@ -123,7 +129,7 @@ async def run(args):
                 "model": str(local_path(args.model)),
                 "adapter": str(local_path(args.adapter)) if args.adapter else None,
                 "maxPromptTokens": args.max_prompt_tokens, "maxTokens": args.max_tokens,
-                "serviceBudgetMs": PolicyRunner().max_decision_ms, "startupMs": startup_ms,
+                "serviceBudgetMs": args.budget_ms, "startupMs": startup_ms,
                 "platform": platform.platform(), "pythonVersion": platform.python_version(),
                 "mlxVersion": worker.ready_info.get("mlxVersion"),
                 "mlxLMVersion": worker.ready_info.get("mlxLMVersion")}
@@ -146,10 +152,16 @@ def main():
     parser.add_argument("--positions", type=int, default=20, help="engine positions to measure")
     parser.add_argument("--seed", default="benchmark", help="match seed prefix; match i uses <seed>-<i>")
     parser.add_argument("--repeat", type=int, default=5)
+    parser.add_argument("--budget-ms", type=int, default=DEFAULT_DECISION_BUDGET_MS,
+                        help=f"per-decision budget (default {DEFAULT_DECISION_BUDGET_MS})")
     parser.add_argument("--output", help="Write a new JSONL report; existing reports are never overwritten")
     args = parser.parse_args()
     if args.repeat < 1 or args.matches < 1 or args.positions < 1:
         parser.error("--repeat, --matches and --positions must be positive")
+    try:
+        check_budget_ms(args.budget_ms)
+    except ValueError as exc:
+        parser.error(f"--budget-ms: {exc}")
     if args.output and local_path(args.output).exists():
         parser.error("--output already exists; choose a new report name")
     if platform.system() != "Darwin" or platform.machine() != "arm64":

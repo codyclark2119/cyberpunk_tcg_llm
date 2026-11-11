@@ -50,6 +50,11 @@ match ends.
 The bot seat moves through `PolicyRunner`, with the usual fallbacks. An `mlx`
 bot shares one local MLX worker per server, started on first use.
 
+Update 2026-11-11 ([local-time-budget.md](local-time-budget.md)): both the play
+form and the bot-vs-bot form have a "Bot budget ms" field (default 10,000 ms),
+recorded in the match header, and the record viewer shows each decision's failure
+code (`error`) and any worker restart next to its reason.
+
 ## Records
 
 Human matches write the same JSONL as the runner (`local/matches/<seed>.jsonl`).

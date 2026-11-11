@@ -30,7 +30,7 @@ from fastapi.testclient import TestClient
 
 from games.cyberpunk.local_match import load_default_setup
 from games.cyberpunk.play_app import HUMAN_REASON, PLAY_HTML, build_play_app, is_loopback, mlx_available
-from games.cyberpunk.sim_bot import baseline_action_id
+from games.cyberpunk.sim_bot import DEFAULT_DECISION_BUDGET_MS, baseline_action_id
 
 FORBIDDEN_KEYS = ("actorId", "choiceId", "optionIndices", "cardInstanceId", "sourceInstanceId", "rng",
                   "objects", "turnHistory", "zones")
@@ -58,6 +58,9 @@ def test_page_is_the_play_ui_and_self_contained():
     # No CDN or remote asset: the page must work offline.
     assert not re.search(r"""(src|href)\s*=\s*["']?(https?:)?//""", PLAY_HTML)
     assert "<script src" not in PLAY_HTML and "@import" not in PLAY_HTML
+    # Bot settings carry the decision budget; the viewer shows each fallback's failure code.
+    assert 'id="pBudget"' in PLAY_HTML and 'id="bBudget"' in PLAY_HTML
+    assert 'kv("Error", d.error)' in PLAY_HTML and '"Reason", "Error", "ms"' in PLAY_HTML
 
 
 def test_page_javascript_actually_parses():
@@ -74,8 +77,10 @@ def test_config_and_bad_requests_are_refused():
     config = client().get("/api/play/config").json()
     assert config["policies"] == (["baseline", "mlx"] if mlx_available() else ["baseline"])
     assert config["botAction"] == "local-matches" and config["live"] == []
+    assert config["budgetMs"] == DEFAULT_DECISION_BUDGET_MS
     bad = [{"seat": 2}, {"seat": True}, {"seed": "../escape"}, {"seed": "a b"}, {"policy": "remote"},
-           {"maxTurns": -1}, {"maxDecisions": "9"}, {"setup": "/no/such/file.json"}, {"setup": "README.md"}]
+           {"maxTurns": -1}, {"maxDecisions": "9"}, {"setup": "/no/such/file.json"}, {"setup": "README.md"},
+           {"budgetMs": 0}, {"budgetMs": "1000"}, {"budgetMs": 1.5}, {"budgetMs": 600_001}]
     if not mlx_available():
         bad.append({"policy": "mlx"})
     for payload in bad:
@@ -89,7 +94,8 @@ def test_config_and_bad_requests_are_refused():
 
 def test_start_lets_the_bot_move_until_the_human_decides():
     for seat in (0, 1):
-        view = start(f"play-start-{seat}", seat=seat)
+        view = start(f"play-start-{seat}", seat=seat, **({"budgetMs": 2500} if seat else {}))
+        assert view["botBudgetMs"] == (2500 if seat else DEFAULT_DECISION_BUDGET_MS)
         assert view["status"] == "live" and view["humanSeat"] == seat and view["yourTurn"], view["status"]
         assert view["observation"]["viewerSeat"] == seat and view["observation"]["actingSeat"] == seat
         assert view["actions"] and all(a["actionId"] and a["label"] for a in view["actions"])
@@ -164,10 +170,15 @@ def test_abandon_writes_the_record_and_closes_the_worker():
     rows = [json.loads(line) for line in (CTX["records"] / "play-start-1.jsonl").read_text().splitlines()]
     header, decisions, final = rows[0], rows[1:-1], rows[-1]
     assert header["kind"] == "match" and header["seed"] == "play-start-1"
-    assert header["seats"] == [{"seat": 0, "policy": "baseline"}, {"seat": 1, "policy": "human"}]
+    # Neither seat runs a timed policy (baseline bot, human), so no budget applies.
+    assert header["seats"] == [{"seat": 0, "policy": "baseline", "budgetMs": None},
+                               {"seat": 1, "policy": "human", "budgetMs": None}]
+    assert header["budgetMs"] is None
     assert final["kind"] == "result" and final["status"] == "abandoned" and final["decisions"] == len(decisions)
     assert set(decisions[0]) == {"kind", "index", "turn", "step", "seat", "playerId", "policy", "offered",
-                                 "actionId", "label", "reason", "elapsedMs", "stateHash"}
+                                 "actionId", "label", "reason", "error", "workerEvent", "elapsedMs",
+                                 "stateHash"}
+    assert all(r["error"] is None for r in decisions) and final["errors"] == {}
     assert [r["index"] for r in decisions] == list(range(len(decisions)))
     assert final["selections"]["human"] == sum(1 for r in decisions if r["seat"] == 1)
     assert final["finalStateHash"] == decisions[-1]["stateHash"]
@@ -210,7 +221,9 @@ def test_bot_vs_bot_runs_only_through_the_allowlisted_runner():
     assert action["id"] == "local-matches" and "cmd" not in action
     runner = CTX["app"].state.runner
     cmd = runner.build_cmd(runner.actions_by_id["local-matches"],
-                           {"--matches": 2, "--seed": "s", "seat0": "baseline", "seat1": "mlx", "--force": True})
+                           {"--matches": 2, "--seed": "s", "seat0": "baseline", "seat1": "mlx", "--force": True,
+                            "--budget-ms": 4000})
+    assert cmd[cmd.index("--budget-ms") + 1] == "4000"
     assert cmd[1] == "scripts/run_local_matches.py"
     assert cmd[cmd.index("--policy"):cmd.index("--policy") + 3] == ["--policy", "baseline", "mlx"]
     assert cmd[cmd.index("--output-dir") + 1] == str(CTX["records"]) and "--force" in cmd
@@ -218,7 +231,7 @@ def test_bot_vs_bot_runs_only_through_the_allowlisted_runner():
                          json={"values": {"seat0": "rm -rf"}}).status_code == 400
     assert client().post("/api/run/anything-else", json={}).status_code == 400
     started = client().post("/api/run/local-matches", json={"values": {
-        "--matches": 1, "--seed": "bots", "--max-decisions": 12}})
+        "--matches": 1, "--seed": "bots", "--max-decisions": 12, "--budget-ms": 4000}})
     assert started.status_code == 200, started.text
     job = started.json()["job"]
     assert client().post("/api/run/local-matches", json={"values": {}}).status_code == 409

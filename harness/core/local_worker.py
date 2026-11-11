@@ -1,9 +1,15 @@
 """Bounded asynchronous JSONL client for one local inference subprocess.
 
-One exchange may be active. Cancelling its caller leaves the exchange draining
-in the background; the next caller fails fast until that response is consumed.
-This avoids stale replies, queued GPU work, and reloading weights on every game
-deadline. A separate hard watchdog stops a wedged worker. No game imports.
+One exchange may be active. Cancelling its caller (a decision timeout) leaves
+the exchange running in the background as an *abandoned* exchange: it still
+reads its own reply, matched by request id, and that late reply is discarded.
+The next request waits for an abandoned exchange to finish before it writes
+anything, so a timeout costs one decision instead of failing every request
+until the GPU is free (the 2026-11-11 Mac cascade; docs/local-time-budget.md).
+Two *live* callers still never queue: the second fails fast with worker_busy.
+Ids increase across restarts, so a stale reply can never match a later request.
+A separate hard watchdog stops a wedged worker; ``restart`` relaunches it.
+No game imports.
 """
 
 from __future__ import annotations
@@ -22,6 +28,10 @@ MAX_LINE_BYTES = 2 * 1024 * 1024
 class WorkerError(RuntimeError):
     """A safe machine-readable reason; never contains prompts/model output."""
 
+    @property
+    def code(self) -> str:
+        return str(self.args[0]) if self.args else "worker_error"
+
 
 class LocalWorker:
     def __init__(self, command: Sequence[str], *, cwd: Path,
@@ -37,7 +47,11 @@ class LocalWorker:
         self.response_timeout = response_timeout
         self.process: asyncio.subprocess.Process | None = None
         self._active: asyncio.Task | None = None
+        self._abandoned: asyncio.Task | None = None
+        self._caller: asyncio.Task | None = None
         self._serial = 0
+        self.restarts = 0
+        self.late_replies_discarded = 0
         self._available = False
         self._closed = False
         self.ready_info: dict = {}
@@ -46,6 +60,10 @@ class LocalWorker:
     @property
     def busy(self):
         return self._active is not None and not self._active.done()
+
+    @property
+    def closed(self):
+        return self._closed
 
     @property
     def available(self):
@@ -116,9 +134,37 @@ class LocalWorker:
             await self._stop_process()
             raise WorkerError("worker_unavailable") from None
 
+    def _count_late(self, task: asyncio.Task):
+        if not task.cancelled() and task.exception() is None:
+            self.late_replies_discarded += 1
+
+    def _abandon(self, task: asyncio.Task):
+        if self._abandoned is not task and not task.done():
+            self._abandoned = task
+            task.add_done_callback(self._count_late)
+
+    def _active_is_abandoned(self) -> bool:
+        """The in-flight exchange's caller is gone or being cancelled (a decision timeout).
+
+        Checked on the caller task itself, so it holds as soon as the runner calls
+        ``cancel()``, before the cancelled caller next runs.
+        """
+        if not self.busy:
+            return False
+        caller = self._caller
+        if self._active is self._abandoned or caller is None or caller.done() or caller.cancelling():
+            self._abandon(self._active)
+            return True
+        return False
+
     async def request(self, payload: dict) -> dict:
         if not self.available:
             raise WorkerError("worker_unavailable")
+        if self._active_is_abandoned():
+            # Its caller gave up; let it read (and drop) its own reply first.
+            await self.drain_abandoned()
+            if not self.available:
+                raise WorkerError("worker_unavailable")
         if self.busy:
             raise WorkerError("worker_busy")
         message = {**payload, "protocol": PROTOCOL, "id": self._serial + 1}
@@ -130,16 +176,38 @@ class LocalWorker:
         task = asyncio.create_task(self._exchange(message["id"], data))
         # Observe background failures even if the original caller has timed out.
         task.add_done_callback(lambda done: None if done.cancelled() else done.exception())
-        self._active = task
-        return await asyncio.shield(task)
+        self._active, self._caller = task, asyncio.current_task()
+        try:
+            return await asyncio.shield(task)
+        except asyncio.CancelledError:
+            self._abandon(task)
+            raise
+
+    async def drain_abandoned(self):
+        """Wait for an exchange whose caller gave up; its late reply is discarded.
+
+        A live caller's exchange is left alone, so live callers never queue.
+        """
+        if self._active_is_abandoned():
+            await asyncio.wait({self._active})
 
     async def wait_idle(self):
-        """Used by serial benchmarks and orderly shutdown, never the HTTP path."""
-        if self._active is not None:
-            try:
-                await asyncio.shield(self._active)
-            except WorkerError:
-                pass
+        """Wait for any in-flight exchange to finish; its reply is not returned."""
+        if self._active is not None and not self._active.done():
+            await asyncio.wait({self._active})
+
+    async def restart(self):
+        """Stop the process if it is still there and start a fresh one (weights reload)."""
+        if self._closed:
+            raise WorkerError("worker_closed")
+        if self.busy:
+            self._active.cancel()
+            await asyncio.wait({self._active})
+        await self._stop_process()
+        self.process, self._active, self._abandoned, self._caller = None, None, None, None
+        self.ready_info = {}
+        self.restarts += 1
+        await self.start()
 
     async def close(self):
         self._closed = True
