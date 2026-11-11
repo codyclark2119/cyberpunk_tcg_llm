@@ -359,3 +359,24 @@ python scripts/assistant_local.py --model models/qwen3-8b-4bit   # then open htt
 # optional: --adapter <dir>, --thinking, --max-tokens 1024
 python scripts/test_assistant_loop.py    # loop, worker parts, chat route; fake model, no mlx
 ```
+
+The page opens on a Chat tab (the Tools tab is the form above). The header shows the
+data snapshot (`RULES_VERSION`, card count) and the model's state (none, idle,
+loading, ready, error; `GET /api/status`). Answers render through a tiny escaping
+markdown subset (paragraphs, lists, bold, inline code); every other model or tool
+string is set as text. Under each answer a collapsed trace has one row per model step
+and tool call (ok or error, summary, elapsed ms; expand for arguments and result
+JSON), flags for the tool-call cap and the token limit, and the card slugs and rule
+ids the tools returned; clicking one shows its `get_card` or `get_rule` result in a
+side panel without asking the model. The deck panel (`POST /api/deck`, paste or pick a
+public deck) runs `parse_deck`, lists unresolved or ambiguous lines with candidates,
+and for a resolved deck shows `check_deck` and a compact `deck_profile`; that deck is
+held for the session and `loop.deck_context` adds it to the system message as a
+labelled `<loaded_deck>` JSON block whose `deck` value the model passes unchanged to
+the deck tools, until it is cleared (`/api/deck/clear`). "New chat"
+(`/api/chat/reset`) clears the history and keeps the deck. A per-question "think
+first" toggle defaults to `--thinking`. The four example chips only fill the input.
+
+```bash
+python scripts/test_assistant_ui.py      # escaping, deck panel, sessions, status, trace; fake model, needs node
+```

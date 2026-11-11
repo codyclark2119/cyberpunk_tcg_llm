@@ -14,6 +14,12 @@ The model is anything with ``async generate(messages, tools, *, max_tokens,
 enable_thinking) -> dict`` returning the chat worker's reply fields (``ok``,
 ``text``, ``finishReason``, token counts, ``elapsedMs``), so tests drive the
 loop with a scripted fake. Nothing here branches on the question's text.
+
+A deck the user loaded in the page's deck panel reaches the model as data, not
+as a question: ``build_messages`` appends a labelled ``<loaded_deck>`` block to
+the system message holding the deck dict exactly as ``parse_deck`` returned it,
+so the model can pass it unchanged as the ``deck`` argument of any deck tool.
+With no deck loaded the system message is the bare prompt.
 """
 
 from __future__ import annotations
@@ -27,7 +33,7 @@ from typing import Any, Protocol
 from games.cyberpunk.assistant.tools import TOOLS, call_tool, tool_specs
 from games.cyberpunk.prompts import RULES_VERSION
 
-ASSISTANT_PROMPT_VERSION = "assistant-chat-v1"
+ASSISTANT_PROMPT_VERSION = "assistant-chat-v2"
 MAX_TOOL_CALLS = 6
 DEFAULT_MAX_TOKENS = 1024
 SOURCE_KEYS = ("card_slugs", "rule_ids", "errata_ids", "deck_ids", "chunk_ids")
@@ -179,16 +185,34 @@ def _assistant_message(content: str, calls: list[ToolCall]) -> dict:
     return message
 
 
-def build_messages(history: list[dict], user_message: str) -> list[dict]:
-    return [{"role": "system", "content": SYSTEM_PROMPT}, *history, {"role": "user", "content": user_message}]
+DECK_CONTEXT_OPEN, DECK_CONTEXT_CLOSE = "<loaded_deck>", "</loaded_deck>"
+
+
+def deck_context(deck: dict) -> str:
+    """The loaded deck as a labelled block: one JSON object whose ``deck`` value goes straight into deck tools."""
+    payload = json.dumps({"deck": deck}, ensure_ascii=False, separators=(",", ":"), sort_keys=True)
+    return ("Loaded deck: the user loaded this deck in the deck panel for this chat. It may or may not be what "
+            "the question is about.\n"
+            f"{DECK_CONTEXT_OPEN}\n{payload}\n{DECK_CONTEXT_CLOSE}\n"
+            "To use it, pass the value of \"deck\" above unchanged as the deck argument of check_deck, "
+            "deck_profile, similar_decks or archetype_of. It holds card slugs and quantities only; card facts "
+            "still come from get_card.")
+
+
+def build_messages(history: list[dict], user_message: str, deck: dict | None = None) -> list[dict]:
+    system = SYSTEM_PROMPT if deck is None else f"{SYSTEM_PROMPT}\n\n{deck_context(deck)}"
+    return [{"role": "system", "content": system}, *history, {"role": "user", "content": user_message}]
 
 
 async def run_turn(history: list[dict], user_message: str, model: ChatModel, *,
                    max_tool_calls: int = MAX_TOOL_CALLS, max_tokens: int = DEFAULT_MAX_TOKENS,
-                   enable_thinking: bool = False) -> TurnResult:
-    """Run one user turn to an answer, an error or the tool-call cap. ``history`` is not modified."""
+                   enable_thinking: bool = False, deck: dict | None = None) -> TurnResult:
+    """Run one user turn to an answer, an error or the tool-call cap. ``history`` is not modified.
+
+    ``deck`` is the session's loaded deck (see ``deck_context``), or None.
+    """
     started = time.monotonic()
-    messages = build_messages(history, user_message)
+    messages = build_messages(history, user_message, deck)
     specs = tool_specs()
     turn = TurnResult(ok=False, answer="", stop_reason="")
     step = 0
@@ -246,7 +270,7 @@ async def run_turn(history: list[dict], user_message: str, model: ChatModel, *,
             add({"kind": "tool", "tool": call.name, "arguments": call.arguments, "ok": bool(result.get("ok")),
                  "errorKind": result.get("error_kind"), "error": result.get("error"),
                  "summary": summarize_result(result), "sources": {k: list(sources.get(k) or []) for k in SOURCE_KEYS},
-                 "elapsedMs": elapsed})
+                 "result": result.get("result") if result.get("ok") else None, "elapsedMs": elapsed})
             messages.append({"role": "tool", "content": json.dumps(result, ensure_ascii=False,
                                                                    separators=(",", ":"))})
     turn.elapsed_ms = round((time.monotonic() - started) * 1000, 2)
