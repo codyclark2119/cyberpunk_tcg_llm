@@ -205,6 +205,18 @@ npm run baseline:regenerate -- --preserved <last commit before the runtime chang
 
 This runs every replay writer, the 192-game Demo matrix and its reviews, then confirms the tree is byte-stable. It never commits. Review the diff (version/hash pins and legal-action order are expected to change; chosen actions, events and final states should not, unless the engine change intends it), run the gates, and commit the regeneration separately.
 
+The independent replay fixtures are listed in `scripts/lib/replay-registry.ts` and written by one CLI; `--check` regenerates them in memory and names any file whose committed bytes differ:
+
+```bash
+npm run replays:generate                          # write every registered fixture
+npm run replays:generate -- turn-replay gear-replay
+npm run replays:generate -- --check               # no writes; exit 1 on any byte difference
+npm run replays:generate -- --list
+DEMO_MATRIX_CONCURRENCY=4 npm run test:matrix -- --check   # matrix; serial and parallel output are identical
+```
+
+Matrix traces, which the matrix reviews read back, go to `DEMO_MATRIX_TRACE_DIR` (default `/tmp/tcg-reboot-model-a-traces`).
+
 ## AI harness
 
 Model work needs Apple Silicon and MLX:
