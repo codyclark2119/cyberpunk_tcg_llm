@@ -67,6 +67,7 @@ py-engine-adapter    | quick | "$PY" scripts/test_engine_adapter.py --app-root .
 py-local-match       | quick | "$PY" scripts/test_local_match.py               | line:PASS local match runner: 12/12
 py-validation-console| quick | "$PY" scripts/test_validation_console.py        | line:PASS validation console: 8/8
 py-play-app          | quick | "$PY" scripts/test_play_app.py                  | line:PASS local play UI: 12/12
+py-assistant-tools   | quick | "$PY" scripts/test_assistant_tools.py           | line:PASS assistant tools: 14/14
 deck-rules           | full  | "$PY" scripts/check_deck_rules.py --negative-control | contains:agree:    272/272;;contains:reproduce budget AND usage exactly: 272/272;;absent:<-- LOOK
 integration          | full  | prepare_integration && npm run test:integration | tap:12
 '

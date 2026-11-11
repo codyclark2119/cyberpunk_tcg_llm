@@ -276,3 +276,28 @@ off loopback requires the printed token. See [docs/local-play-ui.md](docs/local-
 python scripts/play_local.py              # then open http://127.0.0.1:8766/
 python scripts/test_play_app.py           # needs fastapi and httpx; real engine, baseline bot
 ```
+
+### Local assistant tools
+
+The local chat assistant gets every card and rule fact from code, never from the
+model's memory: `games/cyberpunk/assistant/tools.py` holds `find_card` (name to
+slugs, every same-named card listed with an `ambiguous` flag), `get_card` (full facts
+by slug, errata attached and marked as overriding the printed text), `search_cards`
+(structured filters only), `get_rule` (by rule number, with its section and
+sub-rules), `search_rules` (embedding retrieval once `data/processed/corpus_index.npz`
+exists, otherwise a deterministic BM25 ranking; the result says which ran) and
+`card_interactions` (the rules two cards' keywords, triggers and symbols point to).
+Each validates its arguments against its JSON schema, fails closed with an error dict,
+and returns the slugs, rule ids and errata it used with `rules_version`. The `TOOLS`
+registry renders to OpenAI-style function specs (`tool_specs()`) for Qwen3's tool
+template. No model runs yet.
+
+`scripts/assistant_local.py` serves the Tools page on `127.0.0.1:8767`: pick a tool,
+fill the form generated from its schema, see the JSON result. On loopback it answers
+only to a loopback `Host` and `Origin` (against DNS rebinding); any other bind needs
+the printed token unless `--no-auth`.
+
+```bash
+python scripts/assistant_local.py         # then open http://127.0.0.1:8767/
+python scripts/test_assistant_tools.py    # needs fastapi and httpx; snapshot data, no model
+```
