@@ -164,6 +164,9 @@ subprocess is also stopped. To return to the portable heuristic, omit `--policy 
   by default, it falls back without truncating state or dropping legal actions.
   All supplied snapshot fields remain opaque; the current prompt has no retrieval
   of the rules/card corpus. Legal choices alone do not establish strategic knowledge.
+  (Update 2026-11-11: the position is now rendered as compact text,
+  `local-choice-v3`, about a third of the JSON prompt's size; every visible field
+  is still sent. See [local-prompt-v3.md](local-prompt-v3.md).)
 - Only a JSON object with exactly one in-range integer `choice` is accepted.
   Duplicate fields, booleans, prose, invented IDs and length-truncated generation
   fall back. The parent validates the mapped ID against the current offered set.

@@ -226,6 +226,7 @@ python scripts/test_engine_adapter.py                  # Python-to-engine bounda
 python scripts/test_sim_bot.py                         # local policy layer: validation, baseline, fallbacks
 python scripts/test_sim_mlx.py                         # subprocess policy boundary; no MLX required
 python scripts/test_local_match.py                     # bot-vs-bot games on the real engine worker
+python scripts/test_local_prompt.py                    # compact gameplay prompt: facts kept, nothing hidden added
 ```
 
 `data/` is a dated snapshot of the official card API. The fetch/ingest pipeline, errata handling, deckbuilding and archetype tooling, and the rules for refreshing the snapshot are in [CLAUDE.md](CLAUDE.md), with full detail in [the original harness README](docs/ai-source/README.legacy.md).
@@ -246,7 +247,10 @@ the next decision; see [docs/local-time-budget.md](docs/local-time-budget.md). F
 [Mac setup and benchmark guide](docs/local-mlx-bot.md) to install
 `requirements-mlx-bot.txt`, download Qwen3-8B's 4-bit weights and measure decision
 time with `scripts/benchmark_sim_bot.py`, which now measures positions from real
-local engine games. The external simulator HTTP bridge was
+local engine games. The model reads the position as compact text
+(`local-choice-v3`, about a third of the earlier JSON prompt);
+`scripts/measure_prompt_size.py` reports prompt sizes over real games without a
+model; see [docs/local-prompt-v3.md](docs/local-prompt-v3.md). The external simulator HTTP bridge was
 [retired on 2026-11-11](docs/simulator-bot-retirement.md). No external LLM API is
 used. A trained gameplay adapter and measured playing strength are still future
 milestones.

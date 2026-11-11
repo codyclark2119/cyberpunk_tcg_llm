@@ -65,6 +65,7 @@ py-sim-bot           | quick | "$PY" scripts/test_sim_bot.py                   |
 py-sim-mlx           | quick | "$PY" scripts/test_sim_mlx.py                   | line:PASS local MLX bot: 32/32
 py-engine-adapter    | quick | "$PY" scripts/test_engine_adapter.py --app-root . | -
 py-local-match       | quick | "$PY" scripts/test_local_match.py               | line:PASS local match runner: 14/14
+py-local-prompt      | quick | "$PY" scripts/test_local_prompt.py              | line:PASS local prompt: 9/9
 py-validation-console| quick | "$PY" scripts/test_validation_console.py        | line:PASS validation console: 8/8
 py-play-app          | quick | "$PY" scripts/test_play_app.py                  | line:PASS local play UI: 12/12
 py-assistant-tools   | quick | "$PY" scripts/test_assistant_tools.py           | line:PASS assistant tools: 14/14
