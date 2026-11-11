@@ -56,6 +56,12 @@ class EngineWorker:
                 self._process.wait(timeout=2)
 
     def _request(self, op: str, *, content: Mapping[str, Any], state: Mapping[str, Any], actor_id: str, action_id: str | None = None) -> Mapping[str, Any]:
+        fields: dict[str, Any] = {"state": state, "actorId": actor_id}
+        if action_id is not None:
+            fields["actionId"] = action_id
+        return self._send(op, content=content, fields=fields)
+
+    def _send(self, op: str, *, content: Mapping[str, Any], fields: Mapping[str, Any]) -> Mapping[str, Any]:
         if self._process.poll() is not None:
             stderr = self._process.stderr.read() if self._process.stderr else ""
             raise EngineProtocolError(f"engine worker exited early: {stderr.strip()}")
@@ -66,11 +72,8 @@ class EngineWorker:
             "requestId": request_id,
             "op": op,
             "content": content,
-            "state": state,
-            "actorId": actor_id,
+            **fields,
         }
-        if action_id is not None:
-            request["actionId"] = action_id
         assert self._process.stdin is not None and self._process.stdout is not None
         self._process.stdin.write(json.dumps(request, separators=(",", ":")) + "\n")
         self._process.stdin.flush()
@@ -90,6 +93,17 @@ class EngineWorker:
         value = response.get("value")
         if not isinstance(value, dict):
             raise EngineProtocolError("successful engine response is missing object value")
+        return value
+
+    def create_game(self, *, content: Mapping[str, Any], initialization: Mapping[str, Any]) -> Mapping[str, Any]:
+        """Create a game from an engine CreateGameInput and return the trusted initial transition.
+
+        The initialization (players, seed, format, decks) is passed through
+        untouched; the engine alone decides whether it is a legal game.
+        """
+        value = self._send("createGame", content=content, fields={"initialization": initialization})
+        if value.get("kind") != "transition":
+            raise EngineProtocolError(f"expected transition response, got {value.get('kind')!r}")
         return value
 
     def model_input(self, *, content: Mapping[str, Any], state: Mapping[str, Any], actor_id: str) -> Mapping[str, Any]:

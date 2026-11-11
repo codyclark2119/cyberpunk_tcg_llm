@@ -38,6 +38,7 @@ npm run build
 npm run test:integration     # needs TEST_DATABASE_URL and TEST_MONGODB_URI
 python scripts/test_cyberpunk.py && python scripts/test_harness_core.py
 python scripts/test_engine_candidates.py && python scripts/test_engine_adapter.py
+python scripts/test_local_match.py   # full baseline games on the real engine worker
 python scripts/check_deck_rules.py --negative-control
 ```
 

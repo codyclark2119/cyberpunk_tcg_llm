@@ -214,6 +214,7 @@ python scripts/check_deck_rules.py --negative-control  # deck rules against 272 
 python scripts/test_engine_adapter.py                  # Python-to-engine boundary
 python scripts/test_sim_bot.py                         # local policy layer: validation, baseline, fallbacks
 python scripts/test_sim_mlx.py                         # subprocess policy boundary; no MLX required
+python scripts/test_local_match.py                     # bot-vs-bot games on the real engine worker
 ```
 
 `data/` is a dated snapshot of the official card API. The fetch/ingest pipeline, errata handling, deckbuilding and archetype tooling, and the rules for refreshing the snapshot are in [CLAUDE.md](CLAUDE.md), with full detail in [the original harness README](docs/ai-source/README.legacy.md).
@@ -230,7 +231,23 @@ persistent local MLX model in its own process; slow, busy or invalid model
 decisions fall back to the baseline. Follow the
 [Mac setup and benchmark guide](docs/local-mlx-bot.md) to install
 `requirements-mlx-bot.txt`, download Qwen3-8B's 4-bit weights and measure decision
-time with `scripts/benchmark_sim_bot.py`. The external simulator HTTP bridge was
-[retired on 2026-11-11](docs/simulator-bot-retirement.md); driving this policy
-layer from the local engine is the next step. No external LLM API is used. A
-trained gameplay adapter and measured playing strength are still future milestones.
+time with `scripts/benchmark_sim_bot.py`, which now measures positions from real
+local engine games. The external simulator HTTP bridge was
+[retired on 2026-11-11](docs/simulator-bot-retirement.md). No external LLM API is
+used. A trained gameplay adapter and measured playing strength are still future
+milestones.
+
+### Local bot-vs-bot matches
+
+`scripts/run_local_matches.py` plays full games on the local engine. For each
+decision the engine names the acting player and offers its legal actions; that
+seat's policy (`baseline` or `mlx`) picks one offered `actionId`, and the engine
+applies it. Each match is written as JSONL under `local/matches/` (gitignored).
+The fixed Demo decks are the default; `--setup` takes any `content` plus
+`initialization` the engine's `createGame` accepts. See
+[docs/local-match-runner.md](docs/local-match-runner.md).
+
+```bash
+python scripts/run_local_matches.py --matches 10 --seed demo            # baseline vs baseline
+python scripts/run_local_matches.py --policy baseline mlx --matches 3   # Apple Silicon only
+```

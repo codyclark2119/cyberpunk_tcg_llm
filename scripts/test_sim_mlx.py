@@ -27,11 +27,11 @@ REPO_ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(REPO_ROOT))
 sys.path.insert(0, str(REPO_ROOT / "scripts"))
 
-from games.cyberpunk.sim_bot import PolicyRunner
+from games.cyberpunk.sim_bot import Decision, PolicyRunner
 from games.cyberpunk.sim_mlx import MLXPolicy, local_path, make_worker
 from games.cyberpunk.sim_prompt import build_choice_messages, parse_choice
 from harness.core.local_worker import LocalWorker, MAX_LINE_BYTES, PROTOCOL, WorkerError
-from benchmark_sim_bot import measure, smoke_decision, summarize
+from benchmark_sim_bot import measure, summarize
 from mlx_sim_worker import run_generation
 
 
@@ -89,6 +89,18 @@ async def running(mode="good", **kwargs):
     finally:
         await worker.close()
     assert worker.process.returncode is not None
+
+
+def smoke_decision():
+    """Synthetic two-action probe for the worker boundary (moved here from the benchmark,
+    which now measures real engine positions)."""
+    return Decision(request_id="smoke-1", match_id="synthetic-smoke", sequence=1,
+                    player_id="player2", deadline_ms=3000, prompt="Choose an action.",
+                    snapshot={"game": {}, "players": {}, "controls": {}}, legal_actions=[
+                        {"actionId": "smoke-roll", "source": "die", "label": "ROLL D12",
+                         "type": "roll_die", "payload": {"dieId": "die_player2_1"}},
+                        {"actionId": "smoke-end", "source": "primary", "label": "END TURN",
+                         "type": "end_turn", "payload": {}}])
 
 
 def body(**changes):

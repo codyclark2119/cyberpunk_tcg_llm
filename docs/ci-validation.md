@@ -31,6 +31,10 @@ bump it deliberately rather than tracking the latest 22.x release implicitly.
   The local inference boundary (`test_sim_mlx.py`, 27/27 tests) uses real Python
   subprocesses and injected tokenizers/generators. It requires no MLX or weights;
   actual Metal inference, latency and gameplay quality are Mac-side checks.
+  The local match runner (`test_local_match.py`, 12/12 tests) plays real
+  baseline-vs-baseline Demo games through the Node engine worker, checks that
+  every chosen action was offered and that a seed replays identically, and uses
+  fake async policies for the model seat; it loads no model.
   These steps assert exact pass lines (for example `all 89 tests passed`), so
   adding or removing a Python test also updates the expected line here.
 

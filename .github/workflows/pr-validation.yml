@@ -218,6 +218,12 @@ jobs:
           set -euo pipefail
           python scripts/test_engine_adapter.py --app-root . 2>&1 | tee "$RUNNER_TEMP/ai-engine-adapter.log"
 
+      - name: Test local bot-vs-bot match runner on the engine
+        run: |
+          set -euo pipefail
+          python scripts/test_local_match.py 2>&1 | tee "$RUNNER_TEMP/ai-local-match.log"
+          grep -q '^PASS local match runner: 12/12$' "$RUNNER_TEMP/ai-local-match.log"
+
       - name: Preserve AI validation evidence
         if: always()
         uses: actions/upload-artifact@v7
@@ -231,5 +237,6 @@ jobs:
             ${{ runner.temp }}/ai-engine-adapter.log
             ${{ runner.temp }}/ai-sim-bot.log
             ${{ runner.temp }}/ai-sim-mlx.log
+            ${{ runner.temp }}/ai-local-match.log
           if-no-files-found: warn
           retention-days: 14
