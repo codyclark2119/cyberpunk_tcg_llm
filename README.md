@@ -262,3 +262,17 @@ The fixed Demo decks are the default; `--setup` takes any `content` plus
 python scripts/run_local_matches.py --matches 10 --seed demo            # baseline vs baseline
 python scripts/run_local_matches.py --policy baseline mlx --matches 3   # Apple Silicon only
 ```
+
+### Local play UI
+
+`scripts/play_local.py` serves one offline page on `127.0.0.1` where you can play
+a match against a local bot, launch bot-vs-bot matches and step through recorded
+matches. You see only your seat's public engine view and press the actions the
+engine offers; the server accepts only an offered `actionId`. Human matches write
+the same records to `local/matches/`. It needs `fastapi` and `uvicorn`; any bind
+off loopback requires the printed token. See [docs/local-play-ui.md](docs/local-play-ui.md).
+
+```bash
+python scripts/play_local.py              # then open http://127.0.0.1:8766/
+python scripts/test_play_app.py           # needs fastapi and httpx; real engine, baseline bot
+```

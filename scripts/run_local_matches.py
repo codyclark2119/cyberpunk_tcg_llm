@@ -9,8 +9,8 @@ rules, legal actions and transitions; each seat's policy (the deterministic
 Each match is written as a JSONL record under local/matches/ (gitignored): a
 match header with seed, decks and engine identity, one row per decision with
 the offered count, chosen actionId, selection reason and elapsed ms, and a
-result row. Those records are what the planned match viewer UI (scope 3) will
-read; this script has no UI of its own.
+result row. The local play UI (scripts/play_local.py) reads those records and
+can launch this script as its bot-vs-bot job.
 
 Decks and format are whatever the engine's createGame accepts. By default the
 fixed Demo content and decks are used; pass --setup with a JSON object holding

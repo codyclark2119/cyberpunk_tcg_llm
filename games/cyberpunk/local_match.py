@@ -35,7 +35,7 @@ from pathlib import Path
 from typing import Any, Callable, Mapping, Sequence
 
 from games.cyberpunk.engine_adapter import EngineProtocolError, EngineWorker
-from games.cyberpunk.sim_bot import Decision, PolicyRunner
+from games.cyberpunk.sim_bot import Decision, PolicyRunner, Selection
 from harness.core.io import write_jsonl_atomic
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
@@ -111,6 +111,52 @@ def _decision(match_id: str, index: int, actor: str, model_input: Mapping[str, A
         metadata={"format": observation.get("format")})
 
 
+# Public alias for drivers that step a match themselves (the local play UI).
+build_decision = _decision
+
+
+def match_header(setup: MatchSetup, policy_names: Sequence[str], *, max_decisions: int,
+                 max_turns: int) -> dict[str, Any]:
+    """The record's ``match`` row, before ``initialStateHash`` is known."""
+    content, initialization = setup.content, setup.initialization
+    return {"kind": "match", "schemaVersion": RECORD_SCHEMA_VERSION,
+            "matchId": initialization.get("matchId", "local-match"),
+            "seed": initialization.get("seed"), "format": initialization.get("format"),
+            "setupSource": setup.source, "players": list(initialization["players"]),
+            "decks": initialization.get("decks"), "engine": dict(setup.engine),
+            "contentManifestHash": content.get("manifestHash"),
+            "seats": [{"seat": seat, "policy": name} for seat, name in enumerate(policy_names)],
+            "limits": {"maxDecisions": max_decisions, "maxTurns": max_turns}}
+
+
+def decision_row(index: int, decision: Decision, seat: int, policy: str, selection: Selection,
+                 state_hash: str) -> dict[str, Any]:
+    """One ``decision`` row; ``selection.action_id`` must be one the decision offered."""
+    chosen = next(a for a in decision.legal_actions if a["actionId"] == selection.action_id)
+    return {"kind": "decision", "index": index, "turn": decision.turn.get("turn"),
+            "step": decision.turn.get("step"), "seat": seat, "playerId": decision.player_id,
+            "policy": policy, "offered": len(decision.legal_actions),
+            "actionId": selection.action_id,
+            "label": (chosen.get("descriptor") or {}).get("label"),
+            "reason": selection.reason, "elapsedMs": selection.elapsed_ms,
+            "stateHash": state_hash}
+
+
+def result_row(match_id: str, rows: Sequence[Mapping[str, Any]], status: str, detail: str | None,
+               state: Mapping[str, Any] | None, state_hash: str | None) -> dict[str, Any]:
+    """The closing ``result`` row for the rows so far (header plus decisions)."""
+    reasons = collections.Counter(row["reason"] for row in rows if row.get("kind") == "decision")
+    outcome = (state or {}).get("match", {}).get("outcome") if state else None
+    seat_of = {pid: player["seat"] for pid, player in (state or {}).get("players", {}).items()}
+    return {"kind": "result", "matchId": match_id, "status": status, "detail": detail,
+            "winnerSeat": seat_of.get(outcome["winnerId"]) if outcome else None,
+            "loserSeat": seat_of.get(outcome["loserId"]) if outcome else None,
+            "reason": outcome["reason"] if outcome else None,
+            "turns": state["timing"]["turn"] if state else None,
+            "decisions": len(rows) - 1, "selections": dict(sorted(reasons.items())),
+            "finalStateHash": state_hash}
+
+
 async def play_match(worker: EngineWorker, setup: MatchSetup, runners: Sequence[PolicyRunner], *,
                      policy_names: Sequence[str], max_decisions: int = DEFAULT_MAX_DECISIONS,
                      max_turns: int = DEFAULT_MAX_TURNS,
@@ -121,16 +167,9 @@ async def play_match(worker: EngineWorker, setup: MatchSetup, runners: Sequence[
     if max_decisions < 1 or max_turns < 0:
         raise ValueError("max_decisions must be positive and max_turns nonnegative.")
     content, initialization = setup.content, setup.initialization
-    match_id = initialization.get("matchId", "local-match")
-    header = {"kind": "match", "schemaVersion": RECORD_SCHEMA_VERSION, "matchId": match_id,
-              "seed": initialization.get("seed"), "format": initialization.get("format"),
-              "setupSource": setup.source, "players": list(initialization["players"]),
-              "decks": initialization.get("decks"), "engine": dict(setup.engine),
-              "contentManifestHash": content.get("manifestHash"),
-              "seats": [{"seat": seat, "policy": name} for seat, name in enumerate(policy_names)],
-              "limits": {"maxDecisions": max_decisions, "maxTurns": max_turns}}
+    header = match_header(setup, policy_names, max_decisions=max_decisions, max_turns=max_turns)
+    match_id = header["matchId"]
     rows: list[dict[str, Any]] = [header]
-    reasons: collections.Counter[str] = collections.Counter()
     status, detail, state, state_hash = "engine_error", None, None, None
     try:
         created = worker.create_game(content=content, initialization=initialization)
@@ -161,29 +200,13 @@ async def play_match(worker: EngineWorker, setup: MatchSetup, runners: Sequence[
             selection = await runners[seat].choose(decision)
             if selection.action_id not in decision.offered_ids:
                 raise AssertionError("policy runner returned an actionId the engine did not offer")
-            chosen = next(a for a in decision.legal_actions if a["actionId"] == selection.action_id)
             transition = worker.apply_action(content=content, state=state, actor_id=actor,
                                              action_id=selection.action_id)
             state, state_hash = transition["state"], transition["stateHash"]
-            reasons[selection.reason] += 1
-            rows.append({"kind": "decision", "index": index, "turn": decision.turn.get("turn"),
-                         "step": decision.turn.get("step"), "seat": seat, "playerId": actor,
-                         "policy": policy_names[seat], "offered": len(decision.legal_actions),
-                         "actionId": selection.action_id,
-                         "label": (chosen.get("descriptor") or {}).get("label"),
-                         "reason": selection.reason, "elapsedMs": selection.elapsed_ms,
-                         "stateHash": state_hash})
+            rows.append(decision_row(index, decision, seat, policy_names[seat], selection, state_hash))
     except EngineProtocolError as exc:
         status, detail = "engine_error", str(exc)[:500]
-    outcome = (state or {}).get("match", {}).get("outcome") if state else None
-    seat_of = {pid: player["seat"] for pid, player in (state or {}).get("players", {}).items()}
-    rows.append({"kind": "result", "matchId": match_id, "status": status, "detail": detail,
-                 "winnerSeat": seat_of.get(outcome["winnerId"]) if outcome else None,
-                 "loserSeat": seat_of.get(outcome["loserId"]) if outcome else None,
-                 "reason": outcome["reason"] if outcome else None,
-                 "turns": state["timing"]["turn"] if state else None,
-                 "decisions": len(rows) - 1, "selections": dict(sorted(reasons.items())),
-                 "finalStateHash": state_hash})
+    rows.append(result_row(match_id, rows, status, detail, state, state_hash))
     return rows
 
 
