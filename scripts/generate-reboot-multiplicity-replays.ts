@@ -1,5 +1,5 @@
 import assert from "node:assert/strict";
-import { mkdirSync, readFileSync, writeFileSync } from "node:fs";
+import { writeFileSync } from "node:fs";
 import { hashCanonical, GameActionSchema } from "@tcg/domain";
 import { applyAction, listLegalActions, observe } from "@tcg/engine";
 import { demoMatrixReplay } from "../tests/demo-matrix-replay";
@@ -8,10 +8,13 @@ import { demoStarterContext } from "../tests/demo-starter-fixture";
 import { summarizeMatrixTrace } from "../tests/demo-matrix-metrics";
 import { unwrap } from "../tests/turn-replay";
 import prefixes from "../tests/fixtures/reboot-multiplicity-reproducers.v1.json";
-const check=process.argv.includes("--check"),directory="/tmp/tcg-reboot-model-a-traces";
-mkdirSync(directory,{recursive:true});
+import { compactArtifactWriter, matrixTraceDir, matrixTracePath } from "./lib/generated-artifacts";
+import { coordinateId } from "../tests/demo-matrix-config";
+const check=process.argv.includes("--check");
+matrixTraceDir({create:true});
 const context=demoStarterContext();
-function artifact(path:string,value:unknown){const s=JSON.stringify(value)+"\n";if(check)assert.equal(readFileSync(path,"utf8"),s,path);else writeFileSync(path,s);}
+// Fixtures are written (or checked) only after every assertion below has passed.
+const pending:[path:string,value:unknown][]=[];
 const records=[];
 for(const prefix of prefixes.records){
     const coordinate={...prefix.coordinate,branch:"base",seats:prefix.coordinate.seats as "A"|"B",chooseFirstOrSecond:"FIRST",mulligan:[false,false]} as const;
@@ -39,14 +42,17 @@ for(const prefix of prefixes.records){
     if(consumed>=0)assert.equal(trace.steps[consumed].state.fightPreventions,undefined);
     const summary=summarizeMatrixTrace(trace);
     records.push({coordinate,prefixActions:prefix.steps.length,secondPlayAction:prefix.steps.length+1,twoOutstandingAfterAction:two+1,consumedAfterAction:consumed<0?null:consumed+1,expiredAfterAction:expired<0?null:expired+1,summary});
-    writeFileSync(`${directory}/base-${coordinate.seed}-${coordinate.seats}-FIRST-KK.json`,JSON.stringify(trace));
+    writeFileSync(matrixTracePath(coordinateId(coordinate)),JSON.stringify(trace));
     if(coordinate.seats==="A"&&coordinate.seed==="demo-matrix-003"){
         assert.ok(consumed>=0,"primary exact acceptance must reach the qualifying fight");
-        artifact("tests/fixtures/reboot-multiplicity-replay.v1.json",trace);
+        pending.push(["tests/fixtures/reboot-multiplicity-replay.v1.json",trace]);
         // Current-engine traversal of the original stopping prefix; its original actions/hashes remain in the frozen source-review fixture.
-        artifact("tests/fixtures/demo-matrix-overlap-replay.v1.json",{...trace,failure:null,purpose:"HISTORICAL_PREFIX",note:"Original 206-action source-blocked prefix under current pins. Second Reboot is now legal; this is not a current engine failure.",positions:trace.positions.slice(0,171),steps:trace.steps.slice(0,prefix.steps.length),finalState:before,finalStateHash:trace.steps[prefix.steps.length-1].stateHash});
+        pending.push(["tests/fixtures/demo-matrix-overlap-replay.v1.json",{...trace,failure:null,purpose:"HISTORICAL_PREFIX",note:"Original 206-action source-blocked prefix under current pins. Second Reboot is now legal; this is not a current engine failure.",positions:trace.positions.slice(0,171),steps:trace.steps.slice(0,prefix.steps.length),finalState:before,finalStateHash:trace.steps[prefix.steps.length-1].stateHash}]);
     }
     console.log(JSON.stringify({coordinate,actions:trace.steps.length,failure:trace.failure?.code,terminal:trace.finalState.match.outcome,secondPlay:prefix.steps.length+1,two:two+1,consumed:consumed+1,expired:expired+1}));
     assert.equal(trace.failure,null,JSON.stringify(trace.failure));
 }
-artifact("tests/fixtures/reboot-multiplicity-acceptance.v1.json",{schemaVersion:1,ruling:"reboot-multiplicity-ruling.v1.json",records});
+assert.equal(pending.length,2,"primary exact acceptance coordinate (demo-matrix-003, seats A) must be among the reproducers");
+pending.push(["tests/fixtures/reboot-multiplicity-acceptance.v1.json",{schemaVersion:1,ruling:"reboot-multiplicity-ruling.v1.json",records}]);
+const artifact=compactArtifactWriter(check);
+for(const [path,value] of pending)artifact(path,value);
