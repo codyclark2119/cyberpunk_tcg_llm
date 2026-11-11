@@ -1,5 +1,9 @@
 import { cards } from "@tcg/domain/fixtures";
 import { defaultRuleset, hashCanonical, type Card, type CardId, type CardRevision, type CardRepository, type RulesetRepository, type Ruleset, type RulesetId, type RulesetVersion, type CardPageRequest, type PublishResult } from "@tcg/domain";
+/** The card fields a free-text search matches. Shared by the fixture and Mongo repositories. */
+export function cardSearchFields(card: Card): string[] {
+  return [card.name, card.cardNumber, card.rulesText, ...card.tags];
+}
 export class FixtureCardRepository implements CardRepository {
   private readonly revisions = new Map<string, Card>();
   private readonly current = new Map<CardId, Card>();
@@ -17,7 +21,7 @@ export class FixtureCardRepository implements CardRepository {
     const search = filter?.search?.trim().toLowerCase();
     const matches = [...this.current.values()].filter((card) => card.status !== "RETIRED" && (!afterId || card.id > afterId) &&
       (!filter?.type || card.type === filter.type) && (!filter?.color || card.colors.includes(filter.color)) &&
-      (!filter?.setCode || card.setCode === filter.setCode) && (!search || [card.name, card.cardNumber, card.rulesText, ...card.tags].some((x) => x.toLowerCase().includes(search))))
+      (!filter?.setCode || card.setCode === filter.setCode) && (!search || cardSearchFields(card).some((x) => x.toLowerCase().includes(search))))
       .sort((a, b) => a.id < b.id ? -1 : a.id > b.id ? 1 : 0);
     return { cards: structuredClone(matches.slice(0, first)), hasNextPage: matches.length > first };
   }
