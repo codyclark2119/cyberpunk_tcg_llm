@@ -1,14 +1,15 @@
 import assert from "node:assert/strict";
-import { readFileSync, writeFileSync } from "node:fs";
+import { readFileSync } from "node:fs";
 import { hashCanonical } from "@tcg/domain";
 import { applicableFightPreventions } from "../packages/engine/src/fight-prevention";
 import { coordinateId, type MatrixCoordinate } from "../tests/demo-matrix-config";
 import type { MatrixTrace } from "../tests/demo-matrix-metrics";
+import { compactArtifactWriter, matrixTracePath, repoPath } from "./lib/generated-artifacts";
 // Trusted post-run coverage audit. No new simulation, policy selection or model input.
-const matrix: { matrixHash: string; records: { coordinate: MatrixCoordinate; finalHash: string }[] } = JSON.parse(readFileSync("tests/fixtures/demo-match-matrix-reboot.v1.json", "utf8"));
+const matrix: { matrixHash: string; records: { coordinate: MatrixCoordinate; finalHash: string }[] } = JSON.parse(readFileSync(repoPath("tests/fixtures/demo-match-matrix-reboot.v1.json"), "utf8"));
 const records = matrix.records.map(record => {
     const coordinate = coordinateId(record.coordinate);
-    const trace: MatrixTrace = JSON.parse(readFileSync(`/tmp/tcg-reboot-model-a-traces/${coordinate}.json`, "utf8"));
+    const trace: MatrixTrace = JSON.parse(readFileSync(matrixTracePath(coordinate), "utf8"));
     assert.equal(trace.finalStateHash, record.finalHash);
     let state = trace.initialized.state, additionalRegistrations = 0, multiConsumptionFights = 0, redundantConsumptionFights = 0, multiExpiryBoundaries = 0, pluralProofStates = 0, maxOutstanding = 0;
     for (const [i, step] of trace.steps.entries()) {
@@ -41,6 +42,6 @@ function totals(branch: "base" | "variant") {
 }
 assert.ok(records.find(r => r.coordinate === "base-demo-matrix-003-A-FIRST-KK")!.multiConsumptionFights > 0, "Exact primary overlap fight must be included");
 const identity = { schemaVersion: 1, matrixHash: matrix.matrixHash, base: totals("base"), variant: totals("variant"), records };
-const result = { ...identity, reviewHash: hashCanonical(identity) }, path = "tests/fixtures/reboot-multiplicity-matrix-review.v1.json", serialized = JSON.stringify(result) + "\n";
-if (process.argv.includes("--check")) assert.equal(readFileSync(path, "utf8"), serialized); else writeFileSync(path, serialized);
+const result = { ...identity, reviewHash: hashCanonical(identity) };
+compactArtifactWriter(process.argv.includes("--check"))("tests/fixtures/reboot-multiplicity-matrix-review.v1.json", result);
 console.log(JSON.stringify({ base: result.base, variant: result.variant, reviewHash: result.reviewHash }));

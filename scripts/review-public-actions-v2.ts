@@ -1,14 +1,14 @@
 import assert from "node:assert/strict";
-import { readFileSync, writeFileSync } from "node:fs";
+import { readFileSync } from "node:fs";
 import { canonicalSerialize, hashCanonical } from "@tcg/domain";
 import { buildModelInputV2 } from "@tcg/engine/public-actions";
 import { coordinateId, type MatrixCoordinate } from "../tests/demo-matrix-config";
 import { distribution, type MatrixTrace } from "../tests/demo-matrix-metrics";
+import { compactArtifactWriter, matrixTracePath, repoPath } from "./lib/generated-artifacts";
 
 const matrix: { matrixHash: string; records: { coordinate: MatrixCoordinate; finalHash: string }[] } = JSON.parse(
-    readFileSync("tests/fixtures/demo-match-matrix-reboot.v1.json", "utf8")
+    readFileSync(repoPath("tests/fixtures/demo-match-matrix-reboot.v1.json"), "utf8")
 );
-const TRACE_DIR = "/tmp/tcg-reboot-model-a-traces";
 const LEGACY_EXPECTED = { positions: 5956, groups: 7463 } as const;
 const forbiddenKeys = new Set(["actorId", "choiceId", "optionIndices", "cardInstanceId", "sourceInstanceId"]);
 const withoutLabel = (descriptor: unknown) => {
@@ -32,7 +32,7 @@ let unprojectableActions = 0, actionSetMismatches = 0, privacyFailures = 0;
 const v1Bytes: number[] = [], v2Bytes: number[] = [], examples: unknown[] = [];
 
 for (const record of matrix.records) {
-    const trace: MatrixTrace = JSON.parse(readFileSync(`${TRACE_DIR}/${coordinateId(record.coordinate)}.json`, "utf8"));
+    const trace: MatrixTrace = JSON.parse(readFileSync(matrixTracePath(coordinateId(record.coordinate)), "utf8"));
     assert.equal(trace.finalStateHash, record.finalHash);
     const context = { content: trace.content };
     for (const position of trace.positions) {
@@ -98,8 +98,5 @@ const result = {
     examples
 };
 const artifact = { ...result, reviewHash: hashCanonical(result) };
-const serialized = JSON.stringify(artifact) + "\n";
-const path = "tests/fixtures/demo-matrix-public-action-review.v2.json";
-if (process.argv.includes("--check")) assert.equal(readFileSync(path, "utf8"), serialized);
-else writeFileSync(path, serialized);
+compactArtifactWriter(process.argv.includes("--check"))("tests/fixtures/demo-matrix-public-action-review.v2.json", artifact);
 console.log(JSON.stringify(artifact));
