@@ -66,6 +66,7 @@ py-sim-mlx           | quick | "$PY" scripts/test_sim_mlx.py                   |
 py-engine-adapter    | quick | "$PY" scripts/test_engine_adapter.py --app-root . | -
 py-local-match       | quick | "$PY" scripts/test_local_match.py               | line:PASS local match runner: 12/12
 py-validation-console| quick | "$PY" scripts/test_validation_console.py        | line:PASS validation console: 8/8
+py-play-app          | quick | "$PY" scripts/test_play_app.py                  | line:PASS local play UI: 12/12
 deck-rules           | full  | "$PY" scripts/check_deck_rules.py --negative-control | contains:agree:    272/272;;contains:reproduce budget AND usage exactly: 272/272;;absent:<-- LOOK
 integration          | full  | prepare_integration && npm run test:integration | tap:12
 '
@@ -164,11 +165,12 @@ run_diff_check() {
   git diff --check "$base"
 }
 
-# The harness web UI tests need fastapi; fail early with the install command.
+# The harness web UI tests need fastapi, and FastAPI's TestClient needs httpx;
+# fail early with the install command.
 check_py_deps() {
   "$PY" --version
-  "$PY" -c 'import fastapi' || {
-    echo "missing Python dependency: fastapi (install with: $PY -m pip install fastapi)" >&2
+  "$PY" -c 'import fastapi, httpx' || {
+    echo "missing Python dependency: fastapi/httpx (install with: $PY -m pip install fastapi httpx)" >&2
     return 1
   }
 }

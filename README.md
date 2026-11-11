@@ -217,7 +217,7 @@ pip install -r requirements.txt
 The offline checks need `fastapi` (for the harness monitor tests), no GPU and no network after dependency installation. `scripts/run_tests.sh` runs all of them:
 
 ```bash
-python -m pip install fastapi
+python -m pip install fastapi httpx
 python scripts/test_cyberpunk.py                       # corpus and ingestion
 python scripts/test_harness_core.py                    # harness/core
 python scripts/test_engine_candidates.py               # engine candidate bridge

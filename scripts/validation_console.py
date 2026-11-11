@@ -47,9 +47,10 @@ DEFAULT_PORT = 8766  # one above monitor.serve's default, so both can run
 # run_tests.sh's step names as of 2026-11-11.
 FALLBACK_STEPS = [
     "guard-tests", "typecheck", "lint", "validate-cards", "unit", "build",
-    "diff-check", "py-compile", "py-cyberpunk", "py-harness-core",
+    "diff-check", "py-deps", "py-compile", "py-cyberpunk", "py-harness-core",
     "py-engine-candidates", "py-sim-bot", "py-sim-mlx", "py-engine-adapter",
-    "py-local-match", "deck-rules", "integration",
+    "py-local-match", "py-validation-console", "py-play-app",
+    "deck-rules", "integration",
 ]
 
 _STEP_RE = re.compile(r"^[A-Za-z0-9][A-Za-z0-9_.:-]*$")
