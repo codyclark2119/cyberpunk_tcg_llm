@@ -42,7 +42,7 @@ npm run validate:ui          # loopback console for the same runs
 npm run typecheck && npm run lint && npm run validate:cards
 npm test                     # ~1,360 unit tests, about a minute
 npm run build
-npm run test:integration     # needs TEST_DATABASE_URL and TEST_MONGODB_URI
+npm run test:integration     # needs TEST_MONGODB_URI
 python scripts/test_cyberpunk.py && python scripts/test_harness_core.py
 python scripts/test_engine_candidates.py && python scripts/test_engine_adapter.py
 python scripts/test_local_match.py   # full baseline games on the real engine worker
@@ -85,7 +85,7 @@ Tests use `node:test` through tsx, and the Python suites are plain scripts with 
 Validation is local-first: GitHub runs nothing automatically.
 `scripts/run_tests.sh` is the one entry point (`--quick` before every push, the full
 default before asking for a merge; the full tier starts Docker for the integration
-databases unless `--no-infra`). It has no path filters, skips or conditional steps, so
+Mongo unless `--no-infra`). It has no path filters, skips or conditional steps, so
 do not work around it. Every exact pass line, such as `all 89 tests passed`, lives in
 the pin table at the top of that script; update the row when you add or remove a
 Python test. `.github/workflows/manual-validation.yml` runs the same script on demand
