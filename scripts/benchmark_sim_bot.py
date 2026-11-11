@@ -1,9 +1,14 @@
 #!/usr/bin/env python3
 """Measure local model decisions through the policy runner's deadline/fallback path.
 
-By default use a synthetic protocol probe, not a gameplay strength evaluation.
-Pass --requests with JSONL of decision records (camelCase Decision fields, such as
-requestId, playerId, legalActions; other keys are ignored) for realistic sizes.
+Why: latency and fallback rates only mean something on positions the engine
+really produces. By default this plays --matches baseline-vs-baseline games on
+the local engine (games/cyberpunk/local_match.py), keeps the decisions that
+offered more than one action, takes --positions of them evenly spaced, and asks
+the local model to choose in each. That is a timing and protocol measurement,
+not a gameplay strength evaluation. Pass --requests with JSONL of decision
+records (camelCase Decision fields, such as requestId, playerId, legalActions;
+other keys are ignored) to measure saved positions instead.
 Reports contain timing, selection source and token counts, never prompts/snapshots
 or generated text. No network connection or model download occurs here.
 """
@@ -24,20 +29,34 @@ from pathlib import Path
 REPO_ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(REPO_ROOT))
 
-from games.cyberpunk.sim_bot import Decision, PolicyRunner, decision_from_record
+from games.cyberpunk.engine_adapter import EngineWorker
+from games.cyberpunk.local_match import load_default_setup, play_match
+from games.cyberpunk.sim_bot import PolicyRunner, decision_from_record
 from games.cyberpunk.sim_mlx import DEFAULT_MODEL, MLXPolicy, local_path, make_worker
 from games.cyberpunk.sim_prompt import PROMPT_VERSION
 from harness.core.io import read_jsonl, write_jsonl_atomic
 
 
-def smoke_decision():
-    return Decision(request_id="smoke-1", match_id="synthetic-smoke", sequence=1,
-                    player_id="player2", deadline_ms=3000, prompt="Choose an action.",
-                    snapshot={"game": {}, "players": {}, "controls": {}}, legal_actions=[
-                        {"actionId": "smoke-roll", "source": "die", "label": "ROLL D12",
-                         "type": "roll_die", "payload": {"dieId": "die_player2_1"}},
-                        {"actionId": "smoke-end", "source": "primary", "label": "END TURN",
-                         "type": "end_turn", "payload": {}}])
+def sample_evenly(decisions, count):
+    """Deterministic spread over the whole game rather than the first few setup choices."""
+    if len(decisions) <= count:
+        return list(decisions)
+    return [decisions[(index * len(decisions)) // count] for index in range(count)]
+
+
+async def engine_decisions(args):
+    """Real engine decision points from baseline-vs-baseline local matches."""
+    setup = load_default_setup(REPO_ROOT)
+    collected = []
+    with EngineWorker(REPO_ROOT) as engine:
+        for index in range(args.matches):
+            def keep(decision):
+                if len(decision.legal_actions) > 1:
+                    collected.append(decision)
+            await play_match(engine, setup.for_seed(f"{args.seed}-{index}"),
+                             [PolicyRunner(), PolicyRunner()], policy_names=["baseline", "baseline"],
+                             on_decision=keep)
+    return sample_evenly(collected, args.positions), setup
 
 
 def summarize(rows):
@@ -77,9 +96,13 @@ async def measure(worker, decisions, repeat):
 
 
 async def run(args):
-    decisions = ([decision_from_record(record)
-                  for record in read_jsonl(local_path(args.requests), missing_ok=False)]
-                 if args.requests else [smoke_decision()])
+    setup = None
+    if args.requests:
+        decisions = [decision_from_record(record)
+                     for record in read_jsonl(local_path(args.requests), missing_ok=False)]
+    else:
+        print("Playing baseline matches on the local engine for positions...", file=sys.stderr)
+        decisions, setup = await engine_decisions(args)
     if not decisions:
         raise ValueError("Benchmark requires at least one valid decision record.")
     worker = make_worker(args.model, adapter=args.adapter,
@@ -93,7 +116,10 @@ async def run(args):
     finally:
         await worker.close()
     metadata = {"kind": "metadata", "promptVersion": PROMPT_VERSION,
-                "inputKind": "user_positions" if args.requests else "synthetic_smoke",
+                "inputKind": "user_positions" if args.requests else "engine_positions",
+                "positions": len(decisions),
+                "engine": dict(setup.engine) if setup else None,
+                "matchSeeds": None if args.requests else [f"{args.seed}-{i}" for i in range(args.matches)],
                 "model": str(local_path(args.model)),
                 "adapter": str(local_path(args.adapter)) if args.adapter else None,
                 "maxPromptTokens": args.max_prompt_tokens, "maxTokens": args.max_tokens,
@@ -116,11 +142,14 @@ def main():
     parser.add_argument("--max-prompt-tokens", type=int, default=4096)
     parser.add_argument("--max-tokens", type=int, default=16)
     parser.add_argument("--requests", help="JSONL of decision records (camelCase Decision fields)")
+    parser.add_argument("--matches", type=int, default=1, help="baseline engine matches to draw positions from")
+    parser.add_argument("--positions", type=int, default=20, help="engine positions to measure")
+    parser.add_argument("--seed", default="benchmark", help="match seed prefix; match i uses <seed>-<i>")
     parser.add_argument("--repeat", type=int, default=5)
     parser.add_argument("--output", help="Write a new JSONL report; existing reports are never overwritten")
     args = parser.parse_args()
-    if args.repeat < 1:
-        parser.error("--repeat must be positive")
+    if args.repeat < 1 or args.matches < 1 or args.positions < 1:
+        parser.error("--repeat, --matches and --positions must be positive")
     if args.output and local_path(args.output).exists():
         parser.error("--output already exists; choose a new report name")
     if platform.system() != "Darwin" or platform.machine() != "arm64":

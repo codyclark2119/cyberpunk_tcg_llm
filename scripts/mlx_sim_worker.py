@@ -3,7 +3,7 @@
 
 The parent owns deadlines and legal-action validation. Load and warm the model
 once before announcing readiness. No prompt cache or state crosses requests.
-Use serve_sim_bot.py or benchmark_sim_bot.py rather than launching this directly.
+Use run_local_matches.py or benchmark_sim_bot.py rather than launching this directly.
 """
 
 from __future__ import annotations
