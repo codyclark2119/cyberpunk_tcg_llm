@@ -1,10 +1,17 @@
-"""The local assistant's loopback page: for now, a Tools tab that runs any assistant tool by hand.
+"""The local assistant's loopback page: a small chat box and a Tools tab that runs any tool by hand.
 
 Every tool in this project gets a UI, and the card, rules and deck tools in
 ``games/cyberpunk/assistant/`` are no exception: this page lists the registry,
 builds a form from each tool's JSON schema, runs the tool on the server and
-shows the JSON result exactly as a model would receive it. No model is
-involved; the chat pane arrives in a later change and reuses these routes.
+shows the JSON result exactly as a model would receive it.
+
+Chat: ``POST /api/chat`` with ``{"session": id, "message": text}`` runs one
+turn of ``assistant/loop.py`` against the configured model and returns the
+answer and its trace (every tool call, its arguments, ok or error, a summary
+and its sources). A short history per session is kept in memory, server side.
+With no model configured the route answers 503 ``no_model``; a real model is a
+local MLX worker that starts on the first chat (``scripts/assistant_local.py
+--model``).
 
 The deck tools get three form controls the schema alone does not imply: a
 textarea for a pasted list (``text``), a JSON textarea for a deck dict
@@ -26,21 +33,68 @@ is any cross-site Origin. Off loopback the monitor's token applies instead.
 
 # No `from __future__ import annotations` here: FastAPI resolves the route handlers' `Request`
 # annotation at runtime, and it is imported inside `build_assistant_app`.
+import asyncio
+import contextlib
 import ipaddress
+import re
 import secrets
+from collections import OrderedDict
 from urllib.parse import urlsplit
 
 from games.cyberpunk.assistant.decks import public_deck_index
+from games.cyberpunk.assistant.loop import ASSISTANT_PROMPT_VERSION, run_turn
 from games.cyberpunk.assistant.tools import TOOLS, call_tool
 from games.cyberpunk.config import REPO_ROOT
 from games.cyberpunk.prompts import RULES_VERSION
 from harness.core.webui.monitor import build_app
 from harness.core.webui.runner import lan_ip
 
-__all__ = ["build_assistant_app", "serve_assistant", "ASSISTANT_HTML", "is_loopback", "host_allowed"]
+__all__ = ["build_assistant_app", "serve_assistant", "ASSISTANT_HTML", "is_loopback", "host_allowed",
+           "ChatService"]
 
 DEFAULT_PORT = 8767
 TITLE = "Cyberpunk TCG assistant"
+SESSION_RE = re.compile(r"^[A-Za-z0-9_-]{1,64}$")
+MAX_MESSAGE_CHARS = 8000
+NO_MODEL = ("No model configured. Restart with: python scripts/assistant_local.py --model models/qwen3-8b-4bit "
+            "(Apple Silicon Mac with mlx-lm installed and the weights downloaded).")
+
+
+class ChatService:
+    """Sessions of short history over one model; turns run one at a time (one local model)."""
+
+    def __init__(self, model=None, *, max_history_messages: int = 8, max_sessions: int = 32,
+                 enable_thinking: bool = False, max_tokens: int = 1024):
+        self.model = model
+        self.max_history_messages = max_history_messages
+        self.max_sessions = max_sessions
+        self.enable_thinking = enable_thinking
+        self.max_tokens = max_tokens
+        self.sessions: OrderedDict[str, list[dict]] = OrderedDict()
+        self._lock: asyncio.Lock | None = None
+
+    async def chat(self, session: str, message: str) -> dict:
+        if self._lock is None:
+            self._lock = asyncio.Lock()
+        async with self._lock:
+            history = list(self.sessions.get(session, []))
+            turn = await run_turn(history, message, self.model, max_tokens=self.max_tokens,
+                                  enable_thinking=self.enable_thinking)
+            if turn.ok:
+                # Only the question and the final answer are kept: facts are fetched
+                # again by tools, and the answer's cited slugs carry the context.
+                history += [{"role": "user", "content": message}, {"role": "assistant", "content": turn.answer}]
+                self.sessions[session] = history[-self.max_history_messages:]
+                self.sessions.move_to_end(session)
+                while len(self.sessions) > self.max_sessions:
+                    self.sessions.popitem(last=False)
+            return {**turn.to_dict(), "session": session,
+                    "historyMessages": len(self.sessions.get(session, []))}
+
+    async def close(self):
+        close = getattr(self.model, "close", None)
+        if close is not None:
+            await close()
 
 
 def is_loopback(host: str) -> bool:
@@ -83,8 +137,9 @@ def registry_view() -> dict:
                       for t in TOOLS.values()]}
 
 
-def build_assistant_app(*, token: str | None = None, lan: bool = False):
-    """The FastAPI app: the monitor's app (token) plus the tool routes and a Host/Origin guard."""
+def build_assistant_app(*, token: str | None = None, lan: bool = False, chat: ChatService | None = None):
+    """The FastAPI app: the monitor's app (token) plus the tool and chat routes and a Host/Origin guard."""
+    chat = chat if chat is not None else ChatService()
     from fastapi import Request
     from fastapi.responses import HTMLResponse, JSONResponse, PlainTextResponse
     from fastapi.routing import APIRoute
@@ -130,18 +185,52 @@ def build_assistant_app(*, token: str | None = None, lan: bool = False):
                 return result
             return JSONResponse(result, status_code=404 if result.get("error_kind") == "not_found" else 400)
 
+        def chat_refusal(kind: str, message: str, status: int):
+            return JSONResponse({"ok": False, "error_kind": kind, "error": message, "rulesVersion": RULES_VERSION,
+                                 "promptVersion": ASSISTANT_PROMPT_VERSION}, status_code=status)
+
+        @app.post("/api/chat")
+        async def post_chat(request: Request):
+            try:
+                payload = await request.json()
+            except ValueError:
+                payload = None
+            if not isinstance(payload, dict):
+                return chat_refusal("invalid_arguments", "Send {\"session\": id, \"message\": text}.", 400)
+            session, message = payload.get("session"), payload.get("message")
+            if not isinstance(session, str) or not SESSION_RE.match(session):
+                return chat_refusal("invalid_arguments", "session must be 1-64 letters, digits, - or _.", 400)
+            if not isinstance(message, str) or not message.strip() or len(message) > MAX_MESSAGE_CHARS:
+                return chat_refusal("invalid_arguments",
+                                    f"message must be non-empty text of at most {MAX_MESSAGE_CHARS} characters.", 400)
+            if chat.model is None:
+                return chat_refusal("no_model", NO_MODEL, 503)
+            result = await chat.chat(session, message.strip())
+            return JSONResponse(result, status_code=200 if result["stopReason"] != "model_error" else 502)
+
+        # Stop the model worker when the server stops (it would also exit on stdin EOF).
+        inner_lifespan = app.router.lifespan_context
+
+        @contextlib.asynccontextmanager
+        async def lifespan(server_app):
+            async with inner_lifespan(server_app) as lifespan_state:
+                yield lifespan_state
+            await chat.close()
+
+        app.router.lifespan_context = lifespan
+
     return build_app([], REPO_ROOT, title=TITLE, token=token, extra_routes=routes)
 
 
 def serve_assistant(host: str = "127.0.0.1", port: int = DEFAULT_PORT, *, lan: bool = False,
-                    no_auth: bool = False) -> None:
+                    no_auth: bool = False, chat: ChatService | None = None) -> None:
     """Serve on loopback by default; any other bind needs the printed token unless ``no_auth``."""
     import uvicorn
 
     bind = "0.0.0.0" if lan else host
     open_bind = not is_loopback(bind)
     token = None if (no_auth or not open_bind) else secrets.token_urlsafe(12)
-    app = build_assistant_app(token=token, lan=open_bind)
+    app = build_assistant_app(token=token, lan=open_bind, chat=chat)
     shown = f"http://{lan_ip() if lan else host}:{port}"
     print(f"{TITLE} -> {shown}/" + (f"?t={token}" if token else ""), flush=True)
     if open_bind and not token:
@@ -183,15 +272,38 @@ button.go{font:inherit;padding:6px 12px;border-radius:6px;border:1px solid var(-
 button:disabled{opacity:.5;cursor:default}
 pre{white-space:pre-wrap;word-break:break-word;font-size:12px;max-height:70vh;overflow:auto;background:var(--card);padding:8px;border-radius:6px;margin:0}
 .status{margin:8px 0;font-size:13px}
+section.chat{max-width:1200px;margin:16px auto 0;padding:0 16px}
+#chatLog .turn{border-top:1px solid var(--line);padding:8px 0}
+#chatLog .q{font-weight:600;white-space:pre-wrap}
+#chatLog .a{white-space:pre-wrap;margin:6px 0}
+#chatLog details{font-size:12px;color:var(--muted)}
+#chatLog ol{margin:4px 0;padding-left:20px}
+#chatLog li{margin:3px 0;word-break:break-word}
+#chatLog li.bad{color:var(--warn)}
+.chatrow{display:flex;gap:8px;align-items:flex-end}
+.chatrow textarea{flex:1;min-height:3.2em;resize:vertical}
 </style>
 </head>
 <body>
 <header>
   <h1>Cyberpunk TCG assistant</h1>
-  <nav><button type="button">Tools</button></nav>
+  <nav><button type="button">Chat and tools</button></nav>
   <span class="badge" id="snapshot">snapshot …</span>
-  <span class="muted">Run any card, rules or deck tool by hand. The result is exactly what the model would receive.</span>
+  <span class="muted">Ask the local model, or run any card, rules or deck tool by hand. A tool's result is exactly what the model receives.</span>
 </header>
+<section class="chat">
+  <div class="panel">
+    <h2 style="margin:0 0 6px;font-size:15px">Ask</h2>
+    <p class="muted" style="margin:0 0 8px">The local model answers using only the tools below; every tool it ran is listed under its answer.</p>
+    <div id="chatLog"></div>
+    <div class="chatrow">
+      <textarea id="chatInput" placeholder="Ask about a card, a rule or a deck list"></textarea>
+      <button class="go" id="chatSend" type="button">Send</button>
+      <button class="small" id="chatNew" type="button">New chat</button>
+    </div>
+    <div class="status" id="chatStatus"></div>
+  </div>
+</section>
 <main>
   <div class="panel"><ul class="tools" id="toolList"></ul></div>
   <div>
@@ -369,6 +481,73 @@ async function run() {
   }
 }
 
+function newSession() {
+  const bytes = new Uint8Array(12);
+  crypto.getRandomValues(bytes);
+  return Array.from(bytes, (b) => b.toString(16).padStart(2, "0")).join("");
+}
+let chatSession = newSession();
+
+function traceItem(step) {
+  const li = el("li");
+  if (step.kind === "model") {
+    if (!step.ok) { li.className = "bad"; li.textContent = "model failed: " + step.error; return li; }
+    li.textContent = "model: " + (step.generationTokens ?? "?") + " tokens, " + Math.round(step.elapsedMs || 0) + " ms" +
+      (step.toolCallsRequested ? ", asked for " + step.toolCallsRequested + " tool call(s)" : ", answered");
+    if (step.thinking) {
+      const d = el("details");
+      d.appendChild(el("summary", {}, "thinking"));
+      d.appendChild(el("pre", {}, step.thinking));
+      li.appendChild(d);
+    }
+    return li;
+  }
+  if (!step.ok) li.className = "bad";
+  li.textContent = (step.tool || "(no tool)") + " " + JSON.stringify(step.arguments ?? {}) + " -> " +
+    (step.ok ? "ok" : (step.errorKind || "error")) + ": " + (step.summary || "") + " (" + Math.round(step.elapsedMs || 0) + " ms)";
+  return li;
+}
+
+function showTurn(question, data) {
+  const turn = el("div", {class: "turn"});
+  turn.appendChild(el("div", {class: "q"}, question));
+  turn.appendChild(el("div", {class: data.ok ? "a" : "a err"}, data.answer || data.error || "No answer."));
+  if (data.trace && data.trace.length) {
+    const d = el("details");
+    d.appendChild(el("summary", {}, "trace: " + data.toolCalls + " tool call(s), " + Math.round(data.elapsedMs || 0) +
+      " ms, prompt " + data.promptVersion + ", snapshot " + data.rulesVersion));
+    const ol = el("ol");
+    for (const step of data.trace) ol.appendChild(traceItem(step));
+    d.appendChild(ol);
+    turn.appendChild(d);
+  }
+  $("chatLog").appendChild(turn);
+}
+
+async function sendChat() {
+  const question = $("chatInput").value.trim();
+  if (!question) return;
+  $("chatSend").disabled = true;
+  $("chatStatus").textContent = "Thinking … (the first question also loads the model)";
+  try {
+    const response = await fetch("/api/chat", {method: "POST", headers: {"Content-Type": "application/json"},
+      body: JSON.stringify({session: chatSession, message: question})});
+    const data = await response.json();
+    showTurn(question, data);
+    $("chatStatus").textContent = data.ok ? "" : "Refused (" + (data.error_kind || data.stopReason || response.status) + ")";
+    if (data.ok) $("chatInput").value = "";
+  } catch (err) {
+    $("chatStatus").textContent = "Request failed: " + err;
+  } finally {
+    $("chatSend").disabled = false;
+  }
+}
+
+$("chatSend").addEventListener("click", sendChat);
+$("chatInput").addEventListener("keydown", (e) => {
+  if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); sendChat(); }
+});
+$("chatNew").addEventListener("click", () => { chatSession = newSession(); $("chatLog").textContent = ""; $("chatStatus").textContent = "New chat."; });
 $("runBtn").addEventListener("click", run);
 $("toolForm").addEventListener("keydown", (e) => {
   if (e.key === "Enter" && e.target.tagName !== "TEXTAREA") { e.preventDefault(); run(); }
