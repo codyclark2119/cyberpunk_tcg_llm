@@ -13,7 +13,11 @@ import { auditDemoObservation, publicPolicyActions } from "./demo-match-audit";
 import { assertNoSuppressedDemoInteraction } from "./demo-match-replay";
 import { aggregateMatrix, summarizeMatrixTrace, type MatrixTrace } from "./demo-matrix-metrics";
 import { unwrap } from "./turn-replay";
-const load=(family:string):MatrixTrace=>JSON.parse(readFileSync(`tests/fixtures/${family}.v1.json`,"utf8"));
+// Each fixture is 7-29 MB and several tests read the same one: parse once per family and deep-freeze the
+// shared result so a test that mutated it would throw instead of leaking state into later tests.
+const deepFreeze=<T>(value:T):T=>{if(value&&typeof value==="object"&&!Object.isFrozen(value)){Object.freeze(value);for(const child of Object.values(value))deepFreeze(child);}return value;};
+const traceCache=new Map<string,MatrixTrace>();
+const load=(family:string):MatrixTrace=>{let trace=traceCache.get(family);if(!trace){trace=deepFreeze(JSON.parse(readFileSync(`tests/fixtures/${family}.v1.json`,"utf8")) as MatrixTrace);traceCache.set(family,trace);}return trace;};
 import historicalReview from "./fixtures/reboot-multiplicity-source-review.v1.json";
 const matrix=JSON.parse(readFileSync("tests/fixtures/demo-match-matrix.v1.json","utf8"));
 test("matrix configuration and exact canonical result identity pin every attempted coordinate",()=>{

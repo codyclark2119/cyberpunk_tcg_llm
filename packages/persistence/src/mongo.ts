@@ -2,6 +2,7 @@ import { MongoClient, MongoServerError, type Db } from "mongodb";
 import { z } from "zod";
 import { CardSchema, RulesetSchema, hashCardContent, hashRulesetContent, type Card, type Ruleset, type CardId, type CardRevision, type RulesetId, type RulesetVersion, type CardRepository, type RulesetRepository, type CardPageRequest, type PublishResult } from "@tcg/domain";
 import type { Environment } from "./environment";
+import { cardSearchFields } from "./fixtures";
 export function connectMongo(env: Environment): {
     db: () => Promise<Db>;
     close: () => Promise<void>;
@@ -37,6 +38,14 @@ export function cardFromDocument(raw: unknown): Card {
     if (doc.cardId !== doc.content.id || doc.revision !== doc.content.revision || doc.contentHash !== hashCardContent(doc.content))
         throw new Error("Corrupt card snapshot identity/hash");
     return doc.content;
+}
+/** The `cards` read-model document: latest snapshot plus the fields the indexes in createMongoIndexes cover. */
+export function cardToProjection(card: Card) {
+    return { ...cardToDocument(card), _id: card.id,
+        index: { cardNumber: card.cardNumber, name: card.name, setCode: card.setCode, type: card.type, colors: card.colors,
+            searchText: cardSearchFields(card).join("\n").toLowerCase() },
+        data: { rulesText: card.rulesText, tags: card.tags }
+    };
 }
 const RulesetDocumentSchema = z.object({ _id: z.string(), rulesetId: z.string(), version: z.string(), schemaVersion: z.literal(1), contentHash: hashSchema, content: RulesetSchema });
 export async function createMongoIndexes(db: Db): Promise<void> {
@@ -78,10 +87,7 @@ export class MongoCardRepository implements CardRepository {
         if (!latestRaw)
             throw new Error("Published revision disappeared");
         const latest = cardFromDocument(latestRaw);
-        const projection = { ...cardToDocument(latest), _id: card.id,
-            index: { cardNumber: latest.cardNumber, name: latest.name, setCode: latest.setCode, type: latest.type, colors: latest.colors },
-            data: { rulesText: latest.rulesText, tags: latest.tags }
-        };
+        const projection = cardToProjection(latest);
         // Insert immutable content first. Replay repairs a projection after a crash.
         // Atomic pipeline prevents an older concurrent publisher moving the pointer backwards.
         await db.collection<CardDocument>("cards").updateOne({ _id: card.id }, [{ $replaceWith: { $cond: [

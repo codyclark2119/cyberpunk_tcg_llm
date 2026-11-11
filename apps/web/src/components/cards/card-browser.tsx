@@ -1,11 +1,19 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useQuery } from "@apollo/client/react";
 import { GetCardsDocument } from "@tcg/graphql/client";
 
+const SEARCH_DEBOUNCE_MS = 250;
+
 export function CardBrowser() {
+  const [input, setInput] = useState("");
   const [search, setSearch] = useState("");
+  // Query only after typing pauses, not on every keystroke.
+  useEffect(() => {
+    const timer = setTimeout(() => setSearch(input), SEARCH_DEBOUNCE_MS);
+    return () => clearTimeout(timer);
+  }, [input]);
   const { data, loading, error, fetchMore } = useQuery(GetCardsDocument, {
     variables: { filter: search.trim() ? { search } : null, first: 20 }
   });
@@ -16,8 +24,8 @@ export function CardBrowser() {
         <label htmlFor="card-search">GraphQL search</label>
         <input
           id="card-search"
-          value={search}
-          onChange={(event) => setSearch(event.target.value)}
+          value={input}
+          onChange={(event) => setInput(event.target.value)}
           placeholder="Name, number, rules text, or tag"
         />
         <code>Query.cards(filter: CardFilterInput)</code>
