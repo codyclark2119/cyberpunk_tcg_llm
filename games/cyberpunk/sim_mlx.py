@@ -1,4 +1,4 @@
-"""Compose the external simulator policy with a persistent local MLX worker."""
+"""Compose the local action-selection policy with a persistent local MLX worker."""
 
 from __future__ import annotations
 

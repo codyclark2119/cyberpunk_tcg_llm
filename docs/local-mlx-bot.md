@@ -1,5 +1,7 @@
 # Local MLX simulator bot
 
+> The simulator bridge this describes was retired 2026-11-11; `serve_sim_bot.py` and `--bot-id` are gone and the benchmark now takes decision records. See [simulator-bot-retirement.md](simulator-bot-retirement.md).
+
 Implemented 2026-09-25 for development on Apple Silicon, initially an M3 with
 64 GB unified memory. This milestone connects downloaded model weights to the
 [external simulator bridge](simulator-bot.md). It includes no trained gameplay
