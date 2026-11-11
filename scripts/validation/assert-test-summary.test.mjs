@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { spawnSync } from "node:child_process";
-import { mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import { mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import test from "node:test";
@@ -120,55 +120,3 @@ test("pipefail rejects a nonzero test process even if it printed a passing foote
     rmSync(dir, { recursive: true, force: true });
   }
 });
-
-// This is a policy regression guard, not a replacement for a YAML/action linter.
-// Pin the unconditional execution boundary and reject the old selector machinery.
-const workflow = readFileSync(new URL("../workflows/pr-validation.yml", import.meta.url), "utf8");
-function assertFullWorkflow(source) {
-  assert.match(source, /^on:\n  pull_request:\n  push:\n    branches: \[master\]\n  workflow_dispatch:\n/m);
-  assert.doesNotMatch(source, /^\s*(?:paths|paths-ignore|branches-ignore|continue-on-error):/m);
-  assert.doesNotMatch(source, /baseline_regex|needs\.scope|mapfile -t tests|No changed top-level test files/);
-  const jobs = source.split(/^jobs:\n/m)[1];
-  assert.ok(jobs, "jobs must exist");
-  assert.deepEqual([...jobs.matchAll(/^  ([\w-]+):$/gm)].map(match => match[1]), ["validate", "integration", "ai"]);
-  assert.doesNotMatch(jobs, /^    (?:if|needs|continue-on-error|strategy|uses):/m,
-    "Full jobs must not depend on scope, another job, or a conditional");
-  for (const name of ["Full unit suite with execution evidence", "Run integration tests with zero skips"]) {
-    const marker = `      - name: ${name}\n`;
-    const start = jobs.indexOf(marker);
-    assert.ok(start >= 0, `${name} must exist`);
-    const step = jobs.slice(start + marker.length).split(/^      - name:/m)[0];
-    assert.doesNotMatch(step, /^\s*(?:if|continue-on-error):/m);
-    assert.doesNotMatch(step, /\|\|\s*true/);
-    assert.match(step, /set -euo pipefail/);
-    assert.match(step, /node \.github\/scripts\/assert-test-summary\.mjs/);
-  }
-  assert.match(jobs, /^          npm test 2>&1 \| tee "\$RUNNER_TEMP\/pr-validation-unit\.tap"$/m);
-  assert.match(jobs, /^          npm run test:integration 2>&1 \| tee "\$RUNNER_TEMP\/pr-validation-integration\.tap"$/m);
-  assert.match(jobs, /assert-test-summary\.mjs "\$RUNNER_TEMP\/pr-validation-integration\.tap" --minimum-tests 12/);
-  assert.match(jobs, /TEST_DATABASE_URL: postgresql:/);
-  assert.match(jobs, /TEST_MONGODB_URI: mongodb:/);
-  for (const command of [
-    "python scripts/test_cyberpunk.py",
-    "python scripts/test_harness_core.py",
-    "python scripts/test_engine_candidates.py",
-    "python scripts/test_sim_bot.py",
-    "python scripts/test_sim_mlx.py",
-    "python scripts/check_deck_rules.py --negative-control",
-    "python scripts/test_engine_adapter.py --app-root .",
-    "python scripts/test_local_match.py",
-  ]) assert.ok(jobs.includes(command), `${command} must remain in full CI`);
-}
-
-test("workflow executes complete suites without any changed-path selector", () => assertFullWorkflow(workflow));
-
-for (const [name, transform] of [
-  ["runtime/helper-only skip via scope", source => source.replace("  integration:\n", "  integration:\n    if: needs.scope.outputs.baseline == 'true'\n")],
-  ["schema-only skip via path filter", source => source.replace("  pull_request:\n", "  pull_request:\n    paths: ['tests/fixtures/**']\n")],
-  ["conditional full-unit step", source => source.replace("      - name: Full unit suite with execution evidence\n", "      - name: Full unit suite with execution evidence\n        if: false\n")],
-  ["weakened integration minimum", source => source.replace("--minimum-tests 12", "--minimum-tests 1")],
-  ["loss of pipefail", source => source.replaceAll("set -euo pipefail", "set -eu")],
-  ["suppressed unit failure", source => source.replace('npm test 2>&1', 'npm test || true 2>&1')],
-]) {
-  test(`workflow guard detects ${name}`, () => assert.throws(() => assertFullWorkflow(transform(workflow))));
-}

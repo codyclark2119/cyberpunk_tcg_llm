@@ -29,9 +29,16 @@ measurement is against that snapshot.
 
 ## Commands
 
-Use the Node version in `.nvmrc` (`nvm use`); CI uses the same one.
+Use the Node version in `.nvmrc` (`nvm use`); the manual workflow uses the same one.
 
 ```bash
+scripts/run_tests.sh --quick # static checks, unit suite, Python suites; no Docker
+scripts/run_tests.sh         # full tier: adds build, diff check, deck rules, integration
+scripts/run_tests.sh --only unit   # one step; --list names them
+npm run hooks:install        # pre-push hook runs --quick (SKIP_LOCAL_VALIDATION=1 bypasses)
+npm run validate:ui          # loopback console for the same runs
+
+# The steps it runs, individually:
 npm run typecheck && npm run lint && npm run validate:cards
 npm test                     # ~1,360 unit tests, about a minute
 npm run build
@@ -70,14 +77,17 @@ Tests use `node:test` through tsx, and the Python suites are plain scripts with 
   hash-order-dependent selection in engine code; replays must survive reversed
   legal-action lists.
 
-## CI
+## Validation
 
-PR Validation runs the unit, integration and AI jobs on every PR, and the `master`
-ruleset requires all three. There are deliberately no path filters, skips or
-conditional jobs, and `.github/scripts/assert-test-summary.test.mjs` pins that
-structure, so do not work around it. The AI job asserts exact pass lines such as
-`all 89 tests passed`; update the expected line in `pr-validation.yml` when you add or
-remove a Python test. A stale baseline is a real failure, fixed by regeneration.
+Validation is local-first: GitHub runs nothing automatically.
+`scripts/run_tests.sh` is the one entry point (`--quick` before every push, the full
+default before asking for a merge; the full tier starts Docker for the integration
+databases unless `--no-infra`). It has no path filters, skips or conditional steps, so
+do not work around it. Every exact pass line, such as `all 89 tests passed`, lives in
+the pin table at the top of that script; update the row when you add or remove a
+Python test. `.github/workflows/manual-validation.yml` runs the same script on demand
+only. A stale baseline is a real failure, fixed by regeneration. See
+[docs/ci-validation.md](docs/ci-validation.md).
 
 ## AI harness rules
 

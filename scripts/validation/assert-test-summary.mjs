@@ -44,7 +44,7 @@ if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.ur
       allowPositionals: true,
     });
     assert.equal(positionals.length, 1,
-      "Usage: node .github/scripts/assert-test-summary.mjs REPORT [--minimum-tests N]");
+      "Usage: node scripts/validation/assert-test-summary.mjs REPORT [--minimum-tests N]");
     const result = assertSuccessfulTap(readFileSync(positionals[0], "utf8"), Number(values["minimum-tests"]));
     console.log(JSON.stringify(result, null, 2));
   } catch (error) {

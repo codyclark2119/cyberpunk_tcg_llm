@@ -1,0 +1,30 @@
+#!/bin/sh
+# Opt-in pre-push hook: runs the quick local validation before a push.
+# Enable with `npm run hooks:install`, disable with `npm run hooks:uninstall`.
+# Bypass once with SKIP_LOCAL_VALIDATION=1 git push (or git push --no-verify).
+# LOCAL_VALIDATION_CMD overrides the command (run through sh -c), e.g. for testing.
+
+if [ "${SKIP_LOCAL_VALIDATION:-}" = "1" ]; then
+  echo "pre-push: local validation skipped (SKIP_LOCAL_VALIDATION=1)." >&2
+  exit 0
+fi
+
+repo_root=$(git rev-parse --show-toplevel) || exit 1
+cd "$repo_root" || exit 1
+
+# git feeds the refs being pushed on stdin; the runner does not need them.
+if [ -n "${LOCAL_VALIDATION_CMD:-}" ]; then
+  sh -c "$LOCAL_VALIDATION_CMD" </dev/null
+  status=$?
+elif [ -f scripts/run_tests.sh ]; then
+  bash scripts/run_tests.sh --quick </dev/null
+  status=$?
+else
+  echo "pre-push: scripts/run_tests.sh not found; cannot run local validation." >&2
+  status=1
+fi
+
+if [ "$status" -ne 0 ]; then
+  echo "pre-push: local validation failed (exit $status); fix it, rerun scripts/run_tests.sh --quick, or bypass with SKIP_LOCAL_VALIDATION=1 git push." >&2
+fi
+exit "$status"

@@ -1,81 +1,114 @@
-# Hosted PR validation
+# Validation
 
 ## Scope
 
-`PR Validation` runs on every pull request (including stacked PRs and docs-only
-PRs), on pushes to `master`, and on manual dispatch. There are no changed-file
-selectors, generated-baseline classifiers, path filters, or conditional full-test
-jobs. Runtime-only, shared-helper-only, dependency-only, evidence-only and
-wire-schema-only changes all receive the same complete validation.
+Validation is local-first. GitHub runs nothing automatically: no workflow triggers on
+pull requests or pushes. `scripts/run_tests.sh` is the single command that decides
+whether a tree is acceptable, and the same script runs on a laptop, in the pre-push
+hook, in the local console and in the manual GitHub workflow.
 
-Running full checks for docs-only changes is intentional: the small scheduling
-saving is not worth another default-pass classification boundary. The three jobs
-are independent, so a failure in one cannot silently prevent the others from
-reporting their own results. Every job uses the Node version pinned in `.nvmrc`;
-bump it deliberately rather than tracking the latest 22.x release implicitly.
+There are no changed-file selectors, generated-baseline classifiers, path filters or
+conditional steps. A docs-only change gets the same validation as a runtime change;
+the small time saving is not worth another default-pass boundary. Use the Node
+version pinned in `.nvmrc` (`nvm use`) and Python 3 with `fastapi` installed
+(`python -m pip install fastapi httpx`; `httpx` is used by the console tests).
 
-## Gates
-
-- **Unit, static, and build validation**: dependency-free CI guard regression tests,
-  `npm ci`, typecheck, lint, card validation, the complete `npm test` suite, build,
-  and PR diff whitespace checking.
-- **Database integration validation**: fresh PostgreSQL 16 and MongoDB 7 services,
-  explicit disposable connection configuration, and the complete
-  `npm run test:integration` suite with a minimum of 12 tests.
-- **AI harness validation**: Python 3.12 with `fastapi` installed (for the harness
-  monitor tests), a compile check of `games/`, `harness/` and `scripts/`, the corpus/ingestion suite
-  (`test_cyberpunk.py`), the generic harness suite (`test_harness_core.py`), the
-  engine-candidate bridge, community deck rules with negative controls, the
-  Python-to-engine adapter boundary against the committed Demo matrix fixture,
-  and the local action-selection policy layer (`test_sim_bot.py`, 24/24 tests).
-  The local inference boundary (`test_sim_mlx.py`, 27/27 tests) uses real Python
-  subprocesses and injected tokenizers/generators. It requires no MLX or weights;
-  actual Metal inference, latency and gameplay quality are Mac-side checks.
-  The local match runner (`test_local_match.py`, 12/12 tests) plays real
-  baseline-vs-baseline Demo games through the Node engine worker, checks that
-  every chosen action was offered and that a seed replays identically, and uses
-  fake async policies for the model seat; it loads no model.
-  These steps assert exact pass lines (for example `all 89 tests passed`), so
-  adding or removing a Python test also updates the expected line here.
-
-Both suite commands are piped to TAP logs using `set -euo pipefail`. A nonzero
-command remains a failure even if it prints plausible successful output. The
-report guard separately requires one complete final Node TAP summary, positive
-test/plan counts, every test passed, and zero failures, cancellations, skips and
-todos. A parent test's plan count need not equal the recursive test count.
-
-The integration minimum is a coverage floor, not an exact ceiling: adding tests
-needs no CI change, but legitimately reducing the suite requires explicit review
-of the floor. A skipped or empty run is never acceptance evidence.
-
-The guard tests include real Node-runner/CLI subprocesses, the exit-zero skipped
-case, malformed/partial/concatenated logs, and workflow policy mutants. They are
-policy regression tests, not a general-purpose YAML or GitHub Actions linter.
-Run them locally without installing application dependencies:
+## Commands and tiers
 
 ```bash
-node --test .github/scripts/*.test.mjs
+scripts/run_tests.sh --quick         # before every push
+scripts/run_tests.sh                 # full tier (the default) before asking for a merge
+scripts/run_tests.sh --only unit     # one step; repeat --only for several
+scripts/run_tests.sh --list          # step names and tiers
 ```
 
-TAP logs are uploaded on success and failure when produced and retained for 14
-days. Missing logs after an earlier setup failure do not turn that failure green.
-Artifacts are named by run and attempt. Credentials are not repository secrets;
-these service credentials belong only to disposable job-local test databases.
+- **Quick tier**: the validation-guard tests (`scripts/validation/*.test.mjs`),
+  typecheck, lint, card validation, the complete `npm test` suite, a Python
+  dependency check, a compile check of `games/`, `harness/` and `scripts/`, and the
+  Python suites: corpus and ingestion, harness core, engine candidates, the local
+  policy layer, the local MLX worker boundary (no MLX or weights needed), the
+  Python-to-engine adapter, the local match runner and the validation console. It
+  needs no Docker.
+- **Full tier**: every quick step plus the build, `git diff --check` against the
+  merge-base with `origin/master` (override with `RUN_TESTS_BASE`), community deck
+  rules with negative controls (272/272, and no negative control may print
+  `<-- LOOK`), and the database integration suite with at least 12 tests.
+
+By default every selected step runs and all failures are reported at the end;
+`--fail-fast` stops at the first. Exit status is 0 only when every selected step
+passed. Each step's output is kept in `${TMPDIR:-/tmp}/run_tests.<pid>/<step>.log`.
+
+## Where the pins live
+
+The pin table at the top of `scripts/run_tests.sh` is the only place that names steps,
+tiers, commands and expected output. Each row checks the exit status (with
+`pipefail`) and, where pinned, an exact pass line such as `all 89 tests passed`.
+Adding or removing a Python test means updating that row in the same change.
+
+Node suites are checked by `scripts/validation/assert-test-summary.mjs`: one complete
+final TAP summary, positive test and plan counts, every test passed, and zero
+failures, cancellations, skips and todos. A nonzero command stays a failure even if it
+prints plausible output, and a skipped or empty run is never acceptance evidence. The
+integration minimum of 12 is a floor: adding tests needs no change, but reducing the
+suite requires reviewing the floor. The guard's own regression tests (real Node-runner
+and CLI subprocesses, the exit-zero skipped case, malformed, partial and concatenated
+logs) run as the first quick step and need no installed dependencies:
+
+```bash
+node --test scripts/validation/*.test.mjs
+```
+
+## Docker and the integration databases
+
+Only the full tier's integration step needs databases. When `TEST_DATABASE_URL` or
+`TEST_MONGODB_URI` is unset, it points the missing one at the `docker-compose.yml`
+service on `POSTGRES_PORT` (default 5432) or `MONGO_PORT` (default 27017) and runs
+`npm run infra:up` (`docker compose up -d --wait`, PostgreSQL 16 and MongoDB 7). When
+both URLs are set, or with `--no-infra`, it starts nothing and waits for the databases
+to be reachable. So a machine without Docker can run the quick tier, single steps, or
+the full tier with `--no-infra` against databases it already has. Integration tests create and remove randomized
+databases and schemas; the credentials belong only to disposable test databases.
+
+## Pre-push hook
+
+`npm run hooks:install` sets `core.hooksPath` to `.githooks`, whose `pre-push` hook
+runs `scripts/run_tests.sh --quick`. The hook is opt-in per clone;
+`npm run hooks:uninstall` turns it off. Bypass it once with
+`SKIP_LOCAL_VALIDATION=1 git push` (or `git push --no-verify`).
+
+## Local console
+
+`npm run validate:ui` serves `scripts/validation_console.py` on loopback
+(`http://127.0.0.1:8766`). It offers Quick, Full, Full without Docker (`--no-infra`)
+and Single step actions, the last listed from `run_tests.sh --list`. The browser names
+an action id only; the command line is built server-side from a fixed allowlist.
+
+## Manual GitHub workflow
+
+`.github/workflows/manual-validation.yml` has only a `workflow_dispatch` trigger, with
+a `tier` input (`quick`, the default, or `full`). Its one job on `ubuntu-latest`
+starts PostgreSQL 16 and MongoDB 7 service containers, sets up Node from `.nvmrc` and
+Python 3.12, installs `fastapi` and `httpx`, runs `npm ci`, then
+`scripts/run_tests.sh --no-infra` (plus `--quick` for the quick tier). The step logs
+are uploaded on success and failure and kept for 14 days. The workflow contains no
+pass lines; it is a clean-machine run of the same script, not a separate gate.
+
+## Branch protection
+
+Because no workflow runs on pull requests, the required status checks in the
+`master: require PR Validation` repository ruleset can never report. Cody must remove
+those required checks from the ruleset by hand in the repository settings, keeping
+the pull-request requirement and the blocks on force-pushes and deletion of `master`.
+Until then, pull requests to `master` cannot merge.
 
 ## Acceptance boundary
 
-CI does not regenerate fixtures to make tests pass. It validates the checked-out
-candidate. A stale baseline is a real failed check and must be corrected by an
-explicitly reviewed regeneration commit, never by skipping the relevant tests.
+Validation does not regenerate fixtures to make tests pass; it checks the tree as it
+is. A stale baseline is a real failure and is corrected by an explicitly reviewed
+regeneration commit, never by skipping the relevant steps.
 
 After an engine identity change, regenerate locally with
-`npm run baseline:regenerate -- --preserved <last pre-change commit>` and commit
-the result separately. The full 192-game matrix, its trace regeneration, and the
-full Descriptor V2 corpus review run there, as deliberate milestone gates, not as
-automatic jobs in this workflow.
-
-The `master: require PR Validation` repository ruleset requires a pull request and
-all three named jobs before merge, and blocks force-pushes and deletion of
-`master`. Only PR diff whitespace checking is event-specific. Manual runs still
-execute every complete suite; pushes to `master` validate the actual post-merge
-tree.
+`npm run baseline:regenerate -- --preserved <last pre-change commit>` and commit the
+result separately. The full 192-game matrix, its trace regeneration and the full
+Descriptor V2 corpus review run there as deliberate milestone gates, not as
+`run_tests.sh` steps.

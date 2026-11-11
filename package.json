@@ -9,6 +9,7 @@
     "lint": "eslint .",
     "typecheck": "npm run codegen && tsc --noEmit && tsc --noEmit -p apps/web/tsconfig.json",
     "validate:cards": "node --import tsx scripts/validate-card-data.ts",
+    "validate:ui": "python3 scripts/validation_console.py",
     "mongo:indexes": "node --import tsx scripts/create-mongo-indexes.ts",
     "infra:up": "docker compose up -d --wait",
     "infra:down": "docker compose down",
@@ -23,7 +24,9 @@
     "test:matrix": "node --import tsx scripts/generate-demo-match-matrix.ts",
     "review:descriptor-v2": "node --import tsx scripts/review-public-actions-v2.ts",
     "review:engine-candidates": "node --import tsx scripts/review-engine-candidates.ts",
-    "baseline:regenerate": "bash scripts/regenerate-baseline.sh"
+    "baseline:regenerate": "bash scripts/regenerate-baseline.sh",
+    "hooks:install": "git config core.hooksPath .githooks",
+    "hooks:uninstall": "git config --unset core.hooksPath || true"
   },
   "dependencies": {
     "@next/env": "16.3.4"
