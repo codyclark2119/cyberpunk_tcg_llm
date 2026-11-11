@@ -50,7 +50,7 @@ cp .env.example .env.local
 npm run dev
 ```
 
-Use the Node version pinned in `.nvmrc` (`nvm use`); CI runs the same version. The lockfile pins resolved dependencies.
+Use the Node version pinned in `.nvmrc` (`nvm use`); the manual validation workflow runs the same version. The lockfile pins resolved dependencies.
 
 ### Fixture-only mode
 
@@ -168,6 +168,17 @@ Code generation uses the official [resolver mapper configuration](https://the-gu
 
 ## Quality gates
 
+Validation is local-first; GitHub runs nothing automatically. One script runs every gate below and checks each suite's exact pass line or TAP summary:
+
+```bash
+scripts/run_tests.sh --quick   # static checks, unit suite and Python suites; no Docker
+scripts/run_tests.sh           # full tier: adds build, diff check, deck rules and integration (starts Docker unless --no-infra)
+npm run hooks:install          # opt-in pre-push hook running --quick (SKIP_LOCAL_VALIDATION=1 bypasses)
+npm run validate:ui            # loopback console with Quick, Full, Full-no-Docker and Single-step runs
+```
+
+The individual commands:
+
 ```bash
 npm run typecheck
 npm run lint
@@ -182,11 +193,11 @@ node scripts/smoke-web.mjs unavailable
 
 Integration tests create and remove randomized test databases/schemas, never application tables. They skip if explicit test URLs are missing; supply both to verify both adapters. Use the ports Compose was started with. HTTP smoke tests start and stop a temporary production server on port 3011; Mongo mode expects the development fixtures to have been seeded.
 
-PR Validation runs the unit, integration and AI suites on every pull request and rejects skipped tests; `master` requires all three. See [CI validation](docs/ci-validation.md).
+`run_tests.sh` rejects skipped tests, and its pin table is the one place that holds every expected pass line. A manual-only GitHub workflow (`manual-validation.yml`) runs the same script on demand. See [Validation](docs/ci-validation.md).
 
 ## Regenerating the engine baseline
 
-Replays, wire schemas and matrix reviews pin the engine identity from `scripts/engine-identity.ts`: a version string plus a hash of the domain, engine and wire sources, the engine worker, the identity script itself and `package-lock.json`. Changing any of those makes the committed baseline stale, and CI fails until it is regenerated:
+Replays, wire schemas and matrix reviews pin the engine identity from `scripts/engine-identity.ts`: a version string plus a hash of the domain, engine and wire sources, the engine worker, the identity script itself and `package-lock.json`. Changing any of those makes the committed baseline stale, and validation fails until it is regenerated:
 
 ```bash
 npm run baseline:regenerate -- --preserved <last commit before the runtime change>
@@ -203,7 +214,7 @@ python3 -m venv mlx_env && source mlx_env/bin/activate
 pip install -r requirements.txt
 ```
 
-The offline checks need `fastapi` (for the harness monitor tests), no GPU and no network after dependency installation. CI runs all of them:
+The offline checks need `fastapi` (for the harness monitor tests), no GPU and no network after dependency installation. `scripts/run_tests.sh` runs all of them:
 
 ```bash
 python -m pip install fastapi
