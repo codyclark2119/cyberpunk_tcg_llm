@@ -135,7 +135,7 @@ revision 2) are checked on an edited real position.
 
 ## For the Mac re-measurement
 
-- Run `benchmark_sim_bot.py` and compare `promptTokens` with the estimates
+- Run `benchmark_policy_bot.py` and compare `promptTokens` with the estimates
   above: compact text with slugs and short ids may tokenize at a different
   ratio than JSON did.
 - Check whether decisions that previously took 2.6–5.1 s now take about the

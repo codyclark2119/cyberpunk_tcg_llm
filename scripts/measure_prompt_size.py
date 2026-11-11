@@ -3,16 +3,16 @@
 
 Why: on Apple Silicon, a gameplay decision's time is almost all prompt prefill
 (the answer is about 6 tokens), so prompt length is decision latency, and
-mlx_sim_worker.py refuses any prompt over --max-prompt-tokens (4,096 by default).
+mlx_policy_worker.py refuses any prompt over --max-prompt-tokens (4,096 by default).
 This plays --matches baseline-vs-baseline games on the local engine (seeds
-<seed>-0, <seed>-1, ..., the same as benchmark_sim_bot.py), renders every
+<seed>-0, <seed>-1, ..., the same as benchmark_policy_bot.py), renders every
 decision the policy would receive with the current prompt (PROMPT_VERSION) and
 with the retired local-choice-v2 JSON prompt, and reports characters per
 position: min, median, p95 and max overall and for the early, middle and late
 third of each game's decisions, plus an approximate token count at
 --chars-per-token (the 2026-11-11 Mac run with Qwen3-8B saw about 3). Counts
 cover the system and user messages; the chat template adds a few tokens more.
-The exact count needs the model's tokenizer: run benchmark_sim_bot.py on a Mac.
+The exact count needs the model's tokenizer: run benchmark_policy_bot.py on a Mac.
 No model, network or GPU is used; it needs node and installed npm dependencies.
 """
 
@@ -30,8 +30,8 @@ sys.path.insert(0, str(REPO_ROOT))
 
 from games.cyberpunk.engine_adapter import EngineWorker
 from games.cyberpunk.local_match import load_default_setup, play_match
-from games.cyberpunk.sim_bot import Decision, PolicyRunner
-from games.cyberpunk.sim_prompt import PROMPT_VERSION, build_choice_messages
+from games.cyberpunk.policy_bot import Decision, PolicyRunner
+from games.cyberpunk.policy_prompt import PROMPT_VERSION, build_choice_messages
 
 # local-choice-v2's prompt, kept only so this report and the v3 fact tests can
 # compare against it. The bot never sends it.

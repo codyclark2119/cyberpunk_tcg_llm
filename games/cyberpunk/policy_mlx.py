@@ -7,12 +7,12 @@ import logging
 import sys
 from pathlib import Path
 
-from games.cyberpunk.sim_prompt import PROMPT_VERSION, build_choice_messages, parse_choice
+from games.cyberpunk.policy_prompt import PROMPT_VERSION, build_choice_messages, parse_choice
 from harness.core.local_worker import LocalWorker, WorkerError
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
 DEFAULT_MODEL = "models/qwen3-8b-4bit"
-LOGGER = logging.getLogger("cyberpunk.sim_mlx")
+LOGGER = logging.getLogger("cyberpunk.policy_mlx")
 
 
 def local_path(value: str) -> Path:
@@ -38,7 +38,7 @@ def make_worker(model: str = DEFAULT_MODEL, *, adapter: str | None = None,
                          "see docs/local-mlx-bot.md for the download command.")
     if not 1 <= max_prompt_tokens <= 32768 or not 1 <= max_tokens <= 128:
         raise ValueError("Token limits must be 1..32768 for prompts and 1..128 for outputs.")
-    command = [sys.executable, "-u", str(REPO_ROOT / "scripts/mlx_sim_worker.py"),
+    command = [sys.executable, "-u", str(REPO_ROOT / "scripts/mlx_policy_worker.py"),
                "--model", str(model_path), "--max-prompt-tokens", str(max_prompt_tokens),
                "--max-tokens", str(max_tokens)]
     if adapter is not None:

@@ -61,8 +61,8 @@ py-compile           | quick | "$PY" -m compileall -q games harness scripts    |
 py-cyberpunk         | quick | "$PY" scripts/test_cyberpunk.py                 | line:all 89 tests passed
 py-harness-core      | quick | "$PY" scripts/test_harness_core.py              | line:48 tests passed
 py-engine-candidates | quick | "$PY" scripts/test_engine_candidates.py         | line:PASS 3/3
-py-sim-bot           | quick | "$PY" scripts/test_sim_bot.py                   | line:PASS policy layer: 27/27
-py-sim-mlx           | quick | "$PY" scripts/test_sim_mlx.py                   | line:PASS local MLX bot: 32/32
+py-policy-bot        | quick | "$PY" scripts/test_policy_bot.py                | line:PASS policy layer: 27/27
+py-policy-mlx        | quick | "$PY" scripts/test_policy_mlx.py                | line:PASS local MLX bot: 32/32
 py-engine-adapter    | quick | "$PY" scripts/test_engine_adapter.py --app-root . | -
 py-local-match       | quick | "$PY" scripts/test_local_match.py               | line:PASS local match runner: 14/14
 py-local-prompt      | quick | "$PY" scripts/test_local_prompt.py              | line:PASS local prompt: 9/9

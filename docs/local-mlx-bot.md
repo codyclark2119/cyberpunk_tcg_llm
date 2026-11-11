@@ -1,6 +1,6 @@
 # Local MLX simulator bot
 
-> The simulator bridge this describes was retired 2026-11-11; `serve_sim_bot.py` and `--bot-id` are gone and the benchmark now takes decision records. See [simulator-bot-retirement.md](simulator-bot-retirement.md).
+> The simulator bridge this describes was retired 2026-11-11; `serve_sim_bot.py` and `--bot-id` are gone and the benchmark now takes decision records. See [simulator-bot-retirement.md](simulator-bot-retirement.md). The benchmark and test commands below use the renamed `policy_*` scripts; `serve_sim_bot.py` commands are kept as they were.
 
 Implemented 2026-09-25 for development on Apple Silicon, initially an M3 with
 64 GB unified memory. This milestone connects downloaded model weights to the
@@ -59,7 +59,7 @@ python -c 'import mlx.core as mx; print("Metal available:", mx.metal.is_availabl
 ## Benchmark before connecting a match
 
 ```bash
-python scripts/benchmark_sim_bot.py \
+python scripts/benchmark_policy_bot.py \
   --model models/qwen3-8b-4bit \
   --repeat 5 \
   --output local/benchmark-qwen3-8b-smoke.jsonl
@@ -84,7 +84,7 @@ For realistic latency, place full **bot-visible acting `/sync` request bodies**
 in `local/positions.jsonl`, one JSON object per line, and run:
 
 ```bash
-python scripts/benchmark_sim_bot.py \
+python scripts/benchmark_policy_bot.py \
   --model models/qwen3-8b-4bit \
   --requests local/positions.jsonl \
   --repeat 3 \
@@ -104,7 +104,7 @@ If 8B misses the deadline, compare a smaller model using the same positions:
 hf download mlx-community/Qwen3-4B-4bit \
   --revision 4dcb3d101c2a062e5c1d4bb173588c54ea6c4d25 \
   --local-dir models/qwen3-4b-4bit
-python scripts/benchmark_sim_bot.py \
+python scripts/benchmark_policy_bot.py \
   --model models/qwen3-4b-4bit \
   --requests local/positions.jsonl \
   --output local/benchmark-qwen3-4b-positions.jsonl
@@ -201,7 +201,7 @@ HF_HUB_OFFLINE=1 mlx_lm.generate \
 Once a reviewed gameplay adapter exists, both commands accept it:
 
 ```bash
-python scripts/benchmark_sim_bot.py \
+python scripts/benchmark_policy_bot.py \
   --model models/qwen3-8b-4bit --adapter models/cyberpunk-policy-v1 \
   --requests local/positions.jsonl --output local/benchmark-policy-v1.jsonl
 
@@ -226,8 +226,8 @@ No heuristic decisions or synthetic smoke fixtures become gold labels by default
 
 ```bash
 python -m pip install httpx
-python scripts/test_sim_bot.py
-python scripts/test_sim_mlx.py
+python scripts/test_policy_bot.py
+python scripts/test_policy_mlx.py
 ```
 
 The portable suites cover 29 simulator contract checks and 29 local-worker checks,

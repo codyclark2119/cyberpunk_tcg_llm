@@ -27,12 +27,12 @@ REPO_ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(REPO_ROOT))
 sys.path.insert(0, str(REPO_ROOT / "scripts"))
 
-from games.cyberpunk.sim_bot import Decision, PolicyRunner
-from games.cyberpunk.sim_mlx import MLXPolicy, local_path, make_worker, watchdog_seconds
-from games.cyberpunk.sim_prompt import build_choice_messages, parse_choice
+from games.cyberpunk.policy_bot import Decision, PolicyRunner
+from games.cyberpunk.policy_mlx import MLXPolicy, local_path, make_worker, watchdog_seconds
+from games.cyberpunk.policy_prompt import build_choice_messages, parse_choice
 from harness.core.local_worker import LocalWorker, MAX_LINE_BYTES, PROTOCOL, WorkerError
-from benchmark_sim_bot import measure, summarize
-from mlx_sim_worker import run_generation
+from benchmark_policy_bot import measure, summarize
+from mlx_policy_worker import run_generation
 
 
 def fake_worker(mode):
@@ -281,7 +281,7 @@ async def test_parallel_calls_never_queue_multiple_generations():
 async def test_invalid_model_output_falls_back_without_logging_text():
     capture = io.StringIO()
     handler = logging.StreamHandler(capture)
-    logger = logging.getLogger("cyberpunk.sim_mlx")
+    logger = logging.getLogger("cyberpunk.policy_mlx")
     previous = logger.level
     logger.setLevel(logging.INFO)
     logger.addHandler(handler)

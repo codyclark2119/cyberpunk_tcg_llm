@@ -24,7 +24,7 @@ from pathlib import Path
 REPO_ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(REPO_ROOT))
 
-from games.cyberpunk.sim_bot import (DEFAULT_DECISION_BUDGET_MS, MAX_DECISION_BUDGET_MS, Decision,
+from games.cyberpunk.policy_bot import (DEFAULT_DECISION_BUDGET_MS, MAX_DECISION_BUDGET_MS, Decision,
                                      DecisionError, PolicyRunner, baseline_action_id,
                                      check_budget_ms, decision_from_record)
 
@@ -287,7 +287,7 @@ async def test_concurrent_matches_and_later_decisions_never_reuse_ids():
 
 
 async def test_logs_include_identifiers_without_private_input():
-    logger = logging.getLogger("cyberpunk.sim_bot")
+    logger = logging.getLogger("cyberpunk.policy_bot")
     output = io.StringIO()
     handler = logging.StreamHandler(output)
     old_level = logger.level

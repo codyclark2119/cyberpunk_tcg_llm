@@ -4,7 +4,7 @@ A monorepo for a Cyberpunk TCG platform and its AI harness:
 
 - **Deterministic TypeScript engine** (`packages/engine`): the sole authority for rules, legality, hidden state, RNG and legal-action enumeration. It plays the fixed Arasaka-vs-Merc Demo format end to end, and all 192 games of its deterministic match matrix reach supported terminals. Further cards enter only through reviewed, immutable revisions (API admission batches V1–V6).
 - **Web platform** (`apps/web`, `packages/graphql`, `packages/persistence`): Next.js and Apollo over versioned Mongo content and a PostgreSQL command ledger. The web catalog still serves the four development fixture cards; engine-admitted revisions are exercised by tests and replays, not yet published to it.
-- **Python AI harness** (`games/`, `harness/`, `data/`): rules Q&A over the official rules and card corpus, with retrieval, a rubric-based judge and LoRA fine-tuning on Apple Silicon via MLX. For gameplay it receives public observations and engine-enumerated legal actions, and returns only an `actionId`. A local policy layer (`games/cyberpunk/sim_bot.py`) validates each decision and picks an offered action with a deterministic baseline or optional [local MLX inference](docs/local-mlx-bot.md). Everything runs locally; the external simulator bridge was [retired](docs/simulator-bot-retirement.md).
+- **Python AI harness** (`games/`, `harness/`, `data/`): rules Q&A over the official rules and card corpus, with retrieval, a rubric-based judge and LoRA fine-tuning on Apple Silicon via MLX. For gameplay it receives public observations and engine-enumerated legal actions, and returns only an `actionId`. A local policy layer (`games/cyberpunk/policy_bot.py`) validates each decision and picks an offered action with a deterministic baseline or optional [local MLX inference](docs/local-mlx-bot.md). Everything runs locally; the external simulator bridge was [retired](docs/simulator-bot-retirement.md).
 
 Browser gameplay, authentication, matchmaking and WebSockets are not implemented. Working rules for both halves are in [CLAUDE.md](CLAUDE.md); the documentation index is [docs/README.md](docs/README.md).
 
@@ -36,7 +36,7 @@ Dependency direction:
 - Engine depends only on domain and Zod. Domain depends only on Zod and Node's deterministic SHA-256 primitive. Neither imports React, Next, Apollo, GraphQL, database drivers, networking, or WebSockets.
 - Training harness depends on domain and engine. It has no database or model-provider integration.
 - The Python harness reaches the engine only through the JSONL worker (`scripts/engine-worker.ts`, wrapped by `games/cyberpunk/engine_adapter.py`). Nothing under `harness/` imports from `games/`.
-- The policy layer (`games/cyberpunk/sim_bot.py`, `sim_prompt.py`, `sim_mlx.py`) only chooses among offered action IDs; it implements no rules and invents no actions.
+- The policy layer (`games/cyberpunk/policy_bot.py`, `policy_prompt.py`, `policy_mlx.py`) only chooses among offered action IDs; it implements no rules and invents no actions.
 
 `npm test` checks package manifests and source imports to enforce these boundaries. Shared packages export TypeScript source and are transpiled by Next/tsx. They are private workspaces, not published libraries. The current headless runtime is Node.js; browser-only/WASM packaging would need a hashing adapter.
 
@@ -223,8 +223,8 @@ python scripts/test_harness_core.py                    # harness/core
 python scripts/test_engine_candidates.py               # engine candidate bridge
 python scripts/check_deck_rules.py --negative-control  # deck rules against 272 public decks
 python scripts/test_engine_adapter.py                  # Python-to-engine boundary
-python scripts/test_sim_bot.py                         # local policy layer: validation, baseline, fallbacks
-python scripts/test_sim_mlx.py                         # subprocess policy boundary; no MLX required
+python scripts/test_policy_bot.py                      # local policy layer: validation, baseline, fallbacks
+python scripts/test_policy_mlx.py                      # subprocess policy boundary; no MLX required
 python scripts/test_local_match.py                     # bot-vs-bot games on the real engine worker
 python scripts/test_local_prompt.py                    # compact gameplay prompt: facts kept, nothing hidden added
 ```
@@ -235,10 +235,10 @@ The harness was imported from `codyclark2119/cyberpunk_tcg_ai`, now archived, at
 
 ### Local gameplay policy
 
-`games/cyberpunk/sim_bot.py` validates a `Decision` (visible context plus the
+`games/cyberpunk/policy_bot.py` validates a `Decision` (visible context plus the
 offered legal actions) and `PolicyRunner` returns one offered `actionId`. The
 default chooser is a deterministic smoke-play baseline, not a trained gameplay
-model. On Apple Silicon, `MLXPolicy` (`games/cyberpunk/sim_mlx.py`) runs a
+model. On Apple Silicon, `MLXPolicy` (`games/cyberpunk/policy_mlx.py`) runs a
 persistent local MLX model in its own process; slow, busy or invalid model
 decisions fall back to the baseline, and each fallback's failure code is recorded.
 The per-decision budget is a setting (`--budget-ms`, default 10,000 ms; local play
@@ -246,7 +246,7 @@ has no external deadline), and a late model answer is discarded without blocking
 the next decision; see [docs/local-time-budget.md](docs/local-time-budget.md). Follow the
 [Mac setup and benchmark guide](docs/local-mlx-bot.md) to install
 `requirements-mlx-bot.txt`, download Qwen3-8B's 4-bit weights and measure decision
-time with `scripts/benchmark_sim_bot.py`, which now measures positions from real
+time with `scripts/benchmark_policy_bot.py`, which now measures positions from real
 local engine games. The model reads the position as compact text
 (`local-choice-v3`, about a third of the earlier JSON prompt);
 `scripts/measure_prompt_size.py` reports prompt sizes over real games without a

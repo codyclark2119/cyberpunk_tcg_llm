@@ -26,9 +26,9 @@ REPO_ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(REPO_ROOT))
 sys.path.insert(0, str(REPO_ROOT / "scripts"))
 
-from games.cyberpunk.sim_bot import Decision
-from games.cyberpunk.sim_mlx import MLXPolicy
-from games.cyberpunk.sim_prompt import (PROMPT_VERSION, SYSTEM_PROMPT, build_choice_messages,
+from games.cyberpunk.policy_bot import Decision
+from games.cyberpunk.policy_mlx import MLXPolicy
+from games.cyberpunk.policy_prompt import (PROMPT_VERSION, SYSTEM_PROMPT, build_choice_messages,
                                         parse_choice, prompt_fingerprint, render_position)
 from measure_prompt_size import baseline_games, prompt_chars, v2_messages
 

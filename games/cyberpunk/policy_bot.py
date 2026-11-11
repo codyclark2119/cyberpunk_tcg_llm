@@ -28,7 +28,7 @@ import time
 from dataclasses import dataclass, field
 from typing import Any, Awaitable, Callable, Mapping
 
-LOGGER = logging.getLogger("cyberpunk.sim_bot")
+LOGGER = logging.getLogger("cyberpunk.policy_bot")
 # Local play has no external deadline; 10 s covers MLX prefill of long positions
 # on the first Mac run (docs/local-time-budget.md). Callers may pass any budget.
 DEFAULT_DECISION_BUDGET_MS = 10_000

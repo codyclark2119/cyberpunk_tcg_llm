@@ -25,7 +25,7 @@ sys.path.insert(0, str(REPO_ROOT))
 from games.cyberpunk.engine_adapter import EngineWorker
 from games.cyberpunk.local_match import (MatchSetup, load_default_setup, load_setup_file, play_match,
                                          summarize, write_match_record)
-from games.cyberpunk.sim_bot import DEFAULT_DECISION_BUDGET_MS, PolicyRunner, baseline_action_id
+from games.cyberpunk.policy_bot import DEFAULT_DECISION_BUDGET_MS, PolicyRunner, baseline_action_id
 
 FORBIDDEN_KEYS = ("actorId", "choiceId", "optionIndices", "cardInstanceId", "sourceInstanceId", "rng")
 CTX: dict = {}

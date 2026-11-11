@@ -21,7 +21,7 @@ import json
 import re
 from typing import Any, Mapping
 
-from games.cyberpunk.sim_bot import Decision
+from games.cyberpunk.policy_bot import Decision
 
 PROMPT_VERSION = "local-choice-v3"
 SYSTEM_PROMPT = """You are choosing an action in a Cyberpunk TCG match.

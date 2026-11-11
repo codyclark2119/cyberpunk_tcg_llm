@@ -2,6 +2,20 @@
 
 Recorded 2026-11-11.
 
+> Later on 2026-11-11 the `sim_*` modules were renamed, since no simulator remains.
+> The names below are as they were when this was recorded.
+>
+> | Old | New |
+> | --- | --- |
+> | `games/cyberpunk/sim_bot.py` | `games/cyberpunk/policy_bot.py` |
+> | `games/cyberpunk/sim_prompt.py` | `games/cyberpunk/policy_prompt.py` |
+> | `games/cyberpunk/sim_mlx.py` | `games/cyberpunk/policy_mlx.py` |
+> | `scripts/benchmark_sim_bot.py` | `scripts/benchmark_policy_bot.py` |
+> | `scripts/mlx_sim_worker.py` | `scripts/mlx_policy_worker.py` |
+> | `scripts/test_sim_bot.py` | `scripts/test_policy_bot.py` |
+> | `scripts/test_sim_mlx.py` | `scripts/test_policy_mlx.py` |
+> | `run_tests.sh` steps `py-sim-bot`, `py-sim-mlx` | `py-policy-bot`, `py-policy-mlx` |
+
 ## Why
 
 The external Cyberpunk TCG Sim website that the v1alpha1 HTTP bot bridge served
