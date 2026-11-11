@@ -5,7 +5,7 @@
     npm run validate:ui
 
 Why a console at all: `scripts/run_tests.sh` is the one entry point that runs
-the same checks CI does, but its output is long and a full run takes many
+every validation check, but its output is long and a full run takes many
 minutes. Running it from a browser tab keeps the log scrollable, cancellable
 and next to the code being changed, without a terminal held open for it.
 
