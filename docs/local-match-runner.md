@@ -25,7 +25,8 @@ enumerates no actions and decides no legality.
    engine's action descriptors only. Game states, events and hidden cards never
    reach a policy.
 3. That engine seat's `PolicyRunner.choose` returns an offered `actionId`, with
-   the usual 2,500 ms cap and baseline fallbacks. The runner checks the id was
+   the usual 2,500 ms cap and baseline fallbacks (since
+   [local-time-budget.md](local-time-budget.md): a `--budget-ms` setting, default 10,000 ms). The runner checks the id was
    offered and submits only that id through `applyAction`.
 4. The match stops at the engine's outcome, at `--max-decisions` (default 2,000),
    when the turn passes `--max-turns` (default 120), when the acting player is
@@ -60,13 +61,18 @@ without `--force`. Rows:
   `engine_error`), `detail`, `winnerSeat`, `loserSeat`, `reason` (the engine's
   outcome reason), `turns`, `decisions`, `selections`, `finalStateHash`.
 
+Update 2026-11-11 ([local-time-budget.md](local-time-budget.md)): `schemaVersion`
+2 adds `budgetMs` to the header and to each `seats` entry, `error` and
+`workerEvent` to decision rows, and `errors` and `workerRestarts` to the result row
+and the CLI summary.
+
 The record holds ids, public labels and hashes only, no states or events. A
 viewer that needs board positions can replay the action ids through the engine.
 
 ```bash
 python scripts/run_local_matches.py [--matches N] [--seed PREFIX] [--policy SEAT0 SEAT1]
     [--setup FILE] [--output-dir DIR] [--force] [--max-decisions N] [--max-turns N]
-    [--model PATH] [--adapter PATH]
+    [--model PATH] [--adapter PATH] [--budget-ms MS]
 ```
 
 The CLI prints a JSON summary: statuses, wins by seat, end reasons, selection

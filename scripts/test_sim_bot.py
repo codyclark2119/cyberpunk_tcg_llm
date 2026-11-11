@@ -24,8 +24,9 @@ from pathlib import Path
 REPO_ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(REPO_ROOT))
 
-from games.cyberpunk.sim_bot import (Decision, DecisionError, PolicyRunner,
-                                     baseline_action_id, decision_from_record)
+from games.cyberpunk.sim_bot import (DEFAULT_DECISION_BUDGET_MS, MAX_DECISION_BUDGET_MS, Decision,
+                                     DecisionError, PolicyRunner, baseline_action_id,
+                                     check_budget_ms, decision_from_record)
 
 
 def actions():
@@ -312,6 +313,78 @@ async def test_runner_configuration_is_validated():
         except ValueError:
             continue
         raise AssertionError(f"bad config accepted: {settings}")
+
+
+async def test_default_budget_is_the_local_play_default_and_configurable():
+    assert DEFAULT_DECISION_BUDGET_MS == 10_000
+    assert PolicyRunner().max_decision_ms == DEFAULT_DECISION_BUDGET_MS
+    assert PolicyRunner(max_decision_ms=1234).max_decision_ms == 1234
+    assert check_budget_ms(500) == 500
+    for bad in (0, -1, 1.5, True, "1000", MAX_DECISION_BUDGET_MS + 1):
+        try:
+            check_budget_ms(bad)
+        except ValueError:
+            continue
+        raise AssertionError(f"bad budget accepted: {bad!r}")
+
+
+async def test_fallbacks_carry_a_safe_failure_code():
+    class Coded(RuntimeError):
+        code = "worker_busy"
+
+    class Unsafe(RuntimeError):
+        code = "private prompt text"
+
+    async def raises(exc):
+        async def policy(_decision):
+            raise exc
+        return await PolicyRunner(policy).choose(request())
+
+    assert (await raises(Coded())).error == "worker_busy"
+    assert (await raises(Unsafe())).error == "policy_error"
+    assert (await raises(RuntimeError("private"))).error == "policy_error"
+    assert (await raises(asyncio.CancelledError())).error == "policy_cancelled"
+
+    async def stale(_decision):
+        return "stale-id"
+    assert (await PolicyRunner(stale).choose(request())).error == "invalid_action"
+
+    async def hang(_decision):
+        await asyncio.Event().wait()
+    assert (await PolicyRunner(hang, max_decision_ms=30).choose(request())).error == "timeout"
+
+    async def good(_decision):
+        return "act_002"
+    ok = await PolicyRunner(good).choose(request())
+    assert (ok.reason, ok.error, ok.worker_event) == ("policy", None, None)
+    late = await PolicyRunner(good).choose(request(deadlineMs=10), started=time.monotonic() - 1)
+    assert late.error == "deadline_exceeded"
+    assert (await PolicyRunner().choose(request())).error is None
+
+
+async def test_prepare_runs_before_the_budget_clock_and_reports_its_event():
+    class Policy:
+        def __init__(self):
+            self.matches = 0
+        def begin_match(self):
+            self.matches += 1
+        async def prepare(self):
+            await asyncio.sleep(0.1)  # Longer than the budget: must not count against it.
+            return "worker_restarted"
+        async def __call__(self, _decision):
+            return "act_002"
+    policy = Policy()
+    runner = PolicyRunner(policy, max_decision_ms=60)
+    runner.begin_match()
+    selection = await runner.choose(request(deadlineMs=None))
+    assert policy.matches == 1
+    assert (selection.reason, selection.worker_event) == ("policy", "worker_restarted")
+
+    class Broken(Policy):
+        async def prepare(self):
+            raise RuntimeError("private")
+    selection = await PolicyRunner(Broken()).choose(request())
+    assert (selection.reason, selection.worker_event) == ("policy", "prepare_failed")
 
 
 async def run_tests():

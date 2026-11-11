@@ -14,7 +14,9 @@ never leave the server. During a live match the human also never sees the bot's
 action labels or offered counts, only that the bot acted; the full record,
 labels included, is readable in the viewer once the match is over.
 
-A bot seat moves through ``PolicyRunner`` exactly as in ``local_match``. Human
+A bot seat moves through ``PolicyRunner`` exactly as in ``local_match``, with
+the per-decision budget chosen in the bot settings (default 10,000 ms; see
+docs/local-time-budget.md) and recorded in the match header. Human
 matches write the same JSONL record as ``scripts/run_local_matches.py``, with the
 human seat's policy and every human decision's reason set to ``human``.
 
@@ -47,7 +49,8 @@ from games.cyberpunk.local_match import (DEFAULT_MAX_DECISIONS, DEFAULT_MAX_TURN
                                          REPO_ROOT, MatchSetup, build_decision, decision_row,
                                          load_default_setup, load_setup_file, match_header, result_row,
                                          write_match_record)
-from games.cyberpunk.sim_bot import Decision, PolicyRunner, Selection
+from games.cyberpunk.sim_bot import (DEFAULT_DECISION_BUDGET_MS, Decision, PolicyRunner, Selection,
+                                     check_budget_ms)
 from harness.core.webui.monitor import build_app
 from harness.core.webui.runner import Runner, lan_ip
 
@@ -94,6 +97,8 @@ def bot_match_action(records_dir: Path, node: str = "node") -> dict:
             {"name": "--max-decisions", "type": "int", "default": DEFAULT_MAX_DECISIONS,
              "label": "Max decisions"},
             {"name": "--max-turns", "type": "int", "default": DEFAULT_MAX_TURNS, "label": "Max turns"},
+            {"name": "--budget-ms", "type": "int", "default": DEFAULT_DECISION_BUDGET_MS,
+             "label": "Bot budget ms"},
             {"name": "--force", "type": "flag", "default": False, "label": "Replace existing records"},
             {"name": "--output-dir", "type": "fixed", "value": [str(records_dir)]},
             {"name": "--node", "type": "fixed", "value": [node]},
@@ -141,6 +146,13 @@ class PlaySession:
         return names
 
     @property
+    def budgets_ms(self) -> list[int | None]:
+        budget = self.bot_runner.max_decision_ms if self.bot_runner.policy is not None else None
+        budgets = [budget, budget]
+        budgets[self.human_seat] = None
+        return budgets
+
+    @property
     def match_id(self) -> str:
         return self.rows[0]["matchId"]
 
@@ -149,7 +161,8 @@ class PlaySession:
 
     async def start(self) -> None:
         self.rows = [match_header(self.setup, self.policy_names, max_decisions=self.max_decisions,
-                                  max_turns=self.max_turns)]
+                                  max_turns=self.max_turns, budgets_ms=self.budgets_ms)]
+        self.bot_runner.begin_match()
         try:
             created = await self._engine(self.worker.create_game, initialization=self.setup.initialization)
         except EngineProtocolError as exc:
@@ -257,7 +270,7 @@ class PlaySession:
         result = self.rows[-1] if self.status is not None else None
         return {"id": self.sid, "seed": self.rows[0]["seed"], "format": self.rows[0]["format"],
                 "setupSource": self.setup.source, "humanSeat": self.human_seat,
-                "botPolicy": self.bot_policy, "status": self.status or "live", "detail": self.detail,
+                "botPolicy": self.bot_policy, "botBudgetMs": self.bot_runner.max_decision_ms, "status": self.status or "live", "detail": self.detail,
                 "yourTurn": self.pending is not None, "observation": observation, "actions": actions,
                 "log": log, "cards": {cid: catalog[cid] for cid in card_ids if cid in catalog},
                 "result": result,
@@ -299,14 +312,14 @@ class PlayState:
         except (ValueError, OSError) as exc:
             raise PlayError(f"setup file rejected: {exc}") from None
 
-    async def bot_runner(self, policy: str) -> PolicyRunner:
+    async def bot_runner(self, policy: str, budget_ms: int = DEFAULT_DECISION_BUDGET_MS) -> PolicyRunner:
         if policy == "baseline":
-            return PolicyRunner()
+            return PolicyRunner(max_decision_ms=budget_ms)
         if policy != "mlx":
             raise PlayError(f"policy must be one of {', '.join(BOT_POLICIES)}.")
         if not mlx_available():
             raise PlayError("An mlx bot requires native arm64 Python on Apple Silicon macOS.")
-        from games.cyberpunk.sim_mlx import DEFAULT_MODEL, MLXPolicy, make_worker
+        from games.cyberpunk.sim_mlx import DEFAULT_MODEL, MLXPolicy, make_worker, watchdog_seconds
         async with self._mlx_lock:
             if self._mlx is None:
                 try:
@@ -315,7 +328,9 @@ class PlayState:
                     raise PlayError(str(exc)) from None
                 await worker.start()
                 self._mlx = worker
-        return PolicyRunner(MLXPolicy(self._mlx))
+            # The shared worker's watchdog follows the latest session's budget.
+            self._mlx.response_timeout = watchdog_seconds(budget_ms)
+        return PolicyRunner(MLXPolicy(self._mlx), max_decision_ms=budget_ms)
 
     async def create(self, payload: Mapping[str, Any]) -> PlaySession:
         seat = payload.get("seat", 0)
@@ -332,6 +347,11 @@ class PlayState:
             if type(value) is not int or value < low:
                 raise PlayError(f"{key} must be an integer >= {low}.")
             limits[key] = value
+        budget_ms = payload.get("budgetMs", DEFAULT_DECISION_BUDGET_MS)
+        try:
+            check_budget_ms(budget_ms)
+        except ValueError as exc:
+            raise PlayError(f"budgetMs: {exc}") from None
         record_path = self.records_dir / f"{seed}.jsonl"
         async with self._create_lock:
             live = [s for s in self.sessions.values() if s.status is None]
@@ -342,7 +362,7 @@ class PlayState:
             setup = await self.resolve_setup(payload.get("setup"))
             if len(setup.initialization["players"]) != 2:
                 raise PlayError("Human matches need a two-player setup.")
-            runner = await self.bot_runner(policy)
+            runner = await self.bot_runner(policy, budget_ms)
             session = PlaySession(sid=secrets.token_urlsafe(9), setup=setup.for_seed(seed), human_seat=seat,
                                   bot_policy=policy, bot_runner=runner,
                                   worker=EngineWorker(REPO_ROOT, node=self.node), record_path=record_path,
@@ -450,7 +470,7 @@ def build_play_app(records_dir: Path = DEFAULT_OUTPUT_DIR, *, token: str | None 
         def config():
             return {"policies": [p for p in BOT_POLICIES if p == "baseline" or mlx_available()],
                     "seats": [0, 1], "maxDecisions": DEFAULT_MAX_DECISIONS, "maxTurns": DEFAULT_MAX_TURNS,
-                    "recordsDir": str(records_dir), "botAction": action["id"],
+                    "budgetMs": DEFAULT_DECISION_BUDGET_MS, "recordsDir": str(records_dir), "botAction": action["id"],
                     "live": [s.sid for s in play.sessions.values() if s.status is None]}
 
         @app.post("/api/play")
@@ -612,6 +632,7 @@ pre{white-space:pre-wrap;word-break:break-word;font-size:12px;max-height:360px;o
       <label>Seed<input id="pSeed" placeholder="auto"></label>
       <label>Setup file<input id="pSetup" placeholder="blank: fixed Demo decks" size="28"></label>
       <label>Max turns<input id="pTurns" type="number" min="0" style="width:80px"></label>
+      <label>Bot budget ms<input id="pBudget" type="number" min="1" step="500" style="width:90px"></label>
       <button class="go" id="pStart">Start match</button>
     </div>
     <div class="err" id="pErr"></div>
@@ -628,6 +649,7 @@ pre{white-space:pre-wrap;word-break:break-word;font-size:12px;max-height:360px;o
       <label>Setup file<input id="bSetup" placeholder="blank: fixed Demo decks" size="24"></label>
       <label>Max decisions<input id="bMaxD" type="number" min="1" style="width:90px"></label>
       <label>Max turns<input id="bMaxT" type="number" min="0" style="width:80px"></label>
+      <label>Bot budget ms<input id="bBudget" type="number" min="1" step="500" style="width:90px"></label>
       <label>Replace records<input id="bForce" type="checkbox"></label>
       <button class="go" id="bStart">Run</button>
       <button class="ghost" id="bCancel" disabled>Cancel</button>
@@ -684,6 +706,7 @@ async function init() {
   fill($("pPolicy"), CONFIG.policies);
   fill($("bP0"), CONFIG.policies); fill($("bP1"), CONFIG.policies);
   $("pTurns").value = CONFIG.maxTurns; $("bMaxT").value = CONFIG.maxTurns; $("bMaxD").value = CONFIG.maxDecisions;
+  $("pBudget").value = CONFIG.budgetMs; $("bBudget").value = CONFIG.budgetMs;
   $("hdr").textContent = "records: " + CONFIG.recordsDir;
   if (CONFIG.live.length) { SID = CONFIG.live[0]; refreshGame(); }
 }
@@ -694,7 +717,7 @@ $("pStart").addEventListener("click", async () => {
   $("pErr").textContent = ""; $("pStart").disabled = true;
   $("game").replaceChildren(h("div", {class: "panel muted"}, "Starting the engine and letting the bot move..."));
   try {
-    const body = {seat: Number($("pSeat").value), policy: $("pPolicy").value, maxTurns: num("pTurns")};
+    const body = {seat: Number($("pSeat").value), policy: $("pPolicy").value, maxTurns: num("pTurns"), budgetMs: num("pBudget")};
     if ($("pSeed").value.trim()) body.seed = $("pSeed").value.trim();
     if ($("pSetup").value.trim()) body.setup = $("pSetup").value.trim();
     const view = await api("/api/play", body);
@@ -780,7 +803,7 @@ let JOB = null, JOB_LINES = 0, JOB_TIMER = null;
 $("bStart").addEventListener("click", async () => {
   $("bErr").textContent = "";
   const values = {"--matches": num("bMatches"), "--seed": $("bSeed").value.trim(), seat0: $("bP0").value, seat1: $("bP1").value,
-    "--setup": $("bSetup").value.trim(), "--max-decisions": num("bMaxD"), "--max-turns": num("bMaxT"), "--force": $("bForce").checked};
+    "--setup": $("bSetup").value.trim(), "--max-decisions": num("bMaxD"), "--max-turns": num("bMaxT"), "--budget-ms": num("bBudget"), "--force": $("bForce").checked};
   try {
     const r = await api("/api/run/" + CONFIG.botAction, {values: values});
     JOB = r.job; JOB_LINES = 0; $("bLog").textContent = ""; pollJob();
@@ -834,20 +857,21 @@ function renderRecord() {
     h("button", {class: "ghost", onclick: () => stepTo(STEP + 1)}, "Next"), h("button", {class: "ghost", onclick: () => stepTo(REC.decisions.length - 1)}, "Last"),
     h("input", {type: "range", min: 0, max: Math.max(0, REC.decisions.length - 1), value: STEP, oninput: e => stepTo(Number(e.target.value))}),
     h("span", {}, REC.decisions.length ? "decision " + (STEP + 1) + " of " + REC.decisions.length : "no decisions"));
-  const table = h("table", {}, h("tr", {}, ["#", "Turn", "Step", "Seat", "Policy", "Offered", "Action", "Reason", "ms"].map(x => h("th", {}, x))),
+  const table = h("table", {}, h("tr", {}, ["#", "Turn", "Step", "Seat", "Policy", "Offered", "Action", "Reason", "Error", "ms"].map(x => h("th", {}, x))),
     REC.decisions.map((x, i) => h("tr", {class: "click" + (i === STEP ? " sel" : ""), onclick: () => stepTo(i)},
       h("td", {}, x.index), h("td", {}, x.turn), h("td", {}, x.step), h("td", {}, x.seat), h("td", {}, x.policy), h("td", {}, x.offered),
-      h("td", {}, x.label), h("td", {class: String(x.reason).endsWith("_fallback") ? "warn" : ""}, x.reason), h("td", {}, x.elapsedMs))));
+      h("td", {}, x.label), h("td", {class: String(x.reason).endsWith("_fallback") ? "warn" : ""}, x.reason), h("td", {class: x.error ? "warn" : ""}, (x.error || "") + (x.workerEvent ? " [" + x.workerEvent + "]" : "")), h("td", {}, x.elapsedMs))));
   $("rView").replaceChildren(
     h("div", {class: "twocol"},
       h("div", {class: "panel"}, h("b", {}, REC.name), nav,
         d ? h("table", {}, kv("Decision", d.index), kv("Turn / step", d.turn + " / " + d.step), kv("Seat / player", d.seat + " / " + d.playerId),
           kv("Policy", d.policy), kv("Offered", d.offered), kv("Chosen", d.label), kv("actionId", d.actionId), kv("Reason", d.reason),
-          kv("Elapsed ms", d.elapsedMs), kv("State hash after", d.stateHash)) : null),
+          kv("Error", d.error), kv("Worker event", d.workerEvent), kv("Elapsed ms", d.elapsedMs), kv("State hash after", d.stateHash)) : null),
       h("div", {class: "panel"}, h("b", {}, "Match"), h("table", {}, kv("Seed", hd.seed), kv("Format", hd.format), kv("Setup", hd.setupSource),
-        kv("Seats", (hd.seats || []).map(s => s.seat + ": " + s.policy).join(", ")), kv("Engine", hd.engine && hd.engine.version), kv("Limits", hd.limits)),
+        kv("Seats", (hd.seats || []).map(s => s.seat + ": " + s.policy).join(", ")), kv("Engine", hd.engine && hd.engine.version), kv("Limits", hd.limits),
+        kv("Budget ms", (hd.seats || []).map(s => s.seat + ": " + (s.budgetMs == null ? "-" : s.budgetMs)).join(", "))),
         h("b", {}, "Result"), res ? h("table", {}, kv("Status", res.status), kv("Winner seat", res.winnerSeat), kv("Reason", res.reason), kv("Turns", res.turns),
-          kv("Decisions", res.decisions), kv("Selections", res.selections), kv("Detail", res.detail)) : h("div", {class: "warn"}, "No result row"))),
+          kv("Decisions", res.decisions), kv("Selections", res.selections), kv("Errors", res.errors), kv("Worker restarts", res.workerRestarts), kv("Detail", res.detail)) : h("div", {class: "warn"}, "No result row"))),
     h("div", {class: "panel"}, table));
 }
 

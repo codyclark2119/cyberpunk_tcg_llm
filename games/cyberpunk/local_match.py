@@ -41,7 +41,9 @@ from harness.core.io import write_jsonl_atomic
 REPO_ROOT = Path(__file__).resolve().parents[2]
 DEFAULT_OUTPUT_DIR = REPO_ROOT / "local" / "matches"
 SETUP_SCRIPT = "scripts/local-match-setup.ts"
-RECORD_SCHEMA_VERSION = 1
+# 2: header records each seat's decision budget; decision rows add error and
+# workerEvent; result rows add errors and workerRestarts (docs/local-time-budget.md).
+RECORD_SCHEMA_VERSION = 2
 DEFAULT_MAX_DECISIONS = 2000
 DEFAULT_MAX_TURNS = 120
 # Seed namespace for deterministic per-match matchIds; never a secret.
@@ -116,17 +118,32 @@ build_decision = _decision
 
 
 def match_header(setup: MatchSetup, policy_names: Sequence[str], *, max_decisions: int,
-                 max_turns: int) -> dict[str, Any]:
-    """The record's ``match`` row, before ``initialStateHash`` is known."""
+                 max_turns: int, budgets_ms: Sequence[int | None] | None = None) -> dict[str, Any]:
+    """The record's ``match`` row, before ``initialStateHash`` is known.
+
+    ``budgets_ms[seat]`` is that seat's per-decision policy budget, None for a
+    seat with no timed policy (baseline or human). ``budgetMs`` is the largest.
+    """
     content, initialization = setup.content, setup.initialization
+    budgets = list(budgets_ms) if budgets_ms is not None else [None] * len(policy_names)
+    if len(budgets) != len(policy_names):
+        raise ValueError("Give one budget per seat.")
+    timed = [b for b in budgets if b is not None]
     return {"kind": "match", "schemaVersion": RECORD_SCHEMA_VERSION,
             "matchId": initialization.get("matchId", "local-match"),
             "seed": initialization.get("seed"), "format": initialization.get("format"),
             "setupSource": setup.source, "players": list(initialization["players"]),
             "decks": initialization.get("decks"), "engine": dict(setup.engine),
             "contentManifestHash": content.get("manifestHash"),
-            "seats": [{"seat": seat, "policy": name} for seat, name in enumerate(policy_names)],
+            "seats": [{"seat": seat, "policy": name, "budgetMs": budget}
+                      for seat, (name, budget) in enumerate(zip(policy_names, budgets))],
+            "budgetMs": max(timed) if timed else None,
             "limits": {"maxDecisions": max_decisions, "maxTurns": max_turns}}
+
+
+def seat_budgets(runners: Sequence[PolicyRunner]) -> list[int | None]:
+    """Each runner's budget, or None when it has no policy to time."""
+    return [runner.max_decision_ms if runner.policy is not None else None for runner in runners]
 
 
 def decision_row(index: int, decision: Decision, seat: int, policy: str, selection: Selection,
@@ -138,14 +155,18 @@ def decision_row(index: int, decision: Decision, seat: int, policy: str, selecti
             "policy": policy, "offered": len(decision.legal_actions),
             "actionId": selection.action_id,
             "label": (chosen.get("descriptor") or {}).get("label"),
-            "reason": selection.reason, "elapsedMs": selection.elapsed_ms,
+            "reason": selection.reason, "error": selection.error,
+            "workerEvent": selection.worker_event, "elapsedMs": selection.elapsed_ms,
             "stateHash": state_hash}
 
 
 def result_row(match_id: str, rows: Sequence[Mapping[str, Any]], status: str, detail: str | None,
                state: Mapping[str, Any] | None, state_hash: str | None) -> dict[str, Any]:
     """The closing ``result`` row for the rows so far (header plus decisions)."""
-    reasons = collections.Counter(row["reason"] for row in rows if row.get("kind") == "decision")
+    decisions = [row for row in rows if row.get("kind") == "decision"]
+    reasons = collections.Counter(row["reason"] for row in decisions)
+    errors = collections.Counter(row["error"] for row in decisions if row.get("error"))
+    restarts = sum(1 for row in decisions if row.get("workerEvent") == "worker_restarted")
     outcome = (state or {}).get("match", {}).get("outcome") if state else None
     seat_of = {pid: player["seat"] for pid, player in (state or {}).get("players", {}).items()}
     return {"kind": "result", "matchId": match_id, "status": status, "detail": detail,
@@ -154,6 +175,7 @@ def result_row(match_id: str, rows: Sequence[Mapping[str, Any]], status: str, de
             "reason": outcome["reason"] if outcome else None,
             "turns": state["timing"]["turn"] if state else None,
             "decisions": len(rows) - 1, "selections": dict(sorted(reasons.items())),
+            "errors": dict(sorted(errors.items())), "workerRestarts": restarts,
             "finalStateHash": state_hash}
 
 
@@ -167,7 +189,10 @@ async def play_match(worker: EngineWorker, setup: MatchSetup, runners: Sequence[
     if max_decisions < 1 or max_turns < 0:
         raise ValueError("max_decisions must be positive and max_turns nonnegative.")
     content, initialization = setup.content, setup.initialization
-    header = match_header(setup, policy_names, max_decisions=max_decisions, max_turns=max_turns)
+    header = match_header(setup, policy_names, max_decisions=max_decisions, max_turns=max_turns,
+                          budgets_ms=seat_budgets(runners))
+    for runner in runners:
+        runner.begin_match()
     match_id = header["matchId"]
     rows: list[dict[str, Any]] = [header]
     status, detail, state, state_hash = "engine_error", None, None, None
@@ -227,6 +252,7 @@ def summarize(records: Sequence[Sequence[Mapping[str, Any]]]) -> dict[str, Any]:
     decisions = [row for rows in records for row in rows if row.get("kind") == "decision"]
     times = sorted(row["elapsedMs"] for row in decisions)
     selections = collections.Counter(row["reason"] for row in decisions)
+    errors = collections.Counter(row["error"] for row in decisions if row.get("error"))
     return {"matches": len(results),
             "statuses": dict(sorted(collections.Counter(r["status"] for r in results).items())),
             "winsBySeat": dict(sorted(collections.Counter(
@@ -235,4 +261,6 @@ def summarize(records: Sequence[Sequence[Mapping[str, Any]]]) -> dict[str, Any]:
                 r["reason"] for r in results if r["reason"]).items())),
             "decisions": len(decisions), "selections": dict(sorted(selections.items())),
             "fallbacks": sum(n for reason, n in selections.items() if reason.endswith("_fallback")),
+            "errors": dict(sorted(errors.items())),
+            "workerRestarts": sum(r.get("workerRestarts", 0) for r in results),
             "maxElapsedMs": times[-1] if times else None}

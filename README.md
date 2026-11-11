@@ -239,7 +239,10 @@ offered legal actions) and `PolicyRunner` returns one offered `actionId`. The
 default chooser is a deterministic smoke-play baseline, not a trained gameplay
 model. On Apple Silicon, `MLXPolicy` (`games/cyberpunk/sim_mlx.py`) runs a
 persistent local MLX model in its own process; slow, busy or invalid model
-decisions fall back to the baseline. Follow the
+decisions fall back to the baseline, and each fallback's failure code is recorded.
+The per-decision budget is a setting (`--budget-ms`, default 10,000 ms; local play
+has no external deadline), and a late model answer is discarded without blocking
+the next decision; see [docs/local-time-budget.md](docs/local-time-budget.md). Follow the
 [Mac setup and benchmark guide](docs/local-mlx-bot.md) to install
 `requirements-mlx-bot.txt`, download Qwen3-8B's 4-bit weights and measure decision
 time with `scripts/benchmark_sim_bot.py`, which now measures positions from real
@@ -261,6 +264,7 @@ The fixed Demo decks are the default; `--setup` takes any `content` plus
 ```bash
 python scripts/run_local_matches.py --matches 10 --seed demo            # baseline vs baseline
 python scripts/run_local_matches.py --policy baseline mlx --matches 3   # Apple Silicon only
+python scripts/run_local_matches.py --policy baseline mlx --budget-ms 20000  # longer thinking time
 ```
 
 ### Local play UI

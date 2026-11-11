@@ -66,7 +66,10 @@ python scripts/benchmark_sim_bot.py \
 ```
 
 This loads/warms the model once and runs five decisions through `BotService`, using
-the same 2500 ms service cap and response reserve as HTTP play. The fixture is a
+the same 2500 ms service cap and response reserve as HTTP play. (Update 2026-11-11:
+the benchmark now runs engine positions through `PolicyRunner` with `--budget-ms`,
+default 10,000 ms, the local-play default; see
+[local-time-budget.md](local-time-budget.md).) The fixture is a
 small synthetic roll/end protocol probe, with no preferred-action label. It is
 neither a full match nor a strategy evaluation. Startup time is reported separately.
 
@@ -110,7 +113,8 @@ python scripts/benchmark_sim_bot.py \
 The optional 4B comparison also pins the upstream revision checked on 2026-09-25. Increase
 `--max-prompt-tokens` only after inspecting realistic token counts and memory use;
 a larger limit can increase prefill latency. Increasing the service's response
-budget alone cannot change the simulator's deadline.
+budget alone cannot change the simulator's deadline. (Local play has no external
+deadline; raise `--budget-ms` instead. See [local-time-budget.md](local-time-budget.md).)
 
 ## Run the bot
 
@@ -166,9 +170,14 @@ subprocess is also stopped. To return to the portable heuristic, omit `--policy 
 - When the HTTP deadline expires, the baseline returns while the worker finishes
   its bounded generation. That late response is drained and discarded; the next
   request can never receive it. During draining, new requests use the baseline.
+  (Update 2026-11-11: in local play the next request now waits for the late answer
+  to finish and discards it instead of falling back with `worker_busy`; see
+  [local-time-budget.md](local-time-budget.md).)
 - A 30-second worker watchdog kills a wedged process. EOF, malformed protocol or
   mismatched response IDs also stop the worker. The HTTP service keeps providing
   the baseline; **restart the bot process** to reload MLX after such a failure.
+  (Update 2026-11-11: local matches restart a dead worker once per match, and the
+  watchdog is `max(30 s, 3 x budget)`; see [local-time-budget.md](local-time-budget.md).)
   `/ready` still reports service readiness because legal fallback remains available;
   it is not proof that a particular decision used the model.
 - Logs record decision selection and safe failure codes such as `worker_busy`,
