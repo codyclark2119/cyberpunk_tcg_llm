@@ -49,7 +49,7 @@ from games.cyberpunk.local_match import (DEFAULT_MAX_DECISIONS, DEFAULT_MAX_TURN
                                          REPO_ROOT, MatchSetup, build_decision, decision_row,
                                          load_default_setup, load_setup_file, match_header, result_row,
                                          write_match_record)
-from games.cyberpunk.sim_bot import (DEFAULT_DECISION_BUDGET_MS, Decision, PolicyRunner, Selection,
+from games.cyberpunk.policy_bot import (DEFAULT_DECISION_BUDGET_MS, Decision, PolicyRunner, Selection,
                                      check_budget_ms)
 from harness.core.webui.monitor import build_app
 from harness.core.webui.runner import Runner, lan_ip
@@ -319,7 +319,7 @@ class PlayState:
             raise PlayError(f"policy must be one of {', '.join(BOT_POLICIES)}.")
         if not mlx_available():
             raise PlayError("An mlx bot requires native arm64 Python on Apple Silicon macOS.")
-        from games.cyberpunk.sim_mlx import DEFAULT_MODEL, MLXPolicy, make_worker, watchdog_seconds
+        from games.cyberpunk.policy_mlx import DEFAULT_MODEL, MLXPolicy, make_worker, watchdog_seconds
         async with self._mlx_lock:
             if self._mlx is None:
                 try:

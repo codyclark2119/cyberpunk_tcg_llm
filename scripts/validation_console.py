@@ -48,7 +48,7 @@ DEFAULT_PORT = 8766  # one above monitor.serve's default, so both can run
 FALLBACK_STEPS = [
     "guard-tests", "typecheck", "lint", "validate-cards", "unit", "build",
     "diff-check", "py-deps", "py-compile", "py-cyberpunk", "py-harness-core",
-    "py-engine-candidates", "py-sim-bot", "py-sim-mlx", "py-engine-adapter",
+    "py-engine-candidates", "py-policy-bot", "py-policy-mlx", "py-engine-adapter",
     "py-local-match", "py-validation-console", "py-play-app",
     "deck-rules", "integration",
 ]

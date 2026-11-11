@@ -33,10 +33,10 @@ sys.path.insert(0, str(REPO_ROOT))
 
 from games.cyberpunk.engine_adapter import EngineWorker
 from games.cyberpunk.local_match import load_default_setup, play_match
-from games.cyberpunk.sim_bot import (DEFAULT_DECISION_BUDGET_MS, PolicyRunner, check_budget_ms,
+from games.cyberpunk.policy_bot import (DEFAULT_DECISION_BUDGET_MS, PolicyRunner, check_budget_ms,
                                      decision_from_record)
-from games.cyberpunk.sim_mlx import DEFAULT_MODEL, MLXPolicy, local_path, make_worker, watchdog_seconds
-from games.cyberpunk.sim_prompt import PROMPT_VERSION
+from games.cyberpunk.policy_mlx import DEFAULT_MODEL, MLXPolicy, local_path, make_worker, watchdog_seconds
+from games.cyberpunk.policy_prompt import PROMPT_VERSION
 from harness.core.io import read_jsonl, write_jsonl_atomic
 
 

@@ -42,8 +42,8 @@ from games.cyberpunk.engine_adapter import EngineWorker
 from games.cyberpunk.local_match import (DEFAULT_MAX_DECISIONS, DEFAULT_MAX_TURNS, DEFAULT_OUTPUT_DIR,
                                          load_default_setup, load_setup_file, play_match, summarize,
                                          write_match_record)
-from games.cyberpunk.sim_bot import DEFAULT_DECISION_BUDGET_MS, PolicyRunner, check_budget_ms
-from games.cyberpunk.sim_mlx import DEFAULT_MODEL, MLXPolicy, make_worker, watchdog_seconds
+from games.cyberpunk.policy_bot import DEFAULT_DECISION_BUDGET_MS, PolicyRunner, check_budget_ms
+from games.cyberpunk.policy_mlx import DEFAULT_MODEL, MLXPolicy, make_worker, watchdog_seconds
 
 POLICIES = ("baseline", "mlx")
 

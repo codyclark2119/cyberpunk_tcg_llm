@@ -38,7 +38,7 @@ def main():
     parser.add_argument("--no-auth", action="store_true", help="no token off loopback (trusted network only)")
     parser.add_argument("--records-dir", type=Path, default=DEFAULT_OUTPUT_DIR,
                         help="where match records are read and written (default local/matches)")
-    parser.add_argument("--model", help="local model directory for an mlx bot (default: sim_mlx.DEFAULT_MODEL)")
+    parser.add_argument("--model", help="local model directory for an mlx bot (default: policy_mlx.DEFAULT_MODEL)")
     parser.add_argument("--adapter", help="optional LoRA adapter for an mlx bot")
     parser.add_argument("--node", default="node")
     args = parser.parse_args()

@@ -35,7 +35,7 @@ from pathlib import Path
 from typing import Any, Callable, Mapping, Sequence
 
 from games.cyberpunk.engine_adapter import EngineProtocolError, EngineWorker
-from games.cyberpunk.sim_bot import Decision, PolicyRunner, Selection
+from games.cyberpunk.policy_bot import Decision, PolicyRunner, Selection
 from harness.core.io import write_jsonl_atomic
 
 REPO_ROOT = Path(__file__).resolve().parents[2]

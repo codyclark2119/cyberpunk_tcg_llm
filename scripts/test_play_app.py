@@ -30,7 +30,7 @@ from fastapi.testclient import TestClient
 
 from games.cyberpunk.local_match import load_default_setup
 from games.cyberpunk.play_app import HUMAN_REASON, PLAY_HTML, build_play_app, is_loopback, mlx_available
-from games.cyberpunk.sim_bot import DEFAULT_DECISION_BUDGET_MS, baseline_action_id
+from games.cyberpunk.policy_bot import DEFAULT_DECISION_BUDGET_MS, baseline_action_id
 
 FORBIDDEN_KEYS = ("actorId", "choiceId", "optionIndices", "cardInstanceId", "sourceInstanceId", "rng",
                   "objects", "turnHistory", "zones")
