@@ -322,3 +322,28 @@ python scripts/assistant_local.py         # then open http://127.0.0.1:8767/
 python scripts/test_assistant_tools.py    # needs fastapi and httpx; snapshot data, no model
 python scripts/test_assistant_deck_tools.py  # deck tools, same requirements
 ```
+
+### Local assistant chat
+
+The same page has a chat box. `games/cyberpunk/assistant/loop.py` runs one turn: a
+system prompt (`ASSISTANT_PROMPT_VERSION`, with the snapshot's `RULES_VERSION`) tells
+the model it does not know this game, that every card and rule fact must come from a
+tool, to cite card slugs and rule numbers, and to label strategy as judgment. The
+model answers with Qwen3's native `<tool_call>` blocks (the tool specs go through the
+tokenizer's chat template); the loop parses them strictly, returns an unknown tool,
+bad arguments or malformed JSON to the model as a tool error without running
+anything, stops after 6 tool calls, and strips `<think>` from the answer. Each answer
+carries a trace: every tool, its arguments, ok or error, a summary, its sources and
+timings, and any thinking. `POST /api/chat` (`session`, `message`) keeps a short
+history per session in memory. The model runs in `scripts/mlx_chat_worker.py`
+(protocol `local-chat-v1`, greedy, offline, Apple Silicon only), separate from the
+gameplay worker; it starts on the first question. Without `--model` the chat box
+answers "no model configured".
+
+On the Mac (not yet run against a real model; the Linux tests use a scripted fake):
+
+```bash
+python scripts/assistant_local.py --model models/qwen3-8b-4bit   # then open http://127.0.0.1:8767/
+# optional: --adapter <dir>, --thinking, --max-tokens 1024
+python scripts/test_assistant_loop.py    # loop, worker parts, chat route; fake model, no mlx
+```
