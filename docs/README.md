@@ -14,8 +14,9 @@ latest admission batch.
 | [../README.md](../README.md) | Setup, commands and architecture |
 | [../CLAUDE.md](../CLAUDE.md) | Working rules for the engine and the AI harness |
 | [ci-validation.md](ci-validation.md) | What PR Validation runs and why it never skips |
-| [simulator-bot.md](simulator-bot.md) | External simulator v1alpha1 service, baseline policy and model integration boundary |
-| [local-mlx-bot.md](local-mlx-bot.md) | Apple Silicon model download, local inference, latency benchmark and adapter loading |
+| [simulator-bot-retirement.md](simulator-bot-retirement.md) | 2026-11-11: external simulator HTTP bridge retired; what remains of the local policy layer |
+| [simulator-bot.md](simulator-bot.md) | Retired record: external simulator v1alpha1 service, baseline policy and model integration boundary |
+| [local-mlx-bot.md](local-mlx-bot.md) | Apple Silicon model download, local inference, latency benchmark and adapter loading (written for the retired bridge) |
 | [migration/cyberpunk_tcg_ai-import.md](migration/cyberpunk_tcg_ai-import.md) | How the AI repository was merged in, and the authority boundary |
 
 ## Card admission

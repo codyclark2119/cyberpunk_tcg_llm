@@ -22,13 +22,13 @@ bump it deliberately rather than tracking the latest 22.x release implicitly.
 - **Database integration validation**: fresh PostgreSQL 16 and MongoDB 7 services,
   explicit disposable connection configuration, and the complete
   `npm run test:integration` suite with a minimum of 12 tests.
-- **AI harness validation**: Python 3.12 with `fastapi` and `httpx` installed, a compile
-  check of `games/`, `harness/` and `scripts/`, the corpus/ingestion suite
+- **AI harness validation**: Python 3.12 with `fastapi` installed (for the harness
+  monitor tests), a compile check of `games/`, `harness/` and `scripts/`, the corpus/ingestion suite
   (`test_cyberpunk.py`), the generic harness suite (`test_harness_core.py`), the
-  engine-candidate bridge, community deck rules with negative controls, and the
+  engine-candidate bridge, community deck rules with negative controls, the
   Python-to-engine adapter boundary against the committed Demo matrix fixture,
-  and the external simulator HTTP contract (`test_sim_bot.py`, 29/29 tests).
-  The local inference boundary (`test_sim_mlx.py`, 29/29 tests) uses real Python
+  and the local action-selection policy layer (`test_sim_bot.py`, 24/24 tests).
+  The local inference boundary (`test_sim_mlx.py`, 27/27 tests) uses real Python
   subprocesses and injected tokenizers/generators. It requires no MLX or weights;
   actual Metal inference, latency and gameplay quality are Mac-side checks.
   These steps assert exact pass lines (for example `all 89 tests passed`), so

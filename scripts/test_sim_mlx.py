@@ -11,11 +11,11 @@ from __future__ import annotations
 import argparse
 import asyncio
 import copy
+import dataclasses
 import io
 import json
 import logging
 import os
-import subprocess
 import sys
 import tempfile
 import time
@@ -27,11 +27,11 @@ REPO_ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(REPO_ROOT))
 sys.path.insert(0, str(REPO_ROOT / "scripts"))
 
-from games.cyberpunk.sim_bot import BotProfile, BotService, _decision, build_app
+from games.cyberpunk.sim_bot import PolicyRunner
 from games.cyberpunk.sim_mlx import MLXPolicy, local_path, make_worker
 from games.cyberpunk.sim_prompt import build_choice_messages, parse_choice
 from harness.core.local_worker import LocalWorker, MAX_LINE_BYTES, PROTOCOL, WorkerError
-from benchmark_sim_bot import measure, smoke_request, summarize
+from benchmark_sim_bot import measure, smoke_decision, summarize
 from mlx_sim_worker import run_generation
 
 
@@ -92,7 +92,7 @@ async def running(mode="good", **kwargs):
 
 
 def body(**changes):
-    return {**smoke_request(), **changes}
+    return dataclasses.replace(smoke_decision(), **changes)
 
 
 async def expect_error(awaitable, kind=WorkerError):
@@ -107,10 +107,10 @@ async def test_prompt_preserves_visible_fields_without_mutating_request():
     source = body(snapshot={"knownCard": "私有カード", "unknownFutureField": [1, 2]},
                   pending={"kind": "choice"}, metadata={"rulesVersion": "current"})
     before = copy.deepcopy(source)
-    messages = build_choice_messages(_decision(source, BotProfile()))
+    messages = build_choice_messages(source)
     position = json.loads(messages[1]["content"])
-    assert position["snapshot"] == source["snapshot"]
-    assert position["pending"] == source["pending"] and position["metadata"] == source["metadata"]
+    assert position["snapshot"] == source.snapshot
+    assert position["pending"] == source.pending and position["metadata"] == source.metadata
     assert "requestId" not in position and "matchId" not in position
     assert "actionId" not in position["actions"][0]["action"]
     assert position["actions"][1]["choice"] == 1 and source == before
@@ -129,48 +129,38 @@ async def test_choice_parser_rejects_ambiguous_or_forged_outputs():
         raise AssertionError(f"accepted invalid output: {value!r}")
 
 
-async def test_valid_model_choice_reaches_http_response_and_lifespan_closes():
-    import httpx
+async def test_valid_model_choice_reaches_runner_and_worker_closes():
     worker = new_worker()
-    @asynccontextmanager
-    async def lifespan(_app):
-        try:
-            await worker.start()
-            yield
-        finally:
-            await worker.close()
-    app = build_app(BotService(policy=MLXPolicy(worker)), lifespan=lifespan, base_path="/cyberpunk")
-    async with app.router.lifespan_context(app):
-        async with httpx.AsyncClient(transport=httpx.ASGITransport(app), base_url="http://bot") as http:
-            ready = await http.post("/cyberpunk/ready", json={"apiVersion": "v1alpha1",
-                                      "game": "cyberpunk-tcg-sim", "check": "ready"})
-            response = await http.post("/cyberpunk/sync", json=body())
-            assert ready.json()["ready"] is True
-            assert response.json()["actionId"] == "smoke-end"
+    try:
+        await worker.start()
+        selection = await PolicyRunner(MLXPolicy(worker)).choose(body())
+        assert (selection.action_id, selection.reason) == ("smoke-end", "policy")
+    finally:
+        await worker.close()
     assert worker.process.returncode is not None
 
 
 async def test_action_mapping_is_request_local_across_reordering():
     async with running() as worker:
-        service = BotService(policy=MLXPolicy(worker))
-        assert (await service.sync(body()))["actionId"] == "smoke-end"
-        actions = list(reversed(body()["legalActions"]))
-        assert (await service.sync(body(legalActions=actions)))["actionId"] == "smoke-roll"
+        runner = PolicyRunner(MLXPolicy(worker))
+        assert (await runner.choose(body())).action_id == "smoke-end"
+        actions = [dict(action) for action in reversed(body().legal_actions)]
+        assert (await runner.choose(body(legal_actions=actions))).action_id == "smoke-roll"
         actions[1]["actionId"] = "fresh-next-match"
-        assert (await service.sync(body(matchId="other", legalActions=actions)))["actionId"] == "fresh-next-match"
+        assert (await runner.choose(body(match_id="other", legal_actions=actions))).action_id == "fresh-next-match"
 
 
 async def test_deadline_returns_fallback_and_drains_late_reply_before_reuse():
     async with running("slow_first") as worker:
-        service = BotService(policy=MLXPolicy(worker))
-        result = await service.sync(body(deadlineMs=30))
-        assert result["actionId"] == "smoke-roll" and worker.busy
+        runner = PolicyRunner(MLXPolicy(worker))
+        result = await runner.choose(body(deadline_ms=30))
+        assert result.action_id == "smoke-roll" and worker.busy
         # While the GPU is busy, another match falls back without queueing.
-        other = body(matchId="other", legalActions=[{"actionId": "fresh-a"}, {"actionId": "fresh-b"}])
-        assert (await service.sync(other))["actionId"] == "fresh-a"
+        other = body(match_id="other", legal_actions=[{"actionId": "fresh-a"}, {"actionId": "fresh-b"}])
+        assert (await runner.choose(other)).action_id == "fresh-a"
         assert worker._serial == 1
         await worker.wait_idle()
-        assert (await service.sync(other))["actionId"] == "fresh-b"
+        assert (await runner.choose(other)).action_id == "fresh-b"
         assert worker._serial == 2
 
 
@@ -205,8 +195,8 @@ async def test_invalid_model_output_falls_back_without_logging_text():
     logger.addHandler(handler)
     try:
         async with running("invalid") as worker:
-            result = await BotService(policy=MLXPolicy(worker)).sync(body(snapshot={"private": "secret card"}))
-            assert result["actionId"] == "smoke-roll"
+            result = await PolicyRunner(MLXPolicy(worker)).choose(body(snapshot={"private": "secret card"}))
+            assert result.action_id == "smoke-roll"
     finally:
         logger.removeHandler(handler)
         logger.setLevel(previous)
@@ -216,7 +206,7 @@ async def test_invalid_model_output_falls_back_without_logging_text():
 
 async def test_worker_error_falls_back_and_worker_remains_usable():
     async with running("error") as worker:
-        assert (await BotService(policy=MLXPolicy(worker)).sync(body()))["actionId"] == "smoke-roll"
+        assert (await PolicyRunner(MLXPolicy(worker)).choose(body())).action_id == "smoke-roll"
         assert worker.available and not worker.busy
 
 
@@ -224,7 +214,7 @@ async def assert_fault_stops_worker(mode):
     async with running(mode) as worker:
         await expect_error(worker.request({"messages": []}))
         assert not worker.available and worker.process.returncode is not None
-        assert (await BotService(policy=MLXPolicy(worker)).sync(body()))["actionId"] == "smoke-roll"
+        assert (await PolicyRunner(MLXPolicy(worker)).choose(body())).action_id == "smoke-roll"
 
 
 async def test_wrong_correlation_id_stops_worker():
@@ -363,38 +353,21 @@ async def test_missing_model_and_adapter_paths_fail_before_process_launch():
 
 async def test_benchmark_separates_model_decisions_from_fast_fallbacks():
     async with running() as worker:
-        rows = await measure(worker, [body()], 2, BotProfile())
+        rows = await measure(worker, [body()], 2)
         assert summarize(rows)["modelDecisions"] == 2 and summarize(rows)["allModelDecisions"]
     async with running("slow") as worker:
-        rows = await measure(worker, [body(deadlineMs=30)], 2, BotProfile())
+        rows = await measure(worker, [body(deadline_ms=30)], 2)
         summary = summarize(rows)
         assert summary["fallbacks"] == 2 and not summary["allModelDecisions"]
         assert all(row["selection"] == "timeout_fallback" and row["inferenceMs"] == 170 for row in rows)
         assert "snapshot" not in json.dumps(rows) and "text" not in json.dumps(rows)
 
 
-async def test_cli_profile_works_without_mlx_or_model_download():
-    result = subprocess.run([sys.executable, str(REPO_ROOT / "scripts/serve_sim_bot.py"),
-                             "--policy", "mlx", "--profile-url", "http://127.0.0.1:3100/cyberpunk"],
-                            capture_output=True, text=True, check=True, cwd=REPO_ROOT.parent)
-    profile = json.loads(result.stdout)
-    assert profile["name"] == "Cyberpunk TCG AI (local MLX)" and profile["timeoutMs"] == 3000
-    assert profile["version"] == "0.2.0"
-
-
 async def test_benchmark_does_not_reuse_metrics_when_deadline_already_expired():
     async with running() as worker:
-        rows = await measure(worker, [body(), body(deadlineMs=0.000001)], 1, BotProfile())
+        rows = await measure(worker, [body(), body(deadline_ms=0.000001)], 1)
         assert rows[0]["promptTokens"] == 123
         assert rows[1]["selection"] == "deadline_fallback" and "promptTokens" not in rows[1]
-
-
-async def test_nonacting_requests_never_start_inference():
-    async with running() as worker:
-        service = BotService(policy=MLXPolicy(worker))
-        for status in ("waiting", "finished"):
-            assert (await service.sync(body(status=status)))["actionId"] is None
-        assert worker._serial == 0
 
 
 async def run_tests():

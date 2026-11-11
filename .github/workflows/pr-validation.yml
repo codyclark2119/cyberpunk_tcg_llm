@@ -164,7 +164,7 @@ jobs:
           cache: npm
 
       - name: Install Python CI dependencies
-        run: python -m pip install --disable-pip-version-check fastapi httpx
+        run: python -m pip install --disable-pip-version-check fastapi
 
       - name: Install engine dependencies
         run: npm ci
@@ -190,17 +190,17 @@ jobs:
           python scripts/test_engine_candidates.py 2>&1 | tee "$RUNNER_TEMP/ai-engine-candidates.log"
           grep -q '^PASS 3/3$' "$RUNNER_TEMP/ai-engine-candidates.log"
 
-      - name: Test external simulator bot contract
+      - name: Test local action-selection policy layer
         run: |
           set -euo pipefail
           python scripts/test_sim_bot.py 2>&1 | tee "$RUNNER_TEMP/ai-sim-bot.log"
-          grep -q '^PASS simulator bot: 29/29$' "$RUNNER_TEMP/ai-sim-bot.log"
+          grep -q '^PASS policy layer: 24/24$' "$RUNNER_TEMP/ai-sim-bot.log"
 
       - name: Test local MLX worker boundary without model weights
         run: |
           set -euo pipefail
           python scripts/test_sim_mlx.py 2>&1 | tee "$RUNNER_TEMP/ai-sim-mlx.log"
-          grep -q '^PASS local MLX bot: 29/29$' "$RUNNER_TEMP/ai-sim-mlx.log"
+          grep -q '^PASS local MLX bot: 27/27$' "$RUNNER_TEMP/ai-sim-mlx.log"
 
       - name: Validate community deck rules and negative controls
         run: |

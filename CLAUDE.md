@@ -16,6 +16,11 @@ One repository, two halves, and one authority boundary between them:
   engine-offered `actionId`. It never implements game rules, and nothing under
   `harness/` may import from `games/`.
 
+Everything runs locally: the engine plus local MLX models. The external simulator's
+HTTP bot bridge was retired on 2026-11-11
+([docs/simulator-bot-retirement.md](docs/simulator-bot-retirement.md)); do not
+reintroduce a remote simulator, bot endpoint or its contract.
+
 **The game launched in 2026 and is in open beta.** No base model knows it; anything a
 model appears to recall about Cyberpunk TCG is confabulated, and some terms invert
 other games' conventions (only **ready** Units attack, only **spent** Units can be

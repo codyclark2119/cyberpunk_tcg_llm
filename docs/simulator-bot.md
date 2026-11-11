@@ -1,5 +1,7 @@
 # External simulator bot
 
+> Retired 2026-11-11; see [simulator-bot-retirement.md](simulator-bot-retirement.md). The developer guide linked below was removed from the repository.
+
 The service implements the [v1alpha1 External Bot Developer Guide](ai-source/simulator-bot-v1alpha1.txt)
 supplied as `Bot-api-docs(1).txt` on 2026-09-25. It exposes `POST /ready` and `POST /sync` for
 Cyberpunk TCG Sim. The simulator owns the match, hidden information, legal actions
