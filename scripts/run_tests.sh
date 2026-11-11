@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Single local validation command; replaces the GitHub "PR Validation" workflow.
+# Single local validation command (GitHub runs nothing automatically).
 #
 # Usage: scripts/run_tests.sh [--quick | --full] [--only STEP]... [--fail-fast]
 #                             [--no-infra] [--list] [--help]
@@ -164,7 +164,7 @@ run_diff_check() {
   git diff --check "$base"
 }
 
-# CI installs fastapi for the harness web UI tests; fail early with the fix.
+# The harness web UI tests need fastapi; fail early with the install command.
 check_py_deps() {
   "$PY" --version
   "$PY" -c 'import fastapi' || {
