@@ -14,6 +14,7 @@ latest admission batch.
 | [../README.md](../README.md) | Setup, commands and architecture |
 | [../CLAUDE.md](../CLAUDE.md) | Working rules for the engine and the AI harness |
 | [ci-validation.md](ci-validation.md) | What PR Validation runs and why it never skips |
+| [local-prompt-v3.md](local-prompt-v3.md) | 2026-11-11: compact gameplay prompt (`local-choice-v3`), about a third of v2's size with every visible fact kept; `scripts/measure_prompt_size.py` |
 | [local-time-budget.md](local-time-budget.md) | 2026-11-11: local decision budget (10 s default, `--budget-ms`), late model answers drained instead of cascading, failure codes in match records |
 | [local-play-ui.md](local-play-ui.md) | 2026-11-11: local play UI: play a bot, launch bot-vs-bot jobs, browse match records |
 | [local-match-runner.md](local-match-runner.md) | 2026-11-11: local bot-vs-bot match runner on the engine, its match record and CLI |

@@ -132,12 +132,16 @@ async def test_prompt_preserves_visible_fields_without_mutating_request():
                   pending={"kind": "choice"}, metadata={"rulesVersion": "current"})
     before = copy.deepcopy(source)
     messages = build_choice_messages(source)
-    position = json.loads(messages[1]["content"])
-    assert position["snapshot"] == source.snapshot
-    assert position["pending"] == source.pending and position["metadata"] == source.metadata
-    assert "requestId" not in position and "matchId" not in position
-    assert "actionId" not in position["actions"][0]["action"]
-    assert position["actions"][1]["choice"] == 1 and source == before
+    position = messages[1]["content"]
+    # local-choice-v3 renders text; unrecognized fields are rendered, never dropped.
+    for shown in ("knownCard: \"私有カード\"", "unknownFutureField: [1, 2]", "Pending: {kind=choice}",
+                  "Metadata: {rulesVersion=current}", "Note: \"Choose an action.\""):
+        assert shown in position, shown
+    for hidden in ("smoke-1", "synthetic-smoke", "smoke-roll", "smoke-end"):
+        assert hidden not in position, hidden
+    actions = position.split("\nActions:\n")[1].splitlines()
+    assert actions[0].startswith("0: ") and "ROLL D12" in actions[0] and "die_player2_1" in actions[0]
+    assert actions[1].startswith("1: ") and "END TURN" in actions[1] and source == before
 
 
 async def test_choice_parser_rejects_ambiguous_or_forged_outputs():
