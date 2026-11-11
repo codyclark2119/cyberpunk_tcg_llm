@@ -219,7 +219,9 @@ def test_card_interactions_lists_rules_only():
 
 
 def test_registry_schemas_are_valid_and_match_the_callables():
-    assert list(TOOLS) == ["find_card", "get_card", "search_cards", "get_rule", "search_rules", "card_interactions"]
+    assert list(TOOLS) == ["find_card", "get_card", "search_cards", "get_rule", "search_rules", "card_interactions",
+                           "parse_deck", "check_deck", "deck_profile", "similar_decks", "archetype_of",
+                           "played_with"]  # the deck tools are tested in test_assistant_deck_tools.py
     specs = tool_specs()
     json.dumps(specs)
     for spec in specs:
@@ -230,7 +232,7 @@ def test_registry_schemas_are_valid_and_match_the_callables():
         assert params["type"] == "object" and params["additionalProperties"] is False
         assert set(params["required"]) <= set(params["properties"])
         for name, prop in params["properties"].items():
-            assert prop["type"] in ("string", "integer"), (fn["name"], name)
+            assert prop["type"] in ("string", "integer", "object"), (fn["name"], name)
             if "pattern" in prop:
                 re.compile(prop["pattern"])
             if "enum" in prop:

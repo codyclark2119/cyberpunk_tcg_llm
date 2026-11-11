@@ -1,10 +1,16 @@
 """The local assistant's loopback page: for now, a Tools tab that runs any assistant tool by hand.
 
-Every tool in this project gets a UI, and the card and rules tools in
-``games/cyberpunk/assistant/tools.py`` are no exception: this page lists the
-registry, builds a form from each tool's JSON schema, runs the tool on the
-server and shows the JSON result exactly as a model would receive it. No model
-is involved; the chat pane arrives in a later change and reuses these routes.
+Every tool in this project gets a UI, and the card, rules and deck tools in
+``games/cyberpunk/assistant/`` are no exception: this page lists the registry,
+builds a form from each tool's JSON schema, runs the tool on the server and
+shows the JSON result exactly as a model would receive it. No model is
+involved; the chat pane arrives in a later change and reuses these routes.
+
+The deck tools get three form controls the schema alone does not imply: a
+textarea for a pasted list (``text``), a JSON textarea for a deck dict
+(``deck``, with a button that inserts the last deck ``parse_deck`` returned, so
+tools can be chained by hand), and a picker over the public decks
+(``deck_id``, filled from ``/api/decks``).
 
 It is the harness monitor's ``build_app`` (token middleware) with the generic
 console page replaced by this one, served on loopback by
@@ -24,6 +30,7 @@ import ipaddress
 import secrets
 from urllib.parse import urlsplit
 
+from games.cyberpunk.assistant.decks import public_deck_index
 from games.cyberpunk.assistant.tools import TOOLS, call_tool
 from games.cyberpunk.config import REPO_ROOT
 from games.cyberpunk.prompts import RULES_VERSION
@@ -102,6 +109,10 @@ def build_assistant_app(*, token: str | None = None, lan: bool = False):
         def list_tools():
             return registry_view()
 
+        @app.get("/api/decks")
+        def list_decks():
+            return {"rulesVersion": RULES_VERSION, "decks": public_deck_index()}
+
         @app.post("/api/tools/{name}")
         async def run_tool(name: str, request: Request):
             if name not in TOOLS:
@@ -135,7 +146,7 @@ def serve_assistant(host: str = "127.0.0.1", port: int = DEFAULT_PORT, *, lan: b
     print(f"{TITLE} -> {shown}/" + (f"?t={token}" if token else ""), flush=True)
     if open_bind and not token:
         print("  WARNING: reachable beyond this machine with --no-auth. Anyone on this network can run the "
-              "card and rules tools.", flush=True)
+              "card, rules and deck tools.", flush=True)
     uvicorn.run(app, host=bind, port=port, log_level="warning")
 
 
@@ -164,7 +175,10 @@ ul.tools li button.on{background:var(--sel)}
 form{display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:10px;margin:10px 0}
 label{display:flex;flex-direction:column;font-size:12px;color:var(--muted);gap:2px}
 label .req{color:var(--warn)}
-input,select{font:inherit;padding:5px 6px;border:1px solid var(--line);border-radius:5px;background:var(--bg);color:var(--ink);min-width:0}
+label.wide{grid-column:1/-1}
+textarea.x{font:12px/1.4 ui-monospace,SFMono-Regular,Menlo,monospace;min-height:9em;resize:vertical}
+button.small{font:inherit;font-size:12px;padding:2px 8px;border-radius:5px;border:1px solid var(--line);background:var(--card);color:var(--ink);cursor:pointer;align-self:flex-start}
+input,select,textarea{font:inherit;padding:5px 6px;border:1px solid var(--line);border-radius:5px;background:var(--bg);color:var(--ink);min-width:0}
 button.go{font:inherit;padding:6px 12px;border-radius:6px;border:1px solid var(--accent);background:var(--accent);color:#fff;cursor:pointer}
 button:disabled{opacity:.5;cursor:default}
 pre{white-space:pre-wrap;word-break:break-word;font-size:12px;max-height:70vh;overflow:auto;background:var(--card);padding:8px;border-radius:6px;margin:0}
@@ -176,7 +190,7 @@ pre{white-space:pre-wrap;word-break:break-word;font-size:12px;max-height:70vh;ov
   <h1>Cyberpunk TCG assistant</h1>
   <nav><button type="button">Tools</button></nav>
   <span class="badge" id="snapshot">snapshot …</span>
-  <span class="muted">Run any card or rules tool by hand. The result is exactly what the model would receive.</span>
+  <span class="muted">Run any card, rules or deck tool by hand. The result is exactly what the model would receive.</span>
 </header>
 <main>
   <div class="panel"><ul class="tools" id="toolList"></ul></div>
@@ -193,7 +207,9 @@ pre{white-space:pre-wrap;word-break:break-word;font-size:12px;max-height:70vh;ov
 </main>
 <script>
 "use strict";
-const state = {tools: [], current: null};
+const state = {tools: [], current: null, decks: [], lastDeck: null};
+// Arguments the schema types do not fully describe get their own control.
+const LONG_TEXT = 1000;
 const $ = (id) => document.getElementById(id);
 
 function el(tag, attrs, text) {
@@ -201,6 +217,23 @@ function el(tag, attrs, text) {
   for (const [k, v] of Object.entries(attrs || {})) node.setAttribute(k, v);
   if (text !== undefined) node.textContent = text;
   return node;
+}
+
+async function loadDecks() {
+  const response = await fetch("/api/decks");
+  if (!response.ok) return;
+  state.decks = (await response.json()).decks;
+  if (state.current) pick(state.current.name);
+}
+
+function deckPicker() {
+  const input = el("select");
+  input.appendChild(el("option", {value: ""}, "(no public deck)"));
+  for (const d of state.decks) {
+    const label = (d.name || "(unnamed)") + " · " + (d.colours || []).join("/") + " · " + d.card_count + " cards";
+    input.appendChild(el("option", {value: d.id}, label));
+  }
+  return input;
 }
 
 async function loadTools() {
@@ -239,7 +272,20 @@ function pick(name) {
     if (required.has(field)) title.appendChild(el("span", {class: "req"}, " *"));
     label.appendChild(title);
     let input;
-    if (spec.enum) {
+    let wide = false;
+    if (field === "deck_id") {
+      input = deckPicker();
+      wide = true;
+    } else if (spec.type === "object") {
+      input = el("textarea", {class: "x", spellcheck: "false"});
+      input.placeholder = '{"zones": [{"zone_code": "legends", "cards": [{"card_slug": "...", "quantity": 1}]}, ' +
+        '{"zone_code": "deck", "cards": []}]}';
+      wide = true;
+    } else if (spec.type === "string" && (spec.maxLength || 0) >= LONG_TEXT) {
+      input = el("textarea", {class: "x", spellcheck: "false"});
+      input.placeholder = "Legends\n1 V: Streetkid\n...\nDeck\n3 Kiroshi Optics\n...";
+      wide = true;
+    } else if (spec.enum) {
       input = el("select");
       input.appendChild(el("option", {value: ""}, required.has(field) ? "(choose)" : "(any)"));
       for (const value of spec.enum) input.appendChild(el("option", {value: String(value)}, String(value)));
@@ -254,8 +300,15 @@ function pick(name) {
     input.name = field;
     input.dataset.type = spec.type;
     if (spec.description) input.title = spec.description;
-    input.placeholder = spec.description || "";
+    if (!input.placeholder) input.placeholder = spec.description || "";
     label.appendChild(input);
+    if (wide) label.classList.add("wide");
+    if (spec.type === "object" && field === "deck") {
+      const use = el("button", {type: "button", class: "small"}, "Insert last parsed deck");
+      use.disabled = !state.lastDeck;
+      use.addEventListener("click", () => { input.value = JSON.stringify(state.lastDeck, null, 1); });
+      label.appendChild(use);
+    }
     form.appendChild(label);
   }
   $("runBtn").disabled = false;
@@ -264,10 +317,12 @@ function pick(name) {
 
 function collectArgs() {
   const args = {};
-  for (const input of $("toolForm").querySelectorAll("input,select")) {
+  for (const input of $("toolForm").querySelectorAll("input,select,textarea")) {
     const raw = input.value.trim();
     if (raw === "") continue;
-    if (input.dataset.type === "integer") {
+    if (input.dataset.type === "object") {
+      try { args[input.name] = JSON.parse(raw); } catch (err) { throw new Error(input.name + " is not valid JSON: " + err.message); }
+    } else if (input.dataset.type === "integer") {
       const n = Number(raw);
       args[input.name] = Number.isInteger(n) ? n : raw;
     } else {
@@ -280,7 +335,8 @@ function collectArgs() {
 async function run() {
   const tool = state.current;
   if (!tool) return;
-  const args = collectArgs();
+  let args;
+  try { args = collectArgs(); } catch (err) { $("status").textContent = err.message; return; }
   $("runBtn").disabled = true;
   $("status").textContent = "Running " + tool.name + " …";
   try {
@@ -295,7 +351,13 @@ async function run() {
       if (s.card_slugs && s.card_slugs.length) bits.push(s.card_slugs.length + " card(s)");
       if (s.rule_ids && s.rule_ids.length) bits.push(s.rule_ids.length + " rule(s)");
       if (s.errata_ids && s.errata_ids.length) bits.push(s.errata_ids.length + " erratum/errata");
-      if (data.result && data.result.method) bits.push("method " + data.result.method);
+      if (s.deck_ids && s.deck_ids.length) bits.push(s.deck_ids.length + " public deck(s)");
+      if (data.result && typeof data.result.method === "string" && data.result.method.length < 40) bits.push("method " + data.result.method);
+      if (data.result && data.result.deck) {
+        state.lastDeck = data.result.deck;
+        bits.push("deck kept for 'Insert last parsed deck'");
+      }
+      if (data.result && data.result.resolved === false) bits.push(data.result.unresolved.length + " line(s) unresolved");
       $("status").textContent = "OK" + (bits.length ? ": " + bits.join(", ") : "");
     } else {
       $("status").textContent = "Refused (" + (data.error_kind || response.status) + "): " + data.error;
@@ -308,8 +370,10 @@ async function run() {
 }
 
 $("runBtn").addEventListener("click", run);
-$("toolForm").addEventListener("keydown", (e) => { if (e.key === "Enter") { e.preventDefault(); run(); } });
-loadTools().catch((err) => { $("status").textContent = "Could not load tools: " + err; });
+$("toolForm").addEventListener("keydown", (e) => {
+  if (e.key === "Enter" && e.target.tagName !== "TEXTAREA") { e.preventDefault(); run(); }
+});
+loadTools().then(loadDecks).catch((err) => { $("status").textContent = "Could not load tools: " + err; });
 </script>
 </body>
 </html>

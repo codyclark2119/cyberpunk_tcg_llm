@@ -1,9 +1,10 @@
 #!/usr/bin/env python3
-"""Serve the local assistant page: run the card and rules tools by hand.
+"""Serve the local assistant page: run the card, rules and deck tools by hand.
 
-Why: the local chat assistant gets every card and rule fact from tools in
-``games/cyberpunk/assistant/tools.py`` (find_card, get_card, search_cards,
-get_rule, search_rules, card_interactions), and every tool in this project gets
+Why: the local chat assistant gets every card, rule and deck fact from tools in
+``games/cyberpunk/assistant/`` (find_card, get_card, search_cards, get_rule,
+search_rules, card_interactions; parse_deck, check_deck, deck_profile,
+similar_decks, archetype_of, played_with), and every tool in this project gets
 a UI. This serves one self-contained page (no CDN, works offline) from
 ``games/cyberpunk/assistant_app.py`` that lists the tools, builds a form from
 each tool's JSON schema and shows the exact JSON result a model would receive.

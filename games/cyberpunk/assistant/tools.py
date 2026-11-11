@@ -25,7 +25,8 @@ Design rules, each one load-bearing:
   - Nothing here dispatches on a card's name, and nothing assumes a format.
 
 ``TOOLS`` is the registry: name, description, JSON-schema parameters and the
-callable. ``tool_specs()`` renders it as OpenAI-style function specs, the shape
+callable. The deck tools live in ``decks.py`` and join it at the end of this
+module. ``tool_specs()`` renders it as OpenAI-style function specs, the shape
 Qwen3's native chat template takes in its ``tools`` argument.
 """
 
@@ -50,7 +51,8 @@ from games.cyberpunk.prompts import RULES_VERSION
 from harness.core.io import read_jsonl
 
 __all__ = ["TOOLS", "Tool", "call_tool", "tool_specs", "validate_args", "find_card", "get_card", "search_cards",
-           "get_rule", "search_rules", "card_interactions", "LEXICAL_METHOD", "EMBEDDING_METHOD"]
+           "get_rule", "search_rules", "card_interactions", "parse_deck", "check_deck", "deck_profile",
+           "similar_decks", "archetype_of", "played_with", "LEXICAL_METHOD", "EMBEDDING_METHOD"]
 
 LEXICAL_METHOD = "lexical-bm25"
 EMBEDDING_METHOD = "embedding"
@@ -201,11 +203,11 @@ def _fold(text: str) -> str:
     return "".join(c for c in decomposed if not unicodedata.combining(c)).casefold()
 
 
-def _sources(card_slugs=(), rule_ids=(), errata_ids=(), chunk_ids=()) -> dict:
+def _sources(card_slugs=(), rule_ids=(), errata_ids=(), chunk_ids=(), deck_ids=()) -> dict:
     def ordered(values):
         return list(dict.fromkeys(v for v in values if v))
     return {"card_slugs": ordered(card_slugs), "rule_ids": ordered(rule_ids), "errata_ids": ordered(errata_ids),
-            "chunk_ids": ordered(chunk_ids)}
+            "chunk_ids": ordered(chunk_ids), "deck_ids": ordered(deck_ids)}
 
 
 # find_card ---------------------------------------------------------------------------
@@ -562,6 +564,14 @@ def _build_tools() -> dict[str, Tool]:
 
 TOOLS: dict[str, Tool] = _build_tools()
 
+# The deck tools (``decks.py``) build on the helpers above and join the same
+# registry. Imported here, after everything they use is defined; the package's
+# ``__init__`` imports this module first, so this order holds whichever module
+# a caller imports.
+from games.cyberpunk.assistant.decks import DECK_TOOLS  # noqa: E402
+
+TOOLS.update((t.name, t) for t in DECK_TOOLS)
+
 _JSON_TYPES = {"string": str, "integer": int, "boolean": bool, "object": dict, "array": list}
 
 
@@ -654,3 +664,28 @@ def search_rules(query: str, k: int | None = None) -> dict:
 
 def card_interactions(slug_a: str, slug_b: str) -> dict:
     return call_tool("card_interactions", {"slug_a": slug_a, "slug_b": slug_b})
+
+
+def parse_deck(**source: Any) -> dict:
+    """``parse_deck(text=...)``, ``parse_deck(deck_id=...)`` or ``parse_deck(deck=...)``."""
+    return call_tool("parse_deck", _given(**source))
+
+
+def check_deck(**source: Any) -> dict:
+    return call_tool("check_deck", _given(**source))
+
+
+def deck_profile(**source: Any) -> dict:
+    return call_tool("deck_profile", _given(**source))
+
+
+def similar_decks(k: int | None = None, **source: Any) -> dict:
+    return call_tool("similar_decks", _given(k=k, **source))
+
+
+def archetype_of(**source: Any) -> dict:
+    return call_tool("archetype_of", _given(**source))
+
+
+def played_with(slug: str, k: int | None = None) -> dict:
+    return call_tool("played_with", _given(slug=slug, k=k))

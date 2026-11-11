@@ -300,12 +300,25 @@ and returns the slugs, rule ids and errata it used with `rules_version`. The `TO
 registry renders to OpenAI-style function specs (`tool_specs()`) for Qwen3's tool
 template. No model runs yet.
 
+The deck tools in `games/cyberpunk/assistant/decks.py` join the same registry and
+supply deck facts, never judgment: `parse_deck` (a pasted list, a deck dict or a
+public deck id to a normalised deck of slugs; Legends go under a `Legends` line; a
+shared, partial or unknown name is reported with its candidates and never guessed),
+`check_deck` (`deckbuilding.validate`/`describe`, violations by rule slug, the
+format reported as the deck gives it), `deck_profile` (cost curve, colour and type
+split, RAM budget against usage, keyword and trigger counts, cards with errata),
+`similar_decks` and `archetype_of` (`archetypes` similarity and clustering over the
+272 public decks, computed once and cached) and `played_with` (co-occurrence across
+the public decks). Every deck tool takes `deck`, `deck_id` or `text`, so they chain.
+
 `scripts/assistant_local.py` serves the Tools page on `127.0.0.1:8767`: pick a tool,
-fill the form generated from its schema, see the JSON result. On loopback it answers
+fill the form generated from its schema (a textarea for pasted lists and deck JSON, a
+picker over the public decks), see the JSON result. On loopback it answers
 only to a loopback `Host` and `Origin` (against DNS rebinding); any other bind needs
 the printed token unless `--no-auth`.
 
 ```bash
 python scripts/assistant_local.py         # then open http://127.0.0.1:8767/
 python scripts/test_assistant_tools.py    # needs fastapi and httpx; snapshot data, no model
+python scripts/test_assistant_deck_tools.py  # deck tools, same requirements
 ```
