@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 # Regenerate every engine-pinned artifact after an engine identity change:
 # wire schemas, ordinary replays, the 192-game Demo matrix and its reviews.
+# Matrix traces go to DEMO_MATRIX_TRACE_DIR (default /tmp/tcg-reboot-model-a-traces).
 #
 # Usage:
 #   npm run baseline:regenerate
@@ -39,22 +40,13 @@ if [[ -n "$preserved" ]]; then
   node --import tsx scripts/audit-replay-compatibility.ts "$tmp/tests/fixtures"
 fi
 
-# The matrix, its trace-backed reviews and the Reboot multiplicity replays run
-# separately below; every other generate-*.ts is an independent writer.
-generators=()
-for script in scripts/generate-*.ts; do
-  case "$(basename "$script")" in
-    generate-demo-match-matrix.ts|generate-demo-match-matrix-coordinate.ts|generate-reboot-multiplicity-replays.ts) ;;
-    *) generators+=("$script") ;;
-  esac
-done
-
-echo "== Wire schemas and ${#generators[@]} replay writers =="
+# Independent replay fixtures come from the registry in
+# scripts/lib/replay-registry.ts; the matrix, its trace-backed reviews and the
+# Reboot multiplicity replays run separately below.
+echo "== Wire schemas and replay fixtures =="
 npm run contracts:export
-for script in "${generators[@]}"; do
-  echo "== $(basename "$script") =="
-  node --import tsx "$script"
-done
+npm run replays:generate
+npm run replays:generate -- --check
 node --import tsx scripts/generate-reboot-multiplicity-replays.ts
 node --import tsx scripts/generate-reboot-multiplicity-replays.ts --check
 
@@ -72,6 +64,7 @@ npm run review:descriptor-v2 -- --check
 echo "== Final writer stability =="
 tree_manifest > "$tmp/final.sha256"
 npm run contracts:export
+npm run replays:generate -- --check
 node --import tsx scripts/generate-reboot-multiplicity-replays.ts --check
 node --import tsx scripts/review-reboot-multiplicity-matrix.ts --check
 node --import tsx scripts/review-demo-matrix-positions.ts --check

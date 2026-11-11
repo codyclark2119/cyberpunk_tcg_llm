@@ -62,7 +62,10 @@ Tests use `node:test` through tsx, and the Python suites are plain scripts with 
   schema stale. Bump the version string in that file for a deliberate runtime change.
 - **Never hand-edit hashes or generated fixtures.** Regenerate with
   `npm run baseline:regenerate -- --preserved <last pre-change commit>` (about 40
-  minutes; matrix traces go to `/tmp/tcg-reboot-model-a-traces`). Then classify the
+  minutes; matrix traces go to `DEMO_MATRIX_TRACE_DIR`, default
+  `/tmp/tcg-reboot-model-a-traces`). Ordinary replays are registered in
+  `scripts/lib/replay-registry.ts`; `npm run replays:generate -- --check` names any
+  that drifted. Then classify the
   diff: pin and legal-action-order changes are expected; changes to chosen actions,
   events or final states must be intended by the engine change. Commit the
   regeneration separately from the runtime change.

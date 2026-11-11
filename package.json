@@ -21,6 +21,7 @@
     "training:demo": "node --import tsx scripts/training-demo.ts",
     "engine:worker": "node --import tsx scripts/engine-worker.ts",
     "contracts:export": "node --import tsx scripts/export-wire-schemas.ts",
+    "replays:generate": "node --import tsx scripts/generate-replays.ts",
     "test:matrix": "node --import tsx scripts/generate-demo-match-matrix.ts",
     "review:descriptor-v2": "node --import tsx scripts/review-public-actions-v2.ts",
     "review:engine-candidates": "node --import tsx scripts/review-engine-candidates.ts",
