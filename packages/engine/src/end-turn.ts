@@ -18,7 +18,8 @@ export function endTurn(m: TurnMutation) {
 export function finishEndTurn(m: TurnMutation) {
     const s = m.state, actor = s.timing.activePlayer;
     if (turnSliceAllows(m.context.content.ruleset.gameplay?.turnSlice, "cardPlay"))
-        for (const card of Object.values(s.objects.cards)) if (card.statuses.includes("LAG")) {
+        // Card-id order, not object insertion order: equal-hash states must emit equal events.
+        for (const card of Object.values(s.objects.cards).filter(c => c.statuses.includes("LAG")).sort((a, b) => a.id < b.id ? -1 : a.id > b.id ? 1 : 0)) {
             card.statuses = card.statuses.filter(status => status !== "LAG");
             m.emit({ kind: "LAG_REMOVED", cardInstanceId: card.id });
         }
