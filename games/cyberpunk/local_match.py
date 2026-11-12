@@ -41,6 +41,7 @@ from typing import Any, Callable, Mapping, Sequence
 
 from games.cyberpunk.engine_adapter import EngineProtocolError, EngineWorker
 from games.cyberpunk.policy_bot import Decision, PolicyRunner, Selection, baseline_action_id
+from games.cyberpunk.policy_prompt import card_catalog, visible_slugs
 from harness.core.io import write_jsonl_atomic
 from harness.core.training_records import Decoding, ModelMetadata, TrainingLog, build_position
 
@@ -114,16 +115,24 @@ def load_setup_file(path: str | Path) -> MatchSetup:
     return MatchSetup(value["content"], value["initialization"], f"file:{Path(path).name}")
 
 
-def _decision(match_id: str, index: int, actor: str, model_input: Mapping[str, Any]) -> Decision:
-    """Only the actor's public observation and the engine's public action descriptors."""
+def _decision(match_id: str, index: int, actor: str, model_input: Mapping[str, Any],
+              catalog: Mapping[str, Mapping[str, Any]] | None = None) -> Decision:
+    """Only the actor's public observation and the engine's public action descriptors.
+
+    With ``catalog`` (``policy_prompt.card_catalog`` of the match's content
+    bundle), the Decision also carries the reference facts of exactly the card
+    slugs that observation and those actions name, never another card of the bundle.
+    """
     observation = model_input["observation"]
+    seen = visible_slugs(observation, model_input["legalActions"])
     return Decision(
         request_id=f"{match_id}-{index}", match_id=match_id, sequence=index, player_id=actor,
         legal_actions=[dict(action) for action in model_input["legalActions"]],
         snapshot=dict(observation),
         turn={key: observation.get(key) for key in ("turn", "step", "window", "activeSeat", "actingSeat")},
         pending=observation.get("choice"),
-        metadata={"format": observation.get("format")})
+        metadata={"format": observation.get("format")},
+        cards={slug: dict(catalog[slug]) for slug in sorted(seen) if slug in catalog} if catalog else {})
 
 
 # Public alias for drivers that step a match themselves (the local play UI).
@@ -337,6 +346,7 @@ async def play_match(worker: EngineWorker, setup: MatchSetup, runners: Sequence[
     if max_decisions < 1 or max_turns < 0:
         raise ValueError("max_decisions must be positive and max_turns nonnegative.")
     content, initialization = setup.content, setup.initialization
+    catalog = card_catalog(content)
     models = seat_models(runners)
     if training is not None:
         for info in models:
@@ -372,7 +382,7 @@ async def play_match(worker: EngineWorker, setup: MatchSetup, runners: Sequence[
             if not model_input["legalActions"]:
                 status, detail = "no_legal_actions", "engine offered the acting player no action"
                 break
-            decision = _decision(match_id, index, actor, model_input)
+            decision = _decision(match_id, index, actor, model_input, catalog)
             if on_decision is not None:
                 on_decision(decision)
             selection = await runners[seat].choose(decision)

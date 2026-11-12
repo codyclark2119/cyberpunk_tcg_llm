@@ -66,7 +66,9 @@ class Decision:
     """Policy input, validated on construction; policies receive an isolated copy.
 
     `deadline_ms` is the driver's per-decision budget; None means the runner's
-    own cap applies.
+    own cap applies. `cards` maps card slugs to reference facts from the engine
+    content bundle (``policy_prompt.card_catalog``); a driver passes only the
+    slugs the acting seat can see, and the prompt renders only those anyway.
     """
 
     request_id: str
@@ -80,6 +82,7 @@ class Decision:
     turn: Mapping[str, Any] = field(default_factory=dict)
     pending: Any = None
     metadata: Mapping[str, Any] = field(default_factory=dict)
+    cards: Mapping[str, Any] = field(default_factory=dict)
 
     def __post_init__(self):
         for name in ("request_id", "match_id", "player_id"):
@@ -105,7 +108,7 @@ class Decision:
                 if key in action and not isinstance(action[key], str):
                     raise DecisionError(f"Action {key} must be a string.")
         object.__setattr__(self, "legal_actions", tuple(actions))
-        for name in ("snapshot", "turn", "metadata"):
+        for name in ("snapshot", "turn", "metadata", "cards"):
             if not isinstance(getattr(self, name), dict):
                 raise DecisionError(f"{name} must be an object.")
         if not isinstance(self.prompt, str):
@@ -119,7 +122,8 @@ class Decision:
 _RECORD_FIELDS = {"requestId": "request_id", "matchId": "match_id", "sequence": "sequence",
                   "playerId": "player_id", "legalActions": "legal_actions",
                   "deadlineMs": "deadline_ms", "snapshot": "snapshot", "prompt": "prompt",
-                  "turn": "turn", "pending": "pending", "metadata": "metadata"}
+                  "turn": "turn", "pending": "pending", "metadata": "metadata",
+                  "cards": "cards"}
 
 
 def decision_from_record(record: Mapping[str, Any]) -> Decision:

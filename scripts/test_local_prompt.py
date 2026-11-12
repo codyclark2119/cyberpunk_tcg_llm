@@ -1,15 +1,19 @@
 #!/usr/bin/env python3
-"""Tests for the compact local gameplay prompt (local-choice-v3) on real engine positions.
+"""Tests for the compact local gameplay prompt (local-choice-v4) on real engine positions.
 
-Why: v3 shortens the prompt the local MLX bot prefills on every decision. That is
+Why: v3 shortened the prompt the local MLX bot prefills on every decision. That is
 only safe if it drops no fact the acting seat can see, adds nothing the seat
 cannot see, stays deterministic and keeps {"choice": i} meaning the i-th offered
 action. Every check runs over all decisions of real baseline games on the
-engine worker, comparing v3 against the facts in the retired v2 JSON prompt
-(kept in scripts/measure_prompt_size.py). The card checks decode the v3 text
+engine worker, comparing the prompt against the facts in the retired v2 JSON
+prompt (kept in games/cyberpunk/prompt_size.py). The card checks decode the text
 back into facts and compare facts, so a wording change that keeps the facts
-passes and a dropped fact fails. No model, server or network is used. Needs
-node and installed npm dependencies.
+passes and a dropped fact fails. v4 adds a card reference (docs/local-prompt-v4.md):
+these tests also check that every card the seat can see has exactly one line whose
+facts match the engine content bundle, that no card the seat cannot see (per the
+real engine state) gets one, that trimming follows its documented rules and that
+the whole prompt stays within its size bound. No model, server or network is
+used. Needs node and installed npm dependencies.
 """
 
 from __future__ import annotations
@@ -26,11 +30,14 @@ REPO_ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(REPO_ROOT))
 sys.path.insert(0, str(REPO_ROOT / "scripts"))
 
-from games.cyberpunk.policy_bot import Decision
+from games.cyberpunk.engine_adapter import EngineWorker
+from games.cyberpunk.local_match import REPO_ROOT as APP_ROOT, build_decision, load_default_setup
+from games.cyberpunk.policy_bot import Decision, baseline_action_id
 from games.cyberpunk.policy_mlx import MLXPolicy
-from games.cyberpunk.policy_prompt import (PROMPT_VERSION, SYSTEM_PROMPT, build_choice_messages,
+from games.cyberpunk.policy_prompt import (MAX_CARD_TEXT_CHARS, MAX_REFERENCE_TEXT_CHARS, PROMPT_VERSION,
+                                        SYSTEM_PROMPT, build_choice_messages, card_catalog, card_reference,
                                         parse_choice, prompt_fingerprint, render_position)
-from measure_prompt_size import baseline_games, prompt_chars, v2_messages
+from measure_prompt_size import baseline_games, prompt_chars, v2_messages, v3_messages
 
 # Together these games show re-rolled gigs, stolen gigs, lag, Go Solo, gear,
 # restrictions, triggers, inspected cards and temporary modifiers.
@@ -43,6 +50,9 @@ FACE_DOWN_ZONES = ("HAND", "EDDIES")
 # 1,400 tokens at 3 characters per token and at most 35% of v2.
 MAX_V3_CHARS = 4_200
 MAX_V3_SHARE_OF_V2 = 0.35
+# v4 (2026-11-12) adds the card reference; no position of these games may pass
+# 1,850 tokens at 3 characters per token (the largest was 5,3xx characters).
+MAX_V4_CHARS = 5_550
 
 
 def decisions():
@@ -279,10 +289,28 @@ def strings(value):
         yield value
 
 
+def without_reference(text):
+    """The prompt text without its "Cards:" section (checked by the card reference tests)."""
+    head, actions = text.split("\nActions:\n")
+    return head.split("\nCards:\n")[0] + "\nActions:\n" + actions
+
+
+def reference_lines(text):
+    """{slug: line} of the "Cards:" section; asserts each slug has one line."""
+    head = text.split("\nActions:\n")[0]
+    if "\nCards:\n" not in head:
+        return {}
+    lines = head.split("\nCards:\n")[1].splitlines()
+    slugs = [line.split(": ", 1)[0] for line in lines]
+    assert len(slugs) == len(set(slugs)), f"a card appears twice in the reference: {slugs}"
+    assert slugs == sorted(slugs), slugs
+    return dict(zip(slugs, lines))
+
+
 async def test_no_hidden_or_unusable_information():
-    """Every id or slug in v3 comes from the seat's own observation or offered actions."""
+    """Every id or slug in the position comes from the seat's own observation or offered actions."""
     for decision in decisions():
-        text = render_position(decision)
+        text = without_reference(render_position(decision))
         source = {word for value in [*strings(decision.snapshot), *strings(list(decision.legal_actions))]
                   for word in re.findall(r"[A-Za-z0-9_\-]+", value)}
         for token in re.findall(r"\b[a-z0-9]+(?:-[a-z0-9]+)+(?:@r\d+)?\b", text):
@@ -336,8 +364,165 @@ async def test_unrecognized_fields_are_rendered_not_dropped():
     assert "Turn info" not in render_position(decision) and "Pending" not in render_position(decision)
 
 
+def visible(decision):
+    """The slugs the seat can see, by this test's own walk over its observation and actions."""
+    return {slug(ref) for ref in refs([dict(decision.snapshot), list(decision.legal_actions)])}
+
+
+def refs(value):
+    if isinstance(value, dict):
+        if set(value) == {"cardId", "revision"}:
+            yield value
+            return
+        for item in value.values():
+            yield from refs(item)
+    elif isinstance(value, (list, tuple)):
+        for item in value:
+            yield from refs(item)
+
+
+def strip_reminders(text):
+    return re.sub(r"\s+", " ", re.sub(r"\s*\([^()]*\)", "", text)).strip()
+
+
+def without_flavour(text):
+    """Rules text minus whole-line quotes and [Flavour] lines, lines joined by spaces."""
+    lines = [line.strip() for line in text.splitlines()]
+    return " ".join(line for line in lines if line and not line.startswith("[Flavour]")
+                    and not (line[0] in "\"\u201c" and line[-1] in "\"\u201d"))
+
+
+async def test_every_visible_card_has_one_reference_line_from_the_engine_content():
+    catalog = {f"{c['id']}" if c["revision"] == 1 else f"{c['id']}@r{c['revision']}": c
+               for c in CTX["setup"].content["cards"]}
+    lines_seen = with_text = cut = omitted = 0
+    for decision in decisions():
+        lines = reference_lines(render_position(decision))
+        expected = visible(decision)
+        assert set(lines) == expected, (sorted(lines), sorted(expected))
+        assert set(decision.cards) == expected, "the driver passed facts for a card the seat cannot see"
+        for card_slug, line in lines.items():
+            card = catalog[card_slug]
+            head, _, body = line.partition(". ")
+            tokens = head.split(" ")
+            assert tokens[0] == f"{card_slug}:" and tokens[1] == card["type"], line
+            facts = dict(token.split("=", 1) for token in tokens[2:] if "=" in token)
+            cost = card["printedCost"]
+            assert facts["cost"] == (str(cost["amount"]) if cost["kind"] == "EDDIES" else cost["kind"]), line
+            assert facts.get("pow") == (None if card.get("power") is None else str(card["power"])), line
+            keywords = card["mechanics"]["keywords"] or card["keywords"]
+            assert facts.get("kw", "") == ",".join(keywords), line
+            assert set(facts.get("tags", "").split(",")) - {""} <= {t.replace(" ", "_") for t in card["tags"]}
+            lines_seen += 1
+            if head.endswith(" ..."):
+                omitted += 1
+                continue
+            if not body:
+                continue
+            with_text += 1
+            # The text is the content's rulesText, trimmed: never reworded or invented.
+            shown = strip_reminders(body.removesuffix("..."))
+            source = strip_reminders(without_flavour(card["rulesText"]))
+            if body.endswith("...") and not source.endswith("..."):
+                cut += 1
+                assert len(body) <= MAX_CARD_TEXT_CHARS and source.startswith(shown.rstrip(" ,.;:")), (shown, source)
+            else:
+                assert shown == source, (shown, source)
+    assert lines_seen > 1000 and with_text > 500 and omitted > 0 and cut > 0, (lines_seen, with_text, omitted, cut)
+
+
+async def test_no_card_the_seat_cannot_see_reaches_the_reference():
+    """Against the real engine state: rival hand, decks and face-down cards never get a line."""
+    setup = CTX["setup"].for_seed("test-local-prompt-hidden")
+    catalog = card_catalog(setup.content)
+    checked, hidden_only = 0, set()
+    with EngineWorker(APP_ROOT, node=CTX["node"]) as engine:
+        state = engine.create_game(content=setup.content, initialization=setup.initialization)["state"]
+        while not state["match"].get("outcome") and checked < 80:
+            actor = state["timing"]["actingPlayer"]
+            model_input = engine.model_input(content=setup.content, state=state, actor_id=actor)
+            decision = build_decision("m", checked, actor, model_input, catalog)
+            observed = {card["publicId"] for player in model_input["observation"]["players"]
+                        for card in player["cards"] if "content" in card}
+            unseen = {obj["cardId"] for iid, obj in state["objects"]["cards"].items() if iid not in observed}
+            secret = unseen - visible(decision)
+            hidden_only |= secret
+            lines = reference_lines(render_position(decision))
+            assert not secret & set(lines), sorted(secret & set(lines))
+            assert not secret & set(decision.cards)
+            # A driver that passed the whole catalog would still not leak: the renderer filters.
+            leaky = Decision(**{**decision.__dict__, "cards": catalog})
+            assert render_position(leaky) == render_position(decision)
+            action_id = baseline_action_id(decision.legal_actions)
+            state = engine.apply_action(content=setup.content, state=state, actor_id=actor,
+                                        action_id=action_id)["state"]
+            checked += 1
+    assert checked == 80 and len(hidden_only) > 5, (checked, sorted(hidden_only))
+
+
+async def test_card_reference_trimming_rules():
+    decision = next(d for d in decisions() if d.cards)
+    blocker = "(You may spend this Unit to redirect a rival Unit's attack to it instead.)"
+    long_text = "Draw 1. " * 40
+    cards = {
+        "a-card": {"type": "UNIT", "printedCost": {"kind": "EDDIES", "amount": 2}, "power": 3,
+                   "tags": ["Trauma Team", "Corpo"], "keywords": ["BLOCKER"],
+                   "rulesText": f"{{Blocker}} {blocker}\n\"A quoted flavour line.\""},
+        "b-card": {"type": "PROGRAM", "printedCost": {"kind": "DASH"}, "tags": ["Merc"], "keywords": [],
+                   "rulesText": f"Friendly CORPO Units gain {{Blocker}} {blocker}\n[Flavour] Old news."},
+        "c-card": {"type": "GEAR", "printedCost": {"kind": "EDDIES", "amount": 1}, "power": 1,
+                   "tags": [], "keywords": [], "rulesText": long_text, "ram": {"RED": 1}},
+    }
+    snapshot = copy.deepcopy(decision.snapshot)
+    me = next(p for p in snapshot["players"] if p["seat"] == snapshot["viewerSeat"])
+    me["cards"] = [{**card, "zone": "BATTLEFIELD", "content": {"cardId": name, "revision": 1}}
+                   for card, name in zip([c for c in me["cards"] if "content" in c][:3], cards)]
+    variant = Decision(**{**decision.__dict__, "snapshot": snapshot, "cards": cards,
+                          "legal_actions": [{"actionId": "x", "descriptor": {"label": "END_TURN",
+                                                                               "kind": "END_TURN"}}]})
+    lines = reference_lines(render_position(variant))
+    rival = {s for s in visible(variant) if s not in cards}
+    assert set(lines) == set(cards) | rival
+    a, b, c = lines["a-card"], lines["b-card"], lines["c-card"]
+    # Flavour is dropped, a repeated reminder is shown once, tags only when text names them.
+    assert a == f"a-card: UNIT cost=2 pow=3 tags=Corpo kw=BLOCKER. {{Blocker}} {blocker}", a
+    assert b == "b-card: PROGRAM cost=DASH. Friendly CORPO Units gain {Blocker}", b
+    # Long text is cut at a word; an unknown field is rendered, not dropped.
+    body = c.split(". ", 1)[1]
+    assert c.startswith("c-card: GEAR cost=1 pow=1 ram={RED=1}. Draw 1.") and body.endswith("...")
+    assert len(body) <= MAX_CARD_TEXT_CHARS and long_text.startswith(body[:-3]), body
+    # Past the text budget, lower-tier cards keep their line but lose their text.
+    many = {f"x{i:02d}-card": dict(cards["c-card"], rulesText=f"Card {i}: " + "Ready 1 Eddie. " * 8)
+            for i in range(12)}
+    me["cards"] = [{**me["cards"][0], "publicId": f"p-{name}", "content": {"cardId": name, "revision": 1}}
+                   for name in many]
+    assert me["cards"][0]["zone"] == "BATTLEFIELD"
+    crowded = Decision(**{**variant.__dict__, "snapshot": snapshot, "cards": many})
+    lines = reference_lines(render_position(crowded))
+    kept = [s for s in many if not lines[s].endswith(" ...")]
+    assert kept and len(kept) < len(many) and kept == sorted(kept)[:len(kept)], kept
+    assert sum(len(lines[s].split(". ", 1)[1]) for s in kept) <= MAX_REFERENCE_TEXT_CHARS
+    # An offered action's card gets text first, whatever its slug.
+    last = sorted(many)[-1]
+    offered = Decision(**{**crowded.__dict__, "legal_actions": [{"actionId": "y", "descriptor": {
+        "label": "Play", "kind": "PLAY_CARD", "source": {"kind": "CARD", "publicId": f"p-{last}"}}}]})
+    assert not reference_lines(render_position(offered))[last].endswith(" ...")
+    # Without card facts (an old decision record) there is no reference at all.
+    assert "\nCards:\n" not in render_position(Decision(**{**decision.__dict__, "cards": {}}))
+
+
+async def test_card_reference_is_deterministic_under_reordering():
+    for decision in decisions()[::5]:
+        first = build_choice_messages(decision)
+        flipped = Decision(**{**decision.__dict__,
+                              "legal_actions": list(reversed(decision.legal_actions)),
+                              "cards": reorder({k: decision.cards[k] for k in reversed(list(decision.cards))})})
+        again = build_choice_messages(flipped)[1]["content"]
+        assert again.split("\nActions:\n")[0] == first[1]["content"].split("\nActions:\n")[0]
+
+
 async def test_version_fingerprint_and_size_guard():
-    assert PROMPT_VERSION == "local-choice-v3"
+    assert PROMPT_VERSION == "local-choice-v4"
     sample = decisions()[:5]
     stamp = prompt_fingerprint(sample)
     assert stamp == prompt_fingerprint(copy.deepcopy(sample))
@@ -345,13 +530,22 @@ async def test_version_fingerprint_and_size_guard():
     game = CTX["games"][0]
     late = max(game, key=lambda d: prompt_chars(v2_messages(d)))
     assert game.index(late) > len(game) // 2, "the largest v2 prompt should be a late-game position"
-    v2, v3 = prompt_chars(v2_messages(late)), prompt_chars(build_choice_messages(late))
+    v2, v3 = prompt_chars(v2_messages(late)), prompt_chars(v3_messages(late))
     assert v3 <= MAX_V3_CHARS and v3 <= MAX_V3_SHARE_OF_V2 * v2, (v2, v3)
+    # v3 is v4 without the card reference.
+    for decision in decisions()[::9]:
+        v4 = build_choice_messages(decision)
+        assert v3_messages(decision)[1]["content"] == without_reference(v4[1]["content"])
+        assert v4[0]["content"].startswith(v3_messages(decision)[0]["content"] + "\nCards: ")
+    largest = max(prompt_chars(build_choice_messages(d)) for d in decisions())
+    assert largest <= MAX_V4_CHARS, largest
     assert len(SYSTEM_PROMPT) < 1500
 
 
 async def run_tests(node):
     tests = [value for name, value in globals().items() if name.startswith("test_") and callable(value)]
+    CTX["node"] = node
+    CTX["setup"] = load_default_setup(APP_ROOT, node=node)
     CTX["games"] = await baseline_games(SEEDS, node)
     for test in tests:
         await test()

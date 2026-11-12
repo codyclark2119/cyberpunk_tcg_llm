@@ -32,6 +32,11 @@ decision's index among the offered actions, the baseline's pick on the same
 list and whether they agree, the per-seat agreement rate, the model's raw
 output and token counts, and each seat's model path and revision
 (docs/local-match-records-v3.md).
+The "Prompt size" tab runs the measurement of ``scripts/measure_prompt_size.py``
+(``games/cyberpunk/prompt_size.py``) on 1-5 baseline games of the Demo setup:
+characters and estimated tokens per position for local-choice-v2, v3 and the
+current prompt, and the largest current prompt in full. No model runs.
+
 The app is the monitor's ``build_app`` (token middleware and job routes) with
 its generic console page replaced by this one.
 
@@ -60,6 +65,8 @@ from games.cyberpunk.local_match import (DEFAULT_MAX_DECISIONS, DEFAULT_MAX_TURN
                                          result_row, seat_models, write_match_record)
 from games.cyberpunk.policy_bot import (DEFAULT_DECISION_BUDGET_MS, Decision, PolicyRunner, Selection,
                                      check_budget_ms)
+from games.cyberpunk.policy_prompt import DROPPED_FIELDS, PROMPT_VERSION, card_catalog
+from games.cyberpunk.prompt_size import baseline_games, largest_prompt, report
 from harness.core.webui.monitor import build_app
 from harness.core.webui.runner import Runner, lan_ip
 
@@ -71,6 +78,9 @@ MAX_ACTIVE_SESSIONS = 4
 MAX_KEPT_SESSIONS = 32
 SEED_RE = re.compile(r"^[A-Za-z0-9][A-Za-z0-9._-]{0,79}$")
 RECORD_RE = re.compile(r"^[A-Za-z0-9][A-Za-z0-9._-]{0,120}\.jsonl$")
+# The prompt-size view plays at most this many baseline games per request.
+PROMPT_SIZE_MAX_MATCHES = 5
+PROMPT_SIZE_CHARS_PER_TOKEN = 3.0
 # Public card-catalog fields the page may show for a card the observation names.
 CARD_FIELDS = ("displayName", "name", "type", "colors", "power", "printedCost", "ram", "keywords",
                "tags", "rulesText")
@@ -198,6 +208,7 @@ class PlaySession:
 
     async def _advance(self) -> None:
         """Let the bot move until the human must act or the match stops."""
+        catalog = card_catalog(self.setup.content)
         try:
             while True:
                 state = self.state
@@ -213,7 +224,7 @@ class PlaySession:
                 model_input = await self._engine(self.worker.model_input, state=state, actor_id=actor)
                 if not model_input["legalActions"]:
                     return await self.finish("no_legal_actions", "engine offered the acting player no action")
-                decision = build_decision(self.match_id, index, actor, model_input)
+                decision = build_decision(self.match_id, index, actor, model_input, catalog)
                 if seat == self.human_seat:
                     self.pending, self.offered_at = decision, time.monotonic()
                     self.observation = model_input["observation"]
@@ -313,6 +324,26 @@ class PlayState:
         self._mlx = None
         self._mlx_lock = asyncio.Lock()
         self._create_lock = asyncio.Lock()
+        self._measure_lock = asyncio.Lock()
+
+    async def measure_prompts(self, payload: Mapping[str, Any]) -> dict[str, Any]:
+        """``scripts/measure_prompt_size.py``'s report on the Demo setup, plus its largest prompt."""
+        matches, seed = payload.get("matches", 1), payload.get("seed", "benchmark")
+        if type(matches) is not int or not 1 <= matches <= PROMPT_SIZE_MAX_MATCHES:
+            raise PlayError(f"matches must be an integer from 1 to {PROMPT_SIZE_MAX_MATCHES}.")
+        if not isinstance(seed, str) or not SEED_RE.match(seed):
+            raise PlayError("seed must be 1-80 letters, digits, '.', '_' or '-'.")
+        if self._measure_lock.locked():
+            raise PlayError("A prompt-size measurement is already running.", 409)
+        async with self._measure_lock:
+            setup = await self.demo_setup()
+            seeds = [f"{seed}-{index}" for index in range(matches)]
+            games = await asyncio.to_thread(
+                lambda: asyncio.run(baseline_games(seeds, self.node, REPO_ROOT, setup)))
+            result = report(games, PROMPT_SIZE_CHARS_PER_TOKEN)
+        return {**result, "seeds": seeds, "promptVersion": PROMPT_VERSION,
+                "cardTrimming": list(DROPPED_FIELDS["card"]),
+                "largest": largest_prompt(games, PROMPT_SIZE_CHARS_PER_TOKEN)}
 
     async def demo_setup(self) -> MatchSetup:
         if self._demo is None:
@@ -553,6 +584,19 @@ def build_play_app(records_dir: Path = DEFAULT_OUTPUT_DIR, *, token: str | None 
                 await session.finish("abandoned", "abandoned by the player")
                 return session.view(play.catalog(session))
 
+        @app.post("/api/prompt-size")
+        async def prompt_size(request: Request):
+            try:
+                payload = await request.json()
+            except ValueError:
+                payload = None
+            if not isinstance(payload, dict):
+                return refused(PlayError("Send a JSON object."))
+            try:
+                return await play.measure_prompts(payload)
+            except PlayError as exc:
+                return refused(exc)
+
         @app.get("/api/records")
         def records():
             return {"dir": str(records_dir), "records": play.list_records()}
@@ -653,7 +697,7 @@ pre{white-space:pre-wrap;word-break:break-word;font-size:12px;max-height:360px;o
 </head>
 <body>
 <header><h1>Cyberpunk TCG local play</h1>
-<nav><button data-tab="play" class="on">Play a bot</button><button data-tab="bots">Bot vs bot</button><button data-tab="records">Match records</button></nav>
+<nav><button data-tab="play" class="on">Play a bot</button><button data-tab="bots">Bot vs bot</button><button data-tab="records">Match records</button><button data-tab="prompt">Prompt size</button></nav>
 <span class="muted" id="hdr"></span></header>
 <main>
 <section id="play" class="on">
@@ -691,6 +735,19 @@ pre{white-space:pre-wrap;word-break:break-word;font-size:12px;max-height:360px;o
   </div>
   <div class="panel"><div id="bStatus" class="muted">No job yet. Jobs run one at a time.</div><pre id="bLog"></pre></div>
   <div class="panel"><b>Recent jobs</b><div id="bHist"></div></div>
+</section>
+<section id="prompt">
+  <div class="panel">
+    <div class="row">
+      <label>Baseline games<input id="sMatches" type="number" min="1" max="5" value="3" style="width:70px"></label>
+      <label>Seed prefix<input id="sSeed" value="benchmark"></label>
+      <button class="go" id="sStart">Measure</button>
+    </div>
+    <div class="muted">Plays baseline games on the local engine and renders every decision the bot would get,
+      as <code>scripts/measure_prompt_size.py</code> does. No model runs. Tokens are estimated at 3 characters per token.</div>
+    <div class="err" id="sErr"></div>
+  </div>
+  <div id="sOut"></div>
 </section>
 <section id="records">
   <div class="panel"><div class="row"><button class="ghost" id="rRefresh">Refresh</button><span class="muted" id="rDir"></span></div>
@@ -862,6 +919,34 @@ async function loadHistory() {
     r.jobs.map(j => h("tr", {class: "click", onclick: () => { JOB = j.id; JOB_LINES = 0; $("bLog").textContent = ""; pollJob(); }},
       h("td", {}, j.started), h("td", {}, j.label), h("td", {}, j.status), h("td", {}, j.returncode)))));
   if (r.active && !JOB) { JOB = r.active; pollJob(); }
+}
+
+/* ---------- prompt size ---------- */
+$("sStart").addEventListener("click", async () => {
+  $("sErr").textContent = ""; $("sStart").disabled = true;
+  $("sOut").replaceChildren(h("div", {class: "panel muted"}, "Playing baseline games and rendering every position..."));
+  try { renderPromptSize(await api("/api/prompt-size", {matches: num("sMatches"), seed: $("sSeed").value.trim()})); }
+  catch (e) { $("sErr").textContent = e.message; $("sOut").replaceChildren(); }
+  finally { $("sStart").disabled = false; }
+});
+function renderPromptSize(r) {
+  const head = ["Prompt", "Phase", "Positions", "Min", "Median", "p95", "Max", "~tokens median", "~tokens max"];
+  const rows = [];
+  for (const [name, phases] of Object.entries(r.versions)) {
+    for (const [phase, s] of Object.entries(phases)) {
+      rows.push(h("tr", {class: name === r.promptVersion ? "sel" : ""}, h("td", {}, name), h("td", {}, phase), h("td", {}, s.positions),
+        h("td", {}, s.min), h("td", {}, s.median), h("td", {}, s.p95), h("td", {}, s.max), h("td", {}, s.approxTokens.median), h("td", {}, s.approxTokens.max)));
+    }
+  }
+  const big = r.largest;
+  $("sOut").replaceChildren(
+    h("div", {class: "panel"}, h("b", {}, "Characters per position (system + user), " + r.decisions + " decisions in " + r.games + " games: " + r.seeds.join(", ")),
+      h("table", {}, h("tr", {}, head.map(x => h("th", {}, x))), rows),
+      h("div", {class: "muted"}, "Card text trimming in " + r.promptVersion + ": " + r.cardTrimming.join("; ") + ".")),
+    h("div", {class: "panel"}, h("b", {}, "Largest " + big.promptVersion + " prompt: game " + big.game + ", decision " + big.decision + ", turn " + big.turn +
+      ", " + big.chars + " chars (~" + big.approxTokens + " tokens)"),
+      h("details", {}, h("summary", {}, "System message"), h("pre", {id: "sSystem"}, big.system)),
+      h("pre", {id: "sUser"}, big.user)));
 }
 
 /* ---------- match records ---------- */
