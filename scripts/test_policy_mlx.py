@@ -473,7 +473,7 @@ async def test_benchmark_budget_is_configurable():
 
 
 async def test_policy_details_reach_the_selection_and_never_cross_decisions():
-    info = {"modelPath": "models/x", "modelRevision": "r", "promptVersion": "v"}
+    info = {"modelPath": "models/x", "modelRevision": "r", "promptVersion": PROMPT_VERSION}
     async with running() as worker:
         policy = MLXPolicy(worker, info=info)
         assert policy.describe() == info and policy.describe() is not policy.info

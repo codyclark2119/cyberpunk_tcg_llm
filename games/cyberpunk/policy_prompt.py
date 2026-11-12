@@ -17,6 +17,11 @@ card reference: one line per card the acting seat can see, with the type, cost,
 power, tags, keywords and trimmed rules text of its engine-admitted revision
 (docs/local-prompt-v4.md).
 
+``PROMPT_VERSIONS`` lists the versions a policy may still be asked to render, for
+comparing them on the same seeds (docs/local-strength-eval.md): the current one
+and local-choice-v3, which is the current renderer without the card reference
+(byte-identical to the v3 prompt; scripts/test_local_prompt.py checks this).
+
 Card facts come only from the engine content bundle the worker plays with
 (``card_catalog``), restricted to the slugs in the seat's observation and offered
 actions (``visible_slugs``). Nothing here reads data/ or interprets card text.
@@ -25,6 +30,7 @@ actions (``visible_slugs``). Nothing here reads data/ or interprets card text.
 from __future__ import annotations
 
 import copy
+import dataclasses
 import json
 import re
 from typing import Any, Mapping
@@ -54,6 +60,12 @@ gig or option it uses].
 Cards: each card you can see: slug: TYPE cost= pow= (printed) tags= kw=, then
 rules text without flavour; a repeated (reminder) is shown once; "..." = text
 cut or left out. The position's pow=/kw= are the live values."""
+
+# local-choice-v3 is local-choice-v4 without the card reference: the same system
+# prompt up to its "Cards:" paragraph and a Decision with no cards.
+V3_PROMPT_VERSION = "local-choice-v3"
+SYSTEM_PROMPTS = {V3_PROMPT_VERSION: SYSTEM_PROMPT.split("\nCards: ")[0], PROMPT_VERSION: SYSTEM_PROMPT}
+PROMPT_VERSIONS = tuple(SYSTEM_PROMPTS)
 
 # The card reference: which revision fields a Decision carries, and the trimming
 # rules (docs/local-prompt-v4.md). Text is trimmed, never reworded.
@@ -599,16 +611,25 @@ def render_position(decision: Decision) -> str:
     return "\n".join(lines)
 
 
-def build_choice_messages(decision: Decision) -> list[dict[str, str]]:
-    return [{"role": "system", "content": SYSTEM_PROMPT},
+def check_prompt_version(version: str) -> str:
+    if version not in PROMPT_VERSIONS:
+        raise ValueError(f"unknown prompt version {version!r}; known: {', '.join(PROMPT_VERSIONS)}")
+    return version
+
+
+def build_choice_messages(decision: Decision, version: str = PROMPT_VERSION) -> list[dict[str, str]]:
+    """The messages for ``decision`` under ``version`` (one of ``PROMPT_VERSIONS``)."""
+    if check_prompt_version(version) == V3_PROMPT_VERSION:
+        decision = dataclasses.replace(decision, cards={})
+    return [{"role": "system", "content": SYSTEM_PROMPTS[version]},
             {"role": "user", "content": render_position(decision)}]
 
 
-def prompt_fingerprint(sample_decisions: list[Decision]) -> dict:
+def prompt_fingerprint(sample_decisions: list[Decision], version: str = PROMPT_VERSION) -> dict:
     """``harness.core.prompt_fingerprint`` stamp for this prompt version and message shape."""
     from harness.core.prompt_fingerprint import fingerprint
-    return fingerprint({"prompt_version": PROMPT_VERSION, "system_prompt": SYSTEM_PROMPT},
-                       [build_choice_messages(decision) for decision in sample_decisions])
+    return fingerprint({"prompt_version": check_prompt_version(version), "system_prompt": SYSTEM_PROMPTS[version]},
+                       [build_choice_messages(decision, version) for decision in sample_decisions])
 
 
 def parse_choice(text: str, action_count: int) -> int:

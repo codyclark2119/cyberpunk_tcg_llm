@@ -11,7 +11,8 @@ import sys
 from pathlib import Path
 from typing import Any, Mapping
 
-from games.cyberpunk.policy_prompt import PROMPT_VERSION, build_choice_messages, parse_choice, prompt_fingerprint
+from games.cyberpunk.policy_prompt import (PROMPT_VERSION, build_choice_messages, check_prompt_version, parse_choice,
+                                           prompt_fingerprint)
 from harness.core.local_worker import LocalWorker, WorkerError
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
@@ -69,15 +70,20 @@ def display_path(path: Path) -> str:
 
 
 def model_info(model: str = DEFAULT_MODEL, *, adapter: str | None = None,
-               max_tokens: int = DEFAULT_MAX_TOKENS) -> dict[str, Any]:
-    """What a match header records about an mlx seat; reads local files only."""
+               max_tokens: int = DEFAULT_MAX_TOKENS, prompt_version: str = PROMPT_VERSION) -> dict[str, Any]:
+    """What a match header records about an mlx seat; reads local files only.
+
+    ``prompt_version`` (one of ``policy_prompt.PROMPT_VERSIONS``) is the prompt
+    the seat's ``MLXPolicy`` renders; it is recorded with its fingerprint.
+    """
+    check_prompt_version(prompt_version)
     model_path = local_path(model)
     adapter_path = local_path(adapter) if adapter is not None else None
     return {"modelPath": display_path(model_path), "modelRevision": model_revision(model_path),
             "adapterPath": display_path(adapter_path) if adapter_path is not None else None,
             "adapterRevision": adapter_revision(adapter_path) if adapter_path is not None else None,
-            "promptVersion": PROMPT_VERSION,
-            "promptFingerprint": prompt_fingerprint([])["prompt_fingerprint"],
+            "promptVersion": prompt_version,
+            "promptFingerprint": prompt_fingerprint([], prompt_version)["prompt_fingerprint"],
             # mlx_policy_worker.py samples greedily (make_sampler(temp=0)) with no seed.
             "decoding": {"temperature": 0.0, "topP": 1.0, "maxTokens": max_tokens, "seed": None}}
 
@@ -121,7 +127,8 @@ class MLXPolicy:
     share a worker so the allowance is per match, not per seat.
 
     ``info`` (see ``model_info``) is what ``describe`` reports for the match
-    header. Each answered request leaves its raw output, token counts and parsed
+    header; its ``promptVersion`` (default the current ``PROMPT_VERSION``) is the
+    prompt this policy renders. Each answered request leaves its raw output, token counts and parsed
     index for ``take_details``; a request cancelled by a timeout leaves nothing.
     """
 
@@ -131,6 +138,7 @@ class MLXPolicy:
         self.max_restarts = max_restarts
         self.restarts_left = max_restarts
         self.info = dict(info) if info is not None else {"promptVersion": PROMPT_VERSION}
+        self.prompt_version = check_prompt_version(self.info.get("promptVersion") or PROMPT_VERSION)
         self._details: tuple[str, dict[str, Any]] | None = None
 
     def describe(self) -> dict[str, Any]:
@@ -163,8 +171,8 @@ class MLXPolicy:
         offered = tuple(action["actionId"] for action in decision.legal_actions)
         self._details = None
         try:
-            reply = await self.worker.request({"messages": build_choice_messages(decision),
-                                               "promptVersion": PROMPT_VERSION})
+            reply = await self.worker.request({"messages": build_choice_messages(decision, self.prompt_version),
+                                               "promptVersion": self.prompt_version})
             text = reply.get("text")
             details = {"rawOutput": text if isinstance(text, str) else None,
                        "inputTokens": _count(reply.get("promptTokens")),

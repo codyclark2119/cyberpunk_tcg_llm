@@ -36,6 +36,12 @@ The "Prompt size" tab runs the measurement of ``scripts/measure_prompt_size.py``
 (``games/cyberpunk/prompt_size.py``) on 1-5 baseline games of the Demo setup:
 characters and estimated tokens per position for local-choice-v2, v3 and the
 current prompt, and the largest current prompt in full. No model runs.
+The "Strength" tab launches ``scripts/eval_local_strength.py`` through the same
+allowlisted ``Runner`` (models only from the local ``models/`` directories found
+at startup, prompt versions from ``policy_prompt.PROMPT_VERSIONS``, output fixed
+to ``<records>/../strength``), and shows the summaries of past runs side by side
+(``games/cyberpunk/strength_eval.py``), each match linked into the viewer
+(docs/local-strength-eval.md).
 
 The app is the monitor's ``build_app`` (token middleware and job routes) with
 its generic console page replaced by this one.
@@ -65,12 +71,16 @@ from games.cyberpunk.local_match import (DEFAULT_MAX_DECISIONS, DEFAULT_MAX_TURN
                                          result_row, seat_models, write_match_record)
 from games.cyberpunk.policy_bot import (DEFAULT_DECISION_BUDGET_MS, Decision, PolicyRunner, Selection,
                                      check_budget_ms)
-from games.cyberpunk.policy_prompt import DROPPED_FIELDS, PROMPT_VERSION, card_catalog
+from games.cyberpunk.policy_prompt import DROPPED_FIELDS, PROMPT_VERSION, PROMPT_VERSIONS, card_catalog
 from games.cyberpunk.prompt_size import baseline_games, largest_prompt, report
+from games.cyberpunk.strength_eval import RECORD_NAME_RE as STRENGTH_RECORD_RE
+from games.cyberpunk.strength_eval import MATCHES_DIR as STRENGTH_MATCHES_DIR
+from games.cyberpunk.strength_eval import RUN_ID_RE, list_runs, summarize_run
 from harness.core.webui.monitor import build_app
 from harness.core.webui.runner import Runner, lan_ip
 
-__all__ = ["build_play_app", "serve_play", "PLAY_HTML", "HUMAN_REASON", "bot_match_action"]
+__all__ = ["build_play_app", "serve_play", "PLAY_HTML", "HUMAN_REASON", "bot_match_action",
+           "strength_action", "strength_dir_for", "local_models"]
 
 HUMAN_REASON = "human"
 BOT_POLICIES = ("baseline", "mlx")
@@ -81,6 +91,10 @@ RECORD_RE = re.compile(r"^[A-Za-z0-9][A-Za-z0-9._-]{0,120}\.jsonl$")
 # The prompt-size view plays at most this many baseline games per request.
 PROMPT_SIZE_MAX_MATCHES = 5
 PROMPT_SIZE_CHARS_PER_TOKEN = 3.0
+# Model slots and prompt-version slots the Strength tab offers per run.
+STRENGTH_MODEL_SLOTS = 3
+STRENGTH_PROMPT_SLOTS = 2
+STRENGTH_DEFAULT_MATCHES = 20
 # Public card-catalog fields the page may show for a card the observation names.
 CARD_FIELDS = ("displayName", "name", "type", "colors", "power", "printedCost", "ram", "keywords",
                "tags", "rulesText")
@@ -102,6 +116,45 @@ def is_loopback(host: str) -> bool:
 def training_dir_for(records_dir: Path) -> Path:
     """The one directory the bot-vs-bot job may log training records into."""
     return Path(records_dir).parent / "training"
+
+
+def strength_dir_for(records_dir: Path) -> Path:
+    """The one directory strength-eval runs write into: ``<records>/../strength``."""
+    return Path(records_dir).parent / "strength"
+
+
+def local_models(root: Path = REPO_ROOT / "models") -> list[str]:
+    """Downloaded model directories (with a config.json) under ``models/``, repo-relative when inside it."""
+    if not Path(root).is_dir():
+        return []
+    out = []
+    for path in sorted(p for p in Path(root).iterdir() if (p / "config.json").is_file()):
+        try:
+            out.append(path.resolve().relative_to(REPO_ROOT).as_posix())
+        except ValueError:
+            out.append(str(path.resolve()))
+    return out
+
+
+def strength_action(strength_dir: Path, models: list[str], node: str = "node") -> dict:
+    """The allowlisted strength-eval job. Models are a fixed choice list; output is fixed."""
+    args: list[dict] = [{"name": "--run-id", "type": "text", "default": "", "label": "Run id"}]
+    args += [{"name": "--model", "key": f"model{i}", "type": "choice", "choices": list(models), "default": "",
+              "label": f"Model {i + 1}"} for i in range(STRENGTH_MODEL_SLOTS)]
+    args += [{"name": "--prompt-version", "key": f"prompt{i}", "type": "choice", "choices": list(PROMPT_VERSIONS),
+              "default": "", "label": f"Prompt {i + 1}"} for i in range(STRENGTH_PROMPT_SLOTS)]
+    args += [
+        {"name": "--matches", "type": "int", "default": STRENGTH_DEFAULT_MATCHES, "label": "Matches per config"},
+        {"name": "--seed", "type": "text", "default": "strength", "label": "Seed prefix"},
+        {"name": "--budget-ms", "type": "int", "default": DEFAULT_DECISION_BUDGET_MS, "label": "Budget ms"},
+        {"name": "--max-turns", "type": "int", "default": DEFAULT_MAX_TURNS, "label": "Max turns"},
+        {"name": "--output-root", "type": "fixed", "value": [str(strength_dir)]},
+        {"name": "--node", "type": "fixed", "value": [node]},
+    ]
+    return {"id": "strength-eval", "label": "Strength eval", "group": "Strength",
+            "cmd": "scripts/eval_local_strength.py", "writes": True,
+            "desc": "Play N matches per model configuration against the baseline; resumable by run id.",
+            "args": args}
 
 
 def bot_match_action(records_dir: Path, node: str = "node") -> dict:
@@ -316,6 +369,7 @@ class PlayState:
     def __init__(self, records_dir: Path, node: str, setup_loader: Callable[[], MatchSetup] | None,
                  mlx_model: str | None, mlx_adapter: str | None):
         self.records_dir = records_dir
+        self.strength_dir = strength_dir_for(records_dir)
         self.node = node
         self.setup_loader = setup_loader or (lambda: load_default_setup(REPO_ROOT, node=node))
         self.mlx_model, self.mlx_adapter = mlx_model, mlx_adapter
@@ -489,10 +543,27 @@ class PlayState:
         """What the viewer derives from a record; v2 records have no baseline fields (None)."""
         return {"schemaVersion": rows[0].get("schemaVersion"), "agreement": baseline_agreement(rows)}
 
-    def read_record(self, name: str) -> list[dict[str, Any]]:
-        if not RECORD_RE.match(name):
+    def strength_run_dir(self, run_id: str) -> Path:
+        if not RUN_ID_RE.match(run_id):
+            raise PlayError("Not a run id.", 400)
+        path = self.strength_dir / run_id
+        if not path.is_dir():
+            raise PlayError("No such strength run.", 404)
+        return path
+
+    def strength_summary(self, run_id: str) -> dict[str, Any]:
+        """Always recomputed from the run's records, never read from its summary.json."""
+        return summarize_run(self.strength_run_dir(run_id))
+
+    def read_strength_record(self, run_id: str, name: str) -> list[dict[str, Any]]:
+        if not STRENGTH_RECORD_RE.match(name):
             raise PlayError("Not a record name.", 400)
-        path = self.records_dir / name
+        return self.read_record(name, self.strength_run_dir(run_id) / STRENGTH_MATCHES_DIR)
+
+    def read_record(self, name: str, directory: Path | None = None) -> list[dict[str, Any]]:
+        if directory is None and not RECORD_RE.match(name):
+            raise PlayError("Not a record name.", 400)
+        path = (directory or self.records_dir) / name
         if not path.is_file():
             raise PlayError("No such record.", 404)
         try:
@@ -503,8 +574,12 @@ class PlayState:
 
 def build_play_app(records_dir: Path = DEFAULT_OUTPUT_DIR, *, token: str | None = None, node: str = "node",
                    setup_loader: Callable[[], MatchSetup] | None = None, mlx_model: str | None = None,
-                   mlx_adapter: str | None = None):
-    """The FastAPI app: the monitor's app (token, job routes) plus the play and record routes."""
+                   mlx_adapter: str | None = None, strength_models: list[str] | None = None):
+    """The FastAPI app: the monitor's app (token, job routes) plus the play, record and strength routes.
+
+    ``strength_models`` are the model directories the Strength tab may launch
+    (default: ``local_models()`` plus ``mlx_model``).
+    """
     from fastapi import Request
     from fastapi.responses import HTMLResponse, JSONResponse
     from fastapi.routing import APIRoute
@@ -514,6 +589,11 @@ def build_play_app(records_dir: Path = DEFAULT_OUTPUT_DIR, *, token: str | None 
         records_dir = REPO_ROOT / records_dir
     play = PlayState(records_dir, node, setup_loader, mlx_model, mlx_adapter)
     action = bot_match_action(records_dir, node)
+    if strength_models is None:
+        strength_models = local_models()
+        if mlx_model and mlx_model not in strength_models:
+            strength_models.append(mlx_model)
+    strength = strength_action(play.strength_dir, strength_models, node)
 
     def refused(exc: PlayError):
         return JSONResponse({"ok": False, "error": str(exc)}, status_code=exc.status)
@@ -609,8 +689,32 @@ def build_play_app(records_dir: Path = DEFAULT_OUTPUT_DIR, *, token: str | None 
                 return refused(exc)
             return {"name": name, "rows": rows, "summary": play.record_summary(rows)}
 
-    app = build_app([action], REPO_ROOT, title="Cyberpunk TCG local play", token=token,
-                    runner=Runner({action["id"]: action}, REPO_ROOT), extra_routes=routes)
+        @app.get("/api/strength")
+        def strength_runs():
+            return {"dir": str(play.strength_dir), "runs": list_runs(play.strength_dir),
+                    "action": strength["id"], "models": list(strength_models),
+                    "promptVersions": list(PROMPT_VERSIONS), "promptVersion": PROMPT_VERSION,
+                    "budgetMs": DEFAULT_DECISION_BUDGET_MS, "maxTurns": DEFAULT_MAX_TURNS,
+                    "matches": STRENGTH_DEFAULT_MATCHES, "mlx": mlx_available()}
+
+        @app.get("/api/strength/{run_id}")
+        def strength_run(run_id: str):
+            try:
+                return play.strength_summary(run_id)
+            except PlayError as exc:
+                return refused(exc)
+
+        @app.get("/api/strength/{run_id}/records/{name}")
+        def strength_record(run_id: str, name: str):
+            try:
+                rows = play.read_strength_record(run_id, name)
+            except PlayError as exc:
+                return refused(exc)
+            return {"name": name, "run": run_id, "rows": rows, "summary": play.record_summary(rows)}
+
+    app = build_app([action, strength], REPO_ROOT, title="Cyberpunk TCG local play", token=token,
+                    runner=Runner({action["id"]: action, strength["id"]: strength}, REPO_ROOT),
+                    extra_routes=routes)
     app.state.play = play
     inner_lifespan = app.router.lifespan_context
 
@@ -697,7 +801,7 @@ pre{white-space:pre-wrap;word-break:break-word;font-size:12px;max-height:360px;o
 </head>
 <body>
 <header><h1>Cyberpunk TCG local play</h1>
-<nav><button data-tab="play" class="on">Play a bot</button><button data-tab="bots">Bot vs bot</button><button data-tab="records">Match records</button><button data-tab="prompt">Prompt size</button></nav>
+<nav><button data-tab="play" class="on">Play a bot</button><button data-tab="bots">Bot vs bot</button><button data-tab="records">Match records</button><button data-tab="prompt">Prompt size</button><button data-tab="strength">Strength</button></nav>
 <span class="muted" id="hdr"></span></header>
 <main>
 <section id="play" class="on">
@@ -749,6 +853,32 @@ pre{white-space:pre-wrap;word-break:break-word;font-size:12px;max-height:360px;o
   </div>
   <div id="sOut"></div>
 </section>
+<section id="strength">
+  <div class="panel">
+    <div class="row">
+      <label>Run id<input id="tRun" placeholder="e.g. qwen3-v4-20" size="18"></label>
+      <label>Model 1<select id="tM0"></select></label>
+      <label>Model 2<select id="tM1"></select></label>
+      <label>Model 3<select id="tM2"></select></label>
+      <label>Prompt 1<select id="tP0"></select></label>
+      <label>Prompt 2<select id="tP1"></select></label>
+      <label>Matches per config<input id="tMatches" type="number" min="2" step="2" style="width:80px"></label>
+      <label>Seed prefix<input id="tSeed" value="strength"></label>
+      <label>Budget ms<input id="tBudget" type="number" min="1" step="500" style="width:90px"></label>
+      <label>Max turns<input id="tMaxT" type="number" min="0" style="width:80px"></label>
+      <button class="go" id="tStart">Run eval</button>
+      <button class="ghost" id="tCancel" disabled>Cancel</button>
+    </div>
+    <div class="muted" id="tNote">Each configuration (model x prompt) plays every seed once per seat against the baseline.
+      Re-running a run id resumes it. One job at a time, shared with Bot vs bot.</div>
+    <div class="err" id="tErr"></div>
+  </div>
+  <div class="panel"><div id="tStatus" class="muted">No strength job yet.</div><pre id="tLog"></pre></div>
+  <div class="panel"><div class="row"><b>Runs</b><button class="ghost" id="tRefresh">Refresh</button>
+    <button class="go" id="tCompare">Compare selected</button><span class="muted" id="tDir"></span></div>
+    <div id="tRuns"></div></div>
+  <div id="tOut"></div>
+</section>
 <section id="records">
   <div class="panel"><div class="row"><button class="ghost" id="rRefresh">Refresh</button><span class="muted" id="rDir"></span></div>
   <div id="rList"></div></div>
@@ -788,7 +918,9 @@ document.querySelectorAll("nav button").forEach(b => b.addEventListener("click",
   document.querySelectorAll("main section").forEach(s => s.classList.toggle("on", s.id === b.dataset.tab));
   if (b.dataset.tab === "records") loadRecords();
   if (b.dataset.tab === "bots") loadHistory();
+  if (b.dataset.tab === "strength") loadStrength();
 }));
+function showTab(name) { document.querySelector('nav button[data-tab="' + name + '"]').click(); }
 
 let CONFIG = null;
 async function init() {
@@ -973,8 +1105,8 @@ function seatModel(s) {
     (s.adapterPath ? " + " + s.adapterPath : "") + (s.promptVersion ? " [" + s.promptVersion + "]" : "");
 }
 let REC = null, STEP = 0;
-async function openRecord(name) {
-  const r = await api("/api/records/" + encodeURIComponent(name));
+async function openRecord(name, url) {
+  const r = await api(url || "/api/records/" + encodeURIComponent(name));
   const rows = r.rows;
   REC = {name: name, header: rows[0], decisions: rows.filter(x => x.kind === "decision"), result: rows.find(x => x.kind === "result"), summary: r.summary || {}};
   STEP = 0; renderRecord();
@@ -1008,6 +1140,102 @@ function renderRecord() {
         h("b", {}, "Result"), res ? h("table", {}, kv("Status", res.status), kv("Winner seat", res.winnerSeat), kv("Reason", res.reason), kv("Turns", res.turns),
           kv("Decisions", res.decisions), kv("Selections", res.selections), kv("Errors", res.errors), kv("Worker restarts", res.workerRestarts), kv("Detail", res.detail)) : h("div", {class: "warn"}, "No result row"))),
     h("div", {class: "panel"}, table));
+}
+
+/* ---------- strength ---------- */
+let SCONF = null, TJOB = null, TJOB_LINES = 0, TJOB_TIMER = null, TRUN = null;
+function pct(x) { return x === null || x === undefined ? "n/a" : (100 * x).toFixed(1) + "%"; }
+function orNA(x) { return x === null || x === undefined ? "n/a" : x; }
+function wld(t) { return t ? t.wins + "-" + t.losses + "-" + t.draws + (t.noResult ? " (+" + t.noResult + ")" : "") : ""; }
+async function loadStrength() {
+  const r = await api("/api/strength");
+  if (!SCONF) {
+    SCONF = r;
+    for (const id of ["tM0", "tM1", "tM2"]) fill($(id), [""].concat(r.models));
+    for (const id of ["tP0", "tP1"]) fill($(id), [""].concat(r.promptVersions));
+    if (r.models.length) $("tM0").value = r.models[0];
+    $("tP0").value = r.promptVersion;
+    $("tMatches").value = r.matches; $("tBudget").value = r.budgetMs; $("tMaxT").value = r.maxTurns;
+    if (!r.mlx) $("tNote").textContent += " This machine cannot run mlx models (Apple Silicon only); past runs still show.";
+    if (!r.models.length) $("tNote").textContent += " No downloaded models found under models/.";
+  }
+  $("tDir").textContent = r.dir;
+  if (!r.runs.length) { $("tRuns").replaceChildren(h("div", {class: "muted"}, "No strength runs yet.")); return; }
+  $("tRuns").replaceChildren(h("table", {},
+    h("tr", {}, ["", "Run", "Matches", "Per config", "Seed", "Configurations"].map(x => h("th", {}, x))),
+    r.runs.map(x => h("tr", {},
+      h("td", {}, h("input", {type: "checkbox", class: "tPick", value: x.runId})),
+      h("td", {class: "click", onclick: () => showRuns([x.runId])}, x.runId),
+      h("td", {}, x.completedMatches + " / " + orNA(x.plannedMatches)), h("td", {}, orNA(x.matchesPerConfig)),
+      h("td", {}, orNA(x.seed)), h("td", {}, (x.configs || []).join("; "))))));
+}
+$("tRefresh").addEventListener("click", () => loadStrength());
+$("tCompare").addEventListener("click", () => {
+  const ids = Array.from(document.querySelectorAll(".tPick:checked")).map(x => x.value);
+  if (ids.length) showRuns(ids);
+});
+async function showRuns(ids) {
+  const runs = [];
+  for (const id of ids) runs.push(await api("/api/strength/" + encodeURIComponent(id)));
+  renderStrength(runs);
+}
+function renderStrength(runs) {
+  const head = ["Run", "Configuration", "Seat 0 W-L-D", "Seat 1 W-L-D", "Win rate", "95% interval", "Baseline agreement",
+    "Fallbacks", "Latency ms p50 / p95 / max", "Input tokens median / max", "Wall s"];
+  const rows = [], details = [];
+  for (const run of runs) {
+    for (const c of run.configs) {
+      const ci = c.winRateInterval95, ag = c.baselineAgreement, fb = c.fallbacks, lat = c.latencyMs, tok = c.inputTokens;
+      rows.push(h("tr", {}, h("td", {}, run.runId), h("td", {title: JSON.stringify(c.config)}, c.label),
+        h("td", {}, wld(c.bySeat["0"])), h("td", {}, wld(c.bySeat["1"])),
+        h("td", {}, c.wins + "/" + c.games + " = " + pct(c.winRate)),
+        h("td", {}, ci ? "[" + pct(ci[0]) + ", " + pct(ci[1]) + "]" : "n/a"),
+        h("td", {}, ag ? pct(ag.rate) + " of " + ag.decisions + (ag.matchesWithout ? " (" + ag.matchesWithout + " records n/a)" : "") : "n/a"),
+        h("td", {class: fb.total ? "warn" : ""}, fb.total + (fb.total ? " " + JSON.stringify(fb.byError) : "")),
+        h("td", {}, orNA(lat.p50) + " / " + orNA(lat.p95) + " / " + orNA(lat.max)),
+        h("td", {}, orNA(tok.median) + " / " + orNA(tok.max)), h("td", {}, orNA(c.wallSeconds))));
+      details.push(h("details", {class: "panel"}, h("summary", {}, run.runId + ": " + c.label + " (" + c.matches + " matches)"),
+        h("table", {}, h("tr", {}, ["Record", "Seed", "Model seat", "Outcome", "Status", "Reason", "Turns", "Model decisions", "Agreement", "Wall s"].map(x => h("th", {}, x))),
+          c.matchList.map(m => h("tr", {class: "click", onclick: () => openStrengthRecord(run.runId, m.name)},
+            h("td", {}, m.name), h("td", {}, m.seed), h("td", {}, m.subjectSeat), h("td", {class: m.outcome === "loss" ? "warn" : ""}, m.outcome),
+            h("td", {}, m.status), h("td", {}, m.reason), h("td", {}, m.turns), h("td", {}, m.decisions), h("td", {}, pct(m.agreement)),
+            h("td", {}, m.wallMs == null ? "" : (m.wallMs / 1000).toFixed(1)))))));
+    }
+  }
+  const notes = runs.map(run => h("div", {class: "muted"}, run.runId + ": " + run.completedMatches + " / " + orNA(run.plannedMatches) + " matches" +
+    (run.loadSeconds != null ? ", model load " + run.loadSeconds + " s" : "") + (run.skipped.length ? ", skipped " + run.skipped.map(x => x.name).join(", ") : "")));
+  $("tOut").replaceChildren(
+    h("div", {class: "panel"}, h("b", {}, "Against the baseline (model's side; draws include turn and decision caps; no result is left out of the rate)"),
+      h("table", {}, h("tr", {}, head.map(x => h("th", {}, x))), rows), notes),
+    details);
+}
+async function openStrengthRecord(runId, name) {
+  showTab("records");
+  await openRecord(runId + " / " + name, "/api/strength/" + encodeURIComponent(runId) + "/records/" + encodeURIComponent(name));
+}
+$("tStart").addEventListener("click", async () => {
+  $("tErr").textContent = "";
+  const values = {"--run-id": $("tRun").value.trim(), model0: $("tM0").value, model1: $("tM1").value, model2: $("tM2").value,
+    prompt0: $("tP0").value, prompt1: $("tP1").value, "--matches": num("tMatches"), "--seed": $("tSeed").value.trim(),
+    "--budget-ms": num("tBudget"), "--max-turns": num("tMaxT")};
+  if (!values["--run-id"]) { $("tErr").textContent = "Give the run a run id (re-using one resumes it)."; return; }
+  try {
+    const r = await api("/api/run/" + SCONF.action, {values: values});
+    TJOB = r.job; TJOB_LINES = 0; TRUN = values["--run-id"]; $("tLog").textContent = ""; pollStrengthJob();
+  } catch (e) { $("tErr").textContent = e.message; }
+});
+$("tCancel").addEventListener("click", async () => { if (TJOB) { try { await api("/api/cancel/" + TJOB, {}); } catch (e) { $("tErr").textContent = e.message; } } });
+async function pollStrengthJob() {
+  clearTimeout(TJOB_TIMER);
+  if (!TJOB) return;
+  const j = await api("/api/job/" + TJOB + "?since=" + TJOB_LINES);
+  TJOB_LINES = j.total_lines;
+  if (j.lines.length) $("tLog").textContent += j.lines.join("\n") + "\n";
+  $("tLog").scrollTop = $("tLog").scrollHeight;
+  $("tStatus").textContent = j.label + ": " + j.status + " · started " + j.started + (j.ended ? " · ended " + j.ended : "") + " · " + j.cmd;
+  $("tStart").disabled = j.status === "running"; $("tCancel").disabled = j.status !== "running";
+  if (TRUN) { try { renderStrength([await api("/api/strength/" + encodeURIComponent(TRUN))]); } catch (e) { /* no matches yet */ } }
+  if (j.status === "running") TJOB_TIMER = setTimeout(pollStrengthJob, 3000); else loadStrength();
 }
 
 init().catch(e => { $("pErr").textContent = "Could not load: " + e.message; });

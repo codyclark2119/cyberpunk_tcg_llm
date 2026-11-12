@@ -246,8 +246,8 @@ prompt sizes over real games without a model; see
 [docs/local-prompt-v4.md](docs/local-prompt-v4.md) and
 [docs/local-prompt-v3.md](docs/local-prompt-v3.md). The external simulator HTTP bridge was
 [retired on 2026-11-11](docs/simulator-bot-retirement.md). No external LLM API is
-used. A trained gameplay adapter and measured playing strength are still future
-milestones.
+used. A trained gameplay adapter is still a future milestone; the strength eval below
+measures play against the baseline.
 
 ### Local bot-vs-bot matches
 
@@ -268,6 +268,21 @@ python scripts/run_local_matches.py --matches 10 --seed demo            # baseli
 python scripts/run_local_matches.py --policy baseline mlx --matches 3   # Apple Silicon only
 python scripts/run_local_matches.py --policy baseline mlx --budget-ms 20000  # longer thinking time
 python scripts/run_local_matches.py --policy baseline mlx --training-dir local/training  # also log training records
+```
+
+`scripts/eval_local_strength.py` measures playing strength: N matches per
+configuration (model, prompt version, budget) against the baseline, every
+configuration on the same seeds and both seats, written under
+`local/strength/<run-id>/` with a summary of wins, losses and draws per seat, win
+rate with a 95% Wilson interval, baseline agreement, fallbacks, latency and tokens.
+Re-running a run id resumes it. The play UI's "Strength" tab launches it and
+compares runs. See [docs/local-strength-eval.md](docs/local-strength-eval.md).
+
+```bash
+python scripts/eval_local_strength.py --run-id qwen3-v4-first \
+  --model models/qwen3-8b-4bit --model models/qwen3-4b-4bit --matches 20   # Apple Silicon only
+python scripts/eval_local_strength.py --run-id qwen3-v4-first --summarize-only  # re-summarise, play nothing
+python scripts/test_strength_eval.py      # real engine, fake MLX worker
 ```
 
 ### Local play UI
