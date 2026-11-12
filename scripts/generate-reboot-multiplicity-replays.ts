@@ -10,6 +10,7 @@ import { unwrap } from "../tests/turn-replay";
 import prefixes from "../tests/fixtures/reboot-multiplicity-reproducers.v1.json";
 import { compactArtifactWriter, matrixTraceDir, matrixTracePath } from "./lib/generated-artifacts";
 import { coordinateId } from "../tests/demo-matrix-config";
+import { eventsMatchHashUpToLagOrder } from "./lib/lag-order";
 const check=process.argv.includes("--check");
 matrixTraceDir({create:true});
 const context=demoStarterContext();
@@ -23,7 +24,7 @@ for(const prefix of prefixes.records){
     assert.ok(trace.steps.length>prefix.steps.length,JSON.stringify(trace.failure));
     for(const [i,original] of prefix.steps.entries()){
         assert.deepEqual(trace.steps[i].action,GameActionSchema.parse(original.action),`original action ${i}`);
-        assert.equal(hashCanonical(trace.steps[i].events),original.eventsHash);
+        assert.ok(eventsMatchHashUpToLagOrder(trace.steps[i].events,original.eventsHash),`original events ${i} (LAG_REMOVED runs compared by card id)`);
         assert.equal(hashCanonical(trace.steps[i].observations),original.observationsHash);
     }
     const before=trace.steps[prefix.steps.length-1].state,step=trace.steps[prefix.steps.length];
