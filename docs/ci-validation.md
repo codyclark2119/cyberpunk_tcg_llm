@@ -11,7 +11,8 @@ There are no changed-file selectors, generated-baseline classifiers, path filter
 conditional steps. A docs-only change gets the same validation as a runtime change;
 the small time saving is not worth another default-pass boundary. Use the Node
 version pinned in `.nvmrc` (`nvm use`) and Python 3 with `fastapi` installed
-(`python -m pip install fastapi httpx`; `httpx` is used by the console tests).
+(`python -m pip install fastapi httpx numpy`; `httpx` is used by the console tests,
+`numpy` by the rules-retrieval tests' fake embedding index).
 
 ## Commands and tiers
 
@@ -88,7 +89,7 @@ an action id only; the command line is built server-side from a fixed allowlist.
 `.github/workflows/manual-validation.yml` has only a `workflow_dispatch` trigger, with
 a `tier` input (`quick`, the default, or `full`). Its one job on `ubuntu-latest`
 starts a MongoDB 7 service container, sets up Node from `.nvmrc` and
-Python 3.12, installs `fastapi` and `httpx`, runs `npm ci`, then
+Python 3.12, installs `fastapi`, `httpx` and `numpy`, runs `npm ci`, then
 `scripts/run_tests.sh --no-infra` (plus `--quick` for the quick tier). The step logs
 are uploaded on success and failure and kept for 14 days. The workflow contains no
 pass lines; it is a clean-machine run of the same script, not a separate gate.

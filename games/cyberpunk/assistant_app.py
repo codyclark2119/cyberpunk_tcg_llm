@@ -46,6 +46,13 @@ settings (no shell), and it refuses to start while a chat turn or another job
 is running; the chat refuses while an eval job runs. Progress comes from the
 job log (the monitor's ``/api/job`` route).
 
+The Eval tab's Retrieval panel measures ``search_rules`` itself: two more
+allowlisted actions, "Build rules index" (``scripts/build_rules_index.py``, no
+values; Apple Silicon only) and "Measure retrieval"
+(``scripts/eval_retrieval.py --name``, checked like a run name), and
+``/api/eval/retrieval`` (index status and each report's recall per method) with
+``/api/eval/retrieval/<name>.json`` for one report's per-question hits.
+
 DNS rebinding: a page on another site can resolve its own hostname to
 127.0.0.1 and then talk to this server from the victim's browser. Loopback
 needs no token, so the guard here is the Host header: unless the app was
@@ -69,14 +76,15 @@ from games.cyberpunk.assistant import eval_store
 from games.cyberpunk.assistant.decks import public_deck_index
 from games.cyberpunk.assistant.eval_store import EvalSetError
 from games.cyberpunk.assistant.loop import ASSISTANT_PROMPT_VERSION, MAX_TOOL_CALLS, run_turn
-from games.cyberpunk.assistant.tools import TOOLS, call_tool, cards
+from games.cyberpunk.assistant.tools import TOOLS, call_tool, cards, index_status
 from games.cyberpunk.config import REPO_ROOT
 from games.cyberpunk.prompts import RULES_VERSION
 from harness.core.webui.monitor import build_app
 from harness.core.webui.runner import Runner, lan_ip
 
 __all__ = ["build_assistant_app", "serve_assistant", "ASSISTANT_HTML", "is_loopback", "host_allowed",
-           "ChatService", "Session", "deck_brief", "EXAMPLE_QUESTIONS", "EvalRunner", "eval_action"]
+           "ChatService", "Session", "deck_brief", "EXAMPLE_QUESTIONS", "EvalRunner", "eval_action",
+           "index_action", "retrieval_action"]
 
 DEFAULT_PORT = 8767
 TITLE = "Cyberpunk TCG assistant"
@@ -277,6 +285,28 @@ def eval_action(chat: "ChatService", set_paths: list[str], runs_dir) -> dict:
             "args": args}
 
 
+INDEX_ACTION_ID = "build-rules-index"
+RETRIEVAL_ACTION_ID = "eval-retrieval"
+
+
+def index_action() -> dict:
+    """Build the rules embedding index (``scripts/build_rules_index.py``). It takes no values at all."""
+    return {"id": INDEX_ACTION_ID, "label": "Build rules index", "group": "Eval", "cmd": "scripts/build_rules_index.py",
+            "writes": True, "args": [],
+            "desc": "Embed every rule for hybrid search_rules (Apple Silicon with mlx-embeddings; a git-ignored "
+                    "build artifact). Without it search_rules stays lexical."}
+
+
+def retrieval_action(reports_dir) -> dict:
+    """Measure search_rules recall on the quiz (``scripts/eval_retrieval.py``) into ``<reports_dir>/<name>.json``."""
+    return {"id": RETRIEVAL_ACTION_ID, "label": "Measure retrieval", "group": "Eval", "cmd": "scripts/eval_retrieval.py",
+            "writes": True, "desc": "Recall@1/5/10 of each search_rules method against the expected-rules draft.",
+            "args": [{"name": "--name", "key": "name", "type": "text", "default": "", "label": "Report name"},
+                     {"name": "--force", "key": "force", "type": "flag", "default": False, "label": "Replace"},
+                     {"name": "--quiet", "type": "fixed", "value": []},
+                     {"name": "--reports-dir", "type": "fixed", "value": [str(reports_dir)]}]}
+
+
 class EvalRunner(Runner):
     """The monitor's one-job-at-a-time runner, checking the eval action's values before argv is built.
 
@@ -286,10 +316,11 @@ class EvalRunner(Runner):
     and nothing starts without a configured model or while a chat turn runs.
     """
 
-    def __init__(self, actions_by_id: dict, repo_root, *, chat: "ChatService", runs_dir):
+    def __init__(self, actions_by_id: dict, repo_root, *, chat: "ChatService", runs_dir, reports_dir=None):
         super().__init__(actions_by_id, repo_root)
         self.chat = chat
         self.runs_dir = runs_dir
+        self.reports_dir = eval_store.REPORTS_DIR if reports_dir is None else reports_dir
 
     def running(self) -> bool:
         return bool(self.active and self.jobs[self.active]["status"] == "running")
@@ -297,7 +328,30 @@ class EvalRunner(Runner):
     def build_cmd(self, action: dict, values: dict) -> list[str]:
         if action["id"] == EVAL_ACTION_ID:
             values = self.check_eval_values(action, values)
+        elif action["id"] == INDEX_ACTION_ID:
+            if not isinstance(values, dict) or values:
+                raise ValueError("Build rules index takes no values")
+        elif action["id"] == RETRIEVAL_ACTION_ID:
+            values = self.check_retrieval_values(values)
+        else:
+            raise ValueError(f"unknown action {action['id']!r}")
         return super().build_cmd(action, values)
+
+    def check_retrieval_values(self, values: dict) -> dict:
+        if not isinstance(values, dict):
+            raise ValueError("values must be an object")
+        extra = sorted(set(values) - {"name", "force"})
+        if extra:
+            raise ValueError(f"unknown value(s): {', '.join(extra)}")
+        name, force = values.get("name"), values.get("force", False)
+        if not isinstance(name, str) or not eval_store.RUN_NAME_RE.match(name):
+            raise ValueError("Report name must be 1-80 letters, digits, '.', '_' or '-', starting with a letter or "
+                             "digit.")
+        if not isinstance(force, bool):
+            raise ValueError("force must be true or false")
+        if (self.reports_dir / f"{name}.json").exists() and not force:
+            raise ValueError(f"A report named {name} exists; tick 'replace' or pick another name.")
+        return {"name": name, "force": force}
 
     def check_eval_values(self, action: dict, values: dict) -> dict:
         if not isinstance(values, dict):
@@ -349,18 +403,21 @@ def registry_view() -> dict:
 
 
 def build_assistant_app(*, token: str | None = None, lan: bool = False, chat: ChatService | None = None,
-                        gold_dir=None, runs_dir=None, notes_dir=None):
+                        gold_dir=None, runs_dir=None, notes_dir=None, reports_dir=None):
     """The FastAPI app: the monitor's app (token, job routes) plus the tool, chat and eval routes and a
-    Host/Origin guard. ``gold_dir``, ``runs_dir`` and ``notes_dir`` default to data/gold, eval/runs and
-    eval/notes; tests point them at temporary directories."""
+    Host/Origin guard. ``gold_dir``, ``runs_dir``, ``notes_dir`` and ``reports_dir`` default to data/gold,
+    eval/runs, eval/notes and eval/reports; tests point them at temporary directories."""
     chat = chat if chat is not None else ChatService()
     gold_dir = eval_store.GOLD_DIR if gold_dir is None else gold_dir
     runs_dir = eval_store.RUNS_DIR if runs_dir is None else runs_dir
     notes_dir = eval_store.NOTES_DIR if notes_dir is None else notes_dir
     sets = eval_store.list_sets(gold_dir)
     set_paths = {s["name"]: _repo_relative(gold_dir / s["name"]) for s in sets}
+    reports_dir = eval_store.REPORTS_DIR if reports_dir is None else reports_dir
     action = eval_action(chat, list(set_paths.values()), runs_dir)
-    runner = EvalRunner({action["id"]: action}, REPO_ROOT, chat=chat, runs_dir=runs_dir)
+    actions = [action, index_action(), retrieval_action(reports_dir)]
+    runner = EvalRunner({a["id"]: a for a in actions}, REPO_ROOT, chat=chat, runs_dir=runs_dir,
+                        reports_dir=reports_dir)
     from fastapi import Request
     from fastapi.responses import HTMLResponse, JSONResponse, PlainTextResponse
     from fastapi.routing import APIRoute
@@ -523,6 +580,22 @@ def build_assistant_app(*, token: str | None = None, lan: bool = False, chat: Ch
             except (EvalSetError, ValueError) as exc:
                 return eval_refusal(str(exc), 400)
 
+        @app.get("/api/eval/retrieval")
+        def retrieval_overview():
+            return {"index": index_status(), "dir": _repo_relative(reports_dir), "buildActionId": INDEX_ACTION_ID,
+                    "measureActionId": RETRIEVAL_ACTION_ID,
+                    "active": runner.active if runner.running() else None,
+                    "reports": eval_store.list_retrieval_reports(reports_dir)}
+
+        @app.get("/api/eval/retrieval/{name}")
+        def retrieval_report(name: str):
+            try:
+                return {"name": name, "report": eval_store.read_retrieval_report(name, reports_dir)}
+            except FileNotFoundError:
+                return eval_refusal("No such report.", 404)
+            except (EvalSetError, ValueError) as exc:
+                return eval_refusal(str(exc), 400)
+
         # Stop the model worker when the server stops (it would also exit on stdin EOF).
         inner_lifespan = app.router.lifespan_context
 
@@ -534,7 +607,7 @@ def build_assistant_app(*, token: str | None = None, lan: bool = False, chat: Ch
 
         app.router.lifespan_context = lifespan
 
-    return build_app([action], REPO_ROOT, title=TITLE, token=token, runner=runner, extra_routes=routes)
+    return build_app(actions, REPO_ROOT, title=TITLE, token=token, runner=runner, extra_routes=routes)
 
 
 def serve_assistant(host: str = "127.0.0.1", port: int = DEFAULT_PORT, *, lan: bool = False,
@@ -731,6 +804,20 @@ table.runs tr.pick{cursor:pointer}table.runs tr.pick:hover{background:var(--sel)
       <div id="evalRuns" class="muted">No runs loaded.</div>
       <div id="evalRunBody"></div>
     </div>
+    <div class="panel">
+      <h2>Retrieval</h2>
+      <p class="muted" style="margin:0 0 6px;font-size:12px">How often search_rules returns a rule each quiz question needs (scripts/eval_retrieval.py). The expected rules are an unreviewed Claude draft in eval/sets: a measurement aid, not gold, never training data. Build rules index embeds every rule for hybrid search (Apple Silicon only; a git-ignored build artifact).</p>
+      <div class="muted" id="retrIndex" style="font-size:12px">Index status not loaded.</div>
+      <div class="evalrun">
+        <label>Report name<input type="text" id="retrName" maxlength="80" placeholder="retrieval-quiz"></label>
+        <label class="inline"><input type="checkbox" id="retrForce"> replace a report of this name</label>
+      </div>
+      <div class="row"><button class="go" id="retrMeasureBtn" type="button">Measure retrieval</button><button class="small" id="retrBuildBtn" type="button">Build rules index</button><button class="small" id="retrRefresh" type="button">Refresh</button></div>
+      <div class="status" id="retrStatus"></div>
+      <pre id="retrLog" class="muted" hidden></pre>
+      <div id="retrReports" class="muted">No reports loaded.</div>
+      <div id="retrReportBody"></div>
+    </div>
   </div>
 </section>
 </div>
@@ -820,6 +907,17 @@ function answerFlags(data, maxToolCalls) {
   if (data.stopReason === "model_error") flags.push("model error");
   if (data.stopReason === "empty") flags.push("no answer text");
   return flags;
+}
+// Rows of the retrieval table: one per method of one report, recall as percentages or why it did not run.
+function retrievalRows(report) {
+  const pct = (v) => v === null || v === undefined ? "n/a" : (v * 100).toFixed(1) + "%";
+  const rows = [];
+  for (const [method, m] of Object.entries((report && report.methods) || {})) {
+    if (!m.available) { rows.push({method, cells: ["unavailable: " + (m.reason || "unknown reason")]}); continue; }
+    rows.push({method, cells: [pct(m["recall@1"]), pct(m["recall@5"]), pct(m["recall@10"]),
+      m["chars@10"] === null || m["chars@10"] === undefined ? "n/a" : String(Math.round(m["chars@10"]))]});
+  }
+  return rows;
 }
 // pure:end
 
@@ -1288,6 +1386,7 @@ async function loadEval() {
   if (config.active) watchJob(config.active);
   if ((config.sets || []).length) await loadSet(pick.value); else $("evalSetStatus").textContent = "No multiple-choice sets in data/gold.";
   await loadRuns();
+  await loadRetr();
 }
 
 async function loadSet(name) {
@@ -1447,6 +1546,107 @@ async function showRun(name) {
   }
 }
 
+// Retrieval panel -------------------------------------------------------------------
+const retrState = {data: null, job: null, lines: 0, timer: null};
+
+async function loadRetr() {
+  const [, data] = await getJson("/api/eval/retrieval");
+  retrState.data = data;
+  const idx = data.index || {};
+  $("retrIndex").textContent = "Rules index " + idx.path + ": " + (idx.usable ? "in use (" + idx.model_id + ", " +
+    idx.documents + " documents), search_rules runs hybrid" : "not in use, search_rules runs lexical: " + (idx.reason || "")) + ".";
+  if (data.active && !retrState.job) watchRetrJob(data.active);
+  const box = $("retrReports");
+  box.textContent = "";
+  box.className = "";
+  if (!data.reports || !data.reports.length) { box.className = "muted"; box.textContent = "No retrieval reports in " + data.dir + " yet."; return; }
+  const table = el("table", {class: "runs"});
+  const head = el("tr");
+  for (const h of ["report", "method", "R@1", "R@5", "R@10", "chars@10"]) head.appendChild(el("th", {}, h));
+  table.appendChild(head);
+  for (const report of data.reports) {
+    if (report.error) {
+      const tr = el("tr");
+      tr.appendChild(el("td", {}, report.name));
+      tr.appendChild(el("td", {colspan: "5", class: "err"}, report.error));
+      table.appendChild(tr);
+      continue;
+    }
+    for (const row of retrievalRows(report)) {
+      const tr = el("tr", {class: "pick"});
+      tr.appendChild(el("td", {}, report.name));
+      tr.appendChild(el("td", {}, row.method));
+      if (row.cells.length === 1) tr.appendChild(el("td", {colspan: "4", class: "muted"}, row.cells[0]));
+      else for (const cell of row.cells) tr.appendChild(el("td", {}, cell));
+      tr.addEventListener("click", () => showRetrReport(report.name, row.method).catch((err) => { $("retrReportBody").textContent = "Could not load: " + err; }));
+      table.appendChild(tr);
+    }
+  }
+  box.appendChild(table);
+}
+
+async function showRetrReport(name, method) {
+  const body = $("retrReportBody");
+  body.textContent = "Loading " + name + " …";
+  const [, data] = await getJson("/api/eval/retrieval/" + encodeURIComponent(name));
+  body.textContent = "";
+  if (data.ok === false) { body.className = "err"; body.textContent = data.error; return; }
+  body.className = "";
+  const report = data.report, m = (report.methods || {})[method];
+  body.appendChild(el("h3", {}, name + " · " + method));
+  body.appendChild(factsList({"expected set": report.expected_set + " (" + (report.expected_status || []).join(", ") + ")",
+    questions: report.questions, query: report.query_form, snapshot: report.rules_version, scored: report.scored,
+    skipped: (report.skipped || []).map((s) => s.id).join(", "), "hit rule": report.match_rule}));
+  if (!m || !m.available) { body.appendChild(el("div", {class: "muted"}, "Not measured: " + ((m && m.reason) || "no such method"))); return; }
+  const table = el("table", {class: "runs"});
+  const head = el("tr");
+  for (const h of ["question", "expected", "first hit", "top 3"]) head.appendChild(el("th", {}, h));
+  table.appendChild(head);
+  for (const item of m.items || []) {
+    const tr = el("tr");
+    tr.appendChild(el("td", {}, item.id));
+    tr.appendChild(el("td", {}, (item.expected || []).join(", ")));
+    tr.appendChild(el("td", {class: item.first_hit_rank ? "" : "err"}, item.first_hit_rank ? "#" + item.first_hit_rank : "none in top 10"));
+    tr.appendChild(el("td", {}, (item.top || []).slice(0, 3).map((t) => t.rule_ids.length ? t.rule_ids.slice(0, 3).join("/") : t.chunk_id).join(" · ")));
+    table.appendChild(tr);
+  }
+  body.appendChild(table);
+}
+
+async function startRetrJob(actionId, values) {
+  $("retrStatus").textContent = "Starting …";
+  try {
+    const [response, data] = await postJson("/api/run/" + encodeURIComponent(actionId), {values});
+    if (!data.ok) { $("retrStatus").textContent = "Refused (" + response.status + "): " + data.error; return; }
+    watchRetrJob(data.job);
+  } catch (err) {
+    $("retrStatus").textContent = "Request failed: " + err;
+  }
+}
+
+function watchRetrJob(id) {
+  retrState.job = id;
+  retrState.lines = 0;
+  $("retrLog").textContent = "";
+  $("retrLog").hidden = false;
+  clearInterval(retrState.timer);
+  retrState.timer = setInterval(() => pollRetrJob().catch(() => {}), 1500);
+  pollRetrJob().catch(() => {});
+}
+
+async function pollRetrJob() {
+  const [response, job] = await getJson("/api/job/" + encodeURIComponent(retrState.job) + "?since=" + retrState.lines);
+  if (!response.ok) return;
+  if (job.lines.length) $("retrLog").textContent += job.lines.join("\n") + "\n";
+  retrState.lines = job.total_lines;
+  $("retrStatus").textContent = job.status + " · " + job.cmd;
+  if (job.status !== "running") {
+    clearInterval(retrState.timer);
+    retrState.job = null;
+    loadRetr().catch(() => {});
+  }
+}
+
 // Wiring ----------------------------------------------------------------------------
 // Example chips only fill the input box; the question goes through the same path as any other.
 for (const chip of document.querySelectorAll("#chips button")) {
@@ -1473,6 +1673,10 @@ $("toolForm").addEventListener("keydown", (e) => {
 $("evalSetPick").addEventListener("change", () => loadSet($("evalSetPick").value).catch((err) => { $("evalSetStatus").textContent = "Could not load: " + err; }));
 $("evalRunBtn").addEventListener("click", startEval);
 $("evalRunsRefresh").addEventListener("click", () => loadRuns().catch((err) => { $("evalRuns").textContent = "Could not load: " + err; }));
+$("retrRefresh").addEventListener("click", () => loadRetr().catch((err) => { $("retrReports").textContent = "Could not load: " + err; }));
+$("retrBuildBtn").addEventListener("click", () => startRetrJob(retrState.data ? retrState.data.buildActionId : "build-rules-index", {}));
+$("retrMeasureBtn").addEventListener("click", () => startRetrJob(retrState.data ? retrState.data.measureActionId : "eval-retrieval",
+  {name: $("retrName").value.trim(), force: $("retrForce").checked}));
 showHeldDeck(null);
 loadStatus().catch(() => { $("modelBadge").textContent = "status unavailable"; });
 loadTools().then(loadDecks).catch((err) => { $("status").textContent = "Could not load tools: " + err; });

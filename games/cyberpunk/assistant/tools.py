@@ -32,18 +32,17 @@ Qwen3's native chat template takes in its ``tools`` argument.
 
 from __future__ import annotations
 
-import math
 import re
 import unicodedata
-from collections import Counter
 from dataclasses import dataclass
 from functools import lru_cache
 from pathlib import Path
 from typing import Any, Callable
 
 from games.cyberpunk import markup
+from games.cyberpunk.assistant import retrieval
 from games.cyberpunk.chunking import card_to_text
-from games.cyberpunk.config import (CARD_DATABASE_PATH, CORPUS_CHUNKS_PATH, CORPUS_INDEX_PATH, ERRATA_CHUNKS_PATH,
+from games.cyberpunk.config import (CARD_DATABASE_PATH, CORPUS_INDEX_PATH, ERRATA_CHUNKS_PATH,
                                     ERRATA_PATH, REPO_ROOT, RULE_SECTIONS_PATH, RULES_CHUNKS_PATH,
                                     RULES_PATH)
 from games.cyberpunk.errata import normalize_name
@@ -52,10 +51,13 @@ from harness.core.io import read_jsonl
 
 __all__ = ["TOOLS", "Tool", "call_tool", "tool_specs", "validate_args", "find_card", "get_card", "search_cards",
            "get_rule", "search_rules", "card_interactions", "parse_deck", "check_deck", "deck_profile",
-           "similar_decks", "archetype_of", "played_with", "LEXICAL_METHOD", "EMBEDDING_METHOD"]
+           "similar_decks", "archetype_of", "played_with", "LEXICAL_METHOD", "EMBEDDING_METHOD", "HYBRID_METHOD",
+           "LEGACY_CHUNK_METHOD", "retrieval_methods", "index_status", "rule_docs"]
 
-LEXICAL_METHOD = "lexical-bm25"
-EMBEDDING_METHOD = "embedding"
+LEXICAL_METHOD = "lexical-bm25-rules"   # rule-level BM25 (retrieval.LexicalIndex)
+EMBEDDING_METHOD = "embedding"          # the rules index alone (measured by eval_retrieval.py only)
+HYBRID_METHOD = "hybrid"                # lexical + embedding, reciprocal rank fusion
+LEGACY_CHUNK_METHOD = "lexical-bm25-chunks"  # the pre-2026-11-12 chunk BM25, kept as the measured baseline
 MAX_FIND_RESULTS = 25
 SLUG_PATTERN = r"^[a-z0-9][a-z0-9-]{0,159}$"
 RULE_NUMBER_PATTERN = r"^\d+(?:\.\d+)*\.?$"
@@ -146,11 +148,6 @@ def rule_referenced_by() -> dict[str, tuple[str, ...]]:
         for ref in r.get("refs") or ():
             out.setdefault(ref, []).append(r["id"])
     return {k: tuple(v) for k, v in out.items()}
-
-
-@lru_cache(maxsize=1)
-def lexical_chunks() -> tuple[dict, ...]:
-    return tuple(_rows(RULES_CHUNKS_PATH)) + tuple(_rows(ERRATA_CHUNKS_PATH))
 
 
 def snapshot_values(field: str) -> list[str]:
@@ -343,76 +340,178 @@ def _get_rule(args: dict):
 
 
 # search_rules ------------------------------------------------------------------------
+# The ranking itself lives in ``retrieval.py``; this wires it to the snapshot and the optional index.
 
-TOKEN_RE = re.compile(r"\d+(?:\.\d+)+|[a-z0-9]+")
-STOPWORDS = frozenset(
-    "a an and are as at be by can do does for from has have how i if in is it its may of on or that the their "
-    "then there this to was what when where which while who will with you your".split())
-
-
-def _tokens(text: str) -> list[str]:
-    return [t for t in TOKEN_RE.findall(_fold(text)) if t not in STOPWORDS]
+# The embedding index ``scripts/build_rules_index.py`` writes. A module attribute so tests can point it
+# at a temporary file; the default is the configured corpus index path (a git-ignored build artifact).
+RULES_INDEX_PATH: Path = CORPUS_INDEX_PATH
+HYBRID_POOL = 50  # candidates from each ranking that go into the fusion
 
 
 @lru_cache(maxsize=1)
-def _bm25_index() -> tuple[tuple[Counter, ...], dict[str, int], float]:
-    docs = tuple(Counter(_tokens(c["text"])) for c in lexical_chunks())
-    df: Counter = Counter()
-    for doc in docs:
-        df.update(doc.keys())
-    avg = sum(sum(d.values()) for d in docs) / max(len(docs), 1)
-    return docs, dict(df), avg
+def rule_docs() -> tuple[dict, ...]:
+    """The rule-level retrieval corpus: every rule row plus the errata chunks (``retrieval.build_rule_docs``)."""
+    return retrieval.build_rule_docs(rules(), _rows(ERRATA_CHUNKS_PATH))
+
+
+@lru_cache(maxsize=1)
+def lexical_index() -> retrieval.LexicalIndex:
+    terms = markup.KEYWORDS + markup.TIMING_TRIGGERS + markup.SYMBOLS
+    return retrieval.LexicalIndex(rule_docs(), {t: term_rules(t)["defining"] for t in terms},
+                                  keywords=markup.KEYWORDS, plain_word_terms=markup.TIMING_TRIGGERS + markup.SYMBOLS)
 
 
 def lexical_search(query: str, k: int) -> list[dict]:
-    """BM25 over the rule and errata chunks; ties broken by corpus order, so it is deterministic."""
-    docs, df, avg = _bm25_index()
-    n = len(docs)
-    terms = list(dict.fromkeys(_tokens(query)))
-    k1, b = 1.5, 0.75
-    scored = []
-    for position, doc in enumerate(docs):
-        length = sum(doc.values())
-        score = 0.0
-        for term in terms:
-            tf = doc.get(term, 0)
-            if not tf:
-                continue
-            idf = math.log(1 + (n - df[term] + 0.5) / (df[term] + 0.5))
-            score += idf * tf * (k1 + 1) / (tf + k1 * (1 - b + b * length / avg))
-        if score > 0:
-            scored.append((-round(score, 9), position))
-    scored.sort()
-    chunks = lexical_chunks()
-    return [{**chunks[pos], "score": round(-neg, 4)} for neg, pos in scored[:k]]
+    """Rule-level BM25 (``retrieval.LexicalIndex``); deterministic, ties broken by rule number."""
+    return lexical_index().search(query, k)
+
+
+@lru_cache(maxsize=1)
+def legacy_chunk_index() -> retrieval.LegacyChunkBM25:
+    return retrieval.LegacyChunkBM25(tuple(_rows(RULES_CHUNKS_PATH)) + tuple(_rows(ERRATA_CHUNKS_PATH)))
+
+
+def _default_embedder(model_id: str):
+    """``texts -> vectors`` with the index's own model; needs mlx_embeddings (Apple Silicon)."""
+    from harness.core.rag.index import embed_texts, load_model
+    model, tokenizer = load_model(model_id)
+    return lambda texts: embed_texts(model, tokenizer, list(texts))
+
+
+# ``model_id -> (texts -> vectors)``. Tests replace it with a fake; embedders are cached per model id.
+EMBEDDER_FACTORY: Callable[[str], Callable] = _default_embedder
+_EMBEDDERS: dict = {}
+_INDEX_CACHE: dict = {}
+
+
+def _embedder(model_id: str):
+    key = (EMBEDDER_FACTORY, model_id)
+    if key not in _EMBEDDERS:
+        _EMBEDDERS[key] = EMBEDDER_FACTORY(model_id)
+    return _EMBEDDERS[key]
+
+
+def _index_label(path: Path) -> str:
+    try:
+        return str(path.relative_to(REPO_ROOT))
+    except ValueError:
+        return str(path)
+
+
+def embedding_index() -> tuple[retrieval.EmbeddingIndex | None, str | None]:
+    """(index, None) when the rules index exists and matches the corpus, else (None, why not)."""
+    path = RULES_INDEX_PATH
+    label = _index_label(path)
+    try:
+        stat = path.stat()
+    except FileNotFoundError:
+        return None, f"no rules index at {label} (build it on the Mac with scripts/build_rules_index.py)"
+    key = (str(path), stat.st_mtime_ns, stat.st_size)
+    if key not in _INDEX_CACHE:
+        try:
+            from harness.core.rag.index import read_index
+            _INDEX_CACHE.clear()
+            _INDEX_CACHE[key] = (retrieval.EmbeddingIndex(read_index(path), rule_docs(), label), None)
+        except retrieval.IndexUnavailable as exc:
+            _INDEX_CACHE[key] = (None, str(exc))
+        except Exception as exc:  # an unreadable file is a fallback with a reason, never a crash
+            _INDEX_CACHE[key] = (None, f"{label} is unreadable ({type(exc).__name__}: {exc})"[:300])
+    return _INDEX_CACHE[key]
+
+
+def index_status() -> dict:
+    """What the Eval tab shows: where the index is, whether search_rules will use it, and why not."""
+    index, reason = embedding_index()
+    return {"path": _index_label(RULES_INDEX_PATH), "exists": RULES_INDEX_PATH.exists(), "usable": index is not None,
+            "reason": reason, "model_id": index.model_id if index else None, "documents": len(rule_docs()),
+            "fingerprint": retrieval.corpus_fingerprint(rule_docs())}
+
+
+def embedding_search(query: str, n: int) -> list[tuple[str, float]]:
+    """(doc_id, cosine) best first; raises ``IndexUnavailable`` or the embedder's error when it cannot run."""
+    index, reason = embedding_index()
+    if index is None:
+        raise retrieval.IndexUnavailable(reason)
+    vectors = _embedder(index.model_id)([query])
+    return index.ranking(vectors[0], n)
+
+
+def _docs_by_id() -> dict[str, dict]:
+    return {d["doc_id"]: d for d in rule_docs()}
+
+
+def hybrid_search(query: str, k: int) -> list[dict]:
+    """Reciprocal rank fusion of the lexical and embedding rankings (each cut at ``HYBRID_POOL``)."""
+    lexical = [h["doc_id"] for h in lexical_search(query, HYBRID_POOL)]
+    embedded = [doc_id for doc_id, _ in embedding_search(query, HYBRID_POOL)]
+    docs = _docs_by_id()
+    lexical_set, embedded_set = set(lexical), set(embedded)
+    return [{**docs[doc_id], "score": round(score, 6),
+             "matched_by": [m for m, ids in (("lexical", lexical_set), ("embedding", embedded_set)) if doc_id in ids]}
+            for doc_id, score in retrieval.rrf([lexical, embedded])[:k]]
+
+
+def _passage(hit: dict) -> dict:
+    """One search_rules result: a rule (or erratum) with its number, heading path, section and text."""
+    if "doc_id" not in hit:  # a legacy chunk
+        return {"chunk_id": hit["chunk_id"], "source": hit.get("source"), "score": hit.get("score"),
+                "section": hit.get("section"), "rule_ids": [r for r in hit.get("rule_ids") or () if _is_numbered(r)],
+                "card_slug": hit.get("card_id"), "text": hit["text"]}
+    passage = {"chunk_id": hit["doc_id"], "source": hit["source"], "score": hit.get("score"),
+               "section": hit.get("section"), "rule_ids": [hit["rule_id"]] if hit["rule_id"] and
+               _is_numbered(hit["rule_id"]) else [], "path": hit.get("context") or None,
+               "card_slug": hit.get("card_id"), "text": hit["text"]}
+    if hit.get("matched_by"):
+        passage["matched_by"] = hit["matched_by"]
+    return passage
+
+
+def retrieval_methods() -> dict[str, dict]:
+    """Every ranking ``scripts/eval_retrieval.py`` can score: ``{name: {"search": fn or None, "reason"}}``.
+
+    ``search(query, k)`` returns passages shaped like search_rules results.
+    The embedding and hybrid entries carry ``search=None`` and the reason when
+    no usable index or embedding model is available here.
+    """
+    index, reason = embedding_index()
+    if index is not None:
+        try:
+            _embedder(index.model_id)
+        except Exception as exc:
+            index, reason = None, f"embedding model unavailable ({type(exc).__name__}: {exc})"[:300]
+
+    def wrap(fn):
+        return lambda query, k: [_passage(h) for h in fn(query, k)]
+
+    def embedding_only(query, k):
+        docs = _docs_by_id()
+        return [{**docs[d], "score": s} for d, s in embedding_search(query, k)]
+
+    available = index is not None
+    return {LEGACY_CHUNK_METHOD: {"search": wrap(legacy_chunk_index().search), "reason": None},
+            LEXICAL_METHOD: {"search": wrap(lexical_search), "reason": None},
+            EMBEDDING_METHOD: {"search": wrap(embedding_only) if available else None, "reason": reason},
+            HYBRID_METHOD: {"search": wrap(hybrid_search) if available else None, "reason": reason}}
 
 
 def _search_rules(args: dict):
     query, k = args["query"].strip(), args.get("k", 5)
-    if not _tokens(query):
+    if not retrieval.tokens(query):
         raise ToolError("invalid_arguments", "query has no searchable words.")
-    method, fallback_reason, hits = LEXICAL_METHOD, None, None
-    if CORPUS_INDEX_PATH.exists():
-        try:
-            from harness.core.rag.index import retrieve
-            hits = retrieve(query, k, CORPUS_CHUNKS_PATH, CORPUS_INDEX_PATH)
-            method = EMBEDDING_METHOD
-        except Exception as exc:  # an unusable index must not take the tool down; it is reported instead
-            fallback_reason = f"embedding retrieval unavailable ({type(exc).__name__}: {exc})"[:300]
-    else:
-        fallback_reason = f"no corpus index at {CORPUS_INDEX_PATH.relative_to(REPO_ROOT)}"
+    method, fallback_reason, hits = HYBRID_METHOD, None, None
+    try:
+        hits = hybrid_search(query, k)
+    except retrieval.IndexUnavailable as exc:
+        fallback_reason = str(exc)
+    except Exception as exc:  # no embedding model here, or it failed: report it and answer lexically
+        fallback_reason = f"embedding model unavailable ({type(exc).__name__}: {exc})"[:300]
     if hits is None:
-        hits = lexical_search(query, k)
-    results = []
-    for hit in hits:
-        results.append({"chunk_id": hit["chunk_id"], "source": hit.get("source"), "score": hit.get("score"),
-                        "section": hit.get("section"), "rule_ids": [r for r in hit.get("rule_ids") or ()
-                                                                    if _is_numbered(r)],
-                        "card_slug": hit.get("card_id"), "text": hit["text"]})
+        method, hits = LEXICAL_METHOD, lexical_search(query, k)
+    results = [_passage(h) for h in hits]
     result = {"query": query, "method": method, "k": k, "results": results}
     if fallback_reason:
         result["fallback_reason"] = fallback_reason
-    errata_ids = [h["chunk_id"] for h in hits if str(h["chunk_id"]).startswith("errata:")]
+    errata_ids = [r["chunk_id"] for r in results if str(r["chunk_id"]).startswith("errata:")]
     return result, _sources(card_slugs=[r["card_slug"] for r in results], rule_ids=[i for r in results
                                                                                      for i in r["rule_ids"]],
                             errata_ids=errata_ids, chunk_ids=[r["chunk_id"] for r in results])

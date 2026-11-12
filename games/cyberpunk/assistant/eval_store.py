@@ -15,6 +15,7 @@ model time is spent on it.
 
 from __future__ import annotations
 
+import json
 import re
 from pathlib import Path
 
@@ -175,4 +176,48 @@ def list_runs(runs_dir: Path = RUNS_DIR) -> list[dict]:
         except (EvalSetError, FileNotFoundError, ValueError, AttributeError) as exc:
             entry["error"] = f"unreadable run: {exc}"[:200]
         out.append(entry)
+    return out
+
+
+# Retrieval reports ------------------------------------------------------------------------------
+# ``scripts/eval_retrieval.py --name X`` writes ``eval/reports/X.json`` (kind "retrieval-report"): recall of
+# each search_rules method against the unreviewed expected-rules draft. Other report kinds in the same
+# directory are skipped.
+
+REPORTS_DIR = REPO_ROOT / "eval/reports"
+RETRIEVAL_REPORT_KIND = "retrieval-report"
+RETRIEVAL_SUMMARY_KEYS = ("recall@1", "recall@5", "recall@10", "coverage@10", "chars@10")
+
+
+def read_retrieval_report(name: str, reports_dir: Path = REPORTS_DIR) -> dict:
+    if not isinstance(name, str) or not name.endswith(".json") or not RUN_NAME_RE.match(name[:-5]):
+        raise EvalSetError("not a report name")
+    path = Path(reports_dir) / name
+    if not path.is_file():
+        raise FileNotFoundError(name)
+    report = json.loads(path.read_text(encoding="utf-8"))
+    if not isinstance(report, dict) or report.get("kind") != RETRIEVAL_REPORT_KIND:
+        raise EvalSetError("not a retrieval report")
+    return report
+
+
+def list_retrieval_reports(reports_dir: Path = REPORTS_DIR) -> list[dict]:
+    """Every retrieval report, newest name last, with each method's recall (or why it was unavailable)."""
+    out = []
+    for path in sorted(Path(reports_dir).glob("*.json")):
+        try:
+            report = read_retrieval_report(path.name, reports_dir)
+        except EvalSetError:
+            continue  # another kind of report
+        except (OSError, ValueError) as exc:
+            out.append({"name": path.name, "error": f"unreadable report: {exc}"[:200]})
+            continue
+        methods = {}
+        for method, m in (report.get("methods") or {}).items():
+            methods[method] = ({k: m.get(k) for k in RETRIEVAL_SUMMARY_KEYS} | {"available": True}
+                               if m.get("available") else {"available": False, "reason": m.get("reason")})
+        out.append({"name": path.name, "rules_version": report.get("rules_version"),
+                    "query_form": report.get("query_form"), "expected_set": report.get("expected_set"),
+                    "expected_status": report.get("expected_status"), "scored": report.get("scored"),
+                    "methods": methods})
     return out

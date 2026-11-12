@@ -6,7 +6,7 @@ tool that guessed between same-named cards, dropped an erratum, ignored a
 filter, misreported which search ran, or let a bad argument through would put
 a wrong fact in front of the model looking authoritative. Each test runs a
 tool on the committed snapshot in ``data/processed/`` (no model, no network,
-no index build) and checks a fact that can be read off that data by hand. The
+no real index: the hybrid path runs on a fake embedder) and checks a fact that can be read off that data by hand. The
 page tests call the app in process through FastAPI's TestClient (fastapi and
 httpx) and parse the page's inline script with node.
 """
@@ -27,11 +27,12 @@ from fastapi.testclient import TestClient
 
 from games.cyberpunk import config
 from games.cyberpunk.assistant import tools
-from games.cyberpunk.assistant.tools import (LEXICAL_METHOD, TOOLS, call_tool, card_interactions, find_card,
+from games.cyberpunk.assistant.tools import (HYBRID_METHOD, LEXICAL_METHOD, TOOLS, call_tool, card_interactions, find_card,
                                              get_card, get_rule, search_cards, search_rules, tool_specs)
 from games.cyberpunk.assistant_app import ASSISTANT_HTML, build_assistant_app, host_allowed
 from games.cyberpunk.prompts import RULES_VERSION
 from harness.core.io import read_jsonl
+from test_assistant_retrieval import fake_index, no_index  # the shared fake-embedder index (scripts/)
 
 CTX: dict = {}
 LOCAL = {"host": "127.0.0.1:8767"}
@@ -175,20 +176,32 @@ def test_get_rule_with_section_context():
     assert missing["nearest_existing"] == "9.9"
 
 
-def test_search_rules_falls_back_to_lexical_and_says_so():
-    assert not config.CORPUS_INDEX_PATH.exists(), "an index now exists: this test must cover the embedding path"
-    result = search_rules("when can a blocker redirect an attack", k=3)
-    found = ok(result)
-    assert found["method"] == LEXICAL_METHOD and "no corpus index" in found["fallback_reason"]
-    assert 1 <= len(found["results"]) <= 3
-    top_rule_ids = {r for hit in found["results"] for r in hit["rule_ids"]}
-    assert "11.24.1" in top_rule_ids or "9.9" in top_rule_ids, found["results"]
-    assert result["sources"]["chunk_ids"] == [h["chunk_id"] for h in found["results"]]
-    scores = [h["score"] for h in found["results"]]
-    assert scores == sorted(scores, reverse=True)
-    assert search_rules("when can a blocker redirect an attack", k=3) == result, "lexical search is deterministic"
-    errata_hit = ok(search_rules("Nocturne artist errata", k=5))
-    assert any(h["source"] == "errata" and h["card_slug"] == "nocturne-op55-n1" for h in errata_hit["results"])
+def test_search_rules_lexical_fallback_and_hybrid_with_a_fake_index():
+    # Without a usable index: rule-level lexical search, and the result says why.
+    with no_index():
+        result = search_rules("when can a blocker redirect an attack", k=3)
+        found = ok(result)
+        assert found["method"] == LEXICAL_METHOD and "no rules index" in found["fallback_reason"]
+        assert len(found["results"]) == 3
+        top_rule_ids = {r for hit in found["results"] for r in hit["rule_ids"]}
+        assert top_rule_ids & {"11.24.1", "11.24.3", "9.9", "9.9.1"}, found["results"]
+        assert all(len(hit["rule_ids"]) == 1 and hit["chunk_id"] == "rule:" + hit["rule_ids"][0]
+                   for hit in found["results"]), "one rule per passage"
+        assert all(hit["section"] and hit["text"] and hit["path"] for hit in found["results"])
+        assert result["sources"]["chunk_ids"] == [h["chunk_id"] for h in found["results"]]
+        scores = [h["score"] for h in found["results"]]
+        assert scores == sorted(scores, reverse=True)
+        assert search_rules("when can a blocker redirect an attack", k=3) == result, "lexical search is deterministic"
+        errata_hit = ok(search_rules("Nocturne artist errata", k=5))
+        assert any(h["source"] == "errata" and h["card_slug"] == "nocturne-op55-n1" for h in errata_hit["results"])
+        assert result["sources"]["errata_ids"] == []
+    # With an index that matches the corpus (fake embedder): fused results, method "hybrid".
+    with fake_index():
+        hybrid = search_rules("when can a blocker redirect an attack", k=3)
+        found = ok(hybrid)
+        assert found["method"] == HYBRID_METHOD and "fallback_reason" not in found
+        assert all(hit["matched_by"] for hit in found["results"])
+        assert hybrid["sources"]["rule_ids"] == [i for h in found["results"] for i in h["rule_ids"]]
 
 
 def test_card_interactions_lists_rules_only():
