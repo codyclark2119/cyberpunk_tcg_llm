@@ -40,14 +40,24 @@ npm run validate:ui          # loopback console for the same runs
 
 # The steps it runs, individually:
 npm run typecheck && npm run lint && npm run validate:cards
-npm test                     # ~1,360 unit tests, about a minute
+npm test                     # ~1,375 unit tests, about a minute
 npm run build
 npm run test:integration     # needs TEST_MONGODB_URI
 python scripts/test_cyberpunk.py && python scripts/test_harness_core.py
 python scripts/test_engine_candidates.py && python scripts/test_engine_adapter.py
+python scripts/test_policy_bot.py && python scripts/test_policy_mlx.py
 python scripts/test_local_match.py   # full baseline games on the real engine worker
+python scripts/test_local_prompt.py && python scripts/test_training_records.py
+python scripts/test_validation_console.py && python scripts/test_play_app.py
+python scripts/test_assistant_tools.py && python scripts/test_assistant_deck_tools.py
+python scripts/test_assistant_loop.py && python scripts/test_assistant_ui.py
+python scripts/test_assistant_eval.py && python scripts/test_assistant_retrieval.py
 python scripts/check_deck_rules.py --negative-control
 ```
+
+`scripts/run_tests.sh --list` is the authoritative list of steps. The Python suites
+need `python -m pip install -r requirements.txt` (NumPy, FastAPI, Uvicorn, httpx);
+model work on Apple Silicon adds `requirements-mlx-bot.txt`.
 
 Tests use `node:test` through tsx, and the Python suites are plain scripts with asserts
 (no pytest). Run a single TypeScript file with
@@ -86,7 +96,7 @@ Validation is local-first: GitHub runs nothing automatically.
 `scripts/run_tests.sh` is the one entry point (`--quick` before every push, the full
 default before asking for a merge; the full tier starts Docker for the integration
 Mongo unless `--no-infra`). It has no path filters, skips or conditional steps, so
-do not work around it. Every exact pass line, such as `all 89 tests passed`, lives in
+do not work around it. Every exact pass line, such as `all 91 tests passed`, lives in
 the pin table at the top of that script; update the row when you add or remove a
 Python test. `.github/workflows/manual-validation.yml` runs the same script on demand
 only. A stale baseline is a real failure, fixed by regeneration. See

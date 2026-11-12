@@ -6,7 +6,7 @@ A monorepo for a Cyberpunk TCG platform and its AI harness:
 - **Web platform** (`apps/web`, `packages/graphql`, `packages/persistence`): Next.js and Apollo over versioned Mongo content (or the fixture repositories). The web catalog still serves the four development fixture cards; engine-admitted revisions are exercised by tests and replays, not yet published to it.
 - **Python AI harness** (`games/`, `harness/`, `data/`): rules Q&A over the official rules and card corpus, with retrieval, a rubric-based judge and LoRA fine-tuning on Apple Silicon via MLX. For gameplay it receives public observations and engine-enumerated legal actions, and returns only an `actionId`. A local policy layer (`games/cyberpunk/policy_bot.py`) validates each decision and picks an offered action with a deterministic baseline or optional [local MLX inference](docs/local-mlx-bot.md). Everything runs locally; the external simulator bridge was [retired](docs/simulator-bot-retirement.md).
 
-Browser gameplay, authentication, matchmaking and WebSockets are not implemented. Working rules for both halves are in [CLAUDE.md](CLAUDE.md); the documentation index is [docs/README.md](docs/README.md).
+Gameplay runs locally in Python, not in the web app: the [local play UI](docs/local-play-ui.md) (`scripts/play_local.py`) lets you play the engine against a local bot. The web app has no gameplay, authentication, matchmaking or WebSockets. Working rules for both halves are in [CLAUDE.md](CLAUDE.md); the documentation index is [docs/README.md](docs/README.md).
 
 ## Workspace and dependencies
 
@@ -23,7 +23,7 @@ tests/integration/             isolated Mongo integration tests
 games/cyberpunk/               Python game layer: markup, cards, errata, chunking, prompts, engine adapter
 harness/core/                  game-agnostic Python harness: JSONL I/O, retrieval, judge, SFT, calibration
 data/                          dated source snapshot: raw API captures, processed corpus, engine candidates
-eval/ configs/ models/         evaluation runs, configs and local model weights (weights are gitignored)
+eval/ models/                  evaluation sets, runs and reports; local model weights (gitignored)
 docs/                          milestone reports and admission records, indexed in docs/README.md
 ```
 
@@ -194,17 +194,17 @@ Matrix traces, which the matrix reviews read back, go to `DEMO_MATRIX_TRACE_DIR`
 
 ## AI harness
 
-Model work needs Apple Silicon and MLX:
+`requirements.txt` lists the packages the harness imports (NumPy, FastAPI, Uvicorn, httpx), enough for the offline checks, the play UI and the assistant page on any OS. Model work also needs Apple Silicon and the pinned MLX stack in `requirements-mlx-bot.txt` (see the [Mac setup guide](docs/local-mlx-bot.md)):
 
 ```bash
-python3 -m venv mlx_env && source mlx_env/bin/activate
-pip install -r requirements.txt
+python3 -m venv .venv && source .venv/bin/activate
+python -m pip install -r requirements.txt                              # any OS
+python -m pip install -r requirements.txt -r requirements-mlx-bot.txt  # Apple Silicon model work
 ```
 
-The offline checks need `fastapi` (for the harness monitor tests), no GPU and no network after dependency installation. `scripts/run_tests.sh` runs all of them:
+The offline checks need no GPU and no network after dependency installation. `scripts/run_tests.sh` runs all of them; `scripts/run_tests.sh --list` names every step. The core suites:
 
 ```bash
-python -m pip install fastapi httpx
 python scripts/test_cyberpunk.py                       # corpus and ingestion
 python scripts/test_harness_core.py                    # harness/core
 python scripts/test_engine_candidates.py               # engine candidate bridge
@@ -214,7 +214,11 @@ python scripts/test_policy_bot.py                      # local policy layer: val
 python scripts/test_policy_mlx.py                      # subprocess policy boundary; no MLX required
 python scripts/test_local_match.py                     # bot-vs-bot games on the real engine worker
 python scripts/test_local_prompt.py                    # compact gameplay prompt: facts kept, nothing hidden added
+python scripts/test_training_records.py                # TrainingPosition/TrainingAttempt records, both languages
+python scripts/test_validation_console.py              # the validate:ui console
 ```
+
+The play UI and assistant suites are listed in their sections below.
 
 `data/` is a dated snapshot of the official card API. The fetch/ingest pipeline, errata handling, deckbuilding and archetype tooling, and the rules for refreshing the snapshot are in [CLAUDE.md](CLAUDE.md), with full detail in [the original harness README](docs/ai-source/README.legacy.md).
 

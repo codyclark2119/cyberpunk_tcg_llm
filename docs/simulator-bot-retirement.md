@@ -82,7 +82,9 @@ alias, non-acting and CLI tests, and added tests for record parsing, the runner'
 own deadline cap and non-`Decision` input. `scripts/test_sim_mlx.py` dropped the
 HTTP lifespan, serve CLI profile and non-acting tests, gained a direct runner test,
 and prints `PASS local MLX bot: 27/27`. `pr-validation.yml` pins both lines; the
-workflow guard still requires both commands in full CI.
+workflow guard still requires both commands in full CI. (Note added 2026-11-12:
+that workflow was later removed; both pins now live in the table at the top of
+`scripts/run_tests.sh`.)
 
 ## Left for scope 2
 
