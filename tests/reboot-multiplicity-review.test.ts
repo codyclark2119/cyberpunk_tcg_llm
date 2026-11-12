@@ -12,6 +12,7 @@ import { createDemoMatchPolicy } from "./demo-matrix-policy";
 import { assertNoSuppressedDemoInteraction } from "./demo-match-replay";
 import { unwrap } from "./turn-replay";
 import { engineIdentity } from "../scripts/engine-identity";
+import { eventsMatchHashUpToLagOrder } from "../scripts/lib/lag-order";
 import review from "./fixtures/reboot-multiplicity-source-review.v1.json";
 import reproducers from "./fixtures/reboot-multiplicity-reproducers.v1.json";
 import originalSources from "./fixtures/combat-restrictions-card-sources.v1.json";
@@ -66,7 +67,7 @@ for (const record of reproducers.records) test(`frozen ${record.coordinate.seed}
         const before = hashReplayState(state);
         const result = unwrap(applyAction(state, action, context));
         assert.equal(hashReplayState(state), before, `immutable input ${index}`);
-        assert.equal(hashCanonical(result.events), step.eventsHash, `events ${index}`);
+        assert.ok(eventsMatchHashUpToLagOrder(result.events, step.eventsHash), `events ${index}`);
         state = result.state;
         assert.equal(hashReplayState(historical(state)), step.stateHash, `state ${index}`);
         assert.equal(hashPosition(historical(state)), step.positionHash, `position ${index}`);

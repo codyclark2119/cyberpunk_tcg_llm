@@ -6,6 +6,7 @@ import { ContentBundleSchema, GameActionSchema, GameEventSchema, GameStateSchema
 import { CreateGameInputSchema, PlayerObservationSchema, applyAction, createGameWithEvents, listLegalActions, observe, type ActionResult } from "@tcg/engine";
 import { demoStarterContext } from "../tests/demo-starter-fixture";
 import { engineIdentity } from "./engine-identity";
+import { canonicalLagOrder } from "./lib/lag-order";
 /** Audit untouched pre-milestone payloads. Regenerated hashes cannot prove compatibility.
  * Usage: node --import tsx scripts/audit-replay-compatibility.ts /path/to/preserved-replays
  */
@@ -31,10 +32,10 @@ for (const name of files) {
         for (const [i, step] of original.steps.entries()) {
             assert.deepEqual(semanticActions(unwrap(listLegalActions(state, step.actorId, context))), semanticActions(step.legalActions), `${name}: legal actions/descriptors ${i}`);
             assert.deepEqual(unwrap(observe(state, step.actorId, context)), step.observation, `${name}: observation ${i}`);
-            const next: ActionResult = unwrap(applyAction(state, step.action, context)); assert.deepEqual(next.events, step.events, `${name}: events ${i}`); state = next.state; if (policyIndex === 0) decisions++;
+            const next: ActionResult = unwrap(applyAction(state, step.action, context)); assert.deepEqual(canonicalLagOrder(next.events), canonicalLagOrder(step.events), `${name}: events ${i} (LAG_REMOVED runs compared by card id)`); state = next.state; if (policyIndex === 0) decisions++;
         }
         assert.deepEqual(state, repin(original.finalState), `${name}: final state`);
         process.stdout.write(`${name}: ${original.steps.length} original decisions preserved${policyIndex ? " also under current supported Demo overtime policy" : ""}\n`);
     }
 }
-process.stdout.write(`PASS: ${files.length} original families, ${decisions} original decisions; semantic legal actions/descriptors, observations, events and final states unchanged under new pins\n`);
+process.stdout.write(`PASS: ${files.length} original families, ${decisions} original decisions; semantic legal actions/descriptors, observations, events (up to LAG_REMOVED run order) and final states unchanged under new pins\n`);
