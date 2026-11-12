@@ -33,8 +33,9 @@ sys.path.insert(0, str(REPO_ROOT))
 from fastapi.testclient import TestClient
 
 from games.cyberpunk.assistant import tools
-from games.cyberpunk.assistant.loop import (ASSISTANT_PROMPT_VERSION, CAP_MESSAGE, MAX_TOOL_CALLS, SYSTEM_PROMPT,
-                                            parse_tool_calls, run_turn, split_thinking)
+from games.cyberpunk.assistant.loop import (ASSISTANT_PROMPT_VERSION, CAP_MESSAGE, MAX_TOKENS_LIMIT, MAX_TOOL_CALLS,
+                                            SYSTEM_PROMPT, cap_message, parse_tool_calls, run_turn, split_thinking,
+                                            system_prompt)
 from games.cyberpunk.assistant.mlx_chat import chat_worker_command
 from games.cyberpunk.assistant_app import ChatService, build_assistant_app
 from games.cyberpunk.prompts import RULES_VERSION
@@ -374,12 +375,48 @@ def test_loop_does_not_depend_on_the_question_text():
     assert RULES_VERSION in SYSTEM_PROMPT and ASSISTANT_PROMPT_VERSION in SYSTEM_PROMPT
 
 
+def test_system_prompt_and_cap_message_state_the_effective_cap():
+    # At the default the rendered prompt is the versioned SYSTEM_PROMPT, word for word.
+    assert system_prompt() == system_prompt(MAX_TOOL_CALLS) == SYSTEM_PROMPT and cap_message() == CAP_MESSAGE
+    assert f"At most {MAX_TOOL_CALLS} tool calls per question." in SYSTEM_PROMPT
+    model = LoopingModel()
+    with CountRuns() as counter:
+        result = turn([], "Tell me about V.", model, max_tool_calls=2)
+    assert counter.count == 2 and model.calls == 3 and result.stop_reason == "tool_cap"
+    assert result.answer == cap_message(2) and "more than 2 tool calls" in result.answer
+    seen = ScriptedModel(["Short answer."])
+    turn([], "Q?", seen, max_tool_calls=10)
+    prompt = seen.seen[0][0]["content"]
+    assert prompt == system_prompt(10) != SYSTEM_PROMPT and "At most 10 tool calls per question." in prompt
+    assert prompt.replace("At most 10 ", f"At most {MAX_TOOL_CALLS} ") == SYSTEM_PROMPT, "only the cap differs"
+    assert f"Prompt {ASSISTANT_PROMPT_VERSION}." in prompt
+
+
 # Worker pure functions -------------------------------------------------------------------
 
 
-def test_worker_pure_functions_without_mlx():
+def test_worker_token_ceiling_is_16384_like_the_loop():
     worker = load_worker_module()
-    assert "mlx" not in sys.modules and "mlx_lm" not in sys.modules
+    assert worker.MAX_TOKENS_LIMIT == MAX_TOKENS_LIMIT == 16384
+    assert worker.DEFAULT_MAX_TOKENS == 1024, "the ceiling moved, the default did not"
+    good = {"protocol": CHAT_PROTOCOL, "id": 1, "messages": [{"role": "user", "content": "hi"}]}
+    for value in (1, 4096, 4097, 8192, 16384):
+        request, problem = worker.check_request({**good, "max_tokens": value})
+        assert problem is None and request["max_tokens"] == value, value
+    for value in (0, 16385, 10 ** 6, 8192.0, "8192", True):
+        assert worker.check_request({**good, "max_tokens": value}) == (None, "bad_max_tokens"), value
+    reply, keep = worker.handle_line((json.dumps({**good, "max_tokens": 16385}) + "\n").encode(), None)
+    assert reply == {"id": 1, "ok": False, "error": "bad_max_tokens"} and keep
+
+
+
+
+def test_worker_pure_functions_without_mlx():
+    # Loading the worker must not import MLX itself. Compare before and after rather than
+    # assert absence: on a Mac an earlier test may already have imported mlx.
+    before = {name for name in sys.modules if name.split(".")[0] in ("mlx", "mlx_lm")}
+    worker = load_worker_module()
+    assert {name for name in sys.modules if name.split(".")[0] in ("mlx", "mlx_lm")} == before
     good = {"protocol": CHAT_PROTOCOL, "id": 1, "messages": [{"role": "user", "content": "hi"}],
             "tools": tools.tool_specs()}
     request, problem = worker.check_request(good)
@@ -489,7 +526,7 @@ def test_model_directory_is_checked_before_anything_starts():
         (Path(tmp) / "config.json").write_text("{}")
         (Path(tmp) / "model.safetensors").write_bytes(b"")
         command = chat_worker_command(tmp)
-        assert command[2].endswith("scripts/mlx_chat_worker.py") and command[command.index("--model") + 1] == tmp
+        assert command[2].endswith("scripts/mlx_chat_worker.py") and Path(command[command.index("--model") + 1]).resolve() == Path(tmp).resolve()  # macOS: /var is /private/var
         try:
             chat_worker_command(tmp, adapter=tmp)
             raise AssertionError("an adapter without adapter files was accepted")

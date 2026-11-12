@@ -14,6 +14,13 @@ counts and elapsed time. Sampling is greedy, so the same prompt gives the same
 text. The model loads once, offline; no prompt cache or state crosses requests.
 Launched by games/cyberpunk/assistant/mlx_chat.py; do not run it by hand.
 
+``max_tokens`` may be 1..``MAX_TOKENS_LIMIT`` (16384), the same ceiling as
+``games/cyberpunk/assistant/loop.py``'s ``MAX_TOKENS_LIMIT``. It was 4096 until
+2026-11-12, when larger models (Qwen3-Next-80B, Qwen3.8-27B) thought past 4096
+tokens on quiz questions and an 8192 run was refused. 16384 leaves room to try
+8192 and one doubling past it on the Mac's memory; it is a ceiling, not a
+default, so the defaults (1024 here, 1024/2048 in the loop) are unchanged.
+
 Rendering and request checks are pure functions so they are tested on Linux
 without mlx (scripts/test_assistant_loop.py); only ``main`` imports mlx.
 """
@@ -36,7 +43,7 @@ sys.path.insert(0, str(REPO_ROOT))
 from harness.core.chat_worker import CHAT_PROTOCOL, MAX_LINE_BYTES
 
 DEFAULT_MAX_TOKENS = 1024
-MAX_TOKENS_LIMIT = 4096
+MAX_TOKENS_LIMIT = 16384  # same as loop.MAX_TOKENS_LIMIT (see the docstring)
 MAX_PROMPT_TOKENS = 16384
 ROLES = frozenset({"system", "user", "assistant", "tool"})
 

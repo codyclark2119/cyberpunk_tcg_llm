@@ -9,7 +9,10 @@ Review notes live beside the runs, in ``eval/notes/<set stem>.jsonl`` (one
 ``{"id", "note"}`` row per question), written atomically with
 ``write_jsonl_atomic``. A run is ``eval/runs/<name>.jsonl`` written by
 ``scripts/eval_assistant.py``: a header row, one row per question and a summary
-row. ``load_mc_set`` validates strictly, so a malformed set fails before any
+row. While it runs, each finished question is appended to
+``eval/runs/<name>.partial.jsonl`` (header first, flushed per row), which the
+scorer removes once the final file is written; ``list_runs`` shows a partial as
+``incomplete``. ``load_mc_set`` validates strictly, so a malformed set fails before any
 model time is spent on it.
 """
 
@@ -27,6 +30,7 @@ RUNS_DIR = REPO_ROOT / "eval/runs"
 NOTES_DIR = REPO_ROOT / "eval/notes"
 SET_NAME_RE = re.compile(r"^[A-Za-z0-9][A-Za-z0-9._-]{0,120}\.jsonl$")
 RUN_NAME_RE = re.compile(r"^[A-Za-z0-9][A-Za-z0-9._-]{0,79}$")
+PARTIAL_SUFFIX = ".partial.jsonl"  # <name>.partial.jsonl: a run still going, or one that stopped before its end
 LETTER_RE = re.compile(r"^[A-Z]$")
 MAX_NOTE_CHARS = 4000
 OUTCOMES = ("correct", "wrong", "unanswered", "unscored")
@@ -150,13 +154,24 @@ def summarize(records: list[dict]) -> dict:
             "tool_use": used, "tool_use_rate": round(used / len(records), 4) if records else None}
 
 
+def partial_path(runs_dir: Path, name: str) -> Path:
+    return Path(runs_dir) / f"{name}{PARTIAL_SUFFIX}"
+
+
+def read_partial_rows(path: Path) -> list[dict]:
+    """A partial run's rows. Text after the last newline is a row cut off mid-write and is dropped, so that
+    question runs again on resume; any complete line that is not JSON is an error (``ValueError``)."""
+    lines = Path(path).read_text(encoding="utf-8").split("\n")[:-1]  # the last piece is "" or a torn row
+    return [json.loads(line) for line in lines if line.strip()]
+
+
 def read_run(name: str, runs_dir: Path = RUNS_DIR) -> list[dict]:
     if not isinstance(name, str) or not name.endswith(".jsonl") or not RUN_NAME_RE.match(name[:-6]):
         raise EvalSetError("not a run name")
     path = Path(runs_dir) / name
     if not path.is_file():
         raise FileNotFoundError(name)
-    rows = read_jsonl(path, missing_ok=False)
+    rows = read_partial_rows(path) if name.endswith(PARTIAL_SUFFIX) else read_jsonl(path, missing_ok=False)
     if not rows or rows[0].get("kind") != "header":
         raise EvalSetError("first row is not a run header")
     return rows
@@ -166,6 +181,8 @@ def list_runs(runs_dir: Path = RUNS_DIR) -> list[dict]:
     out = []
     for path in sorted(Path(runs_dir).glob("*.jsonl")):
         entry: dict = {"name": path.name}
+        if path.name.endswith(PARTIAL_SUFFIX):
+            entry["incomplete"] = True  # no summary row yet: the run is going, or stopped (resume it)
         try:
             rows = read_run(path.name, runs_dir)
             header = rows[0]

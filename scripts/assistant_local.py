@@ -39,6 +39,8 @@ from pathlib import Path
 REPO_ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(REPO_ROOT))
 
+from games.cyberpunk.assistant.loop import MAX_TOKENS_LIMIT  # noqa: E402
+
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
@@ -59,8 +61,8 @@ def main():
         parser.error("--port must be 1..65535")
     if args.adapter and not args.model:
         parser.error("--adapter needs --model")
-    if args.max_tokens is not None and not 1 <= args.max_tokens <= 4096:
-        parser.error("--max-tokens must be 1..4096")
+    if args.max_tokens is not None and not 1 <= args.max_tokens <= MAX_TOKENS_LIMIT:
+        parser.error(f"--max-tokens must be 1..{MAX_TOKENS_LIMIT}")
     try:
         import fastapi  # noqa: F401
         import uvicorn  # noqa: F401
