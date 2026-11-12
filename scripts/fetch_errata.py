@@ -32,20 +32,24 @@ the errata themselves are `### <Card Name>` headings inside one block's
 Usage:
     python scripts/fetch_errata.py               # -> data/raw/errata.json
     python scripts/fetch_errata.py --print-updated-at   # check for new errata
+
+The write refuses to replace the file with one holding fewer errata headings
+unless `--force` is passed; see `fetch_common.write_json_snapshot`. An erratum
+silently dropped is the failure this script exists to prevent.
 """
 
 import argparse
-import json
 import sys
-import urllib.request
 from pathlib import Path
 
 REPO_ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(REPO_ROOT))
+sys.path.insert(0, str(REPO_ROOT / "scripts"))
+
+from fetch_common import fetch_json, write_json_snapshot  # noqa: E402
 
 API_BASE = "https://api.netdeck.gg/api"
 CONTENT_URL = f"{API_BASE}/cyberpunk/content/query"
-USER_AGENT = "Mozilla/5.0 (compatible; cyberpunk-llm-corpus-builder/1.0)"
 PAGE_SLUG = "errata"
 
 DEFAULT_OUT = REPO_ROOT / "data" / "raw" / "errata.json"
@@ -53,7 +57,7 @@ DEFAULT_OUT = REPO_ROOT / "data" / "raw" / "errata.json"
 
 def fetch_page(slug: str = PAGE_SLUG, url: str = CONTENT_URL, timeout: int = 30) -> dict:
     """One CMS page and every entry it links, as returned by the content API."""
-    payload = json.dumps({
+    payload = {
         "params": {
             "content_type": "cyberpunkPage",
             "fields.slug": slug,
@@ -63,12 +67,17 @@ def fetch_page(slug: str = PAGE_SLUG, url: str = CONTENT_URL, timeout: int = 30)
             # errata list that is quietly short.
             "include": 3,
         }
-    }).encode("utf-8")
-    req = urllib.request.Request(
-        url, data=payload, method="POST",
-        headers={"User-Agent": USER_AGENT, "Content-Type": "application/json"})
-    with urllib.request.urlopen(req, timeout=timeout) as resp:
-        return json.loads(resp.read().decode("utf-8"))
+    }
+    return fetch_json(url, timeout=timeout, payload=payload)
+
+
+def count_errata_headings(doc: dict) -> int:
+    """`### <Card Name>` headings across the page's markdown blocks."""
+    return sum(
+        (e["fields"].get("bodyMarkdown") or "").count("\n### ")
+        + (e["fields"].get("bodyMarkdown") or "").startswith("### ")
+        for e in doc["includes"]["Entry"]
+        if e["sys"]["contentType"]["sys"]["id"] == "cyberpunkPageMarkdownBlock")
 
 
 def validate(doc: dict, slug: str = PAGE_SLUG) -> None:
@@ -117,6 +126,8 @@ def main():
     ap.add_argument("--url", type=str, default=CONTENT_URL)
     ap.add_argument("--print-updated-at", action="store_true",
                     help="fetch and print the page's updatedAt, write nothing")
+    ap.add_argument("--force", action="store_true",
+                    help="write even if the new page has fewer errata headings")
     args = ap.parse_args()
 
     doc = fetch_page(args.slug, args.url)
@@ -129,13 +140,10 @@ def main():
         return
 
     args.out.parent.mkdir(parents=True, exist_ok=True)
-    args.out.write_text(json.dumps(doc, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+    write_json_snapshot(args.out, doc, count_errata_headings, force=args.force,
+                        min_ratio=1.0, what="errata headings")
 
-    headings = sum(
-        (e["fields"].get("bodyMarkdown") or "").count("\n### ")
-        + (e["fields"].get("bodyMarkdown") or "").startswith("### ")
-        for e in doc["includes"]["Entry"]
-        if e["sys"]["contentType"]["sys"]["id"] == "cyberpunkPageMarkdownBlock")
+    headings = count_errata_headings(doc)
     print(f"wrote the {args.slug!r} page ({headings} errata heading(s)) -> {args.out}")
     print(f"updatedAt: {updated_at}")
 

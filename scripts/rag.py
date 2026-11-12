@@ -1,8 +1,8 @@
 """CLI: embed a chunked corpus and query it.
 
 Usage:
-    python scripts/rag.py index --chunks data/processed/chunks.jsonl --out data/processed/chunk_embeddings.npz
-    python scripts/rag.py query "..." --chunks data/processed/chunks.jsonl --index data/processed/chunk_embeddings.npz [--k 5]
+    python scripts/rag.py index --chunks data/processed/corpus_chunks.jsonl --out data/processed/chunk_embeddings.npz
+    python scripts/rag.py query "..." --chunks data/processed/corpus_chunks.jsonl --index data/processed/chunk_embeddings.npz [--k 5]
 """
 
 import argparse
