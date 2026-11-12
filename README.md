@@ -356,6 +356,15 @@ history per session in memory. The model runs in `scripts/mlx_chat_worker.py`
 gameplay worker; it starts on the first question. Without `--model` the chat box
 answers "no model configured".
 
+Both tool-call forms parse, chosen per `<tool_call>` block and never by model name:
+Qwen3's JSON (`{"name": ..., "arguments": {...}}`) and the XML form that Qwen3.5-family
+templates (Qwen3.6-35B-A3B, Qwen3.8-27B) ask for, `<function=NAME>` with one
+`<parameter=KEY>` per argument. XML values are converted with the tool's own schema
+(strings raw, other types as JSON); a value that does not convert, an unknown function
+or parameter, a repeated parameter or stray text goes back to the model as a tool error
+with its raw text, and the trace marks XML calls `callFormat: "xml"`. Qwen3.5-family
+models are not yet measured on the quiz.
+
 On the Mac (not yet run against a real model; the Linux tests use a scripted fake):
 
 ```bash

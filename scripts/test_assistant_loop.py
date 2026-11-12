@@ -54,6 +54,13 @@ def call(name: str, **arguments) -> str:
     return f'<tool_call>\n{json.dumps({"name": name, "arguments": arguments})}\n</tool_call>'
 
 
+def xml_call(name: str, **arguments) -> str:
+    """The Qwen3.5-family template's rendering: strings raw, everything else as JSON, one newline each side."""
+    params = "".join(f"<parameter={key}>\n{value if isinstance(value, str) else json.dumps(value)}\n</parameter>\n"
+                     for key, value in arguments.items())
+    return f"<tool_call>\n<function={name}>\n{params}</function>\n</tool_call>"
+
+
 class ScriptedModel:
     """Returns the scripted texts in order and records every message list it was given."""
 
@@ -154,6 +161,114 @@ def test_malformed_tool_calls_are_errors_not_calls():
         assert len(calls) == 1 and calls[0].error and problem in calls[0].error, (text, calls)
     calls, _ = parse_tool_calls('<tool_call>{"name": "find_card"}</tool_call>')
     assert calls[0].error is None and calls[0].arguments == {}, "omitted arguments mean none"
+
+
+def test_xml_tool_calls_parse_like_the_json_form():
+    # Verbatim as the Qwen3.5-family template writes it: a string raw, an integer as JSON.
+    text = ("<tool_call>\n<function=search_rules>\n<parameter=query>\nready unit attack\n</parameter>\n"
+            "<parameter=k>\n5\n</parameter>\n</function>\n</tool_call>")
+    (xml,), rest = parse_tool_calls(text)
+    (js,), _ = parse_tool_calls(call("search_rules", query="ready unit attack", k=5))
+    assert rest == "" and xml.error is None and xml.format == "xml" and js.format == "json"
+    expected = ("search_rules", {"query": "ready unit attack", "k": 5})
+    assert (xml.name, xml.arguments) == (js.name, js.arguments) == expected
+    assert type(xml.arguments["k"]) is int
+    # A string that looks like a number stays a string; an object parameter is JSON.
+    (c,), _ = parse_tool_calls(xml_call("get_rule", rule_id="9"))
+    assert c.error is None and c.arguments == {"rule_id": "9"}
+    deck = {"legend": "v-streetkid", "cards": [{"slug": "x", "quantity": 3}]}
+    (c,), _ = parse_tool_calls(xml_call("check_deck", deck=deck))
+    assert c.error is None and c.arguments == {"deck": deck}
+    # Only the template's one newline each side is removed: the rest of a multiline value is kept.
+    value = "  line one\n\nline two  \n"
+    (c,), _ = parse_tool_calls(xml_call("search_cards", text=value))
+    assert c.error is None and c.arguments == {"text": value}
+    (c,), _ = parse_tool_calls("<tool_call><function=find_card><parameter=query>V</parameter></function></tool_call>")
+    assert c.error is None and c.arguments == {"query": "V"}, "the newlines are optional"
+    (c,), _ = parse_tool_calls("<tool_call>\n<function=search_cards>\n</function>\n</tool_call>")
+    assert c.error is None and c.arguments == {}
+    # One reply may mix the forms; each block is read on its own.
+    calls, rest = parse_tool_calls("Checking.\n" + call("find_card", query="V") + "\n"
+                                   + xml_call("get_card", slug="v-streetkid"))
+    assert [(c.name, c.arguments, c.format, c.error) for c in calls] == [
+        ("find_card", {"query": "V"}, "json", None), ("get_card", {"slug": "v-streetkid"}, "xml", None)]
+    assert rest == "Checking."
+
+
+XML_BAD_CASES = {
+    "bad integer": (xml_call("search_rules", query="attack", k="five"), "not valid JSON"),
+    "wrong type": (xml_call("search_rules", query="attack", k="5.5"), "must be of type integer"),
+    "bool for integer": (xml_call("find_card", query="V", limit="true"), "must be of type integer"),
+    "unknown function": (xml_call("delete_everything", path="/"), "unknown function"),
+    "unknown parameter": (xml_call("get_card", slug="v-streetkid", x="1"), "unknown parameter 'x'"),
+    "duplicate parameter": ("<tool_call>\n<function=get_card>\n<parameter=slug>\na\n</parameter>\n"
+                            "<parameter=slug>\nb\n</parameter>\n</function>\n</tool_call>", "given twice"),
+    "stray text inside": ("<tool_call>\n<function=get_card>\nplease\n<parameter=slug>\nv-streetkid\n"
+                          "</parameter>\n</function>\n</tool_call>", "unexpected text"),
+    "stray text before": ("<tool_call>\nsure <function=get_card>\n<parameter=slug>\nv-streetkid\n"
+                          "</parameter>\n</function>\n</tool_call>", "text before"),
+    "stray text after": ("<tool_call>\n<function=get_card>\n<parameter=slug>\nv-streetkid\n"
+                         "</parameter>\n</function>\nthanks\n</tool_call>", "nothing after"),
+    "unclosed parameter": ("<tool_call>\n<function=get_card>\n<parameter=slug>\nv-streetkid\n</function>\n"
+                           "</tool_call>", "not closed"),
+    "unclosed block": ("<tool_call>\n<function=get_card>\n<parameter=slug>\nv-str", "unclosed"),
+}
+
+
+def test_malformed_xml_tool_calls_are_errors_not_calls():
+    for label, (text, problem) in XML_BAD_CASES.items():
+        calls, _ = parse_tool_calls(text)
+        assert len(calls) == 1 and calls[0].error and problem in calls[0].error, (label, calls)
+        assert calls[0].format == "xml", label
+
+
+def test_malformed_xml_calls_go_back_to_the_model_with_their_raw_text():
+    texts = [text for text, _ in XML_BAD_CASES.values()]
+    for text in texts:
+        model = ScriptedModel([text, "I could not look that up."])
+        with CountRuns() as counter:
+            result = turn([], "anything", model)
+        assert counter.count == 0, ("a rejected XML call ran a tool", text)
+        (step,) = tool_steps(result)
+        assert step["errorKind"] == "malformed_tool_call" and step["ok"] is False and step["callFormat"] == "xml"
+        (reply,) = [json.loads(m["content"]) for m in model.seen[1] if m["role"] == "tool"]
+        assert reply["error_kind"] == "malformed_tool_call" and "<function=<tool>>" in reply["error"], reply
+        assistant = [m for m in model.seen[1] if m["role"] == "assistant"][0]
+        assert "tool_calls" not in assistant
+        assert text.replace("<tool_call>", "").replace("</tool_call>", "").strip() in assistant["content"], \
+            "the model should see the XML it wrote next to the error"
+        assert result.ok and result.answer == "I could not look that up."
+    # A JSON call keeps the JSON hint and records no callFormat, so JSON traces are unchanged.
+    model = ScriptedModel(["<tool_call>{oops}</tool_call>", "No."])
+    (step,) = tool_steps(turn([], "anything", model))
+    assert "callFormat" not in step
+    reply = json.loads(model.seen[1][-1]["content"])
+    assert 'Write <tool_call>{"name": <tool>, "arguments": {...}}</tool_call> with one of' in reply["error"]
+
+
+def test_scripted_xml_turn_runs_tools_and_answers():
+    model = ScriptedModel([
+        xml_call("find_card", query="V: Streetkid"),
+        "Reading it.\n" + xml_call("get_card", slug="v-streetkid") + "\n" + call("search_rules", query="attack", k=2),
+        "`v-streetkid` is a Legend; its facts are above.",
+    ])
+    with CountRuns() as counter:
+        result = turn([], "What does V: Streetkid do?", model)
+    assert counter.count == 3 and result.ok and result.stop_reason == "answer" and result.tool_calls == 3
+    steps = tool_steps(result)
+    assert [(s["tool"], s.get("callFormat")) for s in steps] == [
+        ("find_card", "xml"), ("get_card", "xml"), ("search_rules", None)]
+    assert all(s["ok"] for s in steps) and steps[2]["arguments"] == {"query": "attack", "k": 2}
+    assert result.sources["card_slugs"][0] == "v-streetkid"
+    last = model.seen[-1]
+    # History goes back as structured tool_calls, which the template re-renders in its own form.
+    assert last[2]["tool_calls"] == [
+        {"type": "function", "function": {"name": "find_card", "arguments": {"query": "V: Streetkid"}}}]
+    assert last[4] == {"role": "assistant", "content": "Reading it.", "tool_calls": [
+        {"type": "function", "function": {"name": "get_card", "arguments": {"slug": "v-streetkid"}}},
+        {"type": "function", "function": {"name": "search_rules", "arguments": {"query": "attack", "k": 2}}}]}
+    assert json.loads(last[5]["content"]) == tools.get_card("v-streetkid")
+    assert result.answer == "`v-streetkid` is a Legend; its facts are above."
 
 
 # The loop --------------------------------------------------------------------------------

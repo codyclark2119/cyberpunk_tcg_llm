@@ -1,10 +1,14 @@
 """One chat turn: the model chooses tools, code supplies every fact, and the turn leaves a trace.
 
 ``run_turn`` renders the system prompt, the kept history and the user's message,
-asks the model, and parses Qwen3's native ``<tool_call>{"name": ..., "arguments":
-{...}}</tool_call>`` blocks strictly. A block that is not valid JSON, an unknown
-tool or bad arguments go back to the model as a tool error and never run (the
-registry's ``call_tool`` validates before running). At most ``MAX_TOOL_CALLS``
+asks the model, and parses its ``<tool_call>`` blocks strictly. Each block is
+read in one of two forms, chosen per block from its own text and never by model
+name: Qwen3's JSON ``{"name": ..., "arguments": {...}}``, or the XML form the
+Qwen3.5-family chat template asks for, ``<function=NAME>`` holding one
+``<parameter=KEY>value</parameter>`` per argument (see ``_parse_xml_block``). A
+block that does not parse, an unknown tool or bad arguments go back to the model
+as a tool error and never run (the registry's ``call_tool`` validates before
+running). At most ``MAX_TOOL_CALLS``
 calls run per turn, malformed ones included; a model reply whose calls would go
 past the cap runs none of them and ends the turn with a clear message.
 ``<think>`` blocks are stripped from the answer and kept in the trace; a tool
@@ -51,7 +55,7 @@ from typing import Any, Protocol
 
 from games.cyberpunk.assistant.preload import DEFAULT_PRELOAD_CHARS, DEFAULT_PRELOAD_K
 from games.cyberpunk.assistant.preload import preload as run_preload
-from games.cyberpunk.assistant.tools import TOOLS, call_tool, tool_specs
+from games.cyberpunk.assistant.tools import TOOLS, call_tool, tool_specs, validate_args
 from games.cyberpunk.prompts import RULES_VERSION
 
 ASSISTANT_PROMPT_VERSION = "assistant-chat-v3"
@@ -88,6 +92,11 @@ def tool_specs_sha256() -> str:
 
 THINK_RE = re.compile(r"<think>(.*?)</think>", re.S)
 TOOL_CALL_RE = re.compile(r"<tool_call>(.*?)</tool_call>", re.S)
+XML_FUNCTION_OPEN_RE = re.compile(r"<function=([^<>\n]*)>")
+XML_PARAMETER_OPEN_RE = re.compile(r"<parameter=([^<>\n]*)>")
+XML_FUNCTION_CLOSE, XML_PARAMETER_CLOSE = "</function>", "</parameter>"
+JSON_CALL_HINT = "<tool_call>{\"name\": <tool>, \"arguments\": {...}}</tool_call>"
+XML_CALL_HINT = "<tool_call>\n<function=<tool>>\n<parameter=<name>>\n<value>\n</parameter>\n</function>\n</tool_call>"
 CAP_MESSAGE = (f"Stopped: the model asked for more than {MAX_TOOL_CALLS} tool calls for one question, so this turn "
                "has no answer. The tool results so far are in the trace. Try a narrower question.")
 EMPTY_MESSAGE = "The model returned no answer text."
@@ -100,11 +109,15 @@ class ChatModel(Protocol):
 
 @dataclass
 class ToolCall:
-    """One parsed ``<tool_call>`` block; ``error`` is set when it must not run."""
+    """One parsed ``<tool_call>`` block; ``error`` is set when it must not run.
+
+    ``format`` is the form the block was written in: ``"json"`` or ``"xml"``.
+    """
     name: str | None
     arguments: Any
     raw: str
     error: str | None = None
+    format: str = "json"
 
 
 @dataclass
@@ -147,7 +160,9 @@ def parse_tool_calls(text: str) -> tuple[list[ToolCall], str]:
     """Tool calls in ``text`` (thinking already removed) and the text outside them.
 
     Strict: each block must be one JSON object with a string ``name`` and an
-    object ``arguments``, and nothing else. An unclosed ``<tool_call>`` is a
+    object ``arguments``, and nothing else, or one XML ``<function=NAME>``
+    element (``_parse_xml_block``); the form is read per block, so one reply
+    may mix them. An unclosed ``<tool_call>`` is a
     malformed call too, so a truncated call is reported, never half-run.
     """
     calls = []
@@ -156,12 +171,20 @@ def parse_tool_calls(text: str) -> tuple[list[ToolCall], str]:
     rest = TOOL_CALL_RE.sub("", text)
     if "<tool_call>" in rest:
         rest, _, tail = rest.partition("<tool_call>")
-        calls.append(ToolCall(None, None, tail.strip(), "unclosed <tool_call> block (output cut off?)"))
+        tail = tail.strip()
+        form = "xml" if not tail.startswith("{") and XML_FUNCTION_OPEN_RE.search(tail) else "json"
+        calls.append(ToolCall(None, None, tail, "unclosed <tool_call> block (output cut off?)", form))
     return calls, rest.replace("</tool_call>", "").strip()
 
 
 def _parse_block(raw: str) -> ToolCall:
     raw = raw.strip()
+    if not raw.startswith("{") and XML_FUNCTION_OPEN_RE.search(raw):
+        return _parse_xml_block(raw)
+    return _parse_json_block(raw)
+
+
+def _parse_json_block(raw: str) -> ToolCall:
     try:
         value = json.loads(raw)
     except (ValueError, RecursionError) as exc:
@@ -177,6 +200,79 @@ def _parse_block(raw: str) -> ToolCall:
     if extra:
         return ToolCall(name, arguments, raw, f"tool call has unexpected keys: {', '.join(extra)}")
     return ToolCall(name, arguments, raw)
+
+
+def _xml_error(raw: str, message: str, name: str | None = None, arguments: Any = None) -> ToolCall:
+    return ToolCall(name, arguments, raw, message, "xml")
+
+
+def _strip_template_newlines(text: str) -> str:
+    """Drop the one newline the template writes after ``<parameter=K>`` and the one before ``</parameter>``."""
+    if text.startswith("\n"):
+        text = text[1:]
+    if text.endswith("\n"):
+        text = text[:-1]
+    return text
+
+
+def _parse_xml_block(raw: str) -> ToolCall:
+    """One XML-form block (``raw`` already stripped): exactly one ``<function=NAME>`` element, nothing around it.
+
+    Parameters are converted with the tool's own schema from ``TOOLS``, the way
+    the chat template rendered them: a string-typed parameter is its raw text
+    (less the template's one leading and one trailing newline); any other type
+    is JSON. A value that does not parse, or parses to the wrong type, an
+    unknown function or parameter, a repeated parameter and any text outside
+    the elements are errors. Range, length, pattern and required-argument
+    checks stay with ``call_tool``, exactly as for a JSON call.
+    """
+    opened = XML_FUNCTION_OPEN_RE.match(raw)
+    if opened is None:
+        return _xml_error(raw, "tool call has text before <function=...>")
+    if not raw.endswith(XML_FUNCTION_CLOSE):
+        return _xml_error(raw, "tool call must end with </function> and have nothing after it")
+    name = opened.group(1)
+    tool = TOOLS.get(name)
+    if tool is None:
+        return _xml_error(raw, f"unknown function {name!r}", name)
+    props = tool.parameters.get("properties", {})
+    body = raw[opened.end():len(raw) - len(XML_FUNCTION_CLOSE)]
+    texts: dict[str, str] = {}
+    pos = 0
+    while True:
+        while pos < len(body) and body[pos].isspace():
+            pos += 1
+        if pos == len(body):
+            break
+        param = XML_PARAMETER_OPEN_RE.match(body, pos)
+        if param is None:
+            return _xml_error(raw, f"unexpected text inside <function={name}>: {body[pos:pos + 40]!r}", name)
+        key = param.group(1)
+        end = body.find(XML_PARAMETER_CLOSE, param.end())
+        if end < 0:
+            return _xml_error(raw, f"<parameter={key}> is not closed", name)
+        if key in texts:
+            return _xml_error(raw, f"parameter {key!r} given twice", name)
+        texts[key] = _strip_template_newlines(body[param.end():end])
+        pos = end + len(XML_PARAMETER_CLOSE)
+    arguments: dict[str, Any] = {}
+    for key, text in texts.items():
+        spec = props.get(key)
+        if spec is None:
+            allowed = ", ".join(props) or "none"
+            return _xml_error(raw, f"unknown parameter {key!r} for {name} (allowed: {allowed})", name, texts)
+        if spec.get("type") == "string":
+            arguments[key] = text
+            continue
+        try:
+            value = json.loads(text)
+        except (ValueError, RecursionError) as exc:
+            return _xml_error(raw, f"parameter {key!r} is not valid JSON for type {spec.get('type')}: {exc}",
+                              name, texts)
+        if validate_args({"properties": {key: {"type": spec["type"]}}}, {key: value}):
+            return _xml_error(raw, f"parameter {key!r} must be of type {spec['type']}", name, texts)
+        arguments[key] = value
+    return ToolCall(name, arguments, raw, None, "xml")
 
 
 def summarize_result(result: dict, limit: int = 160) -> str:
@@ -321,19 +417,23 @@ async def run_turn(history: list[dict], user_message: str, model: ChatModel, *,
             turn.tool_calls += 1
             tool_started = time.monotonic()
             if call.error is not None:
+                hint = XML_CALL_HINT if call.format == "xml" else JSON_CALL_HINT
                 result = _tool_error(call.name, "malformed_tool_call",
-                                     f"{call.error}. Write <tool_call>{{\"name\": <tool>, \"arguments\": {{...}}}}"
-                                     f"</tool_call> with one of: {', '.join(TOOLS)}.")
+                                     f"{call.error}. Write {hint} with one of: {', '.join(TOOLS)}.")
             else:
                 result = call_tool(call.name, call.arguments)  # validates; unknown or bad args never run
             elapsed = round((time.monotonic() - tool_started) * 1000, 2)
             sources = result.get("sources") or {}
             if result.get("ok"):
                 collect(sources)
-            add({"kind": "tool", "tool": call.name, "arguments": call.arguments, "ok": bool(result.get("ok")),
-                 "errorKind": result.get("error_kind"), "error": result.get("error"),
-                 "summary": summarize_result(result), "sources": {k: list(sources.get(k) or []) for k in SOURCE_KEYS},
-                 "result": result.get("result") if result.get("ok") else None, "elapsedMs": elapsed})
+            entry = {"kind": "tool", "tool": call.name, "arguments": call.arguments, "ok": bool(result.get("ok")),
+                     "errorKind": result.get("error_kind"), "error": result.get("error"),
+                     "summary": summarize_result(result),
+                     "sources": {k: list(sources.get(k) or []) for k in SOURCE_KEYS},
+                     "result": result.get("result") if result.get("ok") else None, "elapsedMs": elapsed}
+            if call.format != "json":  # optional: absent for JSON calls, so their traces are unchanged
+                entry["callFormat"] = call.format
+            add(entry)
             messages.append({"role": "tool", "content": json.dumps(result, ensure_ascii=False,
                                                                    separators=(",", ":"))})
     turn.elapsed_ms = round((time.monotonic() - started) * 1000, 2)
