@@ -33,7 +33,7 @@ import { validateDemoState } from "./demo-state";
 import { validateSetupState } from "./setup-state";
 import { paymentSources, paymentValue, paymentCandidates } from "./payment";
 import { z } from "zod";
-import { DeckFormatSchema, GameStateSchema, ContentBundleSchema, ReplayStateHashSchema, PositionHashSchema, hashCanonical, canonicalSerialize, failure, success, type Result, type GameState, type ContentBundle, type PlayerId, type DeepReadonly, CardInstanceIdSchema } from "@tcg/domain";
+import { DeckFormatSchema, GameStateSchema, ContentBundleSchema, ReplayStateHashSchema, PositionHashSchema, hashCanonical, canonicalSerialize, failure, success, type Result, type GameState, type ContentBundle, type DeepReadonly, CardInstanceIdSchema } from "@tcg/domain";
 export type EngineContext = {
     readonly content: DeepReadonly<ContentBundle>;
 };
@@ -286,4 +286,3 @@ export function buildInitialState(input: z.input<typeof CreateGameInputSchema>, 
     const initial = { schemaVersion: 2, match: { ...(parsed.data.format === "DEMO_STARTER_V1" ? { format: "DEMO_STARTER_V1" } : {}), id: matchId, version: 0, eventSequence: 0, rulesetId: b.ruleset.id, rulesetVersion: b.ruleset.version, rulesetHash: b.manifest.ruleset.hash, contentManifestHash: b.manifestHash, engineVersion: b.manifest.engine.version, engineArtifactHash: b.manifest.engine.artifactHash, cards: b.manifest.cards.map(({ cardId, revision }) => ({ cardId, revision })), playerOrder: players }, timing: { turn: 1, activePlayer: players[0], actingPlayer: players[0], window: "MAIN", combat: { stage: "NONE" } }, players: playerMap, objects: { cards, gigs }, resolution: { stage: "DECISION", current: null, pending: [], discovered: [], choice: null }, rng: { algorithm: "SHA256_COUNTER_V1", seed, counter: 0 } };
     return dealOpeningHand ? validateState(initial, context) : success(GameStateSchema.parse(initial));
 }
-export function requirePlayer(state: GameState, actor: PlayerId): boolean { return Boolean(state.players[actor]); }

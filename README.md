@@ -104,7 +104,7 @@ Legacy card envelopes are not silently converted into invented historical snapsh
 
 ## Retired PostgreSQL layer
 
-The PostgreSQL adapters (owned decks, matches and the command ledger), their SQL migrations, `npm run db:migrate` and the Compose service were removed on 2026-11-11. No runtime path used them: the web app and GraphQL read only Mongo or fixture content, and engine state lives in replays and match records. The domain repository contracts (`DeckRepository`, `MatchRepository`, `CommandRepository`) remain in `packages/domain` without an adapter. The `pg` dependency is still declared in `packages/persistence` and will be removed separately, since the lockfile is part of the engine identity. Milestone reports dated before then describe the layer as it was.
+The PostgreSQL adapters (owned decks, matches and the command ledger), their SQL migrations, `npm run db:migrate` and the Compose service were removed on 2026-11-11. No runtime path used them: the web app and GraphQL read only Mongo or fixture content, and engine state lives in replays and match records. The orphaned domain contracts (`DeckRepository`, `MatchRepository`, `CommandRepository` and their deck and command-request schemas) and the `pg` and `@types/pg` dependencies were removed on 2026-11-12 in an engine-identity bump, since the lockfile is part of the engine identity. Milestone reports dated before then describe the layer as it was.
 
 ## Engine and training contracts
 

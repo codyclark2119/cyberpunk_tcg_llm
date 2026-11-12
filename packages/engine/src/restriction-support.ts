@@ -1,10 +1,10 @@
-import { failure, success, type CardRevisionSnapshot, type DeepReadonly } from "@tcg/domain";
+import { turnSliceAllows, failure, success, type CardRevisionSnapshot, type DeepReadonly } from "@tcg/domain";
 import type { EngineContext } from "./state";
-export function restrictionsEnabled(context: EngineContext) { return context.content.ruleset.gameplay?.turnSlice?.combatRestrictions === "COMBAT_RESTRICTIONS_V1"; }
+export function restrictionsEnabled(context: EngineContext) { return turnSliceAllows(context.content.ruleset.gameplay?.turnSlice, "combatRestrictions"); }
 /** 11.23: printed [ADRENALINE] is executable only under the explicit reviewed ruleset policy. */
-export function adrenalineEnabled(context: EngineContext) { return restrictionsEnabled(context) && context.content.ruleset.gameplay?.turnSlice?.adrenaline === "ADRENALINE_V1"; }
+export function adrenalineEnabled(context: EngineContext) { return restrictionsEnabled(context) && turnSliceAllows(context.content.ruleset.gameplay?.turnSlice, "adrenaline"); }
 /** 9.3.2.3: printed target-class restrictions execute only under the explicit reviewed policy. */
-export function attackTargetRestrictionsEnabled(context: EngineContext) { return restrictionsEnabled(context) && context.content.ruleset.gameplay?.turnSlice?.attackTargetRestrictions === "ATTACK_TARGET_RESTRICTIONS_V1"; }
+export function attackTargetRestrictionsEnabled(context: EngineContext) { return restrictionsEnabled(context) && turnSliceAllows(context.content.ruleset.gameplay?.turnSlice, "attackTargetRestrictions"); }
 export function createsFightPrevention(card: DeepReadonly<CardRevisionSnapshot> | undefined) {
     return card?.mechanics.abilities.some(a => a.effects.some(e => e.kind === "CREATE_NEXT_RIVAL_FIGHT_PREVENTION")) ?? false;
 }

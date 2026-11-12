@@ -28,8 +28,8 @@ import { continueSearch } from "./effects";
 import { continueSetup } from "./setup";
 import { setupChoiceLabel } from "./setup-state";
 import { TurnMutation } from "./turn";
-import { drawDeterministicDie } from "./rng";
-import { GameActionSchema, GameCommandSchema, GameStateSchema, GameEventSchema, hashCanonical, canonicalSerialize, failure, success, type Result, type GameState, type GameAction, type GameEvent, type PlayerId, type LegalAction, type GigInstanceId } from "@tcg/domain";
+import { drawDeterministicInteger } from "./rng";
+import { GameActionSchema, GameCommandSchema, GameStateSchema, GameEventSchema, hashCanonical, canonicalSerialize, failure, success, type Result, type GameState, type GameAction, type GameEvent, type PlayerId, type LegalAction, type GigInstanceId, type CardInstanceId } from "@tcg/domain";
 import { validateState, hashPosition, type EngineContext } from "./state";
 import { RulesView } from "./view";
 export * from "./state";
@@ -41,27 +41,47 @@ export type ActionResult = {
 };
 // Keep execution support separate from vocabulary support. Missing mechanics must never silently no-op.
 function supportedContent(context: EngineContext) { return context.content.cards.every(c => !c.mechanics.abilities.length && !c.mechanics.modifiers.length); }
-export function listLegalActions(state: GameState, actor: PlayerId, context: EngineContext): Result<LegalAction[]> {
-    const valid = validateState(state, context);
-    if (!valid.ok)
-        return valid;
-    if (!state.players[actor])
-        return failure("UNKNOWN_PLAYER", "Player is not in match");
-    if (!context.content.ruleset.gameplay?.turnSlice && !supportedContent(context))
-        return failure("UNSUPPORTED_MECHANICS", "Ability/continuous-effect execution awaits reviewed handlers");
-    if (state.resolution.stage !== "DECISION" && !(context.content.ruleset.gameplay?.turnSlice && state.resolution.stage === "CHOICE" && (state.resolution.choice?.kind === "PAYMENT" || state.resolution.legendEntryContinuation || state.resolution.searchContinuation || state.resolution.playContinuation || state.resolution.gigStealContinuation || state.resolution.defeatContinuation || state.resolution.triggerContinuation || state.setup || state.timing.combat.stage === "ATTACK_TARGET_SELECTION")))
-        return failure("UNSUPPORTED_RESOLUTION", "Pending-effect/choice continuation requires a registered reviewed handler");
-    if (actor !== state.timing.actingPlayer)
-        return success([]);
-    const view = new RulesView(valid.value, context);
+/** Continuations whose pending choice the turn slice enumerates as CHOOSE options. */
+function hasContinuationChoice(state: GameState) {
+    return Boolean(state.resolution.triggerContinuation || state.setup || state.resolution.legendEntryContinuation || state.resolution.searchContinuation || state.resolution.playContinuation || state.resolution.gigStealContinuation || state.resolution.defeatContinuation || state.timing.combat.stage === "ATTACK_TARGET_SELECTION");
+}
+/** Outside DECISION, only a turn-slice CHOICE with a registered continuation (or CALL payment) can be enumerated. */
+function hasEnumerableResolution(state: GameState, context: EngineContext) {
+    return state.resolution.stage === "DECISION" || Boolean(context.content.ruleset.gameplay?.turnSlice && state.resolution.stage === "CHOICE" && (state.resolution.choice?.kind === "PAYMENT" || hasContinuationChoice(state)));
+}
+function chooseEachOption(actor: PlayerId, choice: NonNullable<GameState["resolution"]["choice"]>, actions: GameAction[]) {
+    choice.options.forEach((_, index) => actions.push({ actorId: actor, action: { kind: "CHOOSE", choiceId: choice.id, optionIndices: [index] } }));
+}
+function pushReactActions(view: RulesView, actor: PlayerId, actions: GameAction[]) {
+    for (const c of view.faceDownLegends(actor)) if (view.canCallLegend(actor, c.id)) actions.push({ actorId: actor, action: { kind: "CALL_LEGEND", cardInstanceId: c.id } });
+    for (const cardInstanceId of view.listQuickCards(actor)) actions.push({ actorId: actor, action: { kind: "PLAY_CARD", cardInstanceId } });
+    for (const cardInstanceId of view.listBlockers(actor)) actions.push({ actorId: actor, action: { kind: "DECLARE_BLOCKER", cardInstanceId } });
+    actions.push({ actorId: actor, action: { kind: "PASS_REACT" } });
+}
+function pushMainActions(state: GameState, actor: PlayerId, context: EngineContext, view: RulesView, actions: GameAction[]) {
+    for (const c of Object.values(state.objects.cards))
+        if (view.canSellCard(actor, c.id))
+            actions.push({ actorId: actor, action: { kind: "SELL_CARD", cardInstanceId: c.id } });
+    if (!context.content.ruleset.gameplay?.turnSlice)
+        return;
+    for (const card of Object.values(state.objects.cards)) {
+        if (view.isAttackEligible(actor, card.id)) actions.push({ actorId: actor, action: { kind: "DECLARE_ATTACK", cardInstanceId: card.id } });
+        if (canEnterField(state, actor, card.id, context)) actions.push({ actorId: actor, action: { kind: "GO_SOLO", cardInstanceId: card.id } });
+        if (canEnterField(state, actor, card.id, context) || canPlay(state, actor, card.id, context)) actions.push({ actorId: actor, action: { kind: "PLAY_CARD", cardInstanceId: card.id } });
+        for (const ability of view.getRevision(card.id)?.mechanics.abilities ?? [])
+            if (canActivate(state, actor, card.id, ability.id, context)) actions.push({ actorId: actor, action: { kind: "ACTIVATE_ABILITY", sourceInstanceId: card.id, abilityId: ability.id } });
+    }
+    for (const c of view.faceDownLegends(actor))
+        if (view.canCallLegend(actor, c.id))
+            actions.push({ actorId: actor, action: { kind: "CALL_LEGEND", cardInstanceId: c.id } });
+    actions.push({ actorId: actor, action: { kind: "END_TURN" } });
+}
+/** Engine actions for the acting player, before identity, labels and ordering. */
+function enumerateActions(state: GameState, actor: PlayerId, context: EngineContext, view: RulesView): Result<GameAction[]> {
     const actions: GameAction[] = [];
     const slice = context.content.ruleset.gameplay?.turnSlice;
-    if (state.match.outcome || state.timing.combat.stage === "COMBAT_RESOLUTION_PENDING" || (state.timing.combat.stage === "RIVAL_REACT" && !reactEnabled(context)))
-        return success([]);
-    if (state.resolution.triggerContinuation || state.setup || state.resolution.legendEntryContinuation || state.resolution.searchContinuation || state.resolution.playContinuation || state.resolution.gigStealContinuation || state.resolution.defeatContinuation || state.timing.combat.stage === "ATTACK_TARGET_SELECTION") {
-        const choice = state.resolution.choice!;
-        choice.options.forEach((_, index) => actions.push({ actorId: actor, action: { kind: "CHOOSE", choiceId: choice.id, optionIndices: [index] } }));
-    }
+    if (hasContinuationChoice(state))
+        chooseEachOption(actor, state.resolution.choice!, actions);
     else if (slice && state.timing.window === "CHOOSE_GIG") {
         for (const gigInstanceId of view.listRollableFixerDice(actor))
             actions.push({ actorId: actor, action: { kind: "ROLL_GIG", gigInstanceId } });
@@ -70,102 +90,107 @@ export function listLegalActions(state: GameState, actor: PlayerId, context: Eng
         const choice = state.resolution.choice;
         if (!choice || !state.resolution.callContinuation)
             return failure("INVALID_PAYMENT_STATE", "Missing CALL continuation");
-        choice.options.forEach((_, index) => actions.push({ actorId: actor, action: { kind: "CHOOSE", choiceId: choice.id, optionIndices: [index] } }));
+        chooseEachOption(actor, choice, actions);
     }
-    else if (isReactDecision(state, actor, context)) {
-        for (const c of view.faceDownLegends(actor)) if (view.canCallLegend(actor, c.id)) actions.push({ actorId: actor, action: { kind: "CALL_LEGEND", cardInstanceId: c.id } });
-        for (const cardInstanceId of view.listQuickCards(actor)) actions.push({ actorId: actor, action: { kind: "PLAY_CARD", cardInstanceId } });
-        for (const cardInstanceId of view.listBlockers(actor)) actions.push({ actorId: actor, action: { kind: "DECLARE_BLOCKER", cardInstanceId } });
-        actions.push({ actorId: actor, action: { kind: "PASS_REACT" } });
-    }
-    else if (state.timing.window === "MAIN") {
-        for (const c of Object.values(state.objects.cards))
-            if (view.canSellCard(actor, c.id))
-                actions.push({ actorId: actor, action: { kind: "SELL_CARD", cardInstanceId: c.id } });
-        if (slice) {
-            for (const card of Object.values(state.objects.cards)) {
-                if (view.isAttackEligible(actor, card.id)) actions.push({ actorId: actor, action: { kind: "DECLARE_ATTACK", cardInstanceId: card.id } });
-                if (canEnterField(state, actor, card.id, context)) actions.push({ actorId: actor, action: { kind: "GO_SOLO", cardInstanceId: card.id } });
-                if (canEnterField(state, actor, card.id, context) || canPlay(state, actor, card.id, context)) actions.push({ actorId: actor, action: { kind: "PLAY_CARD", cardInstanceId: card.id } });
-                for (const ability of view.getRevision(card.id)?.mechanics.abilities ?? [])
-                    if (canActivate(state, actor, card.id, ability.id, context)) actions.push({ actorId: actor, action: { kind: "ACTIVATE_ABILITY", sourceInstanceId: card.id, abilityId: ability.id } });
+    else if (isReactDecision(state, actor, context))
+        pushReactActions(view, actor, actions);
+    else if (state.timing.window === "MAIN")
+        pushMainActions(state, actor, context, view, actions);
+    return success(actions);
+}
+function describeAction(a: GameAction, state: GameState, actor: PlayerId, view: RulesView): string {
+    switch (a.action.kind) {
+        case "PASS_REACT": return "End React";
+        case "DECLARE_BLOCKER": return `Block with ${view.getRevision(a.action.cardInstanceId)?.displayName}`;
+        case "DECLARE_ATTACK": return `Attack with ${view.getRevision(a.action.cardInstanceId)?.displayName}`;
+        case "GO_SOLO": return `Go Solo with ${view.getRevision(a.action.cardInstanceId)?.displayName}`;
+        case "PLAY_CARD": return `Play ${view.getRevision(a.action.cardInstanceId)?.displayName}`;
+        case "ACTIVATE_ABILITY": return `Activate ${view.getRevision(a.action.sourceInstanceId)?.displayName}: Spend to draw 2`;
+        case "SELL_CARD": return `Sell ${view.getRevision(a.action.cardInstanceId)?.displayName}`;
+        case "CALL_LEGEND": return `Call face-down Legend ${state.players[actor].zones.LEGENDS.indexOf(a.action.cardInstanceId) + 1}`;
+        case "ROLL_GIG": return `Roll ${view.getGig(a.action.gigInstanceId).dieType}`;
+        case "CHOOSE": {
+            if (state.setup) return setupChoiceLabel(state, a.action.optionIndices[0]);
+            const option = state.resolution.choice!.options[a.action.optionIndices[0]];
+            if (option.kind === "ATTACK_TARGET") return option.target.kind === "CARD" ? `Attack ${view.getRevision(option.target.cardInstanceId)?.displayName} (${option.target.cardInstanceId})` : "Attack rival Gig area";
+            if (state.resolution.gigStealContinuation && option.kind === "GIG") {
+                const gig = view.getGig(option.gigInstanceId);
+                return `Steal ${gig.dieType} (${gig.id}, current ${gig.roll.kind === "ROLLED" ? gig.roll.currentValue : "unrolled"})`;
             }
-            for (const c of view.faceDownLegends(actor))
-                if (view.canCallLegend(actor, c.id))
-                    actions.push({ actorId: actor, action: { kind: "CALL_LEGEND", cardInstanceId: c.id } });
-            actions.push({ actorId: actor, action: { kind: "END_TURN" } });
-        }
-    }
-    const label = (a: GameAction) => {
-        switch (a.action.kind) {
-            case "PASS_REACT": return "End React";
-            case "DECLARE_BLOCKER": return `Block with ${view.getRevision(a.action.cardInstanceId)?.displayName}`;
-            case "DECLARE_ATTACK": return `Attack with ${view.getRevision(a.action.cardInstanceId)?.displayName}`;
-            case "GO_SOLO": return `Go Solo with ${view.getRevision(a.action.cardInstanceId)?.displayName}`;
-            case "PLAY_CARD": return `Play ${view.getRevision(a.action.cardInstanceId)?.displayName}`;
-            case "ACTIVATE_ABILITY": return `Activate ${view.getRevision(a.action.sourceInstanceId)?.displayName}: Spend to draw 2`;
-            case "SELL_CARD": return `Sell ${view.getRevision(a.action.cardInstanceId)?.displayName}`;
-            case "CALL_LEGEND": return `Call face-down Legend ${state.players[actor].zones.LEGENDS.indexOf(a.action.cardInstanceId) + 1}`;
-            case "ROLL_GIG": return `Roll ${view.getGig(a.action.gigInstanceId).dieType}`;
-            case "CHOOSE": {
-                if (state.setup) return setupChoiceLabel(state, a.action.optionIndices[0]);
-                const option = state.resolution.choice!.options[a.action.optionIndices[0]];
-                if (option.kind === "ATTACK_TARGET") return option.target.kind === "CARD" ? `Attack ${view.getRevision(option.target.cardInstanceId)?.displayName} (${option.target.cardInstanceId})` : "Attack rival Gig area";
-                if (state.resolution.gigStealContinuation && option.kind === "GIG") {
-                    const gig = view.getGig(option.gigInstanceId);
-                    return `Steal ${gig.dieType} (${gig.id}, current ${gig.roll.kind === "ROLLED" ? gig.roll.currentValue : "unrolled"})`;
-                }
-                if (option.kind === "AMOUNT" && state.resolution.current?.effect.kind === "ADJUST_GIG_UP_TO" && state.resolution.current.effect.direction === "INCREASE") return option.amount === 0 ? "Increase by 0 (no adjustment)" : `Increase by ${option.amount}`;
-                if (option.kind === "AMOUNT" && state.resolution.current?.effect.kind === "ADJUST_GIG_UP_TO" && state.resolution.current.effect.direction === "DECREASE") return option.amount === 0 ? "Decrease by 0 (no adjustment)" : `Decrease by ${option.amount}`;
-                if (state.resolution.current?.effect.kind === "SPEND_UNIT" && option.kind === "CARD") return `Spend ${view.getRevision(option.cardInstanceId)?.displayName} (${option.cardInstanceId}, cost ${view.getReferencedCost(option.cardInstanceId)}, ${state.objects.cards[option.cardInstanceId].readiness.toLowerCase()})`;
-                if (state.resolution.targetedDefeatContinuation && option.kind === "CARD") return state.resolution.targetedDefeatContinuation.phase === "ORDER" ? `Next in your Trash: ${view.getRevision(option.cardInstanceId)?.displayName} (${option.cardInstanceId})` : `Defeat ${view.getRevision(option.cardInstanceId)?.displayName} (${option.cardInstanceId}, power ${view.getEffectivePower(option.cardInstanceId)})`;
-                if (state.resolution.triggerContinuation) {
-                    if (option.kind === "CARD" && state.resolution.current?.effect.kind === "POWER_UNTIL_END_OF_TURN" && state.resolution.current.effect.target.kind === "FRIENDLY_UNIT") return `Give ${view.getRevision(option.cardInstanceId)?.displayName} (${option.cardInstanceId}) +2 power this turn`;
-                    if (option.kind === "EDDIE_SLOT") return `Ready Eddie ${option.slot + 1}`;
-                    if (option.kind === "LEGEND_SLOT") return `Look at friendly face-down Legend slot ${option.slot + 1}`;
-                    if (option.kind === "EFFECT") { const e = state.resolution.pending.find(e => e.id === option.effectId)!; return `Resolve ${view.getRevision(e.sourceId!)?.displayName} (${e.sourceId}) for ${view.getRevision(e.trigger!.subjectId)?.displayName}`; }
-                    if (option.kind === "CONFIRM") return option.confirmed ? "Use the optional Gig decrease" : "Decline the optional effect";
-                    if (option.kind === "GIG") { const g = view.getGig(option.gigInstanceId); return `Choose ${g.controllerId === actor ? "your" : "rival"} ${g.dieType} (current ${g.roll.kind === "ROLLED" ? g.roll.currentValue : "unrolled"})`; }
-                    if (option.kind === "AMOUNT") return `Decrease by ${option.amount}`;
-                    if (option.kind === "MODE") return option.mode === "KEEP" ? "Adjust by zero (keep current value)" : option.mode === "INCREASE_1" ? "Increase by 1" : "Decrease by 1";
-                }
-                if (state.resolution.choice!.kind === "DISCARD" && option.kind === "CARD") return `Discard ${view.getRevision(option.cardInstanceId)?.displayName} (${option.cardInstanceId})`;
-                if (state.resolution.defeatContinuation && option.kind === "CARD") return `Next in your Trash: ${view.getRevision(option.cardInstanceId)?.displayName} (${option.cardInstanceId})`;
-                if (state.resolution.searchContinuation) return option.kind === "CARD" ? `Reveal and take ${view.getRevision(option.cardInstanceId)?.displayName}` : "Take no more Gears";
-                if (state.resolution.playContinuation?.phase === "EQUIP" && option.kind === "CARD") return `Equip to ${view.getRevision(option.cardInstanceId)?.displayName}`;
-                if (state.resolution.playContinuation && option.kind === "CARD") return `Give ${view.getRevision(option.cardInstanceId)?.displayName} (${option.cardInstanceId}) -1 power this turn`;
-                if (state.resolution.playContinuation && option.kind === "GIG") {
-                    const gig = view.getGig(option.gigInstanceId);
-                    return `Adjust ${gig.controllerId === actor ? "your" : "rival"} ${gig.dieType} (current ${gig.roll.kind === "ROLLED" ? gig.roll.currentValue : "unrolled"})`;
-                }
-                if (state.resolution.playContinuation && option.kind === "MODE") return option.mode === "KEEP" ? "Adjust by zero (keep current value)" : option.mode === "INCREASE_1" ? "Increase by 1" : "Decrease by 1";
-                if (option.kind !== "PAYMENT")
-                    return "Unsupported choice";
-                const source = option.source, zone = source.kind === "EDDIE" ? "EDDIES" : "LEGENDS";
-                return `Pay with ${source.kind.toLowerCase()} ${state.players[actor].zones[zone].indexOf(source.cardInstanceId) + 1}`;
+            if (option.kind === "AMOUNT" && state.resolution.current?.effect.kind === "ADJUST_GIG_UP_TO" && state.resolution.current.effect.direction === "INCREASE") return option.amount === 0 ? "Increase by 0 (no adjustment)" : `Increase by ${option.amount}`;
+            if (option.kind === "AMOUNT" && state.resolution.current?.effect.kind === "ADJUST_GIG_UP_TO" && state.resolution.current.effect.direction === "DECREASE") return option.amount === 0 ? "Decrease by 0 (no adjustment)" : `Decrease by ${option.amount}`;
+            if (state.resolution.current?.effect.kind === "SPEND_UNIT" && option.kind === "CARD") return `Spend ${view.getRevision(option.cardInstanceId)?.displayName} (${option.cardInstanceId}, cost ${view.getReferencedCost(option.cardInstanceId)}, ${state.objects.cards[option.cardInstanceId].readiness.toLowerCase()})`;
+            if (state.resolution.targetedDefeatContinuation && option.kind === "CARD") return state.resolution.targetedDefeatContinuation.phase === "ORDER" ? `Next in your Trash: ${view.getRevision(option.cardInstanceId)?.displayName} (${option.cardInstanceId})` : `Defeat ${view.getRevision(option.cardInstanceId)?.displayName} (${option.cardInstanceId}, power ${view.getEffectivePower(option.cardInstanceId)})`;
+            if (state.resolution.triggerContinuation) {
+                if (option.kind === "CARD" && state.resolution.current?.effect.kind === "POWER_UNTIL_END_OF_TURN" && state.resolution.current.effect.target.kind === "FRIENDLY_UNIT") return `Give ${view.getRevision(option.cardInstanceId)?.displayName} (${option.cardInstanceId}) +2 power this turn`;
+                if (option.kind === "EDDIE_SLOT") return `Ready Eddie ${option.slot + 1}`;
+                if (option.kind === "LEGEND_SLOT") return `Look at friendly face-down Legend slot ${option.slot + 1}`;
+                if (option.kind === "EFFECT") { const e = state.resolution.pending.find(e => e.id === option.effectId)!; return `Resolve ${view.getRevision(e.sourceId!)?.displayName} (${e.sourceId}) for ${view.getRevision(e.trigger!.subjectId)?.displayName}`; }
+                if (option.kind === "CONFIRM") return option.confirmed ? "Use the optional Gig decrease" : "Decline the optional effect";
+                if (option.kind === "GIG") { const g = view.getGig(option.gigInstanceId); return `Choose ${g.controllerId === actor ? "your" : "rival"} ${g.dieType} (current ${g.roll.kind === "ROLLED" ? g.roll.currentValue : "unrolled"})`; }
+                if (option.kind === "AMOUNT") return `Decrease by ${option.amount}`;
+                if (option.kind === "MODE") return option.mode === "KEEP" ? "Adjust by zero (keep current value)" : option.mode === "INCREASE_1" ? "Increase by 1" : "Decrease by 1";
             }
-            default: return a.action.kind;
+            if (state.resolution.choice!.kind === "DISCARD" && option.kind === "CARD") return `Discard ${view.getRevision(option.cardInstanceId)?.displayName} (${option.cardInstanceId})`;
+            if (state.resolution.defeatContinuation && option.kind === "CARD") return `Next in your Trash: ${view.getRevision(option.cardInstanceId)?.displayName} (${option.cardInstanceId})`;
+            if (state.resolution.searchContinuation) return option.kind === "CARD" ? `Reveal and take ${view.getRevision(option.cardInstanceId)?.displayName}` : "Take no more Gears";
+            if (state.resolution.playContinuation?.phase === "EQUIP" && option.kind === "CARD") return `Equip to ${view.getRevision(option.cardInstanceId)?.displayName}`;
+            if (state.resolution.playContinuation && option.kind === "CARD") return `Give ${view.getRevision(option.cardInstanceId)?.displayName} (${option.cardInstanceId}) -1 power this turn`;
+            if (state.resolution.playContinuation && option.kind === "GIG") {
+                const gig = view.getGig(option.gigInstanceId);
+                return `Adjust ${gig.controllerId === actor ? "your" : "rival"} ${gig.dieType} (current ${gig.roll.kind === "ROLLED" ? gig.roll.currentValue : "unrolled"})`;
+            }
+            if (state.resolution.playContinuation && option.kind === "MODE") return option.mode === "KEEP" ? "Adjust by zero (keep current value)" : option.mode === "INCREASE_1" ? "Increase by 1" : "Decrease by 1";
+            if (option.kind !== "PAYMENT")
+                return "Unsupported choice";
+            const source = option.source, zone = source.kind === "EDDIE" ? "EDDIES" : "LEGENDS";
+            return `Pay with ${source.kind.toLowerCase()} ${state.players[actor].zones[zone].indexOf(source.cardInstanceId) + 1}`;
         }
-    };
-    // Full PositionHash includes secrets; new private-look bundles bind model action IDs to
-    // the entitled observation instead. Old bundle protocols remain byte-compatible.
-    const projected = (attackConditionPowerEnabled(context) || targetedSpendEnabled(context) || targetedDefeatEnabled(context) || valueConditionsEnabled(context) || attackingAuraEnabled(context) || firstAttackHistoryEnabled(context) || fieldLegendsEnabled(context) || delayedEffectsEnabled(context) || privateInformationEnabled(context) || orderedEffectsEnabled(context) || endTurnEnabled(context)) ? observe(state, actor, context) : null;
-    if (projected && !projected.ok) return projected;
-    const actionIdentity = projected?.ok ? { version: 2, observationHash: hashObservation(projected.value), seat: state.players[actor].seat } : { version: 1, positionHash: hashPosition(state), seat: state.players[actor].seat };
-    const observableAction = (a: GameAction) => a.action.kind === "CALL_LEGEND" && projected?.ok ? { kind: a.action.kind, slot: state.players[actor].zones.LEGENDS.indexOf(a.action.cardInstanceId) } : a.action;
-    const reactOrder = ["CALL_LEGEND", "PLAY_CARD", "DECLARE_BLOCKER", "PASS_REACT"];
-    return success(actions.map(a => ({ ...a, actionId: hashCanonical({ ...actionIdentity, action: observableAction(a) }), descriptor: { kind: a.action.kind, label: label(a) } })).sort((a, b) => {
+        default: return a.action.kind;
+    }
+}
+/** Full PositionHash includes secrets; new private-look bundles bind model action IDs to
+ * the entitled observation instead. Old bundle protocols remain byte-compatible. */
+function observationBoundIdentity(context: EngineContext) {
+    return attackConditionPowerEnabled(context) || targetedSpendEnabled(context) || targetedDefeatEnabled(context) || valueConditionsEnabled(context) || attackingAuraEnabled(context) || firstAttackHistoryEnabled(context) || fieldLegendsEnabled(context) || delayedEffectsEnabled(context) || privateInformationEnabled(context) || orderedEffectsEnabled(context) || endTurnEnabled(context);
+}
+const REACT_ORDER = ["CALL_LEGEND", "PLAY_CARD", "DECLARE_BLOCKER", "PASS_REACT"];
+function compareLegalActions(state: GameState, actor: PlayerId, context: EngineContext) {
+    return (a: LegalAction, b: LegalAction) => {
         if (state.resolution.triggerContinuation && a.action.kind === "CHOOSE" && b.action.kind === "CHOOSE") return a.action.optionIndices[0] - b.action.optionIndices[0];
         if (isReactDecision(state, actor, context)) {
-            const kindOrder = reactOrder.indexOf(a.action.kind) - reactOrder.indexOf(b.action.kind);
+            const kindOrder = REACT_ORDER.indexOf(a.action.kind) - REACT_ORDER.indexOf(b.action.kind);
             if (kindOrder) return kindOrder;
             const left = canonicalSerialize(a.action), right = canonicalSerialize(b.action);
             return left < right ? -1 : left > right ? 1 : 0;
         }
         return a.actionId < b.actionId ? -1 : 1;
-    }));
+    };
 }
-export function listSellActions(state: GameState, actor: PlayerId, context: EngineContext) { const legal = listLegalActions(state, actor, context); return legal.ok ? success(legal.value.filter(a => a.action.kind === "SELL_CARD")) : legal; }
+export function listLegalActions(state: GameState, actor: PlayerId, context: EngineContext): Result<LegalAction[]> {
+    const valid = validateState(state, context);
+    if (!valid.ok)
+        return valid;
+    if (!state.players[actor])
+        return failure("UNKNOWN_PLAYER", "Player is not in match");
+    if (!context.content.ruleset.gameplay?.turnSlice && !supportedContent(context))
+        return failure("UNSUPPORTED_MECHANICS", "Ability/continuous-effect execution awaits reviewed handlers");
+    if (!hasEnumerableResolution(state, context))
+        return failure("UNSUPPORTED_RESOLUTION", "Pending-effect/choice continuation requires a registered reviewed handler");
+    if (actor !== state.timing.actingPlayer)
+        return success([]);
+    const view = new RulesView(valid.value, context);
+    if (state.match.outcome || state.timing.combat.stage === "COMBAT_RESOLUTION_PENDING" || (state.timing.combat.stage === "RIVAL_REACT" && !reactEnabled(context)))
+        return success([]);
+    const enumerated = enumerateActions(state, actor, context, view);
+    if (!enumerated.ok)
+        return enumerated;
+    const projected = observationBoundIdentity(context) ? observe(state, actor, context) : null;
+    if (projected && !projected.ok) return projected;
+    const actionIdentity = projected?.ok ? { version: 2, observationHash: hashObservation(projected.value), seat: state.players[actor].seat } : { version: 1, positionHash: hashPosition(state), seat: state.players[actor].seat };
+    const observableAction = (a: GameAction) => a.action.kind === "CALL_LEGEND" && projected?.ok ? { kind: a.action.kind, slot: state.players[actor].zones.LEGENDS.indexOf(a.action.cardInstanceId) } : a.action;
+    return success(enumerated.value.map(a => ({ ...a, actionId: hashCanonical({ ...actionIdentity, action: observableAction(a) }), descriptor: { kind: a.action.kind, label: describeAction(a, state, actor, view) } })).sort(compareLegalActions(state, actor, context)));
+}
 export function validateAction(state: GameState, input: GameAction, context: EngineContext): Result<GameAction> {
     const action = GameActionSchema.safeParse(input);
     if (!action.success)
@@ -186,126 +211,78 @@ export function validateAction(state: GameState, input: GameAction, context: Eng
     }
     return success(action.data);
 }
-export function applyAction(state: GameState, action: GameAction, context: EngineContext): Result<ActionResult> {
-    const valid = validateAction(state, action, context);
-    if (!valid.ok)
-        return valid;
-    if (context.content.ruleset.gameplay?.turnSlice) {
-        const mutation = new TurnMutation(state, context), s = mutation.state, actor = action.actorId, view = new RulesView(state, context);
-        switch (action.action.kind) {
-            case "ROLL_GIG": {
-                const gig = s.objects.gigs[action.action.gigInstanceId];
-                mutation.phase("ROLL_GIG");
-                const rolled = drawDeterministicDie(s.rng, Number(gig.dieType.slice(1))), counter = s.rng.counter;
-                s.rng = rolled.rng;
-                gig.roll = { kind: "ROLLED", initialValue: rolled.rawValue, currentValue: rolled.rawValue };
-                s.players[actor].gigs.FIXER.splice(s.players[actor].gigs.FIXER.indexOf(gig.id), 1);
-                s.players[actor].gigs.GIGS.push(gig.id);
-                gig.location = { playerId: actor, zone: "GIGS" };
-                mutation.emit({ kind: "GIG_DIE_ROLLED", gigInstanceId: gig.id, dieType: gig.dieType, rawValue: rolled.rawValue, rngCounter: counter });
-                if (!checkOvertimeVictory(mutation)) mutation.phase("MAIN");
-                break;
-            }
-            case "PASS_REACT": {
-                const result = passReact(mutation, actor);
-                if (!result.ok) return result;
-                break;
-            }
-            case "DECLARE_BLOCKER": {
-                const result = declareBlocker(mutation, actor, action.action.cardInstanceId);
-                if (!result.ok) return result;
-                break;
-            }
-            case "DECLARE_ATTACK": {
-                const result = startAttack(mutation, actor, action.action.cardInstanceId);
-                if (!result.ok) return result;
-                break;
-            }
-            case "PLAY_CARD": {
-                const result = canEnterField(s, actor, action.action.cardInstanceId, context) ? startLegendEntry(mutation, actor, action.action.cardInstanceId, "PLAY") : startPlay(mutation, actor, action.action.cardInstanceId);
-                if (!result.ok) return result;
-                break;
-            }
-            case "GO_SOLO": {
-                const result = startLegendEntry(mutation, actor, action.action.cardInstanceId, "GO_SOLO");
-                if (!result.ok) return result;
-                break;
-            }
-            case "ACTIVATE_ABILITY": {
-                const result = activateAbility(mutation, actor, action.action.sourceInstanceId, action.action.abilityId);
-                if (!result.ok) return result;
-                break;
-            }
-            case "CALL_LEGEND": {
-                const cost = context.content.ruleset.gameplay.turnSlice.callCost;
-                const candidates = view.paymentCandidates(actor, cost, []);
-                const resolved = cost === 0 ? mutation.call(actor, action.action.cardInstanceId, []) : candidates.length === 1 && view.getPaymentValue(candidates[0]) === cost ? mutation.call(actor, action.action.cardInstanceId, [candidates[0]]) : mutation.paymentChoice(actor, action.action.cardInstanceId, cost, []);
-                if (!resolved.ok)
-                    return resolved;
-                break;
-            }
-            case "CHOOSE": {
-                if (s.resolution.targetedDefeatContinuation) { const result = continueTargetedDefeat(mutation, action.action.optionIndices[0]); if (!result.ok) return result; break; }
-                if (s.resolution.triggerContinuation) { const result = continueTrigger(mutation, action.action.optionIndices[0]); if (!result.ok) return result; break; }
-                if (s.resolution.gigStealContinuation || s.resolution.defeatContinuation) {
-                    const result = s.resolution.gigStealContinuation ? continueGigSteal(mutation, action.action.optionIndices[0]) : continueDefeatOrder(mutation, action.action.optionIndices[0]);
-                    if (!result.ok) return result;
-                    break;
-                }
-                if (s.timing.combat.stage === "ATTACK_TARGET_SELECTION") {
-                    const result = continueAttack(mutation, action.action.optionIndices[0]);
-                    if (!result.ok) return result;
-                    break;
-                }
-                if (s.resolution.legendEntryContinuation) { const result = continueLegendEntry(mutation, action.action.optionIndices[0]); if (!result.ok) return result; break; }
-                if (s.resolution.playContinuation) {
-                    const result = continuePlay(mutation, action.action.optionIndices[0]);
-                    if (!result.ok) return result;
-                    break;
-                }
-                if (s.setup) {
-                    const resolved = continueSetup(mutation, action.action.optionIndices[0]);
-                    if (!resolved.ok) return resolved;
-                    break;
-                }
-                if (s.resolution.searchContinuation) {
-                    const result = continueSearch(mutation, action.action.optionIndices[0]);
-                    if (!result.ok) return result;
-                    if (!s.resolution.searchContinuation) {
-                        const finished = mutation.finishContinuedEffect();
-                        if (!finished.ok) return finished;
-                    }
-                    break;
-                }
-                const pending = s.resolution.callContinuation!, option = s.resolution.choice!.options[action.action.optionIndices[0]];
-                if (option.kind !== "PAYMENT")
-                    return failure("UNSUPPORTED_CHOICE", "Only CALL payment is implemented");
-                const selected = [...pending.selectedSources, option.source], remaining = pending.remainingCost - view.getPaymentValue(option.source);
-                const resolved = remaining === 0 ? mutation.call(actor, pending.legendId, selected) : mutation.paymentChoice(actor, pending.legendId, remaining, selected);
-                if (!resolved.ok)
-                    return resolved;
-                break;
-            }
-            case "END_TURN": {
-                const ended = endTurn(mutation); if (!ended.ok) return ended;
-                break;
-            }
-            case "SELL_CARD": {
-                const id = action.action.cardInstanceId, c = s.objects.cards[id], p = s.players[actor], from = { ...c.zone };
-                p.zones.HAND.splice(p.zones.HAND.indexOf(id), 1);
-                p.zones.EDDIES.push(id);
-                c.zone = { playerId: actor, zone: "EDDIES" };
-                c.face = "DOWN";
-                c.readiness = "READY";
-                p.economy.sellsThisTurn++;
-                mutation.emit({ kind: "CARD_MOVED", cardInstanceId: id, from, to: c.zone });
-                mutation.emit({ kind: "CARD_SOLD", cardInstanceId: id, value: view.getRevision(id)!.sellProfile.baseEddieValue });
-                break;
-            }
-            default: return failure("UNSUPPORTED_ACTION", "No handler in turn slice");
-        }
-        return mutation.result();
+function rollGig(mutation: TurnMutation, actor: PlayerId, gigInstanceId: GigInstanceId) {
+    const s = mutation.state, gig = s.objects.gigs[gigInstanceId];
+    mutation.phase("ROLL_GIG");
+    const rolled = drawDeterministicInteger(s.rng, Number(gig.dieType.slice(1))), counter = s.rng.counter;
+    s.rng = rolled.rng;
+    gig.roll = { kind: "ROLLED", initialValue: rolled.rawValue, currentValue: rolled.rawValue };
+    s.players[actor].gigs.FIXER.splice(s.players[actor].gigs.FIXER.indexOf(gig.id), 1);
+    s.players[actor].gigs.GIGS.push(gig.id);
+    gig.location = { playerId: actor, zone: "GIGS" };
+    mutation.emit({ kind: "GIG_DIE_ROLLED", gigInstanceId: gig.id, dieType: gig.dieType, rawValue: rolled.rawValue, rngCounter: counter });
+    if (!checkOvertimeVictory(mutation)) mutation.phase("MAIN");
+}
+function callLegend(mutation: TurnMutation, view: RulesView, actor: PlayerId, cardInstanceId: CardInstanceId, cost: number) {
+    const candidates = view.paymentCandidates(actor, cost, []);
+    return cost === 0 ? mutation.call(actor, cardInstanceId, []) : candidates.length === 1 && view.getPaymentValue(candidates[0]) === cost ? mutation.call(actor, cardInstanceId, [candidates[0]]) : mutation.paymentChoice(actor, cardInstanceId, cost, []);
+}
+/** CALL payment is the only CHOOSE that no continuation claims. */
+function continuePayment(mutation: TurnMutation, view: RulesView, actor: PlayerId, optionIndex: number): Result<unknown> {
+    const s = mutation.state, pending = s.resolution.callContinuation!, option = s.resolution.choice!.options[optionIndex];
+    if (option.kind !== "PAYMENT")
+        return failure("UNSUPPORTED_CHOICE", "Only CALL payment is implemented");
+    const selected = [...pending.selectedSources, option.source], remaining = pending.remainingCost - view.getPaymentValue(option.source);
+    return remaining === 0 ? mutation.call(actor, pending.legendId, selected) : mutation.paymentChoice(actor, pending.legendId, remaining, selected);
+}
+/** Routes a CHOOSE to the continuation that owns the pending choice; the precedence order is significant. */
+function continueChoice(mutation: TurnMutation, view: RulesView, actor: PlayerId, optionIndex: number): Result<unknown> {
+    const s = mutation.state;
+    if (s.resolution.targetedDefeatContinuation) return continueTargetedDefeat(mutation, optionIndex);
+    if (s.resolution.triggerContinuation) return continueTrigger(mutation, optionIndex);
+    if (s.resolution.gigStealContinuation || s.resolution.defeatContinuation)
+        return s.resolution.gigStealContinuation ? continueGigSteal(mutation, optionIndex) : continueDefeatOrder(mutation, optionIndex);
+    if (s.timing.combat.stage === "ATTACK_TARGET_SELECTION") return continueAttack(mutation, optionIndex);
+    if (s.resolution.legendEntryContinuation) return continueLegendEntry(mutation, optionIndex);
+    if (s.resolution.playContinuation) return continuePlay(mutation, optionIndex);
+    if (s.setup) return continueSetup(mutation, optionIndex);
+    if (s.resolution.searchContinuation) {
+        const result = continueSearch(mutation, optionIndex);
+        if (!result.ok) return result;
+        return s.resolution.searchContinuation ? result : mutation.finishContinuedEffect();
     }
+    return continuePayment(mutation, view, actor, optionIndex);
+}
+function sellCard(mutation: TurnMutation, view: RulesView, actor: PlayerId, id: CardInstanceId) {
+    const s = mutation.state, c = s.objects.cards[id], p = s.players[actor], from = { ...c.zone };
+    p.zones.HAND.splice(p.zones.HAND.indexOf(id), 1);
+    p.zones.EDDIES.push(id);
+    c.zone = { playerId: actor, zone: "EDDIES" };
+    c.face = "DOWN";
+    c.readiness = "READY";
+    p.economy.sellsThisTurn++;
+    mutation.emit({ kind: "CARD_MOVED", cardInstanceId: id, from, to: c.zone });
+    mutation.emit({ kind: "CARD_SOLD", cardInstanceId: id, value: view.getRevision(id)!.sellProfile.baseEddieValue });
+}
+function dispatchTurnSliceAction(mutation: TurnMutation, view: RulesView, action: GameAction, context: EngineContext): Result<unknown> {
+    const s = mutation.state, actor = action.actorId;
+    switch (action.action.kind) {
+        case "ROLL_GIG": rollGig(mutation, actor, action.action.gigInstanceId); return success(undefined);
+        case "PASS_REACT": return passReact(mutation, actor);
+        case "DECLARE_BLOCKER": return declareBlocker(mutation, actor, action.action.cardInstanceId);
+        case "DECLARE_ATTACK": return startAttack(mutation, actor, action.action.cardInstanceId);
+        case "PLAY_CARD": return canEnterField(s, actor, action.action.cardInstanceId, context) ? startLegendEntry(mutation, actor, action.action.cardInstanceId, "PLAY") : startPlay(mutation, actor, action.action.cardInstanceId);
+        case "GO_SOLO": return startLegendEntry(mutation, actor, action.action.cardInstanceId, "GO_SOLO");
+        case "ACTIVATE_ABILITY": return activateAbility(mutation, actor, action.action.sourceInstanceId, action.action.abilityId);
+        case "CALL_LEGEND": return callLegend(mutation, view, actor, action.action.cardInstanceId, context.content.ruleset.gameplay!.turnSlice!.callCost);
+        case "CHOOSE": return continueChoice(mutation, view, actor, action.action.optionIndices[0]);
+        case "END_TURN": return endTurn(mutation);
+        case "SELL_CARD": sellCard(mutation, view, actor, action.action.cardInstanceId); return success(undefined);
+        default: return failure("UNSUPPORTED_ACTION", "No handler in turn slice");
+    }
+}
+/** Pre-turn-slice fixtures support SELL_CARD only. */
+function applyFixtureSell(state: GameState, action: GameAction, context: EngineContext): Result<ActionResult> {
     const next = GameStateSchema.parse(state), events: GameEvent[] = [];
     const emit = (payload: GameEvent["payload"]) => events.push(GameEventSchema.parse({ sequence: ++next.match.eventSequence, payload }));
     if (action.action.kind !== "SELL_CARD")
@@ -322,6 +299,16 @@ export function applyAction(state: GameState, action: GameAction, context: Engin
     next.match.version++;
     const checked = validateState(next, context);
     return checked.ok ? success({ state: checked.value, events }) : checked;
+}
+export function applyAction(state: GameState, action: GameAction, context: EngineContext): Result<ActionResult> {
+    const valid = validateAction(state, action, context);
+    if (!valid.ok)
+        return valid;
+    if (!context.content.ruleset.gameplay?.turnSlice)
+        return applyFixtureSell(state, action, context);
+    const mutation = new TurnMutation(state, context), view = new RulesView(state, context);
+    const applied = dispatchTurnSliceAction(mutation, view, action, context);
+    return applied.ok ? mutation.result() : applied;
 }
 /** Transport checks wrap, but never change, semantic action validation. */
 export function applyCommand(state: GameState, input: unknown, context: EngineContext): Result<ActionResult> {
@@ -354,7 +341,6 @@ export function modifyGigValue(state: GameState, id: GigInstanceId, delta: numbe
     return checked.ok ? success({ state: checked.value, events: [event] }) : checked;
 }
 export { HandlerRegistry } from "./effects";
-export const STATE_BASED_PIPELINE = ["RESOLVE_EFFECT", "STATE_BASED_CHECKS", "DISCOVER_TRIGGERS", "ORDER_TRIGGERS", "CHOICE", "DECISION"] as const;
 /** Event-preserving automatic driver for a trusted persisted/transient pending boundary.
  * PASS_REACT calls the same reducer within its own transition. No new player or wire action.
  */
@@ -386,7 +372,7 @@ export function rollGigDie(state: GameState, id: GigInstanceId, context: EngineC
     const next = GameStateSchema.parse(state), gig = next.objects.gigs[id];
     if (!gig || !new RulesView(valid.value, context).listRollableFixerDice(gig.controllerId).includes(id))
         return failure("INELIGIBLE_DIE", "Choose an unrolled eligible Fixer die; D20 waits for other dice");
-    const result = drawDeterministicDie(state.rng, Number(gig.dieType.slice(1)));
+    const result = drawDeterministicInteger(state.rng, Number(gig.dieType.slice(1)));
     gig.roll = { kind: "ROLLED", initialValue: result.rawValue, currentValue: result.rawValue };
     next.rng = result.rng;
     next.match.version++;

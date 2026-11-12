@@ -1,19 +1,19 @@
-import { canonicalSerialize, failure, success, type CardRevisionSnapshot, type DeepReadonly, type GameState } from "@tcg/domain";
+import { turnSliceAllows, canonicalSerialize, failure, success, type CardRevisionSnapshot, type DeepReadonly, type GameState } from "@tcg/domain";
 import type { EngineContext } from "./state";
 
 /** Dependency review only. The foundation slice does NOT enable a Gear gameplay handler. */
 export function targetedGearDefeatPolicyComplete(context: EngineContext) {
     const gameplay = context.content.ruleset.gameplay, p = gameplay?.turnSlice;
     return gameplay?.gigValueBounds === "DIE_FACES_V1"
-        && p?.targetedGearDefeat === "TARGETED_GEAR_DEFEAT_V1"
-        && p.targetedDefeat === "TARGETED_DEFEAT_V1"
-        && p.cardPlay === "NONCOMBAT_PLAY_V1"
-        && p.gear === "REVIEWED_GEAR_V1"
-        && p.combat === "COMBAT_ATTACK_V1"
-        && p.react === "COMBAT_REACT_V1"
-        && p.combatTriggers === "COMBAT_TRIGGERS_V1"
-        && p.combatResolution?.version === "COMBAT_RESOLUTION_V1"
-        && p.callEffects === "REVIEWED_CALL_V1";
+        && turnSliceAllows(p, "targetedGearDefeat")
+        && turnSliceAllows(p, "targetedDefeat")
+        && turnSliceAllows(p, "cardPlay")
+        && turnSliceAllows(p, "gear")
+        && turnSliceAllows(p, "combat")
+        && turnSliceAllows(p, "react")
+        && turnSliceAllows(p, "combatTriggers")
+        && turnSliceAllows(p, "combatResolution")
+        && turnSliceAllows(p, "callEffects");
 }
 export function hasTargetedGearDefeatMetadata(card: DeepReadonly<CardRevisionSnapshot>) {
     return card.execution?.scope === "TARGETED_GEAR_DEFEAT_V1"

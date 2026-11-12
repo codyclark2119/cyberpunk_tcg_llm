@@ -3,9 +3,9 @@ import { supportsDelayedAttackGear } from "./delayed-effect-support";
 import { supportsPrivateLookGear } from "./private-look-support";
 import { supportsCapabilityGear } from "./capability-support";
 import { supportsTriggerCard } from "./trigger-support";
-import { failure, success, type GameState, type CardInstanceId, type CardRevisionSnapshot, type DeepReadonly } from "@tcg/domain";
+import { turnSliceAllows, failure, success, type GameState, type CardInstanceId, type CardRevisionSnapshot, type DeepReadonly } from "@tcg/domain";
 import type { EngineContext } from "./state";
-export function gearEnabled(context: EngineContext) { return context.content.ruleset.gameplay?.turnSlice?.gear === "REVIEWED_GEAR_V1"; }
+export function gearEnabled(context: EngineContext) { return turnSliceAllows(context.content.ruleset.gameplay?.turnSlice, "gear"); }
 function revision(state: GameState, id: CardInstanceId, context: EngineContext) {
     const c = state.objects.cards[id];
     return context.content.cards.find(r => r.id === c?.cardId && r.revision === c?.revision);
