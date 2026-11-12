@@ -15,7 +15,7 @@ export function appliedFightPreventions(state: GameState): readonly FightPrevent
     const c = state.resolution.defeatContinuation;
     return c?.appliedPreventions ?? (c?.appliedPrevention ? [c.appliedPrevention] : []);
 }
-export function validatePrevention(effect: FightPrevention, state: GameState, context: EngineContext) {
+function validatePrevention(effect: FightPrevention, state: GameState, context: EngineContext) {
     const source = state.objects.cards[effect.sourceId], r = cardRevision(state, effect.sourceId, context);
     if (!restrictionsEnabled(context) || !source || !state.players[effect.controllerId] || !supportsRestrictedPlay(r, context).ok || !createsFightPrevention(r) || effect.createdTurn !== state.timing.turn || effect.expires.turn !== effect.createdTurn || effect.id !== preventionId(state, effect.sourceId, effect.controllerId, effect.createdTurn))
         return failure("INVALID_FIGHT_PREVENTION", "Reviewed source, controller, deterministic identity and current turn duration required");

@@ -32,7 +32,7 @@ export function handleRequest(input: unknown) {
     }
     const valid = validateState(r.state, context);
     if (!valid.ok)
-        return { ...envelope, ...valid };
+        return WireResponseSchema.parse({ ...envelope, ...valid });
     let result: unknown;
     switch (r.op) {
         case "validateState":

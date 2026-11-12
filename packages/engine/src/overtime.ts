@@ -1,8 +1,8 @@
-import { failure, success, type GameState } from "@tcg/domain";
+import { turnSliceAllows, failure, success, type GameState } from "@tcg/domain";
 import type { EngineContext } from "./state";
 import type { TurnMutation } from "./turn";
 
-export const overtimeEnabled = (context: EngineContext) => context.content.ruleset.gameplay?.turnSlice?.overtime === "STANDARD_OVERTIME_V1";
+export const overtimeEnabled = (context: EngineContext) => turnSliceAllows(context.content.ruleset.gameplay?.turnSlice, "overtime");
 /** Original Fixer objects, independent of current Gig control or Street Cred. */
 export function areBothFixersEmpty(state: GameState) {
     return state.match.playerOrder.length === 2 && state.match.playerOrder.every(id =>

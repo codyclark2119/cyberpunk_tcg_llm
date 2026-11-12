@@ -1,8 +1,8 @@
 import { supportsFieldLegend } from "./field-legend-support";
-import { CardInstanceIdSchema, canonicalSerialize, failure, success, type CardRevisionSnapshot, type DeepReadonly, type GameState } from "@tcg/domain";
+import { turnSliceAllows, CardInstanceIdSchema, canonicalSerialize, failure, success, type CardRevisionSnapshot, type DeepReadonly, type GameState } from "@tcg/domain";
 import type { EngineContext } from "./state";
 export function endTurnEnabled(context: EngineContext) {
-    return context.content.ruleset.gameplay?.turnSlice?.combatTriggers === "COMBAT_TRIGGERS_V1" && context.content.cards.some(c => c.execution?.scope === "END_TURN_HISTORY_V1");
+    return turnSliceAllows(context.content.ruleset.gameplay?.turnSlice, "combatTriggers") && context.content.cards.some(c => c.execution?.scope === "END_TURN_HISTORY_V1");
 }
 /** Full captured ordinary Unit plus its one conditional own-turn end effect. */
 export function supportsEndTurnCard(card: DeepReadonly<CardRevisionSnapshot> | undefined, context: EngineContext) {

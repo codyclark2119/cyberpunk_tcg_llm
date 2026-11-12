@@ -20,7 +20,7 @@ import { triggersEnabled } from "./trigger-support";
 import { supportsPlay } from "./play-support";
 import { beginSetup } from "./setup";
 import { z } from "zod";
-import { matchDemoManifest, DeckSchema, ContentBundleSchema, validateDeck, GameStateSchema, failure, success, type GameState, type Result, type GameEvent } from "@tcg/domain";
+import { turnSliceAllows, matchDemoManifest, DeckSchema, ContentBundleSchema, validateDeck, GameStateSchema, failure, success, type GameState, type Result, type GameEvent } from "@tcg/domain";
 import { buildInitialState, CreateGameInputSchema, type EngineContext } from "./state";
 import { TurnMutation } from "./turn";
 import { drawDeterministicInteger } from "./rng";
@@ -42,7 +42,7 @@ export function createGameWithEvents(input: z.input<typeof CreateGameInputSchema
         return old.ok ? success({ state: old.value, events: [] }) : old;
     }
     const request = parsed.data, rules = context.content.ruleset.gameplay, policy = rules.turnSlice;
-    const engineSetup = policy?.setup === "ENGINE_SETUP_V1";
+    const engineSetup = turnSliceAllows(policy, "setup");
     if (!policy || request.players.length !== 2 || (!engineSetup && (!request.setup || request.setup.firstPlayerSeat >= 2)))
         return failure("UNSUPPORTED_SETUP", "Two players and explicit agreed first-player/declined mulligan/cut decisions are required");
     if (engineSetup && request.setup) return failure("INVALID_SETUP_INPUT", "Engine-owned setup does not accept external first-player, cut or mulligan decisions");
@@ -102,7 +102,7 @@ export function createGameWithEvents(input: z.input<typeof CreateGameInputSchema
     // validated by TurnMutation.result after automatic setup randomness is recorded.
     for (const c of Object.values(s.objects.cards)) {
         const content = context.content.cards.find(r => r.id === c.cardId && r.revision === c.revision)!;
-        if (policy.callEffects === "REVIEWED_CALL_V1" && content.execution?.status !== "SUPPORTED") return failure("UNREVIEWED_EXECUTION", "Reviewed gameplay requires an explicit executable coverage decision for every deck card");
+        if (turnSliceAllows(policy, "callEffects") && content.execution?.status !== "SUPPORTED") return failure("UNREVIEWED_EXECUTION", "Reviewed gameplay requires an explicit executable coverage decision for every deck card");
         if (content.execution?.status === "UNSUPPORTED") return failure("UNSUPPORTED_CARD_EFFECT", "Corpus presence does not certify executable support");
         if (content.type === "LEGEND") {
             const supported = supportsCall(content, context);

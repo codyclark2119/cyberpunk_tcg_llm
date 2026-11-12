@@ -5,7 +5,7 @@ import { delayedEffectsEnabled, supportsDelayedAttackGear } from "./delayed-effe
 import { supportsFieldLegend } from "./field-legend-support";
 import { cardRevision } from "./characteristics";
 import { triggerId } from "./trigger-queries";
-export function delayedEffectId(state: GameState, d: Omit<DelayedEffect, "id">) {
+function delayedEffectId(state: GameState, d: Omit<DelayedEffect, "id">) {
     const { controllerId, kind, sourceId, source, subjectId, subject, abilityId, createdTurn, originOrdinal, originEffectId } = d;
     const semantic = { ...(d.subjectTypesAtCreation ? { subjectTypesAtCreation: d.subjectTypesAtCreation } : {}), kind, sourceId, source, subjectId, subject, abilityId, createdTurn, originOrdinal, originEffectId };
     return hashCanonical({ protocol: "end-turn-delayed@1", ...semantic, controllerSeat: state.players[controllerId].seat });

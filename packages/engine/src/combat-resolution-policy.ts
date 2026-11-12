@@ -1,6 +1,7 @@
+import { turnSliceAllows } from "@tcg/domain";
 import type { EngineContext } from "./state";
 export function combatResolutionEnabled(context: EngineContext) {
-    return context.content.ruleset.gameplay?.turnSlice?.combatResolution?.version === "COMBAT_RESOLUTION_V1";
+    return turnSliceAllows(context.content.ruleset.gameplay?.turnSlice, "combatResolution");
 }
 /** 2.10.1 changes references/comparisons, never the additive derived characteristic. */
 export function referencedPower(power: number) { return Math.max(0, power); }

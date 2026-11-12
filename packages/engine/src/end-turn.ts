@@ -1,7 +1,7 @@
 import { enterOvertimeAfterTurn, overtimeEnabled } from "./overtime";
 import { delayedEffectsEnabled } from "./delayed-effect-support";
 import { takeEndTurnOrigin } from "./delayed-effects";
-import { failure } from "@tcg/domain";
+import { turnSliceAllows, failure } from "@tcg/domain";
 import type { TurnMutation } from "./turn";
 import { beginTriggers } from "./trigger-resolution";
 import { endTurnEnabled } from "./end-turn-support";
@@ -17,7 +17,7 @@ export function endTurn(m: TurnMutation) {
  * The old cleanup event ordering is retained. No second END_TURN or intermediate MAIN. */
 export function finishEndTurn(m: TurnMutation) {
     const s = m.state, actor = s.timing.activePlayer;
-    if (m.context.content.ruleset.gameplay?.turnSlice?.cardPlay === "NONCOMBAT_PLAY_V1")
+    if (turnSliceAllows(m.context.content.ruleset.gameplay?.turnSlice, "cardPlay"))
         for (const card of Object.values(s.objects.cards)) if (card.statuses.includes("LAG")) {
             card.statuses = card.statuses.filter(status => status !== "LAG");
             m.emit({ kind: "LAG_REMOVED", cardInstanceId: card.id });

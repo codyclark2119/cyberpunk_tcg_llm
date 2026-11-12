@@ -1,8 +1,8 @@
-import { failure, success, type CardRevisionSnapshot, type DeepReadonly, type GameState, type PlayerId } from "@tcg/domain";
+import { turnSliceAllows, failure, success, type CardRevisionSnapshot, type DeepReadonly, type GameState, type PlayerId } from "@tcg/domain";
 import type { EngineContext } from "./state";
 import { supportsTargetedGearDefeatCard } from "./targeted-gear-defeat-support";
 
-export function reactEnabled(context: EngineContext) { return context.content.ruleset.gameplay?.turnSlice?.react === "COMBAT_REACT_V1"; }
+export function reactEnabled(context: EngineContext) { return turnSliceAllows(context.content.ruleset.gameplay?.turnSlice, "react"); }
 /** React is a defender decision, never a priority exchange or an interruptible continuation. */
 export function isReactDecision(state: GameState, actor: PlayerId, context: EngineContext) {
     const c = state.timing.combat, r = state.resolution;
