@@ -116,6 +116,27 @@ class EngineWorker:
             raise EngineProtocolError("worker returned invalid ModelInputV2 payload")
         return model_input
 
+    def observe(self, *, content: Mapping[str, Any], state: Mapping[str, Any], actor_id: str) -> Mapping[str, Any]:
+        """Return the engine's PlayerObservation for ``actor_id`` (training positions only)."""
+        value = self._request("observe", content=content, state=state, actor_id=actor_id)
+        if value.get("kind") != "observation" or not isinstance(value.get("observation"), dict):
+            raise EngineProtocolError(f"expected observation response, got {value.get('kind')!r}")
+        return value["observation"]
+
+    def list_legal_actions(self, *, content: Mapping[str, Any], state: Mapping[str, Any], actor_id: str) -> list[Mapping[str, Any]]:
+        """Return the engine's full LegalActions for ``actor_id`` (training positions only, never a policy)."""
+        value = self._request("listLegalActions", content=content, state=state, actor_id=actor_id)
+        if value.get("kind") != "actions" or not isinstance(value.get("actions"), list):
+            raise EngineProtocolError(f"expected actions response, got {value.get('kind')!r}")
+        return value["actions"]
+
+    def hashes(self, *, content: Mapping[str, Any], state: Mapping[str, Any], actor_id: str) -> Mapping[str, str]:
+        """Return the engine's stateHash, positionHash and observationHash for ``state``/``actor_id``."""
+        value = self._request("hash", content=content, state=state, actor_id=actor_id)
+        if value.get("kind") != "hashes":
+            raise EngineProtocolError(f"expected hashes response, got {value.get('kind')!r}")
+        return {key: value[key] for key in ("stateHash", "positionHash", "observationHash")}
+
     def apply_action(self, *, content: Mapping[str, Any], state: Mapping[str, Any], actor_id: str, action_id: str) -> Mapping[str, Any]:
         """Submit only an authoritative actionId and return the trusted transition."""
         value = self._request("applyAction", content=content, state=state, actor_id=actor_id, action_id=action_id)

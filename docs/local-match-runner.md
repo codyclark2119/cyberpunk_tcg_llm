@@ -66,13 +66,22 @@ Update 2026-11-11 ([local-time-budget.md](local-time-budget.md)): `schemaVersion
 `workerEvent` to decision rows, and `errors` and `workerRestarts` to the result row
 and the CLI summary.
 
+Update 2026-11-12 ([local-match-records-v3.md](local-match-records-v3.md)):
+`schemaVersion` 3 adds each seat's `modelPath`, `modelRevision` (read from the
+local download metadata, else null), `adapterPath`, `adapterRevision` and
+`promptVersion` to the header; `chosenIndex`, `baselineActionId`,
+`baselineIndex`, `agreesWithBaseline`, `rawOutput`, `inputTokens` and
+`outputTokens` to decision rows; and `baselineAgreement` per seat to the result
+row and per policy to the CLI summary. `--training-dir DIR` (off by default)
+also logs each model decision as a TrainingPosition plus a TrainingAttempt.
+
 The record holds ids, public labels and hashes only, no states or events. A
 viewer that needs board positions can replay the action ids through the engine.
 
 ```bash
 python scripts/run_local_matches.py [--matches N] [--seed PREFIX] [--policy SEAT0 SEAT1]
     [--setup FILE] [--output-dir DIR] [--force] [--max-decisions N] [--max-turns N]
-    [--model PATH] [--adapter PATH] [--budget-ms MS]
+    [--model PATH] [--adapter PATH] [--budget-ms MS] [--training-dir DIR]
 ```
 
 The CLI prints a JSON summary: statuses, wins by seat, end reasons, selection

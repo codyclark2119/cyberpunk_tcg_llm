@@ -387,6 +387,30 @@ async def test_prepare_runs_before_the_budget_clock_and_reports_its_event():
     assert (selection.reason, selection.worker_event) == ("policy", "prepare_failed")
 
 
+async def test_policy_details_are_passed_through_only_for_their_own_request():
+    class Reporting:
+        def __init__(self):
+            self.asked = []
+
+        async def __call__(self, decision):
+            return decision.legal_actions[1]["actionId"]
+
+        def take_details(self, request_id):
+            self.asked.append(request_id)
+            return {"rawOutput": "x", "inputTokens": 3} if request_id == "request-1" else None
+
+    policy = Reporting()
+    selection = await PolicyRunner(policy).choose(request())
+    assert selection.details == {"rawOutput": "x", "inputTokens": 3} and policy.asked == ["request-1"]
+    assert (await PolicyRunner(policy).choose(request(requestId="request-2"))).details is None
+
+    async def plain(decision):
+        return decision.legal_actions[0]["actionId"]
+
+    assert (await PolicyRunner(plain).choose(request())).details is None
+    assert (await PolicyRunner().choose(request())).details is None
+
+
 async def run_tests():
     tests = [value for name, value in globals().items() if name.startswith("test_") and callable(value)]
     for test in tests:

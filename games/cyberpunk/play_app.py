@@ -23,6 +23,15 @@ human seat's policy and every human decision's reason set to ``human``.
 Bot-vs-bot matches run ``scripts/run_local_matches.py`` through the harness
 monitor's allowlisted ``Runner``: the client names the one action id and fills
 its declared arguments; the command line is built server-side, one job at a time.
+Its "Log training records" option passes ``--training-dir`` with the one fixed
+directory beside the records directory (``<records>/../training``); the client
+cannot name another.
+
+The viewer reads schemaVersion 2 and 3 records. A v3 record also shows each
+decision's index among the offered actions, the baseline's pick on the same
+list and whether they agree, the per-seat agreement rate, the model's raw
+output and token counts, and each seat's model path and revision
+(docs/local-match-records-v3.md).
 The app is the monitor's ``build_app`` (token middleware and job routes) with
 its generic console page replaced by this one.
 
@@ -46,9 +55,9 @@ from typing import Any, Callable, Mapping
 
 from games.cyberpunk.engine_adapter import EngineProtocolError, EngineWorker
 from games.cyberpunk.local_match import (DEFAULT_MAX_DECISIONS, DEFAULT_MAX_TURNS, DEFAULT_OUTPUT_DIR,
-                                         REPO_ROOT, MatchSetup, build_decision, decision_row,
-                                         load_default_setup, load_setup_file, match_header, result_row,
-                                         write_match_record)
+                                         REPO_ROOT, MatchSetup, baseline_agreement, build_decision,
+                                         decision_row, load_default_setup, load_setup_file, match_header,
+                                         result_row, seat_models, write_match_record)
 from games.cyberpunk.policy_bot import (DEFAULT_DECISION_BUDGET_MS, Decision, PolicyRunner, Selection,
                                      check_budget_ms)
 from harness.core.webui.monitor import build_app
@@ -80,8 +89,17 @@ def is_loopback(host: str) -> bool:
         return False
 
 
+def training_dir_for(records_dir: Path) -> Path:
+    """The one directory the bot-vs-bot job may log training records into."""
+    return Path(records_dir).parent / "training"
+
+
 def bot_match_action(records_dir: Path, node: str = "node") -> dict:
-    """The one allowlisted job: ``run_local_matches.py`` writing into ``records_dir``."""
+    """The one allowlisted job: ``run_local_matches.py`` writing into ``records_dir``.
+
+    ``--training-dir`` is a choice with a single allowed value (blank leaves it off),
+    so the client can switch training logging on but never point it elsewhere.
+    """
     return {
         "id": "local-matches", "label": "Bot vs bot matches", "group": "Matches",
         "cmd": "scripts/run_local_matches.py", "writes": True,
@@ -100,6 +118,8 @@ def bot_match_action(records_dir: Path, node: str = "node") -> dict:
             {"name": "--budget-ms", "type": "int", "default": DEFAULT_DECISION_BUDGET_MS,
              "label": "Bot budget ms"},
             {"name": "--force", "type": "flag", "default": False, "label": "Replace existing records"},
+            {"name": "--training-dir", "type": "choice", "choices": [str(training_dir_for(records_dir))],
+             "default": "", "label": "Log training records (model seats only)"},
             {"name": "--output-dir", "type": "fixed", "value": [str(records_dir)]},
             {"name": "--node", "type": "fixed", "value": [node]},
         ],
@@ -160,8 +180,10 @@ class PlaySession:
         return await asyncio.to_thread(method, content=self.setup.content, **kwargs)
 
     async def start(self) -> None:
+        models = seat_models([self.bot_runner, self.bot_runner])
+        models[self.human_seat] = None
         self.rows = [match_header(self.setup, self.policy_names, max_decisions=self.max_decisions,
-                                  max_turns=self.max_turns, budgets_ms=self.budgets_ms)]
+                                  max_turns=self.max_turns, budgets_ms=self.budgets_ms, seat_models=models)]
         self.bot_runner.begin_match()
         try:
             created = await self._engine(self.worker.create_game, initialization=self.setup.initialization)
@@ -319,7 +341,7 @@ class PlayState:
             raise PlayError(f"policy must be one of {', '.join(BOT_POLICIES)}.")
         if not mlx_available():
             raise PlayError("An mlx bot requires native arm64 Python on Apple Silicon macOS.")
-        from games.cyberpunk.policy_mlx import DEFAULT_MODEL, MLXPolicy, make_worker, watchdog_seconds
+        from games.cyberpunk.policy_mlx import DEFAULT_MODEL, MLXPolicy, make_worker, model_info, watchdog_seconds
         async with self._mlx_lock:
             if self._mlx is None:
                 try:
@@ -330,7 +352,8 @@ class PlayState:
                 self._mlx = worker
             # The shared worker's watchdog follows the latest session's budget.
             self._mlx.response_timeout = watchdog_seconds(budget_ms)
-        return PolicyRunner(MLXPolicy(self._mlx), max_decision_ms=budget_ms)
+        info = model_info(self.mlx_model or DEFAULT_MODEL, adapter=self.mlx_adapter)
+        return PolicyRunner(MLXPolicy(self._mlx, info=info), max_decision_ms=budget_ms)
 
     async def create(self, payload: Mapping[str, Any]) -> PlaySession:
         seat = payload.get("seat", 0)
@@ -412,8 +435,10 @@ class PlayState:
                 rows = self._read_rows(path)
                 header, result = rows[0], rows[-1]
                 entry.update({"seed": header.get("seed"), "format": header.get("format"),
+                              "schemaVersion": header.get("schemaVersion"),
                               "policies": [s.get("policy") for s in header.get("seats", [])],
-                              "setupSource": header.get("setupSource")})
+                              "setupSource": header.get("setupSource"),
+                              "agreement": baseline_agreement(rows)})
                 if result.get("kind") == "result":
                     entry.update({k: result.get(k) for k in ("status", "winnerSeat", "reason", "turns",
                                                              "decisions")})
@@ -427,6 +452,11 @@ class PlayState:
         if not rows or not isinstance(rows[0], dict) or rows[0].get("kind") != "match":
             raise ValueError("first row is not a match header")
         return rows
+
+    @staticmethod
+    def record_summary(rows: list[dict[str, Any]]) -> dict[str, Any]:
+        """What the viewer derives from a record; v2 records have no baseline fields (None)."""
+        return {"schemaVersion": rows[0].get("schemaVersion"), "agreement": baseline_agreement(rows)}
 
     def read_record(self, name: str) -> list[dict[str, Any]]:
         if not RECORD_RE.match(name):
@@ -471,6 +501,7 @@ def build_play_app(records_dir: Path = DEFAULT_OUTPUT_DIR, *, token: str | None 
             return {"policies": [p for p in BOT_POLICIES if p == "baseline" or mlx_available()],
                     "seats": [0, 1], "maxDecisions": DEFAULT_MAX_DECISIONS, "maxTurns": DEFAULT_MAX_TURNS,
                     "budgetMs": DEFAULT_DECISION_BUDGET_MS, "recordsDir": str(records_dir), "botAction": action["id"],
+                    "trainingDir": str(training_dir_for(records_dir)),
                     "live": [s.sid for s in play.sessions.values() if s.status is None]}
 
         @app.post("/api/play")
@@ -529,9 +560,10 @@ def build_play_app(records_dir: Path = DEFAULT_OUTPUT_DIR, *, token: str | None 
         @app.get("/api/records/{name}")
         def record(name: str):
             try:
-                return {"name": name, "rows": play.read_record(name)}
+                rows = play.read_record(name)
             except PlayError as exc:
                 return refused(exc)
+            return {"name": name, "rows": rows, "summary": play.record_summary(rows)}
 
     app = build_app([action], REPO_ROOT, title="Cyberpunk TCG local play", token=token,
                     runner=Runner({action["id"]: action}, REPO_ROOT), extra_routes=routes)
@@ -651,6 +683,7 @@ pre{white-space:pre-wrap;word-break:break-word;font-size:12px;max-height:360px;o
       <label>Max turns<input id="bMaxT" type="number" min="0" style="width:80px"></label>
       <label>Bot budget ms<input id="bBudget" type="number" min="1" step="500" style="width:90px"></label>
       <label>Replace records<input id="bForce" type="checkbox"></label>
+      <label title="Model seats only; baseline seats log nothing">Log training records<input id="bTraining" type="checkbox"></label>
       <button class="go" id="bStart">Run</button>
       <button class="ghost" id="bCancel" disabled>Cancel</button>
     </div>
@@ -708,6 +741,7 @@ async function init() {
   $("pTurns").value = CONFIG.maxTurns; $("bMaxT").value = CONFIG.maxTurns; $("bMaxD").value = CONFIG.maxDecisions;
   $("pBudget").value = CONFIG.budgetMs; $("bBudget").value = CONFIG.budgetMs;
   $("hdr").textContent = "records: " + CONFIG.recordsDir;
+  $("bTraining").parentElement.title = "Writes TrainingPosition/TrainingAttempt records for model seats to " + CONFIG.trainingDir;
   if (CONFIG.live.length) { SID = CONFIG.live[0]; refreshGame(); }
 }
 
@@ -803,7 +837,8 @@ let JOB = null, JOB_LINES = 0, JOB_TIMER = null;
 $("bStart").addEventListener("click", async () => {
   $("bErr").textContent = "";
   const values = {"--matches": num("bMatches"), "--seed": $("bSeed").value.trim(), seat0: $("bP0").value, seat1: $("bP1").value,
-    "--setup": $("bSetup").value.trim(), "--max-decisions": num("bMaxD"), "--max-turns": num("bMaxT"), "--budget-ms": num("bBudget"), "--force": $("bForce").checked};
+    "--setup": $("bSetup").value.trim(), "--max-decisions": num("bMaxD"), "--max-turns": num("bMaxT"), "--budget-ms": num("bBudget"), "--force": $("bForce").checked,
+    "--training-dir": $("bTraining").checked ? CONFIG.trainingDir : ""};
   try {
     const r = await api("/api/run/" + CONFIG.botAction, {values: values});
     JOB = r.job; JOB_LINES = 0; $("bLog").textContent = ""; pollJob();
@@ -836,16 +871,27 @@ async function loadRecords() {
   $("rDir").textContent = r.dir;
   if (!r.records.length) { $("rList").replaceChildren(h("div", {class: "muted"}, "No match records yet.")); return; }
   $("rList").replaceChildren(h("table", {},
-    h("tr", {}, ["Record", "Policies", "Status", "Winner seat", "Reason", "Turns", "Decisions", "Modified"].map(x => h("th", {}, x))),
+    h("tr", {}, ["Record", "Schema", "Policies", "Status", "Winner seat", "Reason", "Turns", "Decisions", "Baseline agreement", "Modified"].map(x => h("th", {}, x))),
     r.records.map(x => h("tr", {class: "click", onclick: () => openRecord(x.name)},
-      h("td", {}, x.name), h("td", {}, (x.policies || []).join(" vs ")), h("td", {class: x.error ? "warn" : ""}, x.error || x.status),
-      h("td", {}, x.winnerSeat), h("td", {}, x.reason), h("td", {}, x.turns), h("td", {}, x.decisions), h("td", {}, x.modified)))));
+      h("td", {}, x.name), h("td", {}, x.schemaVersion), h("td", {}, (x.policies || []).join(" vs ")), h("td", {class: x.error ? "warn" : ""}, x.error || x.status),
+      h("td", {}, x.winnerSeat), h("td", {}, x.reason), h("td", {}, x.turns), h("td", {}, x.decisions), h("td", {}, agreementText(x.agreement)), h("td", {}, x.modified)))));
+}
+/* Per seat "seat: agree/decisions (rate%)"; schemaVersion 2 records carry no baseline fields. */
+function agreementText(a) {
+  if (!a) return "n/a";
+  return Object.entries(a).map(([seat, e]) => seat + " " + e.policy + ": " + e.agree + "/" + e.decisions + " (" + (100 * e.rate).toFixed(1) + "%)").join(", ");
+}
+function yesNo(v) { return v === true ? "yes" : v === false ? "no" : ""; }
+function seatModel(s) {
+  if (!s.modelPath) return s.seat + ": " + s.policy;
+  return s.seat + ": " + s.policy + " " + s.modelPath + " @ " + (s.modelRevision ? s.modelRevision.slice(0, 12) : "unknown revision") +
+    (s.adapterPath ? " + " + s.adapterPath : "") + (s.promptVersion ? " [" + s.promptVersion + "]" : "");
 }
 let REC = null, STEP = 0;
 async function openRecord(name) {
   const r = await api("/api/records/" + encodeURIComponent(name));
   const rows = r.rows;
-  REC = {name: name, header: rows[0], decisions: rows.filter(x => x.kind === "decision"), result: rows.find(x => x.kind === "result")};
+  REC = {name: name, header: rows[0], decisions: rows.filter(x => x.kind === "decision"), result: rows.find(x => x.kind === "result"), summary: r.summary || {}};
   STEP = 0; renderRecord();
 }
 function stepTo(i) { STEP = Math.max(0, Math.min(REC.decisions.length - 1, i)); renderRecord(); }
@@ -857,18 +903,22 @@ function renderRecord() {
     h("button", {class: "ghost", onclick: () => stepTo(STEP + 1)}, "Next"), h("button", {class: "ghost", onclick: () => stepTo(REC.decisions.length - 1)}, "Last"),
     h("input", {type: "range", min: 0, max: Math.max(0, REC.decisions.length - 1), value: STEP, oninput: e => stepTo(Number(e.target.value))}),
     h("span", {}, REC.decisions.length ? "decision " + (STEP + 1) + " of " + REC.decisions.length : "no decisions"));
-  const table = h("table", {}, h("tr", {}, ["#", "Turn", "Step", "Seat", "Policy", "Offered", "Action", "Reason", "Error", "ms"].map(x => h("th", {}, x))),
+  const table = h("table", {}, h("tr", {}, ["#", "Turn", "Step", "Seat", "Policy", "Offered", "Pick", "Action", "Baseline pick", "Agrees", "Reason", "Error", "ms"].map(x => h("th", {}, x))),
     REC.decisions.map((x, i) => h("tr", {class: "click" + (i === STEP ? " sel" : ""), onclick: () => stepTo(i)},
       h("td", {}, x.index), h("td", {}, x.turn), h("td", {}, x.step), h("td", {}, x.seat), h("td", {}, x.policy), h("td", {}, x.offered),
-      h("td", {}, x.label), h("td", {class: String(x.reason).endsWith("_fallback") ? "warn" : ""}, x.reason), h("td", {class: x.error ? "warn" : ""}, (x.error || "") + (x.workerEvent ? " [" + x.workerEvent + "]" : "")), h("td", {}, x.elapsedMs))));
+      h("td", {}, x.chosenIndex), h("td", {}, x.label), h("td", {}, x.baselineIndex), h("td", {class: x.agreesWithBaseline === false ? "warn" : ""}, yesNo(x.agreesWithBaseline)), h("td", {class: String(x.reason).endsWith("_fallback") ? "warn" : ""}, x.reason), h("td", {class: x.error ? "warn" : ""}, (x.error || "") + (x.workerEvent ? " [" + x.workerEvent + "]" : "")), h("td", {}, x.elapsedMs))));
   $("rView").replaceChildren(
     h("div", {class: "twocol"},
       h("div", {class: "panel"}, h("b", {}, REC.name), nav,
         d ? h("table", {}, kv("Decision", d.index), kv("Turn / step", d.turn + " / " + d.step), kv("Seat / player", d.seat + " / " + d.playerId),
-          kv("Policy", d.policy), kv("Offered", d.offered), kv("Chosen", d.label), kv("actionId", d.actionId), kv("Reason", d.reason),
-          kv("Error", d.error), kv("Worker event", d.workerEvent), kv("Elapsed ms", d.elapsedMs), kv("State hash after", d.stateHash)) : null),
+          kv("Policy", d.policy), kv("Offered", d.offered), kv("Chosen", d.label), kv("Chosen index", d.chosenIndex), kv("actionId", d.actionId),
+          kv("Baseline index", d.baselineIndex), kv("Baseline actionId", d.baselineActionId), kv("Agrees with baseline", yesNo(d.agreesWithBaseline)),
+          kv("Reason", d.reason), kv("Error", d.error), kv("Worker event", d.workerEvent), kv("Elapsed ms", d.elapsedMs),
+          kv("Raw output", d.rawOutput), kv("Tokens in / out", d.inputTokens == null && d.outputTokens == null ? null : d.inputTokens + " / " + d.outputTokens),
+          kv("State hash after", d.stateHash)) : null),
       h("div", {class: "panel"}, h("b", {}, "Match"), h("table", {}, kv("Seed", hd.seed), kv("Format", hd.format), kv("Setup", hd.setupSource),
-        kv("Seats", (hd.seats || []).map(s => s.seat + ": " + s.policy).join(", ")), kv("Engine", hd.engine && hd.engine.version), kv("Limits", hd.limits),
+        kv("Schema", hd.schemaVersion), kv("Seats", (hd.seats || []).map(seatModel).join("; ")),
+        kv("Baseline agreement", agreementText(REC.summary.agreement)), kv("Engine", hd.engine && hd.engine.version), kv("Limits", hd.limits),
         kv("Budget ms", (hd.seats || []).map(s => s.seat + ": " + (s.budgetMs == null ? "-" : s.budgetMs)).join(", "))),
         h("b", {}, "Result"), res ? h("table", {}, kv("Status", res.status), kv("Winner seat", res.winnerSeat), kv("Reason", res.reason), kv("Turns", res.turns),
           kv("Decisions", res.decisions), kv("Selections", res.selections), kv("Errors", res.errors), kv("Worker restarts", res.workerRestarts), kv("Detail", res.detail)) : h("div", {class: "warn"}, "No result row"))),

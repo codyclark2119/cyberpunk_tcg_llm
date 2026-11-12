@@ -6,7 +6,9 @@ only the human seat's public engine view, accept only an engine-offered
 actionId, let the bot move through the policy layer, write the same match
 record as the bot-vs-bot runner, list and serve those records, run bot-vs-bot
 jobs only through the allowlisted runner, and ship a page whose inline script
-actually parses. The engine and the Demo decks are real; the bot is the
+actually parses. Records are schemaVersion 3 (docs/local-match-records-v3.md),
+human rows included, and a schemaVersion 2 record still opens in the viewer.
+The engine and the Demo decks are real; the bot is the
 deterministic baseline. No model, network or listening socket is used:
 FastAPI's TestClient (fastapi and httpx) calls the app in process. Needs node
 and installed npm dependencies.
@@ -28,13 +30,20 @@ sys.path.insert(0, str(REPO_ROOT))
 
 from fastapi.testclient import TestClient
 
-from games.cyberpunk.local_match import load_default_setup
-from games.cyberpunk.play_app import HUMAN_REASON, PLAY_HTML, build_play_app, is_loopback, mlx_available
+from games.cyberpunk.local_match import SEAT_MODEL_FIELDS, load_default_setup
+from games.cyberpunk.play_app import (HUMAN_REASON, PLAY_HTML, build_play_app, is_loopback, mlx_available,
+                                      training_dir_for)
 from games.cyberpunk.policy_bot import DEFAULT_DECISION_BUDGET_MS, baseline_action_id
 
 FORBIDDEN_KEYS = ("actorId", "choiceId", "optionIndices", "cardInstanceId", "sourceInstanceId", "rng",
                   "objects", "turnHistory", "zones")
 CTX: dict = {}
+NO_MODEL = {key: None for key in SEAT_MODEL_FIELDS}
+DECISION_KEYS = {"kind", "index", "turn", "step", "seat", "playerId", "policy", "offered", "actionId",
+                 "chosenIndex", "label", "baselineActionId", "baselineIndex", "agreesWithBaseline", "reason",
+                 "error", "workerEvent", "elapsedMs", "rawOutput", "inputTokens", "outputTokens", "stateHash"}
+V3_ONLY = {"chosenIndex", "baselineActionId", "baselineIndex", "agreesWithBaseline", "rawOutput",
+           "inputTokens", "outputTokens"}
 
 
 def client() -> TestClient:
@@ -61,6 +70,11 @@ def test_page_is_the_play_ui_and_self_contained():
     # Bot settings carry the decision budget; the viewer shows each fallback's failure code.
     assert 'id="pBudget"' in PLAY_HTML and 'id="bBudget"' in PLAY_HTML
     assert 'kv("Error", d.error)' in PLAY_HTML and '"Reason", "Error", "ms"' in PLAY_HTML
+    # v3 viewer fields and the training option of the bot-vs-bot launcher.
+    for needle in ('kv("Chosen index", d.chosenIndex)', 'kv("Baseline index", d.baselineIndex)',
+                   'kv("Agrees with baseline"', 'kv("Raw output", d.rawOutput)', "agreementText(REC.summary.agreement)",
+                   "s.modelRevision", 'id="bTraining"', "CONFIG.trainingDir"):
+        assert needle in PLAY_HTML, needle
 
 
 def test_page_javascript_actually_parses():
@@ -78,6 +92,7 @@ def test_config_and_bad_requests_are_refused():
     assert config["policies"] == (["baseline", "mlx"] if mlx_available() else ["baseline"])
     assert config["botAction"] == "local-matches" and config["live"] == []
     assert config["budgetMs"] == DEFAULT_DECISION_BUDGET_MS
+    assert config["trainingDir"] == str(CTX["records"].parent / "training")
     bad = [{"seat": 2}, {"seat": True}, {"seed": "../escape"}, {"seed": "a b"}, {"policy": "remote"},
            {"maxTurns": -1}, {"maxDecisions": "9"}, {"setup": "/no/such/file.json"}, {"setup": "README.md"},
            {"budgetMs": 0}, {"budgetMs": "1000"}, {"budgetMs": 1.5}, {"budgetMs": 600_001}]
@@ -134,6 +149,12 @@ def test_human_moves_are_applied_and_the_bot_answers():
     assert all(d["label"] is None and d["elapsedMs"] is None for d in bot)
     rows = session(view).rows
     assert all(r["reason"] == HUMAN_REASON and r["policy"] == "human" for r in rows[1:] if r["seat"] == 1)
+    # Human rows carry the same index and baseline fields as bot rows.
+    human = [r for r in rows[1:] if r["seat"] == 1]
+    assert all(set(r) == DECISION_KEYS for r in rows[1:])
+    assert all(r["chosenIndex"] == r["offered"] - 1 and r["rawOutput"] is None for r in human)
+    assert all(r["agreesWithBaseline"] is (r["actionId"] == r["baselineActionId"]) for r in rows[1:])
+    assert all(r["agreesWithBaseline"] for r in rows[1:] if r["seat"] == 0)
     assert all(r["reason"] == "baseline" for r in rows[1:] if r["seat"] == 0)
     CTX["view1"] = view
 
@@ -171,13 +192,16 @@ def test_abandon_writes_the_record_and_closes_the_worker():
     header, decisions, final = rows[0], rows[1:-1], rows[-1]
     assert header["kind"] == "match" and header["seed"] == "play-start-1"
     # Neither seat runs a timed policy (baseline bot, human), so no budget applies.
-    assert header["seats"] == [{"seat": 0, "policy": "baseline", "budgetMs": None},
-                               {"seat": 1, "policy": "human", "budgetMs": None}]
+    assert header["schemaVersion"] == 3
+    assert header["seats"] == [{"seat": 0, "policy": "baseline", "budgetMs": None, **NO_MODEL},
+                               {"seat": 1, "policy": "human", "budgetMs": None, **NO_MODEL}]
     assert header["budgetMs"] is None
     assert final["kind"] == "result" and final["status"] == "abandoned" and final["decisions"] == len(decisions)
-    assert set(decisions[0]) == {"kind", "index", "turn", "step", "seat", "playerId", "policy", "offered",
-                                 "actionId", "label", "reason", "error", "workerEvent", "elapsedMs",
-                                 "stateHash"}
+    assert all(set(r) == DECISION_KEYS for r in decisions)
+    for seat in ("0", "1"):
+        mine = [r for r in decisions if str(r["seat"]) == seat]
+        assert final["baselineAgreement"][seat]["decisions"] == len(mine)
+        assert final["baselineAgreement"][seat]["agree"] == sum(r["agreesWithBaseline"] for r in mine)
     assert all(r["error"] is None for r in decisions) and final["errors"] == {}
     assert [r["index"] for r in decisions] == list(range(len(decisions)))
     assert final["selections"]["human"] == sum(1 for r in decisions if r["seat"] == 1)
@@ -208,8 +232,28 @@ def test_viewer_lists_and_serves_records():
     assert by_name["play-start-1.jsonl"]["policies"] == ["baseline", "human"]
     (CTX["records"] / "broken.jsonl").write_text("not json\n")
     assert "error" in {r["name"]: r for r in client().get("/api/records").json()["records"]}["broken.jsonl"]
-    rows = client().get("/api/records/play-start-0.jsonl").json()["rows"]
+    served = client().get("/api/records/play-start-0.jsonl").json()
+    rows = served["rows"]
     assert rows[0]["kind"] == "match" and rows[-1]["kind"] == "result"
+    # v3: the viewer's per-seat agreement, also on the listing.
+    agreement = served["summary"]["agreement"]
+    assert served["summary"]["schemaVersion"] == 3 and agreement == rows[-1]["baselineAgreement"]
+    assert agreement["0"]["policy"] == "human" and agreement["1"]["policy"] == "baseline"
+    assert agreement["1"]["rate"] == 1.0  # the baseline bot always agrees with itself
+    assert by_name["play-start-0.jsonl"]["agreement"] == agreement
+    assert by_name["play-start-0.jsonl"]["schemaVersion"] == 3
+    # A schemaVersion 2 record (as written before this change) still lists and opens.
+    v2 = [dict(rows[0], schemaVersion=2, seats=[{k: s[k] for k in ("seat", "policy", "budgetMs")}
+                                                 for s in rows[0]["seats"]])]
+    v2 += [{k: v for k, v in r.items() if k not in V3_ONLY} for r in rows[1:-1]]
+    v2.append({k: v for k, v in rows[-1].items() if k != "baselineAgreement"})
+    (CTX["records"] / "old-v2.jsonl").write_text("".join(json.dumps(r) + "\n" for r in v2))
+    old = {r["name"]: r for r in client().get("/api/records").json()["records"]}["old-v2.jsonl"]
+    assert "error" not in old and old["status"] == "finished" and old["schemaVersion"] == 2
+    assert old["agreement"] is None and old["decisions"] == len(v2) - 2
+    served = client().get("/api/records/old-v2.jsonl")
+    assert served.status_code == 200 and served.json()["rows"] == v2
+    assert served.json()["summary"] == {"schemaVersion": 2, "agreement": None}
     for name, code in (("..%2Fsecret.jsonl", 404), ("x.txt", 400), (".hidden.jsonl", 400),
                        ("missing.jsonl", 404), ("broken.jsonl", 422)):
         assert client().get(f"/api/records/{name}").status_code == code, name
@@ -227,11 +271,19 @@ def test_bot_vs_bot_runs_only_through_the_allowlisted_runner():
     assert cmd[1] == "scripts/run_local_matches.py"
     assert cmd[cmd.index("--policy"):cmd.index("--policy") + 3] == ["--policy", "baseline", "mlx"]
     assert cmd[cmd.index("--output-dir") + 1] == str(CTX["records"]) and "--force" in cmd
+    # Training logging is off unless asked for, and then only into the one fixed directory.
+    assert "--training-dir" not in cmd
+    training = str(training_dir_for(CTX["records"]))
+    on = runner.build_cmd(runner.actions_by_id["local-matches"], {"--training-dir": training})
+    assert on[on.index("--training-dir") + 1] == training
+    assert client().post("/api/run/local-matches",
+                         json={"values": {"--training-dir": "/tmp/elsewhere"}}).status_code == 400
     assert client().post("/api/run/local-matches",
                          json={"values": {"seat0": "rm -rf"}}).status_code == 400
     assert client().post("/api/run/anything-else", json={}).status_code == 400
     started = client().post("/api/run/local-matches", json={"values": {
-        "--matches": 1, "--seed": "bots", "--max-decisions": 12, "--budget-ms": 4000}})
+        "--matches": 1, "--seed": "bots", "--max-decisions": 12, "--budget-ms": 4000,
+        "--training-dir": training}})
     assert started.status_code == 200, started.text
     job = started.json()["job"]
     assert client().post("/api/run/local-matches", json={"values": {}}).status_code == 409
@@ -243,6 +295,8 @@ def test_bot_vs_bot_runs_only_through_the_allowlisted_runner():
     record = {r["name"]: r for r in client().get("/api/records").json()["records"]}["bots-0.jsonl"]
     assert record["status"] == "decision_cap" and record["decisions"] == 12
     assert record["policies"] == ["baseline", "baseline"]
+    # Baseline seats log no training records, even with the option on.
+    assert not Path(training).exists()
 
 
 def test_token_is_required_when_one_is_set_and_loopback_needs_none():
