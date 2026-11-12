@@ -7,6 +7,11 @@ banner inside one means current as of its own date. For present behavior, the co
 tests and committed fixtures are authoritative; for the newest capabilities, read the
 latest admission batch.
 
+The PostgreSQL layer (deck, match and command-ledger adapters, SQL migrations,
+`db:migrate`) was retired on 2026-11-11; no runtime path used it. Reports dated before
+then that mention PostgreSQL, its migrations or the command ledger describe it as it
+was.
+
 ## Start here
 
 | Document | Purpose |
