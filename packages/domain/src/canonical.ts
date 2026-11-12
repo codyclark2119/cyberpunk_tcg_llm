@@ -42,4 +42,3 @@ export function hashCanonical(value: unknown): string {
 }
 export const hashCardContent = hashCanonical;
 export const hashRulesetContent = hashCanonical;
-export const hashCommandRequest = hashCanonical;

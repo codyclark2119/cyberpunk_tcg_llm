@@ -63,10 +63,10 @@ py-policy-bot        | quick | "$PY" scripts/test_policy_bot.py                |
 py-policy-mlx        | quick | "$PY" scripts/test_policy_mlx.py                | line:PASS local MLX bot: 33/33
 py-engine-adapter    | quick | "$PY" scripts/test_engine_adapter.py --app-root . | -
 py-local-match       | quick | "$PY" scripts/test_local_match.py               | line:PASS local match runner: 19/19
-py-local-prompt      | quick | "$PY" scripts/test_local_prompt.py              | line:PASS local prompt: 9/9
+py-local-prompt      | quick | "$PY" scripts/test_local_prompt.py              | line:PASS local prompt: 13/13
 py-training-records  | quick | "$PY" scripts/test_training_records.py         | line:PASS training records: 12/12
 py-validation-console| quick | "$PY" scripts/test_validation_console.py        | line:PASS validation console: 8/8
-py-play-app          | quick | "$PY" scripts/test_play_app.py                  | line:PASS local play UI: 12/12
+py-play-app          | quick | "$PY" scripts/test_play_app.py                  | line:PASS local play UI: 13/13
 py-assistant-tools   | quick | "$PY" scripts/test_assistant_tools.py           | line:PASS assistant tools: 14/14
 py-assistant-decks   | quick | "$PY" scripts/test_assistant_deck_tools.py      | line:PASS assistant deck tools: 12/12
 py-assistant-loop    | quick | "$PY" scripts/test_assistant_loop.py            | line:PASS assistant loop: 16/16

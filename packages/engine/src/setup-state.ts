@@ -1,4 +1,4 @@
-import { canonicalSerialize, hashCanonical, failure, success, type GameState, type PendingChoice } from "@tcg/domain";
+import { turnSliceAllows, canonicalSerialize, hashCanonical, failure, success, type GameState, type PendingChoice } from "@tcg/domain";
 import type { EngineContext } from "./state";
 
 /** Agreed setup protocol: uniform seat draw, Fisher–Yates, single cyclic cut.
@@ -15,7 +15,7 @@ export function setupChoice(state: GameState): PendingChoice {
 }
 export function validateSetupState(state: GameState, context: EngineContext) {
     const setup = state.setup, rules = context.content.ruleset.gameplay;
-    if (!setup || rules?.turnSlice?.setup !== "ENGINE_SETUP_V1" || state.match.playerOrder.length !== 2 || state.timing.turn !== 0 || state.timing.window !== "SETUP" || state.timing.combat.stage !== "NONE" || state.match.outcome)
+    if (!setup || !rules || !turnSliceAllows(rules.turnSlice, "setup") || state.match.playerOrder.length !== 2 || state.timing.turn !== 0 || state.timing.window !== "SETUP" || state.timing.combat.stage !== "NONE" || state.match.outcome)
         return failure("INVALID_SETUP", "Setup requires its pinned two-player protocol and turn zero");
     const { stage, completed, decidingSeat } = setup, ids = state.match.playerOrder;
     const step = stage === "FIRST_PLAYER" ? "CHOOSE_FIRST_PLAYER" : stage === "MULLIGAN" ? "MULLIGAN_DECISION" : "CUT_DECISION";

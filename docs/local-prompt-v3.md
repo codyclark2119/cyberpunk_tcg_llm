@@ -1,5 +1,8 @@
 # Compact local gameplay prompt (local-choice-v3)
 
+> Superseded on 2026-11-12 by `local-choice-v4`, which adds a card reference to
+> this format: see [local-prompt-v4.md](local-prompt-v4.md). This record is unchanged.
+
 2026-11-11. Scope: `games/cyberpunk/sim_prompt.py` (`PROMPT_VERSION` moves from
 `local-choice-v2` to `local-choice-v3`), `scripts/measure_prompt_size.py` (new),
 `scripts/test_local_prompt.py` (new suite, pinned as `py-local-prompt` in

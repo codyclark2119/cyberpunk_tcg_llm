@@ -7,7 +7,7 @@ import type { EngineContext } from "./state";
 import { revisionOf, supportsPlay } from "./play-support";
 import { paymentCandidates, paymentSources, paymentValue, forcedPaymentSources } from "./payment";
 
-export function playIdentity(state: GameState) {
+function playIdentity(state: GameState) {
     const c = state.resolution.playContinuation!;
     return hashCanonical({ protocol: "noncombat-play@1", turn: state.timing.turn, actorSeat: state.players[c.actorId].seat, sourceId: c.sourceId, kind: c.kind, abilityId: c.abilityId ?? null });
 }

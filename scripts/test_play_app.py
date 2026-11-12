@@ -6,7 +6,9 @@ only the human seat's public engine view, accept only an engine-offered
 actionId, let the bot move through the policy layer, write the same match
 record as the bot-vs-bot runner, list and serve those records, run bot-vs-bot
 jobs only through the allowlisted runner, and ship a page whose inline script
-actually parses. Records are schemaVersion 3 (docs/local-match-records-v3.md),
+actually parses. Its "Prompt size" tab must run the same measurement as
+scripts/measure_prompt_size.py and show the current prompt's sizes and its
+largest rendered prompt. Records are schemaVersion 3 (docs/local-match-records-v3.md),
 human rows included, and a schemaVersion 2 record still opens in the viewer.
 The engine and the Demo decks are real; the bot is the
 deterministic baseline. No model, network or listening socket is used:
@@ -17,6 +19,7 @@ and installed npm dependencies.
 from __future__ import annotations
 
 import argparse
+import asyncio
 import json
 import re
 import subprocess
@@ -34,6 +37,8 @@ from games.cyberpunk.local_match import SEAT_MODEL_FIELDS, load_default_setup
 from games.cyberpunk.play_app import (HUMAN_REASON, PLAY_HTML, build_play_app, is_loopback, mlx_available,
                                       training_dir_for)
 from games.cyberpunk.policy_bot import DEFAULT_DECISION_BUDGET_MS, baseline_action_id
+from games.cyberpunk.policy_prompt import PROMPT_VERSION, SYSTEM_PROMPT
+from games.cyberpunk.prompt_size import baseline_games, largest_prompt, report
 
 FORBIDDEN_KEYS = ("actorId", "choiceId", "optionIndices", "cardInstanceId", "sourceInstanceId", "rng",
                   "objects", "turnHistory", "zones")
@@ -297,6 +302,35 @@ def test_bot_vs_bot_runs_only_through_the_allowlisted_runner():
     assert record["policies"] == ["baseline", "baseline"]
     # Baseline seats log no training records, even with the option on.
     assert not Path(training).exists()
+
+
+def test_prompt_size_view_runs_the_cli_measurement():
+    for needle in ('data-tab="prompt"', 'id="sStart"', 'id="sMatches"', "renderPromptSize", "/api/prompt-size",
+                   '{id: "sUser"}'):
+        assert needle in PLAY_HTML, needle
+    for payload in ({"matches": 0}, {"matches": 6}, {"matches": "1"}, {"matches": True}, {"seed": "../x"},
+                    {"seed": ""}):
+        response = client().post("/api/prompt-size", json=payload)
+        assert response.status_code == 400, (payload, response.text)
+    assert client().post("/api/prompt-size", content="[]",
+                         headers={"content-type": "application/json"}).status_code == 400
+    response = client().post("/api/prompt-size", json={"matches": 1, "seed": "ui-size"})
+    assert response.status_code == 200, response.text
+    body = response.json()
+    assert body["promptVersion"] == PROMPT_VERSION and body["seeds"] == ["ui-size-0"]
+    assert set(body["versions"]) == {"local-choice-v2", "local-choice-v3", PROMPT_VERSION}
+    # The same numbers the CLI's report() gives on the same games.
+    games = asyncio.run(baseline_games(["ui-size-0"], CTX["node"], REPO_ROOT, CTX["setup"]))
+    expected = report(games, 3.0)
+    assert body["versions"] == expected["versions"] and body["decisions"] == expected["decisions"]
+    current = body["versions"][PROMPT_VERSION]["all"]
+    assert current["max"] > body["versions"]["local-choice-v3"]["all"]["max"], "no card reference measured"
+    largest = body["largest"]
+    assert largest == largest_prompt(games, 3.0)
+    assert largest["system"] == SYSTEM_PROMPT and "\nCards:\n" in largest["user"]
+    assert largest["chars"] == len(largest["system"]) + len(largest["user"]) == current["max"]
+    assert largest["approxTokens"] == round(largest["chars"] / 3)
+    assert body["cardTrimming"] and all(isinstance(rule, str) for rule in body["cardTrimming"])
 
 
 def test_token_is_required_when_one_is_set_and_loopback_needs_none():

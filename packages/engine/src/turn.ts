@@ -6,7 +6,7 @@ import { triggersEnabled } from "./trigger-support";
 import { actionReturnContext, finishAction } from "./action-return";
 import { resolveCallPrimitive } from "./effects";
 import { z } from "zod";
-import { GameStateSchema, GameEventSchema, EffectSchema, hashCanonical, failure, success, type GameState, type GameEvent, type PlayerId, type CardInstanceId, type PaymentSource, type Result } from "@tcg/domain";
+import { turnSliceAllows, GameStateSchema, GameEventSchema, EffectSchema, hashCanonical, failure, success, type GameState, type GameEvent, type PlayerId, type CardInstanceId, type PaymentSource, type Result } from "@tcg/domain";
 import { type EngineContext, validateState } from "./state";
 import { RulesView } from "./view";
 import { evaluateWinConditions } from "./win";
@@ -39,7 +39,7 @@ export class TurnMutation {
         for (let i = 0; i < count; i++) {
             const id = p.zones.DECK[0];
             if (!id) {
-                if (this.context.content.ruleset.gameplay?.turnSlice?.emptyDraw !== "LOSE")
+                if (!turnSliceAllows(this.context.content.ruleset.gameplay?.turnSlice, "emptyDraw"))
                     return failure("UNSUPPORTED_EMPTY_DRAW", "No empty-draw loss policy");
                 this.finish(this.state.match.playerOrder.find(id => id !== actor)!, actor, "EMPTY_DRAW");
                 return success(null);
