@@ -70,7 +70,7 @@ py-play-app          | quick | "$PY" scripts/test_play_app.py                  |
 py-strength-eval     | quick | "$PY" scripts/test_strength_eval.py             | line:PASS strength eval: 10/10
 py-assistant-tools   | quick | "$PY" scripts/test_assistant_tools.py           | line:PASS assistant tools: 14/14
 py-assistant-decks   | quick | "$PY" scripts/test_assistant_deck_tools.py      | line:PASS assistant deck tools: 12/12
-py-assistant-loop    | quick | "$PY" scripts/test_assistant_loop.py            | line:PASS assistant loop: 16/16
+py-assistant-loop    | quick | "$PY" scripts/test_assistant_loop.py            | line:PASS assistant loop: 20/20
 py-assistant-ui      | quick | "$PY" scripts/test_assistant_ui.py              | line:PASS assistant UI: 13/13
 py-assistant-eval    | quick | "$PY" scripts/test_assistant_eval.py            | line:PASS assistant eval: 14/14
 py-assistant-retrieval | quick | "$PY" scripts/test_assistant_retrieval.py    | line:PASS assistant retrieval: 13/13
