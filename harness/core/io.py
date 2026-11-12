@@ -67,7 +67,7 @@ def file_sha256(path: Path) -> str:
 
 def guard_shrink(path: Path, new_count: int, force: bool = False,
                   min_ratio: float = 0.5, what: str = "records",
-                  hint: str = "") -> None:
+                  hint: str = "", existing: int | None = None) -> None:
     """Refuse to overwrite a corpus with a much smaller one. Raises SystemExit.
 
     A destructive rebuild that accidentally writes a small subset over a full
@@ -80,10 +80,15 @@ def guard_shrink(path: Path, new_count: int, force: bool = False,
     pinned/versioned and should never shrink at all except on a deliberate
     version bump; a looser ratio (e.g. 0.5) suits derived corpora where the
     known failure mode is an order-of-magnitude subset.
+
+    The existing count defaults to the non-blank lines of a jsonl file. For a
+    file that is not jsonl (a fetched JSON document, say), the caller counts
+    its records and passes them as `existing`.
     """
     if force or not path.exists():
         return
-    existing = sum(1 for line in path.open(encoding="utf-8") if line.strip())
+    if existing is None:
+        existing = sum(1 for line in path.open(encoding="utf-8") if line.strip())
     if new_count >= existing * min_ratio:
         return
     detail = (f"refusing to shrink {path} from {existing} to {new_count} {what}.\n"

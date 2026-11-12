@@ -42,23 +42,26 @@ Usage:
     python scripts/fetch_cards.py                 # full pull, index + 151 cards
     python scripts/fetch_cards.py --index-only    # refresh the index alone
     python scripts/fetch_cards.py --slug v-streetkid   # re-fetch one card
+
+Every write refuses to shrink what is on disk (fewer cards in the index, fewer
+filter vocabularies, fewer printings on a card) unless `--force` is passed;
+see `fetch_common.write_json_snapshot`.
 """
 
 import argparse
-import json
 import sys
 import time
-import urllib.error
 import urllib.parse
-import urllib.request
 from pathlib import Path
 
 REPO_ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(REPO_ROOT))
+sys.path.insert(0, str(REPO_ROOT / "scripts"))
+
+from fetch_common import fetch_json, write_json_snapshot  # noqa: E402
 
 API_BASE = "https://api.netdeck.gg/api"
 GAME_CODE = "cyberpunk"
-USER_AGENT = "Mozilla/5.0 (compatible; cyberpunk-llm-corpus-builder/1.0)"
 PAGE_SIZE = 100
 
 # CloudFront's signing parameters. A URL carrying any of these has a query
@@ -70,10 +73,16 @@ INDEX_NAME = "_index.json"
 FILTERS_NAME = "_filters.json"
 
 
-def fetch_json(url: str, timeout: int = 30):
-    req = urllib.request.Request(url, headers={"User-Agent": USER_AGENT})
-    with urllib.request.urlopen(req, timeout=timeout) as resp:
-        return json.loads(resp.read().decode("utf-8"))
+def count_index(doc) -> int:
+    return len(doc["items"])
+
+
+def count_filters(doc) -> int:
+    return len(doc["filters"])
+
+
+def count_printings(doc) -> int:
+    return len(doc["printings"])
 
 
 def is_signed_url(value: str) -> bool:
@@ -143,7 +152,8 @@ def main():
     ap.add_argument("--delay", type=float, default=0.25,
                     help="seconds between requests (default 0.25)")
     ap.add_argument("--force", action="store_true",
-                    help="re-fetch cards whose json is already on disk")
+                    help="re-fetch cards whose json is already on disk, and allow "
+                         "any write to shrink the snapshot")
     args = ap.parse_args()
 
     args.out_dir.mkdir(parents=True, exist_ok=True)
@@ -152,19 +162,21 @@ def main():
         card = strip_signed_urls(
             fetch_json(f"{args.api_base}/cards/{GAME_CODE}/{urllib.parse.quote(args.slug)}"))
         path = args.out_dir / f"{args.slug}.json"
-        path.write_text(json.dumps(card, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+        write_json_snapshot(path, card, count_printings, force=args.force,
+                            min_ratio=1.0, what="printings")
         print(f"wrote {path}")
         return
 
     print(f"fetching card index from {args.api_base} ...")
     index = strip_signed_urls(fetch_index(args.api_base, delay=args.delay))
     index_path = args.out_dir / INDEX_NAME
-    index_path.write_text(json.dumps(index, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+    write_json_snapshot(index_path, index, count_index, force=args.force, what="cards")
     print(f"wrote {index['total']} card summaries -> {index_path}")
 
     filters = strip_signed_urls(fetch_json(f"{args.api_base}/cards/{GAME_CODE}/filters"))
     filters_path = args.out_dir / FILTERS_NAME
-    filters_path.write_text(json.dumps(filters, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+    write_json_snapshot(filters_path, filters, count_filters, force=args.force,
+                        min_ratio=1.0, what="filter vocabularies")
     print(f"wrote filter vocabularies -> {filters_path}")
 
     if args.index_only:
@@ -178,7 +190,8 @@ def main():
             continue
         card = strip_signed_urls(
             fetch_json(f"{args.api_base}/cards/{GAME_CODE}/{urllib.parse.quote(slug)}"))
-        path.write_text(json.dumps(card, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+        write_json_snapshot(path, card, count_printings, force=args.force,
+                            min_ratio=1.0, what="printings")
         fetched += 1
         print(f"[{i}/{len(slugs)}] {slug}")
         if args.delay:

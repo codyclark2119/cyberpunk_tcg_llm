@@ -60,6 +60,10 @@ Usage:
     python scripts/fetch_decks.py                 # index + every public deck
     python scripts/fetch_decks.py --index-only
     python scripts/fetch_decks.py --max-decks 20  # a sample, for a quick check
+
+The index and deck writes refuse to shrink what is on disk (fewer decks in the
+index, fewer card entries in a deck) unless `--force` is passed; see
+`fetch_common.write_json_snapshot`.
 """
 
 import argparse
@@ -68,7 +72,6 @@ import json
 import secrets
 import sys
 import time
-import urllib.request
 from pathlib import Path
 
 REPO_ROOT = Path(__file__).resolve().parent.parent
@@ -78,10 +81,10 @@ sys.path.insert(0, str(REPO_ROOT / "scripts"))
 # One definition of the signed-URL normalization, shared with the card fetch.
 # Two copies that had to agree would be a bug waiting to happen.
 from fetch_cards import strip_signed_urls  # noqa: E402
+from fetch_common import fetch_json, write_json_snapshot  # noqa: E402
 
 API_BASE = "https://api.netdeck.gg/api"
 GAME_CODE = "cyberpunk"
-USER_AGENT = "Mozilla/5.0 (compatible; cyberpunk-llm-corpus-builder/1.0)"
 PAGE_SIZE = 100  # the server's own cap; asking for more returns 100
 
 DEFAULT_OUT_DIR = REPO_ROOT / "data" / "raw" / "decks"
@@ -89,10 +92,17 @@ INDEX_NAME = "_index.json"
 SALT_NAME = "_salt.json"
 
 
-def fetch_json(url: str, timeout: int = 30):
-    req = urllib.request.Request(url, headers={"User-Agent": USER_AGENT})
-    with urllib.request.urlopen(req, timeout=timeout) as resp:
-        return json.loads(resp.read().decode("utf-8"))
+def count_index(doc) -> int:
+    return len(doc["items"])
+
+
+def count_card_entries(node) -> int:
+    """Card references in a cleaned deck (each reduced to a `card_slug`)."""
+    if isinstance(node, dict):
+        return ("card_slug" in node) + sum(count_card_entries(v) for v in node.values())
+    if isinstance(node, list):
+        return sum(count_card_entries(v) for v in node)
+    return 0
 
 
 def pseudonymize_owner(owner: dict, salt: str) -> dict:
@@ -168,7 +178,8 @@ def main():
                     help="stop after this many decks (for a quick check)")
     ap.add_argument("--delay", type=float, default=0.25)
     ap.add_argument("--force", action="store_true",
-                    help="re-fetch decks whose json is already on disk")
+                    help="re-fetch decks whose json is already on disk, and allow "
+                         "any write to shrink the snapshot")
     args = ap.parse_args()
 
     args.out_dir.mkdir(parents=True, exist_ok=True)
@@ -192,8 +203,7 @@ def main():
     index = fetch_index(args.api_base, delay=args.delay)
     index["items"] = [clean_deck(d, salt, seen_slugs) for d in index["items"]]
     index_path = args.out_dir / INDEX_NAME
-    index_path.write_text(json.dumps(index, indent=2, sort_keys=True) + "\n",
-                          encoding="utf-8")
+    write_json_snapshot(index_path, index, count_index, force=args.force, what="decks")
     print(f"wrote {len(index['items'])} deck summaries -> {index_path}")
 
     if args.index_only:
@@ -210,8 +220,8 @@ def main():
             continue
         deck = clean_deck(
             fetch_json(f"{args.api_base}/{GAME_CODE}/decks/{deck_id}"), salt, seen_slugs)
-        path.write_text(json.dumps(deck, indent=2, sort_keys=True) + "\n",
-                        encoding="utf-8")
+        write_json_snapshot(path, deck, count_card_entries, force=args.force,
+                            min_ratio=1.0, what="card entries")
         fetched += 1
         if i % 25 == 0 or i == len(deck_ids):
             print(f"[{i}/{len(deck_ids)}] {fetched} fetched")

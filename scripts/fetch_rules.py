@@ -31,20 +31,23 @@ that date, and refreshing this file is what should prompt changing it.
 Usage:
     python scripts/fetch_rules.py            # write data/raw/comprehensive_rules.json
     python scripts/fetch_rules.py --print-updated-at   # check for a new version
+
+The write refuses to replace the file with one holding fewer rule nodes unless
+`--force` is passed; see `fetch_common.write_json_snapshot`.
 """
 
 import argparse
-import json
 import sys
-import urllib.request
 from pathlib import Path
 
 REPO_ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(REPO_ROOT))
+sys.path.insert(0, str(REPO_ROOT / "scripts"))
+
+from fetch_common import fetch_json, write_json_snapshot  # noqa: E402
 
 API_BASE = "https://api.netdeck.gg/api"
 RULES_URL = f"{API_BASE}/cyberpunk/comprehensive-rules"
-USER_AGENT = "Mozilla/5.0 (compatible; cyberpunk-llm-corpus-builder/1.0)"
 
 DEFAULT_OUT = REPO_ROOT / "data" / "raw" / "comprehensive_rules.json"
 
@@ -52,12 +55,6 @@ REQUIRED_NODE_FIELDS = {
     "id", "parent_id", "node_type", "title", "body_markdown",
     "display_number", "stable_anchor", "sort_order", "depth",
 }
-
-
-def fetch_json(url: str, timeout: int = 30):
-    req = urllib.request.Request(url, headers={"User-Agent": USER_AGENT})
-    with urllib.request.urlopen(req, timeout=timeout) as resp:
-        return json.loads(resp.read().decode("utf-8"))
 
 
 def validate(doc: dict) -> None:
@@ -99,6 +96,8 @@ def main():
     ap.add_argument("--url", type=str, default=RULES_URL)
     ap.add_argument("--print-updated-at", action="store_true",
                     help="fetch and print the document's updated_at, write nothing")
+    ap.add_argument("--force", action="store_true",
+                    help="write even if the new document has fewer rule nodes")
     args = ap.parse_args()
 
     doc = fetch_json(args.url)
@@ -109,7 +108,8 @@ def main():
         return
 
     args.out.parent.mkdir(parents=True, exist_ok=True)
-    args.out.write_text(json.dumps(doc, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+    write_json_snapshot(args.out, doc, lambda d: len(d["items"]), force=args.force,
+                        what="rule nodes")
 
     sections = sum(1 for n in doc["items"] if n["node_type"] == "section")
     rules = sum(1 for n in doc["items"] if n["node_type"] == "rule")
