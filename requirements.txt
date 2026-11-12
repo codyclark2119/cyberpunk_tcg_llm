@@ -1,12 +1,20 @@
-# Minimal, curated dependency list for this template.
+# Python packages the harness imports outside the standard library.
 #
-# Unlike a full `pip freeze`, this lists only what the harness directly
-# imports. Pin exact versions once a game instance's environment is known
-# good; left unpinned here since this is a template, not a running install.
+#   python -m pip install -r requirements.txt
+#
+# Enough for every offline suite in scripts/run_tests.sh, the local play app
+# (scripts/play_local.py), the assistant page (scripts/assistant_local.py) and
+# the validation console, on any OS. Model work on Apple Silicon also needs the
+# pinned MLX stack:
+#
+#   python -m pip install -r requirements.txt -r requirements-mlx-bot.txt
+#
+# mlx-lm is pinned there (mlx-lm[train], which brings the fine-tuning extras)
+# and is deliberately not repeated here, so there is one version of it.
+# These lines are unpinned: no environment has been frozen for them yet.
 
-mlx-lm
-mlx-embeddings
-numpy
-datasets
-fastapi
-uvicorn
+numpy                 # harness/core/rag, rules-retrieval fusion and its tests
+fastapi               # play app, assistant page, validation console, harness monitor
+uvicorn               # serves those apps (imported lazily, only when serving)
+httpx                 # FastAPI's TestClient in the Python suites
+mlx-embeddings; sys_platform == "darwin" and platform_machine == "arm64"  # build_rules_index.py

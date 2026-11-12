@@ -1,6 +1,6 @@
 """Recompute correctness on stored runs under the current scoring, no judge.
 
-    python scripts/rescore_stored.py eval/runs/gold_n99.jsonl --dry-run
+    python scripts/rescore_stored.py eval/runs/<run>.jsonl --dry-run   # any judged run
     python scripts/rescore_stored.py eval/runs/*.jsonl --out-suffix _pointsonly
 
 WHY THIS IS NOT A RE-JUDGE

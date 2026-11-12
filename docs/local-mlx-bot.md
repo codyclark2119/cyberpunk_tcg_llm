@@ -118,6 +118,12 @@ deadline; raise `--budget-ms` instead. See [local-time-budget.md](local-time-bud
 
 ## Run the bot
 
+> Note added 2026-11-12: `scripts/serve_sim_bot.py` no longer exists, so the
+> `serve_sim_bot.py` commands in this section and under "Preparing for a trained
+> adapter" do not run. To play the model locally, use
+> `python scripts/run_local_matches.py --policy baseline mlx --model models/qwen3-8b-4bit`
+> (`--adapter` also works) or the play UI ([local-play-ui.md](local-play-ui.md)).
+
 ```bash
 python scripts/serve_sim_bot.py \
   --policy mlx \
