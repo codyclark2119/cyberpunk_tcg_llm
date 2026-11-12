@@ -15,6 +15,24 @@ enable_thinking) -> dict`` returning the chat worker's reply fields (``ok``,
 ``text``, ``finishReason``, token counts, ``elapsedMs``), so tests drive the
 loop with a scripted fake. Nothing here branches on the question's text.
 
+Before the first model step, unless ``preload=False``, the loop runs the
+automatic context step (``preload.py``): ``search_rules`` on the question and
+``get_card`` / ``find_card`` for each card name in it, added to the
+conversation as one assistant tool-call message and its tool messages, within a
+character budget. Those steps open the trace with ``auto: true``; they do not
+count against ``MAX_TOOL_CALLS``. The question text reaches only that step (the
+search query and the card-name linker); ``preload_text`` replaces it there, so
+the scorer can link and search the question and its choices without its
+answer-format instructions.
+
+Thinking is on by default (``DEFAULT_THINKING``) with a larger generation limit
+(``DEFAULT_THINKING_MAX_TOKENS``, 2048) than without (1024). A step cut off
+inside ``<think>`` has no answer at all, and a thought over several retrieved
+rules plus the answer can plausibly pass 1024 tokens; 2048 doubles the room
+while staying at half the worker's 4096 cap per step. That is an estimate, not
+a measurement: the scorer's ``hit_length`` flag on the Mac runs will show
+whether it is enough.
+
 A deck the user loaded in the page's deck panel reaches the model as data, not
 as a question: ``build_messages`` appends a labelled ``<loaded_deck>`` block to
 the system message holding the deck dict exactly as ``parse_deck`` returned it,
@@ -24,34 +42,49 @@ With no deck loaded the system message is the bare prompt.
 
 from __future__ import annotations
 
+import hashlib
 import json
 import re
 import time
 from dataclasses import dataclass, field
 from typing import Any, Protocol
 
+from games.cyberpunk.assistant.preload import DEFAULT_PRELOAD_CHARS, DEFAULT_PRELOAD_K
+from games.cyberpunk.assistant.preload import preload as run_preload
 from games.cyberpunk.assistant.tools import TOOLS, call_tool, tool_specs
 from games.cyberpunk.prompts import RULES_VERSION
 
-ASSISTANT_PROMPT_VERSION = "assistant-chat-v2"
+ASSISTANT_PROMPT_VERSION = "assistant-chat-v3"
 MAX_TOOL_CALLS = 6
-DEFAULT_MAX_TOKENS = 1024
+DEFAULT_MAX_TOKENS = 1024           # per model step, thinking off
+DEFAULT_THINKING_MAX_TOKENS = 2048  # per model step, thinking on (see the module docstring)
+DEFAULT_THINKING = True
+DEFAULT_PRELOAD = True
 SOURCE_KEYS = ("card_slugs", "rule_ids", "errata_ids", "deck_ids", "chunk_ids")
 
-SYSTEM_PROMPT = f"""You answer questions about Cyberpunk TCG, a trading card game that launched in 2026 and is in open beta.
-You do not know this game. Anything you seem to remember about it is wrong or invented, and some of its terms mean the opposite of what they mean in other card games.
+SYSTEM_PROMPT = f"""You answer questions about Cyberpunk TCG, a card game that launched in 2026 and is in open beta. You know nothing true about it: anything you seem to remember is wrong or invented.
+Warning: some terms here are the reverse of other card games. In these rules an attack spends a friendly ready Unit (rule 9.1), and a spent rival Unit is a valid attack target (rule 9.3.2.1). Where the rules text and your expectations differ, the rules text is right.
 
-Rules for every answer:
-- Every card fact (cost, power, RAM, colour, type, keywords, text, errata) and every rule must come from a tool result in this conversation. If no tool gave you a fact, do not state it.
-- A card's identity is its slug, never its name: several cards share a name. When find_card reports a match as ambiguous, ask which card is meant or answer for each; never pick one silently.
-- Errata override a card's printed text.
-- Cite what you used: card slugs in backticks (for example `v-streetkid`) and rule numbers (for example rule 9.2.3).
-- Deck legality, curves and similar decks come from the deck tools; pass a pasted deck list to parse_deck first.
-- Strategy, combos and matchups are judgment, not facts. Label them as judgment and base them on tool results.
-- If the tools cannot answer, say so plainly.
-- Call at most {MAX_TOOL_CALLS} tools per question. Keep the answer short.
+- Answer only from tool results in this conversation, including the ones looked up before you were asked.
+- If no tool result is relevant, say the snapshot does not cover it. Do not guess. Tournament and event policy is not in the snapshot.
+- Cite rule numbers (rule 9.3.2.1) and card slugs in backticks (`v-streetkid`).
+- A card's identity is its slug; several cards share a name. If find_card says ambiguous, ask which card or answer for each.
+- Errata override printed card text.
+- Give a pasted deck list to parse_deck first. Label strategy as judgment.
+- At most {MAX_TOOL_CALLS} tool calls per question. Keep the answer short.
 
-Card and rules data: snapshot {RULES_VERSION}. Prompt version: {ASSISTANT_PROMPT_VERSION}."""
+Snapshot {RULES_VERSION}. Prompt {ASSISTANT_PROMPT_VERSION}."""
+
+
+def default_max_tokens(enable_thinking: bool) -> int:
+    return DEFAULT_THINKING_MAX_TOKENS if enable_thinking else DEFAULT_MAX_TOKENS
+
+
+def tool_specs_sha256() -> str:
+    """Hash of the tool specs exactly as the model receives them, for run headers."""
+    canonical = json.dumps(tool_specs(), ensure_ascii=False, sort_keys=True, separators=(",", ":"))
+    return hashlib.sha256(canonical.encode("utf-8")).hexdigest()
+
 
 THINK_RE = re.compile(r"<think>(.*?)</think>", re.S)
 TOOL_CALL_RE = re.compile(r"<tool_call>(.*?)</tool_call>", re.S)
@@ -84,10 +117,14 @@ class TurnResult:
     sources: dict = field(default_factory=lambda: {k: [] for k in SOURCE_KEYS})
     elapsed_ms: float = 0.0
     error: str | None = None
+    preload: bool = False
+    auto_calls: int = 0
+    max_tokens: int = DEFAULT_MAX_TOKENS
 
     def to_dict(self) -> dict:
         return {"ok": self.ok, "answer": self.answer, "stopReason": self.stop_reason, "error": self.error,
-                "toolCalls": self.tool_calls, "sources": self.sources, "trace": self.trace,
+                "toolCalls": self.tool_calls, "autoToolCalls": self.auto_calls, "preload": self.preload,
+                "maxTokens": self.max_tokens, "sources": self.sources, "trace": self.trace,
                 "elapsedMs": self.elapsed_ms, "promptVersion": ASSISTANT_PROMPT_VERSION,
                 "rulesVersion": RULES_VERSION}
 
@@ -205,22 +242,51 @@ def build_messages(history: list[dict], user_message: str, deck: dict | None = N
 
 
 async def run_turn(history: list[dict], user_message: str, model: ChatModel, *,
-                   max_tool_calls: int = MAX_TOOL_CALLS, max_tokens: int = DEFAULT_MAX_TOKENS,
-                   enable_thinking: bool = False, deck: dict | None = None) -> TurnResult:
+                   max_tool_calls: int = MAX_TOOL_CALLS, max_tokens: int | None = None,
+                   enable_thinking: bool = DEFAULT_THINKING, deck: dict | None = None,
+                   preload: bool = DEFAULT_PRELOAD, preload_text: str | None = None,
+                   preload_k: int = DEFAULT_PRELOAD_K, preload_chars: int = DEFAULT_PRELOAD_CHARS) -> TurnResult:
     """Run one user turn to an answer, an error or the tool-call cap. ``history`` is not modified.
 
     ``deck`` is the session's loaded deck (see ``deck_context``), or None.
+    ``max_tokens`` defaults by thinking (``default_max_tokens``). ``preload``
+    runs the automatic context step on ``preload_text`` (default: the message).
     """
     started = time.monotonic()
+    max_tokens = default_max_tokens(enable_thinking) if max_tokens is None else max_tokens
     messages = build_messages(history, user_message, deck)
     specs = tool_specs()
-    turn = TurnResult(ok=False, answer="", stop_reason="")
+    turn = TurnResult(ok=False, answer="", stop_reason="", preload=preload, max_tokens=max_tokens)
     step = 0
 
     def add(entry: dict):
         nonlocal step
         step += 1
         turn.trace.append({"step": step, **entry})
+
+    def collect(sources: dict):
+        for key in SOURCE_KEYS:
+            for value in sources.get(key) or []:
+                if value not in turn.sources[key]:
+                    turn.sources[key].append(value)
+
+    if preload:
+        auto = run_preload(user_message if preload_text is None else preload_text, k=preload_k,
+                           budget=preload_chars)
+        sent = [a for a in auto if a.sent]
+        if sent:
+            messages.append({"role": "assistant", "content": "", "tool_calls": [
+                {"type": "function", "function": {"name": a.tool, "arguments": a.arguments}} for a in sent]})
+            messages.extend({"role": "tool", "content": a.content} for a in sent)
+        for a in auto:
+            turn.auto_calls += 1
+            collect(a.sources)
+            result = a.result
+            add({"kind": "tool", "auto": True, "tool": a.tool, "arguments": a.arguments,
+                 "ok": bool(result.get("ok")), "errorKind": result.get("error_kind"), "error": result.get("error"),
+                 "summary": summarize_result(result), "sources": a.sources, "link": a.link, "sent": a.sent,
+                 "contextChars": len(a.content or ""), "contextNote": a.note,
+                 "result": result.get("result") if result.get("ok") else None, "elapsedMs": a.elapsed_ms})
 
     while True:
         reply = await model.generate(messages, specs, max_tokens=max_tokens, enable_thinking=enable_thinking)
@@ -263,10 +329,7 @@ async def run_turn(history: list[dict], user_message: str, model: ChatModel, *,
             elapsed = round((time.monotonic() - tool_started) * 1000, 2)
             sources = result.get("sources") or {}
             if result.get("ok"):
-                for key in SOURCE_KEYS:
-                    for value in sources.get(key) or []:
-                        if value not in turn.sources[key]:
-                            turn.sources[key].append(value)
+                collect(sources)
             add({"kind": "tool", "tool": call.name, "arguments": call.arguments, "ok": bool(result.get("ok")),
                  "errorKind": result.get("error_kind"), "error": result.get("error"),
                  "summary": summarize_result(result), "sources": {k: list(sources.get(k) or []) for k in SOURCE_KEYS},

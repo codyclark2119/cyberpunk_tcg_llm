@@ -6,10 +6,12 @@ registry, builds a form from each tool's JSON schema, runs the tool on the
 server and shows the JSON result exactly as a model would receive it.
 
 Chat tab: ``POST /api/chat`` with ``{"session": id, "message": text,
-"thinking": bool?}`` runs one turn of ``assistant/loop.py`` against the
-configured model and returns the answer and its trace (every model step and
-tool call, its arguments, ok or error, a summary, its result, sources and
-timings). The page renders the answer through a tiny escaping markdown subset
+"thinking": bool?, "preload": bool?}`` runs one turn of ``assistant/loop.py``
+against the configured model and returns the answer and its trace (every model
+step and tool call, its arguments, ok or error, a summary, its result, sources
+and timings). The automatic context steps the loop ran before the model spoke
+(``auto: true``) open the trace, marked "auto". The settings row has a toggle
+each for thinking and the preload, defaulting to the server's settings. The page renders the answer through a tiny escaping markdown subset
 (paragraphs, lists, bold, inline code) and every other model or tool string with
 ``textContent``. Each session keeps a short history and, optionally, a deck
 loaded in the deck panel (``POST /api/deck`` runs ``parse_deck`` and, when every
@@ -75,7 +77,8 @@ from urllib.parse import urlsplit
 from games.cyberpunk.assistant import eval_store
 from games.cyberpunk.assistant.decks import public_deck_index
 from games.cyberpunk.assistant.eval_store import EvalSetError
-from games.cyberpunk.assistant.loop import ASSISTANT_PROMPT_VERSION, MAX_TOOL_CALLS, run_turn
+from games.cyberpunk.assistant.loop import (ASSISTANT_PROMPT_VERSION, DEFAULT_PRELOAD, DEFAULT_THINKING,
+                                            MAX_TOOL_CALLS, default_max_tokens, run_turn)
 from games.cyberpunk.assistant.tools import TOOLS, call_tool, cards, index_status
 from games.cyberpunk.config import REPO_ROOT
 from games.cyberpunk.prompts import RULES_VERSION
@@ -124,8 +127,8 @@ class ChatService:
     """Sessions of short history and an optional loaded deck over one model; turns run one at a time."""
 
     def __init__(self, model=None, *, max_history_messages: int = 8, max_sessions: int = 32,
-                 enable_thinking: bool = False, max_tokens: int = 1024, model_path: str | None = None,
-                 adapter_path: str | None = None):
+                 enable_thinking: bool = DEFAULT_THINKING, max_tokens: int | None = None,
+                 preload: bool = DEFAULT_PRELOAD, model_path: str | None = None, adapter_path: str | None = None):
         self.model = model
         # The model and adapter directories as given on the command line, for the Eval tab's runs.
         self.model_path = model_path
@@ -133,7 +136,8 @@ class ChatService:
         self.max_history_messages = max_history_messages
         self.max_sessions = max_sessions
         self.enable_thinking = enable_thinking
-        self.max_tokens = max_tokens
+        self.max_tokens = max_tokens  # None: by thinking (loop.default_max_tokens)
+        self.preload = preload
         self.sessions: OrderedDict[str, Session] = OrderedDict()
         self._lock: asyncio.Lock | None = None
         # Model status for the header badge: none, idle (starts on the first question), loading, ready, error.
@@ -153,9 +157,13 @@ class ChatService:
     def status(self) -> dict:
         return {"configured": self.model is not None, "label": getattr(self.model, "label", None),
                 "state": self.model_state, "lastError": self.last_error, "busy": self.busy,
-                "thinkingDefault": self.enable_thinking, "maxTokens": self.max_tokens}
+                "thinkingDefault": self.enable_thinking, "preloadDefault": self.preload,
+                "maxTokens": self.max_tokens}
 
-    async def chat(self, session: str, message: str, *, thinking: bool | None = None) -> dict:
+    async def chat(self, session: str, message: str, *, thinking: bool | None = None,
+                   preload: bool | None = None) -> dict:
+        thinking = self.enable_thinking if thinking is None else thinking
+        preload = self.preload if preload is None else preload
         if self._lock is None:
             self._lock = asyncio.Lock()
         async with self._lock:
@@ -165,9 +173,8 @@ class ChatService:
             if self.model_state in ("idle", "error"):
                 self.model_state = "loading"
             try:
-                turn = await run_turn(history, message, self.model, max_tokens=self.max_tokens,
-                                      enable_thinking=self.enable_thinking if thinking is None else thinking,
-                                      deck=record.deck)
+                turn = await run_turn(history, message, self.model, enable_thinking=thinking, preload=preload,
+                                      max_tokens=self.max_tokens or default_max_tokens(thinking), deck=record.deck)
             finally:
                 self.busy = False
             if turn.stop_reason == "model_error":
@@ -180,7 +187,7 @@ class ChatService:
                 history += [{"role": "user", "content": message}, {"role": "assistant", "content": turn.answer}]
                 record.history = history[-self.max_history_messages:]
             return {**turn.to_dict(), "session": session, "historyMessages": len(record.history),
-                    "thinking": self.enable_thinking if thinking is None else thinking,
+                    "thinking": thinking,
                     "deckInContext": deck_brief(record.deck)}
 
     def reset(self, session: str) -> dict:
@@ -271,10 +278,15 @@ def eval_action(chat: "ChatService", set_paths: list[str], runs_dir) -> dict:
         args.append({"name": "--model", "type": "fixed", "value": [chat.model_path]})
     if chat.adapter_path:
         args.append({"name": "--adapter", "type": "fixed", "value": [chat.adapter_path]})
-    args += [{"name": "--thinking", "key": "thinking", "type": "flag", "default": chat.enable_thinking,
-              "label": "Think first"},
-             {"name": "--max-tokens", "key": "max_tokens", "type": "int", "default": chat.max_tokens,
-              "label": "Max tokens per step"},
+    # Thinking and the preload are on in the scorer by default, so the argv carries only the switch-offs.
+    # The page sends "thinking" and "preload" booleans; EvalRunner turns them into these two flags.
+    # Max tokens is text-typed so an unset value is left out and the scorer picks it by thinking.
+    args += [{"name": "--no-thinking", "key": "no_thinking", "type": "flag", "default": not chat.enable_thinking,
+              "label": "Think first (off)"},
+             {"name": "--no-preload", "key": "no_preload", "type": "flag", "default": not chat.preload,
+              "label": "Preload rules and cards (off)"},
+             {"name": "--max-tokens", "key": "max_tokens", "type": "text",
+              "default": "" if chat.max_tokens is None else str(chat.max_tokens), "label": "Max tokens per step"},
              {"name": "--limit", "key": "limit", "type": "int", "default": 0, "label": "First N (0: all)"},
              {"name": "--ids", "key": "ids", "type": "text", "default": "", "label": "Only these ids"},
              {"name": "--force", "key": "force", "type": "flag", "default": False, "label": "Replace a run"},
@@ -358,7 +370,8 @@ class EvalRunner(Runner):
             raise ValueError("values must be an object")
         if not self.chat.model_path:
             raise ValueError("No model configured: restart the page with --model to run an eval.")
-        allowed = {spec.get("key") for spec in action["args"] if spec.get("key")}
+        allowed = {spec.get("key") for spec in action["args"] if spec.get("key")} - {"no_thinking", "no_preload"}
+        allowed |= {"thinking", "preload"}
         extra = sorted(set(values) - allowed)
         if extra:
             raise ValueError(f"unknown value(s): {', '.join(extra)}")
@@ -366,11 +379,14 @@ class EvalRunner(Runner):
         if not isinstance(name, str) or not eval_store.RUN_NAME_RE.match(name):
             raise ValueError("Run name must be 1-80 letters, digits, '.', '_' or '-', starting with a letter or digit.")
         clean = {"name": name}
-        for key in ("thinking", "force"):
-            if values.get(key) is not None:
-                if not isinstance(values[key], bool):
-                    raise ValueError(f"{key} must be true or false")
-                clean[key] = values[key]
+        for key in ("thinking", "preload", "force"):
+            if values.get(key) is not None and not isinstance(values[key], bool):
+                raise ValueError(f"{key} must be true or false")
+        if values.get("force") is not None:
+            clean["force"] = values["force"]
+        thinking = self.chat.enable_thinking if values.get("thinking") is None else values["thinking"]
+        preload = self.chat.preload if values.get("preload") is None else values["preload"]
+        clean["no_thinking"], clean["no_preload"] = not thinking, not preload
         for key, (low, high) in EVAL_INT_LIMITS.items():
             raw = values.get(key)
             if raw is None or raw == "":
@@ -490,17 +506,19 @@ def build_assistant_app(*, token: str | None = None, lan: bool = False, chat: Ch
             payload, session = await session_payload(request)
             if session is None:
                 return payload
-            message, thinking = payload.get("message"), payload.get("thinking")
+            message, thinking, preload = payload.get("message"), payload.get("thinking"), payload.get("preload")
             if not isinstance(message, str) or not message.strip() or len(message) > MAX_MESSAGE_CHARS:
                 return chat_refusal("invalid_arguments",
                                     f"message must be non-empty text of at most {MAX_MESSAGE_CHARS} characters.", 400)
             if thinking is not None and not isinstance(thinking, bool):
                 return chat_refusal("invalid_arguments", "thinking must be true, false or omitted.", 400)
+            if preload is not None and not isinstance(preload, bool):
+                return chat_refusal("invalid_arguments", "preload must be true, false or omitted.", 400)
             if chat.model is None:
                 return chat_refusal("no_model", NO_MODEL, 503)
             if runner.running():
                 return chat_refusal("busy", "An eval run is in progress; chat is paused until it finishes.", 409)
-            result = await chat.chat(session, message.strip(), thinking=thinking)
+            result = await chat.chat(session, message.strip(), thinking=thinking, preload=preload)
             return JSONResponse(result, status_code=200 if result["stopReason"] != "model_error" else 502)
 
         @app.post("/api/chat/reset")
@@ -531,7 +549,7 @@ def build_assistant_app(*, token: str | None = None, lan: bool = False, chat: Ch
         @app.get("/api/eval/config")
         def eval_config():
             return {"model": chat.model_path, "adapter": chat.adapter_path, "thinkingDefault": chat.enable_thinking,
-                    "maxTokens": chat.max_tokens, "actionId": action["id"], "chatBusy": chat.busy,
+                    "preloadDefault": chat.preload, "maxTokens": chat.max_tokens, "actionId": action["id"], "chatBusy": chat.busy,
                     "active": runner.active if runner.running() else None,
                     "sets": [{**s, "path": set_paths[s["name"]]} for s in sets],
                     "runsDir": _repo_relative(runs_dir), "notesDir": _repo_relative(notes_dir)}
@@ -680,6 +698,8 @@ details.trace{margin-top:6px;font-size:12px}
 details.trace>summary{cursor:pointer;color:var(--muted)}
 details.step{border-left:2px solid var(--line);padding-left:8px;margin:4px 0}
 details.step.bad{border-left-color:var(--warn)}
+details.step.auto{border-left-style:dashed;border-left-color:var(--accent)}
+details.step.auto>summary::before{content:"auto ";font-size:11px;color:var(--accent);font-weight:600}
 details.step>summary{cursor:pointer;overflow-wrap:anywhere}
 details.step pre{margin:4px 0;max-height:40vh}
 .sources{margin-top:6px;font-size:12px;display:flex;flex-wrap:wrap;gap:4px;align-items:center}
@@ -735,6 +755,7 @@ table.runs tr.pick{cursor:pointer}table.runs tr.pick:hover{background:var(--sel)
       </div>
       <div class="chatopts">
         <label class="inline"><input type="checkbox" id="thinkToggle"> think first (slower)</label>
+        <label class="inline" title="Run search_rules on the question and get_card or find_card on each card name before the model speaks"><input type="checkbox" id="preloadToggle"> look up rules and cards first</label>
         <button class="small" id="chatNew" type="button">New chat</button>
       </div>
       <div class="status" id="chatStatus"></div>
@@ -792,6 +813,7 @@ table.runs tr.pick{cursor:pointer}table.runs tr.pick:hover{background:var(--sel)
         <label>First N (0: all)<input type="number" id="evalLimit" min="0" step="1" value="0"></label>
         <label>Only these ids<input type="text" id="evalIds" placeholder="cody-quiz-01,cody-quiz-03"></label>
         <label class="inline"><input type="checkbox" id="evalThinking"> think first</label>
+        <label class="inline"><input type="checkbox" id="evalPreload"> look up rules and cards first</label>
         <label class="inline"><input type="checkbox" id="evalForce"> replace a run of this name</label>
       </div>
       <button class="go" id="evalRunBtn" type="button">Run eval</button>
@@ -870,7 +892,9 @@ function stepLine(step) {
       (step.generationTokens ?? "?") + " tokens · " +
       (step.toolCallsRequested ? "asked for " + step.toolCallsRequested + " tool call(s)" : "answered") + " · " + ms(step.elapsedMs);
   }
-  return (step.tool || "(no tool)") + " · " + (step.ok ? "ok" : (step.errorKind || "error")) + " · " +
+  const auto = step.auto ? (step.link ? "linked \u201c" + step.link.span + "\u201d · " : "") +
+    (step.sent ? "sent " + (step.contextChars || 0) + " chars · " : "not sent · ") : "";
+  return (step.tool || "(no tool)") + " · " + (step.ok ? "ok" : (step.errorKind || "error")) + " · " + auto +
     (step.summary || "") + " · " + ms(step.elapsedMs);
 }
 // Flags for an answer that did not end normally.
@@ -966,7 +990,11 @@ async function loadStatus() {
   badge.className = "badge " + m.state;
   badge.textContent = (m.label ? m.label + ": " : "") + (MODEL_TEXT[m.state] || m.state) + (m.busy && m.state === "ready" ? " (answering)" : "");
   badge.title = m.lastError ? "last error: " + m.lastError : "prompt " + data.promptVersion;
-  if (!state.statusLoaded) { $("thinkToggle").checked = !!m.thinkingDefault; state.statusLoaded = true; }
+  if (!state.statusLoaded) {
+    $("thinkToggle").checked = !!m.thinkingDefault;
+    $("preloadToggle").checked = m.preloadDefault !== false;
+    state.statusLoaded = true;
+  }
 }
 
 // Chat ------------------------------------------------------------------------------
@@ -985,7 +1013,7 @@ function jsonPre(label, value) {
 }
 
 function traceRow(step) {
-  const d = el("details", {class: step.ok ? "step" : "step bad"});
+  const d = el("details", {class: (step.ok ? "step" : "step bad") + (step.auto ? " auto" : "")});
   d.appendChild(el("summary", {}, stepLine(step)));
   if (step.kind === "model") {
     d.appendChild(jsonPre("model step", {finishReason: step.finishReason, promptTokens: step.promptTokens,
@@ -993,6 +1021,8 @@ function traceRow(step) {
     if (step.thinking) d.appendChild(jsonPre("thinking", step.thinking));
   } else {
     d.appendChild(jsonPre("arguments", step.arguments ?? {}));
+    if (step.auto) d.appendChild(jsonPre("automatic step (run before the model spoke)", {link: step.link ?? null,
+      sentToModel: !!step.sent, contextChars: step.contextChars, note: step.contextNote ?? null}));
     d.appendChild(step.ok ? jsonPre("result", step.result) : jsonPre("error", {errorKind: step.errorKind, error: step.error}));
   }
   return d;
@@ -1030,8 +1060,9 @@ function showTurn(question, data) {
   if (src) answer.appendChild(src);
   if (data.trace && data.trace.length) {
     const d = el("details", {class: "trace"});
-    d.appendChild(el("summary", {}, "Trace: " + (data.toolCalls || 0) + " tool call(s), " + ms(data.elapsedMs) +
-      (data.thinking ? ", thinking on" : "") + (data.deckInContext ? ", deck in context" : "") +
+    d.appendChild(el("summary", {}, "Trace: " + (data.autoToolCalls ? data.autoToolCalls + " auto step(s), " : "") +
+      (data.toolCalls || 0) + " tool call(s), " + ms(data.elapsedMs) +
+      (data.thinking ? ", thinking on" : "") + (data.preload ? "" : ", preload off") + (data.deckInContext ? ", deck in context" : "") +
       " · prompt " + data.promptVersion + " · snapshot " + data.rulesVersion));
     for (const step of data.trace) d.appendChild(traceRow(step));
     answer.appendChild(d);
@@ -1056,7 +1087,7 @@ async function sendChat() {
   loadStatus().catch(() => {});
   try {
     const [response, data] = await postJson("/api/chat", {session: chatSession, message: question,
-      thinking: $("thinkToggle").checked});
+      thinking: $("thinkToggle").checked, preload: $("preloadToggle").checked});
     showTurn(question, data);
     $("chatStatus").textContent = data.ok ? "" : "Refused (" + (data.error_kind || data.stopReason || response.status) + ")";
     if (data.ok) $("chatInput").value = "";
@@ -1381,8 +1412,10 @@ async function loadEval() {
   $("evalModel").textContent = config.model ? "Model: " + config.model + (config.adapter ? " + " + config.adapter : "") :
     "No model configured: restart with --model to run an eval. Sets and runs still show.";
   $("evalRunBtn").disabled = !config.model;
-  $("evalMaxTokens").value = config.maxTokens;
+  $("evalMaxTokens").value = config.maxTokens ?? "";
+  $("evalMaxTokens").placeholder = "default: 2048 thinking, 1024 not";
   $("evalThinking").checked = !!config.thinkingDefault;
+  $("evalPreload").checked = config.preloadDefault !== false;
   if (config.active) watchJob(config.active);
   if ((config.sets || []).length) await loadSet(pick.value); else $("evalSetStatus").textContent = "No multiple-choice sets in data/gold.";
   await loadRuns();
@@ -1438,10 +1471,11 @@ async function startEval() {
   if (!config) return;
   const set = (config.sets || []).find((s) => s.name === $("evalSetPick").value);
   const values = {set: set ? set.path : "", name: $("evalName").value.trim(), thinking: $("evalThinking").checked,
-    force: $("evalForce").checked, ids: $("evalIds").value.trim()};
-  const maxTokens = Number($("evalMaxTokens").value), limit = Number($("evalLimit").value || 0);
-  if (!Number.isInteger(maxTokens) || !Number.isInteger(limit)) { $("evalRunStatus").textContent = "Max tokens and First N must be whole numbers."; return; }
-  values.max_tokens = maxTokens;
+    preload: $("evalPreload").checked, force: $("evalForce").checked, ids: $("evalIds").value.trim()};
+  const rawMax = $("evalMaxTokens").value.trim();
+  const maxTokens = rawMax === "" ? null : Number(rawMax), limit = Number($("evalLimit").value || 0);
+  if ((maxTokens !== null && !Number.isInteger(maxTokens)) || !Number.isInteger(limit)) { $("evalRunStatus").textContent = "Max tokens and First N must be whole numbers."; return; }
+  if (maxTokens !== null) values.max_tokens = maxTokens;
   values.limit = limit;
   $("evalRunBtn").disabled = true;
   $("evalRunStatus").textContent = "Starting …";
@@ -1496,14 +1530,15 @@ async function loadRuns() {
   if (!data.runs || !data.runs.length) { box.className = "muted"; box.textContent = "No runs in " + data.dir + " yet."; return; }
   const table = el("table", {class: "runs"});
   const head = el("tr");
-  for (const h of ["run", "model", "thinking", "prompt", "score"]) head.appendChild(el("th", {}, h));
+  for (const h of ["run", "model", "thinking", "preload", "prompt", "score"]) head.appendChild(el("th", {}, h));
   table.appendChild(head);
   for (const run of data.runs) {
     const tr = el("tr", {class: "pick"});
     tr.appendChild(el("td", {}, run.name));
-    if (run.error) { tr.appendChild(el("td", {colspan: "4", class: "err"}, run.error)); table.appendChild(tr); continue; }
+    if (run.error) { tr.appendChild(el("td", {colspan: "5", class: "err"}, run.error)); table.appendChild(tr); continue; }
     tr.appendChild(el("td", {}, (run.model || "") + (run.adapter ? " + " + run.adapter : "")));
     tr.appendChild(el("td", {}, run.thinking ? "on" : "off"));
+    tr.appendChild(el("td", {}, run.preload ? "on" : "off"));
     tr.appendChild(el("td", {}, (run.eval_prompt_version || "") + " / " + (run.assistant_prompt_version || "")));
     tr.appendChild(el("td", {}, scoreText(run.summary)));
     tr.addEventListener("click", () => showRun(run.name).catch((err) => { $("evalRunBody").textContent = "Could not load: " + err; }));
@@ -1526,6 +1561,8 @@ async function showRun(name) {
   body.appendChild(el("h3", {}, name + ": " + scoreText(run.summary)));
   if (run.header) body.appendChild(factsList({set: run.header.set, "set sha256": run.header.set_sha256, model: run.header.model,
     adapter: run.header.adapter, thinking: String(run.header.thinking), "max tokens": run.header.max_tokens,
+    preload: run.header.preload ? "on (k " + run.header.preload_k + ", " + run.header.preload_chars + " chars)" : "off",
+    "tool specs sha256": run.header.tool_specs_sha256,
     prompts: run.header.eval_prompt_version + " / " + run.header.assistant_prompt_version, snapshot: run.header.rules_version}));
   for (const item of run.items) {
     const d = el("details", {class: "step" + (item.outcome === "wrong" || item.outcome === "unanswered" ? " bad" : "")});
@@ -1533,6 +1570,7 @@ async function showRun(name) {
     sum.appendChild(el("span", {class: "oc-" + item.outcome}, item.outcome));
     sum.appendChild(document.createTextNode(" · " + item.id + " · chose " + (item.chosen || "-") + ", key " + (item.correct || "-") +
       (item.known_incorrect_hit ? " · picked a known-incorrect option" : "") + " · tools: " + ((item.tools_called || []).join(", ") || "none") +
+      ((item.auto_tools || []).length ? " · auto: " + item.auto_tools.join(", ") : "") +
       (item.hit_tool_cap ? " · hit tool cap" : "") + (item.hit_length ? " · hit token limit" : "")));
     d.appendChild(sum);
     if (questions[item.id]) d.appendChild(el("div", {class: "qtext"}, questions[item.id]));
