@@ -300,7 +300,7 @@ def test_no_code_path_reads_the_question_beyond_the_linker():
     uses = [line.strip() for line in loop_source.splitlines() if re.search(r"\buser_message\b", line)
             and not line.strip().startswith(("async def", "def", "#"))]
     assert uses == ['return [{"role": "system", "content": system}, *history, {"role": "user", "content": user_message}]',
-                    "messages = build_messages(history, user_message, deck)",
+                    "messages = build_messages(history, user_message, deck, max_tool_calls=max_tool_calls)",
                     "auto = run_preload(user_message if preload_text is None else preload_text, k=preload_k,"], uses
     preload_source = (REPO_ROOT / "games/cyberpunk/assistant/preload.py").read_text(encoding="utf-8")
     body = preload_source[preload_source.index("def preload("):]

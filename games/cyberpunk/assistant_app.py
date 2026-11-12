@@ -46,7 +46,11 @@ its declared values, ``EvalRunner`` checks each value and builds the
 ``scripts/eval_assistant.py`` argv server-side with the page's own model
 settings (no shell), and it refuses to start while a chat turn or another job
 is running; the chat refuses while an eval job runs. Progress comes from the
-job log (the monitor's ``/api/job`` route).
+job log (the monitor's ``/api/job`` route). The form carries max tokens
+(1..``MAX_TOKENS_LIMIT``), max tool calls (1..``MAX_TOOL_CALLS_LIMIT``) and
+"resume"; a run name with an incomplete ``<name>.partial.jsonl`` is refused
+unless resume or replace is ticked, and the Runs list shows such a partial as
+incomplete.
 
 The Eval tab's Retrieval panel measures ``search_rules`` itself: two more
 allowlisted actions, "Build rules index" (``scripts/build_rules_index.py``, no
@@ -78,7 +82,8 @@ from games.cyberpunk.assistant import eval_store
 from games.cyberpunk.assistant.decks import public_deck_index
 from games.cyberpunk.assistant.eval_store import EvalSetError
 from games.cyberpunk.assistant.loop import (ASSISTANT_PROMPT_VERSION, DEFAULT_PRELOAD, DEFAULT_THINKING,
-                                            MAX_TOOL_CALLS, default_max_tokens, run_turn)
+                                            MAX_TOKENS_LIMIT, MAX_TOOL_CALLS, MAX_TOOL_CALLS_LIMIT,
+                                            default_max_tokens, run_turn)
 from games.cyberpunk.assistant.tools import TOOLS, call_tool, cards, index_status
 from games.cyberpunk.config import REPO_ROOT
 from games.cyberpunk.prompts import RULES_VERSION
@@ -259,7 +264,8 @@ def host_allowed(host_header: str | None, origin: str | None, *, lan: bool) -> b
 
 EVAL_ACTION_ID = "eval-assistant"
 EVAL_IDS_RE = re.compile(r"^[A-Za-z0-9][A-Za-z0-9._-]*(,[A-Za-z0-9][A-Za-z0-9._-]*)*$")
-EVAL_INT_LIMITS = {"max_tokens": (1, 4096), "limit": (0, 10000)}
+EVAL_INT_LIMITS = {"max_tokens": (1, MAX_TOKENS_LIMIT), "max_tool_calls": (1, MAX_TOOL_CALLS_LIMIT),
+                   "limit": (0, 10000)}
 
 
 def _repo_relative(path) -> str:
@@ -280,16 +286,20 @@ def eval_action(chat: "ChatService", set_paths: list[str], runs_dir) -> dict:
         args.append({"name": "--adapter", "type": "fixed", "value": [chat.adapter_path]})
     # Thinking and the preload are on in the scorer by default, so the argv carries only the switch-offs.
     # The page sends "thinking" and "preload" booleans; EvalRunner turns them into these two flags.
-    # Max tokens is text-typed so an unset value is left out and the scorer picks it by thinking.
+    # Max tokens and max tool calls are text-typed so an unset value is left out and the scorer picks its default.
     args += [{"name": "--no-thinking", "key": "no_thinking", "type": "flag", "default": not chat.enable_thinking,
               "label": "Think first (off)"},
              {"name": "--no-preload", "key": "no_preload", "type": "flag", "default": not chat.preload,
               "label": "Preload rules and cards (off)"},
              {"name": "--max-tokens", "key": "max_tokens", "type": "text",
               "default": "" if chat.max_tokens is None else str(chat.max_tokens), "label": "Max tokens per step"},
+             {"name": "--max-tool-calls", "key": "max_tool_calls", "type": "text", "default": "",
+              "label": "Max tool calls per question"},
              {"name": "--limit", "key": "limit", "type": "int", "default": 0, "label": "First N (0: all)"},
              {"name": "--ids", "key": "ids", "type": "text", "default": "", "label": "Only these ids"},
              {"name": "--force", "key": "force", "type": "flag", "default": False, "label": "Replace a run"},
+             {"name": "--resume", "key": "resume", "type": "flag", "default": False,
+              "label": "Resume an incomplete run"},
              {"name": "--runs-dir", "type": "fixed", "value": [str(runs_dir)]}]
     return {"id": EVAL_ACTION_ID, "label": "Score the assistant on a set", "group": "Eval",
             "cmd": "scripts/eval_assistant.py", "writes": True,
@@ -379,11 +389,12 @@ class EvalRunner(Runner):
         if not isinstance(name, str) or not eval_store.RUN_NAME_RE.match(name):
             raise ValueError("Run name must be 1-80 letters, digits, '.', '_' or '-', starting with a letter or digit.")
         clean = {"name": name}
-        for key in ("thinking", "preload", "force"):
+        for key in ("thinking", "preload", "force", "resume"):
             if values.get(key) is not None and not isinstance(values[key], bool):
                 raise ValueError(f"{key} must be true or false")
-        if values.get("force") is not None:
-            clean["force"] = values["force"]
+        for key in ("force", "resume"):
+            if values.get(key) is not None:
+                clean[key] = values[key]
         thinking = self.chat.enable_thinking if values.get("thinking") is None else values["thinking"]
         preload = self.chat.preload if values.get("preload") is None else values["preload"]
         clean["no_thinking"], clean["no_preload"] = not thinking, not preload
@@ -401,8 +412,14 @@ class EvalRunner(Runner):
             clean["ids"] = ids
         if values.get("set") not in (None, ""):
             clean["set"] = values["set"]  # checked against the action's choices by the base runner
+        if f"{name}.jsonl".endswith(eval_store.PARTIAL_SUFFIX):
+            raise ValueError("Run name must not end in '.partial': that is where an incomplete run is kept.")
         if (self.runs_dir / f"{name}.jsonl").exists() and not clean.get("force"):
             raise ValueError(f"A run named {name} exists; tick 'Replace a run' or pick another name.")
+        if (eval_store.partial_path(self.runs_dir, name).exists() and not clean.get("resume")
+                and not clean.get("force")):
+            raise ValueError(f"An incomplete run named {name} exists; tick 'Resume' to continue it with the same "
+                             "settings, 'Replace a run' to start over, or pick another name.")
         return clean
 
     def start(self, action_id: str, values: dict) -> dict:
@@ -549,7 +566,9 @@ def build_assistant_app(*, token: str | None = None, lan: bool = False, chat: Ch
         @app.get("/api/eval/config")
         def eval_config():
             return {"model": chat.model_path, "adapter": chat.adapter_path, "thinkingDefault": chat.enable_thinking,
-                    "preloadDefault": chat.preload, "maxTokens": chat.max_tokens, "actionId": action["id"], "chatBusy": chat.busy,
+                    "preloadDefault": chat.preload, "maxTokens": chat.max_tokens,
+                    "maxTokensLimit": MAX_TOKENS_LIMIT, "maxToolCalls": MAX_TOOL_CALLS,
+                    "maxToolCallsLimit": MAX_TOOL_CALLS_LIMIT, "actionId": action["id"], "chatBusy": chat.busy,
                     "active": runner.active if runner.running() else None,
                     "sets": [{**s, "path": set_paths[s["name"]]} for s in sets],
                     "runsDir": _repo_relative(runs_dir), "notesDir": _repo_relative(notes_dir)}
@@ -809,12 +828,14 @@ table.runs tr.pick{cursor:pointer}table.runs tr.pick:hover{background:var(--sel)
       <div class="muted" id="evalModel" style="font-size:12px"></div>
       <div class="evalrun">
         <label>Run name<input type="text" id="evalName" maxlength="80" placeholder="baseline-qwen3-8b"></label>
-        <label>Max tokens per step<input type="number" id="evalMaxTokens" min="1" max="4096" step="1"></label>
+        <label>Max tokens per step<input type="number" id="evalMaxTokens" min="1" max="16384" step="1"></label>
+        <label>Max tool calls per question<input type="number" id="evalMaxToolCalls" min="1" max="16" step="1"></label>
         <label>First N (0: all)<input type="number" id="evalLimit" min="0" step="1" value="0"></label>
         <label>Only these ids<input type="text" id="evalIds" placeholder="cody-quiz-01,cody-quiz-03"></label>
         <label class="inline"><input type="checkbox" id="evalThinking"> think first</label>
         <label class="inline"><input type="checkbox" id="evalPreload"> look up rules and cards first</label>
         <label class="inline"><input type="checkbox" id="evalForce"> replace a run of this name</label>
+        <label class="inline"><input type="checkbox" id="evalResume"> resume an incomplete run of this name</label>
       </div>
       <button class="go" id="evalRunBtn" type="button">Run eval</button>
       <div class="status" id="evalRunStatus"></div>
@@ -1414,6 +1435,10 @@ async function loadEval() {
   $("evalRunBtn").disabled = !config.model;
   $("evalMaxTokens").value = config.maxTokens ?? "";
   $("evalMaxTokens").placeholder = "default: 2048 thinking, 1024 not";
+  $("evalMaxTokens").max = String(config.maxTokensLimit || 16384);
+  $("evalMaxToolCalls").value = "";
+  $("evalMaxToolCalls").placeholder = "default: " + (config.maxToolCalls ?? 6);
+  $("evalMaxToolCalls").max = String(config.maxToolCallsLimit || 16);
   $("evalThinking").checked = !!config.thinkingDefault;
   $("evalPreload").checked = config.preloadDefault !== false;
   if (config.active) watchJob(config.active);
@@ -1471,11 +1496,15 @@ async function startEval() {
   if (!config) return;
   const set = (config.sets || []).find((s) => s.name === $("evalSetPick").value);
   const values = {set: set ? set.path : "", name: $("evalName").value.trim(), thinking: $("evalThinking").checked,
-    preload: $("evalPreload").checked, force: $("evalForce").checked, ids: $("evalIds").value.trim()};
-  const rawMax = $("evalMaxTokens").value.trim();
+    preload: $("evalPreload").checked, force: $("evalForce").checked, resume: $("evalResume").checked,
+    ids: $("evalIds").value.trim()};
+  const rawMax = $("evalMaxTokens").value.trim(), rawCalls = $("evalMaxToolCalls").value.trim();
   const maxTokens = rawMax === "" ? null : Number(rawMax), limit = Number($("evalLimit").value || 0);
-  if ((maxTokens !== null && !Number.isInteger(maxTokens)) || !Number.isInteger(limit)) { $("evalRunStatus").textContent = "Max tokens and First N must be whole numbers."; return; }
+  const maxToolCalls = rawCalls === "" ? null : Number(rawCalls);
+  if ((maxTokens !== null && !Number.isInteger(maxTokens)) || (maxToolCalls !== null && !Number.isInteger(maxToolCalls)) ||
+      !Number.isInteger(limit)) { $("evalRunStatus").textContent = "Max tokens, max tool calls and First N must be whole numbers."; return; }
   if (maxTokens !== null) values.max_tokens = maxTokens;
+  if (maxToolCalls !== null) values.max_tool_calls = maxToolCalls;
   values.limit = limit;
   $("evalRunBtn").disabled = true;
   $("evalRunStatus").textContent = "Starting …";
@@ -1534,13 +1563,14 @@ async function loadRuns() {
   table.appendChild(head);
   for (const run of data.runs) {
     const tr = el("tr", {class: "pick"});
-    tr.appendChild(el("td", {}, run.name));
+    tr.appendChild(el("td", {}, run.name + (run.incomplete ? " (incomplete)" : "")));
     if (run.error) { tr.appendChild(el("td", {colspan: "5", class: "err"}, run.error)); table.appendChild(tr); continue; }
     tr.appendChild(el("td", {}, (run.model || "") + (run.adapter ? " + " + run.adapter : "")));
     tr.appendChild(el("td", {}, run.thinking ? "on" : "off"));
     tr.appendChild(el("td", {}, run.preload ? "on" : "off"));
     tr.appendChild(el("td", {}, (run.eval_prompt_version || "") + " / " + (run.assistant_prompt_version || "")));
-    tr.appendChild(el("td", {}, scoreText(run.summary)));
+    tr.appendChild(el("td", {}, (run.incomplete ? "incomplete: " + ((run.summary || {}).items || 0) + " question(s) so far; " +
+      "run it again with resume to finish · " : "") + scoreText(run.summary)));
     tr.addEventListener("click", () => showRun(run.name).catch((err) => { $("evalRunBody").textContent = "Could not load: " + err; }));
     table.appendChild(tr);
   }
@@ -1558,9 +1588,12 @@ async function showRun(name) {
   const questions = {};
   if (evalState.set && run.header && run.header.set && run.header.set.endsWith("/" + evalState.set.name))
     for (const item of evalState.set.items) questions[item.id] = item.question;
-  body.appendChild(el("h3", {}, name + ": " + scoreText(run.summary)));
+  body.appendChild(el("h3", {}, name + ": " + (run.summary ? scoreText(run.summary) :
+    "incomplete, " + run.items.length + " question(s) so far (resume it to finish)")));
   if (run.header) body.appendChild(factsList({set: run.header.set, "set sha256": run.header.set_sha256, model: run.header.model,
     adapter: run.header.adapter, thinking: String(run.header.thinking), "max tokens": run.header.max_tokens,
+    "max tool calls": run.header.max_tool_calls,
+    "system prompt": run.header.system_prompt_sha256 ? "not the default (sha256 " + run.header.system_prompt_sha256 + ")" : "default",
     preload: run.header.preload ? "on (k " + run.header.preload_k + ", " + run.header.preload_chars + " chars)" : "off",
     "tool specs sha256": run.header.tool_specs_sha256,
     prompts: run.header.eval_prompt_version + " / " + run.header.assistant_prompt_version, snapshot: run.header.rules_version}));

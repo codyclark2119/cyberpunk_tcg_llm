@@ -9,7 +9,10 @@ replaced an earlier one, or an unscored question counted as wrong would all
 change the number without anyone noticing. The Eval tab starts a job that
 loads a model, so its one action must build argv server-side without a shell,
 refuse names that could read as flags, and refuse while chat or another job
-runs; its notes must never write to data/gold. Everything runs on the
+runs; its notes must never write to data/gold. A long run must survive a
+restart: a partial file per finished question, a resume that finishes it to the
+same bytes as an uninterrupted run, and a refusal when the settings differ.
+Everything runs on the
 committed snapshot with the scorer's scripted fake model: no mlx, no weights,
 no network.
 """
@@ -17,7 +20,9 @@ no network.
 from __future__ import annotations
 
 import argparse
+import asyncio
 import contextlib
+import io
 import hashlib
 import importlib.util
 import json
@@ -64,6 +69,65 @@ def tree_digest(root: Path) -> str:
 
 def run_scorer(*args: str) -> subprocess.CompletedProcess:
     return subprocess.run([sys.executable, str(SCRIPT), *args], capture_output=True, text=True, cwd=REPO_ROOT)
+
+
+def main_in_process(*args: str, model_cls=None):
+    """(exit code, stdout, stderr) of the scorer's ``main`` with ``model_cls`` standing in for ``FakeModel``.
+
+    An exception other than SystemExit (a simulated crash) propagates.
+    """
+    module = scorer()
+    original = module.FakeModel
+    module.FakeModel = model_cls or original
+    out, err = io.StringIO(), io.StringIO()
+    try:
+        with contextlib.redirect_stdout(out), contextlib.redirect_stderr(err):
+            try:
+                code = module.main(list(args))
+            except SystemExit as exc:
+                code = exc.code
+    finally:
+        module.FakeModel = original
+    return code, out.getvalue(), err.getvalue()
+
+
+def question_of(messages) -> str:
+    user = next(m["content"] for m in reversed(messages) if m["role"] == "user")
+    return user.split("Question: ", 1)[1].split("\n", 1)[0]
+
+
+def crashing_model(after: int):
+    """A FakeModel that raises when the question after the first ``after`` is put to it: a killed process."""
+    base = scorer().FakeModel
+
+    class Crashing(base):
+        asked: list = []
+
+        async def generate(self, messages, tools, **kwargs):
+            question = question_of(messages)
+            if question not in Crashing.asked:
+                Crashing.asked.append(question)
+            if len(Crashing.asked) > after:
+                raise RuntimeError("simulated crash")
+            return await base.generate(self, messages, tools, **kwargs)
+
+    return Crashing
+
+
+def counting_model():
+    """A FakeModel recording each question it was asked (class-level, since main builds its own instance)."""
+    base = scorer().FakeModel
+
+    class Counting(base):
+        asked: list = []
+
+        async def generate(self, messages, tools, **kwargs):
+            question = question_of(messages)
+            if question not in Counting.asked:
+                Counting.asked.append(question)
+            return await base.generate(self, messages, tools, **kwargs)
+
+    return Counting
 
 
 @contextlib.contextmanager
@@ -305,6 +369,170 @@ def test_question_wrapper_carries_every_choice_and_the_answer_format():
     assert "Answer:" not in loop_source and "eval-mc" not in loop_source, "the wrapper lives in the scorer"
 
 
+# Long runs: the token ceiling, the tool-call cap and crash-safe partial runs ----------------
+
+
+def test_scorer_token_ceiling_and_tool_cap_bounds():
+    from games.cyberpunk.assistant.loop import MAX_TOKENS_LIMIT, MAX_TOOL_CALLS_LIMIT
+    assert (MAX_TOKENS_LIMIT, MAX_TOOL_CALLS_LIMIT) == (16384, 16)
+    with tempfile.TemporaryDirectory() as tmp:
+        base = ["--set", str(GOLD), "--fake", "--runs-dir", tmp, "--limit", "1"]
+        for name, extra in (("t8192", ["--max-tokens", "8192"]), ("t16384", ["--max-tokens", "16384"]),
+                            ("c16", ["--max-tool-calls", "16"]), ("c1", ["--max-tool-calls", "1"])):
+            code, _, err = main_in_process(*base, "--name", name, *extra)
+            assert code == 0, (extra, err)
+        assert read_jsonl(Path(tmp) / "t8192.jsonl")[0]["max_tokens"] == 8192
+        assert read_jsonl(Path(tmp) / "c16.jsonl")[0]["max_tool_calls"] == 16
+        for extra, needle in ((["--max-tokens", "16385"], "1..16384"), (["--max-tokens", "0"], "1..16384"),
+                              (["--max-tool-calls", "0"], "1..16"), (["--max-tool-calls", "17"], "1..16"),
+                              (["--max-tool-calls", "x"], "invalid int")):
+            code, _, err = main_in_process(*base, "--name", "bad", *extra)
+            assert code == 2 and needle in err, (extra, err)
+        code, _, err = main_in_process(*base, "--name", "x.partial")
+        assert code == 2 and ".partial" in err, err
+        assert sorted(p.name for p in Path(tmp).iterdir()) == ["c1.jsonl", "c16.jsonl", "t16384.jsonl", "t8192.jsonl"]
+
+
+def test_max_tool_calls_reaches_run_turn_the_prompt_and_the_header():
+    from games.cyberpunk.assistant.loop import MAX_TOOL_CALLS, SYSTEM_PROMPT, cap_message, system_prompt
+
+    class ToolHungry:
+        """Calls search_rules forever, a new query each time, and records the system prompt it saw."""
+        label = "hungry"
+        prompts: list = []
+
+        async def generate(self, messages, tools, *, max_tokens, enable_thinking):
+            ToolHungry.prompts.append(messages[0]["content"])
+            n = sum(len(m.get("tool_calls") or []) for m in messages)
+            call = json.dumps({"name": "search_rules", "arguments": {"query": f"attack {n}", "k": 1}})
+            return {"ok": True, "text": f"<tool_call>\n{call}\n</tool_call>", "finishReason": "stop",
+                    "promptTokens": 0, "generationTokens": 0, "elapsedMs": 0}
+
+    with tempfile.TemporaryDirectory() as tmp:
+        base = ["--set", str(GOLD), "--fake", "--runs-dir", tmp, "--limit", "2", "--no-preload"]
+        for cap in (3, 10, None):
+            ToolHungry.prompts = []
+            name = f"cap{cap}"
+            code, _, err = main_in_process(*base, "--name", name, *(["--max-tool-calls", str(cap)] if cap else []),
+                                           model_cls=ToolHungry)
+            assert code == 0, err
+            rows = read_jsonl(Path(tmp) / f"{name}.jsonl")
+            header, items = rows[0], rows[1:-1]
+            effective = cap or MAX_TOOL_CALLS
+            assert header["max_tool_calls"] == effective
+            if cap is None:
+                assert "system_prompt_sha256" not in header, "a default run's header is unchanged"
+                assert set(ToolHungry.prompts) == {SYSTEM_PROMPT}
+            else:
+                assert header["system_prompt_sha256"] == hashlib.sha256(system_prompt(cap).encode()).hexdigest()
+                assert set(ToolHungry.prompts) == {system_prompt(cap)}
+                assert f"At most {cap} tool calls" in ToolHungry.prompts[0]
+            for record in items:
+                ran = [s for s in record["trace"] if s["kind"] == "tool" and s.get("errorKind") != "cap_exceeded"]
+                assert len(ran) == effective and record["stop_reason"] == "tool_cap" and record["hit_tool_cap"]
+                assert record["answer"] == cap_message(effective)
+            assert len(ToolHungry.prompts) == 2 * (effective + 1), "each question asks once more than the cap"
+
+
+def test_partial_is_written_per_row_and_the_final_file_is_unchanged_by_it():
+    module = scorer()
+    base_cls = module.FakeModel
+    seen_rows: list[int] = []
+
+    class Probe(base_cls):
+        """Before each new question, counts the rows already flushed to the partial."""
+        asked: list = []
+
+        async def generate(self, messages, tools, **kwargs):
+            question = question_of(messages)
+            if question not in Probe.asked:
+                Probe.asked.append(question)
+                seen_rows.append(len(eval_store.read_partial_rows(Path(CTX["tmp"]) / "p.partial.jsonl")))
+            return await base_cls.generate(self, messages, tools, **kwargs)
+
+    with tempfile.TemporaryDirectory() as tmp:
+        CTX["tmp"] = tmp
+        code, out, err = main_in_process("--set", str(GOLD), "--fake", "--name", "p", "--runs-dir", tmp,
+                                         "--limit", "6", model_cls=Probe)
+        assert code == 0, err
+        assert seen_rows == [1, 2, 3, 4, 5, 6], seen_rows  # the header, then one more row per finished question
+        assert not (Path(tmp) / "p.partial.jsonl").exists(), "the partial is removed once the run is final"
+        final = (Path(tmp) / "p.jsonl").read_bytes()
+        # The same run computed without any partial: header, run_items' records, summary, one atomic write.
+        rows = read_jsonl(Path(tmp) / "p.jsonl")
+        selected = eval_store.load_mc_set(GOLD)[:6]
+        with contextlib.redirect_stdout(io.StringIO()):
+            records = asyncio.run(module.run_items(base_cls(), selected, thinking=True, max_tokens=2048))
+        direct = Path(tmp) / "direct.jsonl"
+        module.write_jsonl_atomic(direct, [rows[0], *records, {"kind": "summary", **eval_store.summarize(records)}])
+        assert direct.read_bytes() == final, "the partial path must not change the final file"
+
+
+def test_a_killed_run_resumes_to_the_uninterrupted_bytes():
+    with tempfile.TemporaryDirectory() as tmp:
+        base = ["--set", str(GOLD), "--fake", "--runs-dir", tmp, "--limit", "8"]
+        assert main_in_process(*base, "--name", "ref")[0] == 0
+        reference = (Path(tmp) / "ref.jsonl").read_bytes()
+        try:
+            main_in_process(*base, "--name", "k", model_cls=crashing_model(3))
+            raise AssertionError("the simulated crash did not propagate")
+        except RuntimeError:
+            pass
+        partial = Path(tmp) / "k.partial.jsonl"
+        assert not (Path(tmp) / "k.jsonl").exists()
+        rows = eval_store.read_partial_rows(partial)
+        assert rows[0] == read_jsonl(Path(tmp) / "ref.jsonl")[0] and len(rows) == 4, len(rows)
+        assert [r["id"] for r in rows[1:]] == [f"cody-quiz-{n:02d}" for n in (1, 2, 3)]
+        # The Runs view lists it as incomplete, never as a finished run and never as a crash.
+        listed = {r["name"]: r for r in eval_store.list_runs(Path(tmp))}
+        assert listed["k.partial.jsonl"]["incomplete"] is True and "error" not in listed["k.partial.jsonl"]
+        assert listed["k.partial.jsonl"]["summary"]["items"] == 3 and "incomplete" not in listed["ref.jsonl"]
+        # Without --resume an existing partial is refused and left alone.
+        before = partial.read_bytes()
+        code, out, err = main_in_process(*base, "--name", "k")
+        assert code == 2 and "--resume" in err and "[1/" not in out and partial.read_bytes() == before, err
+        # A row torn mid-write (no newline) is dropped: that question runs again.
+        with partial.open("a", encoding="utf-8") as handle:
+            handle.write('{"kind": "item", "id": "cody-quiz-04", "cho')
+        counting = counting_model()
+        code, out, err = main_in_process(*base, "--name", "k", "--resume", model_cls=counting)
+        assert code == 0, err
+        assert "Resuming k.partial.jsonl: 3 of 8" in out and "[4/8] cody-quiz-04" in out and "[1/8]" not in out
+        gold = {i["id"]: i["question"] for i in eval_store.load_mc_set(GOLD)}
+        assert counting.asked == [gold[f"cody-quiz-{n:02d}"].split("\n", 1)[0] for n in range(4, 9)], \
+            "a resumed run asks only the questions the partial lacks"
+        assert (Path(tmp) / "k.jsonl").read_bytes() == reference, "resumed and uninterrupted runs must match"
+        assert not partial.exists()
+
+
+def test_resume_refuses_a_different_header_and_force_starts_over():
+    with tempfile.TemporaryDirectory() as tmp:
+        base = ["--set", str(GOLD), "--fake", "--runs-dir", tmp, "--limit", "5", "--name", "m"]
+        try:
+            main_in_process(*base, model_cls=crashing_model(2))
+            raise AssertionError("no crash")
+        except RuntimeError:
+            pass
+        partial = Path(tmp) / "m.partial.jsonl"
+        before = partial.read_bytes()
+        for extra, fields in ((["--max-tokens", "900"], ["max_tokens"]),
+                              (["--max-tool-calls", "10"], ["max_tool_calls", "system_prompt_sha256"]),
+                              (["--no-preload"], ["preload", "preload_k", "preload_chars"]),
+                              (["--limit", "4"], ["items_run", "limit"])):
+            counting = counting_model()
+            code, out, err = main_in_process(*base, *extra, "--resume", model_cls=counting)  # the last --limit wins
+            assert code == 2 and "header differs" in err, (extra, err)
+            named = err.split("header differs from this run's in: ", 1)[1]
+            assert [part.split(" (", 1)[0] for part in named.strip().split("; ")] == fields, (extra, named)
+            assert counting.asked == [] and "/5]" not in out, out
+            assert partial.read_bytes() == before, "a refused resume leaves the partial alone"
+        # --force without --resume discards the partial and runs everything again.
+        counting = counting_model()
+        code, out, err = main_in_process(*base, "--force", model_cls=counting)
+        assert code == 0 and len(counting.asked) == 5 and "[1/5]" in out, err
+        assert not partial.exists() and len(read_jsonl(Path(tmp) / "m.jsonl")) == 7
+
+
 # The Eval tab: the Run action ---------------------------------------------------------------
 
 
@@ -397,6 +625,46 @@ def test_run_action_builds_argv_without_a_shell_and_checks_values():
             assert "No model configured" in str(exc)
 
 
+def test_eval_form_passes_max_tool_calls_and_resume_and_checks_them():
+    with eval_dirs() as root:
+        client, chat, app = app_client(root)
+        runner: EvalRunner = app.state.runner
+        action = runner.actions_by_id["eval-assistant"]
+        keys = {spec.get("key") for spec in action["args"]}
+        assert {"max_tool_calls", "resume", "max_tokens"} <= keys
+        cmd = runner.build_cmd(action, {"name": "big-1", "max_tokens": 8192, "max_tool_calls": 10, "resume": True})
+        tail = cmd[cmd.index("--model") + 2:]
+        assert tail == ["--max-tokens", "8192", "--max-tool-calls", "10", "--limit", "0", "--resume",
+                        "--runs-dir", str(root / "runs")], tail
+        default = runner.build_cmd(action, {"name": "big-2"})
+        assert "--max-tool-calls" not in default and "--resume" not in default, "unset: the scorer's defaults"
+        assert "--max-tokens" in runner.build_cmd(action, {"name": "big-3", "max_tokens": 16384})
+        for values in ({"name": "ok", "max_tool_calls": 0}, {"name": "ok", "max_tool_calls": 17},
+                       {"name": "ok", "max_tool_calls": "10"}, {"name": "ok", "max_tool_calls": True},
+                       {"name": "ok", "max_tool_calls": 2.5}, {"name": "ok", "max_tokens": 16385},
+                       {"name": "ok", "resume": "yes"}, {"name": "ok.partial"}):
+            try:
+                runner.build_cmd(action, values)
+                raise AssertionError(f"accepted {values}")
+            except ValueError:
+                pass
+        # An incomplete run of that name: refused unless resumed or replaced.
+        (root / "runs" / "half.partial.jsonl").write_text('{"kind": "header"}\n')
+        for values, ok in (({"name": "half"}, False), ({"name": "half", "resume": True}, True),
+                           ({"name": "half", "force": True}, True), ({"name": "half", "resume": False}, False)):
+            try:
+                runner.build_cmd(action, values)
+                assert ok, values
+            except ValueError as exc:
+                assert not ok and "incomplete run" in str(exc), (values, exc)
+        with client:
+            config = client.get("/api/eval/config", headers=LOCAL).json()
+            assert (config["maxTokensLimit"], config["maxToolCalls"], config["maxToolCallsLimit"]) == (16384, 6, 16)
+            refused = client.post("/api/run/eval-assistant", headers=LOCAL,
+                                  json={"values": {"name": "ok", "max_tool_calls": 99}})
+            assert refused.status_code == 400 and "max_tool_calls" in refused.json()["error"]
+
+
 # The Eval tab: routes, notes and the page --------------------------------------------------
 
 
@@ -406,6 +674,7 @@ def test_eval_routes_reject_a_foreign_host():
         routes = (("get", "/api/eval/config", None), ("get", f"/api/eval/sets/{GOLD.name}", None),
                   ("post", "/api/eval/notes", {"set": GOLD.name, "id": "cody-quiz-01", "note": "x"}),
                   ("get", "/api/eval/runs", None), ("get", "/api/eval/runs/none.jsonl", None),
+                  ("get", "/api/eval/runs/none.partial.jsonl", None),
                   ("post", "/api/run/eval-assistant", {"values": {"name": "x"}}), ("get", "/api/job/none", None),
                   ("get", "/api/history", None), ("get", "/api/actions", None))
         with client:
@@ -424,6 +693,14 @@ def test_set_and_runs_views():
         assert run_scorer("--set", str(root / "gold" / GOLD.name), "--fake", "--name", "smoke",
                           "--runs-dir", str(root / "runs"), "--limit", "5").returncode == 0
         (root / "runs" / "broken.jsonl").write_text('{"kind": "item"}\n')
+        try:
+            main_in_process("--set", str(root / "gold" / GOLD.name), "--fake", "--name", "half",
+                            "--runs-dir", str(root / "runs"), "--limit", "5", model_cls=crashing_model(2))
+            raise AssertionError("no crash")
+        except RuntimeError:
+            pass
+        with (root / "runs" / "half.partial.jsonl").open("a") as handle:
+            handle.write('{"kind": "item", "id": "cody-qu')  # killed mid-row
         client, _, _ = app_client(root)
         with client:
             config = client.get("/api/eval/config", headers=LOCAL).json()
@@ -434,8 +711,13 @@ def test_set_and_runs_views():
             assert client.get("/api/eval/sets/..%2Fx.jsonl", headers=LOCAL).status_code in (400, 404)
             assert client.get("/api/eval/sets/missing.jsonl", headers=LOCAL).status_code == 404
             runs = client.get("/api/eval/runs", headers=LOCAL).json()["runs"]
-            assert [r["name"] for r in runs] == ["broken.jsonl", "smoke.jsonl"]
-            assert "error" in runs[0] and runs[1]["summary"]["items"] == 5 and runs[1]["model"] == "fake"
+            assert [r["name"] for r in runs] == ["broken.jsonl", "half.partial.jsonl", "smoke.jsonl"]
+            assert "error" in runs[0] and runs[2]["summary"]["items"] == 5 and runs[2]["model"] == "fake"
+            half = runs[1]
+            assert half["incomplete"] is True and "error" not in half and half["summary"]["items"] == 2, half
+            assert half["model"] == "fake" and "incomplete" not in runs[2]
+            partial_rows = client.get("/api/eval/runs/half.partial.jsonl", headers=LOCAL).json()["rows"]
+            assert [r["kind"] for r in partial_rows] == ["header", "item", "item"]
             rows = client.get("/api/eval/runs/smoke.jsonl", headers=LOCAL).json()["rows"]
             assert rows[0]["kind"] == "header" and len(rows) == 7
             assert client.get("/api/eval/runs/nope.jsonl", headers=LOCAL).status_code == 404
@@ -504,12 +786,16 @@ def test_eval_tab_script_parses_and_escapes():
                           input=script, capture_output=True, text=True)
     assert proc.returncode == 0, proc.stderr[:600]
     for needle in ('id="tabEval" hidden', 'id="tabBtnEval"', 'id="evalSetPick"', 'id="evalRunBtn"', 'id="evalRuns"',
-                   'id="evalLog"', 'id="evalName"'):
+                   'id="evalLog"', 'id="evalName"', 'id="evalMaxToolCalls"', 'id="evalResume"',
+                   'id="evalMaxTokens" min="1" max="16384"'):
         assert needle in ASSISTANT_HTML, needle
     eval_part = script[script.index("// Eval tab"):script.index("// Wiring")]
     for banned in ("innerHTML", "outerHTML", "insertAdjacentHTML", "document.write", "eval("):
         assert banned not in eval_part, banned
     assert '"/api/run/" + encodeURIComponent(config.actionId)' in eval_part
+    for needle in ("values.max_tool_calls = maxToolCalls", 'resume: $("evalResume").checked', "run.incomplete",
+                   "run.header.max_tool_calls", "run.header.system_prompt_sha256"):
+        assert needle in eval_part, needle
     pure = script[script.index("// pure:start"):script.index("// pure:end")]
     program = (f'"use strict";\n{pure}\nprocess.stdout.write(JSON.stringify(['
                'jobProgress(["Scoring", "[1/40] a", "noise [9/9]", "[2/40] b", "Score: 1/2"]), jobProgress([]),'

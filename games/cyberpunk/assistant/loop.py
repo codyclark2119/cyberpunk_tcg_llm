@@ -32,10 +32,21 @@ answer-format instructions.
 Thinking is on by default (``DEFAULT_THINKING``) with a larger generation limit
 (``DEFAULT_THINKING_MAX_TOKENS``, 2048) than without (1024). A step cut off
 inside ``<think>`` has no answer at all, and a thought over several retrieved
-rules plus the answer can plausibly pass 1024 tokens; 2048 doubles the room
-while staying at half the worker's 4096 cap per step. That is an estimate, not
-a measurement: the scorer's ``hit_length`` flag on the Mac runs will show
-whether it is enough.
+rules plus the answer can plausibly pass 1024 tokens; 2048 doubles the room.
+That is an estimate, not a measurement: the scorer's ``hit_length`` flag on the
+Mac runs will show whether it is enough.
+
+``MAX_TOKENS_LIMIT`` (16384) is the ceiling a caller may ask for per step, the
+same number as the chat worker's own ``MAX_TOKENS_LIMIT``. It was 4096 until
+2026-11-12, when larger models (Qwen3-Next-80B, Qwen3.8-27B) thought past 4096
+tokens on quiz questions and an 8192 run was refused. 16384 leaves room to try
+8192 and one doubling past it on the Mac's memory; it is a ceiling, not a
+default, so the defaults above (and every run measured with them) are unchanged.
+
+``max_tool_calls`` (default ``MAX_TOOL_CALLS``) is stated to the model in the
+system prompt and in the cap message, so a run with another cap tells the model
+the cap it actually has. At the default the rendered prompt is exactly
+``SYSTEM_PROMPT``; ``system_prompt(n)`` renders it for another cap.
 
 A deck the user loaded in the page's deck panel reaches the model as data, not
 as a question: ``build_messages`` appends a labelled ``<loaded_deck>`` block to
@@ -60,13 +71,18 @@ from games.cyberpunk.prompts import RULES_VERSION
 
 ASSISTANT_PROMPT_VERSION = "assistant-chat-v3"
 MAX_TOOL_CALLS = 6
+MAX_TOOL_CALLS_LIMIT = 16           # the most a run may allow (scripts/eval_assistant.py --max-tool-calls)
+MAX_TOKENS_LIMIT = 16384            # per model step; same as scripts/mlx_chat_worker.py (see the docstring)
 DEFAULT_MAX_TOKENS = 1024           # per model step, thinking off
 DEFAULT_THINKING_MAX_TOKENS = 2048  # per model step, thinking on (see the module docstring)
 DEFAULT_THINKING = True
 DEFAULT_PRELOAD = True
 SOURCE_KEYS = ("card_slugs", "rule_ids", "errata_ids", "deck_ids", "chunk_ids")
 
-SYSTEM_PROMPT = f"""You answer questions about Cyberpunk TCG, a card game that launched in 2026 and is in open beta. You know nothing true about it: anything you seem to remember is wrong or invented.
+
+def system_prompt(max_tool_calls: int = MAX_TOOL_CALLS) -> str:
+    """The system prompt stating ``max_tool_calls``; at the default it is exactly ``SYSTEM_PROMPT``."""
+    return f"""You answer questions about Cyberpunk TCG, a card game that launched in 2026 and is in open beta. You know nothing true about it: anything you seem to remember is wrong or invented.
 Warning: some terms here are the reverse of other card games. In these rules an attack spends a friendly ready Unit (rule 9.1), and a spent rival Unit is a valid attack target (rule 9.3.2.1). Where the rules text and your expectations differ, the rules text is right.
 
 - Answer only from tool results in this conversation, including the ones looked up before you were asked.
@@ -75,9 +91,12 @@ Warning: some terms here are the reverse of other card games. In these rules an 
 - A card's identity is its slug; several cards share a name. If find_card says ambiguous, ask which card or answer for each.
 - Errata override printed card text.
 - Give a pasted deck list to parse_deck first. Label strategy as judgment.
-- At most {MAX_TOOL_CALLS} tool calls per question. Keep the answer short.
+- At most {max_tool_calls} tool calls per question. Keep the answer short.
 
 Snapshot {RULES_VERSION}. Prompt {ASSISTANT_PROMPT_VERSION}."""
+
+
+SYSTEM_PROMPT = system_prompt(MAX_TOOL_CALLS)
 
 
 def default_max_tokens(enable_thinking: bool) -> int:
@@ -97,8 +116,14 @@ XML_PARAMETER_OPEN_RE = re.compile(r"<parameter=([^<>\n]*)>")
 XML_FUNCTION_CLOSE, XML_PARAMETER_CLOSE = "</function>", "</parameter>"
 JSON_CALL_HINT = "<tool_call>{\"name\": <tool>, \"arguments\": {...}}</tool_call>"
 XML_CALL_HINT = "<tool_call>\n<function=<tool>>\n<parameter=<name>>\n<value>\n</parameter>\n</function>\n</tool_call>"
-CAP_MESSAGE = (f"Stopped: the model asked for more than {MAX_TOOL_CALLS} tool calls for one question, so this turn "
-               "has no answer. The tool results so far are in the trace. Try a narrower question.")
+
+
+def cap_message(max_tool_calls: int = MAX_TOOL_CALLS) -> str:
+    return (f"Stopped: the model asked for more than {max_tool_calls} tool calls for one question, so this turn "
+            "has no answer. The tool results so far are in the trace. Try a narrower question.")
+
+
+CAP_MESSAGE = cap_message(MAX_TOOL_CALLS)
 EMPTY_MESSAGE = "The model returned no answer text."
 
 
@@ -332,8 +357,10 @@ def deck_context(deck: dict) -> str:
             "still come from get_card.")
 
 
-def build_messages(history: list[dict], user_message: str, deck: dict | None = None) -> list[dict]:
-    system = SYSTEM_PROMPT if deck is None else f"{SYSTEM_PROMPT}\n\n{deck_context(deck)}"
+def build_messages(history: list[dict], user_message: str, deck: dict | None = None, *,
+                   max_tool_calls: int = MAX_TOOL_CALLS) -> list[dict]:
+    prompt = system_prompt(max_tool_calls)
+    system = prompt if deck is None else f"{prompt}\n\n{deck_context(deck)}"
     return [{"role": "system", "content": system}, *history, {"role": "user", "content": user_message}]
 
 
@@ -350,7 +377,7 @@ async def run_turn(history: list[dict], user_message: str, model: ChatModel, *,
     """
     started = time.monotonic()
     max_tokens = default_max_tokens(enable_thinking) if max_tokens is None else max_tokens
-    messages = build_messages(history, user_message, deck)
+    messages = build_messages(history, user_message, deck, max_tool_calls=max_tool_calls)
     specs = tool_specs()
     turn = TurnResult(ok=False, answer="", stop_reason="", preload=preload, max_tokens=max_tokens)
     step = 0
@@ -410,7 +437,7 @@ async def run_turn(history: list[dict], user_message: str, model: ChatModel, *,
                 add({"kind": "tool", "tool": call.name, "arguments": call.arguments, "ok": False,
                      "errorKind": "cap_exceeded", "summary": "not run: tool-call cap reached",
                      "sources": {k: [] for k in SOURCE_KEYS}, "elapsedMs": 0.0})
-            turn.stop_reason, turn.answer = "tool_cap", CAP_MESSAGE
+            turn.stop_reason, turn.answer = "tool_cap", cap_message(max_tool_calls)
             break
         messages.append(_assistant_message(content, calls))
         for call in calls:

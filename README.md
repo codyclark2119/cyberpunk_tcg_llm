@@ -369,7 +369,7 @@ On the Mac (not yet run against a real model; the Linux tests use a scripted fak
 
 ```bash
 python scripts/assistant_local.py --model models/qwen3-8b-4bit   # then open http://127.0.0.1:8767/
-# optional: --adapter <dir>, --no-thinking, --no-preload, --max-tokens N
+# optional: --adapter <dir>, --no-thinking, --no-preload, --max-tokens N (1..16384)
 python scripts/test_assistant_loop.py    # loop, worker parts, chat route; fake model, no mlx
 ```
 
@@ -418,6 +418,35 @@ The baseline on the Mac (not yet run):
 ```bash
 python scripts/eval_assistant.py --set data/gold/quiz_mc_2026-11-12.jsonl --model models/qwen3-8b-4bit --name baseline-qwen3-8b --no-preload --no-thinking
 python scripts/test_assistant_eval.py    # gold set, letter parser, scorer (--fake), Eval tab; needs node
+```
+
+**Long runs.** Larger models think longer and call more tools than the 8B: a 27B quiz
+run hit the 6-call cap on 6 questions and the 4,096-token limit on 2, then was lost at
+question 36 when the process restarted. So:
+
+- `--max-tokens` accepts 1..16384 per model step (the scorer, `assistant_local.py`, the
+  Eval form and the chat worker share the ceiling, `loop.MAX_TOKENS_LIMIT`). The
+  defaults are unchanged (2,048 thinking, 1,024 not).
+- `--max-tool-calls N` (1..16, default 6) sets the per-question cap passed to
+  `run_turn`. The system prompt states the cap, so the header records the effective
+  `max_tool_calls` and, when it is not 6, `system_prompt_sha256` (a default run's
+  header is unchanged).
+- Each finished question is appended to `eval/runs/<name>.partial.jsonl` (header first,
+  flushed per row). At the end the final `<name>.jsonl` is written atomically, the same
+  bytes an uninterrupted run writes, and the partial is removed. If a run stops, the
+  same command with `--resume` skips the ids already in the partial and finishes it;
+  a partial whose header differs (set sha256, model, adapter, thinking, preload, token
+  and tool-call limits, prompt versions, tool specs, ids or limit) is refused with the
+  differing fields named. Without `--resume` an existing partial is refused unless
+  `--force`, which starts over. The Eval form has the same two fields and a resume
+  box, and its Runs list shows a partial as incomplete.
+
+The next runs on the Mac (not yet run):
+
+```bash
+python scripts/eval_assistant.py --set data/gold/quiz_mc_2026-11-12.jsonl --model models/qwen3-next-80b-a3b-thinking-4bit --name v3-both-80b-8192 --max-tokens 8192
+python scripts/eval_assistant.py --set data/gold/quiz_mc_2026-11-12.jsonl --model models/qwen3.8-27b-8bit --name v3-both-27b-8192-c10 --max-tokens 8192 --max-tool-calls 10
+# if either stops part-way, run the same command again with --resume
 ```
 
 ### Rules retrieval

@@ -26,11 +26,32 @@ records preload, thinking, the effective ``max_tokens``, both prompt versions
 and a hash of the tool specs. ``tools_called`` lists the tools the model chose;
 the automatic ones are in ``auto_tools``.
 
+``--max-tokens`` may be 1..16384 (``loop.MAX_TOKENS_LIMIT``, the chat worker's
+ceiling too): larger models think past 4096 tokens, so the ceiling was raised on
+2026-11-12 while the defaults stayed. ``--max-tool-calls`` (1..16, default
+``MAX_TOOL_CALLS``) goes to ``run_turn`` and into the system prompt, which states
+the cap; the header records the effective cap, and when it is not the default
+the rendered prompt differs too, so the header then also carries
+``system_prompt_sha256``. A default run's header is unchanged.
+
+A run is crash-safe. Each finished question is appended to
+``<runs-dir>/<name>.partial.jsonl`` (the header first, flushed and synced per
+row); at the end the final ``<name>.jsonl`` is written atomically, byte for byte
+what an uninterrupted run writes, and the partial is removed. ``--resume``
+continues a partial whose header equals this run's (set and its sha256, model,
+adapter, settings, prompt versions, tool specs): the ids already in it are
+skipped and their rows kept. A header that differs is a hard error naming the
+fields. Without ``--resume`` an existing partial is refused unless ``--force``,
+which starts over.
+
 The set is eval-only: never train on it.
 
 Usage:
     python scripts/eval_assistant.py --set data/gold/quiz_mc_2026-11-12.jsonl \\
         --model models/qwen3-8b-4bit --name baseline-qwen3-8b --no-preload --no-thinking
+    python scripts/eval_assistant.py --set data/gold/quiz_mc_2026-11-12.jsonl \\
+        --model models/qwen3.8-27b-8bit --name v3-both-27b-8192-c10 --max-tokens 8192 --max-tool-calls 10
+    python scripts/eval_assistant.py ... --resume   # the same command again continues a stopped run
     python scripts/eval_assistant.py --set data/gold/quiz_mc_2026-11-12.jsonl --fake --name smoke \\
         --runs-dir /tmp/runs        # scripted fake model, for tests only
 """
@@ -41,6 +62,7 @@ import argparse
 import asyncio
 import hashlib
 import json
+import os
 import re
 import sys
 from pathlib import Path
@@ -48,10 +70,12 @@ from pathlib import Path
 REPO_ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(REPO_ROOT))
 
-from games.cyberpunk.assistant.eval_store import (RUN_NAME_RE, RUNS_DIR, EvalSetError, load_mc_set,  # noqa: E402
+from games.cyberpunk.assistant.eval_store import (PARTIAL_SUFFIX, RUN_NAME_RE, RUNS_DIR,  # noqa: E402
+                                                  EvalSetError, load_mc_set, partial_path, read_partial_rows,
                                                   summarize)
 from games.cyberpunk.assistant.loop import (ASSISTANT_PROMPT_VERSION, DEFAULT_PRELOAD,  # noqa: E402
-                                            DEFAULT_THINKING, MAX_TOOL_CALLS, default_max_tokens, run_turn,
+                                            DEFAULT_THINKING, MAX_TOKENS_LIMIT, MAX_TOOL_CALLS,
+                                            MAX_TOOL_CALLS_LIMIT, default_max_tokens, run_turn, system_prompt,
                                             tool_specs_sha256)
 from games.cyberpunk.assistant.preload import DEFAULT_PRELOAD_CHARS, DEFAULT_PRELOAD_K  # noqa: E402
 from games.cyberpunk.prompts import RULES_VERSION  # noqa: E402
@@ -164,27 +188,65 @@ def header_row(args, set_path: Path, items: list[dict], selected: list[dict]) ->
         shown = str(set_path.resolve().relative_to(REPO_ROOT))
     except ValueError:
         shown = str(set_path)
-    return {"kind": "header", "scorer_version": SCORER_VERSION, "eval_prompt_version": EVAL_PROMPT_VERSION,
+    header = {"kind": "header", "scorer_version": SCORER_VERSION, "eval_prompt_version": EVAL_PROMPT_VERSION,
             "assistant_prompt_version": ASSISTANT_PROMPT_VERSION, "rules_version": RULES_VERSION,
             "set": shown, "set_sha256": file_sha256(set_path), "set_items": len(items),
             "items_run": len(selected), "ids": args.ids, "limit": args.limit,
             "model": "fake" if args.fake else args.model, "adapter": args.adapter, "fake": bool(args.fake),
-            "thinking": bool(args.thinking), "max_tokens": args.max_tokens, "max_tool_calls": MAX_TOOL_CALLS,
+            "thinking": bool(args.thinking), "max_tokens": args.max_tokens, "max_tool_calls": args.max_tool_calls,
             "preload": bool(args.preload), "preload_k": args.preload_k if args.preload else None,
             "preload_chars": args.preload_chars if args.preload else None,
             "tool_specs_sha256": tool_specs_sha256()}
+    if args.max_tool_calls != MAX_TOOL_CALLS:
+        # The prompt states the cap, so it is not the versioned default; say so (absent at the default, so a
+        # default run's header is byte-identical to the runs made before the flag existed).
+        header["system_prompt_sha256"] = hashlib.sha256(system_prompt(args.max_tool_calls).encode("utf-8")).hexdigest()
+    return header
+
+
+def resume_problem(rows: list[dict], header: dict, selected: list[dict]) -> str | None:
+    """Why a partial's rows cannot be resumed by a run with ``header``, or None."""
+    if not rows or not isinstance(rows[0], dict) or rows[0].get("kind") != "header":
+        return "its first row is not a run header"
+    theirs, ours = rows[0], json.loads(json.dumps(header, ensure_ascii=False))
+    differ = [k for k in [*ours, *(k for k in theirs if k not in ours)] if theirs.get(k, "<absent>") != ours.get(k)]
+    if differ:
+        return "its header differs from this run's in: " + "; ".join(
+            f"{k} (partial {json.dumps(theirs.get(k))}, now {json.dumps(ours.get(k))})" for k in differ)
+    wanted, seen = {i["id"] for i in selected}, set()
+    for row in rows[1:]:
+        if not isinstance(row, dict) or row.get("kind") != "item" or row.get("id") not in wanted or row["id"] in seen:
+            return "it holds a row that is not one of this run's questions, or a question twice"
+        seen.add(row["id"])
+    return None
+
+
+def append_row(handle, row: dict) -> None:
+    """One row of a partial run, in the same serialization as ``write_jsonl_atomic``, flushed and synced."""
+    handle.write(json.dumps(row, ensure_ascii=False) + "\n")
+    handle.flush()
+    os.fsync(handle.fileno())
 
 
 async def run_items(model, selected: list[dict], *, thinking: bool, max_tokens: int, preload: bool = DEFAULT_PRELOAD,
-                    preload_k: int = DEFAULT_PRELOAD_K, preload_chars: int = DEFAULT_PRELOAD_CHARS) -> list[dict]:
+                    preload_k: int = DEFAULT_PRELOAD_K, preload_chars: int = DEFAULT_PRELOAD_CHARS,
+                    max_tool_calls: int = MAX_TOOL_CALLS, on_record=None, done: int = 0,
+                    total: int | None = None) -> list[dict]:
+    """Records for ``selected``, in order; ``on_record(record)`` runs as each one finishes.
+
+    ``done`` and ``total`` only number the progress lines, so a resumed run counts on from where it stopped.
+    """
     records = []
-    for n, item in enumerate(selected, 1):
+    total = len(selected) if total is None else total
+    for n, item in enumerate(selected, done + 1):
         turn = await run_turn([], question_message(item), model, max_tokens=max_tokens, enable_thinking=thinking,
                               preload=preload, preload_text=preload_text(item), preload_k=preload_k,
-                              preload_chars=preload_chars)
+                              preload_chars=preload_chars, max_tool_calls=max_tool_calls)
         record = item_record(item, turn)
         records.append(record)
-        print(f"[{n}/{len(selected)}] {item['id']}: chose {record['chosen'] or '-'}, key {record['correct'] or '-'}"
+        if on_record is not None:
+            on_record(record)
+        print(f"[{n}/{total}] {item['id']}: chose {record['chosen'] or '-'}, key {record['correct'] or '-'}"
               f" -> {record['outcome']} ({len(record['tools_called'])} tool call(s), {turn.stop_reason})", flush=True)
     return records
 
@@ -210,7 +272,10 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--thinking", action=argparse.BooleanOptionalAction, default=DEFAULT_THINKING,
                         help="let Qwen3 think before answering (default on; --no-thinking to compare)")
     parser.add_argument("--max-tokens", type=int, default=None,
-                        help="generation limit per model step (default 2048 thinking, 1024 not)")
+                        help=f"generation limit per model step, 1..{MAX_TOKENS_LIMIT} "
+                             "(default 2048 thinking, 1024 not)")
+    parser.add_argument("--max-tool-calls", type=int, default=MAX_TOOL_CALLS,
+                        help=f"model tool calls per question, 1..{MAX_TOOL_CALLS_LIMIT} (default {MAX_TOOL_CALLS})")
     parser.add_argument("--preload", action=argparse.BooleanOptionalAction, default=DEFAULT_PRELOAD,
                         help="run search_rules and card linking before the model speaks (default on)")
     parser.add_argument("--preload-k", type=int, default=DEFAULT_PRELOAD_K, help="rules passages preloaded (1..20)")
@@ -220,7 +285,10 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--ids", help="comma-separated item ids to run")
     parser.add_argument("--name", required=True, help="run name; writes <runs-dir>/<name>.jsonl")
     parser.add_argument("--runs-dir", default=str(RUNS_DIR), help="where runs go (default eval/runs)")
-    parser.add_argument("--force", action="store_true", help="replace an existing run of the same name")
+    parser.add_argument("--force", action="store_true",
+                        help="replace an existing run of the same name, or discard its unfinished partial")
+    parser.add_argument("--resume", action="store_true",
+                        help="continue <name>.partial.jsonl from a stopped run with the same settings")
     args = parser.parse_args(argv)
     if bool(args.fake) == bool(args.model):
         parser.error("give exactly one of --model or --fake")
@@ -228,10 +296,14 @@ def main(argv: list[str] | None = None) -> int:
         parser.error("--adapter needs --model")
     if not RUN_NAME_RE.match(args.name):
         parser.error("--name must be 1-80 letters, digits, '.', '_' or '-', starting with a letter or digit")
+    if f"{args.name}.jsonl".endswith(PARTIAL_SUFFIX):
+        parser.error("--name must not end in '.partial': that is where an unfinished run is kept")
     if args.max_tokens is None:
         args.max_tokens = default_max_tokens(args.thinking)
-    if not 1 <= args.max_tokens <= 4096:
-        parser.error("--max-tokens must be 1..4096")
+    if not 1 <= args.max_tokens <= MAX_TOKENS_LIMIT:
+        parser.error(f"--max-tokens must be 1..{MAX_TOKENS_LIMIT}")
+    if not 1 <= args.max_tool_calls <= MAX_TOOL_CALLS_LIMIT:
+        parser.error(f"--max-tool-calls must be 1..{MAX_TOOL_CALLS_LIMIT}")
     if not 1 <= args.preload_k <= 20:
         parser.error("--preload-k must be 1..20")
     if not 0 <= args.preload_chars <= 100000:
@@ -252,6 +324,23 @@ def main(argv: list[str] | None = None) -> int:
         selected = select(items, args.ids, args.limit)
     except EvalSetError as exc:
         parser.error(str(exc))
+    header = header_row(args, set_path, items, selected)
+    partial = partial_path(runs_dir, args.name)
+    done: dict[str, dict] = {}
+    if partial.exists():
+        if args.resume:
+            try:
+                rows = read_partial_rows(partial)
+            except (OSError, ValueError) as exc:
+                parser.error(f"cannot resume {partial}: unreadable: {exc}")
+            problem = resume_problem(rows, header, selected)
+            if problem:
+                parser.error(f"cannot resume {partial}: {problem}")
+            done = {row["id"]: row for row in rows[1:]}
+        elif not args.force:
+            parser.error(f"{partial} exists from an unfinished run; pass --resume to continue it "
+                         "or --force to start over")
+    remaining = [item for item in selected if item["id"] not in done]
     if args.fake:
         model = FakeModel()
     else:
@@ -263,24 +352,37 @@ def main(argv: list[str] | None = None) -> int:
     print(f"Scoring {len(selected)} of {len(items)} item(s) from {set_path.name} with {model.label} "
           f"(thinking {'on' if args.thinking else 'off'}, preload {'on' if args.preload else 'off'}, "
           f"max tokens {args.max_tokens}, prompt {EVAL_PROMPT_VERSION}) -> {out}", flush=True)
+    if args.max_tool_calls != MAX_TOOL_CALLS:
+        print(f"Tool-call cap {args.max_tool_calls} (default {MAX_TOOL_CALLS}): the system prompt states it, so "
+              f"the header records system_prompt_sha256.", flush=True)
+    if done:
+        print(f"Resuming {partial.name}: {len(done)} of {len(selected)} item(s) already done.", flush=True)
+    # The partial is rewritten whole (header and the rows kept), then appended to row by row.
+    write_jsonl_atomic(partial, [header, *(done[i["id"]] for i in selected if i["id"] in done)])
 
     async def go():
         try:
-            return await run_items(model, selected, thinking=args.thinking, max_tokens=args.max_tokens,
-                                   preload=args.preload, preload_k=args.preload_k,
-                                   preload_chars=args.preload_chars)
+            with partial.open("a", encoding="utf-8") as handle:
+                return await run_items(model, remaining, thinking=args.thinking, max_tokens=args.max_tokens,
+                                       preload=args.preload, preload_k=args.preload_k,
+                                       preload_chars=args.preload_chars, max_tool_calls=args.max_tool_calls,
+                                       on_record=lambda record: append_row(handle, record), done=len(done),
+                                       total=len(selected))
         finally:
             close = getattr(model, "close", None)
             if close is not None:
                 await close()
 
-    records = asyncio.run(go())
+    fresh = {record["id"]: record for record in asyncio.run(go())}
+    records = [done.get(item["id"]) or fresh[item["id"]] for item in selected]
     summary = summarize(records)
-    rows = [header_row(args, set_path, items, selected), *records, {"kind": "summary", **summary}]
+    rows = [header, *records, {"kind": "summary", **summary}]
     if out.exists() and not args.force:  # Created while the run was going: still never overwrite.
-        print(f"{out} appeared during the run; not overwriting (pass --force).", file=sys.stderr)
+        print(f"{out} appeared during the run; not overwriting (pass --force). The rows are in {partial}.",
+              file=sys.stderr)
         return 1
     write_jsonl_atomic(out, rows)
+    partial.unlink()
     score = (f"{summary['correct']}/{summary['scored']} scored correct ({summary['score']:.1%})"
              if summary["scored"] else "no scored items")
     print(f"Score: {score}; unanswered {summary['unanswered']}; wrong {summary['wrong']}; "
