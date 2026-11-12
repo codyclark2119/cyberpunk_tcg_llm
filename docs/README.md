@@ -19,6 +19,7 @@ was.
 | [../README.md](../README.md) | Setup, commands and architecture |
 | [../CLAUDE.md](../CLAUDE.md) | Working rules for the engine and the AI harness |
 | [ci-validation.md](ci-validation.md) | What local validation (`scripts/run_tests.sh`) runs and why it never skips |
+| [local-strength-eval.md](local-strength-eval.md) | 2026-11-12: local strength eval (`scripts/eval_local_strength.py`): N matches per model configuration against the baseline on the same seeds, both seats; win rate with a 95% Wilson interval, agreement, fallbacks, latency, tokens; resumable; prompt v3/v4 selectable; the play UI's "Strength" tab |
 | [local-match-records-v3.md](local-match-records-v3.md) | 2026-11-12: match records v3 (model path and revision per seat, chosen index, baseline pick and agreement, raw output and tokens) and optional TrainingPosition/TrainingAttempt logging from local matches (`--training-dir`) |
 | [training-record-migration.md](training-record-migration.md) | 2026-11-12: Python reader/writer and match-logging hook for the TS training records (`harness/core/training_records.py`); plan for moving the gold store onto TrainingPosition |
 | [local-prompt-v4.md](local-prompt-v4.md) | 2026-11-12: gameplay prompt `local-choice-v4` adds a card reference (type, cost, power, tags, keywords, trimmed rules text from the engine content bundle) for every card the acting seat can see; sizes before and after; the play UI's "Prompt size" tab |

@@ -12,7 +12,6 @@ the UI (its "Prompt size" tab). No model, network or GPU is used.
 
 from __future__ import annotations
 
-import dataclasses
 import json
 import math
 from pathlib import Path
@@ -21,7 +20,8 @@ from typing import Any
 from games.cyberpunk.engine_adapter import EngineWorker
 from games.cyberpunk.local_match import REPO_ROOT, MatchSetup, load_default_setup, play_match
 from games.cyberpunk.policy_bot import Decision, PolicyRunner
-from games.cyberpunk.policy_prompt import PROMPT_VERSION, SYSTEM_PROMPT, build_choice_messages
+from games.cyberpunk.policy_prompt import (PROMPT_VERSION, SYSTEM_PROMPTS, V3_PROMPT_VERSION,
+                                           build_choice_messages)
 
 # local-choice-v2's prompt, kept only so the reports and the v3 fact tests can
 # compare against it. The bot never sends it.
@@ -33,9 +33,8 @@ this task. Choose the action you judge most likely to help your seat win.
 Return exactly one JSON object with one integer field: {"choice":0}.
 The integer is the zero-based choice number in the offered actions. Do not return
 an action ID, explanation, markdown, or thinking text."""
-# local-choice-v3 is local-choice-v4 without the card reference: the same system
-# prompt up to its "Cards:" paragraph and a Decision with no cards.
-V3_SYSTEM_PROMPT = SYSTEM_PROMPT.split("\nCards: ")[0]
+# local-choice-v3 is local-choice-v4 without the card reference (policy_prompt.py).
+V3_SYSTEM_PROMPT = SYSTEM_PROMPTS[V3_PROMPT_VERSION]
 PHASES = ("early", "mid", "late")
 
 
@@ -55,8 +54,7 @@ def v2_messages(decision: Decision) -> list[dict[str, str]]:
 
 def v3_messages(decision: Decision) -> list[dict[str, str]]:
     """The local-choice-v3 messages: no card reference, v3's system prompt."""
-    messages = build_choice_messages(dataclasses.replace(decision, cards={}))
-    return [{"role": "system", "content": V3_SYSTEM_PROMPT}, messages[1]]
+    return build_choice_messages(decision, V3_PROMPT_VERSION)
 
 
 RENDERERS = {"local-choice-v2": v2_messages, "local-choice-v3": v3_messages,

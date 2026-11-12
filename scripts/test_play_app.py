@@ -266,8 +266,10 @@ def test_viewer_lists_and_serves_records():
 
 def test_bot_vs_bot_runs_only_through_the_allowlisted_runner():
     actions = client().get("/api/actions").json()
-    (action,) = [a for group in actions["groups"].values() for a in group]
-    assert action["id"] == "local-matches" and "cmd" not in action
+    listed = {a["id"]: a for group in actions["groups"].values() for a in group}
+    # The bot-vs-bot job and the strength eval (scripts/test_strength_eval.py) are the only actions.
+    assert set(listed) == {"local-matches", "strength-eval"}
+    assert all("cmd" not in a for a in listed.values())
     runner = CTX["app"].state.runner
     cmd = runner.build_cmd(runner.actions_by_id["local-matches"],
                            {"--matches": 2, "--seed": "s", "seat0": "baseline", "seat1": "mlx", "--force": True,
