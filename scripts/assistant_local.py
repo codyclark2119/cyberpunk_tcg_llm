@@ -15,6 +15,11 @@ optional ``--adapter``) the page's chat box works: the first question starts
 comes from ``games/cyberpunk/assistant/loop.py`` with a trace of every tool the
 model ran. Without ``--model`` the chat box answers "no model configured".
 
+The Eval tab shows the multiple-choice gold sets (with a review note per
+question), runs ``scripts/eval_assistant.py`` with the same ``--model``,
+``--adapter``, ``--thinking`` and ``--max-tokens``, and shows the scored runs
+under ``eval/runs/``.
+
 It binds 127.0.0.1 by default and needs no token there; it then answers only
 to a loopback Host and Origin, which blocks DNS-rebinding pages. Any other bind
 (``--host`` or ``--lan``) requires the random token printed with the URL,
@@ -63,7 +68,8 @@ def main():
         except ValueError as exc:
             parser.error(str(exc))
         print(f"Chat model: {model.label} (the worker starts on the first question)", flush=True)
-    chat = ChatService(model, enable_thinking=args.thinking, max_tokens=args.max_tokens)
+    chat = ChatService(model, enable_thinking=args.thinking, max_tokens=args.max_tokens,
+                       model_path=args.model, adapter_path=args.adapter)
     serve_assistant(args.host, args.port, lan=args.lan, no_auth=args.no_auth, chat=chat)
     return 0
 

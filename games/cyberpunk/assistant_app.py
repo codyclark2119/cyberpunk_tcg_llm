@@ -34,6 +34,18 @@ console page replaced by this one, served on loopback by
 ``scripts/assistant_local.py``. One self-contained page: inline CSS and JS, no
 CDN, works offline.
 
+Eval tab: the multiple-choice gold sets under ``data/gold/`` (questions,
+choices, the key and a review note per question), a Run button and the scored
+runs under ``eval/runs/``. Notes are written atomically to a sidecar under
+``eval/notes/`` and never to ``data/gold/`` (``assistant/eval_store.py``). The
+Run button is one allowlisted ``Runner`` action (``eval_action``, the same
+pattern as ``play_app.bot_match_action``): the page names the action and fills
+its declared values, ``EvalRunner`` checks each value and builds the
+``scripts/eval_assistant.py`` argv server-side with the page's own model
+settings (no shell), and it refuses to start while a chat turn or another job
+is running; the chat refuses while an eval job runs. Progress comes from the
+job log (the monitor's ``/api/job`` route).
+
 DNS rebinding: a page on another site can resolve its own hostname to
 127.0.0.1 and then talk to this server from the victim's browser. Loopback
 needs no token, so the guard here is the Host header: unless the app was
@@ -53,16 +65,18 @@ from collections import OrderedDict
 from dataclasses import dataclass, field
 from urllib.parse import urlsplit
 
+from games.cyberpunk.assistant import eval_store
 from games.cyberpunk.assistant.decks import public_deck_index
+from games.cyberpunk.assistant.eval_store import EvalSetError
 from games.cyberpunk.assistant.loop import ASSISTANT_PROMPT_VERSION, MAX_TOOL_CALLS, run_turn
 from games.cyberpunk.assistant.tools import TOOLS, call_tool, cards
 from games.cyberpunk.config import REPO_ROOT
 from games.cyberpunk.prompts import RULES_VERSION
 from harness.core.webui.monitor import build_app
-from harness.core.webui.runner import lan_ip
+from harness.core.webui.runner import Runner, lan_ip
 
 __all__ = ["build_assistant_app", "serve_assistant", "ASSISTANT_HTML", "is_loopback", "host_allowed",
-           "ChatService", "Session", "deck_brief", "EXAMPLE_QUESTIONS"]
+           "ChatService", "Session", "deck_brief", "EXAMPLE_QUESTIONS", "EvalRunner", "eval_action"]
 
 DEFAULT_PORT = 8767
 TITLE = "Cyberpunk TCG assistant"
@@ -102,8 +116,12 @@ class ChatService:
     """Sessions of short history and an optional loaded deck over one model; turns run one at a time."""
 
     def __init__(self, model=None, *, max_history_messages: int = 8, max_sessions: int = 32,
-                 enable_thinking: bool = False, max_tokens: int = 1024):
+                 enable_thinking: bool = False, max_tokens: int = 1024, model_path: str | None = None,
+                 adapter_path: str | None = None):
         self.model = model
+        # The model and adapter directories as given on the command line, for the Eval tab's runs.
+        self.model_path = model_path
+        self.adapter_path = adapter_path
         self.max_history_messages = max_history_messages
         self.max_sessions = max_sessions
         self.enable_thinking = enable_thinking
@@ -224,15 +242,125 @@ def host_allowed(host_header: str | None, origin: str | None, *, lan: bool) -> b
     return True
 
 
+EVAL_ACTION_ID = "eval-assistant"
+EVAL_IDS_RE = re.compile(r"^[A-Za-z0-9][A-Za-z0-9._-]*(,[A-Za-z0-9][A-Za-z0-9._-]*)*$")
+EVAL_INT_LIMITS = {"max_tokens": (1, 4096), "limit": (0, 10000)}
+
+
+def _repo_relative(path) -> str:
+    try:
+        return str(path.resolve().relative_to(REPO_ROOT))
+    except ValueError:
+        return str(path)
+
+
+def eval_action(chat: "ChatService", set_paths: list[str], runs_dir) -> dict:
+    """The one allowlisted eval job: ``scripts/eval_assistant.py`` with this page's model settings."""
+    args = [{"name": "--set", "key": "set", "type": "choice", "choices": list(set_paths),
+             "default": set_paths[0] if set_paths else "", "label": "Set"},
+            {"name": "--name", "key": "name", "type": "text", "default": "", "label": "Run name"}]
+    if chat.model_path:
+        args.append({"name": "--model", "type": "fixed", "value": [chat.model_path]})
+    if chat.adapter_path:
+        args.append({"name": "--adapter", "type": "fixed", "value": [chat.adapter_path]})
+    args += [{"name": "--thinking", "key": "thinking", "type": "flag", "default": chat.enable_thinking,
+              "label": "Think first"},
+             {"name": "--max-tokens", "key": "max_tokens", "type": "int", "default": chat.max_tokens,
+              "label": "Max tokens per step"},
+             {"name": "--limit", "key": "limit", "type": "int", "default": 0, "label": "First N (0: all)"},
+             {"name": "--ids", "key": "ids", "type": "text", "default": "", "label": "Only these ids"},
+             {"name": "--force", "key": "force", "type": "flag", "default": False, "label": "Replace a run"},
+             {"name": "--runs-dir", "type": "fixed", "value": [str(runs_dir)]}]
+    return {"id": EVAL_ACTION_ID, "label": "Score the assistant on a set", "group": "Eval",
+            "cmd": "scripts/eval_assistant.py", "writes": True,
+            "desc": "Put every question of a multiple-choice set to the assistant and write a scored run.",
+            "args": args}
+
+
+class EvalRunner(Runner):
+    """The monitor's one-job-at-a-time runner, checking the eval action's values before argv is built.
+
+    The base runner passes text values through unchecked; here the run name and
+    ids must match fixed patterns (so a value can never read as a flag), numbers
+    must be in range, flags must be booleans, an existing run needs ``force``,
+    and nothing starts without a configured model or while a chat turn runs.
+    """
+
+    def __init__(self, actions_by_id: dict, repo_root, *, chat: "ChatService", runs_dir):
+        super().__init__(actions_by_id, repo_root)
+        self.chat = chat
+        self.runs_dir = runs_dir
+
+    def running(self) -> bool:
+        return bool(self.active and self.jobs[self.active]["status"] == "running")
+
+    def build_cmd(self, action: dict, values: dict) -> list[str]:
+        if action["id"] == EVAL_ACTION_ID:
+            values = self.check_eval_values(action, values)
+        return super().build_cmd(action, values)
+
+    def check_eval_values(self, action: dict, values: dict) -> dict:
+        if not isinstance(values, dict):
+            raise ValueError("values must be an object")
+        if not self.chat.model_path:
+            raise ValueError("No model configured: restart the page with --model to run an eval.")
+        allowed = {spec.get("key") for spec in action["args"] if spec.get("key")}
+        extra = sorted(set(values) - allowed)
+        if extra:
+            raise ValueError(f"unknown value(s): {', '.join(extra)}")
+        name = values.get("name")
+        if not isinstance(name, str) or not eval_store.RUN_NAME_RE.match(name):
+            raise ValueError("Run name must be 1-80 letters, digits, '.', '_' or '-', starting with a letter or digit.")
+        clean = {"name": name}
+        for key in ("thinking", "force"):
+            if values.get(key) is not None:
+                if not isinstance(values[key], bool):
+                    raise ValueError(f"{key} must be true or false")
+                clean[key] = values[key]
+        for key, (low, high) in EVAL_INT_LIMITS.items():
+            raw = values.get(key)
+            if raw is None or raw == "":
+                continue
+            if isinstance(raw, bool) or not isinstance(raw, int) or not low <= raw <= high:
+                raise ValueError(f"{key} must be a whole number {low}..{high}")
+            clean[key] = raw
+        ids = values.get("ids")
+        if ids not in (None, ""):
+            if not isinstance(ids, str) or len(ids) > 2000 or not EVAL_IDS_RE.match(ids):
+                raise ValueError("ids must be comma-separated item ids")
+            clean["ids"] = ids
+        if values.get("set") not in (None, ""):
+            clean["set"] = values["set"]  # checked against the action's choices by the base runner
+        if (self.runs_dir / f"{name}.jsonl").exists() and not clean.get("force"):
+            raise ValueError(f"A run named {name} exists; tick 'Replace a run' or pick another name.")
+        return clean
+
+    def start(self, action_id: str, values: dict) -> dict:
+        if self.chat.busy:
+            # "still running" makes the monitor answer 409, like a job already running.
+            return {"ok": False, "error": "A chat turn is still running; try again when it has answered."}
+        return super().start(action_id, values)
+
+
 def registry_view() -> dict:
     return {"rulesVersion": RULES_VERSION,
             "tools": [{"name": t.name, "description": t.description, "parameters": t.parameters}
                       for t in TOOLS.values()]}
 
 
-def build_assistant_app(*, token: str | None = None, lan: bool = False, chat: ChatService | None = None):
-    """The FastAPI app: the monitor's app (token) plus the tool and chat routes and a Host/Origin guard."""
+def build_assistant_app(*, token: str | None = None, lan: bool = False, chat: ChatService | None = None,
+                        gold_dir=None, runs_dir=None, notes_dir=None):
+    """The FastAPI app: the monitor's app (token, job routes) plus the tool, chat and eval routes and a
+    Host/Origin guard. ``gold_dir``, ``runs_dir`` and ``notes_dir`` default to data/gold, eval/runs and
+    eval/notes; tests point them at temporary directories."""
     chat = chat if chat is not None else ChatService()
+    gold_dir = eval_store.GOLD_DIR if gold_dir is None else gold_dir
+    runs_dir = eval_store.RUNS_DIR if runs_dir is None else runs_dir
+    notes_dir = eval_store.NOTES_DIR if notes_dir is None else notes_dir
+    sets = eval_store.list_sets(gold_dir)
+    set_paths = {s["name"]: _repo_relative(gold_dir / s["name"]) for s in sets}
+    action = eval_action(chat, list(set_paths.values()), runs_dir)
+    runner = EvalRunner({action["id"]: action}, REPO_ROOT, chat=chat, runs_dir=runs_dir)
     from fastapi import Request
     from fastapi.responses import HTMLResponse, JSONResponse, PlainTextResponse
     from fastapi.routing import APIRoute
@@ -313,6 +441,8 @@ def build_assistant_app(*, token: str | None = None, lan: bool = False, chat: Ch
                 return chat_refusal("invalid_arguments", "thinking must be true, false or omitted.", 400)
             if chat.model is None:
                 return chat_refusal("no_model", NO_MODEL, 503)
+            if runner.running():
+                return chat_refusal("busy", "An eval run is in progress; chat is paused until it finishes.", 409)
             result = await chat.chat(session, message.strip(), thinking=thinking)
             return JSONResponse(result, status_code=200 if result["stopReason"] != "model_error" else 502)
 
@@ -337,6 +467,62 @@ def build_assistant_app(*, token: str | None = None, lan: bool = False, chat: Ch
             payload, session = await session_payload(request)
             return payload if session is None else chat.clear_deck(session)
 
+        # Eval tab ------------------------------------------------------------------------
+        def eval_refusal(message: str, status: int):
+            return JSONResponse({"ok": False, "error": message}, status_code=status)
+
+        @app.get("/api/eval/config")
+        def eval_config():
+            return {"model": chat.model_path, "adapter": chat.adapter_path, "thinkingDefault": chat.enable_thinking,
+                    "maxTokens": chat.max_tokens, "actionId": action["id"], "chatBusy": chat.busy,
+                    "active": runner.active if runner.running() else None,
+                    "sets": [{**s, "path": set_paths[s["name"]]} for s in sets],
+                    "runsDir": _repo_relative(runs_dir), "notesDir": _repo_relative(notes_dir)}
+
+        @app.get("/api/eval/sets/{name}")
+        def eval_set(name: str):
+            try:
+                path = eval_store.set_path(name, gold_dir)
+                return {"name": name, "path": set_paths.get(name), "sha256": eval_store.file_sha256(path),
+                        "items": eval_store.load_mc_set(path), "notes": eval_store.read_notes(name, notes_dir)}
+            except FileNotFoundError:
+                return eval_refusal("No such set.", 404)
+            except (EvalSetError, ValueError) as exc:
+                return eval_refusal(str(exc), 400)
+
+        @app.post("/api/eval/notes")
+        async def eval_note(request: Request):
+            try:
+                payload = await request.json()
+            except ValueError:
+                payload = None
+            if not isinstance(payload, dict) or set(payload) != {"set", "id", "note"}:
+                return eval_refusal("Send {set, id, note}.", 400)
+            try:
+                notes = eval_store.write_note(payload["set"], payload["id"], payload["note"],
+                                              gold_dir=gold_dir, notes_dir=notes_dir)
+            except FileNotFoundError:
+                return eval_refusal("No such set.", 404)
+            except (KeyError, TypeError):
+                return eval_refusal("No such question in this set.", 404)
+            except (EvalSetError, ValueError) as exc:
+                return eval_refusal(str(exc), 400)
+            return {"ok": True, "set": payload["set"], "id": payload["id"], "note": notes.get(payload["id"], ""),
+                    "notesFile": _repo_relative(eval_store.notes_path(payload["set"], notes_dir))}
+
+        @app.get("/api/eval/runs")
+        def eval_runs():
+            return {"dir": _repo_relative(runs_dir), "runs": eval_store.list_runs(runs_dir)}
+
+        @app.get("/api/eval/runs/{name}")
+        def eval_run(name: str):
+            try:
+                return {"name": name, "rows": eval_store.read_run(name, runs_dir)}
+            except FileNotFoundError:
+                return eval_refusal("No such run.", 404)
+            except (EvalSetError, ValueError) as exc:
+                return eval_refusal(str(exc), 400)
+
         # Stop the model worker when the server stops (it would also exit on stdin EOF).
         inner_lifespan = app.router.lifespan_context
 
@@ -348,7 +534,7 @@ def build_assistant_app(*, token: str | None = None, lan: bool = False, chat: Ch
 
         app.router.lifespan_context = lifespan
 
-    return build_app([], REPO_ROOT, title=TITLE, token=token, extra_routes=routes)
+    return build_app([action], REPO_ROOT, title=TITLE, token=token, runner=runner, extra_routes=routes)
 
 
 def serve_assistant(host: str = "127.0.0.1", port: int = DEFAULT_PORT, *, lan: bool = False,
@@ -438,12 +624,27 @@ dl.facts{display:grid;grid-template-columns:max-content minmax(0,1fr);gap:2px 10
 dl.facts dt{color:var(--muted)}dl.facts dd{margin:0;white-space:pre-wrap;overflow-wrap:anywhere}
 ul.plain{margin:4px 0;padding-left:18px;font-size:12px}
 h3{font-size:13px;margin:10px 0 4px}
+#tabEval{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:12px}
+@media (max-width:1000px){#tabEval{grid-template-columns:1fr}}
+.qitem{border-top:1px solid var(--line);padding:8px 0}
+.qitem .qtext{white-space:pre-wrap;overflow-wrap:anywhere}
+ul.choices{list-style:none;margin:4px 0;padding:0;font-size:13px}
+ul.choices li{padding:1px 4px;border-radius:4px;overflow-wrap:anywhere}
+ul.choices li.key{background:var(--sel);color:var(--ok);font-weight:600}
+ul.choices li.known{color:var(--warn);text-decoration:line-through}
+.qitem textarea{width:100%;min-height:2.6em;font-size:12px;margin-top:4px}
+table.runs{width:100%;border-collapse:collapse;font-size:12px}
+table.runs th,table.runs td{text-align:left;border-bottom:1px solid var(--line);padding:3px 4px;vertical-align:top;overflow-wrap:anywhere}
+table.runs tr.pick{cursor:pointer}table.runs tr.pick:hover{background:var(--sel)}
+.oc-correct{color:var(--ok)}.oc-wrong,.oc-unanswered{color:var(--warn)}.oc-unscored{color:var(--muted)}
+.evalrun{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:8px;margin:8px 0}
+#evalLog{max-height:30vh}
 </style>
 </head>
 <body>
 <header>
   <h1>Cyberpunk TCG assistant</h1>
-  <nav><button type="button" id="tabBtnChat" class="on" data-tab="Chat">Chat</button><button type="button" id="tabBtnTools" data-tab="Tools">Tools</button></nav>
+  <nav><button type="button" id="tabBtnChat" class="on" data-tab="Chat">Chat</button><button type="button" id="tabBtnTools" data-tab="Tools">Tools</button><button type="button" id="tabBtnEval" data-tab="Eval">Eval</button></nav>
   <span class="badge" id="snapshot">snapshot …</span>
   <span class="badge" id="modelBadge">model …</span>
 </header>
@@ -495,6 +696,41 @@ h3{font-size:13px;margin:10px 0 4px}
       <div class="status" id="status"></div>
     </div>
     <div class="panel"><pre id="output" class="muted">No result yet.</pre></div>
+  </div>
+</section>
+<section id="tabEval" hidden>
+  <div>
+    <div class="panel">
+      <h2>Set</h2>
+      <p class="muted" style="margin:0 0 6px;font-size:12px">Multiple-choice gold sets from data/gold (eval only, never training data). The key is highlighted and known-incorrect options are struck through. Notes save to a sidecar under eval/notes; the set itself is never edited here.</p>
+      <div class="row"><select id="evalSetPick"></select></div>
+      <div class="status" id="evalSetStatus"></div>
+      <div id="evalSetBody"></div>
+    </div>
+  </div>
+  <div>
+    <div class="panel">
+      <h2>Run</h2>
+      <p class="muted" style="margin:0 0 6px;font-size:12px">Runs scripts/eval_assistant.py on the selected set with this page's model. One job at a time; chat pauses while it runs.</p>
+      <div class="muted" id="evalModel" style="font-size:12px"></div>
+      <div class="evalrun">
+        <label>Run name<input type="text" id="evalName" maxlength="80" placeholder="baseline-qwen3-8b"></label>
+        <label>Max tokens per step<input type="number" id="evalMaxTokens" min="1" max="4096" step="1"></label>
+        <label>First N (0: all)<input type="number" id="evalLimit" min="0" step="1" value="0"></label>
+        <label>Only these ids<input type="text" id="evalIds" placeholder="cody-quiz-01,cody-quiz-03"></label>
+        <label class="inline"><input type="checkbox" id="evalThinking"> think first</label>
+        <label class="inline"><input type="checkbox" id="evalForce"> replace a run of this name</label>
+      </div>
+      <button class="go" id="evalRunBtn" type="button">Run eval</button>
+      <div class="status" id="evalRunStatus"></div>
+      <pre id="evalLog" class="muted" hidden></pre>
+    </div>
+    <div class="panel">
+      <h2>Runs</h2>
+      <div class="row"><button class="small" id="evalRunsRefresh" type="button">Refresh</button></div>
+      <div id="evalRuns" class="muted">No runs loaded.</div>
+      <div id="evalRunBody"></div>
+    </div>
   </div>
 </section>
 </div>
@@ -551,6 +787,31 @@ function stepLine(step) {
     (step.summary || "") + " · " + ms(step.elapsedMs);
 }
 // Flags for an answer that did not end normally.
+// Progress of an eval job from its log lines: the last "[k/N]" line the scorer printed.
+function jobProgress(lines) {
+  let done = 0, total = 0;
+  for (const line of lines || []) {
+    const m = /^\[(\d+)\/(\d+)\]/.exec(String(line));
+    if (m) { done = Number(m[1]); total = Number(m[2]); }
+  }
+  return {done, total};
+}
+// A run file's rows split into header, items and summary.
+function splitRun(rows) {
+  const out = {header: null, items: [], summary: null};
+  for (const row of rows || []) {
+    if (row.kind === "header") out.header = row;
+    else if (row.kind === "item") out.items.push(row);
+    else if (row.kind === "summary") out.summary = row;
+  }
+  return out;
+}
+function scoreText(summary) {
+  if (!summary) return "no summary";
+  const pct = summary.score === null || summary.score === undefined ? "n/a" : (summary.score * 100).toFixed(1) + "%";
+  return summary.correct + "/" + summary.scored + " correct (" + pct + ") · " + summary.unanswered + " unanswered · " +
+    summary.unscored + " unscored · tools used on " + summary.tool_use + "/" + summary.items;
+}
 function answerFlags(data, maxToolCalls) {
   const flags = [];
   if (data.stopReason === "tool_cap") flags.push("hit the tool-call cap (" + maxToolCalls + " calls)");
@@ -584,10 +845,11 @@ async function postJson(url, body) {
 
 // Tabs ------------------------------------------------------------------------------
 function showTab(name) {
-  for (const tab of ["Chat", "Tools"]) {
+  for (const tab of ["Chat", "Tools", "Eval"]) {
     $("tab" + tab).hidden = tab !== name;
     $("tabBtn" + tab).classList.toggle("on", tab === name);
   }
+  if (name === "Eval" && !evalState.loaded) loadEval().catch((err) => { $("evalSetStatus").textContent = "Could not load: " + err; });
 }
 for (const b of document.querySelectorAll("nav button")) b.addEventListener("click", () => showTab(b.dataset.tab));
 
@@ -1001,6 +1263,190 @@ async function run() {
   }
 }
 
+// Eval tab --------------------------------------------------------------------------
+const evalState = {loaded: false, config: null, set: null, job: null, jobLines: 0, timer: null};
+
+async function getJson(url) {
+  const response = await fetch(url);
+  let data;
+  try { data = await response.json(); } catch (err) { data = {ok: false, error: "HTTP " + response.status}; }
+  return [response, data];
+}
+
+async function loadEval() {
+  const [, config] = await getJson("/api/eval/config");
+  evalState.config = config;
+  evalState.loaded = true;
+  const pick = $("evalSetPick");
+  pick.textContent = "";
+  for (const s of config.sets || []) pick.appendChild(el("option", {value: s.name}, s.name + " · " + s.items + " items, " + s.scored + " keyed"));
+  $("evalModel").textContent = config.model ? "Model: " + config.model + (config.adapter ? " + " + config.adapter : "") :
+    "No model configured: restart with --model to run an eval. Sets and runs still show.";
+  $("evalRunBtn").disabled = !config.model;
+  $("evalMaxTokens").value = config.maxTokens;
+  $("evalThinking").checked = !!config.thinkingDefault;
+  if (config.active) watchJob(config.active);
+  if ((config.sets || []).length) await loadSet(pick.value); else $("evalSetStatus").textContent = "No multiple-choice sets in data/gold.";
+  await loadRuns();
+}
+
+async function loadSet(name) {
+  $("evalSetStatus").textContent = "Loading " + name + " …";
+  const [, data] = await getJson("/api/eval/sets/" + encodeURIComponent(name));
+  const body = $("evalSetBody");
+  body.textContent = "";
+  if (data.ok === false) { $("evalSetStatus").textContent = "Refused: " + data.error; return; }
+  evalState.set = data;
+  const keyed = data.items.filter((i) => i.correct !== null && i.correct !== undefined).length;
+  $("evalSetStatus").textContent = data.items.length + " questions, " + keyed + " keyed · sha256 " + data.sha256.slice(0, 12) + "…";
+  for (const item of data.items) {
+    const box = el("div", {class: "qitem"});
+    box.appendChild(el("div", {class: "muted", style: "font-size:12px"}, item.id + " · key " + (item.correct || "none (unscored)") +
+      (item.answer_key_by ? " · keyed by " + item.answer_key_by : "") + (item.source ? " · " + item.source : "")));
+    box.appendChild(el("div", {class: "qtext"}, item.question));
+    const ul = el("ul", {class: "choices"});
+    for (const c of item.choices) {
+      const cls = c.letter === item.correct ? "key" : (item.known_incorrect || []).includes(c.letter) ? "known" : "";
+      ul.appendChild(el("li", cls ? {class: cls} : {}, c.letter + ". " + c.text));
+    }
+    box.appendChild(ul);
+    const note = el("textarea", {placeholder: "Review note (saved to eval/notes, not to the set)"});
+    note.value = (data.notes || {})[item.id] || "";
+    const row = el("div", {class: "row"});
+    const save = el("button", {type: "button", class: "small"}, "Save note");
+    const status = el("span", {class: "muted", style: "font-size:12px"});
+    save.addEventListener("click", () => saveNote(data.name, item.id, note, status));
+    row.appendChild(save);
+    row.appendChild(status);
+    box.appendChild(note);
+    box.appendChild(row);
+    body.appendChild(box);
+  }
+}
+
+async function saveNote(setName, id, textarea, status) {
+  status.textContent = "Saving …";
+  try {
+    const [, data] = await postJson("/api/eval/notes", {set: setName, id, note: textarea.value});
+    status.textContent = data.ok ? "Saved to " + data.notesFile : "Refused: " + data.error;
+  } catch (err) {
+    status.textContent = "Request failed: " + err;
+  }
+}
+
+async function startEval() {
+  const config = evalState.config;
+  if (!config) return;
+  const set = (config.sets || []).find((s) => s.name === $("evalSetPick").value);
+  const values = {set: set ? set.path : "", name: $("evalName").value.trim(), thinking: $("evalThinking").checked,
+    force: $("evalForce").checked, ids: $("evalIds").value.trim()};
+  const maxTokens = Number($("evalMaxTokens").value), limit = Number($("evalLimit").value || 0);
+  if (!Number.isInteger(maxTokens) || !Number.isInteger(limit)) { $("evalRunStatus").textContent = "Max tokens and First N must be whole numbers."; return; }
+  values.max_tokens = maxTokens;
+  values.limit = limit;
+  $("evalRunBtn").disabled = true;
+  $("evalRunStatus").textContent = "Starting …";
+  try {
+    const [response, data] = await postJson("/api/run/" + encodeURIComponent(config.actionId), {values});
+    if (!data.ok) {
+      $("evalRunStatus").textContent = "Refused (" + response.status + "): " + data.error;
+      $("evalRunBtn").disabled = false;
+      return;
+    }
+    watchJob(data.job);
+  } catch (err) {
+    $("evalRunStatus").textContent = "Request failed: " + err;
+    $("evalRunBtn").disabled = false;
+  }
+}
+
+function watchJob(id) {
+  evalState.job = id;
+  evalState.jobLines = 0;
+  $("evalLog").textContent = "";
+  $("evalLog").hidden = false;
+  $("evalRunBtn").disabled = true;
+  clearInterval(evalState.timer);
+  evalState.timer = setInterval(() => pollJob().catch(() => {}), 1500);
+  pollJob().catch(() => {});
+}
+
+async function pollJob() {
+  const [response, job] = await getJson("/api/job/" + encodeURIComponent(evalState.job) + "?since=" + evalState.jobLines);
+  if (!response.ok) return;
+  const log = $("evalLog");
+  if (job.lines.length) log.textContent += job.lines.join("\n") + "\n";
+  evalState.allLines = (evalState.allLines || []).concat(job.lines);
+  evalState.jobLines = job.total_lines;
+  log.scrollTop = log.scrollHeight;
+  const p = jobProgress(evalState.allLines);
+  $("evalRunStatus").textContent = job.status + (p.total ? " · " + p.done + "/" + p.total + " questions" : "") + " · " + job.cmd;
+  if (job.status !== "running") {
+    clearInterval(evalState.timer);
+    evalState.allLines = [];
+    $("evalRunBtn").disabled = !(evalState.config && evalState.config.model);
+    loadRuns().catch(() => {});
+  }
+}
+
+async function loadRuns() {
+  const [, data] = await getJson("/api/eval/runs");
+  const box = $("evalRuns");
+  box.textContent = "";
+  box.className = "";
+  if (!data.runs || !data.runs.length) { box.className = "muted"; box.textContent = "No runs in " + data.dir + " yet."; return; }
+  const table = el("table", {class: "runs"});
+  const head = el("tr");
+  for (const h of ["run", "model", "thinking", "prompt", "score"]) head.appendChild(el("th", {}, h));
+  table.appendChild(head);
+  for (const run of data.runs) {
+    const tr = el("tr", {class: "pick"});
+    tr.appendChild(el("td", {}, run.name));
+    if (run.error) { tr.appendChild(el("td", {colspan: "4", class: "err"}, run.error)); table.appendChild(tr); continue; }
+    tr.appendChild(el("td", {}, (run.model || "") + (run.adapter ? " + " + run.adapter : "")));
+    tr.appendChild(el("td", {}, run.thinking ? "on" : "off"));
+    tr.appendChild(el("td", {}, (run.eval_prompt_version || "") + " / " + (run.assistant_prompt_version || "")));
+    tr.appendChild(el("td", {}, scoreText(run.summary)));
+    tr.addEventListener("click", () => showRun(run.name).catch((err) => { $("evalRunBody").textContent = "Could not load: " + err; }));
+    table.appendChild(tr);
+  }
+  box.appendChild(table);
+}
+
+async function showRun(name) {
+  const body = $("evalRunBody");
+  body.textContent = "Loading " + name + " …";
+  const [, data] = await getJson("/api/eval/runs/" + encodeURIComponent(name));
+  body.textContent = "";
+  if (data.ok === false) { body.className = "err"; body.textContent = data.error; return; }
+  body.className = "";
+  const run = splitRun(data.rows);
+  const questions = {};
+  if (evalState.set && run.header && run.header.set && run.header.set.endsWith("/" + evalState.set.name))
+    for (const item of evalState.set.items) questions[item.id] = item.question;
+  body.appendChild(el("h3", {}, name + ": " + scoreText(run.summary)));
+  if (run.header) body.appendChild(factsList({set: run.header.set, "set sha256": run.header.set_sha256, model: run.header.model,
+    adapter: run.header.adapter, thinking: String(run.header.thinking), "max tokens": run.header.max_tokens,
+    prompts: run.header.eval_prompt_version + " / " + run.header.assistant_prompt_version, snapshot: run.header.rules_version}));
+  for (const item of run.items) {
+    const d = el("details", {class: "step" + (item.outcome === "wrong" || item.outcome === "unanswered" ? " bad" : "")});
+    const sum = el("summary");
+    sum.appendChild(el("span", {class: "oc-" + item.outcome}, item.outcome));
+    sum.appendChild(document.createTextNode(" · " + item.id + " · chose " + (item.chosen || "-") + ", key " + (item.correct || "-") +
+      (item.known_incorrect_hit ? " · picked a known-incorrect option" : "") + " · tools: " + ((item.tools_called || []).join(", ") || "none") +
+      (item.hit_tool_cap ? " · hit tool cap" : "") + (item.hit_length ? " · hit token limit" : "")));
+    d.appendChild(sum);
+    if (questions[item.id]) d.appendChild(el("div", {class: "qtext"}, questions[item.id]));
+    d.appendChild(factsList({rules: item.rule_ids, cards: item.card_slugs, errata: item.errata_ids, parse: item.parse, stop: item.stop_reason}));
+    d.appendChild(el("pre", {}, item.answer || ""));
+    const trace = el("details", {class: "trace"});
+    trace.appendChild(el("summary", {}, "Trace: " + (item.trace || []).length + " step(s)"));
+    for (const step of item.trace || []) trace.appendChild(traceRow(step));
+    d.appendChild(trace);
+    body.appendChild(d);
+  }
+}
+
 // Wiring ----------------------------------------------------------------------------
 // Example chips only fill the input box; the question goes through the same path as any other.
 for (const chip of document.querySelectorAll("#chips button")) {
@@ -1024,6 +1470,9 @@ $("runBtn").addEventListener("click", run);
 $("toolForm").addEventListener("keydown", (e) => {
   if (e.key === "Enter" && e.target.tagName !== "TEXTAREA") { e.preventDefault(); run(); }
 });
+$("evalSetPick").addEventListener("change", () => loadSet($("evalSetPick").value).catch((err) => { $("evalSetStatus").textContent = "Could not load: " + err; }));
+$("evalRunBtn").addEventListener("click", startEval);
+$("evalRunsRefresh").addEventListener("click", () => loadRuns().catch((err) => { $("evalRuns").textContent = "Could not load: " + err; }));
 showHeldDeck(null);
 loadStatus().catch(() => { $("modelBadge").textContent = "status unavailable"; });
 loadTools().then(loadDecks).catch((err) => { $("status").textContent = "Could not load tools: " + err; });

@@ -355,3 +355,28 @@ first" toggle defaults to `--thinking`. The four example chips only fill the inp
 ```bash
 python scripts/test_assistant_ui.py      # escaping, deck panel, sessions, status, trace; fake model, needs node
 ```
+
+### Local assistant eval
+
+`data/gold/quiz_mc_2026-11-12.jsonl` is Cody's 40-question multiple-choice quiz (38
+keyed; fields in `data/gold/SCHEMA.md`). It is eval-only, never training data.
+`scripts/eval_assistant.py` puts each question and its lettered choices to the same
+`run_turn` the chat uses, wrapped in a versioned prompt (`EVAL_PROMPT_VERSION`) that
+asks for reasoning and a final `Answer: <letter>` line, parses the last such line
+strictly (none means unanswered), and writes `eval/runs/<name>.jsonl`: a header
+(model, adapter, thinking, prompt versions, `RULES_VERSION`, the set's sha256), one
+row per question (chosen, key, outcome, known-incorrect pick, tools called, rule ids
+and card slugs returned, cap and length flags, answer, full trace) and a summary. The
+file is deterministic and timestamp-free and is never replaced without `--force`;
+items with `correct: null` are recorded as unscored. The page's Eval tab shows each
+set with its key and a review note per question (saved to `eval/notes/`, never to
+`data/gold/`), a Run button that starts the scorer with the page's model settings
+(one job at a time; chat pauses while it runs) and the runs with per-question
+outcomes and traces.
+
+The baseline on the Mac (not yet run):
+
+```bash
+python scripts/eval_assistant.py --set data/gold/quiz_mc_2026-11-12.jsonl --model models/qwen3-8b-4bit --name baseline-qwen3-8b
+python scripts/test_assistant_eval.py    # gold set, letter parser, scorer (--fake), Eval tab; needs node
+```
