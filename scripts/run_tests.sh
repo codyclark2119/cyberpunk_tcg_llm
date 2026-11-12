@@ -71,6 +71,7 @@ py-assistant-tools   | quick | "$PY" scripts/test_assistant_tools.py           |
 py-assistant-decks   | quick | "$PY" scripts/test_assistant_deck_tools.py      | line:PASS assistant deck tools: 12/12
 py-assistant-loop    | quick | "$PY" scripts/test_assistant_loop.py            | line:PASS assistant loop: 16/16
 py-assistant-ui      | quick | "$PY" scripts/test_assistant_ui.py              | line:PASS assistant UI: 12/12
+py-assistant-eval    | quick | "$PY" scripts/test_assistant_eval.py            | line:PASS assistant eval: 13/13
 deck-rules           | full  | "$PY" scripts/check_deck_rules.py --negative-control | contains:agree:    272/272;;contains:reproduce budget AND usage exactly: 272/272;;absent:<-- LOOK
 integration          | full  | prepare_integration && npm run test:integration | tap:3
 '

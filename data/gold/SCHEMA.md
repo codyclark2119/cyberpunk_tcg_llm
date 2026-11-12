@@ -105,3 +105,27 @@ README's "Cloning this template for a new game" section).
   "notes": "Common confusion: players conflate the keyword with damage prevention rather than a lethality override."
 }
 ```
+
+## Additive extension: multiple-choice sets
+
+A multiple-choice set is a separate file in this directory, one question per
+line, scored by `scripts/eval_assistant.py` (letter chosen vs letter keyed)
+rather than by a rubric judge. It uses `id`, `question` and `source` as above
+and these fields instead of `answer`/`key_points`:
+
+| Field | Required | Notes |
+| --- | --- | --- |
+| `choices` | yes | list of `{"letter": "A", "text": "..."}`, two or more, uppercase letters, unique |
+| `correct` | yes | the keyed letter, or `null` when the key is not known. **Items with `correct: null` are unscored**: they are run and recorded but count toward neither the score nor its denominator |
+| `known_incorrect` | yes (may be `[]`) | letters a reviewer has marked wrong; never the `correct` letter. On an unscored item this is all that is known |
+| `answer_key_by` | yes | who supplied the key, e.g. `Cody` |
+| `source` | yes | where the set came from, e.g. `Cody, project thread 2026-11-12` |
+
+`quiz_mc_2026-11-12.jsonl` is Cody's 40-question quiz (38 keyed; `cody-quiz-04`
+and `cody-quiz-15` only mark a known-incorrect option), copied unchanged except
+that two typographic quotes (Q13, Q29) were normalised to ASCII. Review notes
+on its questions go in `eval/notes/`, never into this file.
+
+**These sets are eval-only, never training data.** Do not use them, their
+paraphrases or the assistant's answers to them in any SFT, LoRA or prompt
+example.
