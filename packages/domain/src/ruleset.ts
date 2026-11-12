@@ -1,6 +1,7 @@
 import { z } from "zod";
 import { DemoStarterPolicySchema, demoDeckPolicy } from "./demo";
 import { hashCanonical } from "./canonical";
+import type { DeepReadonly } from "./game";
 import { RulesetIdSchema, RulesetVersionSchema } from "./identity";
 export const DeckFormatSchema = z.enum(["CONSTRUCTED", "SEALED_LIMITED", "DEMO_STARTER_V1"]);
 export const FormatPolicySchema = z.strictObject({
@@ -47,6 +48,25 @@ export const TurnSlicePolicySchema = z.strictObject({
     callEffects: z.enum(["SINGLE_UNCONDITIONAL_DRAW", "REVIEWED_CALL_V1"]),
     overtime: z.enum(["UNSUPPORTED", "STANDARD_OVERTIME_V1"])
 });
+export type TurnSlicePolicy = z.infer<typeof TurnSlicePolicySchema>;
+type TurnSliceGateValue<K extends keyof TurnSlicePolicy> = K extends "combatResolution" ? NonNullable<TurnSlicePolicy[K]>["version"] : NonNullable<TurnSlicePolicy[K]>;
+/** The one policy value that switches each turn-slice gate on. Gates name a key of this map
+ * instead of comparing against a bare string, so a misspelt key or value fails typecheck. */
+export const TURN_SLICE_GATES = {
+    attackConditionPower: "ATTACK_CONDITION_POWER_V1", targetedSpend: "TARGETED_SPEND_V1", targetedDefeat: "TARGETED_DEFEAT_V1", targetedGearDefeat: "TARGETED_GEAR_DEFEAT_V1",
+    valueConditions: "VALUE_CONDITIONS_V1", minGigProgram: "MIN_GIG_PROGRAM_V1", attackingAura: "ATTACKING_AURA_V1",
+    firstAttackHistory: "FIRST_ATTACK_HISTORY_V1", fieldLegends: "FIELD_LEGENDS_V1", cardPlay: "NONCOMBAT_PLAY_V1",
+    combat: "COMBAT_ATTACK_V1", react: "COMBAT_REACT_V1", combatRestrictions: "COMBAT_RESTRICTIONS_V1", adrenaline: "ADRENALINE_V1",
+    attackTargetRestrictions: "ATTACK_TARGET_RESTRICTIONS_V1", attackPrevention: "ATTACK_PREVENTION_V1",
+    friendlyPlayPower: "FRIENDLY_PLAY_POWER_V1", gearCapabilities: "GEAR_CAPABILITIES_V1", combatTriggers: "COMBAT_TRIGGERS_V1",
+    combatResolution: "COMBAT_RESOLUTION_V1", gear: "REVIEWED_GEAR_V1", setup: "ENGINE_SETUP_V1", callEffects: "REVIEWED_CALL_V1",
+    overtime: "STANDARD_OVERTIME_V1", emptyDraw: "LOSE"
+} as const satisfies { [K in keyof TurnSlicePolicy]?: TurnSliceGateValue<K> };
+export type TurnSliceGate = keyof typeof TURN_SLICE_GATES;
+/** True when the turn-slice policy selects the gate's reviewed value (combatResolution by its version). */
+export function turnSliceAllows(policy: DeepReadonly<TurnSlicePolicy> | undefined, gate: TurnSliceGate): boolean {
+    return (gate === "combatResolution" ? policy?.combatResolution?.version : policy?.[gate]) === TURN_SLICE_GATES[gate];
+}
 export const GameplayPolicySchema = z.strictObject({
     initialization: z.enum(["UNSUPPORTED", "ORDERED_FIXTURE", "TURN_SLICE_V1"]),
     turnSlice: TurnSlicePolicySchema.optional(),
@@ -67,14 +87,14 @@ export const RulesetSchema = z.strictObject({
         legendCount: z.number().int().nonnegative(), maxCopies: z.number().int().positive()
     })
 }).superRefine((rules, ctx) => {
-    if (rules.gameplay?.turnSlice?.overtime === "STANDARD_OVERTIME_V1" &&
-        (rules.gameplay.initialization !== "TURN_SLICE_V1" || rules.gameplay.turnSlice.startTurnGigWinCount !== 7))
+    if (turnSliceAllows(rules.gameplay?.turnSlice, "overtime") &&
+        (rules.gameplay?.initialization !== "TURN_SLICE_V1" || rules.gameplay.turnSlice?.startTurnGigWinCount !== 7))
         ctx.addIssue({ code: "custom", message: "Standard overtime requires the reviewed two-player turn slice and seven-Gig win policy" });
     if (rules.demoStarter || rules.formats?.DEMO_STARTER_V1) {
         if (!rules.demoStarter || hashCanonical(rules.formats?.CONSTRUCTED ?? null) !== hashCanonical({ mainDeck: { min: 40, max: 50 }, legendCount: 3, maxCopies: 3, legendUniqueness: "DECKBUILDING_IDENTITY" }) || hashCanonical(rules.formats?.DEMO_STARTER_V1 ?? null) !== hashCanonical(demoDeckPolicy) ||
-            rules.gameplay?.initialization !== "TURN_SLICE_V1" || rules.gameplay.turnSlice?.setup !== "ENGINE_SETUP_V1" ||
+            rules.gameplay?.initialization !== "TURN_SLICE_V1" || !turnSliceAllows(rules.gameplay.turnSlice, "setup") ||
             rules.gameplay.openingHand !== 6 || rules.gameplay.firstPlayerSpentLegends !== 2 ||
-            rules.gameplay.turnSlice.startTurnGigWinCount !== 7 || rules.gameplay.turnSlice.emptyDraw !== "LOSE")
+            rules.gameplay.turnSlice?.startTurnGigWinCount !== 7 || !turnSliceAllows(rules.gameplay.turnSlice, "emptyDraw"))
             ctx.addIssue({ code: "custom", message: "Demo requires the exact fixed-pair policy and reviewed comprehensive setup/win rules" });
     }
     if (rules.gameplay?.initialization === "TURN_SLICE_V1" && !rules.gameplay.turnSlice)

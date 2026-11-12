@@ -11,7 +11,7 @@ export function controlledGigValuesByDieType(state: GameState, actor: PlayerId, 
 }
 /** Uses the same characteristics as RulesView, without recursively validating a pending state. */
 /** 3.17.3.2/3.17.3.3: a Gear's own power, never its host's. Both active areas are eligible (4.10.2). */
-export function listDefeatableGear(state: GameState, actor: PlayerId, target: DefeatGearTarget, context: EngineContext) {
+function listDefeatableGear(state: GameState, actor: PlayerId, target: DefeatGearTarget, context: EngineContext) {
     if (!targetedGearDefeatPolicyComplete(context)) return [];
     return Object.values(state.objects.cards).filter(c => {
         if (c.controllerId === actor || c.face !== "UP" || !["BATTLEFIELD", "LEGENDS"].includes(c.zone.zone)) return false;

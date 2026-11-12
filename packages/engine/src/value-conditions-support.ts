@@ -1,10 +1,10 @@
-import { canonicalSerialize, failure, success, type CardRevisionSnapshot, type DeepReadonly, type GameState } from "@tcg/domain";
+import { turnSliceAllows, canonicalSerialize, failure, success, type CardRevisionSnapshot, type DeepReadonly, type GameState } from "@tcg/domain";
 import type { EngineContext } from "./state";
-export function valueConditionsEnabled(context: EngineContext) { return context.content.ruleset.gameplay?.turnSlice?.valueConditions === "VALUE_CONDITIONS_V1"; }
+export function valueConditionsEnabled(context: EngineContext) { return turnSliceAllows(context.content.ruleset.gameplay?.turnSlice, "valueConditions"); }
 /** Complete two-card admission; executable shapes, not names/slugs or an expression language. */
 export function supportsValueConditionCard(card: DeepReadonly<CardRevisionSnapshot> | undefined, context: EngineContext) {
     const m = card?.mechanics, a = m?.abilities[0], policy = context.content.ruleset.gameplay?.turnSlice;
-    if (!valueConditionsEnabled(context) || policy?.cardPlay !== "NONCOMBAT_PLAY_V1" || policy.combatTriggers !== "COMBAT_TRIGGERS_V1" || context.content.ruleset.gameplay?.gigValueBounds !== "DIE_FACES_V1" || !card?.provenance.reviewed || card.execution?.scope !== "VALUE_CONDITIONS_V1" || card.execution.status !== "SUPPORTED" || card.printedCost.kind !== "EDDIES" || card.keywords.length || !m || m.equip || m.keywords.length || m.modifiers.length || m.restrictions?.length || m.abilities.length !== 1 || !a || a.trigger !== "WHEN_PLAYED" || a.activation || a.inherited || a.guard || a.conditions.length || a.cost.kind !== "NONE")
+    if (!valueConditionsEnabled(context) || !turnSliceAllows(policy, "cardPlay") || !turnSliceAllows(policy, "combatTriggers") || context.content.ruleset.gameplay?.gigValueBounds !== "DIE_FACES_V1" || !card?.provenance.reviewed || card.execution?.scope !== "VALUE_CONDITIONS_V1" || card.execution.status !== "SUPPORTED" || card.printedCost.kind !== "EDDIES" || card.keywords.length || !m || m.equip || m.keywords.length || m.modifiers.length || m.restrictions?.length || m.abilities.length !== 1 || !a || a.trigger !== "WHEN_PLAYED" || a.activation || a.inherited || a.guard || a.conditions.length || a.cost.kind !== "NONE")
         return failure("UNSUPPORTED_VALUE_CONDITIONS", "Complete reviewed current-value Program/PLAY Unit shape and bounded policy required");
     const expected = card.type === "PROGRAM" ? { colors: ["RED"], ram: { RED: 1 }, tags: ["Arasaka", "Braindance"], cost: 1, sell: true, power: null,
         effects: [{ kind: "ADJUST_GIG_UP_TO", target: { kind: "GIGS", relation: "ANY" }, maximum: 4, direction: "INCREASE" }, { kind: "CONDITIONAL_DRAW", timing: "RESOLUTION", condition: { kind: "GIG_VALUE_AT_LEAST", minimum: 8 }, count: 1 }] }

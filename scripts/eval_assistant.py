@@ -17,11 +17,20 @@ moves the version. The output is deterministic and timestamp-free (timings are
 dropped from the trace) and is never overwritten without ``--force``. Items
 whose ``correct`` is null are run but marked ``unscored``.
 
+The automatic context step (``loop.py``: ``search_rules`` and card-name
+linking before the model speaks) and thinking are on by default, as in the
+chat; ``--no-preload`` and ``--no-thinking`` turn each off so a comparison can
+isolate it. The preload sees the question and its choice lines (the same text
+``eval_retrieval.py`` measures), not the answer-format instructions. The header
+records preload, thinking, the effective ``max_tokens``, both prompt versions
+and a hash of the tool specs. ``tools_called`` lists the tools the model chose;
+the automatic ones are in ``auto_tools``.
+
 The set is eval-only: never train on it.
 
 Usage:
     python scripts/eval_assistant.py --set data/gold/quiz_mc_2026-11-12.jsonl \\
-        --model models/qwen3-8b-4bit --name baseline-qwen3-8b
+        --model models/qwen3-8b-4bit --name baseline-qwen3-8b --no-preload --no-thinking
     python scripts/eval_assistant.py --set data/gold/quiz_mc_2026-11-12.jsonl --fake --name smoke \\
         --runs-dir /tmp/runs        # scripted fake model, for tests only
 """
@@ -41,13 +50,15 @@ sys.path.insert(0, str(REPO_ROOT))
 
 from games.cyberpunk.assistant.eval_store import (RUN_NAME_RE, RUNS_DIR, EvalSetError, load_mc_set,  # noqa: E402
                                                   summarize)
-from games.cyberpunk.assistant.loop import (ASSISTANT_PROMPT_VERSION, DEFAULT_MAX_TOKENS,  # noqa: E402
-                                            MAX_TOOL_CALLS, run_turn)
+from games.cyberpunk.assistant.loop import (ASSISTANT_PROMPT_VERSION, DEFAULT_PRELOAD,  # noqa: E402
+                                            DEFAULT_THINKING, MAX_TOOL_CALLS, default_max_tokens, run_turn,
+                                            tool_specs_sha256)
+from games.cyberpunk.assistant.preload import DEFAULT_PRELOAD_CHARS, DEFAULT_PRELOAD_K  # noqa: E402
 from games.cyberpunk.prompts import RULES_VERSION  # noqa: E402
 from harness.core.io import file_sha256, write_jsonl_atomic  # noqa: E402
 
 EVAL_PROMPT_VERSION = "eval-mc-v1"
-SCORER_VERSION = "eval-assistant-v1"
+SCORER_VERSION = "eval-assistant-v2"  # v2: preload, auto_tools, thinking default on
 IDS_RE = re.compile(r"^[A-Za-z0-9][A-Za-z0-9._-]*(,[A-Za-z0-9][A-Za-z0-9._-]*)*$")
 # One line that is only the answer: "Answer: B", "answer: b.", "**Answer:** (B)". Anything else on the
 # line ("Answer: B because ...") is not an answer line, so a hedge is never read as a choice.
@@ -63,6 +74,11 @@ def question_message(item: dict) -> str:
             f"before you answer.\n\nQuestion: {item['question']}\n\nChoices:\n{choices}\n\n"
             f"Explain your reasoning briefly, citing the rules and cards you used. Then end with one final line "
             f"of exactly this form:\nAnswer: <letter>\nwhere <letter> is one of {', '.join(letters)}.")
+
+
+def preload_text(item: dict) -> str:
+    """What the automatic context step searches and links: the question and its lettered choice lines."""
+    return item["question"] + "\n" + "\n".join(f"{c['letter']}. {c['text']}" for c in item["choices"])
 
 
 def parse_answer_letter(text: str, letters: list[str]) -> tuple[str | None, str]:
@@ -95,13 +111,15 @@ def item_record(item: dict, turn) -> dict:
     letters = [c["letter"] for c in item["choices"]]
     chosen, parse = parse_answer_letter(turn.answer if turn.ok else "", letters)
     known = list(item.get("known_incorrect") or [])
-    tools_called = [s.get("tool") for s in turn.trace if s.get("kind") == "tool"]
+    model_tools = [s for s in turn.trace if s.get("kind") == "tool" and not s.get("auto")]
+    tools_called = [s.get("tool") for s in model_tools]
     return {
         "kind": "item", "id": item["id"], "chosen": chosen, "correct": item.get("correct"),
         "outcome": outcome_of(chosen, item.get("correct")), "parse": parse,
         "known_incorrect": known, "known_incorrect_hit": chosen is not None and chosen in known,
         "tools_called": tools_called,
-        "tool_errors": sum(1 for s in turn.trace if s.get("kind") == "tool" and not s.get("ok")),
+        "auto_tools": [s.get("tool") for s in turn.trace if s.get("kind") == "tool" and s.get("auto")],
+        "tool_errors": sum(1 for s in model_tools if not s.get("ok")),
         "rule_ids": list(turn.sources.get("rule_ids") or []),
         "card_slugs": list(turn.sources.get("card_slugs") or []),
         "errata_ids": list(turn.sources.get("errata_ids") or []),
@@ -119,6 +137,8 @@ class FakeModel:
     Deterministic per question: the letter is picked from a sha256 of the
     question line, and every fifth hash bucket answers with no Answer line, so
     a run exercises correct, wrong and unanswered outcomes without a model.
+    It makes its own call once whether or not the preload ran: it answers once
+    it sees its own call (arguments ``{"query": <question>, "k": 3}``).
     """
 
     label = "fake"
@@ -129,8 +149,10 @@ class FakeModel:
         letters = re.findall(r"^([A-Z])\. ", user, re.M)
         digest = int(hashlib.sha256(question.encode("utf-8")).hexdigest(), 16)
         base = {"ok": True, "finishReason": "stop", "promptTokens": 0, "generationTokens": 0, "elapsedMs": 0}
-        if messages[-1]["role"] != "tool":
-            call = json.dumps({"name": "search_rules", "arguments": {"query": question[:200], "k": 3}})
+        own = {"query": question[:200], "k": 3}
+        made = any(c["function"]["arguments"] == own for m in messages for c in m.get("tool_calls") or [])
+        if not made:
+            call = json.dumps({"name": "search_rules", "arguments": own})
             return {**base, "text": f"<tool_call>\n{call}\n</tool_call>"}
         if digest % 5 == 0:
             return {**base, "text": "The rules found do not settle it."}
@@ -147,13 +169,19 @@ def header_row(args, set_path: Path, items: list[dict], selected: list[dict]) ->
             "set": shown, "set_sha256": file_sha256(set_path), "set_items": len(items),
             "items_run": len(selected), "ids": args.ids, "limit": args.limit,
             "model": "fake" if args.fake else args.model, "adapter": args.adapter, "fake": bool(args.fake),
-            "thinking": bool(args.thinking), "max_tokens": args.max_tokens, "max_tool_calls": MAX_TOOL_CALLS}
+            "thinking": bool(args.thinking), "max_tokens": args.max_tokens, "max_tool_calls": MAX_TOOL_CALLS,
+            "preload": bool(args.preload), "preload_k": args.preload_k if args.preload else None,
+            "preload_chars": args.preload_chars if args.preload else None,
+            "tool_specs_sha256": tool_specs_sha256()}
 
 
-async def run_items(model, selected: list[dict], *, thinking: bool, max_tokens: int) -> list[dict]:
+async def run_items(model, selected: list[dict], *, thinking: bool, max_tokens: int, preload: bool = DEFAULT_PRELOAD,
+                    preload_k: int = DEFAULT_PRELOAD_K, preload_chars: int = DEFAULT_PRELOAD_CHARS) -> list[dict]:
     records = []
     for n, item in enumerate(selected, 1):
-        turn = await run_turn([], question_message(item), model, max_tokens=max_tokens, enable_thinking=thinking)
+        turn = await run_turn([], question_message(item), model, max_tokens=max_tokens, enable_thinking=thinking,
+                              preload=preload, preload_text=preload_text(item), preload_k=preload_k,
+                              preload_chars=preload_chars)
         record = item_record(item, turn)
         records.append(record)
         print(f"[{n}/{len(selected)}] {item['id']}: chose {record['chosen'] or '-'}, key {record['correct'] or '-'}"
@@ -179,8 +207,15 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--model", help="local MLX model directory, e.g. models/qwen3-8b-4bit")
     parser.add_argument("--adapter", help="optional LoRA adapter directory for --model")
     parser.add_argument("--fake", action="store_true", help="scripted fake model (tests only)")
-    parser.add_argument("--thinking", action="store_true", help="let Qwen3 think before answering")
-    parser.add_argument("--max-tokens", type=int, default=DEFAULT_MAX_TOKENS, help="generation limit per model step")
+    parser.add_argument("--thinking", action=argparse.BooleanOptionalAction, default=DEFAULT_THINKING,
+                        help="let Qwen3 think before answering (default on; --no-thinking to compare)")
+    parser.add_argument("--max-tokens", type=int, default=None,
+                        help="generation limit per model step (default 2048 thinking, 1024 not)")
+    parser.add_argument("--preload", action=argparse.BooleanOptionalAction, default=DEFAULT_PRELOAD,
+                        help="run search_rules and card linking before the model speaks (default on)")
+    parser.add_argument("--preload-k", type=int, default=DEFAULT_PRELOAD_K, help="rules passages preloaded (1..20)")
+    parser.add_argument("--preload-chars", type=int, default=DEFAULT_PRELOAD_CHARS,
+                        help="character budget for preloaded results")
     parser.add_argument("--limit", type=int, default=0, help="run only the first N selected items (0: all)")
     parser.add_argument("--ids", help="comma-separated item ids to run")
     parser.add_argument("--name", required=True, help="run name; writes <runs-dir>/<name>.jsonl")
@@ -193,8 +228,14 @@ def main(argv: list[str] | None = None) -> int:
         parser.error("--adapter needs --model")
     if not RUN_NAME_RE.match(args.name):
         parser.error("--name must be 1-80 letters, digits, '.', '_' or '-', starting with a letter or digit")
+    if args.max_tokens is None:
+        args.max_tokens = default_max_tokens(args.thinking)
     if not 1 <= args.max_tokens <= 4096:
         parser.error("--max-tokens must be 1..4096")
+    if not 1 <= args.preload_k <= 20:
+        parser.error("--preload-k must be 1..20")
+    if not 0 <= args.preload_chars <= 100000:
+        parser.error("--preload-chars must be 0..100000")
     if args.limit < 0:
         parser.error("--limit must be 0 or more")
     if args.ids is not None and not IDS_RE.match(args.ids):
@@ -220,11 +261,14 @@ def main(argv: list[str] | None = None) -> int:
         except ValueError as exc:
             parser.error(str(exc))
     print(f"Scoring {len(selected)} of {len(items)} item(s) from {set_path.name} with {model.label} "
-          f"(thinking {'on' if args.thinking else 'off'}, prompt {EVAL_PROMPT_VERSION}) -> {out}", flush=True)
+          f"(thinking {'on' if args.thinking else 'off'}, preload {'on' if args.preload else 'off'}, "
+          f"max tokens {args.max_tokens}, prompt {EVAL_PROMPT_VERSION}) -> {out}", flush=True)
 
     async def go():
         try:
-            return await run_items(model, selected, thinking=args.thinking, max_tokens=args.max_tokens)
+            return await run_items(model, selected, thinking=args.thinking, max_tokens=args.max_tokens,
+                                   preload=args.preload, preload_k=args.preload_k,
+                                   preload_chars=args.preload_chars)
         finally:
             close = getattr(model, "close", None)
             if close is not None:

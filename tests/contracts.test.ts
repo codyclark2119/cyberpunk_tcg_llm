@@ -3,7 +3,7 @@ import { z } from "zod";
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { GameStateSchema, CardInstanceIdSchema, GigInstanceIdSchema, MatchIdSchema, DeckSchema, validateDeck, ContentBundleSchema, hashCanonical, createContentBundle } from "@tcg/domain";
-import { validateState, RulesView, listLegalActions, applyAction, applyCommand, resolveActionId, observe, hashObservation, hashPosition, hashReplayState, modifyGigValue, rollGigDie, transferGigControl, drawDeterministicDie } from "@tcg/engine";
+import { validateState, RulesView, listLegalActions, applyAction, applyCommand, resolveActionId, observe, hashObservation, hashPosition, hashReplayState, modifyGigValue, rollGigDie, transferGigControl, drawDeterministicInteger } from "@tcg/engine";
 import { generatePosition, exportAttempts, TrainingAttemptSchema, TrainingPositionSchema, validateTrainingPosition, modelInput } from "@tcg/training-harness";
 import { handleRequest, WireRequestSchema, WireResponseSchema } from "@tcg/wire";
 import { fixtureContext, fixtureState, player, rival } from "./contract-fixture";
@@ -62,7 +62,7 @@ test("selling retains physical identity, readiness, owner and revision; transpor
     assert.equal(view.validatePaymentChoice(player, [], { kind: "DASH" }).ok, false);
 });
 test("Gig rolls replay, D20 eligibility is explicit, transfer and modifications retain die/original roll", () => {
-    assert.deepEqual(drawDeterministicDie(state.rng, 6), drawDeterministicDie(state.rng, 6));
+    assert.deepEqual(drawDeterministicInteger(state.rng, 6), drawDeterministicInteger(state.rng, 6));
     assert.equal(rollGigDie(state, GigInstanceIdSchema.parse("p0-D20"), context).ok, false);
     const rolled = unwrap(rollGigDie(state, gid, context));
     assert.deepEqual(rollGigDie(state, gid, context), rolled ? { ok: true, value: rolled } : null);

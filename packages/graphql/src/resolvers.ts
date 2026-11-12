@@ -2,6 +2,7 @@ import { GraphQLError } from "graphql";
 import { CARD_COLORS, CardIdSchema, DeckSchema, validateDeck, type CardColor } from "@tcg/domain";
 import { PageInputSchema, encodeCursor, decodeCursor } from "./pagination";
 import type { Resolvers } from "./generated/server";
+import packageJson from "../package.json";
 function input<T>(parse: () => T): T {
   try { return parse(); } catch { throw new GraphQLError("Invalid request input or pagination cursor", { extensions: { code: "BAD_USER_INPUT" } }); }
 }
@@ -13,7 +14,7 @@ function ramToList(ram?: Partial<Record<CardColor, number>>) {
 }
 export const resolvers: Resolvers = {
   Query: {
-    apiVersion: () => "0.3.0-phase1",
+    apiVersion: () => packageJson.version,
     cards: async (_parent, args, context) => {
       const page = input(() => PageInputSchema.parse(args));
       const cursor = page.after;

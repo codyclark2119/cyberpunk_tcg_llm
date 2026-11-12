@@ -6,7 +6,7 @@ A monorepo for a Cyberpunk TCG platform and its AI harness:
 - **Web platform** (`apps/web`, `packages/graphql`, `packages/persistence`): Next.js and Apollo over versioned Mongo content (or the fixture repositories). The web catalog still serves the four development fixture cards; engine-admitted revisions are exercised by tests and replays, not yet published to it.
 - **Python AI harness** (`games/`, `harness/`, `data/`): rules Q&A over the official rules and card corpus, with retrieval, a rubric-based judge and LoRA fine-tuning on Apple Silicon via MLX. For gameplay it receives public observations and engine-enumerated legal actions, and returns only an `actionId`. A local policy layer (`games/cyberpunk/policy_bot.py`) validates each decision and picks an offered action with a deterministic baseline or optional [local MLX inference](docs/local-mlx-bot.md). Everything runs locally; the external simulator bridge was [retired](docs/simulator-bot-retirement.md).
 
-Browser gameplay, authentication, matchmaking and WebSockets are not implemented. Working rules for both halves are in [CLAUDE.md](CLAUDE.md); the documentation index is [docs/README.md](docs/README.md).
+Gameplay runs locally in Python, not in the web app: the [local play UI](docs/local-play-ui.md) (`scripts/play_local.py`) lets you play the engine against a local bot. The web app has no gameplay, authentication, matchmaking or WebSockets. Working rules for both halves are in [CLAUDE.md](CLAUDE.md); the documentation index is [docs/README.md](docs/README.md).
 
 ## Workspace and dependencies
 
@@ -23,7 +23,7 @@ tests/integration/             isolated Mongo integration tests
 games/cyberpunk/               Python game layer: markup, cards, errata, chunking, prompts, engine adapter
 harness/core/                  game-agnostic Python harness: JSONL I/O, retrieval, judge, SFT, calibration
 data/                          dated source snapshot: raw API captures, processed corpus, engine candidates
-eval/ configs/ models/         evaluation runs, configs and local model weights (weights are gitignored)
+eval/ models/                  evaluation sets, runs and reports; local model weights (gitignored)
 docs/                          milestone reports and admission records, indexed in docs/README.md
 ```
 
@@ -104,7 +104,7 @@ Legacy card envelopes are not silently converted into invented historical snapsh
 
 ## Retired PostgreSQL layer
 
-The PostgreSQL adapters (owned decks, matches and the command ledger), their SQL migrations, `npm run db:migrate` and the Compose service were removed on 2026-11-11. No runtime path used them: the web app and GraphQL read only Mongo or fixture content, and engine state lives in replays and match records. The domain repository contracts (`DeckRepository`, `MatchRepository`, `CommandRepository`) remain in `packages/domain` without an adapter. The `pg` dependency is still declared in `packages/persistence` and will be removed separately, since the lockfile is part of the engine identity. Milestone reports dated before then describe the layer as it was.
+The PostgreSQL adapters (owned decks, matches and the command ledger), their SQL migrations, `npm run db:migrate` and the Compose service were removed on 2026-11-11. No runtime path used them: the web app and GraphQL read only Mongo or fixture content, and engine state lives in replays and match records. The orphaned domain contracts (`DeckRepository`, `MatchRepository`, `CommandRepository` and their deck and command-request schemas) and the `pg` and `@types/pg` dependencies were removed on 2026-11-12 in an engine-identity bump, since the lockfile is part of the engine identity. Milestone reports dated before then describe the layer as it was.
 
 ## Engine and training contracts
 
@@ -194,17 +194,17 @@ Matrix traces, which the matrix reviews read back, go to `DEMO_MATRIX_TRACE_DIR`
 
 ## AI harness
 
-Model work needs Apple Silicon and MLX:
+`requirements.txt` lists the packages the harness imports (NumPy, FastAPI, Uvicorn, httpx), enough for the offline checks, the play UI and the assistant page on any OS. Model work also needs Apple Silicon and the pinned MLX stack in `requirements-mlx-bot.txt` (see the [Mac setup guide](docs/local-mlx-bot.md)):
 
 ```bash
-python3 -m venv mlx_env && source mlx_env/bin/activate
-pip install -r requirements.txt
+python3 -m venv .venv && source .venv/bin/activate
+python -m pip install -r requirements.txt                              # any OS
+python -m pip install -r requirements.txt -r requirements-mlx-bot.txt  # Apple Silicon model work
 ```
 
-The offline checks need `fastapi` (for the harness monitor tests), no GPU and no network after dependency installation. `scripts/run_tests.sh` runs all of them:
+The offline checks need no GPU and no network after dependency installation. `scripts/run_tests.sh` runs all of them; `scripts/run_tests.sh --list` names every step. The core suites:
 
 ```bash
-python -m pip install fastapi httpx
 python scripts/test_cyberpunk.py                       # corpus and ingestion
 python scripts/test_harness_core.py                    # harness/core
 python scripts/test_engine_candidates.py               # engine candidate bridge
@@ -214,7 +214,11 @@ python scripts/test_policy_bot.py                      # local policy layer: val
 python scripts/test_policy_mlx.py                      # subprocess policy boundary; no MLX required
 python scripts/test_local_match.py                     # bot-vs-bot games on the real engine worker
 python scripts/test_local_prompt.py                    # compact gameplay prompt: facts kept, nothing hidden added
+python scripts/test_training_records.py                # TrainingPosition/TrainingAttempt records, both languages
+python scripts/test_validation_console.py              # the validate:ui console
 ```
+
+The play UI and assistant suites are listed in their sections below.
 
 `data/` is a dated snapshot of the official card API. The fetch/ingest pipeline, errata handling, deckbuilding and archetype tooling, and the rules for refreshing the snapshot are in [CLAUDE.md](CLAUDE.md), with full detail in [the original harness README](docs/ai-source/README.legacy.md).
 
@@ -356,7 +360,7 @@ On the Mac (not yet run against a real model; the Linux tests use a scripted fak
 
 ```bash
 python scripts/assistant_local.py --model models/qwen3-8b-4bit   # then open http://127.0.0.1:8767/
-# optional: --adapter <dir>, --thinking, --max-tokens 1024
+# optional: --adapter <dir>, --no-thinking, --no-preload, --max-tokens N
 python scripts/test_assistant_loop.py    # loop, worker parts, chat route; fake model, no mlx
 ```
 
@@ -374,8 +378,9 @@ and for a resolved deck shows `check_deck` and a compact `deck_profile`; that de
 held for the session and `loop.deck_context` adds it to the system message as a
 labelled `<loaded_deck>` JSON block whose `deck` value the model passes unchanged to
 the deck tools, until it is cleared (`/api/deck/clear`). "New chat"
-(`/api/chat/reset`) clears the history and keeps the deck. A per-question "think
-first" toggle defaults to `--thinking`. The four example chips only fill the input.
+(`/api/chat/reset`) clears the history and keeps the deck. Per-question "think
+first" and "look up rules and cards first" toggles default to the server's settings
+(both on; see Prompt and context). The four example chips only fill the input.
 
 ```bash
 python scripts/test_assistant_ui.py      # escaping, deck panel, sessions, status, trace; fake model, needs node
@@ -402,7 +407,7 @@ outcomes and traces.
 The baseline on the Mac (not yet run):
 
 ```bash
-python scripts/eval_assistant.py --set data/gold/quiz_mc_2026-11-12.jsonl --model models/qwen3-8b-4bit --name baseline-qwen3-8b
+python scripts/eval_assistant.py --set data/gold/quiz_mc_2026-11-12.jsonl --model models/qwen3-8b-4bit --name baseline-qwen3-8b --no-preload --no-thinking
 python scripts/test_assistant_eval.py    # gold set, letter parser, scorer (--fake), Eval tab; needs node
 ```
 
@@ -439,3 +444,44 @@ python scripts/build_rules_index.py                  # Apple Silicon, mlx-embedd
 python scripts/eval_retrieval.py --name retrieval-quiz-hybrid --quiet
 python scripts/test_assistant_retrieval.py           # rule-level index, fusion on a fake embedder, Eval panel; needs node
 ```
+
+### Prompt and context
+
+The quiz diagnosis found the 8B model reading about 11.7k characters of system prompt
+and tool specs before every question, with thinking off. Three changes, each
+switchable so the Mac comparison can isolate it:
+
+- **Lean specs and prompt `assistant-chat-v3`.** Tool descriptions are one or two
+  sentences on when to use the tool; names and argument schemas are unchanged (pinned
+  against `scripts/fixtures/assistant_tool_schemas_v2.json`). The prompt warns that
+  some terms are the reverse of other games, quoting rules 9.1 and 9.3.2.1, says to
+  answer only from tool results and to say the snapshot does not cover a question
+  (tournament policy is not in it) rather than guess. `scripts/prompt_budget.py`
+  prints the overhead (`--tokenizer <model dir>` adds real token counts where
+  `transformers` loads it): 11,655 characters before (10,416 specs + 1,239 prompt),
+  9,253 after (8,138 + 1,115). Most of what remains is schema (enums and patterns).
+- **Preload** (`games/cyberpunk/assistant/preload.py`). Before the model speaks, the
+  loop runs `search_rules` on the question (k 5) and links card names in it (exact
+  display name or name, longest match first, case- and punctuation-insensitive):
+  one card runs `get_card`, a shared name such as "V" runs `find_card` so the model
+  gets the candidates. Results go in as tool messages within 8,000 characters
+  (printings dropped, long passage lists shortened, a card never cut). They open the
+  trace with `auto: true` and do not count against the 6-call cap. The scorer
+  preloads the question and its choices, the text `eval_retrieval.py` measures.
+- **Thinking on** by default, with 2,048 tokens per model step (1,024 without).
+
+The A/B on the Mac (not yet run), each against the same set and snapshot:
+
+```bash
+python scripts/prompt_budget.py --tokenizer models/qwen3-8b-4bit
+S=data/gold/quiz_mc_2026-11-12.jsonl M=models/qwen3-8b-4bit
+python scripts/eval_assistant.py --set $S --model $M --name v3-base     --no-preload --no-thinking
+python scripts/eval_assistant.py --set $S --model $M --name v3-preload  --no-thinking
+python scripts/eval_assistant.py --set $S --model $M --name v3-thinking --no-preload
+python scripts/eval_assistant.py --set $S --model $M --name v3-both
+python scripts/test_assistant_prompt.py   # specs, budget, preload, thinking defaults; fake model, no mlx
+```
+
+Each run's header records preload, thinking, `max_tokens`, both prompt versions and
+the tool-spec sha256; `tools_called` is what the model chose and `auto_tools` what
+the preload ran.

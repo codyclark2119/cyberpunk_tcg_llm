@@ -11,8 +11,9 @@ There are no changed-file selectors, generated-baseline classifiers, path filter
 conditional steps. A docs-only change gets the same validation as a runtime change;
 the small time saving is not worth another default-pass boundary. Use the Node
 version pinned in `.nvmrc` (`nvm use`) and Python 3 with `fastapi` installed
-(`python -m pip install fastapi httpx numpy`; `httpx` is used by the console tests,
-`numpy` by the rules-retrieval tests' fake embedding index).
+(`python -m pip install fastapi httpx numpy`, or `-r requirements.txt`, which also
+adds Uvicorn; `httpx` is used by the console tests, `numpy` by the rules-retrieval
+tests' fake embedding index).
 
 ## Commands and tiers
 
@@ -28,8 +29,9 @@ scripts/run_tests.sh --list          # step names and tiers
   dependency check, a compile check of `games/`, `harness/` and `scripts/`, and the
   Python suites: corpus and ingestion, harness core, engine candidates, the local
   policy layer, the local MLX worker boundary (no MLX or weights needed), the
-  Python-to-engine adapter, the local match runner and the validation console. It
-  needs no Docker.
+  Python-to-engine adapter, the local match runner, the local prompt, training
+  records, the validation console, the local play UI and the assistant suites
+  (tools, deck tools, loop, UI, eval, retrieval). It needs no Docker.
 - **Full tier**: every quick step plus the build, `git diff --check` against the
   merge-base with `origin/master` (override with `RUN_TESTS_BASE`), community deck
   rules with negative controls (272/272, and no negative control may print
@@ -43,7 +45,7 @@ passed. Each step's output is kept in `${TMPDIR:-/tmp}/run_tests.<pid>/<step>.lo
 
 The pin table at the top of `scripts/run_tests.sh` is the only place that names steps,
 tiers, commands and expected output. Each row checks the exit status (with
-`pipefail`) and, where pinned, an exact pass line such as `all 89 tests passed`.
+`pipefail`) and, where pinned, an exact pass line such as `all 91 tests passed`.
 Adding or removing a Python test means updating that row in the same change.
 
 Node suites are checked by `scripts/validation/assert-test-summary.mjs`: one complete

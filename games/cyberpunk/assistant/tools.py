@@ -606,55 +606,58 @@ def _object(properties: dict, required: list[str]) -> dict:
     return {"type": "object", "properties": properties, "required": required, "additionalProperties": False}
 
 
-def _int(description: str, minimum: int = 0, maximum: int = 99) -> dict:
-    return {"type": "integer", "minimum": minimum, "maximum": maximum, "description": description}
+def _int(description: str | None, minimum: int = 0, maximum: int = 99) -> dict:
+    """An integer parameter; no description when the name says it all (cost_min)."""
+    spec = {"type": "integer", "minimum": minimum, "maximum": maximum}
+    return spec if description is None else {**spec, "description": description}
 
 
 def _build_tools() -> dict[str, Tool]:
-    slug = {"type": "string", "pattern": SLUG_PATTERN, "description": "A card slug, e.g. v-streetkid."}
+    # Descriptions are kept to one or two plain sentences on when to use the tool: every spec is in
+    # the prompt of every model step, and an 8B model reads the question after all of them
+    # (scripts/prompt_budget.py counts them). Names and argument schemas are fixed; only the prose is short.
+    slug = {"type": "string", "pattern": SLUG_PATTERN, "description": "Card slug, e.g. v-streetkid."}
     keyword = {"type": "string", "enum": list(markup.KEYWORDS)}
     tools = [
         Tool("find_card",
-             "Resolve a card name or partial name to card slugs. Several cards share a name (three are called V), "
-             "so this returns every match with its subname and an 'ambiguous' flag; it never picks one.",
+             "Use to turn a card name into slugs. Returns every match; a shared name (three cards are V) is "
+             "flagged ambiguous and never resolved for you.",
              _object({"query": {"type": "string", "minLength": 1, "maxLength": 120,
-                                "description": "Card name, partial name or slug."},
-                      "limit": _int("Maximum matches to return.", 1, MAX_FIND_RESULTS)}, ["query"]),
+                                "description": "Card name or slug."},
+                      "limit": _int("Max matches.", 1, MAX_FIND_RESULTS)}, ["query"]),
              _find_card),
         Tool("get_card",
-             "Full facts for one card by slug: type, colour, cost, power, RAM, keywords, triggers, printed text, "
-             "printings, and any errata, which override the printed text.",
+             "Use to read one card by slug: its stats, keywords, text and any errata (errata override the "
+             "printed text).",
              _object({"slug": slug}, ["slug"]), _get_card),
         Tool("search_cards",
-             "Find cards by structured filters (all optional, combined with AND): colour, card type, cost, power "
-             "and RAM ranges, printed keyword, referenced keyword, timing trigger, text substring.",
+             "Use to list cards matching filters; all are optional and combine with AND.",
              _object({"color": {"type": "string", "enum": snapshot_values("color")},
                       "card_type": {"type": "string", "enum": snapshot_values("card_type")},
-                      "cost_min": _int("Minimum cost."), "cost_max": _int("Maximum cost."),
-                      "power_min": _int("Minimum power."), "power_max": _int("Maximum power."),
-                      "ram_min": _int("Minimum RAM."), "ram_max": _int("Maximum RAM."),
-                      "keyword": {**keyword, "description": "A keyword the card has printed."},
-                      "referenced_keyword": {**keyword, "description": "A keyword the card mentions but lacks."},
+                      "cost_min": _int(None), "cost_max": _int(None),
+                      "power_min": _int(None), "power_max": _int(None),
+                      "ram_min": _int(None), "ram_max": _int(None),
+                      "keyword": {**keyword, "description": "Printed keyword."},
+                      "referenced_keyword": {**keyword, "description": "Keyword mentioned in the text."},
                       "timing_trigger": {"type": "string", "enum": list(markup.TIMING_TRIGGERS)},
                       "text": {"type": "string", "minLength": 1, "maxLength": 200,
-                               "description": "Case-insensitive substring of the card text or its errata."},
-                      "limit": _int("Maximum cards to return.", 1, 200)}, []),
+                               "description": "Substring of the card text or errata."},
+                      "limit": _int(None, 1, 200)}, []),
              _search_cards),
         Tool("get_rule",
-             "Look up one rule of the official rules by its number (e.g. 9.9 or 11.24.1), with its section, "
-             "parent headings, sub-rules and cross-references.",
+             "Use to read one rule by number (e.g. 9.3.2) with its parents, sub-rules and cross-references.",
              _object({"rule_id": {"type": "string", "pattern": RULE_NUMBER_PATTERN, "maxLength": 20,
-                                  "description": "Rule number, e.g. 9.2.3."}}, ["rule_id"]),
+                                  "description": "Rule number, e.g. 9.3.2."}}, ["rule_id"]),
              _get_rule),
         Tool("search_rules",
-             "Search the rules and errata text for passages relevant to a question. Returns the matching passages "
-             "with their rule numbers and which search method ran.",
+             "Use for any rules question: returns the most relevant rules and errata passages with their rule "
+             "numbers.",
              _object({"query": {"type": "string", "minLength": 2, "maxLength": 500},
-                      "k": _int("Number of passages to return.", 1, 20)}, ["query"]),
+                      "k": _int("Passages to return.", 1, 20)}, ["query"]),
              _search_rules),
         Tool("card_interactions",
-             "For two cards (by slug), list the rules their keywords, timing triggers and symbols point to and the "
-             "ones they share. Facts only; it does not judge whether the cards combine well.",
+             "Use for two cards (by slug): lists the rules their keywords, triggers and symbols point to, and "
+             "the shared ones. Facts only, no judgment.",
              _object({"slug_a": slug, "slug_b": slug}, ["slug_a", "slug_b"]),
              _card_interactions),
     ]

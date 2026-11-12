@@ -31,7 +31,7 @@ export function gearDefeatSupport(state: GameState, id: CardInstanceId, context:
     return success(null);
 }
 /** Effect defeat admits reviewed Units and, under the Gear capability, reviewed attached Gear. */
-export function effectDefeatSupport(state: GameState, id: CardInstanceId, context: EngineContext) {
+function effectDefeatSupport(state: GameState, id: CardInstanceId, context: EngineContext) {
     const unit = defeatSupport(state, id, context);
     return unit.ok ? unit : gearDefeatSupport(state, id, context);
 }

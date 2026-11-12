@@ -1,0 +1,315 @@
+{
+ "archetype_of": {
+  "additionalProperties": false,
+  "properties": {
+   "deck": {
+    "type": "object"
+   },
+   "deck_id": {
+    "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$",
+    "type": "string"
+   },
+   "format": {
+    "pattern": "^[a-z0-9][a-z0-9-]{0,39}$",
+    "type": "string"
+   },
+   "text": {
+    "maxLength": 10000,
+    "minLength": 1,
+    "type": "string"
+   }
+  },
+  "required": [],
+  "type": "object"
+ },
+ "card_interactions": {
+  "additionalProperties": false,
+  "properties": {
+   "slug_a": {
+    "pattern": "^[a-z0-9][a-z0-9-]{0,159}$",
+    "type": "string"
+   },
+   "slug_b": {
+    "pattern": "^[a-z0-9][a-z0-9-]{0,159}$",
+    "type": "string"
+   }
+  },
+  "required": [
+   "slug_a",
+   "slug_b"
+  ],
+  "type": "object"
+ },
+ "check_deck": {
+  "additionalProperties": false,
+  "properties": {
+   "deck": {
+    "type": "object"
+   },
+   "deck_id": {
+    "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$",
+    "type": "string"
+   },
+   "format": {
+    "pattern": "^[a-z0-9][a-z0-9-]{0,39}$",
+    "type": "string"
+   },
+   "text": {
+    "maxLength": 10000,
+    "minLength": 1,
+    "type": "string"
+   }
+  },
+  "required": [],
+  "type": "object"
+ },
+ "deck_profile": {
+  "additionalProperties": false,
+  "properties": {
+   "deck": {
+    "type": "object"
+   },
+   "deck_id": {
+    "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$",
+    "type": "string"
+   },
+   "format": {
+    "pattern": "^[a-z0-9][a-z0-9-]{0,39}$",
+    "type": "string"
+   },
+   "text": {
+    "maxLength": 10000,
+    "minLength": 1,
+    "type": "string"
+   }
+  },
+  "required": [],
+  "type": "object"
+ },
+ "find_card": {
+  "additionalProperties": false,
+  "properties": {
+   "limit": {
+    "maximum": 25,
+    "minimum": 1,
+    "type": "integer"
+   },
+   "query": {
+    "maxLength": 120,
+    "minLength": 1,
+    "type": "string"
+   }
+  },
+  "required": [
+   "query"
+  ],
+  "type": "object"
+ },
+ "get_card": {
+  "additionalProperties": false,
+  "properties": {
+   "slug": {
+    "pattern": "^[a-z0-9][a-z0-9-]{0,159}$",
+    "type": "string"
+   }
+  },
+  "required": [
+   "slug"
+  ],
+  "type": "object"
+ },
+ "get_rule": {
+  "additionalProperties": false,
+  "properties": {
+   "rule_id": {
+    "maxLength": 20,
+    "pattern": "^\\d+(?:\\.\\d+)*\\.?$",
+    "type": "string"
+   }
+  },
+  "required": [
+   "rule_id"
+  ],
+  "type": "object"
+ },
+ "parse_deck": {
+  "additionalProperties": false,
+  "properties": {
+   "deck": {
+    "type": "object"
+   },
+   "deck_id": {
+    "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$",
+    "type": "string"
+   },
+   "format": {
+    "pattern": "^[a-z0-9][a-z0-9-]{0,39}$",
+    "type": "string"
+   },
+   "text": {
+    "maxLength": 10000,
+    "minLength": 1,
+    "type": "string"
+   }
+  },
+  "required": [],
+  "type": "object"
+ },
+ "played_with": {
+  "additionalProperties": false,
+  "properties": {
+   "k": {
+    "maximum": 200,
+    "minimum": 1,
+    "type": "integer"
+   },
+   "slug": {
+    "pattern": "^[a-z0-9][a-z0-9-]{0,159}$",
+    "type": "string"
+   }
+  },
+  "required": [
+   "slug"
+  ],
+  "type": "object"
+ },
+ "search_cards": {
+  "additionalProperties": false,
+  "properties": {
+   "card_type": {
+    "enum": [
+     "Gear",
+     "Legend",
+     "Program",
+     "Unit"
+    ],
+    "type": "string"
+   },
+   "color": {
+    "enum": [
+     "Blue",
+     "Green",
+     "Red",
+     "Yellow"
+    ],
+    "type": "string"
+   },
+   "cost_max": {
+    "maximum": 99,
+    "minimum": 0,
+    "type": "integer"
+   },
+   "cost_min": {
+    "maximum": 99,
+    "minimum": 0,
+    "type": "integer"
+   },
+   "keyword": {
+    "enum": [
+     "Adrenaline",
+     "Go Solo",
+     "Quick",
+     "Blocker"
+    ],
+    "type": "string"
+   },
+   "limit": {
+    "maximum": 200,
+    "minimum": 1,
+    "type": "integer"
+   },
+   "power_max": {
+    "maximum": 99,
+    "minimum": 0,
+    "type": "integer"
+   },
+   "power_min": {
+    "maximum": 99,
+    "minimum": 0,
+    "type": "integer"
+   },
+   "ram_max": {
+    "maximum": 99,
+    "minimum": 0,
+    "type": "integer"
+   },
+   "ram_min": {
+    "maximum": 99,
+    "minimum": 0,
+    "type": "integer"
+   },
+   "referenced_keyword": {
+    "enum": [
+     "Adrenaline",
+     "Go Solo",
+     "Quick",
+     "Blocker"
+    ],
+    "type": "string"
+   },
+   "text": {
+    "maxLength": 200,
+    "minLength": 1,
+    "type": "string"
+   },
+   "timing_trigger": {
+    "enum": [
+     "Play",
+     "Call",
+     "Attack",
+     "Defeated"
+    ],
+    "type": "string"
+   }
+  },
+  "required": [],
+  "type": "object"
+ },
+ "search_rules": {
+  "additionalProperties": false,
+  "properties": {
+   "k": {
+    "maximum": 20,
+    "minimum": 1,
+    "type": "integer"
+   },
+   "query": {
+    "maxLength": 500,
+    "minLength": 2,
+    "type": "string"
+   }
+  },
+  "required": [
+   "query"
+  ],
+  "type": "object"
+ },
+ "similar_decks": {
+  "additionalProperties": false,
+  "properties": {
+   "deck": {
+    "type": "object"
+   },
+   "deck_id": {
+    "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$",
+    "type": "string"
+   },
+   "format": {
+    "pattern": "^[a-z0-9][a-z0-9-]{0,39}$",
+    "type": "string"
+   },
+   "k": {
+    "maximum": 50,
+    "minimum": 1,
+    "type": "integer"
+   },
+   "text": {
+    "maxLength": 10000,
+    "minLength": 1,
+    "type": "string"
+   }
+  },
+  "required": [],
+  "type": "object"
+ }
+}

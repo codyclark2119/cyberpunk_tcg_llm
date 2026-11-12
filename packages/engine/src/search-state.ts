@@ -1,5 +1,5 @@
 import { supportsCall } from "./effect-support";
-import { canonicalSerialize, hashCanonical, failure, success, type GameState, type PendingChoice } from "@tcg/domain";
+import { turnSliceAllows, canonicalSerialize, hashCanonical, failure, success, type GameState, type PendingChoice } from "@tcg/domain";
 import type { EngineContext } from "./state";
 /** Pure selector usable during structural validation, without recursively constructing RulesView. */
 export function searchTargets(state: GameState, context: EngineContext) {
@@ -19,7 +19,7 @@ export function validateSearchState(state: GameState, context: EngineContext) {
     const c = state.resolution.searchContinuation, current = state.resolution.current;
     if ((state.timing.step === "TARGET_SELECTION" && !state.resolution.playContinuation && !state.resolution.triggerContinuation) !== Boolean(c)) return failure("INVALID_SEARCH_STATE", "Search step and continuation must agree");
     if (!c) return success(null);
-    if (context.content.ruleset.gameplay?.turnSlice?.callEffects !== "REVIEWED_CALL_V1" || current?.effect.kind !== "SEARCH_GEAR" || !current.sourceId || state.resolution.pending.length || state.resolution.discovered.length || state.resolution.callContinuation)
+    if (!turnSliceAllows(context.content.ruleset.gameplay?.turnSlice, "callEffects") || current?.effect.kind !== "SEARCH_GEAR" || !current.sourceId || state.resolution.pending.length || state.resolution.discovered.length || state.resolution.callContinuation)
         return failure("INVALID_SEARCH_STATE", "Search requires a supported single pending CALL effect");
     const actor = current.controllerId, source = state.objects.cards[current.sourceId], revision = context.content.cards.find(r => r.id === source?.cardId && r.revision === source?.revision);
     const ability = revision?.mechanics.abilities[0];

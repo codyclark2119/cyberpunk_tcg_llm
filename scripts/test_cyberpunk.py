@@ -1008,6 +1008,53 @@ def test_corpus_errata_cards_are_annotated():
     assert not unflagged, f"cards flagged with errata that have none: {unflagged[:3]}"
 
 
+def test_fetch_snapshot_writes_refuse_to_shrink():
+    """A short fetch must not overwrite a fuller raw snapshot without --force.
+
+    Works on a copy of a committed card file in a temp directory: the real
+    `data/raw/` is never written, and no fetch touches the network. The
+    unchanged rewrite also proves the helper keeps the snapshot's exact bytes.
+    """
+    import tempfile
+    from fetch_common import write_json_snapshot
+    import fetch_cards
+
+    real = DATA / "raw" / "cards" / "v-streetkid.json"
+    before = real.read_bytes()
+    card = json.loads(before)
+    assert len(card["printings"]) > 1, "fixture needs a card with several printings"
+    with tempfile.TemporaryDirectory() as tmp:
+        path = Path(tmp) / real.name
+        path.write_bytes(before)
+        write_json_snapshot(path, card, fetch_cards.count_printings, min_ratio=1.0)
+        assert path.read_bytes() == before, "an unchanged rewrite changed the bytes"
+
+        short = dict(card, printings=[])  # the index endpoint's shape
+        try:
+            write_json_snapshot(path, short, fetch_cards.count_printings, min_ratio=1.0)
+        except SystemExit as exc:
+            assert "refusing to shrink" in str(exc) and "--force" in str(exc), exc
+        else:
+            raise AssertionError("a card losing its printings was written without --force")
+        assert path.read_bytes() == before, "the refused write still touched the file"
+
+        write_json_snapshot(path, short, fetch_cards.count_printings, force=True,
+                            min_ratio=1.0)
+        assert json.loads(path.read_text())["printings"] == []
+    assert real.read_bytes() == before, "the test wrote into data/raw/"
+
+
+def test_fetch_scripts_share_one_http_helper():
+    """One User-Agent and one fetch_json, in fetch_common.py, for every fetch script."""
+    for name in ("fetch_cards", "fetch_decks", "fetch_errata", "fetch_rules"):
+        source = (REPO_ROOT / "scripts" / f"{name}.py").read_text(encoding="utf-8")
+        assert "def fetch_json" not in source, f"{name}.py defines its own fetch_json"
+        assert "USER_AGENT =" not in source, f"{name}.py defines its own USER_AGENT"
+        assert "from fetch_common import" in source, f"{name}.py bypasses fetch_common"
+        assert ".write_text(json.dumps" not in source.replace("salt_path.write_text(json.dumps", ""), \
+            f"{name}.py writes a snapshot file without the shrink guard"
+
+
 def main():
     tests = [(name, fn) for name, fn in sorted(globals().items())
              if name.startswith("test_") and callable(fn)]

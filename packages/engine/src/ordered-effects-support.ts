@@ -1,8 +1,8 @@
 import { supportsFirstAttackLegend } from "./first-attack-support";
-import { canonicalSerialize, failure, success, type CardRevisionSnapshot, type DeepReadonly, type GameState } from "@tcg/domain";
+import { turnSliceAllows, canonicalSerialize, failure, success, type CardRevisionSnapshot, type DeepReadonly, type GameState } from "@tcg/domain";
 import type { EngineContext } from "./state";
 export function orderedEffectsEnabled(context: EngineContext) {
-    return context.content.ruleset.gameplay?.turnSlice?.combatTriggers === "COMBAT_TRIGGERS_V1" && context.content.cards.some(c => c.execution?.scope === "ATTACK_ORDERED_EFFECTS_V1");
+    return turnSliceAllows(context.content.ruleset.gameplay?.turnSlice, "combatTriggers") && context.content.cards.some(c => c.execution?.scope === "ATTACK_ORDERED_EFFECTS_V1");
 }
 /** Complete reviewed shape. No name/slug dispatch, speculative selectors or partial ability admission. */
 export function supportsOrderedAttackCard(card: DeepReadonly<CardRevisionSnapshot> | undefined, context: EngineContext) {

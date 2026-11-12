@@ -36,7 +36,8 @@ def load_probe(app_root: Path):
 
 
 def main() -> int:
-    parser = argparse.ArgumentParser()
+    parser = argparse.ArgumentParser(description=__doc__,
+                                     formatter_class=argparse.RawDescriptionHelpFormatter)
     parser.add_argument("--app-root", default=REPO_ROOT, type=Path)
     parser.add_argument("--node", default="node")
     args = parser.parse_args()

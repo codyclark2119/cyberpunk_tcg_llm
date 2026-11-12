@@ -11,4 +11,3 @@ export function drawDeterministicInteger(rng: GameState["rng"], faces: number) {
     } while (value >= limit);
     return { rawValue: value % faces + 1, rng: { ...rng, counter } };
 }
-export const drawDeterministicDie = drawDeterministicInteger;

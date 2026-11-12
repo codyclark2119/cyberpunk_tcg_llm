@@ -92,6 +92,8 @@ def run_pure(expression: str, payload) -> object:
 
 
 def client_for(model=None, **kwargs) -> TestClient:
+    """A page over ``model``; the preload is off unless a test asks for it, so turns hold only scripted steps."""
+    kwargs.setdefault("preload", False)
     return TestClient(build_assistant_app(chat=ChatService(model, **kwargs)))
 
 
@@ -173,7 +175,7 @@ def test_status_reports_snapshot_and_model_state():
         client.post("/api/chat", json={"session": "s", "message": "hi"}, headers=LOCAL)
         model = client.get("/api/status", headers=LOCAL).json()["model"]
         assert model == {"configured": True, "label": "broken", "state": "error", "lastError": "worker_startup_failed",
-                         "busy": False, "thinkingDefault": False, "maxTokens": 1024}
+                         "busy": False, "thinkingDefault": True, "preloadDefault": False, "maxTokens": None}
 
 
 def test_new_chat_clears_history_but_keeps_the_deck():
@@ -204,6 +206,38 @@ def test_thinking_toggle_passes_through():
     assert model.thinking == [True, False, True] and [default["thinking"], off["thinking"], on["thinking"]] == [
         True, False, True]
     assert bad.status_code == 400 and bad.json()["error_kind"] == "invalid_arguments"
+
+
+def test_preload_toggle_reaches_the_route_and_auto_steps_show_distinctly():
+    model = ScriptedModel(["a", "b", "c"])
+    with client_for(model, preload=True) as client:
+        assert client.get("/api/status", headers=LOCAL).json()["model"]["preloadDefault"] is True
+        on = client.post("/api/chat", json={"session": "s", "message": "Is Sketchy Ripper a Unit?"},
+                         headers=LOCAL).json()
+        off = client.post("/api/chat", json={"session": "t", "message": "Is Sketchy Ripper a Unit?",
+                                             "preload": False}, headers=LOCAL).json()
+        bad = client.post("/api/chat", json={"session": "s", "message": "q", "preload": "no"}, headers=LOCAL)
+        # A foreign Host is refused before any tool or the model runs, whatever the payload asks for.
+        foreign = client.post("/api/chat", json={"session": "s", "message": "Sketchy Ripper", "preload": True},
+                              headers={"host": "evil.example:8767"})
+    assert bad.status_code == 400 and bad.json()["error_kind"] == "invalid_arguments"
+    assert foreign.status_code == 403 and len(model.seen) == 2
+    auto = [s for s in on["trace"] if s.get("auto")]
+    assert on["preload"] is True and on["autoToolCalls"] == 2 and [s["tool"] for s in auto] == [
+        "search_rules", "get_card"]
+    assert on["trace"][:2] == auto and [m["role"] for m in model.seen[0]][:4] == ["system", "user", "assistant",
+                                                                                   "tool"]
+    assert off["preload"] is False and off["autoToolCalls"] == 0 and [m["role"] for m in model.seen[1]] == [
+        "system", "user"]
+    lines = run_pure("input.map(stepLine)", auto)
+    assert lines[1].startswith("get_card · ok · linked \u201cSketchy Ripper\u201d · sent ") and " chars · " in lines[1]
+    assert lines[0].startswith("search_rules · ok · sent "), lines
+    script = page_script()
+    assert 'preload: $("preloadToggle").checked' in script and '$("preloadToggle").checked = m.preloadDefault' in script
+    assert '(step.auto ? " auto" : "")' in script and "details.step.auto" in ASSISTANT_HTML
+    for needle in ('id="preloadToggle"', 'id="evalPreload"', 'id="thinkToggle"', 'id="evalThinking"'):
+        assert ASSISTANT_HTML.count(needle) == 1, needle
+    assert 'preload: $("evalPreload").checked' in script
 
 
 # Deck panel --------------------------------------------------------------------------------
@@ -263,7 +297,7 @@ def test_deck_context_is_structured_and_absent_without_a_deck():
     messages = build_messages([{"role": "user", "content": "earlier"}], "q", deck)
     assert [m["role"] for m in messages] == ["system", "user", "user"] and messages[-1]["content"] == "q"
     assert loaded_deck_from(messages) == deck and "deck argument" in messages[0]["content"]
-    assert ASSISTANT_PROMPT_VERSION == "assistant-chat-v2"
+    assert ASSISTANT_PROMPT_VERSION == "assistant-chat-v3"
 
 
 # Trace and sources -------------------------------------------------------------------------
@@ -325,7 +359,9 @@ def test_example_chips_are_suggestions_only():
     traces = []
     for _, question in EXAMPLE_QUESTIONS:
         result = asyncio.run(run_turn([], question, ScriptedModel([call("find_card", query="V"), "Done."])))
-        traces.append([{k: v for k, v in s.items() if k != "elapsedMs"} for s in result.trace])
+        # The automatic steps search and link the question's own text; everything after them must not depend on it.
+        traces.append([{k: v for k, v in s.items() if k not in ("elapsedMs", "step")} for s in result.trace
+                       if not s.get("auto")])
     assert all(t == traces[0] for t in traces)
 
 

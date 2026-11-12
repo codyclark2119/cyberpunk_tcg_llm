@@ -51,7 +51,7 @@ python scripts/ingest.py          # rules  -> rules.jsonl, rule_sections.jsonl
 python scripts/build_cards.py     # cards  -> card_database.jsonl
 python scripts/build_errata.py    # errata -> errata.jsonl  (joins to cards)
 python scripts/chunk_corpus.py    # chunks -> rule/card/errata chunks + corpus_chunks
-python scripts/rag.py build       # embedding index over corpus_chunks.jsonl
+python scripts/rag.py index --chunks data/processed/corpus_chunks.jsonl --out data/processed/chunk_embeddings.npz
 ```
 
 `build_errata.py` must run after `build_cards.py`: it joins each erratum to a

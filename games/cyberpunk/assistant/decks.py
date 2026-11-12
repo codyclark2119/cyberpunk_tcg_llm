@@ -612,53 +612,45 @@ def _played_with(args: dict):
 
 
 def _deck_source_schema(with_format: bool = True) -> dict:
+    # Short on purpose: these four properties appear in five tool specs, all in every prompt.
     props = {
-        "deck": {"type": "object", "description": "A deck as parse_deck returns it: {'zones': [{'zone_code': "
-                 "'legends' or 'deck', 'cards': [{'card_slug', 'quantity'}]}], optional 'name' and 'format'}."},
-        "deck_id": {"type": "string", "pattern": DECK_ID_PATTERN,
-                    "description": "The id of a public deck in the snapshot."},
+        "deck": {"type": "object", "description": "A deck exactly as parse_deck returned it."},
+        "deck_id": {"type": "string", "pattern": DECK_ID_PATTERN, "description": "Public deck id."},
         "text": {"type": "string", "minLength": 1, "maxLength": MAX_TEXT,
-                 "description": "A pasted list, one card per line ('3 Name', '3x Name - Subname'); put the "
-                                "Legends under a 'Legends' line and the rest under a 'Deck' line."},
+                 "description": "Pasted list, one card per line ('3 Name'); Legends under a 'Legends' line."},
     }
     if with_format:
-        props["format"] = {"type": "string", "pattern": FORMAT_CODE_PATTERN,
-                           "description": "Format code for pasted text, if known."}
+        props["format"] = {"type": "string", "pattern": FORMAT_CODE_PATTERN, "description": "Format code, if known."}
     return props
 
 
-ONE_OF = " Give exactly one of deck, deck_id or text."
+ONE_OF = " Give one of deck, deck_id or text."
 
 
 def _build_deck_tools() -> list[Tool]:
-    slug = {"type": "string", "pattern": SLUG_PATTERN, "description": "A card slug, e.g. v-streetkid."}
+    slug = {"type": "string", "pattern": SLUG_PATTERN, "description": "Card slug, e.g. v-streetkid."}
     return [
         Tool("parse_deck",
-             "Turn a pasted deck list, a deck dict or a public deck id into a normalised deck of card slugs. Each "
-             "name must match exactly one card; a shared or unknown name is reported with its candidates and never "
-             "guessed." + ONE_OF,
+             "Use first on a pasted deck list: turns it into card slugs and reports unknown or shared names with "
+             "candidates." + ONE_OF,
              _object(_deck_source_schema(), []), _parse_deck),
         Tool("check_deck",
-             "Check a deck against the deck construction rules (Legend count and names, deck size, copy limit, "
-             "RAM) and return each violation with its rule slug, plus the deck's counts and RAM." + ONE_OF,
+             "Use to check deck construction legality; returns each violation with its rule." + ONE_OF,
              _object(_deck_source_schema(), []), _check_deck),
         Tool("deck_profile",
-             "Facts about a deck: cost curve, colour and card-type split, RAM budget against usage, printed and "
-             "referenced keyword counts, timing-trigger counts, and which cards have errata." + ONE_OF,
+             "Use for a deck's cost curve, colours, card types, RAM and keyword counts." + ONE_OF,
              _object(_deck_source_schema(), []), _deck_profile),
         Tool("similar_decks",
-             "The k public decks most similar to a deck (weighted Jaccard over main-deck copies), with their "
-             "similarity and archetype." + ONE_OF,
-             _object({**_deck_source_schema(), "k": _int("Number of decks to return.", 1, 50)}, []),
+             "Use to find the public decks most like a deck, with similarity and archetype." + ONE_OF,
+             _object({**_deck_source_schema(), "k": _int("Decks to return.", 1, 50)}, []),
              _similar_decks),
         Tool("archetype_of",
-             "Which archetype (group of public decks built alike) a deck belongs to or is nearest, with the "
-             "archetype's core cards, Legends and colours. Grouping only, not a strength rating." + ONE_OF,
+             "Use to find which public-deck archetype a deck belongs to (a grouping, not a strength rating)."
+             + ONE_OF,
              _object(_deck_source_schema(), []), _archetype_of),
         Tool("played_with",
-             "Cards most often played alongside a card (by slug) across the public decks: how many decks hold "
-             "both, and each card's base rate.",
-             _object({"slug": slug, "k": _int("Number of cards to return.", 1, 200)}, ["slug"]),
+             "Use to list the cards most often played with a card (by slug) in public decks.",
+             _object({"slug": slug, "k": _int("Cards to return.", 1, 200)}, ["slug"]),
              _played_with),
     ]
 

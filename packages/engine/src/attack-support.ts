@@ -1,6 +1,6 @@
-import { failure, success, type CardRevisionSnapshot, type DeepReadonly } from "@tcg/domain";
+import { turnSliceAllows, failure, success, type CardRevisionSnapshot, type DeepReadonly } from "@tcg/domain";
 import type { EngineContext } from "./state";
-export function combatEnabled(context: EngineContext) { return context.content.ruleset.gameplay?.turnSlice?.combat === "COMBAT_ATTACK_V1"; }
+export function combatEnabled(context: EngineContext) { return turnSliceAllows(context.content.ruleset.gameplay?.turnSlice, "combat"); }
 /** Entire reviewed Swordwise shape, including its only trigger and resolution-time condition. */
 export function supportsAttackPlay(card: DeepReadonly<CardRevisionSnapshot> | undefined, context: EngineContext) {
     if (!combatEnabled(context) || !card || card.mechanics.abilities.some(a => a.inherited || a.guard) || card.type !== "UNIT" || card.execution?.scope !== "COMBAT_ATTACK_V1" || card.execution.status !== "SUPPORTED" || card.printedCost.kind !== "EDDIES" || card.printedCost.amount > 1000 || card.power === undefined || card.mechanics.restrictions?.length || card.mechanics.equip || card.mechanics.keywords.length || card.mechanics.modifiers.length || card.mechanics.abilities.length !== 1)

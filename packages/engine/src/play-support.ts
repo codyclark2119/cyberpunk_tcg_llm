@@ -14,11 +14,11 @@ import { supportsAttackPreventionUnit } from "./attack-prevention-support";
 import { isReactDecision, supportsReactPlay } from "./react-support";
 import { supportsAttackPlay } from "./attack-support";
 import { supportsGear, legalEquipHosts } from "./attachments";
-import { failure, success, type CardRevisionSnapshot, type DeepReadonly, type GameState, type CardInstanceId, type PlayerId } from "@tcg/domain";
+import { turnSliceAllows, failure, success, type CardRevisionSnapshot, type DeepReadonly, type GameState, type CardInstanceId, type PlayerId } from "@tcg/domain";
 import type { EngineContext } from "./state";
 import { paymentCandidates } from "./payment";
 import { testCondition } from "./conditions";
-export function playEnabled(context: EngineContext) { return context.content.ruleset.gameplay?.turnSlice?.cardPlay === "NONCOMBAT_PLAY_V1" && context.content.ruleset.gameplay.gigValueBounds === "DIE_FACES_V1"; }
+export function playEnabled(context: EngineContext) { return turnSliceAllows(context.content.ruleset.gameplay?.turnSlice, "cardPlay") && context.content.ruleset.gameplay?.gigValueBounds === "DIE_FACES_V1"; }
 export function revisionOf(state: GameState, id: CardInstanceId, context: EngineContext) {
     const c = state.objects.cards[id];
     return context.content.cards.find(r => r.id === c?.cardId && r.revision === c?.revision);

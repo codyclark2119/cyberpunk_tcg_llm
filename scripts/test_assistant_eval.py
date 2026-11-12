@@ -170,27 +170,36 @@ def test_fake_run_writes_header_records_and_summary_deterministically():
         a, b = (Path(tmp) / "a.jsonl").read_bytes(), (Path(tmp) / "b.jsonl").read_bytes()
         assert a == b, "two identical runs must write identical bytes"
         rows = read_jsonl(Path(tmp) / "a.jsonl")
-        assert b"elapsed" not in a.lower() and not re.search(rb"20\d\d-\d\d-\d\dT", a), "no timings or timestamps"
+        # Erratum records carry their page's own updated_at (snapshot data, inside preloaded get_card results);
+        # anything else that looks like a timestamp would be the run's.
+        undated = re.sub(rb'"page_updated_at": "[^"]*"', b"", a)
+        assert b"elapsed" not in a.lower() and not re.search(rb"20\d\d-\d\d-\d\dT", undated), "no timings or timestamps"
     header, items, summary = rows[0], rows[1:-1], rows[-1]
+    from games.cyberpunk.assistant.loop import tool_specs_sha256
     assert header == {
-        "kind": "header", "scorer_version": "eval-assistant-v1", "eval_prompt_version": "eval-mc-v1",
+        "kind": "header", "scorer_version": "eval-assistant-v2", "eval_prompt_version": "eval-mc-v1",
         "assistant_prompt_version": header["assistant_prompt_version"], "rules_version": header["rules_version"],
         "set": "data/gold/quiz_mc_2026-11-12.jsonl", "set_sha256": hashlib.sha256(GOLD.read_bytes()).hexdigest(),
         "set_items": 40, "items_run": 40, "ids": None, "limit": 0, "model": "fake", "adapter": None, "fake": True,
-        "thinking": False, "max_tokens": 1024, "max_tool_calls": 6}, header
+        "thinking": True, "max_tokens": 2048, "max_tool_calls": 6, "preload": True, "preload_k": 5,
+        "preload_chars": 8000, "tool_specs_sha256": tool_specs_sha256()}, header
     from games.cyberpunk.assistant.loop import ASSISTANT_PROMPT_VERSION
     from games.cyberpunk.prompts import RULES_VERSION
     assert header["assistant_prompt_version"] == ASSISTANT_PROMPT_VERSION and header["rules_version"] == RULES_VERSION
     assert len(items) == 40 and summary["kind"] == "summary"
     keys = {"kind", "id", "chosen", "correct", "outcome", "parse", "known_incorrect", "known_incorrect_hit",
-            "tools_called", "tool_errors", "rule_ids", "card_slugs", "errata_ids", "stop_reason", "hit_tool_cap",
+            "tools_called", "auto_tools", "tool_errors", "rule_ids", "card_slugs", "errata_ids", "stop_reason", "hit_tool_cap",
             "hit_length", "answer", "trace"}
     gold = {i["id"]: i for i in eval_store.load_mc_set(GOLD)}
     for record in items:
         assert set(record) == keys, sorted(set(record) ^ keys)
         assert record["correct"] == gold[record["id"]]["correct"]
         assert record["tools_called"] == ["search_rules"] and record["rule_ids"], record["id"]
-        assert [s["kind"] for s in record["trace"]] == ["model", "tool", "model"]
+        auto = record["auto_tools"]
+        assert auto[0] == "search_rules" and set(auto[1:]) <= {"get_card", "find_card"}, auto
+        assert [s["kind"] for s in record["trace"]] == ["tool"] * len(auto) + ["model", "tool", "model"]
+        assert all(s.get("auto") for s in record["trace"][:len(auto)])
+        assert record["trace"][len(auto) - 1]["step"] == len(auto), "the automatic steps come first"
         assert record["outcome"] == scorer().outcome_of(record["chosen"], record["correct"])
         assert record["known_incorrect_hit"] == (record["chosen"] in record["known_incorrect"])
         if record["chosen"] is None:
@@ -203,6 +212,44 @@ def test_fake_run_writes_header_records_and_summary_deterministically():
     assert summary["scored"] == 38 and summary["unscored"] == 2 and summary["tool_use"] == 40
     assert f"Score: {summary['correct']}/38 scored correct" in first.stdout
     assert f"unanswered {summary['unanswered']}" in first.stdout and "tool use 40/40" in first.stdout
+
+
+def test_scorer_switches_preload_and_thinking_off_for_the_comparison():
+    with tempfile.TemporaryDirectory() as tmp:
+        ids = "cody-quiz-03,cody-quiz-09"
+        base = run_scorer("--set", str(GOLD), "--fake", "--name", "off", "--runs-dir", tmp, "--ids", ids,
+                          "--no-preload", "--no-thinking")
+        assert base.returncode == 0, base.stderr
+        assert "thinking off, preload off, max tokens 1024" in base.stdout
+        both = run_scorer("--set", str(GOLD), "--fake", "--name", "on", "--runs-dir", tmp, "--ids", ids,
+                          "--preload-k", "3", "--max-tokens", "900")
+        assert both.returncode == 0, both.stderr
+        off_rows, on_rows = read_jsonl(Path(tmp) / "off.jsonl"), read_jsonl(Path(tmp) / "on.jsonl")
+        for bad in (["--preload-k", "0"], ["--preload-k", "21"], ["--preload-chars", "-1"]):
+            refused = run_scorer("--set", str(GOLD), "--fake", "--name", "bad", "--runs-dir", tmp, *bad)
+            assert refused.returncode == 2, bad
+    off, on = off_rows[0], on_rows[0]
+    assert (off["preload"], off["thinking"], off["max_tokens"], off["preload_k"], off["preload_chars"]) == (
+        False, False, 1024, None, None)
+    assert (on["preload"], on["thinking"], on["max_tokens"], on["preload_k"], on["preload_chars"]) == (
+        True, True, 900, 3, 8000)
+    assert off["tool_specs_sha256"] == on["tool_specs_sha256"] and len(on["tool_specs_sha256"]) == 64
+    for record in off_rows[1:-1]:
+        assert record["auto_tools"] == [] and [s["kind"] for s in record["trace"]] == ["model", "tool", "model"]
+    for record in on_rows[1:-1]:
+        first = record["trace"][0]
+        assert first["auto"] is True and first["tool"] == "search_rules" and first["arguments"]["k"] == 3
+        item = next(i for i in eval_store.load_mc_set(GOLD) if i["id"] == record["id"])
+        # The preload searches the question and its choices, never the answer-format instructions.
+        assert first["arguments"]["query"] == scorer().preload_text(item)[:500]
+        assert "Answer:" not in first["arguments"]["query"] and item["question"] in first["arguments"]["query"]
+    # ... which is the text eval_retrieval.py measures recall on, so its numbers describe this search.
+    spec = importlib.util.spec_from_file_location("eval_retrieval", REPO_ROOT / "scripts/eval_retrieval.py")
+    retrieval = importlib.util.module_from_spec(spec)
+    sys.path.insert(0, str(REPO_ROOT / "scripts"))
+    spec.loader.exec_module(retrieval)
+    for item in eval_store.load_mc_set(GOLD):
+        assert retrieval.query_for(item) == scorer().preload_text(item), item["id"]
 
 
 def test_scorer_refuses_overwrite_and_bad_arguments():
@@ -230,13 +277,15 @@ def test_item_record_marks_known_incorrect_picks_caps_and_failed_turns():
     item = {"id": "q", "question": "?", "correct": None, "known_incorrect": ["D"],
             "choices": [{"letter": x, "text": x} for x in "ABCD"]}
     sources = {"rule_ids": ["4.5"], "card_slugs": ["v-streetkid"], "errata_ids": []}
-    trace = [{"step": 1, "kind": "model", "ok": True, "finishReason": "length", "elapsedMs": 3.0},
-             {"step": 2, "kind": "tool", "tool": "get_card", "ok": False, "elapsedMs": 1.0}]
+    trace = [{"step": 1, "kind": "tool", "auto": True, "tool": "search_rules", "ok": False, "elapsedMs": 2.0},
+             {"step": 2, "kind": "model", "ok": True, "finishReason": "length", "elapsedMs": 3.0},
+             {"step": 3, "kind": "tool", "tool": "get_card", "ok": False, "elapsedMs": 1.0}]
     turn = SimpleNamespace(ok=True, answer="Answer: D", stop_reason="answer", trace=trace, sources=sources)
     record = scorer().item_record(item, turn)
     assert record["chosen"] == "D" and record["known_incorrect_hit"] is True and record["outcome"] == "unscored"
     assert record["hit_length"] is True and record["hit_tool_cap"] is False and record["tool_errors"] == 1
     assert record["tools_called"] == ["get_card"] and record["card_slugs"] == ["v-streetkid"]
+    assert record["auto_tools"] == ["search_rules"], "automatic steps are not the model's tool use"
     assert all("elapsedMs" not in step for step in record["trace"])
     capped = SimpleNamespace(ok=False, answer="Answer: A", stop_reason="tool_cap", trace=[], sources=sources)
     record = scorer().item_record({**item, "correct": "A"}, capped)
@@ -280,12 +329,21 @@ def test_run_action_builds_argv_without_a_shell_and_checks_values():
         cmd = runner.build_cmd(action, {"set": set_path, "name": "baseline-1", "thinking": True, "max_tokens": 512,
                                         "limit": 3, "ids": "cody-quiz-01,cody-quiz-02"})
         assert cmd == [sys.executable, "scripts/eval_assistant.py", "--set", set_path, "--name", "baseline-1",
-                       "--model", "models/qwen3-8b-4bit", "--thinking", "--max-tokens", "512", "--limit", "3",
+                       "--model", "models/qwen3-8b-4bit", "--max-tokens", "512", "--limit", "3",
                        "--ids", "cody-quiz-01,cody-quiz-02", "--runs-dir", str(root / "runs")], cmd
+        # The page's two toggles become the scorer's switch-offs; unset ones follow the page's defaults
+        # (thinking and preload on), and an unset max tokens is left to the scorer.
+        off = runner.build_cmd(action, {"name": "ab-1", "thinking": False, "preload": False})
+        assert off[off.index("--name") + 2:] == ["--model", "models/qwen3-8b-4bit", "--no-thinking", "--no-preload",
+                                                  "--limit", "0", "--runs-dir", str(root / "runs")], off
+        default = runner.build_cmd(action, {"name": "ab-2"})
+        assert "--no-thinking" not in default and "--no-preload" not in default and "--max-tokens" not in default
         bad_values = [{"name": "--force"}, {"name": "../x"}, {"name": "a b"}, {"name": ""}, {"name": "x" * 81},
                       {"name": "ok", "max_tokens": 0}, {"name": "ok", "max_tokens": "9; rm"},
                       {"name": "ok", "limit": -1}, {"name": "ok", "ids": "a,,b"}, {"name": "ok", "ids": "--force"},
-                      {"name": "ok", "thinking": "yes"}, {"name": "ok", "model": "/etc"},
+                      {"name": "ok", "thinking": "yes"}, {"name": "ok", "preload": 1},
+                      {"name": "ok", "no_thinking": True}, {"name": "ok", "no_preload": True},
+                      {"name": "ok", "model": "/etc"},
                       {"name": "ok", "set": "/etc/passwd"}, {"name": "ok", "cmd": "sh"}]
         for values in bad_values:
             try:

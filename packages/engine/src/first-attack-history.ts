@@ -1,4 +1,4 @@
-import { canonicalSerialize, failure, success, type CardInstanceId, type GameState } from "@tcg/domain";
+import { turnSliceAllows, canonicalSerialize, failure, success, type CardInstanceId, type GameState } from "@tcg/domain";
 import type { EngineContext } from "./state";
 import type { TurnMutation } from "./turn";
 import { cardRevision, effectiveCardTypes, hasClassification } from "./characteristics";
@@ -24,7 +24,7 @@ export function isFirstArasakaAttack(state: GameState, id: CardInstanceId, conte
 export function validateFirstAttackHistory(state: GameState, context: EngineContext) {
     const h = state.turnHistory?.firstArasakaAttacks, enabled = firstAttackHistoryEnabled(context);
     if (!enabled) return h ? failure("UNSUPPORTED_FIRST_ATTACK_HISTORY", "First-attack history requires its explicit ruleset policy") : success(null);
-    if (context.content.ruleset.gameplay?.turnSlice?.combatTriggers !== "COMBAT_TRIGGERS_V1") return failure("UNSUPPORTED_FIRST_ATTACK_HISTORY", "Reviewed trigger policy required");
+    if (!turnSliceAllows(context.content.ruleset.gameplay?.turnSlice, "combatTriggers")) return failure("UNSUPPORTED_FIRST_ATTACK_HISTORY", "Reviewed trigger policy required");
     if (state.setup) return h ? failure("INVALID_FIRST_ATTACK_HISTORY", "No turn history during setup") : success(null);
     if (!h || state.turnHistory?.turn !== state.timing.turn || canonicalSerialize(Object.keys(h).sort()) !== canonicalSerialize([...state.match.playerOrder].sort())) return failure("INVALID_FIRST_ATTACK_HISTORY", "Current global turn and exact per-player coverage required");
     const seen = new Set<string>();

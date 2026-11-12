@@ -1,16 +1,16 @@
-import { failure, success, type CardRevisionSnapshot, type DeepReadonly, type GameState } from "@tcg/domain";
+import { turnSliceAllows, failure, success, type CardRevisionSnapshot, type DeepReadonly, type GameState } from "@tcg/domain";
 import type { EngineContext } from "./state";
 
 /** A new opt-in play trigger, using the existing public-zone temporary-power lifecycle. */
 export function friendlyPlayPowerEnabled(context: EngineContext) {
     const gameplay = context.content.ruleset.gameplay, policy = gameplay?.turnSlice;
     return gameplay?.gigValueBounds === "DIE_FACES_V1"
-        && policy?.friendlyPlayPower === "FRIENDLY_PLAY_POWER_V1"
-        && policy.cardPlay === "NONCOMBAT_PLAY_V1"
-        && policy.combatTriggers === "COMBAT_TRIGGERS_V1"
-        && policy.combatRestrictions === "COMBAT_RESTRICTIONS_V1"
-        && policy.react === "COMBAT_REACT_V1"
-        && policy.combatResolution?.version === "COMBAT_RESOLUTION_V1";
+        && turnSliceAllows(policy, "friendlyPlayPower")
+        && turnSliceAllows(policy, "cardPlay")
+        && turnSliceAllows(policy, "combatTriggers")
+        && turnSliceAllows(policy, "combatRestrictions")
+        && turnSliceAllows(policy, "react")
+        && turnSliceAllows(policy, "combatResolution");
 }
 export function hasFriendlyPlayPowerMetadata(card: DeepReadonly<CardRevisionSnapshot>) {
     return card.mechanics.abilities.some(a => a.effects.some(e => e.kind === "POWER_UNTIL_END_OF_TURN" && e.target.kind === "FRIENDLY_UNIT"));

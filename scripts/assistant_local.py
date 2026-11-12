@@ -14,10 +14,13 @@ optional ``--adapter``) the page's chat box works: the first question starts
 ``scripts/mlx_chat_worker.py`` (Apple Silicon only, offline), and each answer
 comes from ``games/cyberpunk/assistant/loop.py`` with a trace of every tool the
 model ran. Without ``--model`` the chat box answers "no model configured".
+Thinking and the automatic context step (search_rules and card-name linking
+before the model speaks) are on by default; ``--no-thinking`` and
+``--no-preload`` set the page's defaults off, and the page has a toggle for each.
 
 The Eval tab shows the multiple-choice gold sets (with a review note per
 question), runs ``scripts/eval_assistant.py`` with the same ``--model``,
-``--adapter``, ``--thinking`` and ``--max-tokens``, and shows the scored runs
+``--adapter``, thinking, preload and ``--max-tokens``, and shows the scored runs
 under ``eval/runs/``.
 
 It binds 127.0.0.1 by default and needs no token there; it then answers only
@@ -45,14 +48,18 @@ def main():
     parser.add_argument("--no-auth", action="store_true", help="no token off loopback (trusted network only)")
     parser.add_argument("--model", help="local MLX model directory for chat, e.g. models/qwen3-8b-4bit")
     parser.add_argument("--adapter", help="optional local LoRA adapter directory for --model")
-    parser.add_argument("--thinking", action="store_true", help="let Qwen3 think before answering (slower)")
-    parser.add_argument("--max-tokens", type=int, default=1024, help="generation limit per model step")
+    parser.add_argument("--thinking", action=argparse.BooleanOptionalAction, default=True,
+                        help="let Qwen3 think before answering (default on; slower)")
+    parser.add_argument("--preload", action=argparse.BooleanOptionalAction, default=True,
+                        help="run search_rules and card linking before the model speaks (default on)")
+    parser.add_argument("--max-tokens", type=int, default=None,
+                        help="generation limit per model step (default 2048 with thinking, 1024 without)")
     args = parser.parse_args()
     if not 1 <= args.port <= 65535:
         parser.error("--port must be 1..65535")
     if args.adapter and not args.model:
         parser.error("--adapter needs --model")
-    if not 1 <= args.max_tokens <= 4096:
+    if args.max_tokens is not None and not 1 <= args.max_tokens <= 4096:
         parser.error("--max-tokens must be 1..4096")
     try:
         import fastapi  # noqa: F401
@@ -68,7 +75,7 @@ def main():
         except ValueError as exc:
             parser.error(str(exc))
         print(f"Chat model: {model.label} (the worker starts on the first question)", flush=True)
-    chat = ChatService(model, enable_thinking=args.thinking, max_tokens=args.max_tokens,
+    chat = ChatService(model, enable_thinking=args.thinking, max_tokens=args.max_tokens, preload=args.preload,
                        model_path=args.model, adapter_path=args.adapter)
     serve_assistant(args.host, args.port, lan=args.lan, no_auth=args.no_auth, chat=chat)
     return 0

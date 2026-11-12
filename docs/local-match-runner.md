@@ -112,7 +112,9 @@ heuristic, so that says nothing about deck strength.
 - The `scripts/mlx_sim_worker.py` docstring names `run_local_matches.py` instead
   of the removed `serve_sim_bot.py`.
 - `scripts/test_local_match.py` prints `PASS local match runner: 12/12`, pinned in
-  `pr-validation.yml`; the workflow guard requires the command.
+  `pr-validation.yml`; the workflow guard requires the command. (Note added
+  2026-11-12: that workflow was later removed; the pin now lives in the table at
+  the top of `scripts/run_tests.sh`.)
 
 ## Left for later scopes
 

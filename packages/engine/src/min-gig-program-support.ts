@@ -1,8 +1,8 @@
-import { canonicalSerialize, failure, success, type CardRevisionSnapshot, type DeepReadonly, type GameState } from "@tcg/domain";
+import { turnSliceAllows, canonicalSerialize, failure, success, type CardRevisionSnapshot, type DeepReadonly, type GameState } from "@tcg/domain";
 import type { EngineContext } from "./state";
 
-export function minGigProgramEnabled(context: EngineContext) {
-    return context.content.ruleset.gameplay?.turnSlice?.minGigProgram === "MIN_GIG_PROGRAM_V1";
+function minGigProgramEnabled(context: EngineContext) {
+    return turnSliceAllows(context.content.ruleset.gameplay?.turnSlice, "minGigProgram");
 }
 
 /** Complete Trust No One shape. No name dispatch and no generic expression language. */
@@ -12,7 +12,7 @@ export function supportsMinGigProgramCard(card: DeepReadonly<CardRevisionSnapsho
         { kind: "ADJUST_GIG_UP_TO", target: { kind: "GIGS", relation: "ANY" }, maximum: 3, direction: "DECREASE" },
         { kind: "CONDITIONAL_DRAW", timing: "RESOLUTION", condition: { kind: "GIG_VALUE", value: 1 }, count: 1 }
     ];
-    if (!minGigProgramEnabled(context) || policy?.cardPlay !== "NONCOMBAT_PLAY_V1" ||
+    if (!minGigProgramEnabled(context) || !turnSliceAllows(policy, "cardPlay") ||
         context.content.ruleset.gameplay?.gigValueBounds !== "DIE_FACES_V1" ||
         !card?.provenance.reviewed || card.execution?.scope !== "MIN_GIG_PROGRAM_V1" || card.execution.status !== "SUPPORTED" ||
         card.type !== "PROGRAM" || card.printedCost.kind !== "EDDIES" || card.printedCost.amount !== 1 || card.power !== undefined ||
