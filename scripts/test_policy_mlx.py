@@ -29,7 +29,7 @@ sys.path.insert(0, str(REPO_ROOT / "scripts"))
 
 from games.cyberpunk.policy_bot import Decision, PolicyRunner
 from games.cyberpunk.policy_mlx import MLXPolicy, local_path, make_worker, watchdog_seconds
-from games.cyberpunk.policy_prompt import build_choice_messages, parse_choice
+from games.cyberpunk.policy_prompt import PROMPT_VERSION, build_choice_messages, parse_choice
 from harness.core.local_worker import LocalWorker, MAX_LINE_BYTES, PROTOCOL, WorkerError
 from benchmark_policy_bot import measure, summarize
 from mlx_policy_worker import run_generation
@@ -470,6 +470,34 @@ async def test_benchmark_budget_is_configurable():
         assert rows[0]["selection"] == "timeout_fallback"
         rows = await measure(worker, [body(deadline_ms=None)], 1, budget_ms=2000)
         assert rows[0]["selection"] == "policy"
+
+
+async def test_policy_details_reach_the_selection_and_never_cross_decisions():
+    info = {"modelPath": "models/x", "modelRevision": "r", "promptVersion": "v"}
+    async with running() as worker:
+        policy = MLXPolicy(worker, info=info)
+        assert policy.describe() == info and policy.describe() is not policy.info
+        selection = await PolicyRunner(policy).choose(body())
+        assert selection.details == {"rawOutput": '{"choice":1}', "inputTokens": 123, "outputTokens": 6,
+                                     "inferenceMs": 1, "parsedIndex": 1}
+        assert policy.take_details("smoke-1") is None  # read once
+    async with running("invalid") as worker:
+        selection = await PolicyRunner(MLXPolicy(worker)).choose(body())
+        assert selection.error == "invalid_output"
+        assert selection.details["rawOutput"] == "secret invalid generated output"
+        assert selection.details["parsedIndex"] is None
+    async with running("error") as worker:
+        selection = await PolicyRunner(MLXPolicy(worker)).choose(body())
+        assert selection.error == "prompt_too_large" and selection.details["rawOutput"] is None
+    async with running("slow_first") as worker:
+        policy = MLXPolicy(worker)
+        runner = PolicyRunner(policy, max_decision_ms=100)
+        first = await runner.choose(body())
+        assert first.reason == "timeout_fallback" and first.details is None
+        # The late answer to the timed-out request is never reported for the next one.
+        later = await runner.choose(fresh(0))
+        assert later.reason == "policy" and later.details["parsedIndex"] == 1
+    assert MLXPolicy(worker).describe() == {"promptVersion": PROMPT_VERSION}
 
 
 async def run_tests():

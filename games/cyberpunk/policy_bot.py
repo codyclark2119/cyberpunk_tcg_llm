@@ -157,13 +157,16 @@ def baseline_action_id(actions: tuple[Mapping[str, Any], ...]) -> str:
 @dataclass(frozen=True)
 class Selection:
     """The chosen action. ``error`` is the failure code behind a fallback (None on success);
-    ``worker_event`` notes a worker restart done before this decision (None otherwise)."""
+    ``worker_event`` notes a worker restart done before this decision (None otherwise).
+    ``details`` is what the policy reported about its own answer to this decision
+    (``take_details``: raw output, token counts), None when it reported nothing."""
 
     action_id: str
     reason: str
     elapsed_ms: float
     error: str | None = None
     worker_event: str | None = None
+    details: Mapping[str, Any] | None = None
 
 
 class PolicyRunner:
@@ -177,6 +180,9 @@ class PolicyRunner:
     ``prepare()`` that runs before the decision's clock starts, returning an
     optional event string; the MLX policy uses it to discard a late answer and
     restart a dead worker, so neither eats into the next decision's budget.
+    It may also define ``take_details(request_id)``, read once the call has
+    finished, returning what it knows about its answer to that decision (for
+    the match record and training logs; never logged here).
     """
 
     def __init__(self, policy: Policy | None = None, *,
@@ -254,8 +260,13 @@ class PolicyRunner:
                 except Exception as exc:
                     reason, error = "policy_error_fallback", failure_code(exc)
 
+        details = None
+        take = getattr(self.policy, "take_details", None)
+        if callable(take):
+            found = take(decision.request_id)
+            details = dict(found) if isinstance(found, Mapping) else None
         selection = Selection(selected, reason, round((time.monotonic() - started) * 1000, 2),
-                              error, event)
+                              error, event, details)
         # Never log snapshots, known cards, model prompts or action payloads.
         LOGGER.info(json.dumps({"event": "bot_decision", "requestId": decision.request_id,
                                 "matchId": decision.match_id, "sequence": decision.sequence,

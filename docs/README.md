@@ -19,6 +19,7 @@ was.
 | [../README.md](../README.md) | Setup, commands and architecture |
 | [../CLAUDE.md](../CLAUDE.md) | Working rules for the engine and the AI harness |
 | [ci-validation.md](ci-validation.md) | What PR Validation runs and why it never skips |
+| [local-match-records-v3.md](local-match-records-v3.md) | 2026-11-12: match records v3 (model path and revision per seat, chosen index, baseline pick and agreement, raw output and tokens) and optional TrainingPosition/TrainingAttempt logging from local matches (`--training-dir`) |
 | [training-record-migration.md](training-record-migration.md) | 2026-11-12: Python reader/writer and match-logging hook for the TS training records (`harness/core/training_records.py`); plan for moving the gold store onto TrainingPosition |
 | [local-prompt-v3.md](local-prompt-v3.md) | 2026-11-11: compact gameplay prompt (`local-choice-v3`), about a third of v2's size with every visible fact kept; `scripts/measure_prompt_size.py` |
 | [local-time-budget.md](local-time-budget.md) | 2026-11-11: local decision budget (10 s default, `--budget-ms`), late model answers drained instead of cascading, failure codes in match records |

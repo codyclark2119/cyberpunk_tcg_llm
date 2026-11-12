@@ -249,13 +249,18 @@ decision the engine names the acting player and offers its legal actions; that
 seat's policy (`baseline` or `mlx`) picks one offered `actionId`, and the engine
 applies it. Each match is written as JSONL under `local/matches/` (gitignored).
 The fixed Demo decks are the default; `--setup` takes any `content` plus
-`initialization` the engine's `createGame` accepts. See
-[docs/local-match-runner.md](docs/local-match-runner.md).
+`initialization` the engine's `createGame` accepts. Records (schemaVersion 3) name
+each seat's model path and revision and give every decision's chosen index, the
+baseline's pick and whether they agree; `--training-dir` also logs model decisions
+as TrainingPosition/TrainingAttempt records. See
+[docs/local-match-runner.md](docs/local-match-runner.md) and
+[docs/local-match-records-v3.md](docs/local-match-records-v3.md).
 
 ```bash
 python scripts/run_local_matches.py --matches 10 --seed demo            # baseline vs baseline
 python scripts/run_local_matches.py --policy baseline mlx --matches 3   # Apple Silicon only
 python scripts/run_local_matches.py --policy baseline mlx --budget-ms 20000  # longer thinking time
+python scripts/run_local_matches.py --policy baseline mlx --training-dir local/training  # also log training records
 ```
 
 ### Local play UI

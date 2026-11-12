@@ -55,6 +55,17 @@ form and the bot-vs-bot form have a "Bot budget ms" field (default 10,000 ms),
 recorded in the match header, and the record viewer shows each decision's failure
 code (`error`) and any worker restart next to its reason.
 
+Update 2026-11-12 ([local-match-records-v3.md](local-match-records-v3.md)): the
+viewer reads schemaVersion 2 and 3 records. For v3 it shows each decision's
+chosen index, the baseline's pick on the same offered list, whether they agree,
+the model's raw output and token counts, each seat's model path, revision and
+prompt version, and the per-seat baseline agreement rate (also a column in the
+record list; "n/a" for v2). Human decisions get the same baseline fields. The
+bot-vs-bot form has a "Log training records" checkbox that passes
+`--training-dir` fixed to `local/training/` (beside the records directory);
+baseline seats log nothing. `GET /api/records/{name}` also returns `summary`
+(`schemaVersion`, `agreement`), and `GET /api/play/config` returns `trainingDir`.
+
 ## Records
 
 Human matches write the same JSONL as the runner (`local/matches/<seed>.jsonl`).
