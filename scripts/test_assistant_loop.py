@@ -87,6 +87,8 @@ class LoopingModel:
 
 
 def turn(history, message, model, **kwargs):
+    """One turn; the preload is off unless a test asks for it, so loop mechanics are tested alone."""
+    kwargs.setdefault("preload", False)
     return asyncio.run(run_turn(history, message, model, **kwargs))
 
 
@@ -385,7 +387,7 @@ def test_model_directory_is_checked_before_anything_starts():
 
 def test_chat_route_with_a_fake_model_keeps_short_history():
     model = ScriptedModel([call("find_card", query="V"), "Three cards are named V.", "Ask by slug."])
-    with TestClient(build_assistant_app(chat=ChatService(model, max_history_messages=2))) as client:
+    with TestClient(build_assistant_app(chat=ChatService(model, max_history_messages=2, preload=False))) as client:
         first = client.post("/api/chat", json={"session": "s1", "message": "Who is V?"}, headers=LOCAL)
         assert first.status_code == 200, first.text
         body = first.json()

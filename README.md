@@ -337,7 +337,7 @@ On the Mac (not yet run against a real model; the Linux tests use a scripted fak
 
 ```bash
 python scripts/assistant_local.py --model models/qwen3-8b-4bit   # then open http://127.0.0.1:8767/
-# optional: --adapter <dir>, --thinking, --max-tokens 1024
+# optional: --adapter <dir>, --no-thinking, --no-preload, --max-tokens N
 python scripts/test_assistant_loop.py    # loop, worker parts, chat route; fake model, no mlx
 ```
 
@@ -355,8 +355,9 @@ and for a resolved deck shows `check_deck` and a compact `deck_profile`; that de
 held for the session and `loop.deck_context` adds it to the system message as a
 labelled `<loaded_deck>` JSON block whose `deck` value the model passes unchanged to
 the deck tools, until it is cleared (`/api/deck/clear`). "New chat"
-(`/api/chat/reset`) clears the history and keeps the deck. A per-question "think
-first" toggle defaults to `--thinking`. The four example chips only fill the input.
+(`/api/chat/reset`) clears the history and keeps the deck. Per-question "think
+first" and "look up rules and cards first" toggles default to the server's settings
+(both on; see Prompt and context). The four example chips only fill the input.
 
 ```bash
 python scripts/test_assistant_ui.py      # escaping, deck panel, sessions, status, trace; fake model, needs node
@@ -383,7 +384,7 @@ outcomes and traces.
 The baseline on the Mac (not yet run):
 
 ```bash
-python scripts/eval_assistant.py --set data/gold/quiz_mc_2026-11-12.jsonl --model models/qwen3-8b-4bit --name baseline-qwen3-8b
+python scripts/eval_assistant.py --set data/gold/quiz_mc_2026-11-12.jsonl --model models/qwen3-8b-4bit --name baseline-qwen3-8b --no-preload --no-thinking
 python scripts/test_assistant_eval.py    # gold set, letter parser, scorer (--fake), Eval tab; needs node
 ```
 
@@ -420,3 +421,44 @@ python scripts/build_rules_index.py                  # Apple Silicon, mlx-embedd
 python scripts/eval_retrieval.py --name retrieval-quiz-hybrid --quiet
 python scripts/test_assistant_retrieval.py           # rule-level index, fusion on a fake embedder, Eval panel; needs node
 ```
+
+### Prompt and context
+
+The quiz diagnosis found the 8B model reading about 11.7k characters of system prompt
+and tool specs before every question, with thinking off. Three changes, each
+switchable so the Mac comparison can isolate it:
+
+- **Lean specs and prompt `assistant-chat-v3`.** Tool descriptions are one or two
+  sentences on when to use the tool; names and argument schemas are unchanged (pinned
+  against `scripts/fixtures/assistant_tool_schemas_v2.json`). The prompt warns that
+  some terms are the reverse of other games, quoting rules 9.1 and 9.3.2.1, says to
+  answer only from tool results and to say the snapshot does not cover a question
+  (tournament policy is not in it) rather than guess. `scripts/prompt_budget.py`
+  prints the overhead (`--tokenizer <model dir>` adds real token counts where
+  `transformers` loads it): 11,655 characters before (10,416 specs + 1,239 prompt),
+  9,253 after (8,138 + 1,115). Most of what remains is schema (enums and patterns).
+- **Preload** (`games/cyberpunk/assistant/preload.py`). Before the model speaks, the
+  loop runs `search_rules` on the question (k 5) and links card names in it (exact
+  display name or name, longest match first, case- and punctuation-insensitive):
+  one card runs `get_card`, a shared name such as "V" runs `find_card` so the model
+  gets the candidates. Results go in as tool messages within 8,000 characters
+  (printings dropped, long passage lists shortened, a card never cut). They open the
+  trace with `auto: true` and do not count against the 6-call cap. The scorer
+  preloads the question and its choices, the text `eval_retrieval.py` measures.
+- **Thinking on** by default, with 2,048 tokens per model step (1,024 without).
+
+The A/B on the Mac (not yet run), each against the same set and snapshot:
+
+```bash
+python scripts/prompt_budget.py --tokenizer models/qwen3-8b-4bit
+S=data/gold/quiz_mc_2026-11-12.jsonl M=models/qwen3-8b-4bit
+python scripts/eval_assistant.py --set $S --model $M --name v3-base     --no-preload --no-thinking
+python scripts/eval_assistant.py --set $S --model $M --name v3-preload  --no-thinking
+python scripts/eval_assistant.py --set $S --model $M --name v3-thinking --no-preload
+python scripts/eval_assistant.py --set $S --model $M --name v3-both
+python scripts/test_assistant_prompt.py   # specs, budget, preload, thinking defaults; fake model, no mlx
+```
+
+Each run's header records preload, thinking, `max_tokens`, both prompt versions and
+the tool-spec sha256; `tools_called` is what the model chose and `auto_tools` what
+the preload ran.

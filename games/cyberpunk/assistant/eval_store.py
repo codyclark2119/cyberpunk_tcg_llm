@@ -169,7 +169,7 @@ def list_runs(runs_dir: Path = RUNS_DIR) -> list[dict]:
         try:
             rows = read_run(path.name, runs_dir)
             header = rows[0]
-            entry.update({k: header.get(k) for k in ("set", "model", "adapter", "thinking", "fake",
+            entry.update({k: header.get(k) for k in ("set", "model", "adapter", "thinking", "preload", "fake",
                                                     "eval_prompt_version", "assistant_prompt_version",
                                                     "rules_version")})
             entry["summary"] = summarize([r for r in rows if r.get("kind") == "item"])
