@@ -77,6 +77,8 @@ def budget(tokenizer=None) -> dict:
         try:
             ids = tokenizer.apply_chat_template([{"role": "system", "content": SYSTEM_PROMPT}], tools=specs,
                                                 tokenize=True, add_generation_prompt=False)
+            if hasattr(ids, "keys") and "input_ids" in ids:  # transformers 5 returns a BatchEncoding, not a list
+                ids = ids["input_ids"]
             report["rendered_prefix_tokens"] = len(ids)
         except Exception:  # no chat template, or one without tools: the per-part counts still stand
             pass

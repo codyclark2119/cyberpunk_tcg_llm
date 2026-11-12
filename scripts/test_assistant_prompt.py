@@ -151,6 +151,15 @@ def test_prompt_budget_reports_chars_and_tokens_when_it_can():
     assert counted["tool_tokens"] == sum(r["tokens"] for r in counted["tools"]) > 0
     assert counted["rendered_prefix_tokens"] == len((SYSTEM_PROMPT + json.dumps(tools.tool_specs())).split())
 
+    # transformers 5 returns a BatchEncoding (a mapping with input_ids and attention_mask):
+    # the count is the ids, not the two keys (the Mac first reported "2 tokens").
+    class Encoded(Words):
+        def apply_chat_template(self, messages, tools=None, tokenize=True, add_generation_prompt=False):
+            ids = super().apply_chat_template(messages, tools, tokenize, add_generation_prompt)
+            return {"input_ids": ids, "attention_mask": [1] * len(ids)}
+
+    assert module.budget(Encoded())["rendered_prefix_tokens"] == counted["rendered_prefix_tokens"]
+
 
 def test_system_prompt_v3_warns_from_the_snapshot_wording():
     rules = {r["id"]: r["text"] for r in read_jsonl(REPO_ROOT / "data/processed/rules.jsonl")}
