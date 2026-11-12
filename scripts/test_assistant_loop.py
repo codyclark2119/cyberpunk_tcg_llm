@@ -378,8 +378,11 @@ def test_loop_does_not_depend_on_the_question_text():
 
 
 def test_worker_pure_functions_without_mlx():
+    # Loading the worker must not import MLX itself. Compare before and after rather than
+    # assert absence: on a Mac an earlier test may already have imported mlx.
+    before = {name for name in sys.modules if name.split(".")[0] in ("mlx", "mlx_lm")}
     worker = load_worker_module()
-    assert "mlx" not in sys.modules and "mlx_lm" not in sys.modules
+    assert {name for name in sys.modules if name.split(".")[0] in ("mlx", "mlx_lm")} == before
     good = {"protocol": CHAT_PROTOCOL, "id": 1, "messages": [{"role": "user", "content": "hi"}],
             "tools": tools.tool_specs()}
     request, problem = worker.check_request(good)
@@ -489,7 +492,7 @@ def test_model_directory_is_checked_before_anything_starts():
         (Path(tmp) / "config.json").write_text("{}")
         (Path(tmp) / "model.safetensors").write_bytes(b"")
         command = chat_worker_command(tmp)
-        assert command[2].endswith("scripts/mlx_chat_worker.py") and command[command.index("--model") + 1] == tmp
+        assert command[2].endswith("scripts/mlx_chat_worker.py") and Path(command[command.index("--model") + 1]).resolve() == Path(tmp).resolve()  # macOS: /var is /private/var
         try:
             chat_worker_command(tmp, adapter=tmp)
             raise AssertionError("an adapter without adapter files was accepted")
