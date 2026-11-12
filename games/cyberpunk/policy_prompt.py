@@ -12,18 +12,26 @@ trained under; ``prompt_fingerprint()`` hashes this module's prompt for
 ``harness.core.prompt_fingerprint``. History: sim-choice-v1 named the retired
 simulator; local-choice-v2 (2026-11-11) named the local engine and sent the
 position as one JSON object; local-choice-v3 (2026-11-11) renders the same facts
-as compact text (docs/local-prompt-v3.md).
+as compact text (docs/local-prompt-v3.md); local-choice-v4 (2026-11-12) adds a
+card reference: one line per card the acting seat can see, with the type, cost,
+power, tags, keywords and trimmed rules text of its engine-admitted revision
+(docs/local-prompt-v4.md).
+
+Card facts come only from the engine content bundle the worker plays with
+(``card_catalog``), restricted to the slugs in the seat's observation and offered
+actions (``visible_slugs``). Nothing here reads data/ or interprets card text.
 """
 
 from __future__ import annotations
 
+import copy
 import json
 import re
 from typing import Any, Mapping
 
 from games.cyberpunk.policy_bot import Decision
 
-PROMPT_VERSION = "local-choice-v3"
+PROMPT_VERSION = "local-choice-v4"
 SYSTEM_PROMPT = """You are choosing an action in a Cyberpunk TCG match.
 Use only the supplied visible position and offered actions. Do not assume that
 card names or mechanics work like another game. The game engine owns legality.
@@ -42,7 +50,22 @@ solo, face-up/face-down only when unusual for the zone (HAND and EDDIES are
 face-down), owner=/ctrl= only when not the listed seat. #N = face-down card
 in slot N. Gig die: id=value (id ends in its die type), "(rolled N)" if the
 value changed since the roll. Action: number: label [kind, then the card,
-gig or option it uses]."""
+gig or option it uses].
+Cards: each card you can see: slug: TYPE cost= pow= (printed) tags= kw=, then
+rules text without flavour; a repeated (reminder) is shown once; "..." = text
+cut or left out. The position's pow=/kw= are the live values."""
+
+# The card reference: which revision fields a Decision carries, and the trimming
+# rules (docs/local-prompt-v4.md). Text is trimmed, never reworded.
+REFERENCE_FIELDS = ("type", "printedCost", "power", "tags", "keywords", "rulesText")
+MAX_CARD_TEXT_CHARS = 140
+MAX_REFERENCE_TEXT_CHARS = 600
+# Which cards get rules text first when the reference's text budget runs out.
+REFERENCE_TIERS = ("named by an offered action", "yours, outside TRASH/REMOVED",
+                   "the rival's, outside TRASH/REMOVED", "only in a TRASH or REMOVED zone")
+_PARKED_ZONES = ("TRASH", "REMOVED")
+_FLAVOUR_LINE = re.compile(r'^(?:\[Flavou?r\].*|["\u201c].*["\u201d])$')
+_REMINDER = re.compile(r"\s*\([^()]*\)")
 
 # Fields deliberately left out of the prompt; everything else is rendered.
 # Ids and hashes no rendered fact refers to, schema markers, and the Decision's
@@ -53,6 +76,16 @@ DROPPED_FIELDS = {
                  "temporaryModifiers[].origin.effectId",
                  "pendingTriggers[].id (replaced by T1, T2, ... labels)"),
     "action": ("actionId", "descriptor.schemaVersion"),
+    # Decision.cards holds only REFERENCE_FIELDS of each admitted revision; the
+    # revision's other fields (name, displayName, subtitle, colors, set and
+    # printings, sourceMarkup, mechanics other than keywords, sellProfile,
+    # execution, provenance) never reach the Decision.
+    "card": ("flavour text (a quoted line or a [Flavour] line)",
+             "a (reminder) already shown earlier in the same prompt",
+             f"rules text past {MAX_CARD_TEXT_CHARS} characters (cut at a word, marked ...)",
+             "a tag no card's rules text in the reference names",
+             f"the rules text of lower REFERENCE_TIERS cards once {MAX_REFERENCE_TEXT_CHARS} "
+             "characters of text are used (the line then ends in ...)"),
 }
 
 _SIMPLE = re.compile(r"^[A-Za-z0-9_:@#.+\-]+$")
@@ -259,6 +292,186 @@ def _action(index: int, action: Mapping, choice_kind, triggers) -> str:
     return text + (f" [{' '.join(tags)}]" if tags else "")
 
 
+def card_catalog(content: Mapping[str, Any]) -> dict[str, dict[str, Any]]:
+    """The engine content bundle's admitted revisions as {slug: REFERENCE_FIELDS}.
+
+    ``content`` is the bundle the engine worker plays with; its ``cards`` are
+    the admitted CardRevisionSnapshots (errata are already in their rulesText).
+    ``keywords`` is the revision's admitted ``mechanics.keywords``. Fields a
+    revision lacks (a Program's power) are left out. A slug listed twice is an error.
+    """
+    catalog: dict[str, dict[str, Any]] = {}
+    for card in content.get("cards") or []:
+        if not isinstance(card, Mapping) or not isinstance(card.get("id"), str):
+            raise ValueError("content cards must be revision objects with an id")
+        slug = _ref({"cardId": card["id"], "revision": card.get("revision")})
+        if slug in catalog:
+            raise ValueError(f"content lists card {slug} twice")
+        mechanics = card.get("mechanics") if isinstance(card.get("mechanics"), Mapping) else {}
+        source = {**card, "keywords": list(mechanics.get("keywords") or card.get("keywords") or [])}
+        catalog[slug] = {key: copy.deepcopy(source[key]) for key in REFERENCE_FIELDS
+                         if source.get(key) is not None}
+    return catalog
+
+
+def visible_slugs(*values) -> set[str]:
+    """Every card slug referenced ({cardId, revision}) anywhere in the given values.
+
+    Called on the acting seat's observation and its offered actions, this is
+    exactly the set of cards that seat can see: the engine's observation never
+    carries the content of a rival's hand or of any deck order.
+    """
+    found: set[str] = set()
+
+    def walk(value):
+        slug = _ref(value)
+        if slug is not None:
+            found.add(slug)
+        elif isinstance(value, Mapping):
+            for item in value.values():
+                walk(item)
+        elif isinstance(value, (list, tuple)):
+            for item in value:
+                walk(item)
+
+    for value in values:
+        walk(value)
+    return found
+
+
+def _cost(value) -> str:
+    if isinstance(value, Mapping) and value.get("kind") == "EDDIES" and set(value) == {"kind", "amount"}:
+        return f"cost={compact(value['amount'])}"
+    if isinstance(value, Mapping) and set(value) == {"kind"}:
+        return f"cost={compact(value['kind'])}"
+    return f"cost={compact(value)}"
+
+
+def _card_text(text: str, shown: set[str]) -> str:
+    """Rules text, trimmed by the DROPPED_FIELDS["card"] rules, in that order.
+
+    ``shown`` holds the reminders earlier lines of this prompt already carry in
+    full; a reminder the length cap cuts is not counted as shown.
+    """
+    lines = [line.strip() for line in text.splitlines()]
+    text = " ".join(line for line in lines if line and not _FLAVOUR_LINE.match(line))
+    added: list[str] = []
+
+    def once(match):
+        reminder = match.group(0).strip()
+        if reminder in shown or reminder in added:
+            return ""
+        added.append(reminder)
+        return match.group(0)
+
+    text = re.sub(r"\s+", " ", _REMINDER.sub(once, text)).strip()
+    if len(text) > MAX_CARD_TEXT_CHARS:
+        text = text[:MAX_CARD_TEXT_CHARS - 3].rsplit(" ", 1)[0].rstrip(" ,.;:") + "..."
+    shown.update(reminder for reminder in added if reminder in text)
+    return text
+
+
+def _strings(value):
+    if isinstance(value, Mapping):
+        for item in value.values():
+            yield from _strings(item)
+    elif isinstance(value, (list, tuple)):
+        for item in value:
+            yield from _strings(item)
+    elif isinstance(value, str):
+        yield value
+
+
+def _slug_tiers(decision: Decision) -> dict[str, int]:
+    """Each visible slug's REFERENCE_TIERS index (lowest occurrence wins)."""
+    snapshot, actions = decision.snapshot, list(decision.legal_actions)
+    named = set(_strings(actions))
+    viewer = snapshot.get("viewerSeat")
+    tiers = {slug: 0 for slug in visible_slugs(actions)}
+
+    def note(slugs, tier):
+        for slug in slugs:
+            tiers[slug] = min(tier, tiers.get(slug, tier))
+
+    def walk(value, tier):
+        """Any object holding a card ref takes tier 0 if an action names one of its ids."""
+        if isinstance(value, Mapping):
+            refs = [v for v in value.values() if _ref(v) is not None]
+            if refs:
+                hit = any(isinstance(v, str) and v in named and (k == "id" or str(k).endswith("Id"))
+                          for k, v in value.items())
+                note(visible_slugs(refs), 0 if hit else tier)
+            for item in value.values():
+                if _ref(item) is None:
+                    walk(item, tier)
+        elif isinstance(value, (list, tuple)):
+            for item in value:
+                walk(item, tier)
+
+    players = snapshot.get("players")
+    walk({key: value for key, value in snapshot.items() if key != "players"}, 1)
+    for player in players if isinstance(players, list) else [players]:
+        if not isinstance(player, Mapping):
+            walk(player, 1)
+            continue
+        own = 1 if player.get("seat") == viewer else 2
+        walk({key: value for key, value in player.items() if key != "cards"}, own)
+        for card in player.get("cards") or []:
+            parked = isinstance(card, Mapping) and card.get("zone") in _PARKED_ZONES
+            walk(card, 3 if parked else own)
+    return tiers
+
+
+def card_reference(decision: Decision) -> list[str]:
+    """One line per visible card slug, in slug order; empty without cards or visible slugs.
+
+    Rules text is trimmed by DROPPED_FIELDS["card"]; reminders count as shown and
+    the text budget is spent in REFERENCE_TIERS order, then slug order.
+    """
+    cards = decision.cards
+    tiers = _slug_tiers(decision) if cards else {}
+    if not tiers:
+        return []
+    facts = {slug: cards.get(slug) for slug in tiers}
+    texts = " ".join(f["rulesText"] for f in facts.values()
+                     if isinstance(f, Mapping) and isinstance(f.get("rulesText"), str)).lower()
+    shown: set[str] = set()
+    used, bodies = 0, {}
+    for slug in sorted(tiers, key=lambda s: (tiers[s], s)):
+        text = facts[slug].get("rulesText") if isinstance(facts[slug], Mapping) else None
+        if not isinstance(text, str):
+            bodies[slug] = compact(text) if text else ""
+            continue
+        trial = set(shown)
+        body = _card_text(text, trial)
+        if not body or used + len(body) <= MAX_REFERENCE_TEXT_CHARS:
+            bodies[slug], shown, used = body, trial, used + len(body)
+        else:
+            bodies[slug] = "..."
+    lines = ["Cards:"]
+    for slug in sorted(tiers):
+        card = facts[slug]
+        if not isinstance(card, Mapping):
+            lines.append(f"{slug}: no card data")
+            continue
+        parts = [f"{slug}: {compact(card.get('type'))}"]
+        if "printedCost" in card:
+            parts.append(_cost(card["printedCost"]))
+        if card.get("power") is not None:
+            parts.append(f"pow={compact(card['power'])}")
+        tags = [t for t in card.get("tags") or []
+                if not isinstance(t, str) or re.search(rf"\b{re.escape(t.lower())}\b", texts)]
+        keywords = card.get("keywords") or []
+        for name, values in (("tags", tags), ("kw", keywords)):
+            if values:
+                parts.append(f"{name}=" + ",".join(v.replace(" ", "_") if isinstance(v, str) else compact(v)
+                                                   for v in values))
+        parts += _extras(card, REFERENCE_FIELDS)
+        body = bodies[slug]
+        lines.append(" ".join(parts) + (" ..." if body == "..." else f". {body}" if body else ""))
+    return lines
+
+
 def render_position(decision: Decision) -> str:
     """The user message: the acting seat's visible position, then the offered actions."""
     snap = decision.snapshot
@@ -379,6 +592,7 @@ def render_position(decision: Decision) -> str:
     if decision.prompt:
         lines.append(f"Note: {compact(decision.prompt)}")
 
+    lines += card_reference(decision)
     lines.append("Actions:")
     lines += [_action(index, action, choice_kind, triggers)
               for index, action in enumerate(decision.legal_actions)]

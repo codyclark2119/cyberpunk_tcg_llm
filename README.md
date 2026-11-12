@@ -234,10 +234,13 @@ the next decision; see [docs/local-time-budget.md](docs/local-time-budget.md). F
 [Mac setup and benchmark guide](docs/local-mlx-bot.md) to install
 `requirements-mlx-bot.txt`, download Qwen3-8B's 4-bit weights and measure decision
 time with `scripts/benchmark_policy_bot.py`, which now measures positions from real
-local engine games. The model reads the position as compact text
-(`local-choice-v3`, about a third of the earlier JSON prompt);
-`scripts/measure_prompt_size.py` reports prompt sizes over real games without a
-model; see [docs/local-prompt-v3.md](docs/local-prompt-v3.md). The external simulator HTTP bridge was
+local engine games. The model reads the position as compact text with a card
+reference (`local-choice-v4`): one line per card it can see, with the type, cost,
+power, keywords and trimmed rules text of the card's engine-admitted revision;
+`scripts/measure_prompt_size.py` (and the play UI's "Prompt size" tab) reports
+prompt sizes over real games without a model; see
+[docs/local-prompt-v4.md](docs/local-prompt-v4.md) and
+[docs/local-prompt-v3.md](docs/local-prompt-v3.md). The external simulator HTTP bridge was
 [retired on 2026-11-11](docs/simulator-bot-retirement.md). No external LLM API is
 used. A trained gameplay adapter and measured playing strength are still future
 milestones.
@@ -269,7 +272,8 @@ python scripts/run_local_matches.py --policy baseline mlx --training-dir local/t
 a match against a local bot, launch bot-vs-bot matches and step through recorded
 matches. You see only your seat's public engine view and press the actions the
 engine offers; the server accepts only an offered `actionId`. Human matches write
-the same records to `local/matches/`. It needs `fastapi` and `uvicorn`; any bind
+the same records to `local/matches/`. Its "Prompt size" tab runs the
+`measure_prompt_size.py` measurement and shows the bot's largest prompt. It needs `fastapi` and `uvicorn`; any bind
 off loopback requires the printed token. See [docs/local-play-ui.md](docs/local-play-ui.md).
 
 ```bash
