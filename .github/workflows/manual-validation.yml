@@ -65,7 +65,7 @@ jobs:
           python-version: "3.12"
 
       - name: Install Python dependencies
-        run: python -m pip install --disable-pip-version-check fastapi httpx
+        run: python -m pip install --disable-pip-version-check fastapi httpx numpy
 
       - name: Install engine dependencies
         run: npm ci

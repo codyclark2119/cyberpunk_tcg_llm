@@ -284,8 +284,9 @@ model's memory: `games/cyberpunk/assistant/tools.py` holds `find_card` (name to
 slugs, every same-named card listed with an `ambiguous` flag), `get_card` (full facts
 by slug, errata attached and marked as overriding the printed text), `search_cards`
 (structured filters only), `get_rule` (by rule number, with its section and
-sub-rules), `search_rules` (embedding retrieval once `data/processed/corpus_index.npz`
-exists, otherwise a deterministic BM25 ranking; the result says which ran) and
+sub-rules), `search_rules` (one passage per rule with its heading path, ranked by
+deterministic rule-level BM25 in `assistant/retrieval.py`, fused with an embedding
+ranking once a matching rules index exists; the result says which ran and why) and
 `card_interactions` (the rules two cards' keywords, triggers and symbols point to).
 Each validates its arguments against its JSON schema, fails closed with an error dict,
 and returns the slugs, rule ids and errata it used with `rules_version`. The `TOOLS`
@@ -384,4 +385,38 @@ The baseline on the Mac (not yet run):
 ```bash
 python scripts/eval_assistant.py --set data/gold/quiz_mc_2026-11-12.jsonl --model models/qwen3-8b-4bit --name baseline-qwen3-8b
 python scripts/test_assistant_eval.py    # gold set, letter parser, scorer (--fake), Eval tab; needs node
+```
+
+### Rules retrieval
+
+`search_rules` ranks the 713 rules one rule at a time (each prefixed by its heading
+path, heading-only rows down-weighted, stopwords and light stemming, a named keyword
+or trigger boosting its glossary rules; errata included), all in
+`games/cyberpunk/assistant/retrieval.py`. When `data/processed/corpus_index.npz`
+exists and its fingerprint matches that rule-level corpus, it fuses the lexical and
+embedding rankings by reciprocal rank fusion (`method: "hybrid"`); a missing, stale
+or foreign index, or no embedding model on the machine, falls back to lexical with a
+`fallback_reason`. The index is a git-ignored build artifact.
+
+`scripts/eval_retrieval.py` measures recall@1/5/10 of every method on the quiz
+against `eval/sets/quiz_mc_expected_rules_draft.jsonl`, an unreviewed Claude draft of
+the rules each question needs (a measurement aid, not gold, never training data; 30
+rule-answerable questions, the policy and card-only ones skipped with a reason). The
+hit rule and query form are in its docstring. Reports go to `eval/reports/`; the Eval
+tab's Retrieval panel shows them, the index status, and the "Build rules index" and
+"Measure retrieval" actions. Measured on Linux, 2026-11-12 (no index):
+
+| method | recall@1 | recall@5 | recall@10 | chars in top 10 |
+| --- | --- | --- | --- | --- |
+| old chunk BM25 (`lexical-bm25-chunks`) | 0.533 | 0.733 | 0.867 | 10,710 |
+| rule-level lexical (`lexical-bm25-rules`) | 0.533 | 0.767 | 0.767 | 1,475 |
+
+A chunk passage holds about fifteen rules and is credited for all of them, so the old
+method's recall is bought with seven times the text. Build the index and measure the
+hybrid on the Mac (not yet run):
+
+```bash
+python scripts/build_rules_index.py                  # Apple Silicon, mlx-embeddings; --check reports status anywhere
+python scripts/eval_retrieval.py --name retrieval-quiz-hybrid --quiet
+python scripts/test_assistant_retrieval.py           # rule-level index, fusion on a fake embedder, Eval panel; needs node
 ```

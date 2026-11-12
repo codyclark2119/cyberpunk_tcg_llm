@@ -72,6 +72,7 @@ py-assistant-decks   | quick | "$PY" scripts/test_assistant_deck_tools.py      |
 py-assistant-loop    | quick | "$PY" scripts/test_assistant_loop.py            | line:PASS assistant loop: 16/16
 py-assistant-ui      | quick | "$PY" scripts/test_assistant_ui.py              | line:PASS assistant UI: 12/12
 py-assistant-eval    | quick | "$PY" scripts/test_assistant_eval.py            | line:PASS assistant eval: 13/13
+py-assistant-retrieval | quick | "$PY" scripts/test_assistant_retrieval.py    | line:PASS assistant retrieval: 13/13
 deck-rules           | full  | "$PY" scripts/check_deck_rules.py --negative-control | contains:agree:    272/272;;contains:reproduce budget AND usage exactly: 272/272;;absent:<-- LOOK
 integration          | full  | prepare_integration && npm run test:integration | tap:3
 '
@@ -174,8 +175,8 @@ run_diff_check() {
 # fail early with the install command.
 check_py_deps() {
   "$PY" --version
-  "$PY" -c 'import fastapi, httpx' || {
-    echo "missing Python dependency: fastapi/httpx (install with: $PY -m pip install fastapi httpx)" >&2
+  "$PY" -c 'import fastapi, httpx, numpy' || {
+    echo "missing Python dependency: fastapi/httpx/numpy (install with: $PY -m pip install fastapi httpx numpy)" >&2
     return 1
   }
 }

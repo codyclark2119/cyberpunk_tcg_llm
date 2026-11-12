@@ -8,13 +8,17 @@ that.
 Fully game-agnostic: operates on any jsonl of `{"chunk_id": ..., "text": ...}`
 records. All paths and the embedding model id are parameters rather than
 hardcoded constants, since a per-game module owns its own corpus location.
+
+`mlx_embeddings` (Apple Silicon only) is imported where a model is loaded or
+run, not at module import, so `fingerprint`, `write_index` and `read_index`
+work on any machine: a caller can check whether an index matches its corpus,
+and tests can write one from fake vectors, without the embedding model.
 """
 
 import hashlib
 from pathlib import Path
 
 import numpy as np
-from mlx_embeddings import generate, load
 
 from harness.core.io import read_jsonl
 
@@ -40,7 +44,14 @@ def load_chunks(path: Path) -> list[dict]:
     return read_jsonl(path, missing_ok=False)
 
 
+def load_model(model_id: str = DEFAULT_MODEL_ID):
+    """(model, tokenizer) for ``model_id``; needs mlx_embeddings (Apple Silicon)."""
+    from mlx_embeddings import load
+    return load(model_id)
+
+
 def embed_texts(model, tokenizer, texts: list[str], batch_size: int = 32) -> np.ndarray:
+    from mlx_embeddings import generate
     vectors = []
     for i in range(0, len(texts), batch_size):
         batch = texts[i:i + batch_size]
@@ -49,12 +60,12 @@ def embed_texts(model, tokenizer, texts: list[str], batch_size: int = 32) -> np.
     return np.concatenate(vectors, axis=0)
 
 
-def build_index(chunks_path: Path, index_path: Path, model_id: str = DEFAULT_MODEL_ID) -> None:
-    chunks = load_chunks(chunks_path)
-    model, tokenizer = load(model_id)
-    embeddings = embed_texts(model, tokenizer, [c["text"] for c in chunks])
+def write_index(chunks: list[dict], embeddings, index_path: Path, model_id: str) -> None:
+    """Save row-normalised ``embeddings`` (one row per chunk, in order) with the ids, model and fingerprint."""
+    embeddings = np.asarray(embeddings, dtype=np.float32)
+    if embeddings.ndim != 2 or embeddings.shape[0] != len(chunks):
+        raise ValueError(f"expected {len(chunks)} embedding rows, got shape {embeddings.shape}")
     embeddings = embeddings / np.linalg.norm(embeddings, axis=1, keepdims=True)
-
     index_path.parent.mkdir(parents=True, exist_ok=True)
     np.savez(
         index_path,
@@ -63,6 +74,24 @@ def build_index(chunks_path: Path, index_path: Path, model_id: str = DEFAULT_MOD
         model_id=model_id,
         chunks_fingerprint=fingerprint(chunks),
     )
+
+
+def read_index(index_path: Path) -> dict:
+    """The stored arrays and metadata: embeddings, chunk_ids (str list), model_id and fingerprint (or None)."""
+    with np.load(index_path, allow_pickle=False) as stored:
+        return {
+            "embeddings": np.array(stored["embeddings"]),
+            "chunk_ids": [str(c) for c in stored["chunk_ids"]],
+            "model_id": str(stored["model_id"]) if "model_id" in stored else None,
+            "chunks_fingerprint": str(stored["chunks_fingerprint"]) if "chunks_fingerprint" in stored else None,
+        }
+
+
+def build_index(chunks_path: Path, index_path: Path, model_id: str = DEFAULT_MODEL_ID) -> None:
+    chunks = load_chunks(chunks_path)
+    model, tokenizer = load_model(model_id)
+    embeddings = embed_texts(model, tokenizer, [c["text"] for c in chunks])
+    write_index(chunks, embeddings, index_path, model_id)
     print(f"embedded {len(chunks)} chunks ({embeddings.shape[1]}-dim) -> {index_path}")
 
 
@@ -91,7 +120,7 @@ def retrieve(
 
     # Loading the embedding model takes real time, so a caller doing many
     # retrievals in a loop should load it once and pass it in.
-    model, tokenizer = model_and_tokenizer if model_and_tokenizer else load(model_id)
+    model, tokenizer = model_and_tokenizer if model_and_tokenizer else load_model(model_id)
     query_vec = embed_texts(model, tokenizer, [query])[0]
     query_vec = query_vec / np.linalg.norm(query_vec)
 
