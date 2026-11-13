@@ -535,49 +535,6 @@ python scripts/eval_assistant.py --set data/gold/quiz_mc_2026-11-12.jsonl --mode
 # if either stops part-way, run the same command again with --resume
 ```
 
-**Game flow outline (2026-11-13, prompt `assistant-chat-v6`).** On the v5 runs both
-Qwen3-8B and Qwen3.8-27B missed questions with the right rule already retrieved: they
-treated a spent Legend as one already on the field (Legends sit in the Legends area and
-are spent there, rule 5.7.2), and placed a defeat inside the React Step (it happens in
-the Fight Step, after the React Step has ended, 9.14-9.17). Those are failures to know
-how the game moves, not missing rules, so v6 gives the model the game's flow from the
-rules text itself:
-
-- **The outline** (`games/cyberpunk/assistant/flow.py`) is generated from
-  `data/processed/rules.jsonl` by the rule tree, not written by hand: every top-level
-  rule of section 8 (turn order) and 9 (attack) under its heading (Start Phase, Main
-  Phase, End of Turn; Declare the Attack, React Step, Fight Step, Steal Step, Ending an
-  Attack), with the steps of each "in order" rule; each area of section 5 with its
-  first line and the lines saying what you may do there (5.7.2, 5.7.5, 5.7.6); the
-  state definitions under section 3's Orientation heading; and the Lag entry (11.3)
-  reached through 5.6.4's "See Lag" link. Each line keeps its rule id and the rule's
-  own leading sentences. The section titles, the five attack-step headings in order,
-  the Orientation heading and the Lag link are checked against the snapshot, and the
-  build refuses (`FlowOutlineError`) when one is missing or renamed.
-- **Size.** 90 lines, 6,021 characters: about 1,500 tokens at 4 characters a token
-  (no tokenizer on Linux; rule ids cost several tokens each). `prompt_budget.py`:
-  system prompt 1,230 -> 7,708 characters, prompt-and-spec overhead 9,744 -> 16,222.
-  `python scripts/prompt_budget.py --tokenizer models/qwen3-8b-4bit` gives the real
-  count on the Mac.
-- **Placement: the system prompt**, after the guidance. It is the same for every
-  question, so it belongs in the fixed prefix, and the prompt guard never drops the
-  system prompt (a preloaded tool result it would drop first).
-- **Guidance.** Two general bullets: place every event in the question on the game
-  timeline (whose turn, which phase, which attack step), name each card's area and
-  state, and check that the timing window asked about is actually open at that point;
-  a state such as spent applies in whatever area the card is in. They name no card.
-- A fake scorer run differs from v5 only in the header's prompt version.
-
-This change was designed after looking at the quiz misses, so the quiz cannot measure
-it fairly; the held-out quiz being written is the real test. The reruns on the Mac
-(not yet run; the 27B lost Q19, Q26 and Q39 to its 8,192-token step limit in v5):
-
-```bash
-python scripts/eval_assistant.py --set data/gold/quiz_mc_2026-11-12.jsonl --model models/qwen3-8b-4bit --name v6-8b-4096 --max-tokens 4096
-python scripts/eval_assistant.py --set data/gold/quiz_mc_2026-11-12.jsonl --model models/qwen3.8-27b-8bit --name v6-27b-12288-c10 --max-tokens 12288 --max-tool-calls 10
-# if either stops part-way, run the same command again with --resume
-```
-
 ### Rules retrieval
 
 `search_rules` ranks the 733 comprehensive rules (2026-10-29 snapshot) and the 87 Tournament Rules rows
