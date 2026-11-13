@@ -81,6 +81,7 @@ import time
 from dataclasses import dataclass, field
 from typing import Any, Protocol
 
+from games.cyberpunk.assistant.flow import game_flow_outline
 from games.cyberpunk.assistant.preload import DEFAULT_PRELOAD_CHARS, DEFAULT_PRELOAD_K
 from games.cyberpunk.assistant.preload import preload as run_preload
 from games.cyberpunk.assistant.tools import TOOLS, call_tool, tool_specs, validate_args
@@ -88,7 +89,11 @@ from games.cyberpunk.prompts import RULES_VERSION, TOURNAMENT_RULES_VERSION
 
 # v5 (2026-11-13): the preload adds implied-rule get_rule steps, search_rules cuts passages at 1,500
 # characters, and get_rule takes an ``offset``; the system prompt's wording is unchanged.
-ASSISTANT_PROMPT_VERSION = "assistant-chat-v5"
+# v6 (2026-11-13): the system prompt gains timeline guidance (place each event by turn, phase and attack step;
+# name each card's area and state; check the asked-about timing window is open) and the game flow outline
+# generated from the rules snapshot (flow.py). Why: on the v5 quiz runs both Qwen3-8B and Qwen3.8-27B missed
+# questions with the right rule already retrieved because they misplaced events in the game's flow.
+ASSISTANT_PROMPT_VERSION = "assistant-chat-v6"
 MAX_TOOL_CALLS = 6
 MAX_TOOL_CALLS_LIMIT = 16           # the most a run may allow (scripts/eval_assistant.py --max-tool-calls)
 MAX_TOKENS_LIMIT = 16384            # per model step; same as scripts/mlx_chat_worker.py (see the docstring)
@@ -100,17 +105,29 @@ SOURCE_KEYS = ("card_slugs", "rule_ids", "errata_ids", "deck_ids", "chunk_ids")
 
 
 def system_prompt(max_tool_calls: int = MAX_TOOL_CALLS) -> str:
-    """The system prompt stating ``max_tool_calls``; at the default it is exactly ``SYSTEM_PROMPT``."""
+    """The system prompt stating ``max_tool_calls``; at the default it is exactly ``SYSTEM_PROMPT``.
+
+    It is the guidance (``guidance_prompt``) followed by the game flow outline (``flow.game_flow_outline``):
+    rule lines from the snapshot, the same for every question, so they sit in the fixed prefix, which the
+    ``PromptGuard`` never drops.
+    """
+    return f"{guidance_prompt(max_tool_calls)}\n\n{game_flow_outline()}"
+
+
+def guidance_prompt(max_tool_calls: int = MAX_TOOL_CALLS) -> str:
+    """The system prompt's hand-written part: what to answer from, how to cite, and how to read the game's flow."""
     return f"""You answer questions about Cyberpunk TCG, a card game that launched in 2026 and is in open beta. You know nothing true about it: anything you seem to remember is wrong or invented.
 Warning: some terms here are the reverse of other card games. In these rules an attack spends a friendly ready Unit (rule 9.1), and a spent rival Unit is a valid attack target (rule 9.3.2.1). Where the rules text and your expectations differ, the rules text is right.
 
-- Answer only from tool results in this conversation, including the ones looked up before you were asked.
+- Answer only from tool results in this conversation, including the ones looked up before you were asked, and the GAME FLOW rule lines below.
 - If no tool result is relevant, say the snapshot does not cover it. Do not guess.
 - Tournament procedure, penalties, deck registration, event policy: use the Tournament Rules (TR 3.4.2), cite them. Anything in neither is not covered.
 - Cite rule numbers (rule 9.3.2.1) and card slugs in backticks (`v-streetkid`).
 - A card's identity is its slug; several cards share a name. If find_card says ambiguous, ask which card or answer for each.
 - Errata override printed card text.
 - Give a pasted deck list to parse_deck first. Label strategy as judgment.
+- Before answering, place every event in the question on the game timeline (GAME FLOW below): whose turn, which phase, which attack step. Name each card's area (hand, deck, Legends area, field, Eddies area, trash) and state (face-up or face-down, ready or spent, Lag).
+- Check that the timing window the question asks about is actually open at that point. A state such as spent applies in whatever area the card is in.
 - At most {max_tool_calls} tool calls per question. Keep the answer short.
 
 Snapshot {RULES_VERSION}, TR {TOURNAMENT_RULES_VERSION}. Prompt {ASSISTANT_PROMPT_VERSION}."""

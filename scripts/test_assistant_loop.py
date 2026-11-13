@@ -376,10 +376,12 @@ class SizedModel(ScriptedModel):
     """A scripted model that counts its prompt as characters / 4 and, like the worker, refuses one over ``refuse_over``.
 
     With ``limit`` it also tells the loop its cap (``prompt_token_limit``), as ``WorkerChatModel`` does.
+    ``chars_per_token`` changes the 4.
     """
 
-    def __init__(self, texts, *, limit=None, refuse_over=None, report_cap=True):
+    def __init__(self, texts, *, limit=None, refuse_over=None, report_cap=True, chars_per_token=4):
         super().__init__(texts)
+        self.chars_per_token = chars_per_token
         self.refuse_over = refuse_over
         self.report_cap = report_cap
         self.sizes: list[int] = []
@@ -387,7 +389,7 @@ class SizedModel(ScriptedModel):
             self.prompt_token_limit = lambda max_tokens: limit
 
     async def generate(self, messages, tools_, *, max_tokens, enable_thinking):
-        size = loop_module._message_chars(messages, tools_) // 4
+        size = loop_module._message_chars(messages, tools_) // self.chars_per_token
         self.sizes.append(size)
         if self.refuse_over is not None and size > self.refuse_over:
             refusal = {"ok": False, "error": "prompt_too_large", "promptTokens": size}
@@ -477,10 +479,14 @@ def test_prompt_guard_estimate_learns_from_reported_counts_and_only_tightens():
 
 
 def test_a_worker_refusal_drops_more_and_asks_again():
-    free = SizedModel(list(GUARD_SCRIPT))
+    # This worker counts 3 characters a token, the guard's own pessimistic ratio, so what the guard drops is
+    # measured against the same count the worker refuses on. At 4 (the other tests) the guard's estimate of the
+    # fixed prefix runs a third over the worker's; since prompt v6 put the ~6k-character game flow outline in the
+    # system prompt that alone outweighs the 100-token margin below, and the turn ends context_full.
+    free = SizedModel(list(GUARD_SCRIPT), chars_per_token=3)
     turn([], GUARD_QUESTION, free)
     hidden = free.sizes[3] - 100  # the worker's cap, unknown to the loop until it refuses
-    model = SizedModel(list(GUARD_SCRIPT), refuse_over=hidden)
+    model = SizedModel(list(GUARD_SCRIPT), refuse_over=hidden, chars_per_token=3)
     result = turn([], GUARD_QUESTION, model)
     assert result.ok and result.stop_reason == "answer" and model.sizes[-1] <= hidden < model.sizes[-2]
     refused = [s for s in result.trace if s["kind"] == "model" and not s["ok"]]
@@ -490,7 +496,7 @@ def test_a_worker_refusal_drops_more_and_asks_again():
     assert context[0]["reason"] == "worker_refused" and context[0]["dropped"] and context[0]["limit"] == hidden
     assert context[0]["dropped"][0]["message"] == 3, "the first tool result goes first"
     # A refusal that does not name the cap still drops one more result per refusal until the worker accepts.
-    quiet = SizedModel(list(GUARD_SCRIPT), refuse_over=hidden, report_cap=False)
+    quiet = SizedModel(list(GUARD_SCRIPT), refuse_over=hidden, report_cap=False, chars_per_token=3)
     result = turn([], GUARD_QUESTION, quiet)
     assert result.ok and quiet.sizes[-1] <= hidden
     dropped = [d["message"] for s in result.trace if s["kind"] == "context" for d in s["dropped"]]
