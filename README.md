@@ -427,6 +427,35 @@ python scripts/eval_assistant.py --set data/gold/quiz_mc_2026-11-13.jsonl --mode
 python scripts/eval_assistant.py --set data/gold/quiz_mc_2026-11-13.jsonl --model models/qwen3.8-27b-8bit --name q2-v5-27b-12288-c10 --max-tokens 12288 --max-tool-calls 10
 ```
 
+**Cody's pass standard (2026-11-13).** "The ideal passing would be mixing the
+questions into a 40 question quiz and getting minimum 35 correct." So:
+
+- `--sample N --seed S` draws N questions from the set's keyed items only (`correct`
+  not null), so every sampled question counts and the denominator is N. The keyed
+  items are ranked by `sha256(f"{S}:{id}")`, the first N are taken, and they run in
+  set order. The draw depends only on the seed and the ids, never on file order: the
+  same seed always gives the same questions, and a different seed a different mix.
+  N must be 1..the keyed count (60 for the 11-13 set), `--seed` (a whole number >= 0)
+  is required with `--sample`, and `--sample` cannot be combined with `--ids` or
+  `--limit`. Seed 1 on the 11-13 set draws 26 `cody-quiz-*` and 14 `cody-quiz2-*`
+  questions.
+- `--pass-mark K` (1..items run) adds `pass_mark` and `passed` (correct >= K) to the
+  summary row and ends the score line with `PASS (35/40 needed)` or `FAIL (35/40 needed)`.
+- The header records `sample`, `seed`, `sampled_ids` and `pass_mark` only when they are
+  given, so a run without them is byte-identical to before; `--resume` compares them
+  like any other setting. The Eval form has Sample, Seed and Pass mark fields (checked
+  server-side: a sample needs a seed and excludes "Only these ids" and "First N"), and
+  the Runs list shows the seed and PASS/FAIL.
+
+One 40-question draw is noisy: a couple of questions either way can move a run across
+35, so report several seeds (and their mean), not one. Mac runs (not yet run):
+
+```bash
+python scripts/eval_assistant.py --set data/gold/quiz_mc_2026-11-13.jsonl --model models/qwen3-8b-4bit --name q2-s1-8b --max-tokens 4096 --sample 40 --seed 1 --pass-mark 35
+python scripts/eval_assistant.py --set data/gold/quiz_mc_2026-11-13.jsonl --model models/qwen3-8b-4bit --name q2-s2-8b --max-tokens 4096 --sample 40 --seed 2 --pass-mark 35
+python scripts/eval_assistant.py --set data/gold/quiz_mc_2026-11-13.jsonl --model models/qwen3-8b-4bit --name q2-s3-8b --max-tokens 4096 --sample 40 --seed 3 --pass-mark 35
+```
+
 The baseline on the Mac (not yet run):
 
 ```bash
@@ -450,7 +479,7 @@ question 36 when the process restarted. So:
   bytes an uninterrupted run writes, and the partial is removed. If a run stops, the
   same command with `--resume` skips the ids already in the partial and finishes it;
   a partial whose header differs (set sha256, model, adapter, thinking, preload, token
-  and tool-call limits, prompt versions, tool specs, ids or limit) is refused with the
+  and tool-call limits, prompt versions, tool specs, ids, limit, sample, seed or pass mark) is refused with the
   differing fields named. Without `--resume` an existing partial is refused unless
   `--force`, which starts over. The Eval form has the same two fields and a resume
   box, and its Runs list shows a partial as incomplete.

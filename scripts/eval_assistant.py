@@ -55,6 +55,20 @@ skipped and their rows kept. A header that differs is a hard error naming the
 fields. Without ``--resume`` an existing partial is refused unless ``--force``,
 which starts over.
 
+Sampling and a pass mark (2026-11-13). Cody's standard: "The ideal passing would
+be mixing the questions into a 40 question quiz and getting minimum 35 correct."
+``--sample N --seed S`` draws N questions from the set's keyed items only (``correct``
+not null), so every sampled question counts and the denominator is N: the keyed
+items are ranked by ``sha256(f"{S}:{id}")``, the first N are taken and they run in
+set order. The draw depends only on the seed and the ids, never on file order, so
+the same seed always gives the same questions and several seeds can be averaged.
+``--seed`` is required with ``--sample``, and ``--sample`` excludes ``--ids`` and
+``--limit``. ``--pass-mark K`` (1..items run) adds ``pass_mark`` and ``passed``
+(correct >= K) to the summary and ends the score line with ``PASS (K/N needed)`` or
+``FAIL (K/N needed)``. The header records ``sample``, ``seed``, ``sampled_ids`` and
+``pass_mark`` only when given (a default run's header and summary are unchanged),
+and a resume compares them like every other setting.
+
 The set is eval-only: never train on it.
 
 Usage:
@@ -63,6 +77,8 @@ Usage:
     python scripts/eval_assistant.py --set data/gold/quiz_mc_2026-11-12.jsonl \\
         --model models/qwen3.8-27b-8bit --name v3-both-27b-8192-c10 --max-tokens 8192 --max-tool-calls 10
     python scripts/eval_assistant.py ... --resume   # the same command again continues a stopped run
+    python scripts/eval_assistant.py --set data/gold/quiz_mc_2026-11-13.jsonl --model models/qwen3-8b-4bit \\
+        --name q2-s1-8b --max-tokens 4096 --sample 40 --seed 1 --pass-mark 35
     python scripts/eval_assistant.py --set data/gold/quiz_mc_2026-11-12.jsonl --fake --name smoke \\
         --runs-dir /tmp/runs        # scripted fake model, for tests only
 """
@@ -217,6 +233,13 @@ def header_row(args, set_path: Path, items: list[dict], selected: list[dict]) ->
         # Absent at 600 s (every default run, and every run before the timeout scaled), so those headers
         # are unchanged; a longer step limit is part of how a run was made.
         header["worker_timeout_s"] = timeout
+    sample, pass_mark = getattr(args, "sample", None), getattr(args, "pass_mark", None)
+    if sample is not None:
+        # Absent unless sampled, so a default run's header is unchanged; the ids make the draw readable without
+        # recomputing it, and a resume compares them like any other setting.
+        header.update({"sample": sample, "seed": args.seed, "sampled_ids": [i["id"] for i in selected]})
+    if pass_mark is not None:
+        header["pass_mark"] = pass_mark
     if args.max_tool_calls != MAX_TOOL_CALLS:
         # The prompt states the cap, so it is not the versioned default; say so (absent at the default, so a
         # default run's header is byte-identical to the runs made before the flag existed).
@@ -291,6 +314,24 @@ def select(items: list[dict], ids: str | None, limit: int) -> list[dict]:
     return selected[:limit] if limit else selected
 
 
+def sample_items(items: list[dict], n: int, seed: int) -> list[dict]:
+    """``n`` keyed items (``correct`` not null) of ``items``, in their order: the first ``n`` by
+    ``sha256(f"{seed}:{id}")``. The draw depends only on the seed and the ids, never on the order of ``items``."""
+    keyed = [i for i in items if i.get("correct") is not None]
+    if not 1 <= n <= len(keyed):
+        raise EvalSetError(f"--sample must be 1..{len(keyed)} (the set's keyed items)")
+    ranked = sorted(keyed, key=lambda i: (hashlib.sha256(f"{seed}:{i['id']}".encode("utf-8")).hexdigest(), i["id"]))
+    chosen = {i["id"] for i in ranked[:n]}
+    return [i for i in items if i["id"] in chosen]
+
+
+def with_pass_mark(summary: dict, pass_mark: int | None) -> dict:
+    """The summary with ``pass_mark`` and ``passed`` (correct >= pass_mark) when a pass mark was given."""
+    if pass_mark is None:
+        return summary
+    return {**summary, "pass_mark": pass_mark, "passed": summary["correct"] >= pass_mark}
+
+
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     parser.add_argument("--set", required=True, help="multiple-choice gold set (.jsonl)")
@@ -315,8 +356,13 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--preload-k", type=int, default=DEFAULT_PRELOAD_K, help="rules passages preloaded (1..20)")
     parser.add_argument("--preload-chars", type=int, default=DEFAULT_PRELOAD_CHARS,
                         help="character budget for preloaded results")
-    parser.add_argument("--limit", type=int, default=0, help="run only the first N selected items (0: all)")
+    parser.add_argument("--limit", type=int, default=None, help="run only the first N selected items (0: all)")
     parser.add_argument("--ids", help="comma-separated item ids to run")
+    parser.add_argument("--sample", type=int, default=None,
+                        help="draw N of the set's keyed questions (needs --seed; not with --ids or --limit)")
+    parser.add_argument("--seed", type=int, default=None, help="seed for --sample, a whole number >= 0")
+    parser.add_argument("--pass-mark", type=int, default=None,
+                        help="correct answers needed to pass, 1..items run (e.g. 35 of a 40-question sample)")
     parser.add_argument("--name", required=True, help="run name; writes <runs-dir>/<name>.jsonl")
     parser.add_argument("--runs-dir", default=str(RUNS_DIR), help="where runs go (default eval/runs)")
     parser.add_argument("--force", action="store_true",
@@ -346,6 +392,17 @@ def main(argv: list[str] | None = None) -> int:
         parser.error("--preload-k must be 1..20")
     if not 0 <= args.preload_chars <= 100000:
         parser.error("--preload-chars must be 0..100000")
+    if args.sample is not None:
+        if args.seed is None:
+            parser.error("--sample needs --seed")
+        if args.ids is not None or args.limit is not None:
+            parser.error("--sample cannot be combined with --ids or --limit")
+    elif args.seed is not None:
+        parser.error("--seed is only used with --sample")
+    if args.seed is not None and args.seed < 0:
+        parser.error("--seed must be a whole number >= 0")
+    if args.limit is None:
+        args.limit = 0  # recorded as 0, as before the flag could be absent
     if args.limit < 0:
         parser.error("--limit must be 0 or more")
     if args.ids is not None and not IDS_RE.match(args.ids):
@@ -359,9 +416,14 @@ def main(argv: list[str] | None = None) -> int:
         parser.error(f"{out} exists; pass --force to replace it")
     try:
         items = load_mc_set(set_path)
-        selected = select(items, args.ids, args.limit)
+        if args.sample is not None:
+            selected = sample_items(items, args.sample, args.seed)
+        else:
+            selected = select(items, args.ids, args.limit)
     except EvalSetError as exc:
         parser.error(str(exc))
+    if args.pass_mark is not None and not 1 <= args.pass_mark <= len(selected):
+        parser.error(f"--pass-mark must be 1..{len(selected)} (the items run)")
     header = header_row(args, set_path, items, selected)
     partial = partial_path(runs_dir, args.name)
     done: dict[str, dict] = {}
@@ -397,6 +459,8 @@ def main(argv: list[str] | None = None) -> int:
     if args.max_tool_calls != MAX_TOOL_CALLS:
         print(f"Tool-call cap {args.max_tool_calls} (default {MAX_TOOL_CALLS}): the system prompt states it, so "
               f"the header records system_prompt_sha256.", flush=True)
+    if args.sample is not None:
+        print(f"Sample: {args.sample} keyed question(s), seed {args.seed}.", flush=True)
     if done:
         print(f"Resuming {partial.name}: {len(done)} of {len(selected)} item(s) already done.", flush=True)
     # The partial is rewritten whole (header and the rows kept), then appended to row by row.
@@ -417,7 +481,7 @@ def main(argv: list[str] | None = None) -> int:
 
     fresh = {record["id"]: record for record in asyncio.run(go())}
     records = [done.get(item["id"]) or fresh[item["id"]] for item in selected]
-    summary = summarize(records)
+    summary = with_pass_mark(summarize(records), args.pass_mark)
     rows = [header, *records, {"kind": "summary", **summary}]
     if out.exists() and not args.force:  # Created while the run was going: still never overwrite.
         print(f"{out} appeared during the run; not overwriting (pass --force). The rows are in {partial}.",
@@ -429,7 +493,9 @@ def main(argv: list[str] | None = None) -> int:
              if summary["scored"] else "no scored items")
     print(f"Score: {score}; unanswered {summary['unanswered']}; wrong {summary['wrong']}; "
           f"unscored {summary['unscored']}; known-incorrect picks {summary['known_incorrect_hits']}; "
-          f"tool use {summary['tool_use']}/{summary['items']} ({(summary['tool_use_rate'] or 0):.1%})", flush=True)
+          f"tool use {summary['tool_use']}/{summary['items']} ({(summary['tool_use_rate'] or 0):.1%})"
+          + (f"; {'PASS' if summary['passed'] else 'FAIL'} ({args.pass_mark}/{summary['items']} needed)"
+             if args.pass_mark is not None else ""), flush=True)
     print(f"Wrote {out}", flush=True)
     return 0
 
