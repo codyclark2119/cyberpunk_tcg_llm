@@ -12,7 +12,8 @@ Review notes live beside the runs, in ``eval/notes/<set stem>.jsonl`` (one
 row. While it runs, each finished question is appended to
 ``eval/runs/<name>.partial.jsonl`` (header first, flushed per row), which the
 scorer removes once the final file is written; ``list_runs`` shows a partial as
-``incomplete``. A sampled or pass-marked run's entry also carries ``sample``, ``seed``
+``incomplete``. An item may carry ``cards`` (linked card slugs) and ``official`` (where an
+official-test item came from). A sampled or pass-marked run's entry also carries ``sample``, ``seed``
 and ``pass_mark`` from its header, and a finished one ``passed``. ``load_mc_set`` validates strictly, so a malformed set fails before any
 model time is spent on it.
 """
@@ -77,6 +78,13 @@ def load_mc_set(path: Path) -> list[dict]:
         known = row.get("known_incorrect", [])
         if not isinstance(known, list) or any(k not in letters for k in known) or correct in known:
             raise EvalSetError(f"{where}: known_incorrect must be choice letters other than the key")
+        if "cards" in row:  # optional: the card slugs the question links (data/gold/SCHEMA.md)
+            linked = row["cards"]
+            if (not isinstance(linked, list) or any(not isinstance(s, str) or not s for s in linked)
+                    or len(set(linked)) != len(linked)):
+                raise EvalSetError(f"{where}: cards must be a list of distinct card slugs")
+        if "official" in row and not isinstance(row["official"], dict):
+            raise EvalSetError(f"{where}: official must be an object")
     return rows
 
 

@@ -137,6 +137,27 @@ unscored, with the choice he marked wrong in `known_incorrect`. HTML entities fr
 chat copy were decoded to ASCII quotes. Run the new questions alone with
 `--ids cody-quiz2-01,...` to measure on questions the assistant was never tuned against.
 
+Two optional fields, so far only in the official-test set below:
+
+| Field | Required | Notes |
+| --- | --- | --- |
+| `cards` | no | the card slugs the question links, in order, deduplicated (`[]`: it links none). A slug, never a name: several cards share names. When present, `scripts/eval_assistant.py` preloads exactly these cards with `get_card` instead of guessing cards from names in the text |
+| `official` | no | where an official-test item came from: `{attempt_id, question_id, level, option_ids, pass_percent}`. `option_ids` are the site's own option ids in letter order (they are not letters); `pass_percent` is the attempt's pass rule |
+
+`official_basic_test.jsonl` is the official "Level 1 Basic Test", imported from Cody's
+attempt of 2026-11-13 (`data/raw/official_tests/`) by `scripts/import_test_attempt.py`:
+40 questions and 37 keyed, with the site's exact wording (keyword brackets such as
+`[Blocker]` kept) and its linked cards. The site returns only whether each submitted
+answer was right, so the key is derived: a right answer is the key; a wrong answer to a
+two-option question makes the other option the key; a wrong answer with more options
+leaves the item unscored with that option in `known_incorrect` (`official-cbfafd82`,
+`official-798ace59`, `official-4a61b648`, the attempt's Q01, Q14 and Q15).
+`answer_key_by` is `official test result (Cody's attempt)`. Ids are
+`official-<first 8 hex of the question uuid>`. Later attempts are added with the
+importer's `--merge`, which fills in unscored keys and refuses a conflict. 38 of its 40
+questions are also in `quiz_mc_2026-11-13.jsonl` (by text without the brackets); Q17 and
+Q31 read differently there.
+
 **These sets are eval-only, never training data.** Do not use them, their
 paraphrases or the assistant's answers to them in any SFT, LoRA or prompt
 example.

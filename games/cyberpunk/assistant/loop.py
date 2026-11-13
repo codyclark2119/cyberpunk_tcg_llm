@@ -522,12 +522,14 @@ async def run_turn(history: list[dict], user_message: str, model: ChatModel, *,
                    enable_thinking: bool = DEFAULT_THINKING, deck: dict | None = None,
                    preload: bool = DEFAULT_PRELOAD, preload_text: str | None = None,
                    preload_k: int = DEFAULT_PRELOAD_K, preload_chars: int = DEFAULT_PRELOAD_CHARS,
-                   max_prompt_tokens: int | None = None) -> TurnResult:
+                   preload_cards: list[str] | None = None, max_prompt_tokens: int | None = None) -> TurnResult:
     """Run one user turn to an answer, an error or the tool-call cap. ``history`` is not modified.
 
     ``deck`` is the session's loaded deck (see ``deck_context``), or None.
     ``max_tokens`` defaults by thinking (``default_max_tokens``). ``preload``
-    runs the automatic context step on ``preload_text`` (default: the message).
+    runs the automatic context step on ``preload_text`` (default: the message);
+    ``preload_cards`` (slugs), when not None, replaces its card-name linking with
+    ``get_card`` on exactly those cards (the scorer's linked cards; never set by chat).
     ``max_prompt_tokens`` is the prompt cap the guard keeps to (default: the
     model's ``prompt_token_limit(max_tokens)`` when it has one; see ``PromptGuard``).
     """
@@ -551,7 +553,7 @@ async def run_turn(history: list[dict], user_message: str, model: ChatModel, *,
 
     if preload:
         auto = run_preload(user_message if preload_text is None else preload_text, k=preload_k,
-                           budget=preload_chars)
+                           budget=preload_chars, cards=preload_cards)
         sent = [a for a in auto if a.sent]
         if sent:
             messages.append({"role": "assistant", "content": "", "tool_calls": [

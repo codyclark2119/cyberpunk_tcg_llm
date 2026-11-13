@@ -15,6 +15,11 @@ same bytes as an uninterrupted run, and a refusal when the settings differ.
 Cody's pass standard (35 of a 40-question mix) needs a seeded draw of keyed
 questions that never depends on file order and a pass mark judged exactly at
 the boundary, while a run without those flags stays byte-identical.
+The official test's attempt JSON carries no answer key, so the importer derives
+it from Cody's answers and the right/wrong flags; a flipped derivation, a letter
+read from an option id, an unknown slug or a merge that overwrote a key would
+corrupt the set silently. The scorer must preload exactly the cards the test
+links (several cards share a name) and leave every other set's run unchanged.
 Everything runs on the
 committed snapshot with the scorer's scripted fake model: no mlx, no weights,
 no network.
@@ -52,6 +57,10 @@ GOLD2 = REPO_ROOT / "data/gold/quiz_mc_2026-11-13.jsonl"
 # Question numbers of Cody's 2026-11-13 quiz that are not word-for-word repeats of the 11-12 set.
 SECOND_QUIZ_NEW = (1, 3, 4, 5, 11, 12, 13, 14, 16, 18, 19, 22, 23, 24, 25, 27, 29, 30, 31, 32, 35, 36, 37, 38)
 SCRIPT = REPO_ROOT / "scripts/eval_assistant.py"
+OFFICIAL = REPO_ROOT / "data/gold/official_basic_test.jsonl"
+OFFICIAL_RAW = REPO_ROOT / "data/raw/official_tests/official-test-attempt-2026-11-13.raw.json"
+OFFICIAL_ANSWERS = REPO_ROOT / "data/raw/official_tests/official-test-attempt-2026-11-13.answers.txt"
+IMPORTER = REPO_ROOT / "scripts/import_test_attempt.py"
 LOCAL = {"host": "127.0.0.1:8767"}
 CTX: dict = {}
 
@@ -63,6 +72,15 @@ def scorer():
         spec.loader.exec_module(module)
         CTX["scorer"] = module
     return CTX["scorer"]
+
+
+def importer():
+    if "importer" not in CTX:
+        spec = importlib.util.spec_from_file_location("import_test_attempt", IMPORTER)
+        module = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(module)
+        CTX["importer"] = module
+    return CTX["importer"]
 
 
 def tree_digest(root: Path) -> str:
@@ -172,7 +190,7 @@ def test_gold_quiz_parses_with_40_items_38_keyed():
     assert by_id["cody-quiz-29"]["question"].startswith('"Ready" refers to')
     assert "Gear card's bottom textbox" in by_id["cody-quiz-13"]["question"]
     listed = {s["name"]: s["scored"] for s in eval_store.list_sets(GOLD.parent)}
-    assert listed == {GOLD.name: 38, GOLD2.name: 60}, listed
+    assert listed == {GOLD.name: 38, GOLD2.name: 60, OFFICIAL.name: 37}, listed
 
 
 def test_second_quiz_extends_the_first_unchanged():
@@ -1084,6 +1102,222 @@ def test_gold_docs_say_eval_only():
     for field in ("`choices`", "`correct`", "`known_incorrect`", "`answer_key_by`", "unscored"):
         assert field in schema, field
     assert "never training data" in schema
+
+
+# The official test: importer and linked cards ---------------------------------------------------
+
+
+def run_importer(*args: str) -> subprocess.CompletedProcess:
+    return subprocess.run([sys.executable, str(IMPORTER), *args], capture_output=True, text=True, cwd=REPO_ROOT)
+
+
+def test_official_set_imports_40_rows_37_keyed_and_reruns_byte_identically():
+    items = eval_store.load_mc_set(OFFICIAL)
+    assert len(items) == 40 and sum(1 for i in items if i["correct"] is not None) == 37
+    unscored = {i["id"]: i["known_incorrect"] for i in items if i["correct"] is None}
+    assert unscored == {"official-cbfafd82": ["A"], "official-798ace59": ["D"], "official-4a61b648": ["A"]}, unscored
+    attempt = json.loads(OFFICIAL_RAW.read_text())["attempt"]
+    assert [i["id"] for i in items] == [f"official-{q['id'][:8]}" for q in attempt["questions"]]
+    for item, q in zip(items, attempt["questions"]):
+        assert item["question"] == q["prompt"] and [c["text"] for c in item["choices"]] == [o["text"] for o in q["options"]]
+        assert item["official"]["question_id"] == q["id"] and item["official"]["pass_percent"] == 85
+        assert item["answer_key_by"] == "official test result (Cody's attempt)"
+    by_id = {i["id"]: i for i in items}
+    # Q15: letters by option order, never by the site's ids ("yes"/"no" name "-1" and "0").
+    q15 = by_id["official-4a61b648"]
+    assert q15["official"]["option_ids"][:2] == ["yes", "no"] and [c["text"] for c in q15["choices"][:2]] == ["-1", "0"]
+    assert q15["cards"] == ["kiroshi-optics", "sketchy-ripper", "floor-it"]
+    assert by_id["official-85aac5ec"]["cards"] == ["misty-olszewski-mender-of-broken-spirits", "mox-inciters"]
+    assert by_id["official-cbfafd82"]["cards"] == []
+    assert "[Blocker]" in OFFICIAL.read_text(encoding="utf-8"), "keyword brackets are kept"
+    known = importer().card_ids()
+    assert all(slug in known for i in items for slug in i["cards"])
+    with tempfile.TemporaryDirectory() as tmp:
+        out = Path(tmp) / "official_basic_test.jsonl"
+        for gold in (GOLD, GOLD2):
+            shutil.copyfile(gold, Path(tmp) / gold.name)
+        args = ("--attempt", str(OFFICIAL_RAW), "--answers", str(OFFICIAL_ANSWERS), "--out", str(out))
+        first = run_importer(*args)
+        assert first.returncode == 0, first.stderr
+        assert out.read_bytes() == OFFICIAL.read_bytes(), "the committed set is the importer's output"
+        assert "40 questions, 37 keyed, 3 unscored" in first.stdout
+        assert "quiz_mc_2026-11-12.jsonl: 15 of these 40" in first.stdout, first.stdout
+        assert "quiz_mc_2026-11-13.jsonl: 38 of these 40" in first.stdout, first.stdout
+        again = run_importer(*args)
+        assert again.returncode == 0 and "unchanged" in again.stdout and out.read_bytes() == OFFICIAL.read_bytes()
+        out.write_text(OFFICIAL.read_text().replace('"correct": "A"', '"correct": "B"', 1))
+        assert run_importer(*args).returncode == 1, "a different existing set is not replaced without --force"
+        inline = " ".join(line.split(". ")[1] for line in OFFICIAL_ANSWERS.read_text().split("\n") if line.strip())
+        forced = run_importer(*args[:2], "--answers", inline, "--out", str(out), "--force")
+        assert forced.returncode == 0 and out.read_bytes() == OFFICIAL.read_bytes(), forced.stderr
+
+
+def fixture_attempt(questions: list[dict], *, correct_count: int | None = None, attempt_id: str | None = None) -> dict:
+    """A minimal attempt: ``questions`` are (n options, correct flag, cards) dicts expanded to the site's shape."""
+    out = []
+    for n, q in enumerate(questions, 1):
+        out.append({"id": f"{n:08x}-0000-4000-8000-{n:012x}", "kind": "multiple_choice", "prompt": q.get("prompt", f"Q{n}?"),
+                    "options": [{"id": oid, "text": f"opt {oid}"} for oid in q.get("ids", [f"o{k}" for k in range(q["n"])])],
+                    "cards": [{"text": s, "cards": [{"slug": s, "name": s, "subname": None}]} for s in q.get("cards", [])],
+                    "correct": q["correct"]})
+    count = sum(1 for q in questions if q["correct"]) if correct_count is None else correct_count
+    return {"attempt": {"id": attempt_id or "11111111-2222-4333-8444-555555555555", "level": 1,
+                        "level_name": "Basic Test", "status": "submitted", "questions": out, "answers": {},
+                        "result": {"passed": False, "correct_count": count, "scored_count": len(out),
+                                   "pass_percent": 85, "submitted_at": "2026-11-13T00:00:00Z"}}}
+
+
+def test_importer_derives_keys_and_fails_closed():
+    imp = importer()
+    known = {"sketchy-ripper", "floor-it"}
+    doc = fixture_attempt([{"n": 2, "correct": False}, {"n": 4, "correct": False}, {"n": 2, "correct": True},
+                           {"n": 3, "correct": True, "cards": ["floor-it", "sketchy-ripper", "floor-it"]},
+                           {"n": 2, "correct": False, "ids": ["no", "yes"]}])
+    rows = imp.build_rows(doc, ["A", "C", "B", "C", "B"], known)
+    assert [(r["correct"], r["known_incorrect"]) for r in rows] == [
+        ("B", ["A"]), (None, ["C"]), ("B", []), ("C", []), ("A", ["B"])], rows
+    assert rows[3]["cards"] == ["floor-it", "sketchy-ripper"] and rows[0]["cards"] == []
+    assert rows[4]["official"]["option_ids"] == ["no", "yes"], "letters come from option order, not ids"
+    assert rows[0]["id"] == "official-00000001" and imp.build_rows(doc, ["A", "C", "B", "C", "B"], known) == rows
+    assert imp.parse_answers("1. A\n2. c\n\n3. B\n") == ["A", "C", "B"] and imp.parse_answers("a b, C") == ["A", "B", "C"]
+    refusals = {
+        "count mismatch": lambda: imp.build_rows(fixture_attempt([{"n": 2, "correct": True}], correct_count=0), ["A"], known),
+        "unknown slug": lambda: imp.build_rows(fixture_attempt([{"n": 2, "correct": True, "cards": ["no-such-card"]}]),
+                                               ["A"], known),
+        "bad letter": lambda: imp.build_rows(fixture_attempt([{"n": 2, "correct": True}]), ["C"], known),
+        "answer count": lambda: imp.build_rows(fixture_attempt([{"n": 2, "correct": True}]), ["A", "B"], known),
+        "entity": lambda: imp.build_rows(fixture_attempt([{"n": 2, "correct": True, "prompt": "it&#39;s"}]), ["A"], known),
+        "shape": lambda: imp.build_rows({"attempt": {**fixture_attempt([{"n": 2, "correct": True}])["attempt"],
+                                                     "status": "in_progress"}}, ["A"], known),
+        "answers order": lambda: imp.parse_answers("1. A\n3. B\n"),
+    }
+    for name, call in refusals.items():
+        try:
+            call()
+            raise AssertionError(f"accepted: {name}")
+        except imp.AttemptError as exc:
+            if name == "unknown slug":
+                assert "no-such-card" in str(exc), exc
+
+
+def test_importer_merge_fills_keys_and_refuses_conflicts():
+    imp = importer()
+    known: set = set()
+    first = imp.build_rows(fixture_attempt([{"n": 4, "correct": False}, {"n": 2, "correct": True}]), ["A", "A"], known)
+    second = imp.build_rows(fixture_attempt([{"n": 4, "correct": True}, {"n": 2, "correct": True}, {"n": 2, "correct": True}],
+                                            attempt_id="99999999-2222-4333-8444-555555555555"), ["C", "A", "B"], known)
+    merged = imp.merge_rows(first, second)
+    assert [(r["correct"], r["known_incorrect"]) for r in merged] == [("C", ["A"]), ("A", []), ("B", [])], merged
+    assert "99999999" in merged[0]["source"] and "99999999" not in merged[1]["source"]
+    assert first[0]["correct"] is None, "the existing rows are not modified in place"
+    assert imp.merge_rows(merged, second) == merged, "merging the same attempt again changes nothing"
+    conflicts = [
+        imp.build_rows(fixture_attempt([{"n": 4, "correct": True}, {"n": 2, "correct": True}]), ["A", "A"], known),  # A was wrong
+        imp.build_rows(fixture_attempt([{"n": 4, "correct": False}, {"n": 2, "correct": True}]), ["B", "B"], known),  # key B vs A
+        imp.build_rows(fixture_attempt([{"n": 4, "correct": False, "prompt": "Other?"}]), ["B"], known),               # text
+    ]
+    for rows in conflicts:
+        try:
+            imp.merge_rows(first, rows)
+            raise AssertionError("merge conflict accepted")
+        except imp.AttemptError:
+            pass
+    with tempfile.TemporaryDirectory() as tmp:
+        attempt, answers, out = Path(tmp) / "a.json", Path(tmp) / "a.txt", Path(tmp) / "set.jsonl"
+        attempt.write_text(json.dumps(fixture_attempt([{"n": 4, "correct": True}, {"n": 2, "correct": False}])))
+        answers.write_text("1. D\n2. A\n")
+        assert run_importer("--attempt", str(attempt), "--answers", str(answers), "--out", str(out),
+                            "--merge").returncode == 1, "--merge needs an existing set"
+        assert run_importer("--attempt", str(attempt), "--answers", str(answers), "--out", str(out)).returncode == 0
+        before = out.read_bytes()
+        attempt.write_text(json.dumps(fixture_attempt([{"n": 4, "correct": False}])))
+        answers.write_text("1. D\n")
+        bad = run_importer("--attempt", str(attempt), "--answers", str(answers), "--out", str(out), "--merge")
+        assert bad.returncode == 1 and "conflict" in bad.stderr and out.read_bytes() == before, bad.stderr
+
+
+def linked_set(root: Path) -> Path:
+    """A three-item set: linked cards, an empty link list and no ``cards`` field (name linking)."""
+    rows = [{"id": "l-1", "question": "Does Adam Smasher keep his power when Floor It resolves?",
+             "choices": [{"letter": "A", "text": "Yes"}, {"letter": "B", "text": "No"}], "correct": "A",
+             "known_incorrect": [], "source": "test", "answer_key_by": "test",
+             "cards": ["adam-smasher-metal-over-meat", "floor-it"],
+             "official": {"attempt_id": "x", "question_id": "y", "level": 1, "option_ids": ["a", "b"], "pass_percent": 85}},
+            {"id": "l-2", "question": "Can a Sketchy Ripper attack the turn it is played?",
+             "choices": [{"letter": "A", "text": "Yes"}, {"letter": "B", "text": "No"}], "correct": "B",
+             "known_incorrect": [], "source": "test", "answer_key_by": "test", "cards": []},
+            next(i for i in eval_store.load_mc_set(GOLD) if i["id"] == "cody-quiz-03")]
+    path = root / "linked-set.jsonl"
+    path.write_text("".join(json.dumps(r) + "\n" for r in rows))
+    return path
+
+
+def test_scorer_preloads_exactly_the_linked_cards():
+    with tempfile.TemporaryDirectory() as tmp:
+        path = linked_set(Path(tmp))
+        done = run_scorer("--set", str(path), "--fake", "--name", "linked", "--runs-dir", tmp)
+        assert done.returncode == 0, done.stderr
+        assert "Note: the official test passes at >= 85% (3/3)" in done.stdout, done.stdout
+        rows = read_jsonl(Path(tmp) / "linked.jsonl")
+        header, by_id = rows[0], {r["id"]: r for r in rows[1:-1]}
+        assert header["linked_cards"] is True
+        steps = lambda r: [s for s in r["trace"] if s.get("auto") and s["tool"] in ("get_card", "find_card")]
+        one = steps(by_id["l-1"])
+        assert [(s["tool"], s["arguments"], s["link"]) for s in one] == [
+            ("get_card", {"slug": "adam-smasher-metal-over-meat"}, {"slugs": ["adam-smasher-metal-over-meat"], "given": True}),
+            ("get_card", {"slug": "floor-it"}, {"slugs": ["floor-it"], "given": True})], one
+        assert by_id["l-1"]["auto_tools"][0] == "search_rules", "the usual search still runs first"
+        assert by_id["l-1"]["linked_cards"] == ["adam-smasher-metal-over-meat", "floor-it"]
+        assert steps(by_id["l-2"]) == [] and by_id["l-2"]["linked_cards"] == [], "an empty list links no card"
+        named = steps(by_id["cody-quiz-03"])
+        assert named and all("given" not in s["link"] for s in named), "no cards field: name linking as before"
+        assert "linked_cards" not in by_id["cody-quiz-03"]
+        # The item without cards writes the same record it writes in a set with no linked cards at all.
+        alone = run_scorer("--set", str(GOLD), "--fake", "--name", "alone", "--runs-dir", tmp, "--ids", "cody-quiz-03")
+        assert alone.returncode == 0, alone.stderr
+        assert read_jsonl(Path(tmp) / "alone.jsonl")[1] == by_id["cody-quiz-03"]
+        assert "Note:" not in alone.stdout and "linked_cards" not in read_jsonl(Path(tmp) / "alone.jsonl")[0]
+        marked = run_scorer("--set", str(path), "--fake", "--name", "marked", "--runs-dir", tmp, "--pass-mark", "2")
+        assert marked.returncode == 0 and "Note:" not in marked.stdout, "a pass mark replaces the note"
+        off = run_scorer("--set", str(path), "--fake", "--name", "off", "--runs-dir", tmp, "--no-preload")
+        assert off.returncode == 0 and "linked_cards" not in read_jsonl(Path(tmp) / "off.jsonl")[0]
+        sampled = run_scorer("--set", str(OFFICIAL), "--fake", "--name", "s", "--runs-dir", tmp, "--sample", "5",
+                             "--seed", "1", "--pass-mark", "4")
+        assert sampled.returncode == 0, sampled.stderr
+        assert read_jsonl(Path(tmp) / "s.jsonl")[-1]["items"] == 5 and "(4/5 needed)" in sampled.stdout
+    bad = {"id": "x", "question": "q?", "choices": [{"letter": "A", "text": "a"}, {"letter": "B", "text": "b"}],
+           "correct": "A", "known_incorrect": []}
+    with tempfile.TemporaryDirectory() as tmp:
+        path = Path(tmp) / "s.jsonl"
+        for case in ({**bad, "cards": "floor-it"}, {**bad, "cards": ["a", "a"]}, {**bad, "cards": [""]},
+                     {**bad, "official": "x"}):
+            path.write_text(json.dumps(case) + "\n")
+            try:
+                eval_store.load_mc_set(path)
+                raise AssertionError(f"accepted {case}")
+            except eval_store.EvalSetError:
+                pass
+
+
+def test_eval_tab_shows_linked_cards():
+    with eval_dirs() as root:
+        shutil.copyfile(OFFICIAL, root / "gold" / OFFICIAL.name)
+        client, _, _ = app_client(root)
+        with client:
+            config = client.get("/api/eval/config", headers=LOCAL).json()
+            assert OFFICIAL.name in [s["name"] for s in config["sets"]]
+            data = client.get(f"/api/eval/sets/{OFFICIAL.name}", headers=LOCAL).json()
+            assert len(data["items"]) == 40 and data["items"][1]["cards"] == ["misty-olszewski-mender-of-broken-spirits",
+                                                                              "mox-inciters"]
+    script = page_script()
+    eval_part = script[script.index("// Eval tab"):script.index("// Wiring")]
+    assert "linkedCardsText(item)" in eval_part
+    pure = script[script.index("// pure:start"):script.index("// pure:end")]
+    program = (f'"use strict";\n{pure}\nprocess.stdout.write(JSON.stringify(['
+               'linkedCardsText({cards: ["a-b", "c"]}), linkedCardsText({cards: []}), linkedCardsText({})]));')
+    out = subprocess.run([CTX["node"], "-e", program], capture_output=True, text=True)
+    assert out.returncode == 0, out.stderr[:600]
+    assert json.loads(out.stdout) == ["linked cards: a-b, c", "linked cards: none", ""]
 
 
 def run(node: str) -> None:

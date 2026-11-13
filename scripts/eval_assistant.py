@@ -69,6 +69,18 @@ the same seed always gives the same questions and several seeds can be averaged.
 ``pass_mark`` only when given (a default run's header and summary are unchanged),
 and a resume compares them like every other setting.
 
+Linked cards (2026-11-13). An item may carry ``cards``, the card slugs the
+question links (the official test's, imported by ``scripts/import_test_attempt.py``).
+For such an item the preload runs ``get_card`` on exactly those cards, in order,
+after its usual ``search_rules``, instead of guessing cards from names in the text:
+the test says which card it means, and several cards share a name (Adam Smasher).
+``cards: []`` means no card steps. The steps are auto steps in the trace like any
+other (``link.given`` true), the record names them in ``linked_cards``, and the
+header records ``linked_cards: true`` when the set has any ``cards`` field and the
+preload is on. Items without ``cards`` run exactly as before, so runs of the other
+sets are byte-identical. When the set's rows carry ``official`` and ``--pass-mark``
+is absent, the official pass rule (``pass_percent``) is printed as a note only.
+
 The set is eval-only: never train on it.
 
 Usage:
@@ -79,6 +91,8 @@ Usage:
     python scripts/eval_assistant.py ... --resume   # the same command again continues a stopped run
     python scripts/eval_assistant.py --set data/gold/quiz_mc_2026-11-13.jsonl --model models/qwen3-8b-4bit \\
         --name q2-s1-8b --max-tokens 4096 --sample 40 --seed 1 --pass-mark 35
+    python scripts/eval_assistant.py --set data/gold/official_basic_test.jsonl --model models/qwen3-8b-4bit \\
+        --name off-v7-8b --max-tokens 4096 --pass-mark 34
     python scripts/eval_assistant.py --set data/gold/quiz_mc_2026-11-12.jsonl --fake --name smoke \\
         --runs-dir /tmp/runs        # scripted fake model, for tests only
 """
@@ -166,7 +180,7 @@ def item_record(item: dict, turn) -> dict:
     known = list(item.get("known_incorrect") or [])
     model_tools = [s for s in turn.trace if s.get("kind") == "tool" and not s.get("auto")]
     tools_called = [s.get("tool") for s in model_tools]
-    return {
+    record = {
         "kind": "item", "id": item["id"], "chosen": chosen, "correct": item.get("correct"),
         "outcome": outcome_of(chosen, item.get("correct")), "parse": parse,
         "known_incorrect": known, "known_incorrect_hit": chosen is not None and chosen in known,
@@ -182,6 +196,9 @@ def item_record(item: dict, turn) -> dict:
             s.get("kind") == "model" and s.get("finishReason") == "length" for s in turn.trace),
         "answer": turn.answer, "trace": _drop_timings(turn.trace),
     }
+    if "cards" in item:  # only for a set with linked cards, so other sets' records are unchanged
+        record["linked_cards"] = list(item["cards"])
+    return record
 
 
 class FakeModel:
@@ -240,6 +257,8 @@ def header_row(args, set_path: Path, items: list[dict], selected: list[dict]) ->
         header.update({"sample": sample, "seed": args.seed, "sampled_ids": [i["id"] for i in selected]})
     if pass_mark is not None:
         header["pass_mark"] = pass_mark
+    if args.preload and any("cards" in i for i in items):
+        header["linked_cards"] = True  # absent otherwise, so other sets' headers are unchanged
     if args.max_tool_calls != MAX_TOOL_CALLS:
         # The prompt states the cap, so it is not the versioned default; say so (absent at the default, so a
         # default run's header is byte-identical to the runs made before the flag existed).
@@ -292,7 +311,8 @@ async def run_items(model, selected: list[dict], *, thinking: bool, max_tokens: 
     for n, item in enumerate(selected, done + 1):
         turn = await run_turn([], question_message(item), model, max_tokens=max_tokens, enable_thinking=thinking,
                               preload=preload, preload_text=preload_text(item), preload_k=preload_k,
-                              preload_chars=preload_chars, max_tool_calls=max_tool_calls)
+                              preload_chars=preload_chars, max_tool_calls=max_tool_calls,
+                              preload_cards=item.get("cards"))
         record = item_record(item, turn)
         records.append(record)
         if on_record is not None:
@@ -330,6 +350,18 @@ def with_pass_mark(summary: dict, pass_mark: int | None) -> dict:
     if pass_mark is None:
         return summary
     return {**summary, "pass_mark": pass_mark, "passed": summary["correct"] >= pass_mark}
+
+
+def official_pass_note(items: list[dict], selected: list[dict]) -> str | None:
+    """The official test's pass rule for ``selected``, from the rows' ``official.pass_percent``, or None."""
+    rules = sorted({i["official"]["pass_percent"] for i in items if isinstance(i.get("official"), dict)
+                    and isinstance(i["official"].get("pass_percent"), int)})
+    if not rules:
+        return None
+    n = len(selected)
+    marks = ", ".join(f"{p}% ({-(-p * n // 100)}/{n})" for p in rules)
+    return (f"Note: the official test passes at >= {marks}; this run judges no pass mark "
+            f"(add --pass-mark to judge one).")
 
 
 def main(argv: list[str] | None = None) -> int:
@@ -461,6 +493,10 @@ def main(argv: list[str] | None = None) -> int:
               f"the header records system_prompt_sha256.", flush=True)
     if args.sample is not None:
         print(f"Sample: {args.sample} keyed question(s), seed {args.seed}.", flush=True)
+    if args.pass_mark is None:
+        note = official_pass_note(items, selected)
+        if note:
+            print(note, flush=True)
     if done:
         print(f"Resuming {partial.name}: {len(done)} of {len(selected)} item(s) already done.", flush=True)
     # The partial is rewritten whole (header and the rows kept), then appended to row by row.

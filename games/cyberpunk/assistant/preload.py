@@ -311,8 +311,13 @@ def _fit(steps: list[AutoStep], remaining: int) -> int:
 
 
 def preload(text: str, *, k: int = DEFAULT_PRELOAD_K, budget: int = DEFAULT_PRELOAD_CHARS,
-            implied: tuple[str, ...] = IMPLIED_KINDS) -> list[AutoStep]:
+            implied: tuple[str, ...] = IMPLIED_KINDS, cards: list[str] | None = None) -> list[AutoStep]:
     """Run the automatic steps for ``text`` and fit their results into ``budget`` characters, in order.
+
+    ``cards`` (slugs), when given, replaces the card-name linker: ``get_card`` runs on exactly those
+    slugs, in order, each traced with ``link: {"slugs": [slug], "given": true}``. The eval passes an
+    item's linked cards here (the official test names the card it means, where a name can be shared);
+    ``[]`` means no card steps at all. None (the default, and always in chat) links names as above.
 
     After the search and the card steps, ``get_rule`` runs on each rule
     ``implied_rules`` connects to the search hits that were sent (and, with
@@ -320,12 +325,16 @@ def preload(text: str, *, k: int = DEFAULT_PRELOAD_K, budget: int = DEFAULT_PREL
     of the budget. ``implied=()`` turns the expansion off.
     """
     steps = [_run("search_rules", {"query": text.strip()[:SEARCH_QUERY_MAX], "k": k})]
-    for link in link_cards(text):
-        info = {"span": link.span, "slugs": list(link.slugs), "ambiguous": link.ambiguous}
-        if link.ambiguous:
-            steps.append(_run("find_card", {"query": link.span}, info))
-        else:
-            steps.append(_run("get_card", {"slug": link.slugs[0]}, info))
+    if cards is not None:  # the cards the item links, instead of the name linker
+        for slug in cards:
+            steps.append(_run("get_card", {"slug": slug}, {"slugs": [slug], "given": True}))
+    else:
+        for link in link_cards(text):
+            info = {"span": link.span, "slugs": list(link.slugs), "ambiguous": link.ambiguous}
+            if link.ambiguous:
+                steps.append(_run("find_card", {"query": link.span}, info))
+            else:
+                steps.append(_run("get_card", {"slug": link.slugs[0]}, info))
     remaining = _fit(steps, budget)
     if not implied:
         return steps

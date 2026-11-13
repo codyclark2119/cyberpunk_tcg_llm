@@ -55,6 +55,8 @@ and ``--pass-mark``: a sample needs a seed (and a seed a sample), a sample exclu
 "Only these ids" and a non-zero "First N" (the form's "--limit 0" is then left
 out), and a pass mark may not exceed the sample. The Runs list and a run's page
 show the sample, its seed and PASS/FAIL against the pass mark when a run has them.
+A set item with linked cards (``cards``, e.g. the official test's) shows them under
+its question.
 
 The Eval tab's Retrieval panel measures ``search_rules`` itself: two more
 allowlisted actions, "Build rules index" (``scripts/build_rules_index.py``, no
@@ -974,6 +976,11 @@ function scoreText(summary) {
   return summary.correct + "/" + summary.scored + " correct (" + pct + ") · " + summary.unanswered + " unanswered · " +
     summary.unscored + " unscored · tools used on " + summary.tool_use + "/" + summary.items;
 }
+// An item's linked cards (the set's "cards" slugs), or "" for an item without that field.
+function linkedCardsText(item) {
+  if (!item || !Array.isArray(item.cards)) return "";
+  return "linked cards: " + (item.cards.length ? item.cards.join(", ") : "none");
+}
 // "PASS (35/40 needed)" for a finished run with a pass mark, else "".
 function passText(summary, passMark) {
   if (!summary || passMark === null || passMark === undefined) return "";
@@ -1503,6 +1510,8 @@ async function loadSet(name) {
     box.appendChild(el("div", {class: "muted", style: "font-size:12px"}, item.id + " · key " + (item.correct || "none (unscored)") +
       (item.answer_key_by ? " · keyed by " + item.answer_key_by : "") + (item.source ? " · " + item.source : "")));
     box.appendChild(el("div", {class: "qtext"}, item.question));
+    const linked = linkedCardsText(item);
+    if (linked) box.appendChild(el("div", {class: "muted linked", style: "font-size:12px"}, linked));
     const ul = el("ul", {class: "choices"});
     for (const c of item.choices) {
       const cls = c.letter === item.correct ? "key" : (item.known_incorrect || []).includes(c.letter) ? "known" : "";
