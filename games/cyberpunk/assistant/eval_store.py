@@ -12,7 +12,8 @@ Review notes live beside the runs, in ``eval/notes/<set stem>.jsonl`` (one
 row. While it runs, each finished question is appended to
 ``eval/runs/<name>.partial.jsonl`` (header first, flushed per row), which the
 scorer removes once the final file is written; ``list_runs`` shows a partial as
-``incomplete``. ``load_mc_set`` validates strictly, so a malformed set fails before any
+``incomplete``. A sampled or pass-marked run's entry also carries ``sample``, ``seed``
+and ``pass_mark`` from its header, and a finished one ``passed``. ``load_mc_set`` validates strictly, so a malformed set fails before any
 model time is spent on it.
 """
 
@@ -190,6 +191,11 @@ def list_runs(runs_dir: Path = RUNS_DIR) -> list[dict]:
                                                     "eval_prompt_version", "assistant_prompt_version",
                                                     "rules_version", "tournament_rules_version")})
             entry["summary"] = summarize([r for r in rows if r.get("kind") == "item"])
+            for key in ("sample", "seed", "pass_mark"):  # only in sampled or pass-marked runs' headers
+                if key in header:
+                    entry[key] = header[key]
+            if "pass_mark" in header and not entry.get("incomplete"):
+                entry["passed"] = entry["summary"]["correct"] >= header["pass_mark"]
         except (EvalSetError, FileNotFoundError, ValueError, AttributeError) as exc:
             entry["error"] = f"unreadable run: {exc}"[:200]
         out.append(entry)

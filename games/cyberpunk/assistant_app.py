@@ -50,7 +50,11 @@ job log (the monitor's ``/api/job`` route). The form carries max tokens
 (1..``MAX_TOKENS_LIMIT``), max tool calls (1..``MAX_TOOL_CALLS_LIMIT``) and
 "resume"; a run name with an incomplete ``<name>.partial.jsonl`` is refused
 unless resume or replace is ticked, and the Runs list shows such a partial as
-incomplete.
+incomplete. Sample, Seed and Pass mark (2026-11-13) pass ``--sample``, ``--seed``
+and ``--pass-mark``: a sample needs a seed (and a seed a sample), a sample excludes
+"Only these ids" and a non-zero "First N" (the form's "--limit 0" is then left
+out), and a pass mark may not exceed the sample. The Runs list and a run's page
+show the sample, its seed and PASS/FAIL against the pass mark when a run has them.
 
 The Eval tab's Retrieval panel measures ``search_rules`` itself: two more
 allowlisted actions, "Build rules index" (``scripts/build_rules_index.py``, no
@@ -265,7 +269,7 @@ def host_allowed(host_header: str | None, origin: str | None, *, lan: bool) -> b
 EVAL_ACTION_ID = "eval-assistant"
 EVAL_IDS_RE = re.compile(r"^[A-Za-z0-9][A-Za-z0-9._-]*(,[A-Za-z0-9][A-Za-z0-9._-]*)*$")
 EVAL_INT_LIMITS = {"max_tokens": (1, MAX_TOKENS_LIMIT), "max_tool_calls": (1, MAX_TOOL_CALLS_LIMIT),
-                   "limit": (0, 10000)}
+                   "limit": (0, 10000), "sample": (1, 10000), "seed": (0, 2**31 - 1), "pass_mark": (1, 10000)}
 
 
 def _repo_relative(path) -> str:
@@ -297,6 +301,9 @@ def eval_action(chat: "ChatService", set_paths: list[str], runs_dir) -> dict:
               "label": "Max tool calls per question"},
              {"name": "--limit", "key": "limit", "type": "int", "default": 0, "label": "First N (0: all)"},
              {"name": "--ids", "key": "ids", "type": "text", "default": "", "label": "Only these ids"},
+             {"name": "--sample", "key": "sample", "type": "text", "default": "", "label": "Sample N keyed questions"},
+             {"name": "--seed", "key": "seed", "type": "text", "default": "", "label": "Seed"},
+             {"name": "--pass-mark", "key": "pass_mark", "type": "text", "default": "", "label": "Pass mark"},
              {"name": "--force", "key": "force", "type": "flag", "default": False, "label": "Replace a run"},
              {"name": "--resume", "key": "resume", "type": "flag", "default": False,
               "label": "Resume an incomplete run"},
@@ -350,6 +357,9 @@ class EvalRunner(Runner):
     def build_cmd(self, action: dict, values: dict) -> list[str]:
         if action["id"] == EVAL_ACTION_ID:
             values = self.check_eval_values(action, values)
+            if "sample" in values:
+                # The scorer refuses --sample with any --limit, and the form's "First N" is always sent (0).
+                action = {**action, "args": [spec for spec in action["args"] if spec.get("key") != "limit"]}
         elif action["id"] == INDEX_ACTION_ID:
             if not isinstance(values, dict) or values:
                 raise ValueError("Build rules index takes no values")
@@ -412,6 +422,13 @@ class EvalRunner(Runner):
             clean["ids"] = ids
         if values.get("set") not in (None, ""):
             clean["set"] = values["set"]  # checked against the action's choices by the base runner
+        if ("sample" in clean) != ("seed" in clean):
+            raise ValueError("Sample and Seed go together: give both or neither.")
+        if "sample" in clean:
+            if "ids" in clean or clean.get("limit"):
+                raise ValueError("Sample draws its own questions: clear 'Only these ids' and set 'First N' to 0.")
+            if clean.get("pass_mark", 0) > clean["sample"]:
+                raise ValueError("Pass mark cannot be more than the sample.")
         if f"{name}.jsonl".endswith(eval_store.PARTIAL_SUFFIX):
             raise ValueError("Run name must not end in '.partial': that is where an incomplete run is kept.")
         if (self.runs_dir / f"{name}.jsonl").exists() and not clean.get("force"):
@@ -834,6 +851,9 @@ table.runs tr.pick{cursor:pointer}table.runs tr.pick:hover{background:var(--sel)
         <label>Max tool calls per question<input type="number" id="evalMaxToolCalls" min="1" max="16" step="1"></label>
         <label>First N (0: all)<input type="number" id="evalLimit" min="0" step="1" value="0"></label>
         <label>Only these ids<input type="text" id="evalIds" placeholder="cody-quiz-01,cody-quiz-03"></label>
+        <label>Sample N keyed questions<input type="number" id="evalSample" min="1" step="1" placeholder="e.g. 40 (needs a seed)"></label>
+        <label>Seed<input type="number" id="evalSeed" min="0" step="1" placeholder="e.g. 1"></label>
+        <label>Pass mark<input type="number" id="evalPassMark" min="1" step="1" placeholder="e.g. 35"></label>
         <label class="inline"><input type="checkbox" id="evalThinking"> think first</label>
         <label class="inline"><input type="checkbox" id="evalPreload"> look up rules and cards first</label>
         <label class="inline"><input type="checkbox" id="evalForce"> replace a run of this name</label>
@@ -953,6 +973,11 @@ function scoreText(summary) {
   const pct = summary.score === null || summary.score === undefined ? "n/a" : (summary.score * 100).toFixed(1) + "%";
   return summary.correct + "/" + summary.scored + " correct (" + pct + ") · " + summary.unanswered + " unanswered · " +
     summary.unscored + " unscored · tools used on " + summary.tool_use + "/" + summary.items;
+}
+// "PASS (35/40 needed)" for a finished run with a pass mark, else "".
+function passText(summary, passMark) {
+  if (!summary || passMark === null || passMark === undefined) return "";
+  return (summary.correct >= passMark ? "PASS" : "FAIL") + " (" + passMark + "/" + summary.items + " needed)";
 }
 function answerFlags(data, maxToolCalls) {
   const flags = [];
@@ -1518,10 +1543,14 @@ async function startEval() {
   const rawMax = $("evalMaxTokens").value.trim(), rawCalls = $("evalMaxToolCalls").value.trim();
   const maxTokens = rawMax === "" ? null : Number(rawMax), limit = Number($("evalLimit").value || 0);
   const maxToolCalls = rawCalls === "" ? null : Number(rawCalls);
+  const optional = {sample: $("evalSample").value.trim(), seed: $("evalSeed").value.trim(), pass_mark: $("evalPassMark").value.trim()};
   if ((maxTokens !== null && !Number.isInteger(maxTokens)) || (maxToolCalls !== null && !Number.isInteger(maxToolCalls)) ||
-      !Number.isInteger(limit)) { $("evalRunStatus").textContent = "Max tokens, max tool calls and First N must be whole numbers."; return; }
+      !Number.isInteger(limit) || Object.values(optional).some((raw) => raw !== "" && !Number.isInteger(Number(raw)))) {
+    $("evalRunStatus").textContent = "Max tokens, max tool calls, First N, sample, seed and pass mark must be whole numbers."; return;
+  }
   if (maxTokens !== null) values.max_tokens = maxTokens;
   if (maxToolCalls !== null) values.max_tool_calls = maxToolCalls;
+  for (const [key, raw] of Object.entries(optional)) if (raw !== "") values[key] = Number(raw);
   values.limit = limit;
   $("evalRunBtn").disabled = true;
   $("evalRunStatus").textContent = "Starting …";
@@ -1586,8 +1615,10 @@ async function loadRuns() {
     tr.appendChild(el("td", {}, run.thinking ? "on" : "off"));
     tr.appendChild(el("td", {}, run.preload ? "on" : "off"));
     tr.appendChild(el("td", {}, (run.eval_prompt_version || "") + " / " + (run.assistant_prompt_version || "")));
+    const sampled = run.sample !== undefined ? "sample " + run.sample + " · seed " + run.seed + " · " : "";
+    const verdict = run.passed !== undefined ? " · " + passText(run.summary, run.pass_mark) : "";
     tr.appendChild(el("td", {}, (run.incomplete ? "incomplete: " + ((run.summary || {}).items || 0) + " question(s) so far; " +
-      "run it again with resume to finish · " : "") + scoreText(run.summary)));
+      "run it again with resume to finish · " : "") + sampled + scoreText(run.summary) + verdict));
     tr.addEventListener("click", () => showRun(run.name).catch((err) => { $("evalRunBody").textContent = "Could not load: " + err; }));
     table.appendChild(tr);
   }
@@ -1605,11 +1636,14 @@ async function showRun(name) {
   const questions = {};
   if (evalState.set && run.header && run.header.set && run.header.set.endsWith("/" + evalState.set.name))
     for (const item of evalState.set.items) questions[item.id] = item.question;
-  body.appendChild(el("h3", {}, name + ": " + (run.summary ? scoreText(run.summary) :
+  const verdict = run.summary && run.summary.pass_mark !== undefined ? " · " + passText(run.summary, run.summary.pass_mark) : "";
+  body.appendChild(el("h3", {}, name + ": " + (run.summary ? scoreText(run.summary) + verdict :
     "incomplete, " + run.items.length + " question(s) so far (resume it to finish)")));
   if (run.header) body.appendChild(factsList({set: run.header.set, "set sha256": run.header.set_sha256, model: run.header.model,
     adapter: run.header.adapter, thinking: String(run.header.thinking), "max tokens": run.header.max_tokens,
     "max tool calls": run.header.max_tool_calls,
+    ...(run.header.sample !== undefined ? {sample: run.header.sample + " keyed question(s), seed " + run.header.seed} : {}),
+    ...(run.header.pass_mark !== undefined ? {"pass mark": run.header.pass_mark} : {}),
     "system prompt": run.header.system_prompt_sha256 ? "not the default (sha256 " + run.header.system_prompt_sha256 + ")" : "default",
     preload: run.header.preload ? "on (k " + run.header.preload_k + ", " + run.header.preload_chars + " chars)" : "off",
     "tool specs sha256": run.header.tool_specs_sha256,

@@ -12,6 +12,9 @@ refuse names that could read as flags, and refuse while chat or another job
 runs; its notes must never write to data/gold. A long run must survive a
 restart: a partial file per finished question, a resume that finishes it to the
 same bytes as an uninterrupted run, and a refusal when the settings differ.
+Cody's pass standard (35 of a 40-question mix) needs a seeded draw of keyed
+questions that never depends on file order and a pass mark judged exactly at
+the boundary, while a run without those flags stays byte-identical.
 Everything runs on the
 committed snapshot with the scorer's scripted fake model: no mlx, no weights,
 no network.
@@ -45,6 +48,9 @@ from harness.core.io import read_jsonl
 from harness.core.webui import runner as runner_module
 
 GOLD = REPO_ROOT / "data/gold/quiz_mc_2026-11-12.jsonl"
+GOLD2 = REPO_ROOT / "data/gold/quiz_mc_2026-11-13.jsonl"
+# Question numbers of Cody's 2026-11-13 quiz that are not word-for-word repeats of the 11-12 set.
+SECOND_QUIZ_NEW = (1, 3, 4, 5, 11, 12, 13, 14, 16, 18, 19, 22, 23, 24, 25, 27, 29, 30, 31, 32, 35, 36, 37, 38)
 SCRIPT = REPO_ROOT / "scripts/eval_assistant.py"
 LOCAL = {"host": "127.0.0.1:8767"}
 CTX: dict = {}
@@ -165,8 +171,32 @@ def test_gold_quiz_parses_with_40_items_38_keyed():
     by_id = {i["id"]: i for i in items}
     assert by_id["cody-quiz-29"]["question"].startswith('"Ready" refers to')
     assert "Gear card's bottom textbox" in by_id["cody-quiz-13"]["question"]
-    listed = eval_store.list_sets(GOLD.parent)
-    assert [s["name"] for s in listed] == [GOLD.name] and listed[0]["scored"] == 38
+    listed = {s["name"]: s["scored"] for s in eval_store.list_sets(GOLD.parent)}
+    assert listed == {GOLD.name: 38, GOLD2.name: 60}, listed
+
+
+def test_second_quiz_extends_the_first_unchanged():
+    first = eval_store.load_mc_set(GOLD)
+    items = eval_store.load_mc_set(GOLD2)
+    assert len(items) == 64 and sum(1 for i in items if i["correct"] is not None) == 60
+    new_ids = [f"cody-quiz2-{n:02d}" for n in SECOND_QUIZ_NEW]
+    assert [i["id"] for i in items] == [i["id"] for i in first] + new_ids
+    by_id = {i["id"]: i for i in items}
+    for old in first:
+        row = by_id[old["id"]]
+        if old["id"] == "cody-quiz-04":
+            # The 11-13 quiz repeats it and also marks A wrong (B "most likely", still unscored).
+            assert row["known_incorrect"] == ["A", "D"] and row["correct"] is None
+            continue
+        assert row == old, old["id"]
+    unscored = {i["id"]: i["known_incorrect"] for i in items if i["correct"] is None}
+    assert unscored == {"cody-quiz-04": ["A", "D"], "cody-quiz-15": ["A"],
+                        "cody-quiz2-01": ["A"], "cody-quiz2-14": ["D"]}, unscored
+    assert all(i["answer_key_by"] == "Cody" and "2026-11-13" in i["source"] for i in items[40:])
+    text = GOLD2.read_text(encoding="utf-8")
+    for junk in ("&#39;", "&#34;", "“", "”", "’"):
+        assert junk not in text, junk
+    assert by_id["cody-quiz2-38"]["question"].startswith("Are these correct sequences during the Start phase")
 
 
 def test_set_validation_is_strict():
@@ -253,7 +283,6 @@ def test_fake_run_writes_header_records_and_summary_deterministically():
     from games.cyberpunk.assistant.loop import ASSISTANT_PROMPT_VERSION
     from games.cyberpunk.prompts import RULES_VERSION, TOURNAMENT_RULES_VERSION
     assert header["assistant_prompt_version"] == ASSISTANT_PROMPT_VERSION and header["rules_version"] == RULES_VERSION
-    assert header["assistant_prompt_version"] == "assistant-chat-v6"
     assert header["tournament_rules_version"] == TOURNAMENT_RULES_VERSION
     assert len(items) == 40 and summary["kind"] == "summary"
     keys = {"kind", "id", "chosen", "correct", "outcome", "parse", "known_incorrect", "known_incorrect_hit",
@@ -285,6 +314,10 @@ def test_fake_run_writes_header_records_and_summary_deterministically():
     assert summary["scored"] == 38 and summary["unscored"] == 2 and summary["tool_use"] == 40
     assert f"Score: {summary['correct']}/38 scored correct" in first.stdout
     assert f"unanswered {summary['unanswered']}" in first.stdout and "tool use 40/40" in first.stdout
+    # Without --sample/--pass-mark nothing new appears: not in the header (above), the summary or the score line.
+    assert set(summary) == {"kind", "items", "scored", "correct", "wrong", "unanswered", "unscored", "score",
+                            "known_incorrect_hits", "tool_use", "tool_use_rate"}, sorted(summary)
+    assert "PASS" not in first.stdout and "FAIL" not in first.stdout and "Sample:" not in first.stdout
 
 
 def test_scorer_switches_preload_and_thinking_off_for_the_comparison():
@@ -579,6 +612,139 @@ def test_resume_refuses_a_different_header_and_force_starts_over():
         assert not partial.exists() and len(read_jsonl(Path(tmp) / "m.jsonl")) == 7
 
 
+# Sampling and the pass mark ------------------------------------------------------------------
+
+
+def test_sample_draw_is_seeded_order_independent_and_keyed_only():
+    module = scorer()
+    items = eval_store.load_mc_set(GOLD2)
+    keyed = [i["id"] for i in items if i["correct"] is not None]
+    draw = [i["id"] for i in module.sample_items(items, 40, 1)]
+    assert len(draw) == 40 and len(set(draw)) == 40 and set(draw) <= set(keyed), draw
+    assert draw == [i["id"] for i in items if i["id"] in set(draw)], "a draw runs in set order"
+    assert [i["id"] for i in module.sample_items(items, 40, 1)] == draw, "the same seed gives the same draw"
+    reversed_draw = [i["id"] for i in module.sample_items(list(reversed(items)), 40, 1)]
+    assert sorted(reversed_draw) == sorted(draw), "the draw must not depend on file order"
+    ranked = sorted(keyed, key=lambda i: hashlib.sha256(f"1:{i}".encode()).hexdigest())
+    assert set(draw) == set(ranked[:40]), "first 40 keyed ids by sha256(seed:id)"
+    others = {tuple(i["id"] for i in module.sample_items(items, 40, seed)) for seed in range(2, 6)}
+    assert tuple(draw) not in others and len(others) == 4, "different seeds give different mixes"
+    assert {i["id"] for i in module.sample_items(items, 60, 9)} == set(keyed), "N = keyed count takes them all"
+    for n in (0, 61, -1):
+        try:
+            module.sample_items(items, n, 1)
+            raise AssertionError(f"accepted --sample {n}")
+        except eval_store.EvalSetError as exc:
+            assert "1..60" in str(exc)
+    assert module.with_pass_mark({"correct": 3}, None) == {"correct": 3}
+
+
+def test_sample_and_pass_mark_flags_are_refused_when_wrong():
+    with tempfile.TemporaryDirectory() as tmp:
+        base = ["--set", str(GOLD2), "--fake", "--runs-dir", tmp, "--name", "x"]
+        cases = ((["--sample", "40"], "--sample needs --seed"),
+                 (["--seed", "1"], "--seed is only used with --sample"),
+                 (["--sample", "40", "--seed", "-1"], "--seed must be a whole number >= 0"),
+                 (["--sample", "0", "--seed", "1"], "--sample must be 1..60"),
+                 (["--sample", "61", "--seed", "1"], "--sample must be 1..60"),
+                 (["--sample", "40", "--seed", "1", "--ids", "cody-quiz-01"], "cannot be combined"),
+                 (["--sample", "40", "--seed", "1", "--limit", "5"], "cannot be combined"),
+                 (["--sample", "40", "--seed", "1", "--limit", "0"], "cannot be combined"),
+                 (["--sample", "40", "--seed", "x"], "invalid int value"),
+                 (["--sample", "40", "--seed", "1", "--pass-mark", "41"], "--pass-mark must be 1..40"),
+                 (["--sample", "40", "--seed", "1", "--pass-mark", "0"], "--pass-mark must be 1..40"),
+                 (["--limit", "3", "--pass-mark", "4"], "--pass-mark must be 1..3"))
+        for extra, message in cases:
+            counting = counting_model()
+            code, out, err = main_in_process(*base, *extra, model_cls=counting)
+            assert code == 2 and message in err, (extra, err)
+            assert counting.asked == [] and not any(Path(tmp).iterdir()), extra
+
+
+def keyed_model(right: int):
+    """A FakeModel answering the key on the first ``right`` questions it is asked and a wrong letter after."""
+    base = scorer().FakeModel
+    keys = {i["question"].split("\n", 1)[0]: i["correct"] for i in eval_store.load_mc_set(GOLD2)}
+
+    class Keyed(base):
+        asked: list = []
+
+        async def generate(self, messages, tools, **kwargs):
+            question = question_of(messages)
+            if question not in Keyed.asked:
+                Keyed.asked.append(question)
+            reply = await base.generate(self, messages, tools, **kwargs)
+            if "<tool_call>" in reply["text"]:
+                return reply
+            key = keys[question]
+            letters = re.findall(r"^([A-Z])\. ", next(m["content"] for m in reversed(messages) if m["role"] == "user"),
+                                 re.M)
+            letter = key if Keyed.asked.index(question) < right else next(x for x in letters if x != key)
+            return {**reply, "text": f"Reasoned.\nAnswer: {letter}"}
+
+    return Keyed
+
+
+def test_pass_mark_is_judged_at_the_boundary_and_recorded():
+    with tempfile.TemporaryDirectory() as tmp:
+        base = ["--set", str(GOLD2), "--fake", "--runs-dir", tmp, "--sample", "40", "--seed", "1", "--pass-mark", "35"]
+        verdicts = {}
+        for right in (34, 35, 40):
+            code, out, err = main_in_process(*base, "--name", f"r{right}", model_cls=keyed_model(right))
+            assert code == 0, err
+            rows = read_jsonl(Path(tmp) / f"r{right}.jsonl")
+            header, items, summary = rows[0], rows[1:-1], rows[-1]
+            assert summary["correct"] == right and summary["scored"] == 40 and summary["unscored"] == 0, summary
+            assert summary["pass_mark"] == 35 and summary["passed"] is (right >= 35), summary
+            word = "PASS" if right >= 35 else "FAIL"
+            score_line = next(line for line in out.splitlines() if line.startswith("Score: "))
+            assert score_line.endswith(f"; {word} (35/40 needed)"), score_line
+            assert "Sample: 40 keyed question(s), seed 1." in out
+            verdicts[right] = summary["passed"]
+            assert [header[k] for k in ("sample", "seed", "pass_mark", "items_run", "ids", "limit")] == \
+                [40, 1, 35, 40, None, 0], header
+            assert header["sampled_ids"] == [r["id"] for r in items], "the header names the drawn questions"
+            assert list(header)[-4:] == ["sample", "seed", "sampled_ids", "pass_mark"], list(header)
+        assert verdicts == {34: False, 35: True, 40: True}
+        # The draw itself: 40 keyed questions mixing the 11-12 quiz and the new 11-13 ones.
+        ids = read_jsonl(Path(tmp) / "r35.jsonl")[0]["sampled_ids"]
+        assert sum(i.startswith("cody-quiz-") for i in ids) == 26 and sum(i.startswith("cody-quiz2-") for i in ids) == 14
+        listed = {r["name"]: r for r in eval_store.list_runs(Path(tmp))}
+        assert (listed["r34.jsonl"]["passed"], listed["r35.jsonl"]["passed"]) == (False, True)
+        assert [listed["r35.jsonl"][k] for k in ("sample", "seed", "pass_mark")] == [40, 1, 35]
+        # A pass mark without a sample judges the items run.
+        code, out, err = main_in_process("--set", str(GOLD2), "--fake", "--runs-dir", tmp, "--name", "whole",
+                                         "--ids", "cody-quiz-01,cody-quiz-02,cody-quiz-03,cody-quiz-05", "--pass-mark", "4",
+                                         model_cls=keyed_model(4))
+        assert code == 0 and "; PASS (4/4 needed)" in out, err
+        header = read_jsonl(Path(tmp) / "whole.jsonl")[0]
+        assert header["pass_mark"] == 4 and "sample" not in header and "seed" not in header
+
+
+def test_resume_treats_sample_seed_and_pass_mark_as_settings():
+    with tempfile.TemporaryDirectory() as tmp:
+        base = ["--set", str(GOLD2), "--fake", "--runs-dir", tmp, "--name", "s", "--sample", "6"]
+        try:
+            main_in_process(*base, "--seed", "1", "--pass-mark", "5", model_cls=crashing_model(2))
+            raise AssertionError("no crash")
+        except RuntimeError:
+            pass
+        partial = Path(tmp) / "s.partial.jsonl"
+        before = partial.read_bytes()
+        for extra, fields in ((["--seed", "2", "--pass-mark", "5"], ["seed", "sampled_ids"]),
+                              (["--seed", "1", "--pass-mark", "6"], ["pass_mark"]),
+                              (["--seed", "1"], ["pass_mark"])):
+            counting = counting_model()
+            code, out, err = main_in_process(*base, *extra, "--resume", model_cls=counting)
+            assert code == 2 and "header differs" in err, (extra, err)
+            named = err.split("header differs from this run's in: ", 1)[1]
+            assert [part.split(" (", 1)[0] for part in named.strip().split("; ")] == fields, (extra, named)
+            assert counting.asked == [] and partial.read_bytes() == before
+        counting = counting_model()
+        code, out, err = main_in_process(*base, "--seed", "1", "--pass-mark", "5", "--resume", model_cls=counting)
+        assert code == 0 and "Resuming s.partial.jsonl: 2 of 6" in out and len(counting.asked) == 4, err
+
+
 # The Eval tab: the Run action ---------------------------------------------------------------
 
 
@@ -711,6 +877,55 @@ def test_eval_form_passes_max_tool_calls_and_resume_and_checks_them():
             assert refused.status_code == 400 and "max_tool_calls" in refused.json()["error"]
 
 
+def test_eval_form_passes_sample_seed_and_pass_mark_and_checks_them():
+    with eval_dirs() as root:
+        client, chat, app = app_client(root)
+        runner: EvalRunner = app.state.runner
+        action = runner.actions_by_id["eval-assistant"]
+        assert {"sample", "seed", "pass_mark"} <= {spec.get("key") for spec in action["args"]}
+        cmd = runner.build_cmd(action, {"name": "q2-s1", "sample": 40, "seed": 1, "pass_mark": 35, "limit": 0,
+                                        "ids": ""})
+        tail = cmd[cmd.index("--model") + 2:]
+        assert tail == ["--sample", "40", "--seed", "1", "--pass-mark", "35", "--runs-dir", str(root / "runs")], tail
+        assert "--limit" not in cmd, "the scorer refuses --sample with any --limit"
+        assert runner.build_cmd(action, {"name": "s0", "sample": 5, "seed": 0})[-6:-2] == \
+            ["--sample", "5", "--seed", "0"]
+        marked = runner.build_cmd(action, {"name": "pm", "pass_mark": 30})
+        assert marked[marked.index("--limit"):] == ["--limit", "0", "--pass-mark", "30", "--runs-dir",
+                                                    str(root / "runs")], marked
+        default = runner.build_cmd(action, {"name": "plain"})
+        assert not {"--sample", "--seed", "--pass-mark"} & set(default) and "--limit" in default
+        bad = ({"name": "ok", "sample": 40}, {"name": "ok", "seed": 1}, {"name": "ok", "sample": 40, "seed": 1, "ids": "cody-quiz-01"},
+               {"name": "ok", "sample": 40, "seed": 1, "limit": 5}, {"name": "ok", "sample": 0, "seed": 1},
+               {"name": "ok", "sample": 40, "seed": -1}, {"name": "ok", "sample": "40", "seed": 1},
+               {"name": "ok", "sample": 40, "seed": True}, {"name": "ok", "sample": 40, "seed": 1.5},
+               {"name": "ok", "sample": 40, "seed": 1, "pass_mark": 41}, {"name": "ok", "pass_mark": 0},
+               {"name": "ok", "sample": 40, "seed": "1; rm"}, {"name": "ok", "sample": 40, "seed": 2**31})
+        for values in bad:
+            try:
+                runner.build_cmd(action, values)
+                raise AssertionError(f"accepted {values}")
+            except ValueError:
+                pass
+        original = runner_module.subprocess.Popen
+        runner_module.subprocess.Popen = FakePopen
+        FakePopen.calls = []
+        try:
+            with client:
+                refused = client.post("/api/run/eval-assistant", headers=LOCAL,
+                                      json={"values": {"name": "ok", "sample": 40}})
+                assert refused.status_code == 400 and "Seed" in refused.json()["error"] and not FakePopen.calls
+                started = client.post("/api/run/eval-assistant", headers=LOCAL,
+                                      json={"values": {"name": "q2-s2", "sample": 40, "seed": 2, "pass_mark": 35,
+                                                       "limit": 0}})
+                assert started.status_code == 200, started.text
+                args = FakePopen.calls[0][0]
+                assert args[args.index("--sample"):args.index("--sample") + 6] == \
+                    ["--sample", "40", "--seed", "2", "--pass-mark", "35"] and "--limit" not in args
+        finally:
+            runner_module.subprocess.Popen = original
+
+
 # The Eval tab: routes, notes and the page --------------------------------------------------
 
 
@@ -833,6 +1048,7 @@ def test_eval_tab_script_parses_and_escapes():
     assert proc.returncode == 0, proc.stderr[:600]
     for needle in ('id="tabEval" hidden', 'id="tabBtnEval"', 'id="evalSetPick"', 'id="evalRunBtn"', 'id="evalRuns"',
                    'id="evalLog"', 'id="evalName"', 'id="evalMaxToolCalls"', 'id="evalResume"',
+                   'id="evalSample"', 'id="evalSeed"', 'id="evalPassMark"',
                    'id="evalMaxTokens" min="1" max="16384"'):
         assert needle in ASSISTANT_HTML, needle
     eval_part = script[script.index("// Eval tab"):script.index("// Wiring")]
@@ -840,16 +1056,22 @@ def test_eval_tab_script_parses_and_escapes():
         assert banned not in eval_part, banned
     assert '"/api/run/" + encodeURIComponent(config.actionId)' in eval_part
     for needle in ("values.max_tool_calls = maxToolCalls", 'resume: $("evalResume").checked', "run.incomplete",
-                   "run.header.max_tool_calls", "run.header.system_prompt_sha256"):
+                   "run.header.max_tool_calls", "run.header.system_prompt_sha256",
+                   'sample: $("evalSample").value.trim()', 'seed: $("evalSeed").value.trim()',
+                   'pass_mark: $("evalPassMark").value.trim()', '" · seed " + run.seed',
+                   "passText(run.summary, run.pass_mark)", "passText(run.summary, run.summary.pass_mark)"):
         assert needle in eval_part, needle
     pure = script[script.index("// pure:start"):script.index("// pure:end")]
     program = (f'"use strict";\n{pure}\nprocess.stdout.write(JSON.stringify(['
                'jobProgress(["Scoring", "[1/40] a", "noise [9/9]", "[2/40] b", "Score: 1/2"]), jobProgress([]),'
                'splitRun([{kind: "header", m: 1}, {kind: "item", id: "a"}, {kind: "summary", s: 1}]),'
-               'scoreText({correct: 1, scored: 4, score: 0.25, unanswered: 2, unscored: 1, tool_use: 3, items: 5})]));')
+               'scoreText({correct: 1, scored: 4, score: 0.25, unanswered: 2, unscored: 1, tool_use: 3, items: 5}),'
+               'passText({correct: 34, items: 40}, 35), passText({correct: 35, items: 40}, 35),'
+               'passText({correct: 35, items: 40}, undefined), passText(null, 35)]));')
     out = subprocess.run([CTX["node"], "-e", program], capture_output=True, text=True)
     assert out.returncode == 0, out.stderr[:600]
-    progress, empty, split, text = json.loads(out.stdout)
+    progress, empty, split, text, fail, ok, none, nothing = json.loads(out.stdout)
+    assert (fail, ok, none, nothing) == ("FAIL (35/40 needed)", "PASS (35/40 needed)", "", "")
     assert progress == {"done": 2, "total": 40} and empty == {"done": 0, "total": 0}
     assert split == {"header": {"kind": "header", "m": 1}, "items": [{"kind": "item", "id": "a"}],
                      "summary": {"kind": "summary", "s": 1}}

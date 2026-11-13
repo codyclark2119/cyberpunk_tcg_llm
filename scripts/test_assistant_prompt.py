@@ -28,11 +28,10 @@ from pathlib import Path
 REPO_ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(REPO_ROOT))
 
-from games.cyberpunk.assistant import flow
 from games.cyberpunk.assistant import preload as preload_module
 from games.cyberpunk.assistant import tools
-from games.cyberpunk.assistant.loop import (ASSISTANT_PROMPT_VERSION, DEFAULT_MAX_TOKENS, DEFAULT_THINKING_MAX_TOKENS,
-                                            SYSTEM_PROMPT, guidance_prompt, run_turn, tool_specs_sha256)
+from games.cyberpunk.assistant.loop import (DEFAULT_MAX_TOKENS, DEFAULT_THINKING_MAX_TOKENS, SYSTEM_PROMPT,
+                                            run_turn, tool_specs_sha256)
 from games.cyberpunk.assistant.preload import DEFAULT_PRELOAD_CHARS, fit_result, link_cards
 from games.cyberpunk.assistant_app import ChatService
 from harness.core.io import read_jsonl
@@ -41,12 +40,7 @@ SCHEMA_SNAPSHOT = REPO_ROOT / "scripts/fixtures/assistant_tool_schemas_v2.json"
 BUDGET_SCRIPT = REPO_ROOT / "scripts/prompt_budget.py"
 # The overhead before the lean specs (assistant-chat-v2, measured on master 2026-11-12): 10,416 chars of
 # tool specs plus a 1,239-char system prompt.
-BEFORE_SPEC_CHARS = 10416
 BEFORE_TOTAL_CHARS = 11655
-# The game flow outline (prompt v6) is about 6,000 characters, roughly 1,500 tokens at 4 characters a token;
-# these bounds keep it from growing unnoticed (a snapshot refresh that grows it past them is a decision).
-OUTLINE_MAX_CHARS = 6200
-OUTLINE_MAX_LINES = 95
 
 
 def call(name: str, **arguments) -> str:
@@ -129,12 +123,8 @@ def test_lean_specs_keep_every_name_and_schema():
         description = spec["function"]["description"]
         sentences = [s for s in re.split(r"(?<=[.!?])\s+", description.strip()) if s]
         assert 1 <= len(sentences) <= 3 and len(description) <= 160, (spec["function"]["name"], description)
-    # The lean specs cut the overhead by more than 15%. Since prompt v6 the system prompt carries the game flow
-    # outline on purpose (its own bound is in the outline tests), so the cut is measured on the specs and the
-    # hand-written guidance.
-    spec_chars = sum(len(json.dumps(s, ensure_ascii=False)) for s in specs)
-    assert spec_chars < BEFORE_SPEC_CHARS * 0.85, spec_chars
-    assert spec_chars + len(guidance_prompt()) < BEFORE_TOTAL_CHARS * 0.9, spec_chars + len(guidance_prompt())
+    total = sum(len(json.dumps(s, ensure_ascii=False)) for s in specs) + len(SYSTEM_PROMPT)
+    assert total < BEFORE_TOTAL_CHARS * 0.85, total
 
 
 def test_prompt_budget_reports_chars_and_tokens_when_it_can():
@@ -198,158 +188,11 @@ def test_system_prompt_v4_warns_from_the_snapshot_wording():
                    # v4: policy is answered from the Tournament Rules and cited; what neither covers is not covered.
                    "Tournament procedure, penalties, deck registration, event policy: use the Tournament Rules "
                    "(TR 3.4.2), cite them. Anything in neither is not covered.",
-                   "Snapshot 2026-10-29, TR 2026-10-28. Prompt assistant-chat-v6."):
+                   "Snapshot 2026-10-29, TR 2026-10-28. Prompt assistant-chat-v5."):
         assert needle in SYSTEM_PROMPT, needle
     assert "not in the snapshot" not in SYSTEM_PROMPT, "v3's 'policy is not in the snapshot' is gone"
     assert "rule:TR 3.4.2" in {d["doc_id"] for d in tools.rule_docs()}, "the prompt's example id exists"
-    # v6 adds two timeline bullets (about 420 characters) to the v4/v5 wording, which was under v2's 1,239.
-    assert len(guidance_prompt()) < 1239 + 450, len(guidance_prompt())
-
-
-# The game flow outline (prompt v6) ------------------------------------------------------------
-
-
-def outline_lines(outline: str) -> list[tuple[str, str]]:
-    """(rule id, text) for every outline line that quotes a rule; an area line's id follows its [Area] label."""
-    out = []
-    for line in outline.splitlines():
-        match = re.match(r"^\s*(?:\[[^\]]+\] )?(\d+(?:\.\d+)+) (.+)$", line)
-        if match:
-            out.append((match.group(1), match.group(2)))
-    return out
-
-
-def snapshot_rules() -> list[dict]:
-    return read_jsonl(REPO_ROOT / "data/processed/rules.jsonl")
-
-
-def test_system_prompt_v6_has_timeline_guidance_then_the_outline():
-    assert ASSISTANT_PROMPT_VERSION == "assistant-chat-v6"
-    guidance = guidance_prompt()
-    assert SYSTEM_PROMPT == f"{guidance}\n\n{flow.game_flow_outline()}", "the outline follows the guidance"
-    for needle in ("place every event in the question on the game timeline", "whose turn, which phase, which attack step",
-                   "Name each card's area (hand, deck, Legends area, field, Eddies area, trash)",
-                   "state (face-up or face-down, ready or spent, Lag)",
-                   "Check that the timing window the question asks about is actually open at that point",
-                   "A state such as spent applies in whatever area the card is in",
-                   "and the GAME FLOW rule lines below"):
-        assert needle in guidance, needle
-    # General guidance: it names no card (the questions that motivated it are about specific cards).
-    names = {c["name"] for c in tools.cards()} | {c["display_name"] for c in tools.cards()}
-    assert not [n for n in names if re.search(rf"(?<!\w){re.escape(n)}(?!\w)", guidance)]
-
-
-def test_flow_outline_is_deterministic_and_quotes_only_the_snapshot():
-    rows = snapshot_rules()
-    outline = flow.build_outline(rows)
-    assert outline == flow.build_outline(copy.deepcopy(rows)) == flow.game_flow_outline()
-    by_id = {r["id"]: r for r in rows}
-    lines = outline_lines(outline)
-    assert len(lines) > 60 and len({i for i, _ in lines}) == len(lines), "each rule once"
-    assert flow.outline_rule_ids(outline) == [i for i, _ in lines]
-    for rule_id, text in lines:
-        assert rule_id in by_id, rule_id
-        # Every line is the rule's own text (cleaned), cut at most: nothing in it is written here.
-        full = flow.clean(flow._heading_text(by_id[rule_id]), limit=100000)
-        assert full.startswith(text.removesuffix("…")), (rule_id, text, full)
-    # Rule order inside each part is document order.
-    order = {r["id"]: n for n, r in enumerate(rows)}
-    for part in re.split(r"\n(?=[A-Z ]+ \()", outline)[1:]:
-        ids = [i for i, _ in outline_lines(part)]
-        assert ids == sorted(ids, key=order.__getitem__), part.splitlines()[0]
-
-
-def test_flow_outline_has_the_flow_in_rule_order():
-    outline = flow.game_flow_outline()
-    ids = flow.outline_rule_ids(outline)
-    # The turn: Start Phase steps in order, then the Main phase, then the end of turn.
-    start = [ids.index(i) for i in ("8.6", "8.6.1", "8.6.2", "8.6.3", "8.6.4", "8.6.5")]
-    assert start == sorted(start) and ids.index("8.6.5") < ids.index("8.10") < ids.index("8.16")
-    assert "8.6.3 Ready all spent cards in your Legends area, Field, and Eddies area." in outline
-    # The attack: declare, React Step, Fight Step, Steal Step, attack end, as headings and as rules.
-    steps = [outline.index(f"[{step}]") for step in flow.ANCHORS["attack_steps"]]
-    assert steps == sorted(steps)
-    assert ids.index("9.3.4") < ids.index("9.7") < ids.index("9.10") < ids.index("9.14") < ids.index("9.16")
-    assert ids.index("9.16") < ids.index("9.17") < ids.index("9.20") < ids.index("9.21") < ids.index("9.24")
-    assert outline.index("[React Step]") < outline.index("9.10 ") < outline.index("[Fight Step]")
-    assert "9.14 When the React Step ends, the attack continues." in outline
-    # The Legends area: Legends live there, are spent there for 1 eddie face-up or face-down, and are played
-    # from there; their spend effects can be used there.
-    for needle in ("5.7.1 Each player places their three Legends face-down",
-                   "5.7.2 You can spend any number of Legends in this area as 1 €$ each, whether face-up or face-down.",
-                   "5.7.5 You may pay a Legend’s cost to play it from the Legends area to the field as a Unit.",
-                   "5.7.6 While a Legend is face-up in the Legends area"):
-        assert needle in outline, needle
-    for area in ("Hand", "Deck Area", "Field Area", "Legends Area", "Eddies Area", "Trash Area"):
-        assert f"[{area}] 5." in outline, area
-    # Card states and Lag.
-    for rule_id in ("3.3", "3.4", "3.5", "3.6", "11.3.1", "11.3.1.1", "11.3.1.2", "11.3.2"):
-        assert rule_id in ids, rule_id
-    assert "3.6 “Spent” refers to cards oriented in the horizontal position" in outline
-    assert "11.3.1.1 Lagging Units can’t attack." in outline
-
-
-def test_flow_outline_stays_compact_and_names_no_card():
-    outline = flow.game_flow_outline()
-    assert len(outline) <= OUTLINE_MAX_CHARS and len(outline.splitlines()) <= OUTLINE_MAX_LINES, \
-        (len(outline), len(outline.splitlines()))
-    assert all(len(text) <= flow.FIRST_SENTENCE_CHARS + 1 for _, text in outline_lines(outline))
-    # A cut inside a sentence is marked; dropping whole later sentences is not (the header says so).
-    word = "word " * 40
-    assert flow.clean(f"1.2. {word}end.") == ("word " * 19).strip() + "…"
-    assert flow.clean(f"1.2. Short first. Then {word}end.") == "Short first."
-    assert flow.clean("1.2. ### Heading\n\nBody text. See TERMS > Lag.\n\n> **EXAMPLE:** x") == "Heading Body text."
-    nine_one = dict(outline_lines(outline))["9.1"]
-    assert nine_one.endswith("…") and "leading sentences only (… marks a cut)" in outline
-    names = {c["name"] for c in tools.cards()} | {c["display_name"] for c in tools.cards()}
-    assert len(names) > 100
-    hits = [n for n in names if re.search(rf"(?<!\w){re.escape(n)}(?!\w)", outline)]
-    assert not hits, hits
-    # The skip filter drops alias, visibility and size-limit lines; none of those reach the outline.
-    assert "referred to as" not in outline and "public area" not in outline and "no limit" not in outline
-
-
-def test_flow_outline_fails_closed_when_the_snapshot_moves():
-    rows = snapshot_rules()
-
-    def broken(change) -> str:
-        changed = copy.deepcopy(rows)
-        changed = change(changed) or changed
-        try:
-            flow.build_outline(changed)
-        except flow.FlowOutlineError as exc:
-            return str(exc)
-        raise AssertionError("the outline was built from a snapshot it should refuse")
-
-    def where(changed, rule_id):
-        return next(r for r in changed if r["id"] == rule_id)
-
-    def retitle(title, new):
-        def change(changed):
-            next(r for r in changed if r.get("title") == title and r["kind"] == "section")["title"] = new
-        return change
-
-    # A missing anchor: the Lag line, a section.
-    assert "5.6.4" in broken(lambda c: [r for r in c if r["id"] != "5.6.4"])
-    assert "rule 9 " in broken(lambda c: [r for r in c if r["id"] != "9"])
-    # A renamed one: a section title, an attack step, the Orientation heading.
-    assert "GAME AREAS" in broken(lambda c: where(c, "5").update(title="AREAS"))
-    assert "React Step" in broken(retitle("React Step", "Response Step"))
-    assert "Orientation" in broken(retitle("Orientation", "Position"))
-    # Attack steps out of order.
-    def swap(changed):
-        fight = next(i for i, r in enumerate(changed) if r.get("title") == "Fight Step" and r["kind"] == "section")
-        react = next(i for i, r in enumerate(changed) if r.get("title") == "React Step" and r["kind"] == "section")
-        changed[fight], changed[react] = changed[react], changed[fight]
-    assert "in that order" in broken(swap)
-    # The Lag line no longer links to the Lag entry, or the entry is renamed or empty.
-    assert "Lag" in broken(lambda c: where(c, "5.6.4").update(refs=[]))
-    assert "Lag" in broken(lambda c: where(c, "11.3").update(title="Delay"))
-    assert "no rules under it" in broken(lambda c: [r for r in c if not r["id"].startswith("11.3.")])
-    # An area whose every line is filtered out, and a section 5 with no areas.
-    assert "5.4" in broken(lambda c: [r for r in c if r.get("parent") != "5.4"])
-    assert "no area headings" in broken(lambda c: [r for r in c if r.get("parent") != "5" or not
-                                                   r["id"].startswith("5.")])
+    assert len(SYSTEM_PROMPT) < 1239, "v4 must stay shorter than v2"
 
 
 # The preload --------------------------------------------------------------------------------

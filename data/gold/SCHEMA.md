@@ -126,6 +126,17 @@ and `cody-quiz-15` only mark a known-incorrect option), copied unchanged except
 that two typographic quotes (Q13, Q29) were normalised to ASCII. Review notes
 on its questions go in `eval/notes/`, never into this file.
 
+`quiz_mc_2026-11-13.jsonl` is that set plus Cody's second quiz (2026-11-13), 64
+questions and 60 keyed. Its first 40 rows are the 11-12 rows unchanged, except one.
+The second quiz repeated 16 of the 11-12 questions word for word, with the same keys,
+so they are not duplicated. The exception is `cody-quiz-04` (Sketchy Ripper),
+repeated as the new Q15: there Cody marked A wrong and B "most likely", so A is
+added to its `known_incorrect` and it stays unscored. The 24 new questions follow as
+`cody-quiz2-NN`, numbered as Cody sent them. "Most likely" answers (Q01, Q14) are
+unscored, with the choice he marked wrong in `known_incorrect`. HTML entities from the
+chat copy were decoded to ASCII quotes. Run the new questions alone with
+`--ids cody-quiz2-01,...` to measure on questions the assistant was never tuned against.
+
 **These sets are eval-only, never training data.** Do not use them, their
 paraphrases or the assistant's answers to them in any SFT, LoRA or prompt
 example.
