@@ -1,8 +1,7 @@
 import assert from "node:assert/strict";
 import { execFileSync } from "node:child_process";
 import { createHash } from "node:crypto";
-import { readFileSync, realpathSync } from "node:fs";
-import { resolve } from "node:path";
+import { realpathSync } from "node:fs";
 import { hashCanonical } from "../../packages/domain/src/canonical";
 import type snapshot from "../../tests/fixtures/api-admission-batch-v6-source-evidence.v1.json";
 
@@ -54,11 +53,12 @@ export function verifyV6Source(repoRoot: string, rawBytes: Buffer, evidence: unk
     assert.doesNotThrow(() => execFileSync("git", ["-C", root, "merge-base", "--is-ancestor", V6_SOURCE_COMMIT, "HEAD"]),
         { message: "V6_SOURCE_HISTORY: imported AI source commit must remain an ancestor of this monorepo checkout" });
     const readPinned = (path: string, digest?: string) => {
+        // Verify the evidence against the source commit's own bytes. The working tree may hold a
+        // newer data snapshot (data/ is refreshed as its own change), which must not alter or fail
+        // this pinned evidence; the ancestor check above keeps the source commit in history.
         const committed = execFileSync("git", ["-C", root, "show", `${V6_SOURCE_COMMIT}:${path}`], { maxBuffer: 16 * 1024 * 1024 });
-        const local = readFileSync(resolve(root, path));
-        assert.ok(committed.equals(local), `V6_SOURCE_DIRTY: ${path}`);
-        if (digest) assert.equal(sha256(local), digest, `V6_SOURCE_HASH: ${path}`);
-        return local;
+        if (digest) assert.equal(sha256(committed), digest, `V6_SOURCE_HASH: ${path}`);
+        return committed;
     };
     assert.ok(readPinned(evidence.rawPath, evidence.rawSha256).equals(rawBytes), "V6_SOURCE_RAW_MATCH");
     const m = evidence.manifest;
