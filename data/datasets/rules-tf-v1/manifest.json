@@ -1,0 +1,271 @@
+{
+ "dataset": "rules-tf-v1",
+ "builder_version": "build-tf-dataset-v1",
+ "sources": [
+  {
+   "path": "data/processed/rules.jsonl",
+   "sha256": "9af082081781af7bd0060ab6065713998d05b22a8636c4bb554031e76bf1523f"
+  },
+  {
+   "path": "data/processed/tournament_rules.jsonl",
+   "sha256": "daec9b7d846672f06a1e23fad0a92b45f8dcff6a1fbd2c8bbeb3f4abb7cb88a1"
+  }
+ ],
+ "rules_version": "2026-10-29",
+ "tournament_rules_version": "2026-10-28",
+ "assistant_prompt_version": "assistant-chat-v7",
+ "eval_prompt_version": "eval-mc-v1",
+ "prompt_shape": {
+  "built_by": "loop.run_turn with a capturing stand-in model",
+  "question_message": "eval_assistant.question_message",
+  "preload_text": "eval_assistant.preload_text",
+  "preload": true,
+  "preload_k": 5,
+  "preload_chars": 8000,
+  "enable_thinking": true,
+  "max_tokens": 4096,
+  "max_tool_calls": 6,
+  "choices": [
+   "A. Yes",
+   "B. No"
+  ],
+  "target": "<think> short reasoning </think> + rule quote + one-line conclusion + Answer: X"
+ },
+ "preload_search": {
+  "methods": {
+   "lexical-bm25-rules": 560
+  },
+  "fallback_reasons": [
+   "no rules index at data/processed/corpus_index.npz (build it on the Mac with scripts/build_rules_index.py)"
+  ],
+  "note": "search_rules falls back to lexical BM25 when no usable rules index exists, as the scorer does; a build where data/processed/corpus_index.npz is usable would record 'hybrid' here"
+ },
+ "split": {
+  "by": "first source rule id",
+  "hash": "sha256('rules-tf-v1:<rule id>') % 100 < 10",
+  "train": 462,
+  "valid": 54,
+  "valid_rules": 21,
+  "train_rules": 200
+ },
+ "counts": {
+  "items": 516,
+  "by_kind": {
+   "rule-template": 516
+  },
+  "by_label": {
+   "A": 258,
+   "B": 258
+  },
+  "by_mutation": {
+   "number": 26,
+   "permissive": 52,
+   "polarity": 428,
+   "quantifier": 4,
+   "side": 4,
+   "state": 2
+  },
+  "by_phrasing": {
+   "lexical": 58,
+   "negated": 280,
+   "question": 28,
+   "statement": 150
+  },
+  "by_mutation_and_label": {
+   "number:A": 13,
+   "number:B": 13,
+   "permissive:A": 26,
+   "permissive:B": 26,
+   "polarity:A": 214,
+   "polarity:B": 214,
+   "quantifier:A": 2,
+   "quantifier:B": 2,
+   "side:A": 2,
+   "side:B": 2,
+   "state:A": 1,
+   "state:B": 1
+  },
+  "negated_statements_by_label": {
+   "A": 183,
+   "B": 183
+  },
+  "rules_used": 221,
+  "numbered_rules": 732
+ },
+ "skips": {
+  "abbreviation": 18,
+  "colon-or-semicolon": 15,
+  "context-pronoun": 120,
+  "context-reference": 139,
+  "cross-reference": 32,
+  "example-text": 25,
+  "fragment": 25,
+  "heading": 131,
+  "length": 81,
+  "list-or-table": 223,
+  "mutation-refused": 46,
+  "no-mutation-applies": 220,
+  "not-a-declarative-sentence": 110,
+  "number-in-condition": 3,
+  "number-label": 2,
+  "number-like-word": 4,
+  "number-several": 8,
+  "number-zero-or-one": 15,
+  "parenthetical": 52,
+  "polarity-descriptive-tournament": 41,
+  "polarity-embedded": 7,
+  "polarity-extra-negation": 13,
+  "polarity-late-copula": 7,
+  "polarity-may-be": 9,
+  "polarity-other-modal": 1,
+  "polarity-several-sites": 34,
+  "quotation": 29,
+  "side-in-condition": 2,
+  "side-not-restrictive": 4,
+  "side-noun": 26,
+  "side-several": 9,
+  "source-not-in-preload": 24,
+  "state-not-restrictive": 1,
+  "state-several": 1,
+  "subordinate-opening": 2
+ },
+ "scenario_skips": {},
+ "leak_guard": {
+  "method": "normalised words (lowercase, brackets and punctuation removed); fails on a shared word 8-gram between an item's statement or target and any gold question or choice, or a difflib.SequenceMatcher ratio >= 0.8 between an item's statement and any gold question, both as lists of normalised words",
+  "gold_files": [
+   "official_basic_test.jsonl",
+   "quiz_mc_2026-11-12.jsonl",
+   "quiz_mc_2026-11-13.jsonl"
+  ],
+  "gold_questions": 144,
+  "leak_dropped": 8,
+  "leak_dropped_scenarios": 0,
+  "tripped_first_pass": [
+   {
+    "id": "tf-3682f2031f67",
+    "statement": "A game value can be a negative number.",
+    "shared_ngram": "a game value can be a negative number",
+    "ngram_gold": "official_basic_test.jsonl:official-1159bb04",
+    "ratio": 1.0,
+    "ratio_gold": "official_basic_test.jsonl:official-1159bb04"
+   },
+   {
+    "id": "tf-21744048b12e",
+    "statement": "A game value cannot be a negative number.",
+    "shared_ngram": "a game value can be a negative number",
+    "ngram_gold": "official_basic_test.jsonl:official-1159bb04",
+    "ratio": 0.875,
+    "ratio_gold": "official_basic_test.jsonl:official-1159bb04"
+   },
+   {
+    "id": "tf-c772131ca8f8",
+    "statement": "When you search for a card in a hidden area, you do not have to reveal any information about your findings if you fail to find a valid target.",
+    "shared_ngram": "a card in a hidden area you do",
+    "ngram_gold": "official_basic_test.jsonl:official-e1d1543a",
+    "ratio": 0.9206,
+    "ratio_gold": "official_basic_test.jsonl:official-e1d1543a"
+   },
+   {
+    "id": "tf-a946efddc135",
+    "statement": "When you search for a card in a hidden area, you must reveal any information about your findings if you fail to find a valid target.",
+    "shared_ngram": "a card in a hidden area you do",
+    "ngram_gold": "official_basic_test.jsonl:official-e1d1543a",
+    "ratio": 0.8333,
+    "ratio_gold": "official_basic_test.jsonl:official-e1d1543a"
+   },
+   {
+    "id": "tf-a742bcae7b63",
+    "statement": "It is not true that it is not allowed for players to use officially released Cyberpunk TCG cards in any language.",
+    "shared_ngram": "may use officially released cyberpunk tcg cards in",
+    "ngram_gold": "quiz_mc_2026-11-12.jsonl:cody-quiz-18",
+    "ratio": 0.4878,
+    "ratio_gold": "quiz_mc_2026-11-12.jsonl:cody-quiz-18"
+   },
+   {
+    "id": "tf-280df5c2bf50",
+    "statement": "It is not true that players may use officially released Cyberpunk TCG cards in any language.",
+    "shared_ngram": "may use officially released cyberpunk tcg cards in",
+    "ngram_gold": "quiz_mc_2026-11-12.jsonl:cody-quiz-18",
+    "ratio": 0.6111,
+    "ratio_gold": "quiz_mc_2026-11-12.jsonl:cody-quiz-18"
+   },
+   {
+    "id": "tf-5681b934984c",
+    "statement": "Both players must agree to a gameplay rewind before it's enacted.",
+    "shared_ngram": "agree to a gameplay rewind before its enacted",
+    "ngram_gold": "official_basic_test.jsonl:official-6c282e07",
+    "ratio": 0.5116,
+    "ratio_gold": "official_basic_test.jsonl:official-6c282e07"
+   },
+   {
+    "id": "tf-d12aebb949e9",
+    "statement": "It is optional for both players to agree to a gameplay rewind before it's enacted.",
+    "shared_ngram": "agree to a gameplay rewind before its enacted",
+    "ngram_gold": "official_basic_test.jsonl:official-6c282e07",
+    "ratio": 0.4255,
+    "ratio_gold": "official_basic_test.jsonl:official-6c282e07"
+   }
+  ],
+  "result": "pass",
+  "nearest": [
+   {
+    "id": "tf-7f595e1e7e06",
+    "statement": "It is not true that Gig dice are represented by d4, d6, d8, d10, d12, d20.",
+    "gold": "quiz_mc_2026-11-12.jsonl:cody-quiz-10",
+    "gold_text": "Gig dice are represented by a d4, d6, d8, d10, d12, d20, d100.",
+    "ratio": 0.7586
+   },
+   {
+    "id": "tf-4a5b1a229b05",
+    "statement": "It is not true that Gig dice are not represented by d4, d6, d8, d10, d12, d20.",
+    "gold": "quiz_mc_2026-11-12.jsonl:cody-quiz-10",
+    "gold_text": "Gig dice are represented by a d4, d6, d8, d10, d12, d20, d100.",
+    "ratio": 0.7333
+   },
+   {
+    "id": "tf-66c5a0438501",
+    "statement": "You may Call a Legend as an action during your main phase.",
+    "gold": "official_basic_test.jsonl:official-5d81d41f",
+    "gold_text": "If a Unit in your hand has a “Sell Tag,” you may sell it as an action during your main phase.",
+    "ratio": 0.5455
+   },
+   {
+    "id": "tf-9a9752e249b4",
+    "statement": "Chroming Up Sealed events at the LGS-level or side events are run with 9 Cyberpunk TCG booster packs.",
+    "gold": "quiz_mc_2026-11-12.jsonl:cody-quiz-20",
+    "gold_text": "For a \"Pre-release\" Rules event at the LGS level or side events, how many Cyberpunk TCG booster packs are to be used?",
+    "ratio": 0.5238
+   },
+   {
+    "id": "tf-bfeeaad02acf",
+    "statement": "Chroming Up Sealed events at the LGS-level or side events are run with 8 Cyberpunk TCG booster packs.",
+    "gold": "quiz_mc_2026-11-12.jsonl:cody-quiz-20",
+    "gold_text": "For a \"Pre-release\" Rules event at the LGS level or side events, how many Cyberpunk TCG booster packs are to be used?",
+    "ratio": 0.5238
+   }
+  ]
+ },
+ "size_estimate": {
+  "note": "characters of the tool specs, every message and the preload's tool calls, as the loop's PromptGuard counts them; tokens at 4 and at 3 characters a token",
+  "chars": {
+   "min": 14879,
+   "median": 17998,
+   "max": 22446
+  },
+  "tokens_chars_div_4": {
+   "min": 3719,
+   "median": 4499,
+   "max": 5612
+  },
+  "tokens_chars_div_3": {
+   "min": 4959,
+   "median": 5999,
+   "max": 7482
+  },
+  "target_chars": {
+   "min": 305,
+   "median": 567,
+   "max": 1496
+  }
+ }
+}
