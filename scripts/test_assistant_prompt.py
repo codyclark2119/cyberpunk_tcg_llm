@@ -28,10 +28,12 @@ from pathlib import Path
 REPO_ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(REPO_ROOT))
 
+from games.cyberpunk.assistant import golden_rules
 from games.cyberpunk.assistant import preload as preload_module
 from games.cyberpunk.assistant import tools
-from games.cyberpunk.assistant.loop import (DEFAULT_MAX_TOKENS, DEFAULT_THINKING_MAX_TOKENS, SYSTEM_PROMPT,
-                                            run_turn, tool_specs_sha256)
+from games.cyberpunk.assistant.loop import (ANSWERING_GUIDANCE, ASSISTANT_PROMPT_VERSION, DEFAULT_MAX_TOKENS,
+                                            DEFAULT_THINKING_MAX_TOKENS, SYSTEM_PROMPT, run_turn,
+                                            tool_specs_sha256)
 from games.cyberpunk.assistant.preload import DEFAULT_PRELOAD_CHARS, fit_result, link_cards
 from games.cyberpunk.assistant_app import ChatService
 from harness.core.io import read_jsonl
@@ -41,6 +43,22 @@ BUDGET_SCRIPT = REPO_ROOT / "scripts/prompt_budget.py"
 # The overhead before the lean specs (assistant-chat-v2, measured on master 2026-11-12): 10,416 chars of
 # tool specs plus a 1,239-char system prompt.
 BEFORE_TOTAL_CHARS = 11655
+RULES_JSONL = REPO_ROOT / "data/processed/rules.jsonl"
+CARDS_JSONL = REPO_ROOT / "data/processed/card_database.jsonl"
+# v7's addition (Golden Rules block plus answering guidance) must stay under ~600 tokens. Estimated at 4
+# characters a token (no tokenizer on Linux; prompt_budget.py --tokenizer gives the real count on the Mac).
+V7_ADDITION_MAX_CHARS = 2400
+GOLDEN_RULES_MAX_CHARS = 1600   # ~400 tokens
+
+
+def v7_addition() -> str:
+    return f"\n\n{golden_rules.snapshot_block()}\n\n{ANSWERING_GUIDANCE}"
+
+
+def base_prompt() -> str:
+    """The system prompt without v7's addition: the v5 wording, which the older budgets measure."""
+    assert v7_addition() in SYSTEM_PROMPT
+    return SYSTEM_PROMPT.replace(v7_addition(), "")
 
 
 def call(name: str, **arguments) -> str:
@@ -123,7 +141,9 @@ def test_lean_specs_keep_every_name_and_schema():
         description = spec["function"]["description"]
         sentences = [s for s in re.split(r"(?<=[.!?])\s+", description.strip()) if s]
         assert 1 <= len(sentences) <= 3 and len(description) <= 160, (spec["function"]["name"], description)
-    total = sum(len(json.dumps(s, ensure_ascii=False)) for s in specs) + len(SYSTEM_PROMPT)
+    # The lean specs' saving is measured against the v5-wording prompt; v7's deliberate addition has its own
+    # budget (test_v7_addition_stays_under_its_budget).
+    total = sum(len(json.dumps(s, ensure_ascii=False)) for s in specs) + len(base_prompt())
     assert total < BEFORE_TOTAL_CHARS * 0.85, total
 
 
@@ -188,11 +208,94 @@ def test_system_prompt_v4_warns_from_the_snapshot_wording():
                    # v4: policy is answered from the Tournament Rules and cited; what neither covers is not covered.
                    "Tournament procedure, penalties, deck registration, event policy: use the Tournament Rules "
                    "(TR 3.4.2), cite them. Anything in neither is not covered.",
-                   "Snapshot 2026-10-29, TR 2026-10-28. Prompt assistant-chat-v5."):
+                   "Snapshot 2026-10-29, TR 2026-10-28. Prompt assistant-chat-v7."):
         assert needle in SYSTEM_PROMPT, needle
     assert "not in the snapshot" not in SYSTEM_PROMPT, "v3's 'policy is not in the snapshot' is gone"
     assert "rule:TR 3.4.2" in {d["doc_id"] for d in tools.rule_docs()}, "the prompt's example id exists"
-    assert len(SYSTEM_PROMPT) < 1239, "v4 must stay shorter than v2"
+    assert len(base_prompt()) < 1239, "v4's wording must stay shorter than v2 (v7's addition is budgeted apart)"
+
+
+# v7: the Golden Rules and the answering guidance ---------------------------------------------
+
+
+def test_golden_rules_block_is_2_1_to_2_10_2_without_conduct_or_examples():
+    rows = list(read_jsonl(RULES_JSONL))
+    block = golden_rules.golden_rules_block(rows)
+    assert block == golden_rules.golden_rules_block(list(rows)) == golden_rules.snapshot_block(), "deterministic"
+    lines = block.split("\n")
+    assert lines[0] == golden_rules.HEADER
+    expected = ["2.1", "2.1.1", "2.2", "2.3", "2.4", "2.5", "2.6", "2.7", "2.8", "2.9", "2.10", "2.10.1", "2.10.2"]
+    assert [line.split(" ", 1)[0] for line in lines[1:]] == [i + "." for i in expected], lines
+    # The snapshot's own conduct rules are there to be left out, and its examples to be stripped.
+    by_id = {r["id"]: r for r in rows}
+    conduct = [i for i in by_id if re.fullmatch(r"2\.(1[1-9]|[2-9]\d)(\.\d+)*", i)]
+    assert {"2.11", "2.12", "2.12.3", "2.13", "2.13.1"} <= set(conduct), conduct
+    for rule_id in conduct:
+        assert by_id[rule_id]["text"].split(" ", 1)[1][:30] not in block, rule_id
+        assert not re.search(rf"(?m)^{re.escape(rule_id)}\. ", block), rule_id
+    assert "civility" not in block.lower() and "hygiene" not in block.lower()
+    assert sum("EXAMPLE" in by_id[i]["text"] for i in expected) >= 3, "the fixture must contain examples"
+    assert "EXAMPLE" not in block and ">" not in block
+    for rule_id in expected:  # each line is the rule's own text up to its first example
+        assert by_id[rule_id]["text"].split("\n\n")[0] in block, rule_id
+    assert len(block) <= GOLDEN_RULES_MAX_CHARS, len(block)
+    assert block in SYSTEM_PROMPT
+
+
+def test_golden_rules_fail_closed():
+    rows = list(read_jsonl(RULES_JSONL))
+    # A Golden Rule missing from the snapshot, an extra one, the conduct heading gone, an example that will
+    # not strip: each is an error, never a quietly different prompt.
+    broken = {
+        "missing 2.7": [r for r in rows if r["id"] != "2.7"],
+        "extra rule": rows + [{**next(r for r in rows if r["id"] == "2.10.2"), "id": "2.10.3"}],
+        "no cut heading": [r for r in rows if r.get("text") != golden_rules.STOP_HEADING],
+        "no section": [r for r in rows if r["id"] != "2"],
+        "loose example": [{**r, "text": r["text"] + " EXAMPLE: x"} if r["id"] == "2.3" else r for r in rows],
+    }
+    for label, fixture in broken.items():
+        try:
+            golden_rules.golden_rules_block(fixture)
+        except ValueError:
+            continue
+        raise AssertionError(f"{label}: the Golden Rules block built anyway")
+
+
+def test_v7_addition_stays_under_its_budget():
+    added = v7_addition()
+    assert len(added) <= V7_ADDITION_MAX_CHARS, len(added)
+    assert len(SYSTEM_PROMPT) == len(base_prompt()) + len(added)
+    assert ASSISTANT_PROMPT_VERSION == "assistant-chat-v7" and "Prompt assistant-chat-v7." in SYSTEM_PROMPT
+
+
+def test_answering_guidance_says_each_point_and_names_no_card():
+    for needle in (
+            # (a) permissive rules
+            "something is allowed unless a rule or card text forbids it or a cost can't be paid",
+            '"No rule explicitly permits it" is not a reason to answer No',
+            # (b) polarity, and the conclusion line
+            'including any "not" or "may not", is true; pick Yes only if it is true',
+            "State that conclusion in one line just before your final answer line",
+            # (c) only a cost gates an effect
+            'Only a cost (text before a colon, or "pay ...") can stop an effect from being used',
+            "resolves as much as possible (2.4, 10.10)", '"You may" parts are optional',
+            # (d) numbered order, (e) specific beats general, (f) search past the preload
+            "Numbered sub-steps of a rule happen in their numbered order",
+            "the more specific one wins, and card text beats the rules (2.5)",
+            "Check every preloaded rule before answering, not only the first",
+            "call search_rules or get_rule before answering"):
+        assert needle in ANSWERING_GUIDANCE, needle
+    assert ANSWERING_GUIDANCE in SYSTEM_PROMPT
+    rules = {r["id"] for r in read_jsonl(RULES_JSONL)}
+    assert {"2.4", "2.5", "10.10"} <= rules, "the guidance cites rules that exist"
+    added = v7_addition()
+    for card in read_jsonl(CARDS_JSONL):
+        for name in {card["name"], card["display_name"], card["id"]}:
+            pattern = rf"(?<!\w){re.escape(name)}(?!\w)"
+            assert not re.search(pattern, added, re.I), f"v7's addition names a card: {name}"
+            # The v4 wording cites one slug, `v-streetkid`, as the citation format; no card name appears.
+            if name != card["id"]:
+                assert not re.search(pattern, SYSTEM_PROMPT), f"the system prompt names a card: {name}"
 
 
 # The preload --------------------------------------------------------------------------------
