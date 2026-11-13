@@ -454,7 +454,7 @@ python scripts/eval_assistant.py --set data/gold/quiz_mc_2026-11-12.jsonl --mode
 
 ### Rules retrieval
 
-`search_rules` ranks the 713 comprehensive rules and the 87 Tournament Rules rows
+`search_rules` ranks the 733 comprehensive rules (2026-10-29 snapshot) and the 87 Tournament Rules rows
 (`TR 3.4.2`, added 2026-11-13, see
 [the snapshot record](docs/tournament-rules-snapshot-2026-11-13.md)) one rule at a time
 (each prefixed by its heading path, heading-only rows down-weighted, stopwords and

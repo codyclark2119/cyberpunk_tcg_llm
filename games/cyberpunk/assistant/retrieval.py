@@ -7,7 +7,7 @@ chunk holds a dozen unrelated rules, so one shared word pulls the whole chunk
 up and the model has to find the rule inside it. This module indexes the rules
 one rule at a time instead:
 
-  - **One document per rule** (all 713 rows of ``rules.jsonl``), its text
+  - **One document per rule** (every row of ``rules.jsonl``), its text
     prefixed by the titles of its section and parent headings, so "Lagging
     Units can't attack" is also found by "Lag". The heading prefix counts at
     ``CONTEXT_WEIGHT`` of a body word, and a word inside a rule's
@@ -21,7 +21,7 @@ one rule at a time instead:
     A tournament document's heading path starts with "Tournament Rules", so a
     query that says "tournament" leans toward that document without a rule.
   - **Pure heading rows are kept but heavily down-weighted.** A row whose text
-    is only a heading ("11.24. ### [BLOCKER]", a section title) has no rule in
+    is only a heading ("11.28. ### [BLOCKER]", a section title) has no rule in
     it. In the comprehensive rules every ``section`` row counts as a heading;
     in the Tournament Rules a section with a body is content (the ban list is a
     section) and only a bodiless one (its text is its bare title) is a heading.

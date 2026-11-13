@@ -47,6 +47,7 @@ from harness.core.io import read_jsonl
 sys.path.insert(0, str(REPO_ROOT / "scripts"))
 import ingest  # noqa: E402 -- scripts/ is not a package; path is fixed just above
 import fetch_tournament_rules  # noqa: E402
+import diff_rules_snapshot  # noqa: E402
 
 DATA = REPO_ROOT / "data"
 PROCESSED = DATA / "processed"
@@ -147,7 +148,7 @@ def test_bare_and_braced_links_render_the_same():
 
 
 def test_escaped_brackets_in_a_link_label():
-    # Rule 11.11.1.4 writes the CALL keyword's own brackets escaped. A label
+    # Rule 11.14.1.4 (11.11.1.4 before the 2026-10-29 snapshot) writes the CALL keyword's own brackets escaped. A label
     # pattern that stops at the first `]` misses this link entirely and leaks
     # the raw anchor into the corpus.
     text = r"See [\[CALL\]](#rule-abc)."
@@ -990,7 +991,8 @@ def test_tournament_rules_snapshot_and_its_ingested_rows():
     assert Counter(n["node_type"] for n in doc["items"]) == {"rule": 52, "section": 35}
     assert all(fetch_tournament_rules.REQUIRED_NODE_FIELDS <= set(n) for n in doc["items"])
     assert doc["updated_at"].startswith(prompts.TOURNAMENT_RULES_VERSION)
-    assert prompts.TOURNAMENT_RULES_VERSION == "2026-10-28" and prompts.RULES_VERSION == "2026-09-01"
+    # The 2026-11-13 comprehensive-rules refresh moved RULES_VERSION only; this date stays.
+    assert prompts.TOURNAMENT_RULES_VERSION == "2026-10-28" and prompts.RULES_VERSION == "2026-10-29"
     rows = read_jsonl(PROCESSED / "tournament_rules.jsonl", missing_ok=False)
     assert rows == ingest.build_tournament_records(doc), "tournament_rules.jsonl is stale: re-run ingest.py"
     ids = [r["id"] for r in rows]
@@ -1000,6 +1002,131 @@ def test_tournament_rules_snapshot_and_its_ingested_rows():
     assert {r["doc"] for r in rows} == {"tournament"}
     assert {"TR 3.4.2", "TR A.1.2", "TR C.2.2", "TR E.2.2", "TR B"} <= set(ids)
     assert all(ref in set(ids) for r in rows for ref in r["refs"]), "every ref joins a TR row"
+
+
+def test_rules_version_is_the_comprehensive_snapshot_date():
+    """RULES_VERSION is the raw snapshot's own `updated_at` date, and rules.jsonl is what ingest makes of it.
+
+    A refresh that forgets the constant, or the re-ingest, fails here; the
+    Tournament Rules keep their own, unmoved date.
+    """
+    doc = json.loads((DATA / "raw" / "comprehensive_rules.json").read_text(encoding="utf-8"))
+    assert doc["updated_at"][:10] == prompts.RULES_VERSION == "2026-10-29", doc["updated_at"]
+    assert prompts.TOURNAMENT_RULES_VERSION == "2026-10-28"
+    assert _tournament_doc()["updated_at"][:10] == prompts.TOURNAMENT_RULES_VERSION
+    rows, _ = ingest.build_records(doc)
+    assert len(doc["items"]) == len(rows) == 733
+    assert _rules() == rows, "rules.jsonl is stale: re-run ingest.py"
+
+
+# --------------------------------------------------------------------------
+# diff_rules_snapshot: what a rules refresh changed
+# --------------------------------------------------------------------------
+
+def _row(number, anchor, body, kind="rule"):
+    """One normalised diff row, built from the rules.jsonl record ingest would write."""
+    record = {"id": number or anchor, "kind": kind, "is_numbered": bool(number), "anchor": anchor,
+              "text": f"{number}. {body}" if number else body}
+    return diff_rules_snapshot.normalise([record])[0]
+
+
+def _diff_fixture():
+    """Every category at once, with numbers chosen so a number-keyed diff gets each one wrong.
+
+    Old 1.2 (anchor b) becomes 1.1 and old 1.1 (anchor a) is removed, so "1.1"
+    exists in both but names a different rule; anchor c keeps its number but
+    changes text; anchor d is renumbered 1.4 -> 1.5 with identical text; e's
+    only change is a cross-reference to the renumbered d; f and g share the
+    number 2.1 but not an anchor (re-anchored); h is new as 1.4.
+    """
+    old = [_row("1.1", "a", "Units fight when they attack a Unit and the two of them compare power."),
+           _row("1.2", "b", "A ready Unit can attack."),
+           _row("1.3", "c", "Spent Units can be attacked."),
+           _row("1.4", "d", "Gigs are dice."),
+           _row("1.6", "e", "See 1.4 for Gigs."),
+           _row("2.1", "f", "Legends start face-down."),
+           _row("", "s", "Official Rules Document", kind="section")]
+    new = [_row("1.1", "b", "A ready Unit can attack."),
+           _row("1.3", "c", "Only spent Units can be attacked."),
+           _row("1.4", "h", "Units fight when they attack a Unit, and then the two of them compare power."),
+           _row("1.5", "d", "Gigs are dice."),
+           _row("1.6", "e", "See 1.5 for Gigs."),
+           _row("2.1", "g", "Legends start face-down in the Legends area."),
+           _row("", "s", "Official Rules Document", kind="section")]
+    return old, new
+
+
+def test_diff_rules_pairs_by_anchor_before_number():
+    old, new = _diff_fixture()
+    d = diff_rules_snapshot.diff(old, new)
+    j = diff_rules_snapshot.to_json(d)
+    assert j["renumbered"] == [["1.2", "1.1"], ["1.4", "1.5"]], j["renumbered"]
+    assert j["added"] == ["1.4"] and j["removed"] == ["1.1"], (j["added"], j["removed"])
+    assert j["re_anchored"] == [["2.1", "2.1"]], "an unmatched anchor falls back to its number"
+    assert j["reused"] == ["1.1", "1.4"], "both name a different rule now; 2.1 is reported as re-anchored instead"
+    changed = {c["new"]: c for c in j["changed"]}
+    # d (renumbered, same body) and b are not text changes; the "<number>. " prefix is not text.
+    assert sorted(changed) == ["1.3", "1.6", "2.1"], sorted(changed)
+    assert changed["1.3"]["old_text"] == "Spent Units can be attacked."
+    assert changed["1.3"]["new_text"] == "Only spent Units can be attacked."
+    assert changed["1.6"]["cross_refs_only"] and not changed["1.3"]["cross_refs_only"]
+    assert changed["2.1"]["matched_by"] == "number" and changed["1.3"]["matched_by"] == "anchor"
+    assert j["successors"] == {"1.1": ["1.4", j["successors"]["1.1"][1]]}, j["successors"]
+    assert j["successors"]["1.1"][1] >= diff_rules_snapshot.SUCCESSOR_MIN
+    assert j["old_count"] == j["new_count"] == 7
+
+
+def test_diff_rules_successor_needs_similar_text():
+    old = [_row("1.1", "a", "Units fight when they attack a Unit.")]
+    new = [_row("1.1", "z", "Hand size has no limit."), _row("1.2", "y", "Units fight when they attack a Unit.")]
+    d = diff_rules_snapshot.diff(old, new)
+    # 1.1 is re-anchored by number (paired with z), so it is not removed and gets no successor hint.
+    assert [(o["anchor"], n["anchor"]) for o, n in d["re_anchored"]] == [("a", "z")] and not d["removed"]
+    old = [_row("1.1", "a", "Units fight when they attack a Unit.")]
+    new = [_row("1.2", "z", "Hand size has no limit."), _row("1.3", "y", "Units fight when they attack a Unit.")]
+    d = diff_rules_snapshot.diff(old, new)
+    assert d["successors"]["a"][0]["number"] == "1.3", "the most similar added row, not the first"
+    new = [_row("1.2", "z", "Hand size has no limit.")]
+    assert diff_rules_snapshot.diff(old, new)["successors"] == {}, "no hint below the threshold"
+
+
+def test_diff_rules_trims_long_texts_around_the_change():
+    head, tail = "x " * 300, " y" * 300
+    old_t, new_t = diff_rules_snapshot.trim_pair(head + "OLD" + tail, head + "NEW" + tail)
+    assert "OLD" in old_t and "NEW" in new_t and old_t.startswith("…") and old_t.endswith("…")
+    assert len(old_t) < 2 * diff_rules_snapshot.CONTEXT + 10
+    short = ("a " * 50 + "ready" + " b" * 50, "a " * 50 + "spent" + " b" * 50)
+    assert len(short[0]) <= diff_rules_snapshot.FULL_LIMIT < len(short[0]) + 2 * diff_rules_snapshot.CONTEXT
+    assert diff_rules_snapshot.trim_pair(*short) == short, "a text under the limit is shown whole"
+
+
+def test_diff_rules_cli_reads_raw_and_ingested_snapshots_alike():
+    import tempfile
+    doc = {"game": "cyberpunk", "updated_at": "2026-01-01", "items": [
+        {"id": "n1", "parent_id": None, "node_type": "section", "title": "GAME", "body_markdown": "",
+         "display_number": "1", "stable_anchor": "rule-1", "sort_order": 0, "depth": 0},
+        {"id": "n2", "parent_id": "n1", "node_type": "rule", "title": "Attack", "body_markdown": "A ready [Unit](#rule-1) attacks.",
+         "display_number": "1.1", "stable_anchor": "rule-2", "sort_order": 0, "depth": 1}]}
+    newer = json.loads(json.dumps(doc))
+    newer["items"][1]["display_number"] = "1.2"
+    newer["items"][1]["body_markdown"] = "Only a ready [Unit](#rule-1) attacks."
+    with tempfile.TemporaryDirectory() as tmp:
+        raw_old, raw_new = Path(tmp) / "old.json", Path(tmp) / "new.json"
+        raw_old.write_text(json.dumps(doc)), raw_new.write_text(json.dumps(newer))
+        jsonl_new = Path(tmp) / "new.jsonl"
+        jsonl_new.write_text("\n".join(json.dumps(r) for r in ingest.build_records(newer)[0]) + "\n")
+        outs = []
+        for new_path in (raw_new, jsonl_new):
+            out = Path(tmp) / "out.json"
+            diff_rules_snapshot.main(["--old", str(raw_old), "--new", str(new_path), "--json", "--out", str(out)])
+            outs.append(json.loads(out.read_text()))
+        md = Path(tmp) / "out.md"
+        diff_rules_snapshot.main(["--old", str(raw_old), "--new", str(raw_new), "--out", str(md)])
+        markdown = md.read_text()
+    assert outs[0] == outs[1], "a raw snapshot diffs exactly like its ingested rows"
+    assert outs[0]["renumbered"] == [["1.1", "1.2"]]
+    assert outs[0]["changed"][0]["new_text"] == "Only a ready Unit attacks.", "raw text is rendered, not raw markdown"
+    assert "| renumbered (same anchor) | 1 |" in markdown and "#### 1.1 -> 1.2 (rule)" in markdown
 
 
 # --------------------------------------------------------------------------

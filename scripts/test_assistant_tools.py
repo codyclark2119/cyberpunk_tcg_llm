@@ -168,12 +168,12 @@ def test_get_rule_with_section_context():
     assert [p["title"] for p in rule["path"]] == ["ATTACK, FIGHT, AND STEAL", "React Step"]
     assert [c["id"] for c in rule["children"]] == ["9.9.1"]
     assert result["sources"]["rule_ids"][0] == "9.9"
-    glossary = ok(get_rule("11.24."))  # a trailing period, as cited in prose
-    assert glossary["rule"]["id"] == "11.24" and [p["title"] for p in glossary["path"]][-1] == "Effect Keywords"
-    assert [c["id"] for c in glossary["children"]] == ["11.24.1", "11.24.2", "11.24.3"]
+    glossary = ok(get_rule("11.28."))  # a trailing period, as cited in prose
+    assert glossary["rule"]["id"] == "11.28" and [p["title"] for p in glossary["path"]][-1] == "Effect Keywords"
+    assert [c["id"] for c in glossary["children"]] == ["11.28.1", "11.28.2", "11.28.3"]
     referencing = ok(get_rule("1.14.1"))
-    assert referencing["references"] == [{"id": "11.5", "title": "Draw", "kind": "rule", "numbered": True}]
-    assert any(r["id"] == "1.14.1" for r in ok(get_rule("11.5"))["referenced_by"])
+    assert referencing["references"] == [{"id": "11.8", "title": "Draw", "kind": "rule", "numbered": True}]
+    assert any(r["id"] == "1.14.1" for r in ok(get_rule("11.8"))["referenced_by"])
     missing = refused(get_rule("9.9.9"), "not_found")
     assert missing["nearest_existing"] == "9.9"
 
@@ -252,7 +252,7 @@ def test_search_rules_lexical_fallback_and_hybrid_with_a_fake_index():
         assert found["method"] == LEXICAL_METHOD and "no rules index" in found["fallback_reason"]
         assert len(found["results"]) == 3
         top_rule_ids = {r for hit in found["results"] for r in hit["rule_ids"]}
-        assert top_rule_ids & {"11.24.1", "11.24.3", "9.9", "9.9.1"}, found["results"]
+        assert top_rule_ids & {"11.28.1", "11.28.3", "9.9", "9.9.1"}, found["results"]
         assert all(len(hit["rule_ids"]) == 1 and hit["chunk_id"] == "rule:" + hit["rule_ids"][0]
                    for hit in found["results"]), "one rule per passage"
         assert all(hit["section"] and hit["text"] and hit["path"] for hit in found["results"])
@@ -277,8 +277,8 @@ def test_card_interactions_lists_rules_only():
     report = ok(result)
     v, optics = report["cards"]
     assert v["printed_keywords"] == ["Go Solo"] and v["timing_triggers"] == ["Call"]
-    assert v["rules_by_term"]["Go Solo"]["defining"][0] == "11.25"
-    assert v["rules_by_term"]["Call"]["defining"][0] == "11.18"
+    assert v["rules_by_term"]["Go Solo"]["defining"][0] == "11.29"
+    assert v["rules_by_term"]["Call"]["defining"][0] == "11.22"
     assert optics["errata"] and result["sources"]["errata_ids"] == [e["id"] for e in optics["errata"]]
     assert result["sources"]["card_slugs"] == ["v-streetkid", "kiroshi-optics"]
     assert set(report["rule_titles"]) == set(result["sources"]["rule_ids"])
@@ -287,7 +287,7 @@ def test_card_interactions_lists_rules_only():
     blockers = [c["slug"] for c in ok(search_cards(keyword="Blocker"))["cards"]][:2]
     shared = ok(card_interactions(*blockers))
     assert "Blocker" in shared["shared_terms"]
-    assert {"11.24", "11.24.1", "9.9"} <= set(shared["shared_rule_ids"])
+    assert {"11.28", "11.28.1", "9.9"} <= set(shared["shared_rule_ids"])
     # Every card's keyword and trigger fields agree with the markup helpers the tool uses.
     for card in read_jsonl(config.CARD_DATABASE_PATH):
         side = ok(card_interactions(card["id"], card["id"]))["cards"][0]

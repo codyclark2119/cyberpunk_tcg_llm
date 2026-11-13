@@ -181,7 +181,7 @@ def test_system_prompt_v4_warns_from_the_snapshot_wording():
                    # v4: policy is answered from the Tournament Rules and cited; what neither covers is not covered.
                    "Tournament procedure, penalties, deck registration, event policy: use the Tournament Rules "
                    "(TR 3.4.2), cite them. Anything in neither is not covered.",
-                   "Snapshot 2026-09-01, TR 2026-10-28. Prompt assistant-chat-v4."):
+                   "Snapshot 2026-10-29, TR 2026-10-28. Prompt assistant-chat-v4."):
         assert needle in SYSTEM_PROMPT, needle
     assert "not in the snapshot" not in SYSTEM_PROMPT, "v3's 'policy is not in the snapshot' is gone"
     assert "rule:TR 3.4.2" in {d["doc_id"] for d in tools.rule_docs()}, "the prompt's example id exists"
