@@ -20,6 +20,12 @@ import re
 # and change this string in the same commit.
 RULES_VERSION = "2026-09-01"
 
+# The Tournament Rules (event procedure, penalties, deck registration) are a
+# second document with their own `updated_at`, fetched by
+# `scripts/fetch_tournament_rules.py` and versioned separately: refreshing one
+# document never moves the other's date.
+TOURNAMENT_RULES_VERSION = "2026-10-28"
+
 # Rule ids are dot-separated multi-level numbers, e.g. "9.2.3.1", "1.4".
 # Two or more segments are required so a bare top-level section number ("9")
 # is never mistaken for a specific rule. A rule cited at the end of a sentence
