@@ -9,8 +9,24 @@ Qwen3.5-family chat template asks for, ``<function=NAME>`` holding one
 block that does not parse, an unknown tool or bad arguments go back to the model
 as a tool error and never run (the registry's ``call_tool`` validates before
 running). At most ``MAX_TOOL_CALLS``
-calls run per turn, malformed ones included; a model reply whose calls would go
-past the cap runs none of them and ends the turn with a clear message.
+calls run per turn, malformed ones included. A reply asking for more calls than
+remain runs the ones that fit, in order, and each one past the cap goes back to
+the model as a ``cap_exceeded`` tool error, so it can answer from what it has
+(until 2026-11-13 the whole reply was refused: a 27B model asking for two calls
+with one left lost both and the answer). A reply asking for any call once none
+remain ends the turn with a clear message (``tool_cap``).
+
+Before each model step a ``PromptGuard`` keeps the prompt under the worker's
+token cap (the model's ``prompt_token_limit``): when the estimate is over, the
+oldest tool results are replaced by a short note, oldest first, never the
+system prompt, the question or the latest results, and a ``kind: "context"``
+trace step names what was dropped. The estimate is pessimistic, so a prompt
+still over it with nothing left to drop goes to the worker anyway. A worker
+refusal (``prompt_too_large``, with the real token count) recalibrates the
+estimate and drops more. When a refused prompt has nothing more to drop, the
+turn ends with ``context_full`` and a clear message
+instead of a model error (a 27B quiz run lost a question to that on
+2026-11-13, after four searches that returned long Tournament Rules rows).
 ``<think>`` blocks are stripped from the answer and kept in the trace; a tool
 call written inside thinking is not a call.
 
@@ -59,6 +75,7 @@ from __future__ import annotations
 
 import hashlib
 import json
+import math
 import re
 import time
 from dataclasses import dataclass, field
@@ -69,7 +86,9 @@ from games.cyberpunk.assistant.preload import preload as run_preload
 from games.cyberpunk.assistant.tools import TOOLS, call_tool, tool_specs, validate_args
 from games.cyberpunk.prompts import RULES_VERSION, TOURNAMENT_RULES_VERSION
 
-ASSISTANT_PROMPT_VERSION = "assistant-chat-v4"
+# v5 (2026-11-13): the preload adds implied-rule get_rule steps, search_rules cuts passages at 1,500
+# characters, and get_rule takes an ``offset``; the system prompt's wording is unchanged.
+ASSISTANT_PROMPT_VERSION = "assistant-chat-v5"
 MAX_TOOL_CALLS = 6
 MAX_TOOL_CALLS_LIMIT = 16           # the most a run may allow (scripts/eval_assistant.py --max-tool-calls)
 MAX_TOKENS_LIMIT = 16384            # per model step; same as scripts/mlx_chat_worker.py (see the docstring)
@@ -344,6 +363,119 @@ def _assistant_message(content: str, calls: list[ToolCall]) -> dict:
     return message
 
 
+def refused_message(max_tool_calls: int = MAX_TOOL_CALLS) -> str:
+    return (f"Not run: this question has used all {max_tool_calls} tool calls. Answer from the tool results you "
+            "already have.")
+
+
+def _refused_step(call: ToolCall) -> dict:
+    return {"kind": "tool", "tool": call.name, "arguments": call.arguments, "ok": False,
+            "errorKind": "cap_exceeded", "summary": "not run: tool-call cap reached",
+            "sources": {k: [] for k in SOURCE_KEYS}, "elapsedMs": 0.0}
+
+
+# The prompt guard ---------------------------------------------------------------------------
+
+CHARS_PER_TOKEN = 3.0  # a conservative estimate until the worker reports a real count (see PromptGuard)
+DROPPED_NOTE = ("This earlier tool result ({chars} characters) was removed so the conversation fits the model's "
+                "context. Call the tool again if you need it.")
+
+
+def _message_chars(messages: list[dict], specs: list[dict]) -> int:
+    """Characters of what the template renders: every message's content and tool calls, and the specs."""
+    total = len(json.dumps(specs, ensure_ascii=False))
+    for message in messages:
+        total += len(message.get("content") or "") + 16  # role markers
+        for call in message.get("tool_calls") or ():
+            total += len(json.dumps(call, ensure_ascii=False))
+    return total
+
+
+class PromptGuard:
+    """Keeps each model step's prompt under the worker's token cap by dropping the oldest tool results.
+
+    ``limit`` is the cap (None: unknown, so only a worker refusal triggers
+    dropping). The estimate is characters divided by a characters-per-token
+    ratio: ``CHARS_PER_TOKEN`` (3.0, below what English prose and JSON
+    tokenise to) until a model step reports ``promptTokens`` for a prompt of
+    known size, then the smaller of the two. A refusal (``prompt_too_large``
+    with the real ``promptTokens``) recalibrates the ratio from that exact
+    count, takes the worker's ``maxPromptTokens`` as the limit when it gives
+    one, and drops at least one more result.
+
+    Only ``role: tool`` messages before the last assistant message are
+    dropped, oldest first (the preload's results are the oldest); each keeps
+    its place with a short note in place of its content, so the call it
+    answers still has a result. The system prompt, the history, the question,
+    the model's own messages and the latest tool results are never touched.
+    """
+
+    def __init__(self, limit: int | None, specs: list[dict]):
+        self.limit = limit
+        self.specs = specs
+        self.ratio = CHARS_PER_TOKEN
+        self.dropped: set[int] = set()  # message indices already replaced by a note (messages only grow)
+
+    def estimate(self, messages: list[dict]) -> int:
+        return math.ceil(_message_chars(messages, self.specs) / self.ratio)
+
+    def observe(self, messages: list[dict], reply: dict) -> None:
+        tokens = reply.get("promptTokens")
+        if isinstance(tokens, int) and not isinstance(tokens, bool) and tokens > 0:
+            self.ratio = min(self.ratio, _message_chars(messages, self.specs) / tokens)
+
+    def _droppable(self, messages: list[dict]) -> list[int]:
+        last_assistant = max((i for i, m in enumerate(messages) if m["role"] == "assistant"), default=-1)
+        return [i for i, m in enumerate(messages[:last_assistant]) if m["role"] == "tool" and i not in self.dropped]
+
+    def _drop(self, messages: list[dict], index: int) -> dict:
+        message = messages[index]
+        content = message["content"]
+        try:
+            tool = json.loads(content).get("tool")
+        except (ValueError, AttributeError):
+            tool = None
+        self.dropped.add(index)
+        messages[index] = {"role": "tool", "content": json.dumps(
+            {"ok": False, "tool": tool, "error_kind": "dropped_for_context",
+             "error": DROPPED_NOTE.format(chars=len(content))}, ensure_ascii=False, separators=(",", ":"))}
+        return {"message": index, "tool": tool, "chars": len(content)}
+
+    def _shrink(self, messages: list[dict], reason: str, at_least_one: bool) -> dict:
+        before = self.estimate(messages)
+        dropped = []
+        for index in self._droppable(messages):
+            over = self.limit is not None and self.estimate(messages) > self.limit
+            if not over and (dropped or not at_least_one):
+                break
+            dropped.append(self._drop(messages, index))
+        after = self.estimate(messages)
+        fits = (self.limit is None or after <= self.limit) and (dropped or not at_least_one)
+        return {"kind": "context", "ok": bool(fits), "action": "dropped" if dropped else "full", "reason": reason,
+                "dropped": dropped, "estimatedTokens": before, "estimatedTokensAfter": after, "limit": self.limit}
+
+    def fit(self, messages: list[dict]) -> dict | None:
+        """A trace step when the estimate was over the cap (what was dropped), else None.
+
+        The step is always ``ok``: the estimate is deliberately pessimistic, so
+        a prompt still estimated over the cap with nothing left to drop
+        (``action: "kept"``) goes to the worker anyway, whose exact count
+        decides; only its refusal with nothing left to drop ends the turn.
+        """
+        if self.limit is None or self.estimate(messages) <= self.limit:
+            return None
+        step = self._shrink(messages, "estimate", at_least_one=False)
+        return {**step, "ok": True, "action": "dropped" if step["dropped"] else "kept"}
+
+    def refused(self, messages: list[dict], reply: dict) -> dict:
+        tokens, limit = reply.get("promptTokens"), reply.get("maxPromptTokens")
+        if isinstance(limit, int) and not isinstance(limit, bool) and limit > 0:
+            self.limit = limit
+        if isinstance(tokens, int) and not isinstance(tokens, bool) and tokens > 0:
+            self.ratio = min(self.ratio, _message_chars(messages, self.specs) / tokens)
+        return self._shrink(messages, "worker_refused", at_least_one=True)
+
+
 DECK_CONTEXT_OPEN, DECK_CONTEXT_CLOSE = "<loaded_deck>", "</loaded_deck>"
 
 
@@ -369,12 +501,15 @@ async def run_turn(history: list[dict], user_message: str, model: ChatModel, *,
                    max_tool_calls: int = MAX_TOOL_CALLS, max_tokens: int | None = None,
                    enable_thinking: bool = DEFAULT_THINKING, deck: dict | None = None,
                    preload: bool = DEFAULT_PRELOAD, preload_text: str | None = None,
-                   preload_k: int = DEFAULT_PRELOAD_K, preload_chars: int = DEFAULT_PRELOAD_CHARS) -> TurnResult:
+                   preload_k: int = DEFAULT_PRELOAD_K, preload_chars: int = DEFAULT_PRELOAD_CHARS,
+                   max_prompt_tokens: int | None = None) -> TurnResult:
     """Run one user turn to an answer, an error or the tool-call cap. ``history`` is not modified.
 
     ``deck`` is the session's loaded deck (see ``deck_context``), or None.
     ``max_tokens`` defaults by thinking (``default_max_tokens``). ``preload``
     runs the automatic context step on ``preload_text`` (default: the message).
+    ``max_prompt_tokens`` is the prompt cap the guard keeps to (default: the
+    model's ``prompt_token_limit(max_tokens)`` when it has one; see ``PromptGuard``).
     """
     started = time.monotonic()
     max_tokens = default_max_tokens(enable_thinking) if max_tokens is None else max_tokens
@@ -406,20 +541,50 @@ async def run_turn(history: list[dict], user_message: str, model: ChatModel, *,
             turn.auto_calls += 1
             collect(a.sources)
             result = a.result
-            add({"kind": "tool", "auto": True, "tool": a.tool, "arguments": a.arguments,
-                 "ok": bool(result.get("ok")), "errorKind": result.get("error_kind"), "error": result.get("error"),
-                 "summary": summarize_result(result), "sources": a.sources, "link": a.link, "sent": a.sent,
-                 "contextChars": len(a.content or ""), "contextNote": a.note,
-                 "result": result.get("result") if result.get("ok") else None, "elapsedMs": a.elapsed_ms})
+            entry = {"kind": "tool", "auto": True, "tool": a.tool, "arguments": a.arguments,
+                     "ok": bool(result.get("ok")), "errorKind": result.get("error_kind"), "error": result.get("error"),
+                     "summary": summarize_result(result), "sources": a.sources, "link": a.link, "sent": a.sent,
+                     "contextChars": len(a.content or ""), "contextNote": a.note,
+                     "result": result.get("result") if result.get("ok") else None, "elapsedMs": a.elapsed_ms}
+            if a.implied is not None:  # an implied-rule step: what in the data connects it
+                entry["implied"] = a.implied
+            add(entry)
+
+    if max_prompt_tokens is None:
+        limit_of = getattr(model, "prompt_token_limit", None)
+        max_prompt_tokens = limit_of(max_tokens) if callable(limit_of) else None
+    guard = PromptGuard(max_prompt_tokens, specs)
+
+    def context_full(estimate: int | None):
+        known = f"about {estimate} tokens" if estimate else "the prompt"
+        limit = f" of a {guard.limit}-token limit" if guard.limit else ""
+        turn.stop_reason = "context_full"
+        turn.answer = (f"Stopped: the conversation no longer fits the model's context ({known}{limit}) even with "
+                       "every earlier tool result removed, so this turn has no answer. The tool results so far are "
+                       "in the trace. Try a narrower question.")
 
     while True:
+        fitted = guard.fit(messages)
+        if fitted is not None:
+            add(fitted)
         reply = await model.generate(messages, specs, max_tokens=max_tokens, enable_thinking=enable_thinking)
+        if isinstance(reply, dict) and reply.get("error") == "prompt_too_large":
+            # The worker counted the real prompt and refused it: learn its size, drop more, ask again.
+            add({"kind": "model", "ok": False, "error": "prompt_too_large", "promptTokens": reply.get("promptTokens"),
+                 "maxPromptTokens": reply.get("maxPromptTokens")})
+            refit = guard.refused(messages, reply)
+            add(refit)
+            if not refit["ok"]:
+                context_full(reply.get("promptTokens") if isinstance(reply.get("promptTokens"), int) else None)
+                break
+            continue
         if not isinstance(reply, dict) or reply.get("ok") is not True or not isinstance(reply.get("text"), str):
             error = reply.get("error", "model_error") if isinstance(reply, dict) else "model_error"
             add({"kind": "model", "ok": False, "error": error})
             turn.stop_reason, turn.error = "model_error", str(error)
             turn.answer = f"The local model failed ({error}); no answer."
             break
+        guard.observe(messages, reply)
         thinking, body = split_thinking(reply["text"])
         calls, content = parse_tool_calls(body)
         add({"kind": "model", "ok": True, "thinking": thinking, "toolCallsRequested": len(calls),
@@ -433,15 +598,21 @@ async def run_turn(history: list[dict], user_message: str, model: ChatModel, *,
                 turn.answer += "\n\n(The answer was cut off at the token limit.)"
                 turn.stop_reason = "length"
             break
-        if turn.tool_calls + len(calls) > max_tool_calls:
+        remaining = max_tool_calls - turn.tool_calls
+        if remaining <= 0:
             for call in calls:
-                add({"kind": "tool", "tool": call.name, "arguments": call.arguments, "ok": False,
-                     "errorKind": "cap_exceeded", "summary": "not run: tool-call cap reached",
-                     "sources": {k: [] for k in SOURCE_KEYS}, "elapsedMs": 0.0})
+                add(_refused_step(call))
             turn.stop_reason, turn.answer = "tool_cap", cap_message(max_tool_calls)
             break
         messages.append(_assistant_message(content, calls))
-        for call in calls:
+        for position, call in enumerate(calls):
+            if position >= remaining:
+                # Past the cap: the calls that fit ran, in order; this one is refused and the model told so.
+                add(_refused_step(call))
+                messages.append({"role": "tool", "content": json.dumps(
+                    _tool_error(call.name, "cap_exceeded", refused_message(max_tool_calls)),
+                    ensure_ascii=False, separators=(",", ":"))})
+                continue
             turn.tool_calls += 1
             tool_started = time.monotonic()
             if call.error is not None:

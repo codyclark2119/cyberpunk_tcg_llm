@@ -19,6 +19,14 @@ two questions naming the same cards in the same order get the same card steps
 whatever else they say, and nothing outside the linker and the search query
 looks at the text at all.
 
+Then, since 2026-11-13, ``get_rule`` on up to three rules the data itself
+connects to what was sent (``implied_rules``: a hit's short sub-rules, one hop
+along the "See X" links, the rules for each linked card's type). Quiz question
+09 asks whether a Unit played this turn can attack and never says "lag"; its
+search finds 9.3.1, whose sub-rule 9.3.1.1 says "Lagging Units can't attack.
+See Lag." and links to the Lag entry 11.3. These steps come last, in what is
+left of the budget, and are traced with ``implied``.
+
 Results are added in order (rules first, then cards in the order they appear)
 while they fit a character budget. A result first loses fields that carry no
 rules content (``printings``, ``text_markup``, image URLs) and, when still too
@@ -38,7 +46,8 @@ import unicodedata
 from dataclasses import dataclass, field
 from functools import lru_cache
 
-from games.cyberpunk.assistant.tools import call_tool, cards
+from games.cyberpunk.assistant.retrieval import tokens
+from games.cyberpunk.assistant.tools import _is_numbered, call_tool, cards, rule_children, rules_by_id
 
 DEFAULT_PRELOAD_K = 5
 DEFAULT_PRELOAD_CHARS = 8000
@@ -184,6 +193,87 @@ def fit_result(result: dict, budget: int) -> tuple[str | None, str | None, dict]
         omitted += 1
 
 
+# Implied rules ---------------------------------------------------------------------------
+
+ALL_IMPLIED_KINDS = ("children", "see", "card_type")
+# What ``implied_rules`` follows by default: all three. Measured on the quiz draft (2026-11-13,
+# ``scripts/eval_retrieval.py --preload``), each alone and together; all three gave the highest coverage
+# of the expected rules (0.634 against 0.611 without expansion) and none lowered recall. See the README.
+IMPLIED_KINDS = ALL_IMPLIED_KINDS
+MAX_IMPLIED = 3          # get_rule steps the expansion may add
+CHILD_MAX_CHARS = 300    # a sub-rule this short is one statement ("9.3.1.1. Lagging Units can't attack. See Lag.")
+
+
+def _card_type_rules(card_type: str) -> list[str]:
+    """The numbered rules directly under the one heading titled with ``card_type``'s plural ("Units").
+
+    The rules document has one such heading per card type (section 4, CARD TYPES); a type with no
+    heading, or more than one, adds nothing.
+    """
+    want = tokens(card_type)
+    found = [r["id"] for r in rules_by_id().values()
+             if r.get("doc", "comprehensive") == "comprehensive" and r["kind"] == "section"
+             and r.get("parent") and tokens(r["title"]) == want]
+    if len(found) != 1:
+        return []
+    return [c for c in rule_children().get(found[0], ()) if c in rules_by_id() and _is_numbered(c)]
+
+
+def implied_rules(rule_ids: list[str], card_types: list[str] = (), *,
+                  kinds: tuple[str, ...] = IMPLIED_KINDS, limit: int = MAX_IMPLIED) -> list[tuple[str, dict]]:
+    """Rules the data itself connects to ``rule_ids`` (search hits, best first), as (rule id, why).
+
+    Only relations stored in the rules rows are followed, never the question:
+
+      - ``children``: a hit's direct sub-rules of at most ``CHILD_MAX_CHARS``
+        characters, in document order (9.3.1 "Choose a friendly ready Unit ...
+        that can attack" -> 9.3.1.1 "Lagging Units can't attack. See Lag.");
+      - ``see``: one hop along the ``refs`` of a hit or of such a child -- the
+        "See Lag" links the rules text writes, which point at the glossary
+        entry (9.3.1.1 -> 11.3 "### Lag"); the target's own refs are not
+        followed, and a link to a whole section or an unnumbered heading is
+        skipped (get_rule reads numbered rules);
+      - ``card_type``: for each linked card's type, the rules under the one
+        heading named for it (Unit -> 4.6-4.8, "Units enter the field with
+        Lag").
+
+    Each hit is expanded in turn (its children, each child's refs, then its
+    own refs) before the next; card types come last. An id already among the
+    hits or already added is skipped. At most ``limit`` ids. Deterministic: the
+    order is the hits' order and the document's.
+    """
+    known = rules_by_id()
+    seen = set(rule_ids)
+    out: list[tuple[str, dict]] = []
+
+    def add(rule_id: str, why: dict) -> None:
+        # get_rule takes rule numbers only; a whole section ("See ATTACK, FIGHT, AND STEAL") is a chapter,
+        # not a rule, and an unnumbered heading has no number to ask for.
+        if (rule_id in known and rule_id not in seen and len(out) < limit and _is_numbered(rule_id)
+                and known[rule_id]["kind"] != "section"):
+            seen.add(rule_id)
+            out.append((rule_id, why))
+
+    for hit in rule_ids:
+        if hit not in known:
+            continue
+        if "children" in kinds:
+            for child in rule_children().get(hit, ()):
+                if child in known and len(known[child]["text"]) <= CHILD_MAX_CHARS:
+                    add(child, {"via": "sub-rule", "of": hit})
+                    if "see" in kinds:
+                        for ref in known[child].get("refs") or ():
+                            add(ref, {"via": "see", "of": child})
+        if "see" in kinds:
+            for ref in known[hit].get("refs") or ():
+                add(ref, {"via": "see", "of": hit})
+    if "card_type" in kinds:
+        for card_type in dict.fromkeys(card_types):
+            for rule_id in _card_type_rules(card_type):
+                add(rule_id, {"via": "card type", "of": card_type})
+    return out
+
+
 @dataclass
 class AutoStep:
     tool: str
@@ -191,6 +281,7 @@ class AutoStep:
     result: dict
     elapsed_ms: float
     link: dict | None = None
+    implied: dict | None = None  # for an implied-rule step: why the data connects it (``implied_rules``)
     content: str | None = None   # the tool message, when sent
     note: str | None = None      # what fitting changed, or why it was not sent
     sources: dict = field(default_factory=lambda: {k: [] for k in SOURCE_KEYS})
@@ -200,22 +291,13 @@ class AutoStep:
         return self.content is not None
 
 
-def _run(tool: str, arguments: dict, link: dict | None = None) -> AutoStep:
+def _run(tool: str, arguments: dict, link: dict | None = None, implied: dict | None = None) -> AutoStep:
     started = time.monotonic()
     result = call_tool(tool, arguments)
-    return AutoStep(tool, arguments, result, round((time.monotonic() - started) * 1000, 2), link)
+    return AutoStep(tool, arguments, result, round((time.monotonic() - started) * 1000, 2), link, implied)
 
 
-def preload(text: str, *, k: int = DEFAULT_PRELOAD_K, budget: int = DEFAULT_PRELOAD_CHARS) -> list[AutoStep]:
-    """Run the automatic steps for ``text`` and fit their results into ``budget`` characters, in order."""
-    steps = [_run("search_rules", {"query": text.strip()[:SEARCH_QUERY_MAX], "k": k})]
-    for link in link_cards(text):
-        info = {"span": link.span, "slugs": list(link.slugs), "ambiguous": link.ambiguous}
-        if link.ambiguous:
-            steps.append(_run("find_card", {"query": link.span}, info))
-        else:
-            steps.append(_run("get_card", {"slug": link.slugs[0]}, info))
-    remaining = budget
+def _fit(steps: list[AutoStep], remaining: int) -> int:
     for step in steps:
         if not step.result.get("ok"):
             step.note = "tool error; not sent"
@@ -225,4 +307,31 @@ def preload(text: str, *, k: int = DEFAULT_PRELOAD_K, budget: int = DEFAULT_PREL
             continue
         step.content, step.sources = content, sources
         remaining -= len(content)
-    return steps
+    return remaining
+
+
+def preload(text: str, *, k: int = DEFAULT_PRELOAD_K, budget: int = DEFAULT_PRELOAD_CHARS,
+            implied: tuple[str, ...] = IMPLIED_KINDS) -> list[AutoStep]:
+    """Run the automatic steps for ``text`` and fit their results into ``budget`` characters, in order.
+
+    After the search and the card steps, ``get_rule`` runs on each rule
+    ``implied_rules`` connects to the search hits that were sent (and, with
+    ``card_type``, to the sent cards' types), in that order, in what is left
+    of the budget. ``implied=()`` turns the expansion off.
+    """
+    steps = [_run("search_rules", {"query": text.strip()[:SEARCH_QUERY_MAX], "k": k})]
+    for link in link_cards(text):
+        info = {"span": link.span, "slugs": list(link.slugs), "ambiguous": link.ambiguous}
+        if link.ambiguous:
+            steps.append(_run("find_card", {"query": link.span}, info))
+        else:
+            steps.append(_run("get_card", {"slug": link.slugs[0]}, info))
+    remaining = _fit(steps, budget)
+    if not implied:
+        return steps
+    hits = [i for s in steps if s.tool == "search_rules" and s.sent for i in s.sources["rule_ids"]]
+    types = [s.result["result"]["card"]["card_type"] for s in steps if s.tool == "get_card" and s.sent]
+    extra = [_run("get_rule", {"rule_id": rule_id}, implied=why)
+             for rule_id, why in implied_rules(hits, types, kinds=implied)]
+    _fit(extra, remaining)
+    return steps + extra

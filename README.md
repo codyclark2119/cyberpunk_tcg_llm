@@ -372,7 +372,8 @@ On the Mac (not yet run against a real model; the Linux tests use a scripted fak
 
 ```bash
 python scripts/assistant_local.py --model models/qwen3-8b-4bit   # then open http://127.0.0.1:8767/
-# optional: --adapter <dir>, --no-thinking, --no-preload, --max-tokens N (1..16384)
+# optional: --adapter <dir>, --no-thinking, --no-preload, --max-tokens N (1..16384),
+#           --max-prompt-tokens N (default 32768), --worker-timeout SECONDS (default scales with max tokens)
 python scripts/test_assistant_loop.py    # loop, worker parts, chat route; fake model, no mlx
 ```
 
@@ -452,6 +453,88 @@ python scripts/eval_assistant.py --set data/gold/quiz_mc_2026-11-12.jsonl --mode
 # if either stops part-way, run the same command again with --resume
 ```
 
+**Step limits (2026-11-13, prompt `assistant-chat-v5`).** The 27B run
+`v4-27b-8192-c10` (32/38) lost three questions to limits rather than to the rules: Q07
+was refused as too large after four searches returned long Tournament Rules rows, Q37
+asked for two calls with one left and lost both, and Q39's 8,192-token step outlived
+the fixed 600 s timeout. So:
+
+- **Bounded tool results.** A `search_rules` passage over 1,500 characters is cut to
+  its first 1,500 and marked `truncated: true` (with `text_chars`) and a note to call
+  `get_rule`; only 16 of the 820 rules rows are that long, all Tournament Rules (the
+  median row is about 100). `get_rule` returns up to 6,000 characters per call and,
+  for a longer rule, `truncated`, `next_offset` and an `offset` argument to read on:
+  TR A.2.2 (15,266 characters) comes back in three parts that join exactly. Card and
+  errata texts are a few hundred characters and are not cut. The `offset` parameter
+  takes the prompt-and-spec overhead from 9,619 to 9,744 characters.
+- **Prompt guard.** Before each model step the loop estimates the prompt (characters
+  / 3 until the worker reports a real count, then the smaller ratio) and, over the
+  cap, replaces the oldest tool results with a short note (never the system prompt,
+  the question or the latest results), with a `kind: "context"` trace step naming
+  them. The estimate is pessimistic, so a prompt still over it with nothing left to
+  drop goes to the worker, whose exact count decides. A worker refusal
+  (`prompt_too_large`, with the real count and cap) drops more and asks again; if
+  nothing more can go the turn ends `context_full` with a clear message instead of a
+  model error.
+- **Prompt cap 32,768 tokens** (was 16,384), configurable up to 131,072 with
+  `--max-prompt-tokens` on the scorer and `assistant_local.py`. The worker also reads
+  `max_position_embeddings` from the model's own `config.json` (top level or
+  `text_config`) and keeps `max_tokens` of room: Qwen3-8B's config says 40,960, so an
+  8,192-token step may send 32,768 prompt tokens and a 16,384-token step 24,576.
+- **Per-step timeout** `max(600, 120 + 0.15 x max_tokens)` seconds: 600 at the
+  default 2,048 tokens, 1,349 at 8,192 (about 6.7 tokens/s, below the 27B's 10-12),
+  or fixed with `--worker-timeout`. The scorer header records `worker_timeout_s` only
+  when it is not 600 and `max_prompt_tokens` only when it is not 32,768, so a default
+  run's header is unchanged.
+- **Tool-call cap.** A reply asking for more calls than remain runs the ones that
+  fit, in order, and reports each refused one back as a `cap_exceeded` tool error, so
+  the model can still answer; a call asked for with none left ends the turn
+  `tool_cap` as before.
+- **Prompt `assistant-chat-v5`.** The system prompt's wording is unchanged; the
+  version moved because what the model is shown changed: the preload adds implied
+  rules (below), search passages can be cut, and `get_rule` has a new argument. A fake
+  scorer run differs from v4 only in the prompt version, the tool-spec hash, the
+  implied `get_rule` steps and cut Tournament Rules passages; its scores are identical.
+- **Implied rules in the preload.** After the search and the cards, the preload runs
+  `get_rule` on up to three rules the data connects to what was found
+  (`preload.implied_rules`): a hit's short sub-rules (at most 300 characters), one
+  hop along the "See X" links of a hit or such a sub-rule (to the glossary entry),
+  and the rules under the heading for each linked card's type (Unit: 4.6-4.8), within
+  the same 8,000-character budget, traced as auto steps with `implied`. Nothing reads
+  the question's wording. Q09 ("can you declare an attack with" a Unit played this
+  turn; key No) never says "lag": its search finds 9.3.1, and the expansion adds
+  9.3.1.1 "Lagging Units can't attack. See Lag.", the Lag entry 11.3 (its sub-rules and
+  the rules pointing at it, 4.7 "Units enter the field with Lag." among them) and 4.6.
+
+Preload context on the 36 scored questions (`scripts/eval_retrieval.py --preload`,
+lexical, Linux, 2026-11-13; Q09's draft now lists the current Lag ids 4.7, 5.6.4,
+9.3.1.1, 11.3.1, 11.3.1.1 and the Adrenaline exception 11.27.2). The search ranking
+itself is unchanged (`lexical-bm25-rules` R@1/5/10 0.528/0.778/0.833, the same report
+bytes as before the change apart from the draft edit):
+
+| expansion | recall | coverage | chars sent |
+| --- | --- | --- | --- |
+| none (before) | 0.778 | 0.611 | 4,402 |
+| "See X" links only | 0.778 | 0.611 | 4,851 |
+| short sub-rules only | 0.778 | 0.616 | 5,329 |
+| card type only | 0.778 | 0.634 | 5,122 |
+| sub-rules + "See X" | 0.778 | 0.620 | 5,689 |
+| all three (default) | 0.778 | 0.634 | 5,996 |
+
+Recall cannot move on this draft (every question the expansion helps already had a
+parent-level match); coverage is the measure. No variant lowered either. On Q09 the
+search alone matches only 9.3.1.1 (through its parent 9.3.1); with the default the
+context holds 9.3.1.1, 11.3.1 and 11.3.1.1. The hybrid ranking was not measured (no
+embedding index on Linux).
+
+The reruns on the Mac (not yet run):
+
+```bash
+python scripts/eval_assistant.py --set data/gold/quiz_mc_2026-11-12.jsonl --model models/qwen3.8-27b-8bit --name v5-27b-8192-c10 --max-tokens 8192 --max-tool-calls 10
+python scripts/eval_assistant.py --set data/gold/quiz_mc_2026-11-12.jsonl --model models/qwen3-8b-4bit --name v5-8b-4096 --max-tokens 4096
+# if either stops part-way, run the same command again with --resume
+```
+
 ### Rules retrieval
 
 `search_rules` ranks the 733 comprehensive rules (2026-10-29 snapshot) and the 87 Tournament Rules rows
@@ -518,6 +601,7 @@ switchable so the Mac comparison can isolate it:
   (printings dropped, long passage lists shortened, a card never cut). They open the
   trace with `auto: true` and do not count against the 6-call cap. The scorer
   preloads the question and its choices, the text `eval_retrieval.py` measures.
+  Since prompt `assistant-chat-v5` it also adds implied rules (see Step limits).
 - **Thinking on** by default, with 2,048 tokens per model step (1,024 without).
 
 The A/B on the Mac (not yet run), each against the same set and snapshot:

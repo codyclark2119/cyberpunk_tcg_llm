@@ -28,6 +28,14 @@ Design rules, each one load-bearing:
     ``doc`` filter names one. Keyword glossary lookups (``term_rules``) read
     the comprehensive rules only.
   - Nothing here dispatches on a card's name, and nothing assumes a format.
+  - Results stay a bounded size (``ROW_TEXT_CHARS``, ``GET_RULE_TEXT_CHARS``):
+    a ``search_rules`` passage longer than 1,500 characters is cut to its first
+    1,500 and marked ``truncated`` with a note to call ``get_rule``, which
+    returns up to 6,000 characters per call and an ``offset`` to continue from,
+    so a 15,000-character Tournament Rules row is read in three parts that join
+    back exactly. Before 2026-11-13 one such row filled about 4,000 tokens of a
+    turn's prompt. Card and errata texts (at most a few hundred characters in
+    the snapshot) are not cut.
 
 ``TOOLS`` is the registry: name, description, JSON-schema parameters and the
 callable. The deck tools live in ``decks.py`` and join it at the end of this
@@ -64,6 +72,17 @@ EMBEDDING_METHOD = "embedding"          # the rules index alone (measured by eva
 HYBRID_METHOD = "hybrid"                # lexical + embedding, reciprocal rank fusion
 LEGACY_CHUNK_METHOD = "lexical-bm25-chunks"  # the pre-2026-11-12 chunk BM25, kept as the measured baseline
 MAX_FIND_RESULTS = 25
+# Per-row text budget in list results (search_rules passages). 1,500 characters is above all but 16 of the 820
+# rules rows (the median is about 100) and every one of the 16 is a Tournament Rules row (TR A.2.2 is 15,266
+# characters, TR A.2.1 9,411); five capped passages stay under about 2,000 tokens. A cut row says so
+# (``truncated``) and get_rule reads it whole, in parts.
+ROW_TEXT_CHARS = 1500
+# get_rule returns at most this much of one rule's text per call (every comprehensive rule fits; the two
+# longest Tournament Rules rows take two and three calls) and says where to continue (``next_offset``).
+GET_RULE_TEXT_CHARS = 6000
+MAX_TEXT_OFFSET = 100000
+TRUNCATED_ROW_NOTE = ("Passages marked truncated show only their first {limit} characters; call get_rule with the "
+                      "rule number for the full text.")
 SLUG_PATTERN = r"^[a-z0-9][a-z0-9-]{0,159}$"
 # A comprehensive rule number (9.3.2) or a Tournament Rules id (TR 3.4.2, TR A.1.2).
 RULE_NUMBER_PATTERN = r"^(?:\d+(?:\.\d+)*|TR (?:[A-Z]|\d+)(?:\.\d+)*)\.?$"
@@ -348,6 +367,16 @@ def _ancestors(rule: dict) -> list[dict]:
     return list(reversed(chain))
 
 
+def text_part(text: str, offset: int, limit: int) -> dict:
+    """``text[offset:offset + limit]`` and, when more remains, where to continue. Parts join back exactly."""
+    part = {"text": text[offset:offset + limit]}
+    if offset or offset + limit < len(text):
+        part.update({"offset": offset, "text_chars": len(text)})
+    if offset + limit < len(text):
+        part.update({"truncated": True, "next_offset": offset + limit})
+    return part
+
+
 def _get_rule(args: dict):
     rule_id = args["rule_id"].rstrip(".")
     rule = rules_by_id().get(rule_id)
@@ -358,13 +387,21 @@ def _get_rule(args: dict):
         where = (f"the {TOURNAMENT_RULES_VERSION} Tournament Rules" if rule_id.startswith("TR ")
                  else f"the {RULES_VERSION} rules")
         raise ToolError("not_found", f"Rule {rule_id} is not in {where} snapshot.", nearest_existing=nearest)
+    offset = args.get("offset", 0)
+    if offset and offset >= len(rule["text"]):
+        raise ToolError("invalid_arguments", f"offset {offset} is past the end of rule {rule_id} "
+                        f"({len(rule['text'])} characters).")
+    part = text_part(rule["text"], offset, GET_RULE_TEXT_CHARS)
     refs = [_rule_brief(ref) for ref in rule.get("refs") or ()]
     children = [_rule_brief(c) for c in rule_children().get(rule_id, ())]
     referenced_by = [_rule_brief(r) for r in rule_referenced_by().get(rule_id, ())]
     result = {"rule": {"id": rule_id, "doc": rule.get("doc", "comprehensive"), "kind": rule["kind"],
-                       "title": rule["title"], "text": rule["text"], "section": rule["section"],
+                       "title": rule["title"], **part, "section": rule["section"],
                        "depth": rule.get("depth")},
               "path": _ancestors(rule), "children": children, "references": refs, "referenced_by": referenced_by}
+    if part.get("truncated"):
+        result["note"] = (f"Rule {rule_id} is {part['text_chars']} characters; this is characters {offset} to "
+                          f"{part['next_offset']}. Call get_rule again with offset {part['next_offset']} for more.")
     used = [rule_id] + [c["id"] for c in children] + [r["id"] for r in refs]
     return result, _sources(rule_ids=used)
 
@@ -546,7 +583,13 @@ def _search_rules(args: dict):
     if hits is None:
         method, hits = LEXICAL_METHOD, lexical_search(query, k, doc)
     results = [_passage(h) for h in hits]
+    for passage in results:
+        if len(passage["text"]) > ROW_TEXT_CHARS:
+            passage.update({"text": passage["text"][:ROW_TEXT_CHARS], "truncated": True,
+                            "text_chars": len(passage["text"])})
     result = {"query": query, "method": method, "k": k, "results": results}
+    if any(p.get("truncated") for p in results):
+        result["note"] = TRUNCATED_ROW_NOTE.format(limit=ROW_TEXT_CHARS)
     if doc is not None:
         result["doc"] = doc
     if fallback_reason:
@@ -688,7 +731,9 @@ def _build_tools() -> dict[str, Tool]:
              "Use to read one rule by number (e.g. 9.3.2, or TR 3.4.2 for the Tournament Rules) with its "
              "parents, sub-rules and cross-references.",
              _object({"rule_id": {"type": "string", "pattern": RULE_NUMBER_PATTERN, "maxLength": 20,
-                                  "description": "Rule number, e.g. 9.3.2 or TR A.1.2."}}, ["rule_id"]),
+                                  "description": "Rule number, e.g. 9.3.2 or TR A.1.2."},
+                      "offset": _int("Continue a long rule from its next_offset.", 0, MAX_TEXT_OFFSET)},
+                     ["rule_id"]),
              _get_rule),
         Tool("search_rules",
              "Use for any rules or tournament question: returns the most relevant passages (comprehensive "

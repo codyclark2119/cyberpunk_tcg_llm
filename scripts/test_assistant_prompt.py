@@ -94,6 +94,11 @@ def auto_steps(result) -> list[dict]:
     return [s for s in result.trace if s.get("auto")]
 
 
+def linked_steps(result) -> list[dict]:
+    """The automatic search and card steps, without the implied-rule steps that follow them."""
+    return [s for s in auto_steps(result) if "implied" not in s]
+
+
 # Tool specs and the prompt budget ----------------------------------------------------------
 
 
@@ -105,6 +110,8 @@ def test_lean_specs_keep_every_name_and_schema():
     old_pattern = before["get_rule"]["properties"]["rule_id"]["pattern"]
     before["get_rule"]["properties"]["rule_id"]["pattern"] = tools.RULE_NUMBER_PATTERN
     before["search_rules"]["properties"]["doc"] = {"type": "string", "enum": ["comprehensive", "tournament"]}
+    # And one since (2026-11-13, prompt v5): get_rule gains an optional ``offset`` to read a long rule in parts.
+    before["get_rule"]["properties"]["offset"] = {"type": "integer", "minimum": 0, "maximum": 100000}
     for rule_id in ("9", "9.3.2", "11.24.", "3.18.1.2.2.1"):
         assert re.search(old_pattern, rule_id) and re.search(tools.RULE_NUMBER_PATTERN, rule_id), rule_id
     specs = tools.tool_specs()
@@ -181,7 +188,7 @@ def test_system_prompt_v4_warns_from_the_snapshot_wording():
                    # v4: policy is answered from the Tournament Rules and cited; what neither covers is not covered.
                    "Tournament procedure, penalties, deck registration, event policy: use the Tournament Rules "
                    "(TR 3.4.2), cite them. Anything in neither is not covered.",
-                   "Snapshot 2026-10-29, TR 2026-10-28. Prompt assistant-chat-v4."):
+                   "Snapshot 2026-10-29, TR 2026-10-28. Prompt assistant-chat-v5."):
         assert needle in SYSTEM_PROMPT, needle
     assert "not in the snapshot" not in SYSTEM_PROMPT, "v3's 'policy is not in the snapshot' is gone"
     assert "rule:TR 3.4.2" in {d["doc_id"] for d in tools.rule_docs()}, "the prompt's example id exists"
@@ -194,29 +201,36 @@ def test_system_prompt_v4_warns_from_the_snapshot_wording():
 def test_preload_searches_rules_and_links_named_cards():
     with CountRuns() as counter:
         result, model = turn("What happens when Sketchy Ripper attacks V, Corporate Exile?")
-    steps = auto_steps(result)
+    steps = linked_steps(result)
+    implied = [s for s in auto_steps(result) if "implied" in s]
+    assert auto_steps(result) == steps + implied, "implied-rule steps come after the search and the cards"
+    assert all(s["tool"] == "get_rule" for s in implied)
     assert [(s["tool"], s["arguments"]) for s in steps] == [
         ("search_rules", {"query": "What happens when Sketchy Ripper attacks V, Corporate Exile?", "k": 5}),
         ("get_card", {"slug": "sketchy-ripper"}), ("get_card", {"slug": "v-corporate-exile"})]
-    assert counter.runs == ["search_rules", "get_card", "get_card"], "the links resolved without find_card"
+    assert counter.runs == ["search_rules", "get_card", "get_card"] + ["get_rule"] * len(implied), \
+        "the links resolved without find_card"
     assert steps[1]["link"] == {"span": "Sketchy Ripper", "slugs": ["sketchy-ripper"], "ambiguous": False}
     assert steps[2]["link"]["span"] == "V, Corporate Exile", "longest match first: not the bare V"
-    assert all(s["sent"] and s["ok"] for s in steps) and result.auto_calls == 3 and result.tool_calls == 0
-    # What the model saw first: system, question, one assistant tool-call message and the three results.
+    assert all(s["sent"] and s["ok"] for s in steps) and result.tool_calls == 0
+    assert result.auto_calls == 3 + len(implied)
+    # What the model saw first: system, question, one assistant tool-call message and the results sent.
     first = model.seen[0]
-    assert [m["role"] for m in first] == ["system", "user", "assistant", "tool", "tool", "tool"]
-    assert [c["function"]["name"] for c in first[2]["tool_calls"]] == ["search_rules", "get_card", "get_card"]
+    sent_implied = sum(1 for s in implied if s["sent"])
+    assert [m["role"] for m in first] == ["system", "user", "assistant"] + ["tool"] * (3 + sent_implied)
+    assert [c["function"]["name"] for c in first[2]["tool_calls"]] == ["search_rules", "get_card",
+                                                                       "get_card"] + ["get_rule"] * sent_implied
     sent = [json.loads(m["content"]) for m in first[3:]]
     assert sent[1]["result"]["card"]["slug"] == "sketchy-ripper" and "printings" not in sent[1]["result"]["card"]
     assert sent[1]["result"]["text_with_errata"] == tools.get_card("sketchy-ripper")["result"]["text_with_errata"]
     assert {"sketchy-ripper", "v-corporate-exile"} <= set(result.sources["card_slugs"]) and result.sources["rule_ids"]
-    assert result.to_dict()["preload"] is True and result.to_dict()["autoToolCalls"] == 3
+    assert result.to_dict()["preload"] is True and result.to_dict()["autoToolCalls"] == 3 + len(implied)
 
 
 def test_a_bare_shared_name_goes_through_find_card_never_a_guess():
     with CountRuns() as counter:
         result, model = turn("Can V attack the turn it is played?")
-    steps = auto_steps(result)
+    steps = linked_steps(result)
     assert [s["tool"] for s in steps] == ["search_rules", "find_card"] and "get_card" not in counter.runs
     found = steps[1]
     assert found["arguments"] == {"query": "V"} and found["link"]["ambiguous"] is True
@@ -239,7 +253,7 @@ def test_auto_steps_come_first_and_respect_the_budget():
     full, _ = turn(question)
     steps = auto_steps(full)
     assert full.trace[:len(steps)] == steps and [s["step"] for s in steps] == list(range(1, len(steps) + 1))
-    assert len(steps) == 5 and sum(s["contextChars"] for s in steps) <= DEFAULT_PRELOAD_CHARS
+    assert len(linked_steps(full)) == 5 and sum(s["contextChars"] for s in steps) <= DEFAULT_PRELOAD_CHARS
     for budget in (5000, 2500, 900):
         result, model = turn(question, preload_chars=budget)
         sent = [m["content"] for m in model.seen[0] if m["role"] == "tool"]
@@ -249,7 +263,7 @@ def test_auto_steps_come_first_and_respect_the_budget():
             json.loads(content)  # never cut mid-JSON
         unsent = [s for s in auto_steps(result) if not s["sent"]]
         assert all(s["contextChars"] == 0 and "not sent" in s["contextNote"] for s in unsent)
-        assert len(auto_steps(result)) == 5, "every step still runs and shows in the trace"
+        assert len(linked_steps(result)) == 5, "every step still runs and shows in the trace"
         for step in auto_steps(result):
             if not step["sent"]:
                 assert not any(step["sources"].values()), "an unsent result is not a source"
@@ -290,7 +304,7 @@ def test_card_steps_depend_only_on_the_card_names():
     c, _ = turn("SKETCHY RIPPER vs. V: CORPORATE EXILE — who wins a steal?")
 
     def cards_only(result):
-        return [{k: v for k, v in s.items() if k not in ("elapsedMs", "link")} for s in auto_steps(result)
+        return [{k: v for k, v in s.items() if k not in ("elapsedMs", "link")} for s in linked_steps(result)
                 if s["tool"] != "search_rules"]
     assert cards_only(a) == cards_only(b) == cards_only(c) and len(cards_only(a)) == 2
     # The search step differs only in its query, which is the text itself.
@@ -317,14 +331,106 @@ def test_no_code_path_reads_the_question_beyond_the_linker():
                     "auto = run_preload(user_message if preload_text is None else preload_text, k=preload_k,"], uses
     preload_source = (REPO_ROOT / "games/cyberpunk/assistant/preload.py").read_text(encoding="utf-8")
     body = preload_source[preload_source.index("def preload("):]
+    body = body[body.index('"""', body.index('"""') + 3) + 3:]  # the code after the docstring
     # The text reaches only the search query and the linker; nothing compares it to a phrase.
-    code = [line.strip() for line in body.splitlines()[2:] if re.search(r"\btext\b", line)]
+    code = [line.strip() for line in body.splitlines() if re.search(r"\btext\b", line)]
     assert code == ['steps = [_run("search_rules", {"query": text.strip()[:SEARCH_QUERY_MAX], "k": k})]',
                     "for link in link_cards(text):"], code
     assert not re.search(r"""(text|question)\s*(==|\.startswith|\.endswith)|["'][a-z ]+["']\s+in\s+text""",
                          preload_source)
     # A step's tool and arguments come from the linker's slugs and spans, never from a word list.
     assert preload_module.link_cards.__module__ == "games.cyberpunk.assistant.preload"
+
+
+# Implied rules ------------------------------------------------------------------------------
+
+Q09 = ("You played a friendly Jacked-in Voodoo Boy in the field area this turn, then played a Pyramid Song. Can you "
+       "then declare an attack with the friendly Jacked-in Voodoo Boy?\nA. Yes\nB. No")
+
+
+def test_implied_rules_bring_the_lag_rules_for_an_attack_question_that_never_says_lag():
+    # Cody's quiz 09 (key B): Units enter with Lag (4.7) and lagging Units can't attack (9.3.1.1, 11.3.1.1). The
+    # question never says "lag"; the search finds the attack declaration rule 9.3.1, and the data does the rest.
+    steps = preload_module.preload(Q09)
+    search = steps[0]
+    assert search.tool == "search_rules" and search.sources["rule_ids"][0] == "9.3.1"
+    assert not any("11.3" in i for i in search.sources["rule_ids"]), "the search alone does not reach Lag"
+    implied = [s for s in steps if s.implied is not None]
+    assert [(s.tool, s.arguments, s.implied) for s in implied] == [
+        ("get_rule", {"rule_id": "9.3.1.1"}, {"via": "sub-rule", "of": "9.3.1"}),
+        ("get_rule", {"rule_id": "11.3"}, {"via": "see", "of": "9.3.1.1"}),
+        ("get_rule", {"rule_id": "4.6"}, {"via": "card type", "of": "Unit"})]
+    assert all(s.sent for s in implied) and sum(len(s.content) for s in steps if s.sent) <= DEFAULT_PRELOAD_CHARS
+    lag = json.loads(implied[1].content)["result"]
+    assert lag["rule"]["text"] == "11.3. ### Lag" and "11.3.1" in implied[1].sources["rule_ids"]
+    assert {"9.3.1.1", "4.7"} <= {r["id"] for r in lag["referenced_by"]}, "who points at Lag, with their titles"
+    assert json.loads(implied[0].content)["result"]["rule"]["text"].startswith("9.3.1.1. Lagging Units can")
+    # The same steps reach the model through the loop, after the search and the cards, marked as implied.
+    result, model = turn(Q09)
+    traced = [s for s in auto_steps(result) if "implied" in s]
+    assert [s["arguments"] for s in traced] == [s.arguments for s in implied]
+    assert [s["implied"] for s in traced] == [s.implied for s in implied]
+    assert {"9.3.1.1", "11.3"} <= set(result.sources["rule_ids"])
+    assert [c["function"]["name"] for c in model.seen[0][2]["tool_calls"]][-3:] == ["get_rule"] * 3
+
+
+def test_implied_rules_follow_only_data_relations():
+    implied_rules = preload_module.implied_rules
+    # A pure function of rule ids and card types: no text goes in, so the same hits give the same rules.
+    assert implied_rules(["9.3.1"], []) == implied_rules(["9.3.1"], []) == [
+        ("9.3.1.1", {"via": "sub-rule", "of": "9.3.1"}), ("11.3", {"via": "see", "of": "9.3.1.1"})]
+    assert implied_rules(["9.3.1"], [], kinds=("children",)) == [("9.3.1.1", {"via": "sub-rule", "of": "9.3.1"})]
+    assert implied_rules(["9.3.1"], [], kinds=("see",)) == [], "9.3.1 itself links nowhere"
+    assert implied_rules(["4.7"], [], kinds=("see",)) == [("11.3", {"via": "see", "of": "4.7"})]
+    assert implied_rules(["9.3.1"], [], kinds=()) == []
+    # A hit that is already there is not added again; nor is a whole section or an unnumbered heading.
+    assert implied_rules(["9.3.1", "9.3.1.1", "11.3"], [], kinds=("see",)) == []
+    assert implied_rules(["9.3.1", "9.3.1.1"], [], kinds=("children", "see")) == [
+        ("11.3", {"via": "see", "of": "9.3.1.1"})]
+    assert all(tools.rules_by_id()[i]["kind"] != "section" and re.fullmatch(r"[\d.]+|TR .+", i)
+               for i, _ in implied_rules(["9.6", "9.3"], [], kinds=("see",), limit=20))
+    assert "9" not in [i for i, _ in implied_rules(["9.6"], [], kinds=("see",))], "See ATTACK, FIGHT, AND STEAL"
+    # Only short sub-rules: a child over CHILD_MAX_CHARS is a rule of its own, not a clarification.
+    long_child = next(c for r in tools.rules() for c in tools.rule_children().get(r["id"], ())
+                      if re.fullmatch(r"[\d.]+", c) and re.fullmatch(r"[\d.]+", r["id"])
+                      and len(tools.rules_by_id()[c]["text"]) > preload_module.CHILD_MAX_CHARS)
+    parent = tools.rules_by_id()[long_child]["parent"]
+    assert long_child not in [i for i, _ in implied_rules([parent], [], kinds=("children",), limit=50)]
+    # Card types: the rules under the heading named for the type, and nothing for a type with no heading.
+    assert [i for i, _ in implied_rules([], ["Unit"], kinds=("card_type",), limit=10)] == ["4.6", "4.7", "4.8"]
+    assert [i for i, _ in implied_rules([], ["Program"], kinds=("card_type",), limit=10)] == ["4.13", "4.14"]
+    assert implied_rules([], ["Spaceship"], kinds=("card_type",)) == []
+    assert len(implied_rules(["9.3.1", "4.7"], ["Unit", "Gear"], limit=2)) == 2
+    # Two wordings that link the same card: the card's part of the expansion is the same.
+    a = preload_module.preload("Does the Jacked-In Voodoo Boy have to wait a turn?", implied=("card_type",))
+    b = preload_module.preload("jacked-in voodoo boy: what can it do right after I play it", implied=("card_type",))
+    expansion = [[(s.arguments, s.implied) for s in steps if s.implied is not None] for steps in (a, b)]
+    assert expansion[0] == expansion[1] == [({"rule_id": i}, {"via": "card type", "of": "Unit"})
+                                            for i in ("4.6", "4.7", "4.8")]
+    # With the default kinds, each wording's expansion is exactly implied_rules of what was sent: hits and types.
+    for text in ("Does the Jacked-In Voodoo Boy have to wait a turn?", Q09):
+        steps = preload_module.preload(text)
+        hits = [i for s in steps if s.tool == "search_rules" and s.sent for i in s.sources["rule_ids"]]
+        types = [s.result["result"]["card"]["card_type"] for s in steps if s.tool == "get_card" and s.sent]
+        assert [(s.arguments["rule_id"], s.implied) for s in steps if s.implied is not None] == implied_rules(hits, types)
+    # A type named by two headings is ambiguous and adds nothing (fail closed), whatever the snapshot has now.
+    rows = dict(tools.rules_by_id())
+    rows["rule-duplicate"] = {**rows["rule-1cd8bea3-a2e2-52ee-b00a-7e4dfe3c5824"], "id": "rule-duplicate"}
+    saved = preload_module.rules_by_id
+    preload_module.rules_by_id = lambda: rows
+    try:
+        assert implied_rules([], ["Unit"], kinds=("card_type",)) == []
+        assert implied_rules([], ["Gear"], kinds=("card_type",)) != []
+    finally:
+        preload_module.rules_by_id = saved
+    # Only what was sent is expanded: a search that did not fit implies nothing.
+    starved = preload_module.preload(Q09, budget=50)
+    assert not any(s.sent for s in starved) and not [s for s in starved if s.implied is not None]
+    # Off means off; and a budget too small for them sends none (they run and are traced, never sent).
+    assert not [s for s in preload_module.preload(Q09, implied=()) if s.implied is not None]
+    tight = preload_module.preload(Q09, budget=4700)
+    assert [s.sent for s in tight if s.implied is not None] and not all(s.sent for s in tight if s.implied is not None)
+    assert sum(len(s.content) for s in tight if s.sent) <= 4700
 
 
 # Thinking -----------------------------------------------------------------------------------

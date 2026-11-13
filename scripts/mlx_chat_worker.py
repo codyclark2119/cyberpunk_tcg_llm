@@ -21,6 +21,16 @@ tokens on quiz questions and an 8192 run was refused. 16384 leaves room to try
 8192 and one doubling past it on the Mac's memory; it is a ceiling, not a
 default, so the defaults (1024 here, 1024/2048 in the loop) are unchanged.
 
+The prompt cap (``--max-prompt-tokens``) is 32,768 tokens by default since
+2026-11-13 (16,384 before; a 27B quiz question was refused at that cap after
+four searches) and may be set up to 131,072. 32,768 is Qwen3-8B's native
+context (its ``config.json`` says ``max_position_embeddings`` 40,960, the
+32,768 native plus room for output); the worker reads that field from the
+model's own ``config.json`` and also keeps ``max_tokens`` of room for the
+answer, so on the 8B an 8,192-token step may send at most 32,768 prompt tokens
+and a 16,384-token step 24,576. A refusal names the real ``promptTokens`` and
+the ``maxPromptTokens`` it was held to.
+
 Rendering and request checks are pure functions so they are tested on Linux
 without mlx (scripts/test_assistant_loop.py); only ``main`` imports mlx.
 """
@@ -40,11 +50,12 @@ from pathlib import Path
 REPO_ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(REPO_ROOT))
 
-from harness.core.chat_worker import CHAT_PROTOCOL, MAX_LINE_BYTES
+from harness.core.chat_worker import (CHAT_PROTOCOL, DEFAULT_MAX_PROMPT_TOKENS, MAX_LINE_BYTES,
+                                      MAX_PROMPT_TOKENS_LIMIT, context_length, prompt_cap)
 
 DEFAULT_MAX_TOKENS = 1024
 MAX_TOKENS_LIMIT = 16384  # same as loop.MAX_TOKENS_LIMIT (see the docstring)
-MAX_PROMPT_TOKENS = 16384
+MAX_PROMPT_TOKENS = DEFAULT_MAX_PROMPT_TOKENS  # 32768 since 2026-11-13 (see the docstring)
 ROLES = frozenset({"system", "user", "assistant", "tool"})
 
 
@@ -89,13 +100,18 @@ def render_prompt(tokenizer, messages: list, tools: list, *, enable_thinking: bo
 
 
 def run_generation(model, tokenizer, request: dict, *, stream_fn, sampler,
-                   max_prompt_tokens: int = MAX_PROMPT_TOKENS) -> dict:
-    """Generate for one checked request; the fields below are the reply minus id and protocol."""
+                   max_prompt_tokens: int = MAX_PROMPT_TOKENS, context: int | None = None) -> dict:
+    """Generate for one checked request; the fields below are the reply minus id and protocol.
+
+    A prompt over ``prompt_cap(max_prompt_tokens, context, max_tokens)`` is refused with its real
+    token count and the cap, so the loop can drop earlier tool results and ask again.
+    """
     started = time.monotonic()
     tokens = render_prompt(tokenizer, request["messages"], request["tools"],
                            enable_thinking=request["enable_thinking"])
-    if len(tokens) > max_prompt_tokens:
-        return {"ok": False, "error": "prompt_too_large", "promptTokens": len(tokens)}
+    cap = prompt_cap(max_prompt_tokens, context, request["max_tokens"])
+    if len(tokens) > cap:
+        return {"ok": False, "error": "prompt_too_large", "promptTokens": len(tokens), "maxPromptTokens": cap}
     text, last = "", None
     for part in stream_fn(model, tokenizer, prompt=tokens, sampler=sampler, max_tokens=request["max_tokens"]):
         text += part.text
@@ -104,6 +120,15 @@ def run_generation(model, tokenizer, request: dict, *, stream_fn, sampler,
     return {"ok": True, "text": text, "finishReason": finish or "none", "promptTokens": len(tokens),
             "generationTokens": last.generation_tokens if last is not None else 0,
             "elapsedMs": round((time.monotonic() - started) * 1000, 2)}
+
+
+def read_context_length(model_dir: Path) -> int | None:
+    """``context_length`` of ``model_dir/config.json``; None when it is missing or unreadable."""
+    try:
+        config = json.loads((Path(model_dir) / "config.json").read_text(encoding="utf-8"))
+    except (OSError, ValueError):
+        return None
+    return context_length(config) if isinstance(config, dict) else None
 
 
 def handle_line(line: bytes, generate) -> tuple[dict | None, bool]:
@@ -136,7 +161,7 @@ def main():
         parser.error("MLX chat requires native arm64 Python on Apple Silicon macOS.")
     if not args.model.is_dir() or (args.adapter is not None and not args.adapter.is_dir()):
         parser.error("Download the model and any adapter locally before starting the worker.")
-    if not 1 <= args.max_prompt_tokens <= 32768:
+    if not 1 <= args.max_prompt_tokens <= MAX_PROMPT_TOKENS_LIMIT:
         parser.error("Invalid prompt token limit.")
 
     # Must precede MLX/Hugging Face imports, including when launched directly.
@@ -160,9 +185,11 @@ def main():
                                     tokenizer_config={"trust_remote_code": False, "local_files_only": True})
             sampler = make_sampler(temp=0)
 
+            context = read_context_length(args.model)
+
             def generate(request):
                 return run_generation(model, tokenizer, request, stream_fn=stream_generate, sampler=sampler,
-                                      max_prompt_tokens=args.max_prompt_tokens)
+                                      max_prompt_tokens=args.max_prompt_tokens, context=context)
 
             # Exercise the template (with a tool spec) and the GPU before the ready handshake.
             generate({"messages": [{"role": "user", "content": "Say ok."}], "max_tokens": 2,

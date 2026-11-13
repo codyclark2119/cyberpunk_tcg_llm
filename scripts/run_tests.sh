@@ -68,13 +68,13 @@ py-training-records  | quick | "$PY" scripts/test_training_records.py         | 
 py-validation-console| quick | "$PY" scripts/test_validation_console.py        | line:PASS validation console: 8/8
 py-play-app          | quick | "$PY" scripts/test_play_app.py                  | line:PASS local play UI: 13/13
 py-strength-eval     | quick | "$PY" scripts/test_strength_eval.py             | line:PASS strength eval: 10/10
-py-assistant-tools   | quick | "$PY" scripts/test_assistant_tools.py           | line:PASS assistant tools: 16/16
+py-assistant-tools   | quick | "$PY" scripts/test_assistant_tools.py           | line:PASS assistant tools: 17/17
 py-assistant-decks   | quick | "$PY" scripts/test_assistant_deck_tools.py      | line:PASS assistant deck tools: 12/12
-py-assistant-loop    | quick | "$PY" scripts/test_assistant_loop.py            | line:PASS assistant loop: 22/22
+py-assistant-loop    | quick | "$PY" scripts/test_assistant_loop.py            | line:PASS assistant loop: 29/29
 py-assistant-ui      | quick | "$PY" scripts/test_assistant_ui.py              | line:PASS assistant UI: 13/13
-py-assistant-eval    | quick | "$PY" scripts/test_assistant_eval.py            | line:PASS assistant eval: 20/20
-py-assistant-retrieval | quick | "$PY" scripts/test_assistant_retrieval.py    | line:PASS assistant retrieval: 14/14
-py-assistant-prompt  | quick | "$PY" scripts/test_assistant_prompt.py          | line:PASS assistant prompt: 10/10
+py-assistant-eval    | quick | "$PY" scripts/test_assistant_eval.py            | line:PASS assistant eval: 21/21
+py-assistant-retrieval | quick | "$PY" scripts/test_assistant_retrieval.py    | line:PASS assistant retrieval: 15/15
+py-assistant-prompt  | quick | "$PY" scripts/test_assistant_prompt.py          | line:PASS assistant prompt: 12/12
 deck-rules           | full  | "$PY" scripts/check_deck_rules.py --negative-control | contains:agree:    272/272;;contains:reproduce budget AND usage exactly: 272/272;;absent:<-- LOOK
 integration          | full  | prepare_integration && npm run test:integration | tap:3
 '

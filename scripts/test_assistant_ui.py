@@ -226,15 +226,18 @@ def test_preload_toggle_reaches_the_route_and_auto_steps_show_distinctly():
     assert bad.status_code == 400 and bad.json()["error_kind"] == "invalid_arguments"
     assert foreign.status_code == 403 and len(model.seen) == 2
     auto = [s for s in on["trace"] if s.get("auto")]
-    assert on["preload"] is True and on["autoToolCalls"] == 2 and [s["tool"] for s in auto] == [
-        "search_rules", "get_card"]
-    assert on["trace"][:2] == auto and [m["role"] for m in model.seen[0]][:4] == ["system", "user", "assistant",
+    implied = [s for s in auto if "implied" in s]
+    assert on["preload"] is True and on["autoToolCalls"] == len(auto) and [s["tool"] for s in auto] == [
+        "search_rules", "get_card"] + ["get_rule"] * len(implied)
+    assert implied and on["trace"][:len(auto)] == auto and [m["role"] for m in model.seen[0]][:4] == ["system", "user", "assistant",
                                                                                    "tool"]
     assert off["preload"] is False and off["autoToolCalls"] == 0 and [m["role"] for m in model.seen[1]] == [
         "system", "user"]
     lines = run_pure("input.map(stepLine)", auto)
     assert lines[1].startswith("get_card · ok · linked \u201cSketchy Ripper\u201d · sent ") and " chars · " in lines[1]
     assert lines[0].startswith("search_rules · ok · sent "), lines
+    # An implied-rule step says what in the data connects it (a Unit card's type: the Units rules).
+    assert any(line.startswith("get_rule · ok · implied (card type of Unit) · ") for line in lines[2:]), lines
     script = page_script()
     assert 'preload: $("preloadToggle").checked' in script and '$("preloadToggle").checked = m.preloadDefault' in script
     assert '(step.auto ? " auto" : "")' in script and "details.step.auto" in ASSISTANT_HTML
@@ -300,7 +303,7 @@ def test_deck_context_is_structured_and_absent_without_a_deck():
     messages = build_messages([{"role": "user", "content": "earlier"}], "q", deck)
     assert [m["role"] for m in messages] == ["system", "user", "user"] and messages[-1]["content"] == "q"
     assert loaded_deck_from(messages) == deck and "deck argument" in messages[0]["content"]
-    assert ASSISTANT_PROMPT_VERSION == "assistant-chat-v4"
+    assert ASSISTANT_PROMPT_VERSION == "assistant-chat-v5"
 
 
 # Trace and sources -------------------------------------------------------------------------
@@ -322,6 +325,17 @@ def test_trace_marks_the_cap_and_the_token_limit():
     lines = run_pure("input.trace.map(stepLine)", capped)
     assert lines[0].startswith("model · ok · ? tokens · asked for 1 tool call(s)")
     assert lines[-1] == "find_card · cap_exceeded · not run: tool-call cap reached · 0 ms"
+    # The prompt guard's steps and stop show as such, never as a tool.
+    full = {"stopReason": "context_full", "trace": [
+        {"kind": "context", "ok": True, "action": "dropped", "dropped": [{"message": 3}, {"message": 4}],
+         "estimatedTokens": 900, "estimatedTokensAfter": 700, "limit": 800},
+        {"kind": "context", "ok": True, "action": "kept", "dropped": [], "estimatedTokens": 900, "limit": 800},
+        {"kind": "context", "ok": False, "action": "full", "dropped": [], "estimatedTokens": 900, "limit": 800}]}
+    assert run_pure("answerFlags(input, 6)", full) == ["ran out of model context"]
+    assert run_pure("input.trace.map(stepLine)", full) == [
+        "context · dropped 2 earlier tool result(s) · about 900 -> 700 tokens, limit 800",
+        "context · over the estimate, nothing to drop; the worker decides · about 900 tokens, limit 800",
+        "context · full · about 900 tokens, limit 800"]
 
 
 def test_source_slug_click_returns_card_facts():
