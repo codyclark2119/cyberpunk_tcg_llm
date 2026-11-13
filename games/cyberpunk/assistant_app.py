@@ -909,6 +909,13 @@ function mdToHtml(text) {
 function ms(value) { return Math.round(value || 0) + " ms"; }
 // One line per trace step (shown with textContent).
 function stepLine(step) {
+  if (step.kind === "context") {
+    if (!step.ok) return "context · full · about " + (step.estimatedTokens ?? "?") + " tokens, limit " + (step.limit ?? "?");
+    if (step.action === "kept") return "context · over the estimate, nothing to drop; the worker decides · about " +
+      (step.estimatedTokens ?? "?") + " tokens, limit " + (step.limit ?? "?");
+    return "context · dropped " + (step.dropped || []).length + " earlier tool result(s) · about " +
+      (step.estimatedTokens ?? "?") + " -> " + (step.estimatedTokensAfter ?? "?") + " tokens, limit " + (step.limit ?? "?");
+  }
   if (step.kind === "model") {
     if (!step.ok) return "model · error · " + (step.error || "failed");
     return "model · " + (step.finishReason === "length" ? "token limit" : "ok") + " · " +
@@ -916,6 +923,7 @@ function stepLine(step) {
       (step.toolCallsRequested ? "asked for " + step.toolCallsRequested + " tool call(s)" : "answered") + " · " + ms(step.elapsedMs);
   }
   const auto = step.auto ? (step.link ? "linked \u201c" + step.link.span + "\u201d · " : "") +
+    (step.implied ? "implied (" + step.implied.via + " of " + step.implied.of + ") · " : "") +
     (step.sent ? "sent " + (step.contextChars || 0) + " chars · " : "not sent · ") : "";
   return (step.tool || "(no tool)") + " · " + (step.ok ? "ok" : (step.errorKind || "error")) + " · " + auto +
     (step.summary || "") + " · " + ms(step.elapsedMs);
@@ -953,6 +961,7 @@ function answerFlags(data, maxToolCalls) {
     flags.push("hit the token limit");
   if (data.stopReason === "model_error") flags.push("model error");
   if (data.stopReason === "empty") flags.push("no answer text");
+  if (data.stopReason === "context_full") flags.push("ran out of model context");
   return flags;
 }
 // Rows of the retrieval table: one per method of one report, recall as percentages or why it did not run.
@@ -1039,13 +1048,17 @@ function jsonPre(label, value) {
 function traceRow(step) {
   const d = el("details", {class: (step.ok ? "step" : "step bad") + (step.auto ? " auto" : "")});
   d.appendChild(el("summary", {}, stepLine(step)));
-  if (step.kind === "model") {
+  if (step.kind === "context") {
+    d.appendChild(jsonPre("prompt guard", {reason: step.reason, dropped: step.dropped, estimatedTokens: step.estimatedTokens,
+      estimatedTokensAfter: step.estimatedTokensAfter, limit: step.limit}));
+  } else if (step.kind === "model") {
     d.appendChild(jsonPre("model step", {finishReason: step.finishReason, promptTokens: step.promptTokens,
       generationTokens: step.generationTokens, elapsedMs: step.elapsedMs, error: step.error}));
     if (step.thinking) d.appendChild(jsonPre("thinking", step.thinking));
   } else {
     d.appendChild(jsonPre("arguments", step.arguments ?? {}));
     if (step.auto) d.appendChild(jsonPre("automatic step (run before the model spoke)", {link: step.link ?? null,
+      implied: step.implied ?? null,
       sentToModel: !!step.sent, contextChars: step.contextChars, note: step.contextNote ?? null}));
     d.appendChild(step.ok ? jsonPre("result", step.result) : jsonPre("error", {errorKind: step.errorKind, error: step.error}));
   }

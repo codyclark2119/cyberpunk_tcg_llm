@@ -34,6 +34,17 @@ the cap; the header records the effective cap, and when it is not the default
 the rendered prompt differs too, so the header then also carries
 ``system_prompt_sha256``. A default run's header is unchanged.
 
+Limits per model step (2026-11-13): the worker's prompt cap is
+``--max-prompt-tokens`` (default 32,768; the worker also keeps ``--max-tokens``
+of room in the model's context), and a step may take ``--worker-timeout``
+seconds, by default ``max(600, 120 + 0.15 x --max-tokens)`` (600 s at the
+default 2,048 tokens, 1,349 s at 8,192). The header records
+``max_prompt_tokens`` when it is not the default and ``worker_timeout_s`` when
+the effective timeout is not 600 s (never for ``--fake``), so a default run's
+header is unchanged. The loop's prompt guard drops the oldest tool results to
+stay under the cap (``loop.PromptGuard``), and a reply asking for more tool
+calls than remain runs the ones that fit.
+
 A run is crash-safe. Each finished question is appended to
 ``<runs-dir>/<name>.partial.jsonl`` (the header first, flushed and synced per
 row); at the end the final ``<name>.jsonl`` is written atomically, byte for byte
@@ -79,6 +90,8 @@ from games.cyberpunk.assistant.loop import (ASSISTANT_PROMPT_VERSION, DEFAULT_PR
                                             tool_specs_sha256)
 from games.cyberpunk.assistant.preload import DEFAULT_PRELOAD_CHARS, DEFAULT_PRELOAD_K  # noqa: E402
 from games.cyberpunk.prompts import RULES_VERSION, TOURNAMENT_RULES_VERSION  # noqa: E402
+from harness.core.chat_worker import (DEFAULT_MAX_PROMPT_TOKENS, DEFAULT_RESPONSE_TIMEOUT,  # noqa: E402
+                                      MAX_PROMPT_TOKENS_LIMIT, step_timeout)
 from harness.core.io import file_sha256, write_jsonl_atomic  # noqa: E402
 
 EVAL_PROMPT_VERSION = "eval-mc-v1"
@@ -197,11 +210,26 @@ def header_row(args, set_path: Path, items: list[dict], selected: list[dict]) ->
             "preload": bool(args.preload), "preload_k": args.preload_k if args.preload else None,
             "preload_chars": args.preload_chars if args.preload else None,
             "tool_specs_sha256": tool_specs_sha256()}
+    if args.max_prompt_tokens != DEFAULT_MAX_PROMPT_TOKENS:
+        header["max_prompt_tokens"] = args.max_prompt_tokens
+    timeout = effective_timeout(args)
+    if timeout is not None and timeout != DEFAULT_RESPONSE_TIMEOUT:
+        # Absent at 600 s (every default run, and every run before the timeout scaled), so those headers
+        # are unchanged; a longer step limit is part of how a run was made.
+        header["worker_timeout_s"] = timeout
     if args.max_tool_calls != MAX_TOOL_CALLS:
         # The prompt states the cap, so it is not the versioned default; say so (absent at the default, so a
         # default run's header is byte-identical to the runs made before the flag existed).
         header["system_prompt_sha256"] = hashlib.sha256(system_prompt(args.max_tool_calls).encode("utf-8")).hexdigest()
     return header
+
+
+def effective_timeout(args) -> float | None:
+    """Seconds one model step may take: ``--worker-timeout``, else ``step_timeout(--max-tokens)``; None for
+    the fake model, which has no worker."""
+    if args.fake:
+        return None
+    return float(args.worker_timeout) if args.worker_timeout is not None else step_timeout(args.max_tokens)
 
 
 def resume_problem(rows: list[dict], header: dict, selected: list[dict]) -> str | None:
@@ -276,6 +304,12 @@ def main(argv: list[str] | None = None) -> int:
                              "(default 2048 thinking, 1024 not)")
     parser.add_argument("--max-tool-calls", type=int, default=MAX_TOOL_CALLS,
                         help=f"model tool calls per question, 1..{MAX_TOOL_CALLS_LIMIT} (default {MAX_TOOL_CALLS})")
+    parser.add_argument("--max-prompt-tokens", type=int, default=DEFAULT_MAX_PROMPT_TOKENS,
+                        help=f"prompt cap per model step, 1..{MAX_PROMPT_TOKENS_LIMIT} (default "
+                             f"{DEFAULT_MAX_PROMPT_TOKENS}; the worker also keeps --max-tokens of room in the "
+                             "model's context)")
+    parser.add_argument("--worker-timeout", type=float, default=None,
+                        help="seconds one model step may take (default: max(600, 120 + 0.15 x --max-tokens))")
     parser.add_argument("--preload", action=argparse.BooleanOptionalAction, default=DEFAULT_PRELOAD,
                         help="run search_rules and card linking before the model speaks (default on)")
     parser.add_argument("--preload-k", type=int, default=DEFAULT_PRELOAD_K, help="rules passages preloaded (1..20)")
@@ -304,6 +338,10 @@ def main(argv: list[str] | None = None) -> int:
         parser.error(f"--max-tokens must be 1..{MAX_TOKENS_LIMIT}")
     if not 1 <= args.max_tool_calls <= MAX_TOOL_CALLS_LIMIT:
         parser.error(f"--max-tool-calls must be 1..{MAX_TOOL_CALLS_LIMIT}")
+    if not 1 <= args.max_prompt_tokens <= MAX_PROMPT_TOKENS_LIMIT:
+        parser.error(f"--max-prompt-tokens must be 1..{MAX_PROMPT_TOKENS_LIMIT}")
+    if args.worker_timeout is not None and not 1 <= args.worker_timeout <= 86400:
+        parser.error("--worker-timeout must be 1..86400 seconds")
     if not 1 <= args.preload_k <= 20:
         parser.error("--preload-k must be 1..20")
     if not 0 <= args.preload_chars <= 100000:
@@ -346,12 +384,16 @@ def main(argv: list[str] | None = None) -> int:
     else:
         from games.cyberpunk.assistant.mlx_chat import make_chat_model
         try:
-            model = make_chat_model(args.model, adapter=args.adapter)
+            model = make_chat_model(args.model, adapter=args.adapter, response_timeout=effective_timeout(args),
+                                    max_prompt_tokens=args.max_prompt_tokens)
         except ValueError as exc:
             parser.error(str(exc))
     print(f"Scoring {len(selected)} of {len(items)} item(s) from {set_path.name} with {model.label} "
           f"(thinking {'on' if args.thinking else 'off'}, preload {'on' if args.preload else 'off'}, "
           f"max tokens {args.max_tokens}, prompt {EVAL_PROMPT_VERSION}) -> {out}", flush=True)
+    if "worker_timeout_s" in header or "max_prompt_tokens" in header:
+        print(f"Model step limits: {header.get('worker_timeout_s', DEFAULT_RESPONSE_TIMEOUT):.0f} s per step, "
+              f"prompt cap {args.max_prompt_tokens} tokens (recorded in the header).", flush=True)
     if args.max_tool_calls != MAX_TOOL_CALLS:
         print(f"Tool-call cap {args.max_tool_calls} (default {MAX_TOOL_CALLS}): the system prompt states it, so "
               f"the header records system_prompt_sha256.", flush=True)

@@ -264,7 +264,11 @@ def test_fake_run_writes_header_records_and_summary_deterministically():
         assert record["correct"] == gold[record["id"]]["correct"]
         assert record["tools_called"] == ["search_rules"] and record["rule_ids"], record["id"]
         auto = record["auto_tools"]
-        assert auto[0] == "search_rules" and set(auto[1:]) <= {"get_card", "find_card"}, auto
+        cards = [t for t in auto[1:] if t != "get_rule"]
+        # The search, then the linked cards, then the implied-rule get_rule steps (preload.implied_rules).
+        assert auto == ["search_rules", *cards] + ["get_rule"] * (len(auto) - 1 - len(cards)), auto
+        assert set(cards) <= {"get_card", "find_card"}, auto
+        assert all("implied" in s for s in record["trace"][:len(auto)] if s["tool"] == "get_rule")
         assert [s["kind"] for s in record["trace"]] == ["tool"] * len(auto) + ["model", "tool", "model"]
         assert all(s.get("auto") for s in record["trace"][:len(auto)])
         assert record["trace"][len(auto) - 1]["step"] == len(auto), "the automatic steps come first"
@@ -395,6 +399,43 @@ def test_scorer_token_ceiling_and_tool_cap_bounds():
         code, _, err = main_in_process(*base, "--name", "x.partial")
         assert code == 2 and ".partial" in err, err
         assert sorted(p.name for p in Path(tmp).iterdir()) == ["c1.jsonl", "c16.jsonl", "t16384.jsonl", "t8192.jsonl"]
+
+
+def test_step_limits_reach_the_header_only_when_not_the_default():
+    s = scorer()
+    items = eval_store.load_mc_set(GOLD)
+
+    def header(*extra):
+        """The header of a real-model run with the defaults, ``extra`` being (field, value) pairs."""
+        args = argparse.Namespace(set=str(GOLD), ids=None, limit=0, model="models/x", adapter=None, fake=False,
+                                  thinking=True, max_tokens=2048, max_tool_calls=6, preload=True, preload_k=5,
+                                  preload_chars=8000, max_prompt_tokens=32768, worker_timeout=None)
+        for key, value in zip(extra[::2], extra[1::2]):
+            setattr(args, key, value)
+        return s.header_row(args, GOLD, items, items)
+
+    default = header()
+    assert "worker_timeout_s" not in default and "max_prompt_tokens" not in default, default
+    assert s.effective_timeout(argparse.Namespace(fake=False, worker_timeout=None, max_tokens=2048)) == 600
+    long = header("max_tokens", 8192)
+    assert long["worker_timeout_s"] == 1349 and "max_prompt_tokens" not in long
+    assert header("worker_timeout", 900.0)["worker_timeout_s"] == 900
+    assert header("worker_timeout", 600.0).get("worker_timeout_s") is None, "600 s is the default: not recorded"
+    assert header("max_prompt_tokens", 65536)["max_prompt_tokens"] == 65536
+    # The fake model has no worker, so no timeout: a fake run's header never carries one.
+    fake = argparse.Namespace(fake=True, worker_timeout=None, max_tokens=8192)
+    assert s.effective_timeout(fake) is None
+    with tempfile.TemporaryDirectory() as tmp:
+        base = ["--set", str(GOLD), "--fake", "--runs-dir", tmp, "--limit", "1"]
+        code, out, err = main_in_process(*base, "--name", "big", "--max-tokens", "8192", "--max-prompt-tokens", "65536")
+        assert code == 0, err
+        row = read_jsonl(Path(tmp) / "big.jsonl")[0]
+        assert row["max_prompt_tokens"] == 65536 and "worker_timeout_s" not in row and "prompt cap 65536" in out
+        for extra, needle in ((["--max-prompt-tokens", "0"], "1..131072"),
+                              (["--max-prompt-tokens", "131073"], "1..131072"),
+                              (["--worker-timeout", "0"], "1..86400"), (["--worker-timeout", "x"], "invalid float")):
+            code, _, err = main_in_process(*base, "--name", "bad", *extra)
+            assert code == 2 and needle in err, (extra, err)
 
 
 def test_max_tool_calls_reaches_run_turn_the_prompt_and_the_header():

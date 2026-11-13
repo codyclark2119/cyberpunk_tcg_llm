@@ -21,9 +21,11 @@ import copy
 import dataclasses
 import importlib.util
 import json
+import math
 import re
 import sys
 import tempfile
+import time
 from pathlib import Path
 from types import SimpleNamespace
 
@@ -32,14 +34,16 @@ sys.path.insert(0, str(REPO_ROOT))
 
 from fastapi.testclient import TestClient
 
+from games.cyberpunk.assistant import loop as loop_module
 from games.cyberpunk.assistant import tools
 from games.cyberpunk.assistant.loop import (ASSISTANT_PROMPT_VERSION, CAP_MESSAGE, MAX_TOKENS_LIMIT, MAX_TOOL_CALLS,
                                             SYSTEM_PROMPT, cap_message, parse_tool_calls, run_turn, split_thinking,
                                             system_prompt)
-from games.cyberpunk.assistant.mlx_chat import chat_worker_command
+from games.cyberpunk.assistant.mlx_chat import WorkerChatModel, chat_worker_command, make_chat_model
 from games.cyberpunk.assistant_app import ChatService, build_assistant_app
 from games.cyberpunk.prompts import RULES_VERSION
-from harness.core.chat_worker import CHAT_PROTOCOL, ChatWorker, ChatWorkerError
+from harness.core.chat_worker import (CHAT_PROTOCOL, DEFAULT_MAX_PROMPT_TOKENS, MAX_PROMPT_TOKENS_LIMIT, ChatWorker,
+                                      ChatWorkerError, context_length, prompt_cap, step_timeout)
 
 LOCAL = {"host": "127.0.0.1:8767"}
 
@@ -333,11 +337,169 @@ def test_tool_call_cap():
     assert model.calls == 7 and result.stop_reason == "tool_cap" and not result.ok
     assert result.answer == CAP_MESSAGE and "6 tool calls" in result.answer
     assert tool_steps(result)[-1]["errorKind"] == "cap_exceeded"
-    # A single reply that would go past the cap runs none of its calls.
+    # A reply asking for more calls than remain runs the ones that fit; once none remain the turn stops.
     batch = LoopingModel(per_reply=4)
     with CountRuns() as counter:
         result = turn([], "loop", batch)
-    assert counter.count == 4 and result.tool_calls == 4 and result.stop_reason == "tool_cap"
+    assert counter.count == 6 and result.tool_calls == 6 and result.stop_reason == "tool_cap" and batch.calls == 3
+    assert [s["errorKind"] for s in tool_steps(result)] == [None] * 6 + ["cap_exceeded"] * 6
+
+
+def test_a_batch_past_the_cap_runs_the_calls_that_fit_and_refuses_the_rest():
+    # Two calls asked for with one left (a 27B quiz run, 2026-11-13): the first runs, the second is refused and
+    # reported back, and the model still gets to answer.
+    model = ScriptedModel([call("find_card", query="V"), call("get_rule", rule_id="9.2") + call("find_card", query="Jackie"),
+                           "The answer from what I have."])
+    with CountRuns() as counter:
+        result = turn([], "q", model, max_tool_calls=2)
+    assert counter.count == 2 and result.tool_calls == 2 and result.ok and result.stop_reason == "answer"
+    steps = tool_steps(result)
+    assert [(s["tool"], s["ok"], s["errorKind"]) for s in steps] == [
+        ("find_card", True, None), ("get_rule", True, None), ("find_card", False, "cap_exceeded")]
+    last = model.seen[-1]
+    assert [m["role"] for m in last[-3:]] == ["assistant", "tool", "tool"]
+    assert [c["function"]["name"] for c in last[-3]["tool_calls"]] == ["get_rule", "find_card"]
+    refused = json.loads(last[-1]["content"])
+    assert refused["ok"] is False and refused["error_kind"] == "cap_exceeded" and "all 2 tool calls" in refused["error"]
+    assert json.loads(last[-2]["content"])["ok"] is True, "the call that fit ran, in order"
+    # Three asked with two left: two run in order, one refused; the cap's meaning is otherwise unchanged.
+    model = ScriptedModel([call("find_card", query="V") + call("get_rule", rule_id="9.2") + call("get_rule", rule_id="9.3"),
+                           "Done."])
+    with CountRuns() as counter:
+        result = turn([], "q", model, max_tool_calls=2)
+    assert counter.count == 2 and [s["arguments"] for s in tool_steps(result) if s["ok"]] == [
+        {"query": "V"}, {"rule_id": "9.2"}]
+    assert tool_steps(result)[-1]["arguments"] == {"rule_id": "9.3"} and result.stop_reason == "answer"
+
+
+class SizedModel(ScriptedModel):
+    """A scripted model that counts its prompt as characters / 4 and, like the worker, refuses one over ``refuse_over``.
+
+    With ``limit`` it also tells the loop its cap (``prompt_token_limit``), as ``WorkerChatModel`` does.
+    """
+
+    def __init__(self, texts, *, limit=None, refuse_over=None, report_cap=True):
+        super().__init__(texts)
+        self.refuse_over = refuse_over
+        self.report_cap = report_cap
+        self.sizes: list[int] = []
+        if limit is not None:
+            self.prompt_token_limit = lambda max_tokens: limit
+
+    async def generate(self, messages, tools_, *, max_tokens, enable_thinking):
+        size = loop_module._message_chars(messages, tools_) // 4
+        self.sizes.append(size)
+        if self.refuse_over is not None and size > self.refuse_over:
+            refusal = {"ok": False, "error": "prompt_too_large", "promptTokens": size}
+            return {**refusal, "maxPromptTokens": self.refuse_over} if self.report_cap else refusal
+        reply = await super().generate(messages, tools_, max_tokens=max_tokens, enable_thinking=enable_thinking)
+        return {**reply, "promptTokens": size}
+
+
+GUARD_SCRIPT = [call("search_rules", query="attack a spent unit", k=10), call("search_rules", query="blocker", k=10),
+                call("search_rules", query="lag ready", k=10), "Answer from the latest results."]
+GUARD_QUESTION = "Can a Unit attack the turn it is played?"
+
+
+def no_timing(trace):
+    return [{k: v for k, v in step.items() if k != "elapsedMs"} for step in trace]
+
+
+def test_prompt_guard_drops_the_oldest_tool_results_first():
+    # Measure the run with no cap, then cap it just under what the last model step would be sent.
+    free = SizedModel(list(GUARD_SCRIPT))
+    reference = turn([], GUARD_QUESTION, free, preload=True)
+    assert reference.ok and not [s for s in reference.trace if s["kind"] == "context"]
+    estimate = math.ceil(loop_module._message_chars(free.seen[3], free.tools_seen[3]) / loop_module.CHARS_PER_TOKEN)
+    capped = SizedModel(list(GUARD_SCRIPT), limit=estimate - 50)
+    result = turn([], GUARD_QUESTION, capped, preload=True)
+    assert result.ok and result.stop_reason == "answer" and len(capped.seen) == 4
+    context = [s for s in result.trace if s["kind"] == "context"]
+    assert len(context) == 1 and context[0]["ok"] and context[0]["action"] == "dropped"
+    assert context[0]["reason"] == "estimate" and context[0]["limit"] == estimate - 50
+    assert context[0]["estimatedTokens"] > estimate - 50 >= context[0]["estimatedTokensAfter"]
+    # The step comes right before the model step it made room for.
+    kinds = [s["kind"] for s in result.trace]
+    assert kinds[-2:] == ["context", "model"] and kinds.count("model") == 4
+    sent, before = capped.seen[3], free.seen[3]
+    dropped = [d["message"] for d in context[0]["dropped"]]
+    # Oldest first: the preload's results (right after the preload's assistant message at index 2) go first.
+    assert dropped == list(range(3, 3 + len(dropped))) and before[2]["role"] == "assistant"
+    for index in dropped:
+        note = json.loads(sent[index]["content"])
+        assert sent[index]["role"] == "tool" and note["error_kind"] == "dropped_for_context"
+        assert f"({len(before[index]['content'])} characters)" in note["error"]
+        assert context[0]["dropped"][dropped.index(index)]["tool"] == json.loads(before[index]["content"])["tool"]
+    # Never the system prompt, the question, the model's own messages or the latest tool results.
+    kept = [i for i in range(len(before)) if i not in dropped]
+    assert [sent[i] for i in kept] == [before[i] for i in kept] and len(sent) == len(before)
+    assert sent[-1] == before[-1] and sent[-1]["role"] == "tool" and sent[1]["content"] == GUARD_QUESTION
+    # Deterministic: the same run gives the same trace.
+    again = turn([], GUARD_QUESTION, SizedModel(list(GUARD_SCRIPT), limit=estimate - 50), preload=True)
+    assert no_timing(again.trace) == no_timing(result.trace)
+
+
+def test_prompt_guard_ends_the_turn_when_nothing_more_can_go():
+    # Over the estimate with nothing to drop (only the latest results, the preload's, are there): the worker's
+    # exact count decides, and its refusal ends the turn with a clear stop, not a model error.
+    model = SizedModel(["never answered"], limit=10, refuse_over=10)
+    result = turn([], GUARD_QUESTION, model, preload=True)
+    assert model.seen == [] and len(model.sizes) == 1, "asked once, refused once"
+    assert not result.ok and result.stop_reason == "context_full" and result.error is None
+    assert "no longer fits the model's context" in result.answer and "10-token limit" in result.answer
+    context = [s for s in result.trace if s["kind"] == "context"]
+    assert [(s["ok"], s["action"], s["reason"]) for s in context] == [(True, "kept", "estimate"),
+                                                                      (False, "full", "worker_refused")]
+    assert result.trace[-1] == {**context[-1], "step": result.trace[-1]["step"]}
+    assert all(not s["dropped"] for s in context), "the latest results are never dropped"
+    # The estimate is pessimistic: when the worker accepts what the estimate would not, the answer stands.
+    lenient = SizedModel(["Fine."], limit=10)
+    result = turn([], GUARD_QUESTION, lenient, preload=True)
+    assert result.ok and result.stop_reason == "answer" and len(lenient.seen) == 1
+
+
+def test_prompt_guard_estimate_learns_from_reported_counts_and_only_tightens():
+    specs = tools.tool_specs()
+    messages = [{"role": "system", "content": "s" * 3000}, {"role": "user", "content": "q"}]
+    chars = loop_module._message_chars(messages, specs)
+    guard = loop_module.PromptGuard(None, specs)
+    assert guard.estimate(messages) == math.ceil(chars / 3.0) and guard.fit(messages) is None, "no cap: no guard"
+    guard.observe(messages, {"promptTokens": chars // 4})   # fewer tokens than 3 chars each: keep the safer 3.0
+    assert guard.ratio == 3.0
+    guard.observe(messages, {"promptTokens": chars // 2})   # more tokens than estimated: learn the tighter ratio
+    assert guard.ratio == chars / (chars // 2) and guard.estimate(messages) == chars // 2
+    for junk in (None, 0, -5, True, "9"):
+        guard.observe(messages, {"promptTokens": junk})
+    assert guard.ratio == chars / (chars // 2)
+    refused = loop_module.PromptGuard(None, specs)
+    step = refused.refused(messages, {"promptTokens": chars, "maxPromptTokens": 500})
+    assert refused.limit == 500 and refused.ratio == 1.0 and step["ok"] is False and step["action"] == "full"
+
+
+def test_a_worker_refusal_drops_more_and_asks_again():
+    free = SizedModel(list(GUARD_SCRIPT))
+    turn([], GUARD_QUESTION, free)
+    hidden = free.sizes[3] - 100  # the worker's cap, unknown to the loop until it refuses
+    model = SizedModel(list(GUARD_SCRIPT), refuse_over=hidden)
+    result = turn([], GUARD_QUESTION, model)
+    assert result.ok and result.stop_reason == "answer" and model.sizes[-1] <= hidden < model.sizes[-2]
+    refused = [s for s in result.trace if s["kind"] == "model" and not s["ok"]]
+    assert refused == [{"step": refused[0]["step"], "kind": "model", "ok": False, "error": "prompt_too_large",
+                        "promptTokens": model.sizes[-2], "maxPromptTokens": hidden}]
+    context = [s for s in result.trace if s["kind"] == "context"]
+    assert context[0]["reason"] == "worker_refused" and context[0]["dropped"] and context[0]["limit"] == hidden
+    assert context[0]["dropped"][0]["message"] == 3, "the first tool result goes first"
+    # A refusal that does not name the cap still drops one more result per refusal until the worker accepts.
+    quiet = SizedModel(list(GUARD_SCRIPT), refuse_over=hidden, report_cap=False)
+    result = turn([], GUARD_QUESTION, quiet)
+    assert result.ok and quiet.sizes[-1] <= hidden
+    dropped = [d["message"] for s in result.trace if s["kind"] == "context" for d in s["dropped"]]
+    assert dropped and dropped == sorted(dropped) and all(s["limit"] is None for s in result.trace
+                                                          if s["kind"] == "context")
+    # A refusal with nothing left to drop is a clear stop, not a model error.
+    stuck = SizedModel(["never answered"], refuse_over=1)
+    result = turn([], GUARD_QUESTION, stuck)
+    assert result.stop_reason == "context_full" and result.error is None and len(stuck.sizes) == 1
 
 
 def test_thinking_is_stripped_from_the_answer_and_kept_in_the_trace():
@@ -457,7 +619,11 @@ def test_worker_pure_functions_without_mlx():
     assert reply["promptTokens"] == 7 and reply["elapsedMs"] >= 0
     assert parse_tool_calls(reply["text"])[0][0].arguments == {"query": "V"}
     too_big = worker.run_generation(None, tokenizer, request, stream_fn=stream, sampler="greedy", max_prompt_tokens=3)
-    assert too_big == {"ok": False, "error": "prompt_too_large", "promptTokens": 7}
+    assert too_big == {"ok": False, "error": "prompt_too_large", "promptTokens": 7, "maxPromptTokens": 3}
+    # The model's context also holds the answer: 7 prompt tokens + 1024 to generate do not fit in 1030.
+    assert worker.run_generation(None, tokenizer, request, stream_fn=stream, sampler="greedy",
+                                 context=1030)["maxPromptTokens"] == 6
+    assert worker.run_generation(None, tokenizer, request, stream_fn=stream, sampler="greedy", context=1031)["ok"]
 
     line = (json.dumps(good) + "\n").encode()
     assert worker.handle_line(line, lambda r: {"ok": True, "text": "x"}) == ({"id": 1, "ok": True, "text": "x"}, True)
@@ -467,6 +633,64 @@ def test_worker_pure_functions_without_mlx():
     assert worker.handle_line(b"{nope\n", None) == (None, False)
     assert worker.handle_line(b'{"protocol": "x"}', None) == (None, False)
     assert {name for name in sys.modules if name.split(".")[0] in ("mlx", "mlx_lm")} == before
+
+
+def test_worker_prompt_cap_and_step_timeout_scale_with_the_model_and_max_tokens():
+    worker = load_worker_module()
+    assert worker.MAX_PROMPT_TOKENS == DEFAULT_MAX_PROMPT_TOKENS == 32768 and MAX_PROMPT_TOKENS_LIMIT == 131072
+    # The context length comes from the model's own config.json, top level or under text_config.
+    assert context_length({"max_position_embeddings": 40960}) == 40960
+    assert context_length({"text_config": {"max_position_embeddings": 262144}}) == 262144
+    assert context_length({"max_position_embeddings": 40960, "text_config": {"max_position_embeddings": 8}}) == 40960
+    for bad in ({}, {"max_position_embeddings": True}, {"max_position_embeddings": "40960"},
+                {"max_position_embeddings": 0}, {"text_config": "x"}):
+        assert context_length(bad) is None, bad
+    # The cap keeps room for the answer inside the context; with no context known it is the configured cap.
+    assert prompt_cap(32768, 40960, 8192) == 32768 and prompt_cap(32768, 40960, 16384) == 24576
+    assert prompt_cap(32768, 262144, 8192) == 32768 and prompt_cap(32768, None, 16384) == 32768
+    assert prompt_cap(32768, 100, 200) == 1
+    with tempfile.TemporaryDirectory() as tmp:
+        assert worker.read_context_length(Path(tmp)) is None
+        (Path(tmp) / "config.json").write_text(json.dumps({"text_config": {"max_position_embeddings": 65536}}))
+        assert worker.read_context_length(Path(tmp)) == 65536
+        (Path(tmp) / "model.safetensors").write_bytes(b"")
+        command = chat_worker_command(tmp)
+        assert command[command.index("--max-prompt-tokens") + 1] == "32768"
+        assert chat_worker_command(tmp, max_prompt_tokens=131072)[-1] == "131072"
+        for bad in (0, 131073):
+            try:
+                chat_worker_command(tmp, max_prompt_tokens=bad)
+                raise AssertionError(f"prompt cap {bad} accepted")
+            except ValueError as exc:
+                assert "1..131072" in str(exc)
+        model = make_chat_model(tmp)
+        assert model.context == 65536 and model.prompt_token_limit(2048) == 32768
+        assert model.prompt_token_limit(16384) == 32768 and model.timeout_for(8192) == 1349
+        fixed = make_chat_model(tmp, response_timeout=42, max_prompt_tokens=1000)
+        assert fixed.timeout_for(8192) == 42 and fixed.prompt_token_limit(64000) == 1000
+    # The step timeout: the old 600 s at the default 2,048 tokens, then about 6.7 tokens/s plus 120 s.
+    assert [step_timeout(n) for n in (1, 1024, 2048, 3200, 4096, 8192, 16384)] == [
+        600, 600, 600, 600, 735, 1349, 2578]
+    assert all(step_timeout(n) >= 120 + n / 8 for n in range(1, 16385, 97)), "slower than 8 tokens/s still fits"
+
+
+def test_each_request_gets_its_own_timeout():
+    async def scenario():
+        with tempfile.TemporaryDirectory() as tmp:
+            hang = ChatWorker([sys.executable, "-c", FAKE_WORKER, "hang"], cwd=Path(tmp), response_timeout=8)
+            model = WorkerChatModel(hang, response_timeout=0.5)
+            started = time.monotonic()
+            reply = await model.generate([{"role": "user", "content": "hi"}], [], max_tokens=8192,
+                                         enable_thinking=False)
+            assert reply == {"ok": False, "error": "worker_timeout"}
+            assert time.monotonic() - started < 6, "the per-step timeout, not the worker's own"
+            await hang.close()
+            echo = ChatWorker([sys.executable, "-c", FAKE_WORKER, "echo"], cwd=Path(tmp), response_timeout=0.001)
+            reply = await WorkerChatModel(echo).generate([{"role": "user", "content": "hi"}], [], max_tokens=9,
+                                                         enable_thinking=False)
+            assert reply["ok"] and reply["text"] == "echo:hi:9", "scaled by max_tokens, not the tiny default"
+            await echo.close()
+    asyncio.run(scenario())
 
 
 FAKE_WORKER = r"""

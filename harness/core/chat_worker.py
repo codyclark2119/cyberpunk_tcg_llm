@@ -7,6 +7,13 @@ game decision, so the rules are simpler: requests are serialised behind a lock
 timeout is long, and a timeout or protocol error kills the process; the next
 request starts a fresh one. Ids increase across restarts, so a stale reply can
 never match a later request. No game imports.
+
+The limits a caller needs are pure functions here so they are tested without
+mlx: ``step_timeout`` scales a request's timeout with its ``max_tokens``,
+``context_length`` reads a model's context from its ``config.json`` and
+``prompt_cap`` is the prompt size a step may send (the configured cap, default
+``DEFAULT_MAX_PROMPT_TOKENS``, leaving room for the generation in the model's
+context).
 """
 
 from __future__ import annotations
@@ -20,6 +27,41 @@ from typing import Sequence
 
 CHAT_PROTOCOL = "local-chat-v1"
 MAX_LINE_BYTES = 4 * 1024 * 1024
+DEFAULT_RESPONSE_TIMEOUT = 600.0   # seconds; also the floor of ``step_timeout``
+TIMEOUT_BASE_SECONDS = 120.0       # prompt processing of a long prompt before the first token
+TIMEOUT_SECONDS_PER_TOKEN = 0.15   # about 6.7 tokens/s: slower than a 27B 8-bit model's ~10-12 on a Mac
+DEFAULT_MAX_PROMPT_TOKENS = 32768
+MAX_PROMPT_TOKENS_LIMIT = 131072
+
+
+def step_timeout(max_tokens: int) -> float:
+    """Seconds one generation step may take: ``max(600, 120 + 0.15 * max_tokens)``.
+
+    Why: the fixed 600 s timeout killed an 8,192-token step of a 27B model
+    (about 11-14 minutes at 10-12 tokens/s) on 2026-11-13. At the default
+    2,048 tokens this is exactly the old 600 s; 4,096 gives 735 s, 8,192
+    gives 1,349 s and 16,384 gives 2,578 s.
+    """
+    return float(max(DEFAULT_RESPONSE_TIMEOUT,
+                     math.ceil(TIMEOUT_BASE_SECONDS + TIMEOUT_SECONDS_PER_TOKEN * max_tokens)))
+
+
+def context_length(config: dict) -> int | None:
+    """The model's context length from its ``config.json``: ``max_position_embeddings``, top level or in
+    ``text_config`` (multimodal configs nest it there). None when absent or not a positive int."""
+    for source in (config, config.get("text_config") if isinstance(config.get("text_config"), dict) else {}):
+        value = source.get("max_position_embeddings")
+        if isinstance(value, int) and not isinstance(value, bool) and value > 0:
+            return value
+    return None
+
+
+def prompt_cap(configured: int, context: int | None, max_tokens: int) -> int:
+    """The largest prompt a step may send: the configured cap, and room for ``max_tokens`` more in the
+    model's context when it is known. At least 1 (a step that cannot fit is refused by the worker)."""
+    if context is None:
+        return configured
+    return max(1, min(configured, context - max_tokens))
 
 
 class ChatWorkerError(RuntimeError):
@@ -32,7 +74,7 @@ class ChatWorkerError(RuntimeError):
 
 class ChatWorker:
     def __init__(self, command: Sequence[str], *, cwd: Path,
-                 startup_timeout: float = 300, response_timeout: float = 600):
+                 startup_timeout: float = 300, response_timeout: float = DEFAULT_RESPONSE_TIMEOUT):
         if not command or any(not isinstance(part, str) or not part for part in command):
             raise ValueError("worker command must be a nonempty argument list")
         for timeout in (startup_timeout, response_timeout):
@@ -115,8 +157,15 @@ class ChatWorker:
             if not self.available:
                 await self._start()
 
-    async def request(self, payload: dict) -> dict:
-        """Send one generation request and return the worker's reply (``ok`` is always a bool)."""
+    async def request(self, payload: dict, *, timeout: float | None = None) -> dict:
+        """Send one generation request and return the worker's reply (``ok`` is always a bool).
+
+        ``timeout`` replaces ``response_timeout`` for this request (``step_timeout`` scales it by
+        ``max_tokens``).
+        """
+        timeout = self.response_timeout if timeout is None else timeout
+        if not math.isfinite(timeout) or timeout <= 0:
+            raise ValueError("worker timeouts must be positive and finite")
         if self._closed:
             raise ChatWorkerError("worker_closed")
         async with self._get_lock():
@@ -129,7 +178,7 @@ class ChatWorker:
             if len(data) > MAX_LINE_BYTES:
                 raise ChatWorkerError("worker_input_too_large")
             try:
-                async with asyncio.timeout(self.response_timeout):
+                async with asyncio.timeout(timeout):
                     self.process.stdin.write(data)
                     await self.process.stdin.drain()
                     reply = await self._read()

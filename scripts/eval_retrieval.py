@@ -39,6 +39,17 @@ Metrics, per method, over the scored questions:
               passage holds many rules and so gets credit for all of them; a
               recall gain bought with ten times the text is not the same gain.
 
+Preload context (``--preload``). The assistant does not show the model a
+ranking: before the model speaks, the preload sends the top ``k`` passages, the
+linked cards, and the rules ``preload.implied_rules`` connects to those hits
+(short sub-rules and their "See X" links), within a character budget. With
+``--preload`` the report adds a ``preload`` section scoring that context per
+expansion variant (none, each relation alone, the default, all of them): a
+question is a hit when any rule id in the sent results' sources matches an
+expected id (same rule as above), ``coverage`` is the mean fraction matched,
+``chars`` the mean characters sent. The section is absent without the flag,
+so a default report is unchanged.
+
 Output is deterministic JSON (sorted keys, no timestamps) on stdout, and with
 ``--name`` also ``eval/reports/<name>.json`` (refused if it exists, unless
 ``--force``). Methods that cannot run here (no index, or no embedding model on
@@ -48,6 +59,7 @@ Usage:
     python scripts/eval_retrieval.py
     python scripts/eval_retrieval.py --name retrieval-quiz-2026-11-12 --force
     python scripts/eval_retrieval.py --methods lexical-bm25-rules --quiet
+    python scripts/eval_retrieval.py --methods lexical-bm25-rules --preload --quiet
 """
 
 from __future__ import annotations
@@ -64,6 +76,7 @@ REPO_ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(REPO_ROOT))
 
 from eval_assistant import EVAL_PROMPT_VERSION, question_message  # noqa: E402
+from games.cyberpunk.assistant import preload as preload_module  # noqa: E402
 from games.cyberpunk.assistant import tools  # noqa: E402
 from games.cyberpunk.assistant.eval_store import RUN_NAME_RE, load_mc_set  # noqa: E402
 from games.cyberpunk.prompts import RULES_VERSION, TOURNAMENT_RULES_VERSION  # noqa: E402
@@ -175,8 +188,43 @@ def score_method(search, scored: list[tuple[dict, dict]], form: str) -> dict:
     return {"available": True, **summary, "items": per_item}
 
 
+PRELOAD_VARIANTS = ((), ("see",), ("children",), ("card_type",), ("children", "see"), ("children", "see", "card_type"),
+                    preload_module.IMPLIED_KINDS)
+
+
+def variant_name(kinds: tuple[str, ...]) -> str:
+    return "+".join(kinds) or "none"
+
+
+def score_preload(scored: list[tuple[dict, dict]], form: str) -> dict:
+    """The rules the preload's sent results name, per expansion variant (see the module docstring)."""
+    variants = {}
+    for kinds in dict.fromkeys(PRELOAD_VARIANTS):
+        per_item, hits, coverage, chars = [], 0, 0.0, 0
+        for row, item in scored:
+            steps = preload_module.preload(query_for(item, form), implied=kinds)
+            sent = [s for s in steps if s.sent]
+            ids = list(dict.fromkeys(i for s in sent for i in s.sources["rule_ids"]))
+            expected = row["expected_rule_ids"]
+            found = sorted({e for e in expected if any(matches(r, e) for r in ids)}, key=_id_key)
+            hits += bool(found)
+            coverage += len(found) / len(expected)
+            sent_chars = sum(len(s.content) for s in sent)
+            chars += sent_chars
+            per_item.append({"id": row["id"], "expected": expected, "found": found, "chars": sent_chars,
+                             "implied": [s.arguments["rule_id"] for s in sent if s.implied is not None]})
+        n = len(scored)
+        variants[variant_name(kinds)] = {"kinds": list(kinds), "hits": hits,
+                                         "recall": round(hits / n, 4) if n else None,
+                                         "coverage": round(coverage / n, 4) if n else None,
+                                         "chars": round(chars / n, 1) if n else None, "items": per_item}
+    return {"k": preload_module.DEFAULT_PRELOAD_K, "budget": preload_module.DEFAULT_PRELOAD_CHARS,
+            "max_implied": preload_module.MAX_IMPLIED, "default": variant_name(preload_module.IMPLIED_KINDS),
+            "variants": variants}
+
+
 def build_report(expected_path: Path, questions_path: Path, wanted: list[str] | None,
-                 form: str = "question-choices") -> dict:
+                 form: str = "question-choices", *, with_preload: bool = False) -> dict:
     questions = {item["id"]: item for item in load_mc_set(questions_path)}
     rows = load_expected(expected_path, questions)
     scored = [(row, questions[row["id"]]) for row in rows if row["expected_rule_ids"]]
@@ -193,13 +241,16 @@ def build_report(expected_path: Path, questions_path: Path, wanted: list[str] | 
             methods[name] = {"available": False, "reason": method["reason"]}
         else:
             methods[name] = score_method(method["search"], scored, form)
-    return {"kind": KIND, "report_version": REPORT_VERSION, "rules_version": RULES_VERSION,
+    report = {"kind": KIND, "report_version": REPORT_VERSION, "rules_version": RULES_VERSION,
             "tournament_rules_version": TOURNAMENT_RULES_VERSION,
             "eval_prompt_version": EVAL_PROMPT_VERSION, "query_form": form, "query_form_text": QUERY_FORMS[form], "match_rule": MATCH_RULE,
             "expected_set": _rel(expected_path), "expected_sha256": file_sha256(expected_path),
             "expected_status": sorted({row.get("status", "") for row in rows}),
             "questions": _rel(questions_path), "questions_sha256": file_sha256(questions_path),
             "ks": list(KS), "scored": len(scored), "skipped": skipped, "methods": methods}
+    if with_preload:
+        report["preload"] = score_preload(scored, form)
+    return report
 
 
 def summary_table(report: dict) -> str:
@@ -209,6 +260,12 @@ def summary_table(report: dict) -> str:
             lines.append(f"{name:<24} unavailable: {m['reason']}")
             continue
         lines.append(f"{name:<24} " + " ".join(f"{m[f'recall@{k}']:>6.3f}" for k in KS) + f" {m['chars@10']:>9.0f}")
+    if "preload" in report:
+        pre = report["preload"]
+        lines.append(f"\npreload context (k {pre['k']}, {pre['budget']} chars, default {pre['default']})")
+        lines.append(f"{'variant':<28} {'recall':>6} {'cover':>6} {'chars':>6}")
+        for name, v in pre["variants"].items():
+            lines.append(f"{name:<28} {v['recall']:>6.3f} {v['coverage']:>6.3f} {v['chars']:>6.0f}")
     return "\n".join(lines)
 
 
@@ -243,11 +300,13 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--reports-dir", type=Path, default=REPORTS_DIR)
     parser.add_argument("--force", action="store_true", help="replace an existing report of this name")
     parser.add_argument("--quiet", action="store_true", help="print the summary table instead of the JSON")
+    parser.add_argument("--preload", action="store_true",
+                        help="also score the preload's context per implied-rule variant (see the docstring)")
     args = parser.parse_args(argv)
     if args.name and not RUN_NAME_RE.match(args.name):
         parser.error("--name must be letters, digits, '.', '_' or '-', starting with a letter or digit")
     wanted = [m.strip() for m in args.methods.split(",") if m.strip()] or None
-    report = build_report(args.expected, args.questions, wanted, args.query_form)
+    report = build_report(args.expected, args.questions, wanted, args.query_form, with_preload=args.preload)
     if args.name:
         write_report(report, args.reports_dir / f"{args.name}.json", args.force)
     if args.quiet:

@@ -25,6 +25,7 @@ import argparse
 import contextlib
 import hashlib
 import importlib.util
+import io
 import json
 import re
 import subprocess
@@ -287,6 +288,36 @@ def test_recall_report_has_the_documented_shape():
         except SystemExit as exc:
             assert "exists" in str(exc)
         assert s.main(argv + ["--force"]) == 0
+
+
+def test_recall_report_scores_the_preload_context_per_variant():
+    s = scorer()
+    with no_index():
+        plain = s.build_report(s.DEFAULT_EXPECTED, s.DEFAULT_QUESTIONS, [LEXICAL_METHOD])
+        report = s.build_report(s.DEFAULT_EXPECTED, s.DEFAULT_QUESTIONS, [LEXICAL_METHOD], with_preload=True)
+        again = s.build_report(s.DEFAULT_EXPECTED, s.DEFAULT_QUESTIONS, [LEXICAL_METHOD], with_preload=True)
+    assert "preload" not in plain and {k: v for k, v in report.items() if k != "preload"} == plain
+    assert s.dumps(report) == s.dumps(again), "deterministic"
+    pre = report["preload"]
+    assert (pre["k"], pre["budget"], pre["default"]) == (5, 8000, "children+see+card_type")
+    assert list(pre["variants"]) == ["none", "see", "children", "card_type", "children+see", "children+see+card_type"]
+    none, default = pre["variants"]["none"], pre["variants"][pre["default"]]
+    # Without expansion the preload's rules are the search's top 5: its recall is the method's recall@5.
+    assert none["recall"] == report["methods"][LEXICAL_METHOD]["recall@5"]
+    assert all(not i["implied"] for i in none["items"]) and len(default["items"]) == 36
+    assert default["recall"] >= none["recall"] and default["coverage"] > none["coverage"]
+    q09 = {v: next(i for i in d["items"] if i["id"] == "cody-quiz-09") for v, d in pre["variants"].items()}
+    # The expected-rules draft for 09 holds the current Lag ids; the search alone reaches only 9.3.1.1's parent.
+    assert q09["none"]["expected"] == ["4.7", "5.6.4", "9.3.1.1", "11.3.1", "11.3.1.1", "11.27.2"]
+    assert q09["none"]["found"] == ["9.3.1.1"]
+    assert q09["children+see"]["found"] == ["9.3.1.1", "11.3.1", "11.3.1.1"]
+    assert q09["children+see+card_type"]["implied"] == ["9.3.1.1", "11.3", "4.6"]
+    for name, variant in pre["variants"].items():
+        assert variant["hits"] == sum(1 for i in variant["items"] if i["found"]), name
+        assert all(i["chars"] <= pre["budget"] for i in variant["items"]), name
+    with no_index(), contextlib.redirect_stdout(io.StringIO()) as out:
+        assert s.main(["--methods", LEXICAL_METHOD, "--preload", "--quiet"]) == 0
+    assert "preload context (k 5, 8000 chars, default children+see+card_type)" in out.getvalue()
 
 
 # Hybrid retrieval and its fallback --------------------------------------------------------------

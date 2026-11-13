@@ -206,6 +206,52 @@ def test_get_rule_reads_tournament_rules_by_their_tr_ids():
     assert not any(i.startswith("TR ") for g in tools.term_rules("Blocker").values() for i in g)
 
 
+def test_long_rules_are_cut_in_search_results_and_read_whole_in_parts():
+    full = {r["id"]: r["text"] for r in tools.all_rules()}
+    with no_index():
+        result = tools.search_rules("Tournament Issues", k=20, doc="tournament")
+        again = tools.search_rules("Tournament Issues", k=20, doc="tournament")
+    assert result == again, "deterministic"
+    passages = ok(result)["results"]
+    long = [p for p in passages if len(full[p["rule_ids"][0]]) > tools.ROW_TEXT_CHARS]
+    short = [p for p in passages if len(full[p["rule_ids"][0]]) <= tools.ROW_TEXT_CHARS]
+    assert long and short and tools.ROW_TEXT_CHARS == 1500
+    for p in long:
+        rule_id = p["rule_ids"][0]
+        assert p["truncated"] is True and p["text_chars"] == len(full[rule_id])
+        assert p["text"] == full[rule_id][:1500], "a prefix of the rule, cut at the budget"
+    for p in short:
+        assert "truncated" not in p and "text_chars" not in p and p["text"] == full[p["rule_ids"][0]]
+    assert "call get_rule" in ok(result)["note"] and "1500 characters" in ok(result)["note"]
+    with no_index():
+        plain = ok(tools.search_rules("lagging units can't attack", k=5))
+    assert "note" not in plain and not any("truncated" in p for p in plain["results"]), "short rows are unchanged"
+    # get_rule reads the longest row (TR A.2.2, ~15k characters) in parts that join back exactly.
+    assert len(full["TR A.2.2"]) > 2 * tools.GET_RULE_TEXT_CHARS == 12000
+    parts, offset = [], 0
+    while True:
+        rule = ok(tools.call_tool("get_rule", {"rule_id": "TR A.2.2", **({"offset": offset} if offset else {})}))
+        parts.append(rule["rule"]["text"])
+        assert len(rule["rule"]["text"]) <= 6000 and rule["rule"]["offset"] == offset
+        assert rule["rule"]["text_chars"] == len(full["TR A.2.2"])
+        if not rule["rule"].get("truncated"):
+            assert "next_offset" not in rule["rule"] and "note" not in rule
+            break
+        assert rule["rule"]["next_offset"] == offset + 6000 and f"offset {offset + 6000}" in rule["note"]
+        offset = rule["rule"]["next_offset"]
+    assert len(parts) == 3 and "".join(parts) == full["TR A.2.2"]
+    # A rule that fits has the same shape as before: no offset fields at all.
+    whole = ok(get_rule("9.3.1.1"))["rule"]
+    assert set(whole) == {"id", "doc", "kind", "title", "text", "section", "depth"} and whole["text"] == full["9.3.1.1"]
+    assert ok(tools.call_tool("get_rule", {"rule_id": "9.3.1.1", "offset": 0}))["rule"] == whole
+    assert ok(tools.call_tool("get_rule", {"rule_id": "9.3.1.1", "offset": 5}))["rule"]["text"] == full["9.3.1.1"][5:]
+    past = refused(tools.call_tool("get_rule", {"rule_id": "9.3.1.1", "offset": len(full["9.3.1.1"])}),
+                   "invalid_arguments")
+    assert "past the end" in past["error"]
+    for bad in (-1, 100001, "5", 1.5, True):
+        refused(tools.call_tool("get_rule", {"rule_id": "9.3.1.1", "offset": bad}), "invalid_arguments")
+
+
 def test_search_rules_finds_tournament_rules_and_filters_by_document():
     with no_index():
         # Only the Tournament Rules name this infraction.
