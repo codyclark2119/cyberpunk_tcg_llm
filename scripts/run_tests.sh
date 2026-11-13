@@ -56,7 +56,7 @@ build                | full  | npm run build                                   |
 diff-check           | full  | run_diff_check                                  | -
 py-deps              | quick | check_py_deps                                   | -
 py-compile           | quick | "$PY" -m compileall -q games harness scripts    | -
-py-cyberpunk         | quick | "$PY" scripts/test_cyberpunk.py                 | line:all 95 tests passed
+py-cyberpunk         | quick | "$PY" scripts/test_cyberpunk.py                 | line:all 100 tests passed
 py-harness-core      | quick | "$PY" scripts/test_harness_core.py              | line:48 tests passed
 py-engine-candidates | quick | "$PY" scripts/test_engine_candidates.py         | line:PASS 3/3
 py-policy-bot        | quick | "$PY" scripts/test_policy_bot.py                | line:PASS policy layer: 28/28

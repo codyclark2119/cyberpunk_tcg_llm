@@ -53,12 +53,13 @@ MARKUP_RE = re.compile(r"\{([^{}]*)\}")
 # first and then renders markdown normally, which is what `to_plain_text`
 # below does too.
 #
-# The label alternation is not decoration: rule 11.11.1.4 links to the CALL
-# keyword's definition and writes the label as `[\[CALL\]]`, escaping the
-# brackets that are part of the keyword's own name. A plain `[^\]]*` label
-# stops at the first `]` -- the escaped one -- so the link matches nothing at
-# all and survives into the corpus as a raw `#rule-<uuid>` fragment. That is
-# one record out of 713, found only by grepping the ingested output for
+# The label alternation is not decoration: rule 11.14.1.4 (11.11.1.4 before
+# the 2026-10-29 snapshot) links to the CALL keyword's definition and writes
+# the label as `[\[CALL\]]`, escaping the brackets that are part of the
+# keyword's own name. A plain `[^\]]*` label stops at the first `]` -- the
+# escaped one -- so the link matches nothing at all and survives into the
+# corpus as a raw `#rule-<uuid>` fragment. That was one record out of 713
+# (2026-09-01 snapshot), found only by grepping the ingested output for
 # `](`, which is why `scripts/test_cyberpunk.py` asserts on the whole file
 # rather than on a hand-picked example.
 # The leading `!` makes it a markdown IMAGE rather than a link. Four rules

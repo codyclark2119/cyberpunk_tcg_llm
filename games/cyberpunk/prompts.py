@@ -18,7 +18,7 @@ import re
 # that is what this tracks. `scripts/fetch_rules.py --print-updated-at`
 # reports the live value; when it moves past this date, re-fetch, re-ingest,
 # and change this string in the same commit.
-RULES_VERSION = "2026-09-01"
+RULES_VERSION = "2026-10-29"
 
 # The Tournament Rules (event procedure, penalties, deck registration) are a
 # second document with their own `updated_at`, fetched by

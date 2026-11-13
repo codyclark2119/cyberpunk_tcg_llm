@@ -125,7 +125,7 @@ def test_rule_level_index_covers_all_rules_with_heading_paths():
     tournament = read_jsonl(config.TOURNAMENT_RULES_PATH)
     errata = read_jsonl(config.ERRATA_CHUNKS_PATH)
     docs = tools.rule_docs()
-    assert len(rows) == 713 and len(tournament) == 87
+    assert len(rows) == 733 and len(tournament) == 87
     assert {d["rule_id"] for d in docs if d["source"] == "rule"} == {r["id"] for r in rows + tournament}
     assert sorted(d["doc_id"] for d in docs if d["source"] == "errata") == sorted(c["chunk_id"] for c in errata)
     assert len(docs) == len(rows) + len(tournament) + len(errata) == len(tools.lexical_index().docs)
@@ -134,9 +134,9 @@ def test_rule_level_index_covers_all_rules_with_heading_paths():
     by_id = {d["doc_id"]: d for d in docs}
     # Heading ancestors only: "Lag" names 11.3.1.1's topic; its sentence parent 11.3.1 is not in the path.
     assert by_id["rule:11.3.1.1"]["path"] == ["TERMS", "General Terms", "Lag"], by_id["rule:11.3.1.1"]["path"]
-    assert by_id["rule:11.24.1"]["path"][-1] == "[BLOCKER]"
-    assert by_id["rule:11.24"]["heading_only"] and by_id["rule:1"]["heading_only"]
-    assert not by_id["rule:11.24.1"]["heading_only"] and not by_id["rule:5.4.5"]["heading_only"]
+    assert by_id["rule:11.28.1"]["path"][-1] == "[BLOCKER]"
+    assert by_id["rule:11.28"]["heading_only"] and by_id["rule:1"]["heading_only"]
+    assert not by_id["rule:11.28.1"]["heading_only"] and not by_id["rule:5.4.5"]["heading_only"]
     assert by_id["rule:3.20"]["heading_only"], "a heading followed only by a figure caption has no body"
     # A rule found only through its heading path: the query word "lag" is not in 4.7's neighbour 11.3.1.2's
     # text ("Lagging Units can't activate [Spend Icon] effects") except through the stem and the path.
@@ -165,8 +165,8 @@ def test_heading_path_and_example_words_carry_their_weights():
 
 
 def test_heading_only_rows_are_never_top_for_a_body_query():
-    for query, heading in (("Rarity", "rule:3.16"), ("Blocker", "rule:11.24"), ("What does Go Solo do?",
-                                                                                  "rule:11.25")):
+    for query, heading in (("Rarity", "rule:3.16"), ("Blocker", "rule:11.28"), ("What does Go Solo do?",
+                                                                                  "rule:11.29")):
         hits = tools.lexical_search(query, 10)
         assert not hits[0]["heading_only"], (query, hits[0]["doc_id"])
         assert heading in [h["doc_id"] for h in hits], (query, "a heading row is down-weighted, not dropped")
@@ -186,7 +186,7 @@ def test_stemming_and_stopwords():
     assert retrieval.tokens("See rule 11.24.3") == ["see", "rule", "11.24.3"], "rule numbers stay whole"
     assert retrieval.tokens("The") == [] and retrieval.tokens("Équipped") == ["equip"]
     # Stemming is what joins "stealing gigs" to the rule that defines stealing a Gig.
-    assert "rule:6.7" in top_ids("stealing gigs from a rival", 3)
+    assert "rule:6.8" in top_ids("stealing gigs from a rival", 3)  # 6.7 before the 2026-10-29 snapshot
 
 
 def test_named_term_pulls_up_its_defining_glossary_rules():
@@ -259,7 +259,7 @@ def test_recall_report_has_the_documented_shape():
     assert s.dumps(report) == s.dumps(again), "the report is deterministic"
     assert report["kind"] == "retrieval-report" and report["report_version"] == "retrieval-recall-v1"
     assert report["scored"] == 36 and len(report["skipped"]) == 4 and report["ks"] == [1, 5, 10]
-    assert report["rules_version"] == "2026-09-01" and report["tournament_rules_version"] == "2026-10-28"
+    assert report["rules_version"] == "2026-10-29" and report["tournament_rules_version"] == "2026-10-28"
     assert report["expected_status"] == ["draft"] and report["query_form"] == "question-choices"
     assert list(report["methods"]) == [LEGACY_CHUNK_METHOD, LEXICAL_METHOD, "embedding", HYBRID_METHOD]
     for name in (LEGACY_CHUNK_METHOD, LEXICAL_METHOD):
