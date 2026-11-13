@@ -9,8 +9,9 @@ this template needs all three; this game publishes its rules as data.
 
 Outputs, matching the shapes the rest of the harness expects:
 
-  data/processed/rules.jsonl          one record per node, document order
-  data/processed/rule_sections.jsonl  the outline alone (sections/headings)
+  data/processed/rules.jsonl              one record per node, document order
+  data/processed/rule_sections.jsonl      the outline alone (sections/headings)
+  data/processed/tournament_rules.jsonl   the Tournament Rules, same row shape
 
 A `rules.jsonl` record:
 
@@ -23,6 +24,19 @@ A `rules.jsonl` record:
 what lets a retrieved chunk be cited by a model that only ever saw the chunk
 text, rather than needing the id carried alongside out of band.
 
+THE TOURNAMENT RULES
+
+`data/raw/tournament_rules.json` (`scripts/fetch_tournament_rules.py`) is a
+second, separately versioned document with the same node shape, ingested by
+the same `build_records` into `tournament_rules.jsonl`. Its display numbers
+collide with the comprehensive rules ("1.3" is in both) and carry appendix
+letters ("A.1.2"), so every id, parent, ref and citable text is prefixed
+"TR " (`TR 3.4.2`, `TR A.1.2`; the unnumbered intro is `TR rule-<uuid>`), and
+each row carries `"doc": "tournament"`. Only its in-document anchor links
+become refs: a `{7.6}` number reference (none in the 2026-10-28 snapshot)
+could mean either document, so it is not guessed at. The comprehensive rows are byte-for-byte what they were
+before this document existed; they carry no `doc` field.
+
 WHAT "DOCUMENT ORDER" MEANS HERE
 
 The API returns nodes in no particular order and does NOT return a depth-first
@@ -34,7 +48,7 @@ would just quietly produce chunks that straddle unrelated rules, so
 neighbours.
 
 Usage:
-    python scripts/ingest.py
+    python scripts/ingest.py      # both documents; needs fetch_rules.py and fetch_tournament_rules.py first
     python scripts/ingest.py --report-unknown-markup   # beta keyword watch
 """
 
@@ -52,18 +66,23 @@ from harness.core.io import write_jsonl_atomic, guard_shrink
 DEFAULT_RAW = REPO_ROOT / "data" / "raw" / "comprehensive_rules.json"
 DEFAULT_RULES_OUT = REPO_ROOT / "data" / "processed" / "rules.jsonl"
 DEFAULT_SECTIONS_OUT = REPO_ROOT / "data" / "processed" / "rule_sections.jsonl"
+DEFAULT_TOURNAMENT_RAW = REPO_ROOT / "data" / "raw" / "tournament_rules.json"
+DEFAULT_TOURNAMENT_OUT = REPO_ROOT / "data" / "processed" / "tournament_rules.jsonl"
+TOURNAMENT_PREFIX = "TR "
+TOURNAMENT_DOC = "tournament"
 
 
-def node_id(node: dict) -> str:
+def node_id(node: dict, prefix: str = "") -> str:
     """The citable id for a node: its rule number, or its anchor if unnumbered.
 
     Every `rule` node in this document is numbered; 42 `section` nodes are not
     (they are structural headings like "Official Rules Document"). Those fall
     back to their stable anchor so every record still has a unique key, and
     `is_numbered` records which kind it is rather than leaving a caller to
-    guess from the shape of the string.
+    guess from the shape of the string. ``prefix`` ("TR " for the Tournament
+    Rules) keeps a second document's ids apart from this one's.
     """
-    return node["display_number"] or node["stable_anchor"]
+    return prefix + (node["display_number"] or node["stable_anchor"])
 
 
 def walk(nodes: list[dict]) -> list[dict]:
@@ -97,8 +116,15 @@ def walk(nodes: list[dict]) -> list[dict]:
     return ordered
 
 
-def build_records(doc: dict) -> tuple[list[dict], list[dict]]:
-    """`(rules, sections)` records from a fetched rules document."""
+def build_records(doc: dict, prefix: str = "", doc_name: str | None = None) -> tuple[list[dict], list[dict]]:
+    """`(rules, sections)` records from a fetched rules document.
+
+    With the defaults this is the comprehensive rules, unchanged. ``prefix``
+    and ``doc_name`` ("TR ", "tournament") ingest another document of the
+    same shape: ids, parents, refs and the citable text are prefixed, each row
+    carries ``doc``, and ``{7.6}`` number references are not turned into refs
+    (they would be ambiguous between the two documents).
+    """
     nodes = doc["items"]
     ordered = walk(nodes)
 
@@ -113,7 +139,7 @@ def build_records(doc: dict) -> tuple[list[dict], list[dict]]:
     def top_section(n: dict) -> str:
         if n["parent_id"] is None:
             number = n["display_number"]
-            return f"{number}. {n['title']}" if number else n["title"]
+            return f"{prefix}{number}. {n['title']}" if number else n["title"]
         return section_of[n["parent_id"]]
 
     rules: list[dict] = []
@@ -121,13 +147,13 @@ def build_records(doc: dict) -> tuple[list[dict], list[dict]]:
 
     for n in ordered:
         section_of[n["id"]] = top_section(n)
-        rid = node_id(n)
+        rid = node_id(n, prefix)
         parent = by_id.get(n["parent_id"])
 
         body = n["body_markdown"] or ""
         plain = markup.to_plain_text(body)
         number = n["display_number"]
-        text = f"{number}. {plain}" if (number and plain) else (plain or n["title"])
+        text = f"{prefix}{number}. {plain}" if (number and plain) else (plain or n["title"])
 
         # Anchor links (`[GIGS](#rule-<uuid>)`, braced or bare) point at another
         # node. `to_plain_text` drops the target, since a DOM fragment is noise
@@ -144,7 +170,7 @@ def build_records(doc: dict) -> tuple[list[dict], list[dict]]:
                 continue
             dest = by_anchor.get(target[1:])
             if dest is not None:
-                anchor_refs.append(node_id(dest))
+                anchor_refs.append(node_id(dest, prefix))
 
         record = {
             "id": rid,
@@ -154,10 +180,12 @@ def build_records(doc: dict) -> tuple[list[dict], list[dict]]:
             "title": n["title"],
             "text": text,
             "anchor": n["stable_anchor"],
-            "parent": node_id(parent) if parent else None,
+            "parent": node_id(parent, prefix) if parent else None,
             "depth": n["depth"],
-            "refs": markup.rule_references(body) + anchor_refs,
+            "refs": (markup.rule_references(body) if not prefix else []) + anchor_refs,
         }
+        if doc_name is not None:
+            record["doc"] = doc_name
         rules.append(record)
 
         if n["node_type"] == "section":
@@ -165,11 +193,26 @@ def build_records(doc: dict) -> tuple[list[dict], list[dict]]:
                 "id": rid,
                 "title": n["title"],
                 "kind": "section" if n["parent_id"] is None else "subsection",
-                "parent": node_id(parent) if parent else None,
+                "parent": node_id(parent, prefix) if parent else None,
                 "depth": n["depth"],
             })
 
     return rules, sections
+
+
+def build_tournament_records(doc: dict) -> list[dict]:
+    """The Tournament Rules rows (``tournament_rules.jsonl``), refusing any id collision.
+
+    Its outline is not written separately: its sections are rows of this file,
+    as the comprehensive rules' sections are rows of ``rules.jsonl``.
+    """
+    rows, _ = build_records(doc, TOURNAMENT_PREFIX, TOURNAMENT_DOC)
+    ids = [r["id"] for r in rows]
+    if len(set(ids)) != len(ids):
+        raise SystemExit("tournament rules ingest produced duplicate ids")
+    if any(not i.startswith(TOURNAMENT_PREFIX) for i in ids):
+        raise SystemExit("a tournament rules id lacks the TR prefix")
+    return rows
 
 
 def report_unknown_markup(rules: list[dict], doc: dict) -> list[tuple[str, str]]:
@@ -192,6 +235,8 @@ def main():
     ap.add_argument("--input", type=Path, default=DEFAULT_RAW)
     ap.add_argument("--rules-output", type=Path, default=DEFAULT_RULES_OUT)
     ap.add_argument("--sections-output", type=Path, default=DEFAULT_SECTIONS_OUT)
+    ap.add_argument("--tournament-input", type=Path, default=DEFAULT_TOURNAMENT_RAW)
+    ap.add_argument("--tournament-output", type=Path, default=DEFAULT_TOURNAMENT_OUT)
     ap.add_argument("--report-unknown-markup", action="store_true",
                     help="list brace spans games/cyberpunk/markup.py does not know")
     ap.add_argument("--force", action="store_true")
@@ -200,10 +245,18 @@ def main():
     if not args.input.exists():
         raise SystemExit(f"{args.input} not found -- run scripts/fetch_rules.py first")
     doc = json.loads(args.input.read_text(encoding="utf-8"))
+    if not args.tournament_input.exists():
+        raise SystemExit(f"{args.tournament_input} not found -- run scripts/fetch_tournament_rules.py first")
+    tournament_doc = json.loads(args.tournament_input.read_text(encoding="utf-8"))
 
     rules, sections = build_records(doc)
+    tournament = build_tournament_records(tournament_doc)
+    collisions = sorted({r["id"] for r in rules} & {r["id"] for r in tournament})
+    if collisions:
+        raise SystemExit(f"tournament rule ids collide with comprehensive rule ids: {collisions[:5]}")
 
-    unknown = report_unknown_markup(rules, doc)
+    unknown = report_unknown_markup(rules, doc) + [
+        (TOURNAMENT_PREFIX + rid, token) for rid, token in report_unknown_markup(tournament, tournament_doc)]
     if unknown:
         print(f"WARNING: {len(unknown)} unrecognised markup span(s) -- "
               f"games/cyberpunk/markup.py may need a new keyword:")
@@ -222,6 +275,11 @@ def main():
     write_jsonl_atomic(args.sections_output, sections)
     print(f"wrote {len(sections)} section records -> {args.sections_output}")
     print(f"rules document updated_at: {doc['updated_at']}")
+
+    guard_shrink(args.tournament_output, len(tournament), min_ratio=0.9, force=args.force)
+    write_jsonl_atomic(args.tournament_output, tournament)
+    print(f"wrote {len(tournament)} tournament rule records -> {args.tournament_output}")
+    print(f"tournament rules document updated_at: {tournament_doc['updated_at']}")
 
 
 if __name__ == "__main__":

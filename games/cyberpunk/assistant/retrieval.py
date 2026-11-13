@@ -14,9 +14,18 @@ one rule at a time instead:
     ``> **EXAMPLE:**`` block at ``EXAMPLE_WEIGHT`` (examples name cards that
     quiz questions name too, and would otherwise outrank the rule itself).
     Errata are documents too, as before.
+  - **Two rules documents, one index.** The Tournament Rules rows
+    (``tournament_rules.jsonl``, ids "TR 3.4.2", "TR A.1.2") are documents
+    beside the comprehensive rules, each carrying ``doc`` ("comprehensive",
+    "tournament", or "errata" for an erratum) so ``search_rules`` can filter.
+    A tournament document's heading path starts with "Tournament Rules", so a
+    query that says "tournament" leans toward that document without a rule.
   - **Pure heading rows are kept but heavily down-weighted.** A row whose text
     is only a heading ("11.24. ### [BLOCKER]", a section title) has no rule in
-    it; it keeps ``HEADING_WEIGHT`` of its score so it still surfaces for a
+    it. In the comprehensive rules every ``section`` row counts as a heading;
+    in the Tournament Rules a section with a body is content (the ban list is a
+    section) and only a bodiless one (its text is its bare title) is a heading.
+    A heading row keeps ``HEADING_WEIGHT`` of its score so it still surfaces for a
     query that is nothing but the heading's words, and never outranks a rule
     with a body for an ordinary question. Every rule stays in the index.
   - **Stopwords and light stemming**: a fixed English stopword list (including
@@ -57,7 +66,8 @@ import unicodedata
 from collections import Counter
 from typing import Iterable
 
-__all__ = ["STOPWORDS", "stem", "tokens", "query_terms", "build_rule_docs", "embedding_chunks", "LexicalIndex",
+__all__ = ["DOCS", "TOURNAMENT_PATH_ROOT", "STOPWORDS", "stem", "tokens", "query_terms", "build_rule_docs",
+           "embedding_chunks", "LexicalIndex",
            "LegacyChunkBM25", "EmbeddingIndex", "IndexUnavailable", "rrf", "sort_key", "corpus_fingerprint",
            "CONTEXT_WEIGHT", "EXAMPLE_WEIGHT", "HEADING_WEIGHT", "TERM_BOOST", "RRF_K"]
 
@@ -66,6 +76,8 @@ EXAMPLE_WEIGHT = 0.5   # a word in a "> **EXAMPLE:**" block counts half: it illu
 HEADING_WEIGHT = 0.15  # a heading-only row keeps this share of its score
 TERM_BOOST = 1.0       # a named term's defining rules score x2
 RRF_K = 60             # the usual reciprocal-rank-fusion constant
+DOCS = ("comprehensive", "tournament")  # the rules documents a row may belong to (its ``doc``)
+TOURNAMENT_PATH_ROOT = "Tournament Rules"
 BM25_K1, BM25_B = 1.5, 0.75
 
 TOKEN_RE = re.compile(r"\d+(?:\.\d+)+|[a-z0-9]+")
@@ -80,7 +92,10 @@ whom whose why will with within without would yes yet you your yours s t d ll re
 """.split())
 
 _HEADING_LINE_RE = re.compile(r"^\s*#+\s*")
-_RULE_NUMBER_RE = re.compile(r"^\s*\d+(?:\.\d+)*\.?\s*")
+# A leading rule number: "9.2.3." or a Tournament Rules "TR A.1.2." (the "TR " is required, so a
+# comprehensive row that opens with a capital letter is never mistaken for an appendix number).
+_RULE_NUMBER_RE = re.compile(r"^\s*(?:TR\s+[A-Z0-9]+(?:\.\d+)*\.?|\d+(?:\.\d+)*\.?)\s*")
+_TR_NUMBERED_RE = re.compile(r"^TR (?:[A-Z]|\d+)(?:\.\d+)*$")
 _FIGURE_LINE_RE = re.compile(r"^\s*\*?\s*fig(?:ure|\.)\s*\d+", re.I)
 _EXAMPLE_RE = re.compile(r"^\s*>\s*\*\*EXAMPLES?:?\*\*", re.M)
 _NUMBERED_RE = re.compile(r"^\d+(?:\.\d+)*$")
@@ -129,13 +144,18 @@ def tokens(text: str) -> list[str]:
 
 
 def sort_key(doc_id: str) -> tuple:
-    """Fixed document order: numbered rules by number, then unnumbered headings, then errata, each by id."""
+    """Fixed document order: numbered rules by number, then unnumbered headings, then the Tournament Rules
+    (numbered by number, appendix letters after digits, then unnumbered), then errata, each by id."""
     if doc_id.startswith("rule:"):
         rule_id = doc_id[5:]
         if _NUMBERED_RE.match(rule_id):
             return (0, tuple(int(p) for p in rule_id.split(".")), "")
+        if _TR_NUMBERED_RE.match(rule_id):
+            return (2, tuple((0, int(p), "") if p.isdigit() else (1, 0, p) for p in rule_id[3:].split(".")), "")
+        if rule_id.startswith("TR "):
+            return (3, (), rule_id)
         return (1, (), rule_id)
-    return (2, (), doc_id)
+    return (4, (), doc_id)
 
 
 # Documents -------------------------------------------------------------------------
@@ -164,12 +184,15 @@ def build_rule_docs(rules: Iterable[dict], errata_chunks: Iterable[dict] = ()) -
     """One document per rule row and per errata chunk, in ``sort_key`` order.
 
     A rule document: ``doc_id`` ("rule:<id>"), ``rule_id``, ``source`` "rule",
-    ``section``, ``path`` (titles of its heading ancestors, outermost first),
-    ``context`` (the path joined with " > "), ``text`` (the rule text as
-    published), and ``heading_only`` (no body besides a heading or a figure).
+    ``doc`` ("comprehensive" or "tournament", from the row's ``doc``),
+    ``section``, ``path`` (titles of its heading ancestors, outermost first;
+    "Tournament Rules" first for that document), ``context`` (the path joined
+    with " > "), ``text`` (the rule text as published), and ``heading_only``
+    (no body besides a heading or a figure; see the module docstring).
     """
     rules = list(rules)
     by_id = {r["id"]: r for r in rules}
+    # ``heading``: names a topic, so its title joins its descendants' paths (any section, or a bodiless row).
     heading = {r["id"]: r.get("kind") == "section" or not _body(r["text"]) for r in rules}
     docs = []
     for rule in rules:
@@ -182,12 +205,21 @@ def build_rule_docs(rules: Iterable[dict], errata_chunks: Iterable[dict] = ()) -
                 path.append(_clean_title(by_id[parent]["title"]))
             parent = by_id[parent].get("parent")
         path = [p for p in reversed(path) if p]
-        heading_only = heading[rule["id"]]
-        docs.append({"doc_id": f"rule:{rule['id']}", "rule_id": rule["id"], "source": "rule",
+        doc = rule.get("doc", "comprehensive")
+        if doc not in DOCS:
+            raise ValueError(f"rule {rule['id']!r} names an unknown document {doc!r}")
+        if doc == "tournament":
+            path = [TOURNAMENT_PATH_ROOT] + path
+            # A bodiless row's text is its bare title (scripts/ingest.py); otherwise the body decides.
+            heading_only = rule["text"] == rule["title"] or not _body(rule["text"])
+        else:
+            heading_only = heading[rule["id"]]
+        docs.append({"doc_id": f"rule:{rule['id']}", "rule_id": rule["id"], "source": "rule", "doc": doc,
                      "section": rule.get("section"), "path": path, "context": " > ".join(path),
                      "text": rule["text"], "heading_only": heading_only, "card_id": None})
     for chunk in errata_chunks:
         docs.append({"doc_id": chunk["chunk_id"], "rule_id": None, "source": chunk.get("source", "errata"),
+                     "doc": "errata",
                      "section": None, "path": [], "context": "", "text": chunk["text"], "heading_only": False,
                      "card_id": chunk.get("card_id")})
     ids = [d["doc_id"] for d in docs]
@@ -258,13 +290,21 @@ class LexicalIndex:
         self.df = dict(df)
         self.avg_length = sum(self.lengths) / max(len(self.docs), 1)
 
-    def scores(self, query: str) -> list[tuple[float, dict, list[str]]]:
-        """(score, doc, boosted-by terms) for every document scoring above zero, best first."""
+    def scores(self, query: str, docs: Iterable[str] | None = None) -> list[tuple[float, dict, list[str]]]:
+        """(score, doc, boosted-by terms) for every document scoring above zero, best first.
+
+        ``docs`` keeps only documents whose ``doc`` is in it. Statistics (idf,
+        average length) stay those of the whole corpus, so a filter only
+        removes rows and never reorders the ones it keeps.
+        """
+        wanted = None if docs is None else frozenset(docs)
         terms = list(dict.fromkeys(tokens(query)))
         named = query_terms(query, self.keywords, self.plain_word_terms)
         n = len(self.docs)
         scored = []
         for position, doc in enumerate(self.docs):
+            if wanted is not None and doc["doc"] not in wanted:
+                continue
             weights, length = self.tf[position], self.lengths[position]
             score = 0.0
             for term in terms:
@@ -284,9 +324,9 @@ class LexicalIndex:
         scored.sort(key=lambda s: (-s[0], s[1]))
         return [(score, doc, boosted) for score, _, doc, boosted in scored]
 
-    def search(self, query: str, k: int) -> list[dict]:
+    def search(self, query: str, k: int, docs: Iterable[str] | None = None) -> list[dict]:
         return [{**doc, "score": round(score, 4), "boosted_by": boosted}
-                for score, doc, boosted in self.scores(query)[:k]]
+                for score, doc, boosted in self.scores(query, docs)[:k]]
 
 
 class LegacyChunkBM25:

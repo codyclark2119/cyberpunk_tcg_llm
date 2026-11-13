@@ -20,8 +20,13 @@ Design rules, each one load-bearing:
     runs, and anything unexpected fails closed with an error dict, never a
     guess and never an exception for the caller to catch.
   - Every result names the card slugs, rule ids, errata ids and corpus chunks
-    it used, and the ``rules_version`` of the snapshot, so an answer built on
-    it can be traced back to its sources.
+    it used, and the ``rules_version`` and ``tournament_rules_version`` of the
+    snapshot, so an answer built on it can be traced back to its sources.
+  - Two rules documents: the comprehensive rules (ids "9.3.2") and the
+    Tournament Rules (ids "TR 3.4.2", "TR A.1.2"), each dated separately.
+    ``get_rule`` reads either; ``search_rules`` searches both unless its
+    ``doc`` filter names one. Keyword glossary lookups (``term_rules``) read
+    the comprehensive rules only.
   - Nothing here dispatches on a card's name, and nothing assumes a format.
 
 ``TOOLS`` is the registry: name, description, JSON-schema parameters and the
@@ -44,15 +49,15 @@ from games.cyberpunk.assistant import retrieval
 from games.cyberpunk.chunking import card_to_text
 from games.cyberpunk.config import (CARD_DATABASE_PATH, CORPUS_INDEX_PATH, ERRATA_CHUNKS_PATH,
                                     ERRATA_PATH, REPO_ROOT, RULE_SECTIONS_PATH, RULES_CHUNKS_PATH,
-                                    RULES_PATH)
+                                    RULES_PATH, TOURNAMENT_RULES_PATH)
 from games.cyberpunk.errata import normalize_name
-from games.cyberpunk.prompts import RULES_VERSION
+from games.cyberpunk.prompts import RULES_VERSION, TOURNAMENT_RULES_VERSION
 from harness.core.io import read_jsonl
 
 __all__ = ["TOOLS", "Tool", "call_tool", "tool_specs", "validate_args", "find_card", "get_card", "search_cards",
            "get_rule", "search_rules", "card_interactions", "parse_deck", "check_deck", "deck_profile",
            "similar_decks", "archetype_of", "played_with", "LEXICAL_METHOD", "EMBEDDING_METHOD", "HYBRID_METHOD",
-           "LEGACY_CHUNK_METHOD", "retrieval_methods", "index_status", "rule_docs"]
+           "LEGACY_CHUNK_METHOD", "retrieval_methods", "index_status", "rule_docs", "tournament_rules", "versions"]
 
 LEXICAL_METHOD = "lexical-bm25-rules"   # rule-level BM25 (retrieval.LexicalIndex)
 EMBEDDING_METHOD = "embedding"          # the rules index alone (measured by eval_retrieval.py only)
@@ -60,7 +65,9 @@ HYBRID_METHOD = "hybrid"                # lexical + embedding, reciprocal rank f
 LEGACY_CHUNK_METHOD = "lexical-bm25-chunks"  # the pre-2026-11-12 chunk BM25, kept as the measured baseline
 MAX_FIND_RESULTS = 25
 SLUG_PATTERN = r"^[a-z0-9][a-z0-9-]{0,159}$"
-RULE_NUMBER_PATTERN = r"^\d+(?:\.\d+)*\.?$"
+# A comprehensive rule number (9.3.2) or a Tournament Rules id (TR 3.4.2, TR A.1.2).
+RULE_NUMBER_PATTERN = r"^(?:\d+(?:\.\d+)*|TR (?:[A-Z]|\d+)(?:\.\d+)*)\.?$"
+SEARCH_DOCS = {"comprehensive": ("comprehensive", "errata"), "tournament": ("tournament",)}
 # Fields of a card record that are facts about the card itself (everything but
 # the image URL, which the printings list carries per printing anyway).
 CARD_FACT_FIELDS = ("id", "name", "subname", "display_name", "card_type", "color", "cost", "power", "ram",
@@ -123,8 +130,28 @@ def rules() -> tuple[dict, ...]:
 
 
 @lru_cache(maxsize=1)
+def tournament_rules() -> tuple[dict, ...]:
+    """The Tournament Rules rows (ids "TR ..."), a separately versioned document."""
+    return tuple(_rows(TOURNAMENT_RULES_PATH))
+
+
+@lru_cache(maxsize=1)
+def all_rules() -> tuple[dict, ...]:
+    """Both documents' rows; their ids never collide (the "TR " prefix), and that is checked."""
+    out = rules() + tournament_rules()
+    if len({r["id"] for r in out}) != len(out):
+        raise ValueError("duplicate rule ids across rules.jsonl and tournament_rules.jsonl")
+    return out
+
+
+def versions() -> dict[str, str]:
+    """The snapshot dates every tool result carries."""
+    return {"rules_version": RULES_VERSION, "tournament_rules_version": TOURNAMENT_RULES_VERSION}
+
+
+@lru_cache(maxsize=1)
 def rules_by_id() -> dict[str, dict]:
-    return {r["id"]: r for r in rules()}
+    return {r["id"]: r for r in all_rules()}
 
 
 @lru_cache(maxsize=1)
@@ -135,7 +162,7 @@ def sections_by_id() -> dict[str, dict]:
 @lru_cache(maxsize=1)
 def rule_children() -> dict[str, tuple[str, ...]]:
     out: dict[str, list[str]] = {}
-    for r in rules():
+    for r in all_rules():
         if r.get("parent"):
             out.setdefault(r["parent"], []).append(r["id"])
     return {k: tuple(v) for k, v in out.items()}
@@ -144,7 +171,7 @@ def rule_children() -> dict[str, tuple[str, ...]]:
 @lru_cache(maxsize=1)
 def rule_referenced_by() -> dict[str, tuple[str, ...]]:
     out: dict[str, list[str]] = {}
-    for r in rules():
+    for r in all_rules():
         for ref in r.get("refs") or ():
             out.setdefault(ref, []).append(r["id"])
     return {k: tuple(v) for k, v in out.items()}
@@ -159,7 +186,8 @@ def snapshot_values(field: str) -> list[str]:
 
 
 def _is_numbered(rule_id: str) -> bool:
-    return re.fullmatch(r"\d+(?:\.\d+)*", rule_id) is not None
+    """A citable rule number in either document (9.3.2, TR A.1.2), not an anchor fallback."""
+    return re.fullmatch(r"\d+(?:\.\d+)*|TR (?:[A-Z]|\d+)(?:\.\d+)*", rule_id) is not None
 
 
 def _rule_brief(rule_id: str) -> dict:
@@ -327,13 +355,15 @@ def _get_rule(args: dict):
         parts = rule_id.split(".")
         nearest = next((".".join(parts[:n]) for n in range(len(parts) - 1, 0, -1)
                         if ".".join(parts[:n]) in rules_by_id()), None)
-        raise ToolError("not_found", f"Rule {rule_id} is not in the {RULES_VERSION} rules snapshot.",
-                        nearest_existing=nearest)
+        where = (f"the {TOURNAMENT_RULES_VERSION} Tournament Rules" if rule_id.startswith("TR ")
+                 else f"the {RULES_VERSION} rules")
+        raise ToolError("not_found", f"Rule {rule_id} is not in {where} snapshot.", nearest_existing=nearest)
     refs = [_rule_brief(ref) for ref in rule.get("refs") or ()]
     children = [_rule_brief(c) for c in rule_children().get(rule_id, ())]
     referenced_by = [_rule_brief(r) for r in rule_referenced_by().get(rule_id, ())]
-    result = {"rule": {"id": rule_id, "kind": rule["kind"], "title": rule["title"], "text": rule["text"],
-                       "section": rule["section"], "depth": rule.get("depth")},
+    result = {"rule": {"id": rule_id, "doc": rule.get("doc", "comprehensive"), "kind": rule["kind"],
+                       "title": rule["title"], "text": rule["text"], "section": rule["section"],
+                       "depth": rule.get("depth")},
               "path": _ancestors(rule), "children": children, "references": refs, "referenced_by": referenced_by}
     used = [rule_id] + [c["id"] for c in children] + [r["id"] for r in refs]
     return result, _sources(rule_ids=used)
@@ -350,8 +380,8 @@ HYBRID_POOL = 50  # candidates from each ranking that go into the fusion
 
 @lru_cache(maxsize=1)
 def rule_docs() -> tuple[dict, ...]:
-    """The rule-level retrieval corpus: every rule row plus the errata chunks (``retrieval.build_rule_docs``)."""
-    return retrieval.build_rule_docs(rules(), _rows(ERRATA_CHUNKS_PATH))
+    """The rule-level retrieval corpus: both rules documents plus the errata chunks (``retrieval.build_rule_docs``)."""
+    return retrieval.build_rule_docs(all_rules(), _rows(ERRATA_CHUNKS_PATH))
 
 
 @lru_cache(maxsize=1)
@@ -361,9 +391,14 @@ def lexical_index() -> retrieval.LexicalIndex:
                                   keywords=markup.KEYWORDS, plain_word_terms=markup.TIMING_TRIGGERS + markup.SYMBOLS)
 
 
-def lexical_search(query: str, k: int) -> list[dict]:
+def _doc_set(doc: str | None) -> tuple[str, ...] | None:
+    """The ``doc`` values a search_rules ``doc`` filter keeps (errata go with the comprehensive rules)."""
+    return None if doc is None else SEARCH_DOCS[doc]
+
+
+def lexical_search(query: str, k: int, doc: str | None = None) -> list[dict]:
     """Rule-level BM25 (``retrieval.LexicalIndex``); deterministic, ties broken by rule number."""
-    return lexical_index().search(query, k)
+    return lexical_index().search(query, k, _doc_set(doc))
 
 
 @lru_cache(maxsize=1)
@@ -427,23 +462,26 @@ def index_status() -> dict:
             "fingerprint": retrieval.corpus_fingerprint(rule_docs())}
 
 
-def embedding_search(query: str, n: int) -> list[tuple[str, float]]:
+def embedding_search(query: str, n: int, doc: str | None = None) -> list[tuple[str, float]]:
     """(doc_id, cosine) best first; raises ``IndexUnavailable`` or the embedder's error when it cannot run."""
     index, reason = embedding_index()
     if index is None:
         raise retrieval.IndexUnavailable(reason)
     vectors = _embedder(index.model_id)([query])
-    return index.ranking(vectors[0], n)
+    if doc is None:
+        return index.ranking(vectors[0], n)
+    keep, docs = _doc_set(doc), _docs_by_id()
+    return [hit for hit in index.ranking(vectors[0], len(index.ids)) if docs[hit[0]]["doc"] in keep][:n]
 
 
 def _docs_by_id() -> dict[str, dict]:
     return {d["doc_id"]: d for d in rule_docs()}
 
 
-def hybrid_search(query: str, k: int) -> list[dict]:
+def hybrid_search(query: str, k: int, doc: str | None = None) -> list[dict]:
     """Reciprocal rank fusion of the lexical and embedding rankings (each cut at ``HYBRID_POOL``)."""
-    lexical = [h["doc_id"] for h in lexical_search(query, HYBRID_POOL)]
-    embedded = [doc_id for doc_id, _ in embedding_search(query, HYBRID_POOL)]
+    lexical = [h["doc_id"] for h in lexical_search(query, HYBRID_POOL, doc)]
+    embedded = [doc_id for doc_id, _ in embedding_search(query, HYBRID_POOL, doc)]
     docs = _docs_by_id()
     lexical_set, embedded_set = set(lexical), set(embedded)
     return [{**docs[doc_id], "score": round(score, 6),
@@ -457,7 +495,7 @@ def _passage(hit: dict) -> dict:
         return {"chunk_id": hit["chunk_id"], "source": hit.get("source"), "score": hit.get("score"),
                 "section": hit.get("section"), "rule_ids": [r for r in hit.get("rule_ids") or () if _is_numbered(r)],
                 "card_slug": hit.get("card_id"), "text": hit["text"]}
-    passage = {"chunk_id": hit["doc_id"], "source": hit["source"], "score": hit.get("score"),
+    passage = {"chunk_id": hit["doc_id"], "source": hit["source"], "doc": hit["doc"], "score": hit.get("score"),
                "section": hit.get("section"), "rule_ids": [hit["rule_id"]] if hit["rule_id"] and
                _is_numbered(hit["rule_id"]) else [], "path": hit.get("context") or None,
                "card_slug": hit.get("card_id"), "text": hit["text"]}
@@ -495,20 +533,22 @@ def retrieval_methods() -> dict[str, dict]:
 
 
 def _search_rules(args: dict):
-    query, k = args["query"].strip(), args.get("k", 5)
+    query, k, doc = args["query"].strip(), args.get("k", 5), args.get("doc")
     if not retrieval.tokens(query):
         raise ToolError("invalid_arguments", "query has no searchable words.")
     method, fallback_reason, hits = HYBRID_METHOD, None, None
     try:
-        hits = hybrid_search(query, k)
+        hits = hybrid_search(query, k, doc)
     except retrieval.IndexUnavailable as exc:
         fallback_reason = str(exc)
     except Exception as exc:  # no embedding model here, or it failed: report it and answer lexically
         fallback_reason = f"embedding model unavailable ({type(exc).__name__}: {exc})"[:300]
     if hits is None:
-        method, hits = LEXICAL_METHOD, lexical_search(query, k)
+        method, hits = LEXICAL_METHOD, lexical_search(query, k, doc)
     results = [_passage(h) for h in hits]
     result = {"query": query, "method": method, "k": k, "results": results}
+    if doc is not None:
+        result["doc"] = doc
     if fallback_reason:
         result["fallback_reason"] = fallback_reason
     errata_ids = [r["chunk_id"] for r in results if str(r["chunk_id"]).startswith("errata:")]
@@ -645,15 +685,18 @@ def _build_tools() -> dict[str, Tool]:
                       "limit": _int(None, 1, 200)}, []),
              _search_cards),
         Tool("get_rule",
-             "Use to read one rule by number (e.g. 9.3.2) with its parents, sub-rules and cross-references.",
+             "Use to read one rule by number (e.g. 9.3.2, or TR 3.4.2 for the Tournament Rules) with its "
+             "parents, sub-rules and cross-references.",
              _object({"rule_id": {"type": "string", "pattern": RULE_NUMBER_PATTERN, "maxLength": 20,
-                                  "description": "Rule number, e.g. 9.3.2."}}, ["rule_id"]),
+                                  "description": "Rule number, e.g. 9.3.2 or TR A.1.2."}}, ["rule_id"]),
              _get_rule),
         Tool("search_rules",
-             "Use for any rules question: returns the most relevant rules and errata passages with their rule "
-             "numbers.",
+             "Use for any rules or tournament question: returns the most relevant passages (comprehensive "
+             "rules, Tournament Rules, errata) with their rule numbers.",
              _object({"query": {"type": "string", "minLength": 2, "maxLength": 500},
-                      "k": _int("Passages to return.", 1, 20)}, ["query"]),
+                      "k": _int("Passages to return.", 1, 20),
+                      "doc": {"type": "string", "enum": list(SEARCH_DOCS),
+                              "description": "Only this document (default: both)."}}, ["query"]),
              _search_rules),
         Tool("card_interactions",
              "Use for two cards (by slug): lists the rules their keywords, triggers and symbols point to, and "
@@ -717,7 +760,7 @@ def validate_args(schema: dict, args: Any) -> list[str]:
 
 def _error(name: str, kind: str, message: str, **extra: Any) -> dict:
     return {"ok": False, "tool": name, "error": message, "error_kind": kind, **extra,
-            "rules_version": RULES_VERSION, "sources": _sources()}
+            **versions(), "sources": _sources()}
 
 
 def call_tool(name: Any, args: Any = None) -> dict:
@@ -733,7 +776,7 @@ def call_tool(name: Any, args: Any = None) -> dict:
         result, sources = tool.run(args)
     except ToolError as exc:
         return _error(name, exc.kind, str(exc), **exc.extra)
-    return {"ok": True, "tool": name, "rules_version": RULES_VERSION, "sources": sources, "result": result}
+    return {"ok": True, "tool": name, **versions(), "sources": sources, "result": result}
 
 
 def tool_specs() -> list[dict]:
@@ -760,8 +803,8 @@ def get_rule(rule_id: str) -> dict:
     return call_tool("get_rule", {"rule_id": rule_id})
 
 
-def search_rules(query: str, k: int | None = None) -> dict:
-    return call_tool("search_rules", _given(query=query, k=k))
+def search_rules(query: str, k: int | None = None, doc: str | None = None) -> dict:
+    return call_tool("search_rules", _given(query=query, k=k, doc=doc))
 
 
 def card_interactions(slug_a: str, slug_b: str) -> dict:

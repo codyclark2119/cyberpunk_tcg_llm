@@ -108,14 +108,17 @@ The data pipeline, all idempotent from `data/raw/` and needing no network except
 fetches:
 
 ```bash
-python scripts/fetch_rules.py && python scripts/fetch_cards.py && python scripts/fetch_errata.py
+python scripts/fetch_rules.py && python scripts/fetch_tournament_rules.py
+python scripts/fetch_cards.py && python scripts/fetch_errata.py
 python scripts/ingest.py && python scripts/build_cards.py && python scripts/build_errata.py
 python scripts/chunk_corpus.py
 ```
 
 - **Never re-fetch or re-ingest as a side effect of another task.** A snapshot refresh
   is its own change and moves `RULES_VERSION` in `games/cyberpunk/prompts.py` in the
-  same commit.
+  same commit. The Tournament Rules (`fetch_tournament_rules.py`, ids `TR 3.4.2`) are a
+  second document with their own `TOURNAMENT_RULES_VERSION`; refreshing one never moves
+  the other's date.
 - **Errata override printed card text.** They come from the CMS API, not the rendered
   page. An erratum that joins no card, or joins the wrong one, is a hard error. Keep
   it that way.

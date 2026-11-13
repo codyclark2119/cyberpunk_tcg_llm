@@ -99,6 +99,14 @@ def auto_steps(result) -> list[dict]:
 
 def test_lean_specs_keep_every_name_and_schema():
     before = json.loads(SCHEMA_SNAPSHOT.read_text(encoding="utf-8"))
+    # The two deliberate schema changes since the v2 snapshot (the Tournament Rules, 2026-11-13): get_rule's
+    # pattern also takes "TR 3.4.2" ids, and search_rules gains an optional ``doc`` filter. Every v2 argument
+    # is kept, nothing becomes required, and the old pattern's ids still match the new one.
+    old_pattern = before["get_rule"]["properties"]["rule_id"]["pattern"]
+    before["get_rule"]["properties"]["rule_id"]["pattern"] = tools.RULE_NUMBER_PATTERN
+    before["search_rules"]["properties"]["doc"] = {"type": "string", "enum": ["comprehensive", "tournament"]}
+    for rule_id in ("9", "9.3.2", "11.24.", "3.18.1.2.2.1"):
+        assert re.search(old_pattern, rule_id) and re.search(tools.RULE_NUMBER_PATTERN, rule_id), rule_id
     specs = tools.tool_specs()
     now = {s["function"]["name"]: strip_descriptions(s["function"]["parameters"]) for s in specs}
     assert list(now) == list(tools.TOOLS) and sorted(now) == sorted(before), "a tool was renamed, added or lost"
@@ -161,7 +169,7 @@ def test_prompt_budget_reports_chars_and_tokens_when_it_can():
     assert module.budget(Encoded())["rendered_prefix_tokens"] == counted["rendered_prefix_tokens"]
 
 
-def test_system_prompt_v3_warns_from_the_snapshot_wording():
+def test_system_prompt_v4_warns_from_the_snapshot_wording():
     rules = {r["id"]: r["text"] for r in read_jsonl(REPO_ROOT / "data/processed/rules.jsonl")}
     # The warning cites two rules; it must say only what they say.
     assert "spend a friendly ready Unit to attack" in rules["9.1"]
@@ -169,10 +177,15 @@ def test_system_prompt_v3_warns_from_the_snapshot_wording():
     assert "an attack spends a friendly ready Unit (rule 9.1)" in SYSTEM_PROMPT
     assert "a spent rival Unit is a valid attack target (rule 9.3.2.1)" in SYSTEM_PROMPT
     for needle in ("rules text is right", "Answer only from tool results", "the snapshot does not cover it",
-                   "Do not guess", "Tournament and event policy is not in the snapshot", "card slugs",
-                   "rule numbers", "Errata override"):
+                   "Do not guess", "card slugs", "rule numbers", "Errata override",
+                   # v4: policy is answered from the Tournament Rules and cited; what neither covers is not covered.
+                   "Tournament procedure, penalties, deck registration, event policy: use the Tournament Rules "
+                   "(TR 3.4.2), cite them. Anything in neither is not covered.",
+                   "Snapshot 2026-09-01, TR 2026-10-28. Prompt assistant-chat-v4."):
         assert needle in SYSTEM_PROMPT, needle
-    assert len(SYSTEM_PROMPT) < 1239, "v3 must stay shorter than v2"
+    assert "not in the snapshot" not in SYSTEM_PROMPT, "v3's 'policy is not in the snapshot' is gone"
+    assert "rule:TR 3.4.2" in {d["doc_id"] for d in tools.rule_docs()}, "the prompt's example id exists"
+    assert len(SYSTEM_PROMPT) < 1239, "v4 must stay shorter than v2"
 
 
 # The preload --------------------------------------------------------------------------------

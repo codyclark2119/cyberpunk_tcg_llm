@@ -237,19 +237,23 @@ def test_fake_run_writes_header_records_and_summary_deterministically():
         # Erratum records carry their page's own updated_at (snapshot data, inside preloaded get_card results);
         # anything else that looks like a timestamp would be the run's.
         undated = re.sub(rb'"page_updated_at": "[^"]*"', b"", a)
-        assert b"elapsed" not in a.lower() and not re.search(rb"20\d\d-\d\d-\d\dT", undated), "no timings or timestamps"
+        # A timing would be a field ("elapsedMs"); the word itself is in snapshot text (TR 3.4.5: "After round
+        # time has elapsed").
+        assert not re.search(rb'"elapsed', a, re.I) and not re.search(rb"20\d\d-\d\d-\d\dT", undated), \
+            "no timings or timestamps"
     header, items, summary = rows[0], rows[1:-1], rows[-1]
     from games.cyberpunk.assistant.loop import tool_specs_sha256
     assert header == {
         "kind": "header", "scorer_version": "eval-assistant-v2", "eval_prompt_version": "eval-mc-v1",
         "assistant_prompt_version": header["assistant_prompt_version"], "rules_version": header["rules_version"],
-        "set": "data/gold/quiz_mc_2026-11-12.jsonl", "set_sha256": hashlib.sha256(GOLD.read_bytes()).hexdigest(),
+        "tournament_rules_version": "2026-10-28", "set": "data/gold/quiz_mc_2026-11-12.jsonl", "set_sha256": hashlib.sha256(GOLD.read_bytes()).hexdigest(),
         "set_items": 40, "items_run": 40, "ids": None, "limit": 0, "model": "fake", "adapter": None, "fake": True,
         "thinking": True, "max_tokens": 2048, "max_tool_calls": 6, "preload": True, "preload_k": 5,
         "preload_chars": 8000, "tool_specs_sha256": tool_specs_sha256()}, header
     from games.cyberpunk.assistant.loop import ASSISTANT_PROMPT_VERSION
-    from games.cyberpunk.prompts import RULES_VERSION
+    from games.cyberpunk.prompts import RULES_VERSION, TOURNAMENT_RULES_VERSION
     assert header["assistant_prompt_version"] == ASSISTANT_PROMPT_VERSION and header["rules_version"] == RULES_VERSION
+    assert header["tournament_rules_version"] == TOURNAMENT_RULES_VERSION
     assert len(items) == 40 and summary["kind"] == "summary"
     keys = {"kind", "id", "chosen", "correct", "outcome", "parse", "known_incorrect", "known_incorrect_hit",
             "tools_called", "auto_tools", "tool_errors", "rule_ids", "card_slugs", "errata_ids", "stop_reason", "hit_tool_cap",

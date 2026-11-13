@@ -188,7 +188,7 @@ def list_runs(runs_dir: Path = RUNS_DIR) -> list[dict]:
             header = rows[0]
             entry.update({k: header.get(k) for k in ("set", "model", "adapter", "thinking", "preload", "fake",
                                                     "eval_prompt_version", "assistant_prompt_version",
-                                                    "rules_version")})
+                                                    "rules_version", "tournament_rules_version")})
             entry["summary"] = summarize([r for r in rows if r.get("kind") == "item"])
         except (EvalSetError, FileNotFoundError, ValueError, AttributeError) as exc:
             entry["error"] = f"unreadable run: {exc}"[:200]
@@ -234,6 +234,7 @@ def list_retrieval_reports(reports_dir: Path = REPORTS_DIR) -> list[dict]:
             methods[method] = ({k: m.get(k) for k in RETRIEVAL_SUMMARY_KEYS} | {"available": True}
                                if m.get("available") else {"available": False, "reason": m.get("reason")})
         out.append({"name": path.name, "rules_version": report.get("rules_version"),
+                    "tournament_rules_version": report.get("tournament_rules_version"),
                     "query_form": report.get("query_form"), "expected_set": report.get("expected_set"),
                     "expected_status": report.get("expected_status"), "scored": report.get("scored"),
                     "methods": methods})

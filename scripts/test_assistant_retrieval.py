@@ -11,6 +11,9 @@ whatever order the rules arrive in, the recall script produces its documented
 shape, the hybrid path fuses a (fake) embedding ranking and falls back with a
 reason when the index is stale, and the Eval tab's retrieval routes and script
 hold the page's rules (loopback Host only, no HTML injection, script parses).
+The Tournament Rules rows ("TR 3.4.2") join the same index: each document
+carries ``doc``, a filter removes rows without reordering, their ids sort
+apart, and adding them leaves every comprehensive document as it was.
 
 No model, no network, no real index: the embedding side runs on a fake
 embedder writing a temporary index through ``harness.core.rag.index.write_index``.
@@ -119,12 +122,15 @@ def top_ids(query: str, n: int = 3) -> list[str]:
 
 def test_rule_level_index_covers_all_rules_with_heading_paths():
     rows = read_jsonl(config.RULES_PATH)
+    tournament = read_jsonl(config.TOURNAMENT_RULES_PATH)
     errata = read_jsonl(config.ERRATA_CHUNKS_PATH)
     docs = tools.rule_docs()
-    assert len(rows) == 713
-    assert {d["rule_id"] for d in docs if d["source"] == "rule"} == {r["id"] for r in rows}
+    assert len(rows) == 713 and len(tournament) == 87
+    assert {d["rule_id"] for d in docs if d["source"] == "rule"} == {r["id"] for r in rows + tournament}
     assert sorted(d["doc_id"] for d in docs if d["source"] == "errata") == sorted(c["chunk_id"] for c in errata)
-    assert len(docs) == len(rows) + len(errata) == len(tools.lexical_index().docs)
+    assert len(docs) == len(rows) + len(tournament) + len(errata) == len(tools.lexical_index().docs)
+    assert {d["doc"] for d in docs if d["rule_id"] in {r["id"] for r in tournament}} == {"tournament"}
+    assert {d["doc"] for d in docs if d["source"] == "errata"} == {"errata"}
     by_id = {d["doc_id"]: d for d in docs}
     # Heading ancestors only: "Lag" names 11.3.1.1's topic; its sentence parent 11.3.1 is not in the path.
     assert by_id["rule:11.3.1.1"]["path"] == ["TERMS", "General Terms", "Lag"], by_id["rule:11.3.1.1"]["path"]
@@ -224,12 +230,16 @@ def test_expected_rules_draft_is_a_labelled_draft():
     quiz_ids = [i["id"] for i in read_jsonl(QUIZ)]
     assert [r["id"] for r in rows] == quiz_ids
     assert all(r["status"] == "draft" and r["authored_by"] == "Claude (unreviewed)" for r in rows)
-    assert sum(1 for r in rows if r["expected_rule_ids"]) == 30
+    assert sum(1 for r in rows if r["expected_rule_ids"]) == 36
     empty = {r["id"][-2:] for r in rows if not r["expected_rule_ids"]}
-    assert empty == {"02", "07", "16", "20", "27", "38", "03", "06", "15", "39"}
+    assert empty == {"03", "06", "15", "39"}, "only card-text questions have no expected rule"
     assert all(r.get("reason") for r in rows if not r["expected_rule_ids"])
     known = tools.rules_by_id()
     assert all(i in known for r in rows for i in r["expected_rule_ids"])
+    # The policy questions are answered from the Tournament Rules; 18 and 21 from both documents.
+    policy = {r["id"][-2:]: r["expected_rule_ids"] for r in rows if any(i.startswith("TR ") for i in r["expected_rule_ids"])}
+    assert set(policy) == {"02", "07", "16", "18", "20", "21", "27", "38"}, policy
+    assert policy["18"] == ["1.3", "TR 2.4.4"] and policy["21"] == ["7.3.3", "TR D.1"]
 
 
 def test_recall_report_has_the_documented_shape():
@@ -237,6 +247,8 @@ def test_recall_report_has_the_documented_shape():
     assert s.matches("4.12", "4.12") and s.matches("4.12", "4.12.1") and s.matches("4.12.1", "4.12")
     assert not s.matches("4", "4.12.1") and not s.matches("4.12.1", "4") and not s.matches("4.12", "4.13")
     assert not s.matches("rule-abc", "4.12") and not s.matches("4.1", "4.12"), "parent is by number, not prefix"
+    assert s.matches("TR 3.4", "TR 3.4.2") and s.matches("TR A.1.2", "TR A.1") and s.matches("TR B", "TR B")
+    assert not s.matches("3.4", "TR 3.4.2") and not s.matches("TR 3.4.2", "3.4.2") and not s.matches("TR 3.4", "3.4")
     item = {"id": "x", "question": "Can Units attack?", "choices": [{"letter": "A", "text": "Yes"},
                                                                     {"letter": "B", "text": "No"}]}
     assert s.query_for(item) == "Can Units attack?\nA. Yes\nB. No"
@@ -246,12 +258,13 @@ def test_recall_report_has_the_documented_shape():
         again = s.build_report(s.DEFAULT_EXPECTED, s.DEFAULT_QUESTIONS, None)
     assert s.dumps(report) == s.dumps(again), "the report is deterministic"
     assert report["kind"] == "retrieval-report" and report["report_version"] == "retrieval-recall-v1"
-    assert report["scored"] == 30 and len(report["skipped"]) == 10 and report["ks"] == [1, 5, 10]
+    assert report["scored"] == 36 and len(report["skipped"]) == 4 and report["ks"] == [1, 5, 10]
+    assert report["rules_version"] == "2026-09-01" and report["tournament_rules_version"] == "2026-10-28"
     assert report["expected_status"] == ["draft"] and report["query_form"] == "question-choices"
     assert list(report["methods"]) == [LEGACY_CHUNK_METHOD, LEXICAL_METHOD, "embedding", HYBRID_METHOD]
     for name in (LEGACY_CHUNK_METHOD, LEXICAL_METHOD):
         m = report["methods"][name]
-        assert m["available"] and len(m["items"]) == 30
+        assert m["available"] and len(m["items"]) == 36
         assert 0 <= m["recall@1"] <= m["recall@5"] <= m["recall@10"] <= 1
         assert m["hits@10"] == sum(1 for i in m["items"] if i["first_hit_rank"] and i["first_hit_rank"] <= 10)
         for i in m["items"]:
@@ -260,7 +273,9 @@ def test_recall_report_has_the_documented_shape():
     for name in ("embedding", HYBRID_METHOD):
         assert report["methods"][name] == {"available": False, "reason": report["methods"][name]["reason"]}
         assert "no rules index" in report["methods"][name]["reason"]
-    assert report["methods"][LEXICAL_METHOD]["chars@10"] < report["methods"][LEGACY_CHUNK_METHOD]["chars@10"] / 3
+    # Rule-level passages carry far less text than 1200-character chunks. Less so since the Tournament Rules
+    # joined: some of their rows are long (TR A.2.2, the infraction list, is ~15k characters).
+    assert report["methods"][LEXICAL_METHOD]["chars@10"] < report["methods"][LEGACY_CHUNK_METHOD]["chars@10"] / 2
     with tempfile.TemporaryDirectory() as tmp, no_index(), contextlib.redirect_stdout(None):
         argv = ["--name", "r1", "--reports-dir", tmp, "--methods", LEXICAL_METHOD, "--quiet"]
         assert s.main(argv) == 0
@@ -275,6 +290,49 @@ def test_recall_report_has_the_documented_shape():
 
 
 # Hybrid retrieval and its fallback --------------------------------------------------------------
+
+
+def test_tournament_rows_join_without_changing_the_comprehensive_documents():
+    rows = read_jsonl(config.RULES_PATH)
+    tournament = read_jsonl(config.TOURNAMENT_RULES_PATH)
+    errata = read_jsonl(config.ERRATA_CHUNKS_PATH)
+    alone = {d["doc_id"]: d for d in retrieval.build_rule_docs(rows, errata)}
+    both = {d["doc_id"]: d for d in tools.rule_docs()}
+    assert all(both[k] == v for k, v in alone.items()), "a comprehensive document changed"
+    # Heading path: the document's name first, then its section titles (sections with a body included).
+    assert both["rule:TR 3.4.2"]["path"] == ["Tournament Rules", "Tournament Play", "Game Procedure"]
+    assert both["rule:TR A.1.2"]["path"] == ["Tournament Rules", "Penalties & Infractions", "Penalties"]
+    # A Tournament Rules section with a body is content; one without is a heading. (In the comprehensive
+    # rules every section is a heading, figure captions included: rule 5 above has a body and stays one.)
+    assert not both["rule:TR B"]["heading_only"] and not both["rule:TR A.1"]["heading_only"]
+    assert both["rule:TR 1"]["heading_only"] and both["rule:TR A"]["heading_only"]
+    assert both["rule:5"]["heading_only"]
+    # A "TR A.1.2." number is read as a rule number, as "9.2.3." is: a row that is only a number and a
+    # heading line is a heading.
+    lone = [{"id": "TR A.9", "doc": "tournament", "kind": "rule", "title": "Odd", "text": "TR A.9. ### Odd"},
+            {"id": "TR A.8", "doc": "tournament", "kind": "rule", "title": "Odd", "text": "TR A.8. ### Odd\n\nA body."}]
+    assert [d["heading_only"] for d in retrieval.build_rule_docs(lone)] == [False, True]
+    # A capital letter opening a comprehensive row is not taken for an appendix number.
+    assert retrieval.build_rule_docs([{"id": "x", "kind": "rule", "title": "x", "text": "Units fight."}])[0][
+        "heading_only"] is False
+    # Ids sort apart: comprehensive by number, its anchors, TR by number (digits before letters), TR anchors.
+    order = ["rule:2.1", "rule:10.1", "rule:rule-abc", "rule:TR 2.9", "rule:TR 2.10", "rule:TR A.1",
+             "rule:TR B", "rule:TR rule-abc", "errata:x:01"]
+    assert sorted(reversed(order), key=retrieval.sort_key) == order
+    # Determinism over both documents: arrival order changes nothing.
+    forward = retrieval.build_rule_docs(rows + tournament, errata)
+    backward = retrieval.build_rule_docs(list(reversed(tournament)) + list(reversed(rows)), list(reversed(errata)))
+    assert forward == backward == tools.rule_docs()
+    a, b = retrieval.LexicalIndex(forward), retrieval.LexicalIndex(tuple(reversed(backward)))
+    for query in ("unsporting conduct penalty", "dice check at a competition event", "gig dice"):
+        assert a.search(query, 10) == b.search(query, 10), query
+        assert a.search(query, 10, ("tournament",)) == [h for h in a.search(query, 2000)
+                                                        if h["doc"] == "tournament"][:10], query
+    try:
+        retrieval.build_rule_docs([{"id": "x", "kind": "rule", "title": "x", "text": "x", "doc": "policy"}])
+        raise AssertionError("an unknown document name was accepted")
+    except ValueError:
+        pass
 
 
 def test_rrf_fuses_rankings_deterministically():
@@ -321,6 +379,12 @@ def test_stale_or_unusable_index_falls_back_with_a_reason():
     with no_index():
         found = ok(search_rules("when can a blocker redirect an attack", k=3))
         assert found["method"] == LEXICAL_METHOD and "no rules index" in found["fallback_reason"]
+    # An index built before the Tournament Rules joined (comprehensive rules and errata only) is stale.
+    before = retrieval.build_rule_docs(tools.rules(), read_jsonl(config.ERRATA_CHUNKS_PATH))
+    with fake_index(chunks=retrieval.embedding_chunks(before)):
+        found = ok(search_rules("when can a blocker redirect an attack", k=3))
+        assert found["method"] == LEXICAL_METHOD and "stale" in found["fallback_reason"], found
+        assert tools.index_status()["documents"] == len(before) + 87
 
 
 # The Eval tab's retrieval panel -----------------------------------------------------------------
@@ -349,7 +413,7 @@ def test_retrieval_routes_and_actions():
                 "available", "recall@1", "recall@5", "recall@10", "coverage@10", "chars@10"}
             assert methods[HYBRID_METHOD]["available"] is False
             one = client.get("/api/eval/retrieval/quiz-a.json", headers=LOCAL)
-            assert one.status_code == 200 and one.json()["report"]["scored"] == 30
+            assert one.status_code == 200 and one.json()["report"]["scored"] == 36
             assert client.get("/api/eval/retrieval/nope.json", headers=LOCAL).status_code == 404
             for bad in ("other.json", "..%2Fx.json", "quiz-a.jsonl"):
                 assert client.get("/api/eval/retrieval/" + bad, headers=LOCAL).status_code in (400, 404), bad

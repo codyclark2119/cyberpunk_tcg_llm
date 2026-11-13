@@ -46,6 +46,7 @@ from harness.core.io import read_jsonl
 
 sys.path.insert(0, str(REPO_ROOT / "scripts"))
 import ingest  # noqa: E402 -- scripts/ is not a package; path is fixed just above
+import fetch_tournament_rules  # noqa: E402
 
 DATA = REPO_ROOT / "data"
 PROCESSED = DATA / "processed"
@@ -884,6 +885,123 @@ def test_build_records_falls_back_to_an_anchor_for_an_unnumbered_section():
     assert rules[1]["is_numbered"] is False
 
 
+def test_build_records_prefixes_a_second_document():
+    """The Tournament Rules go through the same `build_records` with a "TR " prefix.
+
+    Ids, parents, anchor refs, the top-level section and the citable text all
+    carry the prefix; a `{9.2.3}` number reference is NOT a ref (it could
+    mean either document); each row says `doc`. The comprehensive path (no
+    prefix) must stay exactly as it was: no `doc` key, `{9.2.3}` is a ref.
+    """
+    body = "See [Bans](#rule-b) and {9.2.3}."
+    doc = {"items": [
+        _node("s", None, 1000, "3", "PLAY", node_type="section"),
+        _node("r", "s", 1000, "3.4", "Procedure", body=body, depth=1),
+        _node("b", None, 2000, "B", "Bans", body="No staff cards.", node_type="section"),
+        _node("i", None, 500, "", "Intro", body="Read this.", node_type="section"),
+    ]}
+    rows, sections = ingest.build_records(doc, "TR ", "tournament")
+    by_id = {r["id"]: r for r in rows}
+    assert [r["id"] for r in rows] == ["TR rule-i", "TR 3", "TR 3.4", "TR B"], [r["id"] for r in rows]
+    assert by_id["TR 3.4"]["parent"] == "TR 3" and by_id["TR 3.4"]["section"] == "TR 3. PLAY"
+    assert by_id["TR 3.4"]["text"].startswith("TR 3.4. See Bans and 9.2.3"), by_id["TR 3.4"]["text"]
+    assert by_id["TR 3.4"]["refs"] == ["TR B"], by_id["TR 3.4"]["refs"]
+    assert by_id["TR B"]["text"] == "TR B. No staff cards." and by_id["TR rule-i"]["section"] == "Intro"
+    assert {r["doc"] for r in rows} == {"tournament"}
+    assert [s["id"] for s in sections] == ["TR rule-i", "TR 3", "TR B"]
+    plain, _ = ingest.build_records(doc)
+    assert all("doc" not in r for r in plain)
+    assert {r["id"]: r["refs"] for r in plain}["3.4"] == ["9.2.3", "B"]
+
+
+def _tournament_doc():
+    return json.loads((DATA / "raw" / "tournament_rules.json").read_text(encoding="utf-8"))
+
+
+def _refused(fn) -> str:
+    try:
+        fn()
+    except SystemExit as exc:
+        return str(exc)
+    raise AssertionError("accepted what it should refuse")
+
+
+def test_fetch_tournament_rules_validate_fails_closed_on_a_bad_shape():
+    """Offline, on copies of the committed snapshot each broken one way."""
+    fetch_tournament_rules.validate(_tournament_doc())  # the real snapshot passes
+
+    def broken(change):
+        doc = _tournament_doc()
+        change(doc)
+        return lambda: fetch_tournament_rules.validate(doc)
+
+    cases = {
+        "not an object": lambda d: d.clear() or d.update({"x": 1}),
+        "no items": lambda d: d.pop("items"),
+        "zero items": lambda d: d.update(items=[]),
+        "no updated_at": lambda d: d.pop("updated_at"),
+        "bad date": lambda d: d.update(updated_at="yesterday"),
+        "missing field": lambda d: d["items"][3].pop("body_markdown"),
+        "unknown node type": lambda d: d["items"][3].update(node_type="appendix"),
+        "numbered field not a string": lambda d: d["items"][3].update(display_number=None),
+        "unnumbered rule": lambda d: next(n for n in d["items"] if n["node_type"] == "rule").update(
+            display_number=""),
+        "duplicate id": lambda d: d["items"].append(dict(d["items"][0])),
+        "duplicate number": lambda d: d["items"].append(dict(d["items"][5], id="other")),
+        "dangling parent": lambda d: next(n for n in d["items"] if n["parent_id"]).update(parent_id="gone"),
+    }
+    for name, change in cases.items():
+        assert _refused(broken(change)), name
+    assert "parent" in _refused(broken(cases["dangling parent"]))
+    assert _refused(lambda: fetch_tournament_rules.validate([]))
+
+
+def test_fetch_tournament_rules_refuses_a_shrink_and_writes_nothing_bad():
+    """`main` against a stand-in fetch: a short or malformed response never replaces the snapshot."""
+    import tempfile
+    full = _tournament_doc()
+    saved = fetch_tournament_rules.fetch_json
+    with tempfile.TemporaryDirectory() as tmp:
+        out = Path(tmp) / "tournament_rules.json"
+        out.write_text(json.dumps(full), encoding="utf-8")
+        before = out.read_bytes()
+        short = dict(full, items=[n for n in full["items"] if n["parent_id"] is None])
+        malformed = dict(full, items=[dict(n, node_type="x") for n in full["items"]])
+        try:
+            for response in (short, malformed):
+                fetch_tournament_rules.fetch_json = lambda url, response=response: response
+                _refused(lambda: fetch_tournament_rules.main(["--out", str(out)]))
+                assert out.read_bytes() == before
+            fetch_tournament_rules.fetch_json = lambda url: short
+            assert "shrink" in _refused(lambda: fetch_tournament_rules.main(["--out", str(out)]))
+            import contextlib
+            import io
+            with contextlib.redirect_stdout(io.StringIO()):
+                fetch_tournament_rules.main(["--out", str(out), "--force"])
+            assert len(json.loads(out.read_text())["items"]) == len(short["items"])
+        finally:
+            fetch_tournament_rules.fetch_json = saved
+
+
+def test_tournament_rules_snapshot_and_its_ingested_rows():
+    """The committed snapshot (2026-10-28) and `tournament_rules.jsonl`, which must be what ingest makes of it."""
+    doc = _tournament_doc()
+    assert len(doc["items"]) == 87
+    assert Counter(n["node_type"] for n in doc["items"]) == {"rule": 52, "section": 35}
+    assert all(fetch_tournament_rules.REQUIRED_NODE_FIELDS <= set(n) for n in doc["items"])
+    assert doc["updated_at"].startswith(prompts.TOURNAMENT_RULES_VERSION)
+    assert prompts.TOURNAMENT_RULES_VERSION == "2026-10-28" and prompts.RULES_VERSION == "2026-09-01"
+    rows = read_jsonl(PROCESSED / "tournament_rules.jsonl", missing_ok=False)
+    assert rows == ingest.build_tournament_records(doc), "tournament_rules.jsonl is stale: re-run ingest.py"
+    ids = [r["id"] for r in rows]
+    assert len(ids) == len(set(ids)) == 87 and all(i.startswith("TR ") for i in ids)
+    assert {"TR " + n["display_number"] for n in doc["items"] if n["node_type"] == "rule"} <= set(ids)
+    assert not set(ids) & {r["id"] for r in _rules()}, "a TR id collides with a comprehensive rule id"
+    assert {r["doc"] for r in rows} == {"tournament"}
+    assert {"TR 3.4.2", "TR A.1.2", "TR C.2.2", "TR E.2.2", "TR B"} <= set(ids)
+    assert all(ref in set(ids) for r in rows for ref in r["refs"]), "every ref joins a TR row"
+
+
 # --------------------------------------------------------------------------
 # corpus: facts about the committed launch set
 # --------------------------------------------------------------------------
@@ -1046,7 +1164,7 @@ def test_fetch_snapshot_writes_refuse_to_shrink():
 
 def test_fetch_scripts_share_one_http_helper():
     """One User-Agent and one fetch_json, in fetch_common.py, for every fetch script."""
-    for name in ("fetch_cards", "fetch_decks", "fetch_errata", "fetch_rules"):
+    for name in ("fetch_cards", "fetch_decks", "fetch_errata", "fetch_rules", "fetch_tournament_rules"):
         source = (REPO_ROOT / "scripts" / f"{name}.py").read_text(encoding="utf-8")
         assert "def fetch_json" not in source, f"{name}.py defines its own fetch_json"
         assert "USER_AGENT =" not in source, f"{name}.py defines its own USER_AGENT"
