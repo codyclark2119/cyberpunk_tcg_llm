@@ -81,6 +81,7 @@ import time
 from dataclasses import dataclass, field
 from typing import Any, Protocol
 
+from games.cyberpunk.assistant import golden_rules
 from games.cyberpunk.assistant.preload import DEFAULT_PRELOAD_CHARS, DEFAULT_PRELOAD_K
 from games.cyberpunk.assistant.preload import preload as run_preload
 from games.cyberpunk.assistant.tools import TOOLS, call_tool, tool_specs, validate_args
@@ -88,7 +89,12 @@ from games.cyberpunk.prompts import RULES_VERSION, TOURNAMENT_RULES_VERSION
 
 # v5 (2026-11-13): the preload adds implied-rule get_rule steps, search_rules cuts passages at 1,500
 # characters, and get_rule takes an ``offset``; the system prompt's wording is unchanged.
-ASSISTANT_PROMPT_VERSION = "assistant-chat-v5"
+# v6 was a 1.5k-token game-flow outline, measured worse and slower, and reverted; the name stays retired.
+# v7 (2026-11-13): the system prompt adds the gameplay Golden Rules 2.1-2.10.2 (``golden_rules.py``, read from
+# the snapshot) and ``ANSWERING_GUIDANCE``, general answering rules aimed at the 8B model's repeated misses:
+# a lean toward No when nothing "explicitly permits" it, polarity slips on negated statements, effect text
+# read as a cost, the first retrieved rule taken over a more specific one, and never searching past the preload.
+ASSISTANT_PROMPT_VERSION = "assistant-chat-v7"
 MAX_TOOL_CALLS = 6
 MAX_TOOL_CALLS_LIMIT = 16           # the most a run may allow (scripts/eval_assistant.py --max-tool-calls)
 MAX_TOKENS_LIMIT = 16384            # per model step; same as scripts/mlx_chat_worker.py (see the docstring)
@@ -97,6 +103,16 @@ DEFAULT_THINKING_MAX_TOKENS = 2048  # per model step, thinking on (see the modul
 DEFAULT_THINKING = True
 DEFAULT_PRELOAD = True
 SOURCE_KEYS = ("card_slugs", "rule_ids", "errata_ids", "deck_ids", "chunk_ids")
+
+
+# General on purpose: it names no card and no quiz question (scripts/test_assistant_prompt.py checks both).
+ANSWERING_GUIDANCE = """How to answer:
+- The rules are permissive: something is allowed unless a rule or card text forbids it or a cost can't be paid. "No rule explicitly permits it" is not a reason to answer No.
+- To judge a statement true or false, first decide whether the statement as written, including any "not" or "may not", is true; pick Yes only if it is true. State that conclusion in one line just before your final answer line.
+- Only a cost (text before a colon, or "pay ...") can stop an effect from being used. Effect text that can't fully happen resolves as much as possible (2.4, 10.10). "You may" parts are optional.
+- Numbered sub-steps of a rule happen in their numbered order.
+- When two retrieved rules seem to conflict, the more specific one wins, and card text beats the rules (2.5). Check every preloaded rule before answering, not only the first.
+- If the preloaded rules don't settle it, call search_rules or get_rule before answering."""
 
 
 def system_prompt(max_tool_calls: int = MAX_TOOL_CALLS) -> str:
@@ -112,6 +128,10 @@ Warning: some terms here are the reverse of other card games. In these rules an 
 - Errata override printed card text.
 - Give a pasted deck list to parse_deck first. Label strategy as judgment.
 - At most {max_tool_calls} tool calls per question. Keep the answer short.
+
+{golden_rules.snapshot_block()}
+
+{ANSWERING_GUIDANCE}
 
 Snapshot {RULES_VERSION}, TR {TOURNAMENT_RULES_VERSION}. Prompt {ASSISTANT_PROMPT_VERSION}."""
 

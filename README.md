@@ -658,3 +658,40 @@ python scripts/test_assistant_prompt.py   # specs, budget, preload, thinking def
 Each run's header records preload, thinking, `max_tokens`, both prompt versions and
 the tool-spec sha256; `tools_called` is what the model chose and `auto_tools` what
 the preload ran.
+
+**Prompt `assistant-chat-v7` (2026-11-13): Golden Rules and answering guidance.**
+Qwen3-8B 4-bit scored 30, 31 and 31 of 40 on sampled mixed quizzes (pass mark 35),
+and in 8 of 10 repeated misses the answering rule was already in its context: it
+leaned toward No when nothing "explicitly permits" something, slipped on negated
+statements, read effect text as a cost, took the first retrieved rule over a more
+specific one, and never searched past the preload. v7 adds two blocks to the system
+prompt, about 2,240 characters (roughly 560 tokens at 4 characters a token; the real
+count is `prompt_budget.py --tokenizer`):
+
+- **The gameplay Golden Rules 2.1-2.10.2** (`games/cyberpunk/assistant/golden_rules.py`),
+  read from `data/processed/rules.jsonl`: every rule under section 2's headings before
+  "Respect Your Rival", whose rules (2.11 on) are conduct (civility, personal space,
+  hygiene). EXAMPLE blocks are dropped and each rule keeps its id; 1,302 characters.
+  The selection must equal a pinned id list, so a snapshot refresh that changes it
+  fails instead of quietly changing the prompt.
+- **Six general answering rules** (`loop.ANSWERING_GUIDANCE`), naming no card or
+  question: the rules are permissive; judge a statement as written (including "not")
+  and state that conclusion in one line before the answer line; only a cost gates an
+  effect, and effect text resolves as much as possible (2.4, 10.10); numbered
+  sub-steps happen in order; the more specific rule and card text (2.5) win; search
+  when the preload does not settle it.
+
+Overhead goes from 9,744 to 11,988 characters (system prompt 1,230 to 3,474). The
+scorer's question wrapper (`eval-mc-v1`) and its strict letter parser are unchanged,
+and a fake scorer run differs from v5 only in the prompt version. (v6, a 1.5k-token
+game-flow outline, scored worse and slower, 31/38 against 33/38, and was reverted.)
+The guidance was written after reading the misses on both quizzes, so these runs are
+not held out; a fresh question batch from Cody is the real test. On the Mac (not yet
+run):
+
+```bash
+python scripts/prompt_budget.py --tokenizer models/qwen3-8b-4bit
+python scripts/eval_assistant.py --set data/gold/quiz_mc_2026-11-13.jsonl --model models/qwen3-8b-4bit --name q2-v7-8b-s1 --max-tokens 4096 --sample 40 --seed 1 --pass-mark 35
+python scripts/eval_assistant.py --set data/gold/quiz_mc_2026-11-13.jsonl --model models/qwen3-8b-4bit --name q2-v7-8b-s2 --max-tokens 4096 --sample 40 --seed 2 --pass-mark 35
+python scripts/eval_assistant.py --set data/gold/quiz_mc_2026-11-13.jsonl --model models/qwen3-8b-4bit --name q2-v7-8b-s3 --max-tokens 4096 --sample 40 --seed 3 --pass-mark 35
+```
