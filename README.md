@@ -456,6 +456,41 @@ python scripts/eval_assistant.py --set data/gold/quiz_mc_2026-11-13.jsonl --mode
 python scripts/eval_assistant.py --set data/gold/quiz_mc_2026-11-13.jsonl --model models/qwen3-8b-4bit --name q2-s3-8b --max-tokens 4096 --sample 40 --seed 3 --pass-mark 35
 ```
 
+**The official test (2026-11-13).** `data/gold/official_basic_test.jsonl` is the official
+"Level 1 Basic Test" with the site's exact wording and linked cards, imported from
+Cody's attempt (`data/raw/official_tests/`) by `scripts/import_test_attempt.py`: 40
+questions, 37 keyed. The site returns only whether each answer was right, so the key
+is derived from Cody's answers: right means keyed; wrong on a two-option question
+keys the other option; wrong with more options leaves it unscored with that option
+in `known_incorrect` (Q01, Q14, Q15). Letters follow option order, never the site's
+option ids. The importer fails closed on a malformed attempt, a wrong answer count or
+letter, a linked slug missing from the card database, or a `correct_count` that does
+not match the flags, and prints how many of the questions each other gold set already
+holds (38 of 40 are in the 11-13 quiz, which lost the keyword brackets).
+
+Each question's linked cards (`cards`, slugs) are preloaded with `get_card`, after the
+usual `search_rules`, instead of guessing cards from names in the text: the test says
+which card it means, and several cards share a name. Sets without `cards` run exactly
+as before. The run header records `linked_cards: true`; the Eval tab lists the set
+and shows each question's linked cards. The site passes at 85% (34/40); Cody's own bar
+is 35/40. Without `--pass-mark` the scorer only prints the official rule as a note.
+
+To add a later attempt, save the attempt JSON the site returns (decode any HTML
+entities from a chat copy) and your submitted answers ("N. X" per line, letters by
+option order) under `data/raw/official_tests/`, then merge it: a question already in
+the set must read the same, an unscored key is filled in, and a conflict is an error.
+
+```bash
+python scripts/import_test_attempt.py --attempt data/raw/official_tests/<attempt>.raw.json \
+    --answers data/raw/official_tests/<attempt>.answers.txt --out data/gold/official_basic_test.jsonl --merge
+```
+
+Mac run (not yet run):
+
+```bash
+python scripts/eval_assistant.py --set data/gold/official_basic_test.jsonl --model models/qwen3-8b-4bit --name off-v7-8b --max-tokens 4096 --pass-mark 34
+```
+
 The baseline on the Mac (not yet run):
 
 ```bash

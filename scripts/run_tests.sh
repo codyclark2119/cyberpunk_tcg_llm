@@ -72,7 +72,7 @@ py-assistant-tools   | quick | "$PY" scripts/test_assistant_tools.py           |
 py-assistant-decks   | quick | "$PY" scripts/test_assistant_deck_tools.py      | line:PASS assistant deck tools: 12/12
 py-assistant-loop    | quick | "$PY" scripts/test_assistant_loop.py            | line:PASS assistant loop: 29/29
 py-assistant-ui      | quick | "$PY" scripts/test_assistant_ui.py              | line:PASS assistant UI: 13/13
-py-assistant-eval    | quick | "$PY" scripts/test_assistant_eval.py            | line:PASS assistant eval: 27/27
+py-assistant-eval    | quick | "$PY" scripts/test_assistant_eval.py            | line:PASS assistant eval: 32/32
 py-assistant-retrieval | quick | "$PY" scripts/test_assistant_retrieval.py    | line:PASS assistant retrieval: 15/15
 py-assistant-prompt  | quick | "$PY" scripts/test_assistant_prompt.py          | line:PASS assistant prompt: 16/16
 deck-rules           | full  | "$PY" scripts/check_deck_rules.py --negative-control | contains:agree:    272/272;;contains:reproduce budget AND usage exactly: 272/272;;absent:<-- LOOK
