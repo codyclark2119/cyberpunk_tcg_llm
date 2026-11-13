@@ -730,3 +730,48 @@ python scripts/eval_assistant.py --set data/gold/quiz_mc_2026-11-13.jsonl --mode
 python scripts/eval_assistant.py --set data/gold/quiz_mc_2026-11-13.jsonl --model models/qwen3-8b-4bit --name q2-v7-8b-s2 --max-tokens 4096 --sample 40 --seed 2 --pass-mark 35
 python scripts/eval_assistant.py --set data/gold/quiz_mc_2026-11-13.jsonl --model models/qwen3-8b-4bit --name q2-v7-8b-s3 --max-tokens 4096 --sample 40 --seed 3 --pass-mark 35
 ```
+
+### Rules true/false LoRA dataset
+
+The 8B model's quiz misses are reasoning habits, not missing knowledge: it leans No, flips negated
+statements, reads effect text as a cost, ignores the more specific rule, and answers No when "no rule
+explicitly permits" something. `scripts/build_tf_dataset.py` (plan "LoRA on rules-based true/false",
+approved 2026-11-13) writes an SFT set that drills judging a statement, as written, against the rule in
+front of it, built only from `data/processed/rules.jsonl` and `tournament_rules.jsonl`. Every usable
+rule sentence (EXAMPLE blocks excluded) gives a true restatement and a false twin made by one typed
+mutation (polarity, permissive "it is not allowed", number, ready/spent, friendly/rival, only/each);
+a sentence where no mutation is unambiguous is skipped and counted by reason. Pairs are phrased as
+statements, "It is not true that ..." statements, "forbidden/optional" twins or "Can you ...?"
+questions so that "not" sits on Yes and No items equally, and Yes/No is exactly 50/50. Each example is
+the scorer's own first-step prompt (v7 system prompt, preload, `eval-mc-v1` wrapper, tool specs; built
+by calling `run_turn` with a capturing stand-in model) plus a target: a short `<think>` block, the rule
+quoted by number, the one-line conclusion and `Answer: A|B`. The split is by rule id (about 10% valid).
+A pair whose rule is not in its own preload is dropped, since the target quotes it. Built on Linux the
+preload's `search_rules` is lexical (no rules index), exactly as the scorer is without one; the manifest
+records it. Details, mutation rules and the thinking-format reasoning are in the script's docstring.
+
+The **leak guard** fails the build if an item's statement or target shares a word 8-gram with any
+question or choice in `data/gold/*.jsonl`, or its statement's difflib ratio to a gold question is 0.8 or
+more (normalised text). Rules text overlaps quiz questions that quote rules, so tripped pairs are dropped
+and counted (`leak_dropped` in the manifest) rather than the guard being tuned; the guard then runs again
+and must pass, and the five nearest pairs are printed and recorded. Training on anything close to the
+gold sets would make the quiz score meaningless.
+
+`--scenarios FILE` adds drafted scenario items (`id`, `statement`, `label` true/false,
+`source_rule_ids`, `kind: "scenario-drafted"`), checked strictly and balanced on their own; the committed
+set has none. `configs/lora-rules-tf-v1.yaml` holds the `mlx_lm.lora` settings (mlx-lm 0.31.3 key names
+checked against its source): rank 8, 16 layers, lr 1e-5, batch 1, grad checkpointing, `mask_prompt`,
+max sequence 8,192 (the manifest's longest example is 5.6k tokens at 4 characters a token, 7.5k at 3),
+one epoch. On the Mac (not yet run):
+
+```bash
+python scripts/build_tf_dataset.py --check     # the committed set is what the code builds (also in the tests)
+python scripts/test_tf_dataset.py
+python scripts/prompt_budget.py --tokenizer models/qwen3-8b-4bit
+mlx_lm.lora --config configs/lora-rules-tf-v1.yaml
+python scripts/stamp_adapter.py models/adapters/rules-tf-v1 --dataset data/datasets/rules-tf-v1
+python scripts/eval_assistant.py --set data/gold/quiz_mc_2026-11-13.jsonl --model models/qwen3-8b-4bit --adapter models/adapters/rules-tf-v1 --name q2-tf1-8b-s1 --max-tokens 4096 --sample 40 --seed 1 --pass-mark 35
+python scripts/eval_assistant.py --set data/gold/quiz_mc_2026-11-13.jsonl --model models/qwen3-8b-4bit --adapter models/adapters/rules-tf-v1 --name q2-tf1-8b-s2 --max-tokens 4096 --sample 40 --seed 2 --pass-mark 35
+python scripts/eval_assistant.py --set data/gold/quiz_mc_2026-11-13.jsonl --model models/qwen3-8b-4bit --adapter models/adapters/rules-tf-v1 --name q2-tf1-8b-s3 --max-tokens 4096 --sample 40 --seed 3 --pass-mark 35
+python scripts/eval_assistant.py --set data/gold/official_basic_test.jsonl --model models/qwen3-8b-4bit --adapter models/adapters/rules-tf-v1 --name off-tf1-8b --max-tokens 4096 --pass-mark 34
+```

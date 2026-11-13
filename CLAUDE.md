@@ -52,6 +52,7 @@ python scripts/test_validation_console.py && python scripts/test_play_app.py
 python scripts/test_assistant_tools.py && python scripts/test_assistant_deck_tools.py
 python scripts/test_assistant_loop.py && python scripts/test_assistant_ui.py
 python scripts/test_assistant_eval.py && python scripts/test_assistant_retrieval.py
+python scripts/test_tf_dataset.py   # rules-only true/false LoRA set: mutations, balance, leak guard
 python scripts/check_deck_rules.py --negative-control
 ```
 
