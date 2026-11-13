@@ -19,7 +19,7 @@ line resolves, holds the deck and adds ``check_deck`` and ``deck_profile``;
 ``/api/deck/clear`` drops it). The loop gives a held deck to the model as a
 labelled block in the system message (``loop.deck_context``).
 ``/api/chat/reset`` starts a new chat (history cleared; the deck stays until
-cleared). ``GET /api/status`` reports the snapshot (``RULES_VERSION``, card
+cleared). ``GET /api/status`` reports the snapshot (``RULES_VERSION``, ``TOURNAMENT_RULES_VERSION``, card
 count) and the model's state: none, idle, loading, ready or error. With no model
 configured the chat route answers 503 ``no_model``; a real model is a local MLX
 worker that starts on the first question (``scripts/assistant_local.py
@@ -86,7 +86,7 @@ from games.cyberpunk.assistant.loop import (ASSISTANT_PROMPT_VERSION, DEFAULT_PR
                                             default_max_tokens, run_turn)
 from games.cyberpunk.assistant.tools import TOOLS, call_tool, cards, index_status
 from games.cyberpunk.config import REPO_ROOT
-from games.cyberpunk.prompts import RULES_VERSION
+from games.cyberpunk.prompts import RULES_VERSION, TOURNAMENT_RULES_VERSION
 from harness.core.webui.monitor import build_app
 from harness.core.webui.runner import Runner, lan_ip
 
@@ -430,7 +430,7 @@ class EvalRunner(Runner):
 
 
 def registry_view() -> dict:
-    return {"rulesVersion": RULES_VERSION,
+    return {"rulesVersion": RULES_VERSION, "tournamentRulesVersion": TOURNAMENT_RULES_VERSION,
             "tools": [{"name": t.name, "description": t.description, "parameters": t.parameters}
                       for t in TOOLS.values()]}
 
@@ -489,7 +489,8 @@ def build_assistant_app(*, token: str | None = None, lan: bool = False, chat: Ch
                 payload = None
             if not isinstance(payload, dict):
                 return JSONResponse({"ok": False, "tool": name, "error": "Send the arguments as a JSON object.",
-                                     "error_kind": "invalid_arguments", "rules_version": RULES_VERSION},
+                                     "error_kind": "invalid_arguments", "rules_version": RULES_VERSION,
+                                     "tournament_rules_version": TOURNAMENT_RULES_VERSION},
                                     status_code=400)
             result = call_tool(name, payload)
             if result["ok"]:
@@ -498,7 +499,7 @@ def build_assistant_app(*, token: str | None = None, lan: bool = False, chat: Ch
 
         def chat_refusal(kind: str, message: str, status: int):
             return JSONResponse({"ok": False, "error_kind": kind, "error": message, "rulesVersion": RULES_VERSION,
-                                 "promptVersion": ASSISTANT_PROMPT_VERSION}, status_code=status)
+                                 "tournamentRulesVersion": TOURNAMENT_RULES_VERSION, "promptVersion": ASSISTANT_PROMPT_VERSION}, status_code=status)
 
         async def session_payload(request: Request):
             """(payload, session) or (refusal response, None)."""
@@ -515,7 +516,8 @@ def build_assistant_app(*, token: str | None = None, lan: bool = False, chat: Ch
 
         @app.get("/api/status")
         def status():
-            return {"rulesVersion": RULES_VERSION, "cardCount": len(cards()), "promptVersion": ASSISTANT_PROMPT_VERSION,
+            return {"rulesVersion": RULES_VERSION, "tournamentRulesVersion": TOURNAMENT_RULES_VERSION,
+                    "cardCount": len(cards()), "promptVersion": ASSISTANT_PROMPT_VERSION,
                     "maxToolCalls": MAX_TOOL_CALLS, "model": chat.status()}
 
         @app.post("/api/chat")
@@ -1005,7 +1007,8 @@ async function loadStatus() {
   if (!response.ok) return;
   const data = await response.json();
   state.maxToolCalls = data.maxToolCalls;
-  $("snapshot").textContent = "snapshot " + data.rulesVersion + " · " + data.cardCount + " cards";
+  $("snapshot").textContent = "snapshot " + data.rulesVersion + " · tournament rules " + data.tournamentRulesVersion +
+    " · " + data.cardCount + " cards";
   const m = data.model;
   const badge = $("modelBadge");
   badge.className = "badge " + m.state;
@@ -1154,7 +1157,8 @@ async function showSource(tool, args, label) {
   if (main) body.appendChild(factsList(main));
   const rest = Object.fromEntries(Object.entries(result).filter(([k]) => k !== "card" && k !== "rule"));
   if (Object.keys(rest).length) body.appendChild(factsList(rest));
-  body.appendChild(el("div", {class: "muted", style: "font-size:11px"}, tool + " · snapshot " + data.rules_version));
+  body.appendChild(el("div", {class: "muted", style: "font-size:11px"}, tool + " · snapshot " + data.rules_version +
+    " · tournament rules " + data.tournament_rules_version));
 }
 
 // Deck panel ------------------------------------------------------------------------

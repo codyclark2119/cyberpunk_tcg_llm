@@ -78,7 +78,7 @@ from games.cyberpunk.assistant.loop import (ASSISTANT_PROMPT_VERSION, DEFAULT_PR
                                             MAX_TOOL_CALLS_LIMIT, default_max_tokens, run_turn, system_prompt,
                                             tool_specs_sha256)
 from games.cyberpunk.assistant.preload import DEFAULT_PRELOAD_CHARS, DEFAULT_PRELOAD_K  # noqa: E402
-from games.cyberpunk.prompts import RULES_VERSION  # noqa: E402
+from games.cyberpunk.prompts import RULES_VERSION, TOURNAMENT_RULES_VERSION  # noqa: E402
 from harness.core.io import file_sha256, write_jsonl_atomic  # noqa: E402
 
 EVAL_PROMPT_VERSION = "eval-mc-v1"
@@ -190,7 +190,7 @@ def header_row(args, set_path: Path, items: list[dict], selected: list[dict]) ->
         shown = str(set_path)
     header = {"kind": "header", "scorer_version": SCORER_VERSION, "eval_prompt_version": EVAL_PROMPT_VERSION,
             "assistant_prompt_version": ASSISTANT_PROMPT_VERSION, "rules_version": RULES_VERSION,
-            "set": shown, "set_sha256": file_sha256(set_path), "set_items": len(items),
+            "tournament_rules_version": TOURNAMENT_RULES_VERSION, "set": shown, "set_sha256": file_sha256(set_path), "set_items": len(items),
             "items_run": len(selected), "ids": args.ids, "limit": args.limit,
             "model": "fake" if args.fake else args.model, "adapter": args.adapter, "fake": bool(args.fake),
             "thinking": bool(args.thinking), "max_tokens": args.max_tokens, "max_tool_calls": args.max_tool_calls,

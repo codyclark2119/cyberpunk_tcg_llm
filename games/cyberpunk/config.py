@@ -20,6 +20,9 @@ MODELS_DIR = REPO_ROOT / "models" / "cyberpunk"
 
 RULES_PATH = DATA_DIR / "processed" / "rules.jsonl"
 RULE_SECTIONS_PATH = DATA_DIR / "processed" / "rule_sections.jsonl"
+# The Tournament Rules, ids prefixed "TR " (scripts/ingest.py). Read by the chat
+# assistant's rules tools only; not part of the legacy chunk corpus.
+TOURNAMENT_RULES_PATH = DATA_DIR / "processed" / "tournament_rules.jsonl"
 RULES_CHUNKS_PATH = DATA_DIR / "processed" / "rule_chunks.jsonl"
 CARDS_CHUNKS_PATH = DATA_DIR / "processed" / "card_chunks.jsonl"
 CARD_DATABASE_PATH = DATA_DIR / "processed" / "card_database.jsonl"

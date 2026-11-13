@@ -466,7 +466,7 @@ def test_worker_pure_functions_without_mlx():
         {"id": 1, "ok": False, "error": "bad_max_tokens"}, True)
     assert worker.handle_line(b"{nope\n", None) == (None, False)
     assert worker.handle_line(b'{"protocol": "x"}', None) == (None, False)
-    assert "mlx" not in sys.modules
+    assert {name for name in sys.modules if name.split(".")[0] in ("mlx", "mlx_lm")} == before
 
 
 FAKE_WORKER = r"""

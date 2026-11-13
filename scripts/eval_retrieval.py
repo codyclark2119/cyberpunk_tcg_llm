@@ -10,8 +10,10 @@ retrieval method the assistant has on the same questions, before and after.
 Expected rules come from ``eval/sets/quiz_mc_expected_rules_draft.jsonl``: one
 row per quiz id with ``expected_rule_ids``. That file is a DRAFT written by
 Claude and not reviewed by a person; it is a measurement aid, not gold, and
-never training data. Rows with an empty list (tournament-policy and card-only
-questions) are skipped and listed as skipped.
+never training data. Expected ids may be comprehensive rule numbers ("9.3.2")
+or Tournament Rules ids ("TR 3.4.2", "TR A.1.2"), since policy questions are
+answered from the latter. Rows with an empty list (card-only questions) are
+skipped and listed as skipped.
 
 Query. Each question is queried as the scorer's ``eval-mc-v1`` wrapper
 (``scripts/eval_assistant.py: question_message``) presents it to the model:
@@ -26,6 +28,8 @@ rule inside it; an erratum carries none). A returned id R matches an expected id
 E when R == E, or R is E's numbering parent (E with its last ".n" removed), or
 E is R's numbering parent. Only dotted numbers count, so a section heading
 without a number never matches, and two levels apart (4 vs 4.12.1) is a miss.
+A Tournament Rules id only ever matches a Tournament Rules id ("TR 3.4" is the
+parent of "TR 3.4.2"; "3.4" is not).
 
 Metrics, per method, over the scored questions:
   recall@k    fraction of questions with at least one matching id in the top k
@@ -62,7 +66,7 @@ sys.path.insert(0, str(REPO_ROOT))
 from eval_assistant import EVAL_PROMPT_VERSION, question_message  # noqa: E402
 from games.cyberpunk.assistant import tools  # noqa: E402
 from games.cyberpunk.assistant.eval_store import RUN_NAME_RE, load_mc_set  # noqa: E402
-from games.cyberpunk.prompts import RULES_VERSION  # noqa: E402
+from games.cyberpunk.prompts import RULES_VERSION, TOURNAMENT_RULES_VERSION  # noqa: E402
 from harness.core.io import file_sha256, read_jsonl  # noqa: E402
 
 REPORT_VERSION = "retrieval-recall-v1"
@@ -71,9 +75,10 @@ KS = (1, 5, 10)
 DEFAULT_EXPECTED = REPO_ROOT / "eval/sets/quiz_mc_expected_rules_draft.jsonl"
 DEFAULT_QUESTIONS = REPO_ROOT / "data/gold/quiz_mc_2026-11-12.jsonl"
 REPORTS_DIR = REPO_ROOT / "eval/reports"
-NUMBERED_RE = re.compile(r"^\d+(?:\.\d+)*$")
+NUMBERED_RE = re.compile(r"^(?:\d+|TR (?:[A-Z]|\d+))(?:\.\d+)*$")
 MATCH_RULE = ("A returned rule id R matches an expected id E when R == E, or R is E's numbering parent, or E is R's "
-              "numbering parent (one trailing '.n' apart). Only dotted rule numbers count.")
+              "numbering parent (one trailing '.n' apart). Only rule numbers count (9.3.2, or TR 3.4.2 in the "
+              "Tournament Rules, which matches only Tournament Rules ids).")
 QUERY_FORMS = {
     "question-choices": "eval-mc-v1 question text and lettered choice lines, without the 'Question:'/'Choices:' labels "
                         "and the wrapper's instruction sentences",
@@ -96,6 +101,13 @@ def query_for(item: dict, form: str = "question-choices") -> str:
         return block
     question, choices = block.split("\n\nChoices:\n", 1)
     return question[len("Question: "):] + "\n" + choices
+
+
+def _id_key(rule_id: str) -> tuple:
+    """Comprehensive ids by number, then Tournament Rules ids (appendix letters after digits)."""
+    tr = rule_id.startswith("TR ")
+    parts = (rule_id[3:] if tr else rule_id).split(".")
+    return (tr, [(0, int(p), "") if p.isdigit() else (1, 0, p) for p in parts])
 
 
 def _parent(rule_id: str) -> str | None:
@@ -133,8 +145,7 @@ def score_item(expected: list[str], passages: list[dict]) -> dict:
     found_by_k = {}
     for k in KS:
         returned = [r for p in passages[:k] for r in p.get("rule_ids") or ()]
-        found = sorted({e for e in expected if any(matches(r, e) for r in returned)},
-                       key=lambda s: [int(x) for x in s.split(".")])
+        found = sorted({e for e in expected if any(matches(r, e) for r in returned)}, key=_id_key)
         found_by_k[k] = found
     for rank, passage in enumerate(passages, 1):
         if any(matches(r, e) for r in passage.get("rule_ids") or () for e in expected):
@@ -183,6 +194,7 @@ def build_report(expected_path: Path, questions_path: Path, wanted: list[str] | 
         else:
             methods[name] = score_method(method["search"], scored, form)
     return {"kind": KIND, "report_version": REPORT_VERSION, "rules_version": RULES_VERSION,
+            "tournament_rules_version": TOURNAMENT_RULES_VERSION,
             "eval_prompt_version": EVAL_PROMPT_VERSION, "query_form": form, "query_form_text": QUERY_FORMS[form], "match_rule": MATCH_RULE,
             "expected_set": _rel(expected_path), "expected_sha256": file_sha256(expected_path),
             "expected_status": sorted({row.get("status", "") for row in rows}),

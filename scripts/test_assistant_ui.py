@@ -158,6 +158,9 @@ def test_status_reports_snapshot_and_model_state():
     with client_for() as client:
         body = client.get("/api/status", headers=LOCAL).json()
     assert body["rulesVersion"] == RULES_VERSION and body["cardCount"] == len(tools.cards()) > 0
+    assert body["tournamentRulesVersion"] == "2026-10-28"
+    # The page's snapshot badge names both documents' dates.
+    assert '"snapshot " + data.rulesVersion + " · tournament rules " + data.tournamentRulesVersion' in ASSISTANT_HTML
     assert body["promptVersion"] == ASSISTANT_PROMPT_VERSION and body["maxToolCalls"] == MAX_TOOL_CALLS
     assert body["model"]["configured"] is False and body["model"]["state"] == "none"
 
@@ -297,7 +300,7 @@ def test_deck_context_is_structured_and_absent_without_a_deck():
     messages = build_messages([{"role": "user", "content": "earlier"}], "q", deck)
     assert [m["role"] for m in messages] == ["system", "user", "user"] and messages[-1]["content"] == "q"
     assert loaded_deck_from(messages) == deck and "deck argument" in messages[0]["content"]
-    assert ASSISTANT_PROMPT_VERSION == "assistant-chat-v3"
+    assert ASSISTANT_PROMPT_VERSION == "assistant-chat-v4"
 
 
 # Trace and sources -------------------------------------------------------------------------

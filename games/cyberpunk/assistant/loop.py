@@ -67,9 +67,9 @@ from typing import Any, Protocol
 from games.cyberpunk.assistant.preload import DEFAULT_PRELOAD_CHARS, DEFAULT_PRELOAD_K
 from games.cyberpunk.assistant.preload import preload as run_preload
 from games.cyberpunk.assistant.tools import TOOLS, call_tool, tool_specs, validate_args
-from games.cyberpunk.prompts import RULES_VERSION
+from games.cyberpunk.prompts import RULES_VERSION, TOURNAMENT_RULES_VERSION
 
-ASSISTANT_PROMPT_VERSION = "assistant-chat-v3"
+ASSISTANT_PROMPT_VERSION = "assistant-chat-v4"
 MAX_TOOL_CALLS = 6
 MAX_TOOL_CALLS_LIMIT = 16           # the most a run may allow (scripts/eval_assistant.py --max-tool-calls)
 MAX_TOKENS_LIMIT = 16384            # per model step; same as scripts/mlx_chat_worker.py (see the docstring)
@@ -86,14 +86,15 @@ def system_prompt(max_tool_calls: int = MAX_TOOL_CALLS) -> str:
 Warning: some terms here are the reverse of other card games. In these rules an attack spends a friendly ready Unit (rule 9.1), and a spent rival Unit is a valid attack target (rule 9.3.2.1). Where the rules text and your expectations differ, the rules text is right.
 
 - Answer only from tool results in this conversation, including the ones looked up before you were asked.
-- If no tool result is relevant, say the snapshot does not cover it. Do not guess. Tournament and event policy is not in the snapshot.
+- If no tool result is relevant, say the snapshot does not cover it. Do not guess.
+- Tournament procedure, penalties, deck registration, event policy: use the Tournament Rules (TR 3.4.2), cite them. Anything in neither is not covered.
 - Cite rule numbers (rule 9.3.2.1) and card slugs in backticks (`v-streetkid`).
 - A card's identity is its slug; several cards share a name. If find_card says ambiguous, ask which card or answer for each.
 - Errata override printed card text.
 - Give a pasted deck list to parse_deck first. Label strategy as judgment.
 - At most {max_tool_calls} tool calls per question. Keep the answer short.
 
-Snapshot {RULES_VERSION}. Prompt {ASSISTANT_PROMPT_VERSION}."""
+Snapshot {RULES_VERSION}, TR {TOURNAMENT_RULES_VERSION}. Prompt {ASSISTANT_PROMPT_VERSION}."""
 
 
 SYSTEM_PROMPT = system_prompt(MAX_TOOL_CALLS)
@@ -164,7 +165,7 @@ class TurnResult:
                 "toolCalls": self.tool_calls, "autoToolCalls": self.auto_calls, "preload": self.preload,
                 "maxTokens": self.max_tokens, "sources": self.sources, "trace": self.trace,
                 "elapsedMs": self.elapsed_ms, "promptVersion": ASSISTANT_PROMPT_VERSION,
-                "rulesVersion": RULES_VERSION}
+                "rulesVersion": RULES_VERSION, "tournamentRulesVersion": TOURNAMENT_RULES_VERSION}
 
 
 def split_thinking(text: str) -> tuple[str | None, str]:
@@ -324,7 +325,7 @@ def summarize_result(result: dict, limit: int = 160) -> str:
 
 def _tool_error(name: str | None, kind: str, message: str) -> dict:
     return {"ok": False, "tool": name, "error": message, "error_kind": kind, "rules_version": RULES_VERSION,
-            "sources": {k: [] for k in SOURCE_KEYS}}
+            "tournament_rules_version": TOURNAMENT_RULES_VERSION, "sources": {k: [] for k in SOURCE_KEYS}}
 
 
 def _assistant_message(content: str, calls: list[ToolCall]) -> dict:

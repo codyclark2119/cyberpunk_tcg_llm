@@ -30,7 +30,7 @@ from games.cyberpunk.assistant import tools
 from games.cyberpunk.assistant.tools import (HYBRID_METHOD, LEXICAL_METHOD, TOOLS, call_tool, card_interactions, find_card,
                                              get_card, get_rule, search_cards, search_rules, tool_specs)
 from games.cyberpunk.assistant_app import ASSISTANT_HTML, build_assistant_app, host_allowed
-from games.cyberpunk.prompts import RULES_VERSION
+from games.cyberpunk.prompts import RULES_VERSION, TOURNAMENT_RULES_VERSION
 from harness.core.io import read_jsonl
 from test_assistant_retrieval import fake_index, no_index  # the shared fake-embedder index (scripts/)
 
@@ -41,6 +41,7 @@ LOCAL = {"host": "127.0.0.1:8767"}
 def ok(result: dict) -> dict:
     assert result["ok"] is True, result
     assert result["rules_version"] == RULES_VERSION
+    assert result["tournament_rules_version"] == TOURNAMENT_RULES_VERSION == "2026-10-28"
     json.dumps(result)  # JSON-serialisable, or this raises
     return result["result"]
 
@@ -48,6 +49,7 @@ def ok(result: dict) -> dict:
 def refused(result: dict, kind: str) -> dict:
     assert result["ok"] is False and result["error_kind"] == kind, result
     assert result["error"] and result["rules_version"] == RULES_VERSION
+    assert result["tournament_rules_version"] == TOURNAMENT_RULES_VERSION
     json.dumps(result)
     return result
 
@@ -176,6 +178,72 @@ def test_get_rule_with_section_context():
     assert missing["nearest_existing"] == "9.9"
 
 
+def test_get_rule_reads_tournament_rules_by_their_tr_ids():
+    rule = ok(get_rule("TR 3.4.2"))
+    assert rule["rule"]["id"] == "TR 3.4.2" and rule["rule"]["doc"] == "tournament"
+    assert rule["rule"]["title"] == "Legend Randomness" and rule["rule"]["text"].startswith("TR 3.4.2. ")
+    assert [p["id"] for p in rule["path"]] == ["TR 3", "TR 3.4"] and rule["rule"]["section"] == "TR 3. Tournament Play"
+    # A number both documents use: the bare id is the comprehensive rule, the TR id the tournament one.
+    assert ok(get_rule("3.4.1"))["rule"]["doc"] == "comprehensive"
+    assert ok(get_rule("TR 3.4.1"))["rule"]["title"] == "Play Sequence"
+    assert ok(get_rule("1.3"))["rule"]["text"].startswith("1.3. *Cyberpunk TCG* cards are published")
+    # 3.4.2 exists only in the Tournament Rules: the bare id must not fall over to it.
+    missing = refused(get_rule("3.4.2"), "not_found")
+    assert missing["nearest_existing"] == "3.4" and RULES_VERSION in missing["error"]
+    appendix = ok(get_rule("TR A.1.2."))  # an appendix letter, and a trailing period as cited in prose
+    assert appendix["rule"]["id"] == "TR A.1.2" and appendix["path"][0]["id"] == "TR A"
+    # Anchor links inside the Tournament Rules become TR refs, both ways.
+    formats = ok(get_rule("TR 1.3.1"))
+    assert [r["id"] for r in formats["references"]] == ["TR D.1", "TR B"], formats["references"]
+    assert any(r["id"] == "TR 1.3.1" for r in ok(get_rule("TR B"))["referenced_by"])
+    assert [c["id"] for c in ok(get_rule("TR 3.4"))["children"]] == [f"TR 3.4.{n}" for n in range(1, 7)]
+    gone = refused(get_rule("TR 3.4.9"), "not_found")
+    assert gone["nearest_existing"] == "TR 3.4" and "Tournament Rules" in gone["error"]
+    assert TOURNAMENT_RULES_VERSION in gone["error"]
+    for bad in ("TR3.4", "tr 3.4", "TR AB.1", "X.1", "TR", "TR .1"):
+        refused(get_rule(bad), "invalid_arguments")
+    # Glossary lookups stay on the comprehensive rules.
+    assert not any(i.startswith("TR ") for g in tools.term_rules("Blocker").values() for i in g)
+
+
+def test_search_rules_finds_tournament_rules_and_filters_by_document():
+    with no_index():
+        # Only the Tournament Rules name this infraction.
+        assert not any("unsporting" in r["text"].lower() for r in tools.rules())
+        result = search_rules("What is the penalty for Unsporting Conduct?", k=5)
+        found = ok(result)
+        top = found["results"][0]
+        assert top["doc"] == "tournament" and top["rule_ids"][0].startswith("TR "), top
+        assert top["chunk_id"] == "rule:" + top["rule_ids"][0] and top["path"].startswith("Tournament Rules > ")
+        assert set(result["sources"]["rule_ids"]) >= set(top["rule_ids"])
+        assert "doc" not in found, "no filter given, none reported"
+        everything = ok(search_rules("sleeves at a competition event", k=20))["results"]
+        assert {r["doc"] for r in everything} >= {"tournament", "comprehensive"}
+        tournament = ok(search_rules("sleeves at a competition event", k=20, doc="tournament"))
+        assert tournament["doc"] == "tournament" and all(r["doc"] == "tournament" for r in tournament["results"])
+        comprehensive = ok(search_rules("sleeves at a competition event", k=20, doc="comprehensive"))["results"]
+        assert all(r["doc"] in ("comprehensive", "errata") for r in comprehensive)
+        assert all(not i.startswith("TR ") for r in comprehensive for i in r["rule_ids"])
+        # A filter removes rows and never reorders the ones it keeps.
+        ranked = tools.lexical_search("sleeves at a competition event", 2000)
+        assert [r["chunk_id"] for r in tournament["results"]] == [
+            h["doc_id"] for h in ranked if h["doc"] == "tournament"][:20]
+        assert [r["chunk_id"] for r in comprehensive] == [
+            h["doc_id"] for h in ranked if h["doc"] != "tournament"][:20]
+        refused(search_rules("sleeves", doc="policy"), "invalid_arguments")
+        assert search_rules("sleeves", k=4, doc="tournament") == search_rules("sleeves", k=4, doc="tournament")
+    with fake_index():
+        hybrid = ok(search_rules("how many booster packs at a pre-release", k=5, doc="tournament"))
+        assert hybrid["method"] == HYBRID_METHOD and all(r["doc"] == "tournament" for r in hybrid["results"])
+        assert len(hybrid["results"]) == 5
+        # The planted embedding hit (comprehensive rule 5.4.5) is fused in unfiltered and kept out by the filter.
+        planted = "rule:5.4.5"
+        assert planted in [r["chunk_id"] for r in ok(search_rules("how big may my grip grow", k=5))["results"]]
+        filtered = ok(search_rules("how big may my grip grow", k=5, doc="tournament"))
+        assert filtered["method"] == HYBRID_METHOD and planted not in [r["chunk_id"] for r in filtered["results"]]
+        assert filtered["results"] and all(r["doc"] == "tournament" for r in filtered["results"])
+
+
 def test_search_rules_lexical_fallback_and_hybrid_with_a_fake_index():
     # Without a usable index: rule-level lexical search, and the result says why.
     with no_index():
@@ -286,7 +354,7 @@ def test_page_is_self_contained_and_its_script_parses():
 def test_routes_list_and_run_tools():
     client = CTX["client"]
     listing = client.get("/api/tools", headers=LOCAL).json()
-    assert listing["rulesVersion"] == RULES_VERSION
+    assert listing["rulesVersion"] == RULES_VERSION and listing["tournamentRulesVersion"] == TOURNAMENT_RULES_VERSION
     assert [t["name"] for t in listing["tools"]] == list(TOOLS)
     assert all(t["parameters"]["type"] == "object" for t in listing["tools"])
     run = client.post("/api/tools/find_card", json={"query": "V"}, headers=LOCAL)

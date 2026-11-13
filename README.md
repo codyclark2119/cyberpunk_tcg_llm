@@ -307,12 +307,15 @@ model's memory: `games/cyberpunk/assistant/tools.py` holds `find_card` (name to
 slugs, every same-named card listed with an `ambiguous` flag), `get_card` (full facts
 by slug, errata attached and marked as overriding the printed text), `search_cards`
 (structured filters only), `get_rule` (by rule number, with its section and
-sub-rules), `search_rules` (one passage per rule with its heading path, ranked by
+sub-rules; `TR 3.4.2` reads the Tournament Rules), `search_rules` (one passage per
+rule with its heading path, over both rules documents unless its optional `doc`
+filter names one, ranked by
 deterministic rule-level BM25 in `assistant/retrieval.py`, fused with an embedding
 ranking once a matching rules index exists; the result says which ran and why) and
 `card_interactions` (the rules two cards' keywords, triggers and symbols point to).
 Each validates its arguments against its JSON schema, fails closed with an error dict,
-and returns the slugs, rule ids and errata it used with `rules_version`. The `TOOLS`
+and returns the slugs, rule ids and errata it used with `rules_version` and
+`tournament_rules_version`. The `TOOLS`
 registry renders to OpenAI-style function specs (`tool_specs()`) for Qwen3's tool
 template. No model runs yet.
 
@@ -342,7 +345,7 @@ python scripts/test_assistant_deck_tools.py  # deck tools, same requirements
 ### Local assistant chat
 
 The same page has a chat box. `games/cyberpunk/assistant/loop.py` runs one turn: a
-system prompt (`ASSISTANT_PROMPT_VERSION`, with the snapshot's `RULES_VERSION`) tells
+system prompt (`ASSISTANT_PROMPT_VERSION`, with the snapshot's `RULES_VERSION` and `TOURNAMENT_RULES_VERSION`) tells
 the model it does not know this game, that every card and rule fact must come from a
 tool, to cite card slugs and rule numbers, and to label strategy as judgment. The
 model answers with Qwen3's native `<tool_call>` blocks (the tool specs go through the
@@ -374,7 +377,7 @@ python scripts/test_assistant_loop.py    # loop, worker parts, chat route; fake 
 ```
 
 The page opens on a Chat tab (the Tools tab is the form above). The header shows the
-data snapshot (`RULES_VERSION`, card count) and the model's state (none, idle,
+data snapshot (`RULES_VERSION`, `TOURNAMENT_RULES_VERSION`, card count) and the model's state (none, idle,
 loading, ready, error; `GET /api/status`). Answers render through a tiny escaping
 markdown subset (paragraphs, lists, bold, inline code); every other model or tool
 string is set as text. Under each answer a collapsed trace has one row per model step
@@ -403,7 +406,7 @@ keyed; fields in `data/gold/SCHEMA.md`). It is eval-only, never training data.
 `run_turn` the chat uses, wrapped in a versioned prompt (`EVAL_PROMPT_VERSION`) that
 asks for reasoning and a final `Answer: <letter>` line, parses the last such line
 strictly (none means unanswered), and writes `eval/runs/<name>.jsonl`: a header
-(model, adapter, thinking, prompt versions, `RULES_VERSION`, the set's sha256), one
+(model, adapter, thinking, prompt versions, `RULES_VERSION`, `TOURNAMENT_RULES_VERSION`, the set's sha256), one
 row per question (chosen, key, outcome, known-incorrect pick, tools called, rule ids
 and card slugs returned, cap and length flags, answer, full trace) and a summary. The
 file is deterministic and timestamp-free and is never replaced without `--force`;
@@ -451,10 +454,12 @@ python scripts/eval_assistant.py --set data/gold/quiz_mc_2026-11-12.jsonl --mode
 
 ### Rules retrieval
 
-`search_rules` ranks the 713 rules one rule at a time (each prefixed by its heading
-path, heading-only rows down-weighted, stopwords and light stemming, a named keyword
-or trigger boosting its glossary rules; errata included), all in
-`games/cyberpunk/assistant/retrieval.py`. When `data/processed/corpus_index.npz`
+`search_rules` ranks the 713 comprehensive rules and the 87 Tournament Rules rows
+(`TR 3.4.2`, added 2026-11-13, see
+[the snapshot record](docs/tournament-rules-snapshot-2026-11-13.md)) one rule at a time
+(each prefixed by its heading path, heading-only rows down-weighted, stopwords and
+light stemming, a named keyword or trigger boosting its glossary rules; errata
+included), all in `games/cyberpunk/assistant/retrieval.py`. When `data/processed/corpus_index.npz`
 exists and its fingerprint matches that rule-level corpus, it fuses the lexical and
 embedding rankings by reciprocal rank fusion (`method: "hybrid"`); a missing, stale
 or foreign index, or no embedding model on the machine, falls back to lexical with a
@@ -475,7 +480,11 @@ tab's Retrieval panel shows them, the index status, and the "Build rules index" 
 
 A chunk passage holds about fifteen rules and is credited for all of them, so the old
 method's recall is bought with seven times the text. Build the index and measure the
-hybrid on the Mac (not yet run):
+hybrid on the Mac (not yet run). Adding the Tournament Rules changed the corpus
+fingerprint, so an index built before 2026-11-13 is reported stale and search falls
+back to lexical until it is rebuilt with the first command below (which embeds both
+documents; not yet run). With the Tournament Rules the draft scores 36 questions; the
+numbers are in the snapshot record.
 
 ```bash
 python scripts/build_rules_index.py                  # Apple Silicon, mlx-embeddings; --check reports status anywhere
@@ -491,7 +500,10 @@ switchable so the Mac comparison can isolate it:
 
 - **Lean specs and prompt `assistant-chat-v3`.** Tool descriptions are one or two
   sentences on when to use the tool; names and argument schemas are unchanged (pinned
-  against `scripts/fixtures/assistant_tool_schemas_v2.json`). The prompt warns that
+  against `scripts/fixtures/assistant_tool_schemas_v2.json`; since 2026-11-13 `get_rule`
+  also takes `TR` ids and `search_rules` has an optional `doc` filter, and prompt
+  `assistant-chat-v4` answers policy from the Tournament Rules instead of calling it
+  uncovered: 9,619 characters of overhead). The prompt warns that
   some terms are the reverse of other games, quoting rules 9.1 and 9.3.2.1, says to
   answer only from tool results and to say the snapshot does not cover a question
   (tournament policy is not in it) rather than guess. `scripts/prompt_budget.py`
