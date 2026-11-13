@@ -417,6 +417,16 @@ set with its key and a review note per question (saved to `eval/notes/`, never t
 (one job at a time; chat pauses while it runs) and the runs with per-question
 outcomes and traces.
 
+`data/gold/quiz_mc_2026-11-13.jsonl` adds Cody's second quiz: the 11-12 set plus
+24 new questions (64 in all, 60 keyed; see `data/gold/SCHEMA.md`). The prompt changes
+so far were made after looking at 11-12 misses, so the `cody-quiz2-*` questions are
+the held-out measure. Mac runs (not yet run):
+
+```bash
+python scripts/eval_assistant.py --set data/gold/quiz_mc_2026-11-13.jsonl --model models/qwen3-8b-4bit --name q2-v5-8b-4096 --max-tokens 4096
+python scripts/eval_assistant.py --set data/gold/quiz_mc_2026-11-13.jsonl --model models/qwen3.8-27b-8bit --name q2-v5-27b-12288-c10 --max-tokens 12288 --max-tool-calls 10
+```
+
 The baseline on the Mac (not yet run):
 
 ```bash

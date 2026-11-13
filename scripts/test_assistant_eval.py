@@ -45,6 +45,9 @@ from harness.core.io import read_jsonl
 from harness.core.webui import runner as runner_module
 
 GOLD = REPO_ROOT / "data/gold/quiz_mc_2026-11-12.jsonl"
+GOLD2 = REPO_ROOT / "data/gold/quiz_mc_2026-11-13.jsonl"
+# Question numbers of Cody's 2026-11-13 quiz that are not word-for-word repeats of the 11-12 set.
+SECOND_QUIZ_NEW = (1, 3, 4, 5, 11, 12, 13, 14, 16, 18, 19, 22, 23, 24, 25, 27, 29, 30, 31, 32, 35, 36, 37, 38)
 SCRIPT = REPO_ROOT / "scripts/eval_assistant.py"
 LOCAL = {"host": "127.0.0.1:8767"}
 CTX: dict = {}
@@ -165,8 +168,32 @@ def test_gold_quiz_parses_with_40_items_38_keyed():
     by_id = {i["id"]: i for i in items}
     assert by_id["cody-quiz-29"]["question"].startswith('"Ready" refers to')
     assert "Gear card's bottom textbox" in by_id["cody-quiz-13"]["question"]
-    listed = eval_store.list_sets(GOLD.parent)
-    assert [s["name"] for s in listed] == [GOLD.name] and listed[0]["scored"] == 38
+    listed = {s["name"]: s["scored"] for s in eval_store.list_sets(GOLD.parent)}
+    assert listed == {GOLD.name: 38, GOLD2.name: 60}, listed
+
+
+def test_second_quiz_extends_the_first_unchanged():
+    first = eval_store.load_mc_set(GOLD)
+    items = eval_store.load_mc_set(GOLD2)
+    assert len(items) == 64 and sum(1 for i in items if i["correct"] is not None) == 60
+    new_ids = [f"cody-quiz2-{n:02d}" for n in SECOND_QUIZ_NEW]
+    assert [i["id"] for i in items] == [i["id"] for i in first] + new_ids
+    by_id = {i["id"]: i for i in items}
+    for old in first:
+        row = by_id[old["id"]]
+        if old["id"] == "cody-quiz-04":
+            # The 11-13 quiz repeats it and also marks A wrong (B "most likely", still unscored).
+            assert row["known_incorrect"] == ["A", "D"] and row["correct"] is None
+            continue
+        assert row == old, old["id"]
+    unscored = {i["id"]: i["known_incorrect"] for i in items if i["correct"] is None}
+    assert unscored == {"cody-quiz-04": ["A", "D"], "cody-quiz-15": ["A"],
+                        "cody-quiz2-01": ["A"], "cody-quiz2-14": ["D"]}, unscored
+    assert all(i["answer_key_by"] == "Cody" and "2026-11-13" in i["source"] for i in items[40:])
+    text = GOLD2.read_text(encoding="utf-8")
+    for junk in ("&#39;", "&#34;", "“", "”", "’"):
+        assert junk not in text, junk
+    assert by_id["cody-quiz2-38"]["question"].startswith("Are these correct sequences during the Start phase")
 
 
 def test_set_validation_is_strict():
