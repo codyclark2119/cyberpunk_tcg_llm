@@ -303,7 +303,7 @@ def test_deck_context_is_structured_and_absent_without_a_deck():
     messages = build_messages([{"role": "user", "content": "earlier"}], "q", deck)
     assert [m["role"] for m in messages] == ["system", "user", "user"] and messages[-1]["content"] == "q"
     assert loaded_deck_from(messages) == deck and "deck argument" in messages[0]["content"]
-    assert ASSISTANT_PROMPT_VERSION == "assistant-chat-v5"
+    assert ASSISTANT_PROMPT_VERSION == "assistant-chat-v6"
 
 
 # Trace and sources -------------------------------------------------------------------------
