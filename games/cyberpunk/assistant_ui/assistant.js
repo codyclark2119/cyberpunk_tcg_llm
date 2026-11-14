@@ -200,6 +200,40 @@ function sessionLost(previousHistory, data) {
 function elapsedText(ms) {
   return "waiting " + Math.max(0, Math.floor((ms || 0) / 1000)) + " s";
 }
+// engine_check results in a turn's trace: each tool step that ran it and succeeded, in order. A refused
+// call (no_position for a card outside the Demo games, bad arguments) is not an engine check.
+function engineChecks(trace) {
+  return (Array.isArray(trace) ? trace : []).filter((s) => s && s.kind === "tool" && s.tool === "engine_check" &&
+    s.ok && s.result && typeof s.result === "object" && typeof s.result.verdict === "string").map((s) => s.result);
+}
+const VERDICT_TEXT = {offered: "offered", not_offered: "not offered", depends: "depends", no_position: "no matching position"};
+function verdictText(verdict) {
+  return Object.prototype.hasOwnProperty.call(VERDICT_TEXT, verdict) ? VERDICT_TEXT[verdict] : String(verdict ?? "");
+}
+// "engine-checked: offered" (distinct verdicts in call order), or "" when the engine was not asked.
+function engineBadgeText(checks) {
+  const verdicts = [...new Set((checks || []).map((c) => verdictText(c.verdict)))];
+  return verdicts.length ? "engine-checked: " + verdicts.join(", ") : "";
+}
+// The play a check asked about, as a short line: "attack_target <card> -> <target>".
+function enginePlayText(check) {
+  const c = check || {};
+  return String(c.play ?? "") + " " + String(c.card ?? "") + (c.target ? " -> " + c.target : "");
+}
+// The filters a check was narrowed by, as "step main, card_state ready" ("" for none).
+function engineFiltersText(filters) {
+  return Object.entries(filters || {}).filter(([, v]) => v !== null && v !== undefined && v !== "")
+    .map(([k, v]) => k + " " + v).join(", ");
+}
+// One card's public facts at a position, as the index recorded them.
+function engineCardText(card) {
+  if (!card) return "";
+  const yes = (v) => v ? "yes" : "no";
+  return card.slug + " (" + card.public_id + ", " + card.side + " " + card.area + ")" +
+    (card.state ? " · " + card.state : "") + " · lagging " + yes(card.lagging) +
+    " · played this turn " + yes(card.played_this_turn) + " · cost " + (card.cost ?? "?") +
+    " · affordable now " + yes(card.affordable);
+}
 // pure:end
 
 // Theme ---------------------------------------------------------------------------------
@@ -431,10 +465,68 @@ function copyButton(text) {
   return b;
 }
 
+// engine_check ------------------------------------------------------------------------
+// A "positions" button per engine check in a turn, opening what the engine offered in the side panel.
+function engineButtons(checks) {
+  if (!checks.length) return null;
+  const box = el("div", {class: "sources engine"});
+  box.appendChild(el("span", {class: "muted"}, "Engine:"));
+  for (const check of checks) {
+    const b = el("button", {type: "button", class: "enginechip", title: "positions from engine_check"},
+      "positions: " + enginePlayText(check) + " (" + verdictText(check.verdict) + ")");
+    b.addEventListener("click", () => showEngineCheck(check));
+    box.appendChild(b);
+  }
+  return box;
+}
+// One engine_check result in the side panel: the verdict and counts, the split facts and what the
+// tool cannot see shown verbatim, and each example position's public facts and the engine's offer.
+function showEngineCheck(check) {
+  $("sideTitle").textContent = "engine_check: " + enginePlayText(check);
+  const body = $("sideBody");
+  body.className = "";
+  body.textContent = "";
+  const engine = check.engine || {};
+  body.appendChild(factsList({verdict: verdictText(check.verdict), play: enginePlayText(check),
+    filters: engineFiltersText(check.filters) || "none",
+    matched: (check.matched ?? 0) + " card cop(ies) in recorded positions: " + (check.offered_count ?? 0) +
+      " offered, " + (check.not_offered_count ?? 0) + " not offered",
+    engine: (engine.version || "?") + " · " + String(engine.artifactHash || "?").slice(0, 12) + " · " + (engine.index || "")}));
+  const split = Array.isArray(check.facts_that_split) ? check.facts_that_split : [];
+  if (split.length) {
+    body.appendChild(el("h3", {}, "Seen only where it was not offered (hints, not rules)"));
+    const ul = el("ul", {class: "plain"});
+    for (const s of split) ul.appendChild(el("li", {}, s.fact + ": " + (s.never_offered_when || []).join(", ")));
+    body.appendChild(ul);
+  }
+  const positions = Array.isArray(check.positions) ? check.positions : [];
+  body.appendChild(el("h3", {}, positions.length ? "Example positions" : "No example positions"));
+  for (const p of positions) {
+    const box = el("div", {class: "position " + (p.offered ? "yes" : "no")});
+    box.appendChild(el("div", {class: "poshead"}, p.position_id + " · seed " + p.seed + " · decision " +
+      p.decision_index + " · turn " + p.turn + " · " + p.step));
+    box.appendChild(el("div", {class: p.offered ? "good" : "err"},
+      p.offered ? "engine offered: " + p.offered.label : "engine did not offer this play here"));
+    const lines = {card: engineCardText(p.card), target: p.target ? engineCardText(p.target) : null,
+      payable: p.payable, "sold this turn": p.sold_this_turn, combat: p.combat,
+      "offered of the same kind": (p.offered_same_kind || []).length ? p.offered_same_kind : ["none"],
+      "state hash": p.state_hash};
+    box.appendChild(factsList(lines));
+    body.appendChild(box);
+  }
+  body.appendChild(el("h3", {}, "Not visible to this check"));
+  const nv = el("ul", {class: "plain"});
+  for (const line of check.not_visible || []) nv.appendChild(el("li", {}, line));
+  body.appendChild(nv);
+}
+
 function showTurn(question, data, restored) {
   $("chatLog").appendChild(el("div", {class: "msg q"}, question));
   const answer = el("div", {class: "msg a"});
   for (const flag of answerFlags(data, state.maxToolCalls)) answer.appendChild(el("div", {class: "flag"}, flag));
+  const checks = engineChecks(data.trace);
+  const badge = engineBadgeText(checks);
+  if (badge) answer.appendChild(el("div", {class: "enginebadge", title: "the answer used engine_check: what the game engine offered in recorded positions"}, badge));
   const body = el("div", {class: data.ok ? "" : "err"});
   // The one HTML sink on the page: mdToHtml escapes everything before adding its few fixed tags,
   // and links only this turn's cited ids (citationLinks).
@@ -448,6 +540,8 @@ function showTurn(question, data, restored) {
   answer.appendChild(bar);
   const src = sourceButtons(data.sources);
   if (src) answer.appendChild(src);
+  const engineBox = engineButtons(checks);
+  if (engineBox) answer.appendChild(engineBox);
   if (data.trace && data.trace.length) {
     const d = el("details", {class: "trace"});
     d.appendChild(el("summary", {}, "Trace: " + (data.autoToolCalls ? data.autoToolCalls + " auto step(s), " : "") +

@@ -208,3 +208,10 @@ details.chunks ul{font:11px var(--mono);color:var(--muted);margin:2px 0}
 .deckcard .qty{font:700 11px/22px var(--mono);color:var(--muted)}
 .restored{font:700 10px/1.4 var(--mono);text-transform:uppercase;letter-spacing:.12em;color:var(--muted);text-align:center;
   border-bottom:1px dashed var(--line-strong);padding-bottom:4px}
+.enginebadge{display:inline-block;font:700 11px/1.6 var(--mono);text-transform:uppercase;letter-spacing:.06em;color:var(--ok);
+  border:1px solid var(--ok);border-radius:2px;padding:0 6px;margin-bottom:4px}
+.sources button.enginechip{color:var(--ink);border-color:var(--line-strong);border-left:3px solid var(--ok)}
+.sources button.enginechip:hover{border-color:var(--ok)}
+.position{border:1px solid var(--line);border-left:3px solid var(--line-strong);padding:4px 8px;margin:6px 0}
+.position.yes{border-left-color:var(--ok)}.position.no{border-left-color:var(--warn)}
+.poshead{font:11px var(--mono);color:var(--muted)}

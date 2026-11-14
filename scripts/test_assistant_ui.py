@@ -967,6 +967,48 @@ def test_deck_and_passage_sources_render_and_deck_sources_get_labels():
     assert "nameDeckChips();" in js_function(script, "loadDecks")
 
 
+def test_engine_check_turns_get_a_badge_and_a_positions_viewer():
+    # A turn that ran engine_check (once refused for a card outside the Demo games, once answered).
+    model = ScriptedModel([call("engine_check", play="attack", card="misty-olszewski-mender-of-broken-spirits"),
+                           call("engine_check", play="attack", card="psycho-squad"), "It depends: see the positions."])
+    with client_for(model) as client:
+        data = client.post("/api/chat", json={"session": "s", "message": "Can Psycho Squad attack?"}, headers=LOCAL).json()
+    checks = run_pure("engineChecks(input)", data["trace"])
+    expected = tools.call_tool("engine_check", {"play": "attack", "card": "psycho-squad"})["result"]
+    assert checks == [expected], "only the answered call is an engine check, with the tool's own result"
+    assert run_pure("engineBadgeText(input)", checks) == "engine-checked: depends"
+    assert run_pure("engineBadgeText(input)", []) == "" and run_pure("engineChecks(input)", [{"kind": "tool"}, None]) == []
+    assert run_pure("engineBadgeText(input)", [{"verdict": "offered"}, {"verdict": "not_offered"}, {"verdict": "offered"}]) == \
+        "engine-checked: offered, not offered"
+    assert run_pure("enginePlayText(input)", {"play": "attack_target", "card": "a", "target": "b"}) == "attack_target a -> b"
+    assert run_pure("engineFiltersText(input)", {"step": "main", "card_state": None, "lagging": "no"}) == "step main, lagging no"
+    # The button opens the side panel with the verdict, every example position, the split facts and
+    # what the check cannot see, all as text taken from the result.
+    out = run_chat(["el", "factsList", "engineButtons", "showEngineCheck"], [], """
+      const box = engineButtons(input);
+      const chips = box.children.filter((c) => c.attrs && c.attrs.class === "enginechip");
+      chips[0].listeners.click[0]();
+      out = {chips: chips.map((c) => c.textContent), title: $("sideTitle").textContent, side: tree($("sideBody")),
+             none: engineButtons([])};
+    """, checks)
+    assert out["chips"] == ["positions: attack psycho-squad (depends)"] and out["none"] is None
+    assert out["title"] == "engine_check: attack psycho-squad"
+    side = _text(out["side"])
+    for p in expected["positions"]:
+        assert p["position_id"] in side and p["state_hash"] in side
+        assert (f"engine offered: {p['offered']['label']}" if p["offered"] else "engine did not offer this play here") in side
+    for s in expected["facts_that_split"]:
+        assert f"{s['fact']}: {', '.join(s['never_offered_when'])}" in side
+    for line in expected["not_visible"]:
+        assert line in side
+    assert f"{expected['offered_count']} offered, {expected['not_offered_count']} not offered" in side
+    script = page_script()
+    turn = js_function(script, "showTurn")
+    assert "engineBadgeText(checks)" in turn and "engineButtons(checks)" in turn
+    for name in ("engineButtons", "showEngineCheck"):
+        assert "innerHTML" not in js_function(script, name)
+
+
 def test_cited_slugs_show_the_card_name_from_the_same_batch():
     script = page_script()
     turn = js_function(script, "showTurn")
