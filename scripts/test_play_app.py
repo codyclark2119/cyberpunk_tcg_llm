@@ -78,7 +78,9 @@ def test_page_is_the_play_ui_and_self_contained():
     # v3 viewer fields and the training option of the bot-vs-bot launcher.
     for needle in ('kv("Chosen index", d.chosenIndex)', 'kv("Baseline index", d.baselineIndex)',
                    'kv("Agrees with baseline"', 'kv("Raw output", d.rawOutput)', "agreementText(REC.summary.agreement)",
-                   "s.modelRevision", 'id="bTraining"', "CONFIG.trainingDir"):
+                   "s.modelRevision", 'id="bTraining"', "CONFIG.trainingDir",
+                   # The Audit tab (scripts/test_audit_match_records.py exercises /api/audit).
+                   'data-tab="audit"', "/api/audit", "renderAudit"):
         assert needle in PLAY_HTML, needle
 
 

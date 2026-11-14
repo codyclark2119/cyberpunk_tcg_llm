@@ -42,6 +42,11 @@ at startup, prompt versions from ``policy_prompt.PROMPT_VERSIONS``, output fixed
 to ``<records>/../strength``), and shows the summaries of past runs side by side
 (``games/cyberpunk/strength_eval.py``), each match linked into the viewer
 (docs/local-strength-eval.md).
+The "Audit" tab replays chosen records (or all of them) on the engine worker with
+``games/cyberpunk/match_audit.py``, the code behind ``scripts/audit_match_records.py``,
+and shows each record's verdict (clean, stale, mismatch, unreadable), its problems,
+and per policy the model choices, fallback reasons, error codes and baseline
+agreement (docs/local-match-audit.md).
 
 The app is the monitor's ``build_app`` (token middleware and job routes) with
 its generic console page replaced by this one.
@@ -69,6 +74,7 @@ from games.cyberpunk.local_match import (DEFAULT_MAX_DECISIONS, DEFAULT_MAX_TURN
                                          REPO_ROOT, MatchSetup, baseline_agreement, build_decision,
                                          decision_row, load_default_setup, load_setup_file, match_header,
                                          result_row, seat_models, write_match_record)
+from games.cyberpunk.match_audit import audit_paths, running_engine
 from games.cyberpunk.policy_bot import (DEFAULT_DECISION_BUDGET_MS, Decision, PolicyRunner, Selection,
                                      check_budget_ms)
 from games.cyberpunk.policy_prompt import DROPPED_FIELDS, PROMPT_VERSION, PROMPT_VERSIONS, card_catalog
@@ -91,6 +97,8 @@ RECORD_RE = re.compile(r"^[A-Za-z0-9][A-Za-z0-9._-]{0,120}\.jsonl$")
 # The prompt-size view plays at most this many baseline games per request.
 PROMPT_SIZE_MAX_MATCHES = 5
 PROMPT_SIZE_CHARS_PER_TOKEN = 3.0
+# The Audit tab replays at most this many records per request.
+AUDIT_MAX_RECORDS = 200
 # Model slots and prompt-version slots the Strength tab offers per run.
 STRENGTH_MODEL_SLOTS = 3
 STRENGTH_PROMPT_SLOTS = 2
@@ -379,6 +387,36 @@ class PlayState:
         self._mlx_lock = asyncio.Lock()
         self._create_lock = asyncio.Lock()
         self._measure_lock = asyncio.Lock()
+        self._audit_lock = asyncio.Lock()
+        self._engine_identity: dict[str, str] | None = None
+
+    async def audit(self, payload: Mapping[str, Any]) -> dict[str, Any]:
+        """``scripts/audit_match_records.py``'s report for the named records (all when none are named)."""
+        names = payload.get("names")
+        if names is None:
+            names = [p.name for p in sorted(self.records_dir.glob("*.jsonl")) if RECORD_RE.match(p.name)] \
+                if self.records_dir.is_dir() else []
+        if (not isinstance(names, list) or not all(isinstance(n, str) and RECORD_RE.match(n) for n in names)
+                or len(set(names)) != len(names)):
+            raise PlayError("names must be a list of distinct record names.")
+        if not names:
+            raise PlayError("There are no match records to audit.")
+        if len(names) > AUDIT_MAX_RECORDS:
+            raise PlayError(f"Audit at most {AUDIT_MAX_RECORDS} records at a time.")
+        paths = [self.records_dir / name for name in names]
+        if missing := [p.name for p in paths if not p.is_file()]:
+            raise PlayError(f"No such record: {missing[0]}", 404)
+        if self._audit_lock.locked():
+            raise PlayError("An audit is already running.", 409)
+        async with self._audit_lock:
+            setup = await self.resolve_setup(payload.get("setup"))
+            if self._engine_identity is None:
+                self._engine_identity = await asyncio.to_thread(running_engine, REPO_ROOT, self.node)
+            try:
+                return await asyncio.to_thread(audit_paths, paths, setup, self._engine_identity,
+                                               node=self.node, names=names)
+            except ValueError as exc:
+                raise PlayError(str(exc)) from None
 
     async def measure_prompts(self, payload: Mapping[str, Any]) -> dict[str, Any]:
         """``scripts/measure_prompt_size.py``'s report on the Demo setup, plus its largest prompt."""
@@ -523,6 +561,7 @@ class PlayState:
                               "schemaVersion": header.get("schemaVersion"),
                               "policies": [s.get("policy") for s in header.get("seats", [])],
                               "setupSource": header.get("setupSource"),
+                              "engine": (header.get("engine") or {}).get("version"),
                               "agreement": baseline_agreement(rows)})
                 if result.get("kind") == "result":
                     entry.update({k: result.get(k) for k in ("status", "winnerSeat", "reason", "turns",
@@ -677,6 +716,19 @@ def build_play_app(records_dir: Path = DEFAULT_OUTPUT_DIR, *, token: str | None 
             except PlayError as exc:
                 return refused(exc)
 
+        @app.post("/api/audit")
+        async def audit(request: Request):
+            try:
+                payload = await request.json()
+            except ValueError:
+                payload = None
+            if not isinstance(payload, dict):
+                return refused(PlayError("Send a JSON object."))
+            try:
+                return await play.audit(payload)
+            except PlayError as exc:
+                return refused(exc)
+
         @app.get("/api/records")
         def records():
             return {"dir": str(records_dir), "records": play.list_records()}
@@ -801,7 +853,7 @@ pre{white-space:pre-wrap;word-break:break-word;font-size:12px;max-height:360px;o
 </head>
 <body>
 <header><h1>Cyberpunk TCG local play</h1>
-<nav><button data-tab="play" class="on">Play a bot</button><button data-tab="bots">Bot vs bot</button><button data-tab="records">Match records</button><button data-tab="prompt">Prompt size</button><button data-tab="strength">Strength</button></nav>
+<nav><button data-tab="play" class="on">Play a bot</button><button data-tab="bots">Bot vs bot</button><button data-tab="records">Match records</button><button data-tab="prompt">Prompt size</button><button data-tab="strength">Strength</button><button data-tab="audit">Audit</button></nav>
 <span class="muted" id="hdr"></span></header>
 <main>
 <section id="play" class="on">
@@ -879,6 +931,23 @@ pre{white-space:pre-wrap;word-break:break-word;font-size:12px;max-height:360px;o
     <div id="tRuns"></div></div>
   <div id="tOut"></div>
 </section>
+<section id="audit">
+  <div class="panel">
+    <div class="row">
+      <label>Setup file<input id="aSetup" placeholder="blank: fixed Demo decks" size="28"></label>
+      <button class="go" id="aSelected">Audit selected</button>
+      <button class="ghost" id="aAll">Audit all</button>
+      <button class="ghost" id="aRefresh">Refresh</button>
+    </div>
+    <div class="muted">Replays each record from its seed on the local engine worker and compares it with what the engine says:
+      engine identity (a record from another engine build is <b>stale</b> and not replayed), setup, every actionId offered,
+      every state hash, the final hash, and that fallbacks and model choices are what they claim. Same checks as
+      <code>scripts/audit_match_records.py</code>.</div>
+    <div class="err" id="aErr"></div>
+  </div>
+  <div class="panel" id="aList"></div>
+  <div id="aOut"></div>
+</section>
 <section id="records">
   <div class="panel"><div class="row"><button class="ghost" id="rRefresh">Refresh</button><span class="muted" id="rDir"></span></div>
   <div id="rList"></div></div>
@@ -919,6 +988,7 @@ document.querySelectorAll("nav button").forEach(b => b.addEventListener("click",
   if (b.dataset.tab === "records") loadRecords();
   if (b.dataset.tab === "bots") loadHistory();
   if (b.dataset.tab === "strength") loadStrength();
+  if (b.dataset.tab === "audit") loadAuditList();
 }));
 function showTab(name) { document.querySelector('nav button[data-tab="' + name + '"]').click(); }
 
@@ -1140,6 +1210,55 @@ function renderRecord() {
         h("b", {}, "Result"), res ? h("table", {}, kv("Status", res.status), kv("Winner seat", res.winnerSeat), kv("Reason", res.reason), kv("Turns", res.turns),
           kv("Decisions", res.decisions), kv("Selections", res.selections), kv("Errors", res.errors), kv("Worker restarts", res.workerRestarts), kv("Detail", res.detail)) : h("div", {class: "warn"}, "No result row"))),
     h("div", {class: "panel"}, table));
+}
+
+/* ---------- audit ---------- */
+$("aRefresh").addEventListener("click", () => loadAuditList());
+$("aAll").addEventListener("click", () => runAudit(null));
+$("aSelected").addEventListener("click", () => {
+  const names = Array.from(document.querySelectorAll("#aList input[type=checkbox]:checked")).map(x => x.value);
+  if (!names.length) { $("aErr").textContent = "Select at least one record, or use Audit all."; return; }
+  runAudit(names);
+});
+async function loadAuditList() {
+  const r = await api("/api/records");
+  if (!r.records.length) { $("aList").replaceChildren(h("div", {class: "muted"}, "No match records yet in " + r.dir + ".")); return; }
+  $("aList").replaceChildren(h("table", {},
+    h("tr", {}, ["", "Record", "Policies", "Status", "Decisions", "Engine", "Modified"].map(x => h("th", {}, x))),
+    r.records.map(x => h("tr", {},
+      h("td", {}, h("input", {type: "checkbox", value: x.name})), h("td", {}, x.name), h("td", {}, (x.policies || []).join(" vs ")),
+      h("td", {class: x.error ? "warn" : ""}, x.error || x.status), h("td", {}, x.decisions), h("td", {}, x.engine || ""), h("td", {}, x.modified)))));
+}
+async function runAudit(names) {
+  $("aErr").textContent = ""; $("aSelected").disabled = $("aAll").disabled = true;
+  $("aOut").replaceChildren(h("div", {class: "panel muted"}, "Replaying on the engine worker..."));
+  try {
+    const body = {};
+    if (names) body.names = names;
+    if ($("aSetup").value.trim()) body.setup = $("aSetup").value.trim();
+    renderAudit(await api("/api/audit", body));
+  } catch (e) { $("aErr").textContent = e.message; $("aOut").replaceChildren(); }
+  finally { $("aSelected").disabled = $("aAll").disabled = false; }
+}
+function seatCounts(s) {
+  return s.policy + ": " + s.modelChoices + " model, " + s.fallbacks + " fallback" + (Object.keys(s.errors).length ? " " + JSON.stringify(s.errors) : "") +
+    ", agree " + s.agree + "/" + s.decisions;
+}
+function renderAudit(report) {
+  const t = report.totals;
+  const verdicts = Object.entries(t.verdicts).map(([v, n]) => n + " " + v).join(", ");
+  const rows = report.records.map(r => h("tr", {},
+    h("td", {class: r.verdict === "clean" ? "" : "warn"}, r.verdict.toUpperCase()), h("td", {}, r.name), h("td", {}, r.status),
+    h("td", {}, r.replayed + "/" + r.decisions), h("td", {}, Object.entries(r.seats).map(([k, s]) => "seat " + k + " " + seatCounts(s)).join("; ")),
+    h("td", {}, r.problems.length ? h("ul", {}, r.problems.map(p => h("li", {}, p.code + (p.index === null ? "" : " at decision " + p.index) + ": " + p.detail))) : "")));
+  const policies = Object.entries(t.policies).map(([name, e]) => h("tr", {},
+    h("td", {}, name), h("td", {}, e.decisions), h("td", {}, e.modelChoices), h("td", {}, e.fallbacks), h("td", {}, JSON.stringify(e.reasons)),
+    h("td", {}, JSON.stringify(e.errors)), h("td", {}, e.agree + "/" + e.decisions + (e.agreement === null ? "" : " (" + (100 * e.agreement).toFixed(1) + "%)"))));
+  $("aOut").replaceChildren(
+    h("div", {class: "panel"}, h("div", {class: "banner"}, (t.ok ? "All clean: " : "Not clean: ") + verdicts + "; " + t.replayed + "/" + t.decisions + " decisions replayed"),
+      h("div", {class: "muted"}, "engine " + report.engine.version + " / " + report.engine.artifactHash.slice(0, 12) + ", setup " + report.setup),
+      h("table", {}, h("tr", {}, ["Policy", "Decisions", "Model choices", "Fallbacks", "Reasons", "Error codes", "Baseline agreement"].map(x => h("th", {}, x))), policies)),
+    h("div", {class: "panel"}, h("table", {}, h("tr", {}, ["Verdict", "Record", "Status", "Replayed", "Counts per seat", "Problems"].map(x => h("th", {}, x))), rows)));
 }
 
 /* ---------- strength ---------- */

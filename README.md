@@ -285,6 +285,20 @@ python scripts/eval_local_strength.py --run-id qwen3-v4-first --summarize-only  
 python scripts/test_strength_eval.py      # real engine, fake MLX worker
 ```
 
+`scripts/audit_match_records.py` replays match records on the running engine
+worker and compares them with what the engine says: a record from another engine
+build is reported stale, and every recorded actionId must be offered, every state
+hash and the final hash must match, and fallbacks must not be recorded as model
+choices. It counts model choices, fallback reasons and error codes and baseline
+agreement, and exits non-zero on any mismatch. The play UI's "Audit" tab runs the
+same audit. See [docs/local-match-audit.md](docs/local-match-audit.md).
+
+```bash
+python scripts/audit_match_records.py                 # every record in local/matches/
+python scripts/audit_match_records.py local/strength/RUN/matches --json
+python scripts/test_audit_match_records.py            # real engine; tampered records must fail
+```
+
 ### Local play UI
 
 `scripts/play_local.py` serves one offline page on `127.0.0.1` where you can play
