@@ -33,7 +33,7 @@
  },
  "preload_search": {
   "methods": {
-   "lexical-bm25-rules": 560
+   "lexical-bm25-rules": 509
   },
   "fallback_reasons": [
    "no rules index at data/processed/corpus_index.npz (build it on the Mac with scripts/build_rules_index.py)"
@@ -43,91 +43,123 @@
  "split": {
   "by": "first source rule id",
   "hash": "sha256('rules-tf-v1:<rule id>') % 100 < 10",
-  "train": 462,
-  "valid": 54,
-  "valid_rules": 21,
-  "train_rules": 200
+  "train": 198,
+  "valid": 22,
+  "valid_rules": 10,
+  "train_rules": 93
  },
  "counts": {
-  "items": 516,
+  "items": 220,
   "by_kind": {
-   "rule-template": 516
+   "rule-template": 220
   },
   "by_label": {
-   "A": 258,
-   "B": 258
+   "A": 110,
+   "B": 110
   },
   "by_mutation": {
    "number": 26,
-   "permissive": 52,
-   "polarity": 428,
-   "quantifier": 4,
-   "side": 4,
-   "state": 2
+   "polarity": 186,
+   "quantifier": 6,
+   "side": 2
   },
   "by_phrasing": {
-   "lexical": 58,
-   "negated": 280,
-   "question": 28,
-   "statement": 150
+   "question": 73,
+   "statement": 147
   },
   "by_mutation_and_label": {
    "number:A": 13,
    "number:B": 13,
-   "permissive:A": 26,
-   "permissive:B": 26,
-   "polarity:A": 214,
-   "polarity:B": 214,
-   "quantifier:A": 2,
-   "quantifier:B": 2,
-   "side:A": 2,
-   "side:B": 2,
-   "state:A": 1,
-   "state:B": 1
+   "polarity:A": 93,
+   "polarity:B": 93,
+   "quantifier:A": 3,
+   "quantifier:B": 3,
+   "side:A": 1,
+   "side:B": 1
   },
-  "negated_statements_by_label": {
-   "A": 183,
-   "B": 183
+  "question_share": 0.3318,
+  "label_by_negation": {
+   "negation": {
+    "A": 42,
+    "B": 51,
+    "yes_share": 0.4516
+   },
+   "no_negation": {
+    "A": 68,
+    "B": 59,
+    "yes_share": 0.5354
+   }
   },
-  "rules_used": 221,
-  "numbered_rules": 732
+  "label_by_negation_templates": {
+   "negation": {
+    "A": 42,
+    "B": 51,
+    "yes_share": 0.4516
+   },
+   "no_negation": {
+    "A": 68,
+    "B": 59,
+    "yes_share": 0.5354
+   }
+  },
+  "balance": {
+   "band": [
+    0.45,
+    0.55
+   ],
+   "limit": [
+    0.4,
+    0.6
+   ],
+   "pairs_dropped": 126
+  },
+  "rules_used": 103,
+  "numbered_rules": 732,
+  "document_rules_excluded": [
+   "1.1",
+   "1.2",
+   "1.3"
+  ]
  },
  "skips": {
   "abbreviation": 18,
   "colon-or-semicolon": 15,
-  "context-pronoun": 120,
+  "context-pronoun": 119,
   "context-reference": 139,
   "cross-reference": 32,
+  "document-meta": 6,
   "example-text": 25,
   "fragment": 25,
   "heading": 131,
   "length": 81,
   "list-or-table": 223,
-  "mutation-refused": 46,
-  "no-mutation-applies": 220,
-  "not-a-declarative-sentence": 110,
+  "mutation-refused": 28,
+  "no-mutation-applies": 226,
+  "not-a-declarative-sentence": 109,
   "number-in-condition": 3,
   "number-label": 2,
   "number-like-word": 4,
   "number-several": 8,
-  "number-zero-or-one": 15,
+  "number-zero-or-one": 16,
   "parenthetical": 52,
-  "polarity-descriptive-tournament": 41,
+  "polarity-descriptive-tournament": 40,
   "polarity-embedded": 7,
-  "polarity-extra-negation": 13,
-  "polarity-late-copula": 7,
+  "polarity-extra-negation": 24,
+  "polarity-late-copula": 6,
   "polarity-may-be": 9,
+  "polarity-negative-word": 3,
   "polarity-other-modal": 1,
-  "polarity-several-sites": 34,
+  "polarity-several-sites": 24,
   "quotation": 29,
   "side-in-condition": 2,
   "side-not-restrictive": 4,
-  "side-noun": 26,
+  "side-noun": 28,
   "side-several": 9,
-  "source-not-in-preload": 24,
+  "source-not-in-preload": 18,
   "state-not-restrictive": 1,
   "state-several": 1,
-  "subordinate-opening": 2
+  "subordinate-opening": 2,
+  "two-negations": 29
  },
  "scenario_skips": {},
  "leak_guard": {
@@ -138,15 +170,15 @@
    "quiz_mc_2026-11-13.jsonl"
   ],
   "gold_questions": 144,
-  "leak_dropped": 8,
+  "leak_dropped": 12,
   "leak_dropped_scenarios": 0,
   "tripped_first_pass": [
    {
     "id": "tf-3682f2031f67",
-    "statement": "A game value can be a negative number.",
+    "statement": "Can a game value be a negative number?",
     "shared_ngram": "a game value can be a negative number",
     "ngram_gold": "official_basic_test.jsonl:official-1159bb04",
-    "ratio": 1.0,
+    "ratio": 0.875,
     "ratio_gold": "official_basic_test.jsonl:official-1159bb04"
    },
    {
@@ -158,6 +190,22 @@
     "ratio_gold": "official_basic_test.jsonl:official-1159bb04"
    },
    {
+    "id": "tf-37e8ff65d5ef",
+    "statement": "If an effect requires you to reveal and move a card from a hidden area, do you have to reveal the card before moving it to another area?",
+    "shared_ngram": "do you have to reveal the card before",
+    "ngram_gold": "official_basic_test.jsonl:official-d67f61fe",
+    "ratio": 0.4407,
+    "ratio_gold": "official_basic_test.jsonl:official-d67f61fe"
+   },
+   {
+    "id": "tf-0bf93c77c7f3",
+    "statement": "If an effect requires you to reveal and move a card from a hidden area, you do not have to reveal the card before moving it to another area.",
+    "shared_ngram": "a hidden area you do not have to",
+    "ngram_gold": "official_basic_test.jsonl:official-e1d1543a",
+    "ratio": 0.4127,
+    "ratio_gold": "official_basic_test.jsonl:official-e1d1543a"
+   },
+   {
     "id": "tf-c772131ca8f8",
     "statement": "When you search for a card in a hidden area, you do not have to reveal any information about your findings if you fail to find a valid target.",
     "shared_ngram": "a card in a hidden area you do",
@@ -167,67 +215,76 @@
    },
    {
     "id": "tf-a946efddc135",
-    "statement": "When you search for a card in a hidden area, you must reveal any information about your findings if you fail to find a valid target.",
+    "statement": "When you search for a card in a hidden area, do you have to reveal any information about your findings if you fail to find a valid target?",
     "shared_ngram": "a card in a hidden area you do",
     "ngram_gold": "official_basic_test.jsonl:official-e1d1543a",
-    "ratio": 0.8333,
+    "ratio": 0.871,
     "ratio_gold": "official_basic_test.jsonl:official-e1d1543a"
    },
    {
+    "id": "tf-4a5b1a229b05",
+    "statement": "Are Gig dice represented by d4, d6, d8, d10, d12, d20?",
+    "shared_ngram": null,
+    "ngram_gold": null,
+    "ratio": 0.8333,
+    "ratio_gold": "quiz_mc_2026-11-12.jsonl:cody-quiz-10"
+   },
+   {
+    "id": "tf-7f595e1e7e06",
+    "statement": "Gig dice are not represented by d4, d6, d8, d10, d12, d20.",
+    "shared_ngram": null,
+    "ngram_gold": null,
+    "ratio": 0.88,
+    "ratio_gold": "quiz_mc_2026-11-12.jsonl:cody-quiz-10"
+   },
+   {
     "id": "tf-a742bcae7b63",
-    "statement": "It is not true that it is not allowed for players to use officially released Cyberpunk TCG cards in any language.",
+    "statement": "May players use officially released Cyberpunk TCG cards in any language?",
     "shared_ngram": "may use officially released cyberpunk tcg cards in",
     "ngram_gold": "quiz_mc_2026-11-12.jsonl:cody-quiz-18",
-    "ratio": 0.4878,
+    "ratio": 0.6452,
     "ratio_gold": "quiz_mc_2026-11-12.jsonl:cody-quiz-18"
    },
    {
     "id": "tf-280df5c2bf50",
-    "statement": "It is not true that players may use officially released Cyberpunk TCG cards in any language.",
+    "statement": "Players may not use officially released Cyberpunk TCG cards in any language.",
     "shared_ngram": "may use officially released cyberpunk tcg cards in",
     "ngram_gold": "quiz_mc_2026-11-12.jsonl:cody-quiz-18",
-    "ratio": 0.6111,
+    "ratio": 0.6875,
     "ratio_gold": "quiz_mc_2026-11-12.jsonl:cody-quiz-18"
    },
    {
     "id": "tf-5681b934984c",
-    "statement": "Both players must agree to a gameplay rewind before it's enacted.",
+    "statement": "Do both players have to agree to a gameplay rewind before it's enacted?",
     "shared_ngram": "agree to a gameplay rewind before its enacted",
     "ngram_gold": "official_basic_test.jsonl:official-6c282e07",
-    "ratio": 0.5116,
+    "ratio": 0.4444,
     "ratio_gold": "official_basic_test.jsonl:official-6c282e07"
    },
    {
     "id": "tf-d12aebb949e9",
-    "statement": "It is optional for both players to agree to a gameplay rewind before it's enacted.",
+    "statement": "Both players do not have to agree to a gameplay rewind before it's enacted.",
     "shared_ngram": "agree to a gameplay rewind before its enacted",
     "ngram_gold": "official_basic_test.jsonl:official-6c282e07",
-    "ratio": 0.4255,
+    "ratio": 0.4348,
     "ratio_gold": "official_basic_test.jsonl:official-6c282e07"
    }
   ],
   "result": "pass",
   "nearest": [
    {
-    "id": "tf-7f595e1e7e06",
-    "statement": "It is not true that Gig dice are represented by d4, d6, d8, d10, d12, d20.",
-    "gold": "quiz_mc_2026-11-12.jsonl:cody-quiz-10",
-    "gold_text": "Gig dice are represented by a d4, d6, d8, d10, d12, d20, d100.",
-    "ratio": 0.7586
-   },
-   {
-    "id": "tf-4a5b1a229b05",
-    "statement": "It is not true that Gig dice are not represented by d4, d6, d8, d10, d12, d20.",
-    "gold": "quiz_mc_2026-11-12.jsonl:cody-quiz-10",
-    "gold_text": "Gig dice are represented by a d4, d6, d8, d10, d12, d20, d100.",
-    "ratio": 0.7333
-   },
-   {
-    "id": "tf-66c5a0438501",
-    "statement": "You may Call a Legend as an action during your main phase.",
+    "id": "tf-b46d146e53a8",
+    "statement": "You may not activate \"activated effects\" as an action during your Main Phase.",
     "gold": "official_basic_test.jsonl:official-5d81d41f",
     "gold_text": "If a Unit in your hand has a “Sell Tag,” you may sell it as an action during your main phase.",
-    "ratio": 0.5455
+    "ratio": 0.5294
+   },
+   {
+    "id": "tf-e135fe39963f",
+    "statement": "You may not Call a Legend as an action during your main phase.",
+    "gold": "official_basic_test.jsonl:official-5d81d41f",
+    "gold_text": "If a Unit in your hand has a “Sell Tag,” you may sell it as an action during your main phase.",
+    "ratio": 0.5294
    },
    {
     "id": "tf-9a9752e249b4",
@@ -242,30 +299,37 @@
     "gold": "quiz_mc_2026-11-12.jsonl:cody-quiz-20",
     "gold_text": "For a \"Pre-release\" Rules event at the LGS level or side events, how many Cyberpunk TCG booster packs are to be used?",
     "ratio": 0.5238
+   },
+   {
+    "id": "tf-66c5a0438501",
+    "statement": "May you Call a Legend as an action during your main phase?",
+    "gold": "official_basic_test.jsonl:official-5d81d41f",
+    "gold_text": "If a Unit in your hand has a “Sell Tag,” you may sell it as an action during your main phase.",
+    "ratio": 0.4848
    }
   ]
  },
  "size_estimate": {
   "note": "characters of the tool specs, every message and the preload's tool calls, as the loop's PromptGuard counts them; tokens at 4 and at 3 characters a token",
   "chars": {
-   "min": 14879,
-   "median": 17998,
-   "max": 22446
+   "min": 14849,
+   "median": 17745,
+   "max": 21428
   },
   "tokens_chars_div_4": {
-   "min": 3719,
-   "median": 4499,
-   "max": 5612
+   "min": 3712,
+   "median": 4436,
+   "max": 5357
   },
   "tokens_chars_div_3": {
-   "min": 4959,
-   "median": 5999,
-   "max": 7482
+   "min": 4949,
+   "median": 5915,
+   "max": 7143
   },
   "target_chars": {
-   "min": 305,
-   "median": 567,
-   "max": 1496
+   "min": 281,
+   "median": 459,
+   "max": 836
   }
  }
 }
