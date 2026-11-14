@@ -485,6 +485,390 @@ def test_writing_refuses_to_shrink_without_force():
         assert tf.stale_files(out, tf.output_texts(result)) == []
 
 
+# rules-tf-v2: the combined set -----------------------------------------------------------------
+
+V2_DIR = REPO_ROOT / "data/datasets" / tf.V2_DATASET
+ENGINE_FILE = REPO_ROOT / "data/datasets/sources/engine-positions-v1.jsonl"
+# sha256 of the committed rules-tf-v1 files: v2 work must never move a byte of v1.
+V1_SHA256 = {
+    "train.jsonl": "ecb2734e43b07cacdd407e20607474c222bee2e4b16a729fd80432f2263defc4",
+    "valid.jsonl": "958dd5e02a28b69d2465357e1f2b7f15f9c82bde758f5233856653fd59399bfd",
+    "manifest.json": "0f07f7fc7dfd44792b6cf90904c3104fdaa110eddf6a5408c9d8ade0261e3aa7",
+}
+V2_SCENARIOS = [
+    {"id": "sc-hit-yes", "kind": "scenario-drafted", "label": True, "source_rule_ids": ["9.3.2.1"],
+     "statement": "Your Rival has a sideways Unit on the field. Your Unit may go after it this turn.",
+     "cards": [], "habit": "state", "why": "9.3.2.1: a spent rival Unit is a valid target.",
+     "lookup_query": "which rival Units can be attacked"},
+    {"id": "sc-hit-no", "kind": "scenario-drafted", "label": False, "source_rule_ids": ["9.3.2.1"],
+     "statement": "Your Rival has an upright Unit on the field. Your Unit may go after it this turn.",
+     "cards": [], "habit": "state", "why": "9.3.2.1: only a spent rival Unit is a valid target.",
+     "lookup_query": "which rival Units can be attacked"},
+    {"id": "sc-miss-yes", "kind": "scenario-drafted", "label": True, "source_rule_ids": ["9.3.1"],
+     "statement": "Zebras paint the moon blue on Tuesdays only.", "cards": [], "habit": "state",
+     "why": "WHY-MARKER-never-in-a-prompt", "lookup_query": "zebra moon paint"},
+    {"id": "sc-miss-no", "kind": "scenario-drafted", "label": False, "source_rule_ids": ["9.3.1"],
+     "statement": "Zebras paint the moon red on Tuesdays only.", "cards": [], "habit": "state",
+     "why": "WHY-MARKER-never-in-a-prompt", "lookup_query": "zebra moon paint"},
+    {"id": "sc-card-yes", "kind": "scenario-drafted", "label": True, "source_rule_ids": ["4.10.1"],
+     "statement": "Mantis Blades can be equipped to a friendly face-up Legend.", "cards": ["mantis-blades"],
+     "habit": "permissive", "why": "WHY-MARKER-never-in-a-prompt"},
+    {"id": "sc-card-no", "kind": "scenario-drafted", "label": False, "source_rule_ids": ["4.10.1"],
+     "statement": "Mantis Blades can only be equipped to a rival Unit.", "cards": ["mantis-blades"],
+     "habit": "permissive", "why": "WHY-MARKER-never-in-a-prompt"},
+    {"id": "sc-straddle-yes", "kind": "scenario-drafted", "label": True, "source_rule_ids": ["4.10.1", "4.10.3"],
+     "statement": "A Gear can be equipped to a friendly Unit you control.", "cards": [], "habit": "state",
+     "why": "4.10.1 is a train rule and 4.10.3 a valid one."},
+    {"id": "sc-straddle-no", "kind": "scenario-drafted", "label": False, "source_rule_ids": ["4.10.1", "4.10.3"],
+     "statement": "A Gear can be equipped to a rival Unit you do not control.", "cards": [], "habit": "state",
+     "why": "4.10.1 is a train rule and 4.10.3 a valid one."},
+]
+V2_ENGINE_CAP = 60
+
+
+def engine_fixture() -> list[dict]:
+    """Every engine item from the first six seeds (by name): enough for every class, one valid seed."""
+    rows = read_jsonl(ENGINE_FILE, missing_ok=False)
+    seeds = sorted({r["provenance"]["seed"] for r in rows})[:6]
+    return [r for r in rows if r["provenance"]["seed"] in seeds]
+
+
+def v2_build(rule_rows=None, scenarios=None, gold_dir=None) -> tf.Build:
+    key = ("v2", rule_rows is None, scenarios is None, gold_dir is None)
+    if rule_rows is None and scenarios is None and gold_dir is None and key in _CACHE:
+        return _CACHE[key]
+    result = tf.build_v2(rule_rows if rule_rows is not None else tf.load_sources(),
+                         gold_dir=gold_dir or tf.GOLD_DIR,
+                         scenarios=scenarios if scenarios is not None else engine_fixture() + copy.deepcopy(V2_SCENARIOS),
+                         engine_cap=V2_ENGINE_CAP)
+    if rule_rows is None and scenarios is None and gold_dir is None:
+        _CACHE[key] = result
+    return result
+
+
+def v2_rows(result: tf.Build) -> list[dict]:
+    return result.rows["train"] + result.rows["valid"]
+
+
+def v2_committed() -> list[dict]:
+    if "v2-committed" not in _CACHE:
+        _CACHE["v2-committed"] = (read_jsonl(V2_DIR / "train.jsonl", missing_ok=False)
+                                  + read_jsonl(V2_DIR / "valid.jsonl", missing_ok=False))
+    return _CACHE["v2-committed"]
+
+
+def v2_manifest() -> dict:
+    return json.loads((V2_DIR / "manifest.json").read_text(encoding="utf-8"))
+
+
+def _search_call(row: dict) -> dict:
+    return next(c["function"] for c in row["messages"][-3]["tool_calls"])
+
+
+def test_v1_is_byte_identical():
+    import hashlib
+    got = {name: hashlib.sha256((COMMITTED / name).read_bytes()).hexdigest() for name in V1_SHA256}
+    assert got == V1_SHA256, got
+    assert tf.DATASET == "rules-tf-v1" and COMMITTED == REPO_ROOT / "data/datasets/rules-tf-v1"
+    with contextlib.redirect_stdout(io.StringIO()):
+        assert tf.main(["--check"]) == 0  # the default dataset is still v1, and its build is unchanged
+
+
+def test_v2_committed_set_is_exactly_what_the_code_builds():
+    manifest = v2_manifest()
+    args = ["--dataset-name", tf.V2_DATASET, "--check"]
+    for source in manifest["item_sources"]:
+        assert tf.file_sha256(REPO_ROOT / source["path"]) == source["sha256"], source
+        args += ["--scenarios", str(REPO_ROOT / source["path"])]
+    assert {Path(s["path"]).name for s in manifest["item_sources"]} == {
+        "engine-positions-v1.jsonl", "scenarios-drafted-v1.jsonl"}
+    with contextlib.redirect_stdout(io.StringIO()):
+        code = tf.main(args)
+    assert code == 0, "data/datasets/rules-tf-v2 is stale: rerun the v2 build command in the README"
+
+
+def _check_lookup(row: dict, rows_by_id: dict) -> None:
+    """A lookup row: preload, the search call, its real result holding a cited rule, then an answer the
+    scorer reads as the label; its lookup-call row is the same first step with the call as the target."""
+    messages = row["messages"]
+    assert messages[0] == {"role": "system", "content": system_prompt()}
+    call = _search_call(row)
+    assert messages[-3]["role"] == "assistant" and messages[-3]["content"] == ""
+    assert call == {"name": "search_rules", "arguments": {"query": row["lookup_query"]}}
+    result = json.loads(messages[-2]["content"])
+    assert messages[-2]["role"] == "tool" and result["ok"] and result["tool"] == "search_rules"
+    assert result["result"]["query"] == row["lookup_query"]
+    found = set(result["sources"]["rule_ids"]) & set(row["source_rule_ids"])
+    assert found, (row["id"], result["sources"]["rule_ids"])
+    # the cited rule really is in the result text, as the real tool rendered it
+    assert any(r["rule_ids"] and r["rule_ids"][0] in found for r in result["result"]["results"])
+    assert eval_assistant.parse_answer_letter(split_thinking(messages[-1]["content"])[1], ["A", "B"]) \
+        == (row["label"], "ok")
+    first = rows_by_id[row["id"] + "-call"]
+    assert first["shape"] == "lookup-call" and first["messages"][:-1] == messages[:-3]
+    target = first["messages"][-1]
+    assert target["tool_calls"] == messages[-3]["tool_calls"] and "Answer:" not in target["content"]
+    assert target["content"].startswith("<think>\n") and target["content"].endswith("\n</think>\n\n")
+    # the preload part is exactly the scorer's prompt for this statement
+    prompt = tf.scorer_prompt(row["statement"], row.get("cards") if row["kind"] != tf.TEMPLATE_KIND else None)
+    assert messages[:-3] == prompt.messages
+
+
+def test_v2_lookup_examples_hold_the_call_the_real_result_and_the_answer():
+    result = v2_build()
+    rows = v2_rows(result)
+    by_id = {r["id"]: r for r in rows}
+    lookups = [r for r in rows if r["shape"] == "lookup"]
+    assert {r["kind"] for r in lookups} >= {tf.ENGINE_KIND, tf.SCENARIO_KIND}, {r["kind"] for r in lookups}
+    for row in lookups:
+        _check_lookup(row, by_id)
+    assert by_id["sc-hit-yes"]["shape"] == by_id["sc-hit-no"]["shape"] == "lookup"
+    committed = v2_committed()
+    by_id = {r["id"]: r for r in committed}
+    for row in [r for r in committed if r["shape"] == "lookup"][::7]:
+        _check_lookup(row, by_id)
+    # direct rows: no call after the preload, the answer straight away
+    for row in [r for r in committed if r["shape"] == "direct"][::40]:
+        assert row["messages"][-2]["role"] == "tool" and "tool_calls" not in row["messages"][-1]
+        assert row["messages"][-1]["content"].endswith(f"Answer: {row['label']}")
+    counts = v2_manifest()["counts"]["by_shape"]
+    assert counts["lookup"] == counts["lookup-call"] > 0
+
+
+def test_v2_lookup_queries_never_name_a_rule_id():
+    for rows in (v2_rows(v2_build()), v2_committed()):
+        for row in rows:
+            if row["shape"] == "direct":
+                continue
+            query = row["lookup_query"]
+            assert not tf.RULE_ID_RE.search(query), (row["id"], query)
+            for rid in row["source_rule_ids"]:
+                assert rid not in query, (row["id"], query)
+            assert row["messages"][-1 if row["shape"] == "lookup-call" else -3]["tool_calls"][0]["function"][
+                "arguments"] == {"query": query}
+    for bad in ("rules for 9.3.2.1", "TR 3.4.2 dice", "see rule 9 attacking"):
+        try:
+            tf.check_query(bad, ["9.3.2.1"])
+        except tf.BuildError:
+            continue
+        raise AssertionError(f"{bad!r} was accepted")
+    assert tf.check_query("which rival Units can be attacked", ["9.3.2.1"])
+    assert tf.key_terms("You cannot activate effects on Lagging Units during 9 turns.") == \
+        "activate effects Lagging Units 9 turns"
+    assert set(tf.ENGINE_QUERIES) == set(tf.ENGINE_CLASSES)
+
+
+def test_v2_lookup_misses_are_dropped_and_counted():
+    result = v2_build()
+    ids = {r["id"] for r in v2_rows(result)}
+    assert not ids & {"sc-miss-yes", "sc-miss-no"}
+    assert result.manifest["item_skips"]["scenario-drafted:lookup-miss"] == 2
+    assert result.manifest["lookup"]["by_kind"]["scenario-drafted"] == {"needed": 4, "hit": 2, "miss": 2}
+    manifest = v2_manifest()
+    for kind, cell in manifest["lookup"]["by_kind"].items():
+        assert cell["needed"] == cell["hit"] + cell["miss"], (kind, cell)
+    assert manifest["item_skips"]["engine-position:lookup-miss"] == manifest["lookup"]["by_kind"][
+        "engine-position"]["miss"]
+
+
+def _unit(uid, kind, label, shape, statement="You may draw a card."):
+    return tf.Unit(uid, kind, label, statement, shape, [{"id": uid}], ["9.1"], {"question_class": "x",
+                                                                                "no_reason": None})
+
+
+def test_v2_lookup_share_is_capped_at_30_percent():
+    pairs = [[_unit(f"p{i}a", tf.TEMPLATE_KIND, "A", "lookup" if i < 6 else "direct"),
+              _unit(f"p{i}b", tf.TEMPLATE_KIND, "B", "lookup" if i < 3 else "direct")] for i in range(10)]
+    singles = ([_unit(f"e{i}a", tf.ENGINE_KIND, "A", "lookup") for i in range(8)]
+               + [_unit(f"e{i}b", tf.ENGINE_KIND, "B", "lookup" if i < 6 else "direct") for i in range(8)])
+    kept_pairs, kept_singles, dropped = tf.cap_lookups(pairs, singles)
+    items = [u for p in kept_pairs for u in p] + kept_singles
+    share = sum(u.shape == "lookup" for u in items) / len(items)
+    assert share <= tf.LOOKUP_SHARE_MAX and dropped == 36 - len(items) and dropped > 0, (share, dropped)
+    labels = [u.label for u in items]
+    assert labels.count("A") == labels.count("B")
+    again = tf.cap_lookups(list(reversed(pairs)), list(reversed(singles)))
+    assert sorted(u.id for p in again[0] for u in p) == sorted(u.id for p in kept_pairs for u in p)
+    assert sorted(u.id for u in again[1]) == sorted(u.id for u in kept_singles)
+    manifest = v2_manifest()
+    rows = v2_committed()
+    items = [r for r in rows if r["shape"] != "lookup-call"]
+    assert sum(r["shape"] == "lookup" for r in items) <= tf.LOOKUP_SHARE_MAX * len(items)
+    assert manifest["lookup"]["share"] <= tf.LOOKUP_SHARE_MAX
+
+
+def test_v2_engine_items_split_by_seed_and_the_rest_by_rule():
+    result = v2_build()
+    pool_seeds = {r["provenance"]["seed"] for r in engine_fixture()}
+    valid_seeds = tf.engine_valid_seeds(pool_seeds)
+    assert len(valid_seeds) == 1 and tf.engine_valid_seeds(set(reversed(sorted(pool_seeds)))) == valid_seeds
+    assert len(tf.engine_valid_seeds({f"s{i}" for i in range(24)})) == 2
+    for split, rows in result.rows.items():
+        for r in rows:
+            if r["kind"] == tf.ENGINE_KIND:
+                assert (r["seed"] in valid_seeds) == (split == "valid"), (r["id"], r["seed"], split)
+    assert any(r["kind"] == tf.ENGINE_KIND for r in result.rows["valid"])
+    ids = {r["id"] for r in v2_rows(result)}
+    assert not ids & {"sc-straddle-yes", "sc-straddle-no"}
+    assert result.manifest["item_skips"]["scenario-drafted:split-straddle"] == 2
+    for rows in (result.rows, {"train": read_jsonl(V2_DIR / "train.jsonl"), "valid": read_jsonl(V2_DIR / "valid.jsonl")}):
+        seeds = {split: {r["seed"] for r in rs if r["kind"] == tf.ENGINE_KIND} for split, rs in rows.items()}
+        assert seeds["valid"] and seeds["train"] and not seeds["train"] & seeds["valid"], seeds
+        rules = {split: {rid for r in rs if r["kind"] != tf.ENGINE_KIND for rid in r["source_rule_ids"]}
+                 for split, rs in rows.items()}
+        assert rules["valid"] and not rules["train"] & rules["valid"]
+        for split, rs in rows.items():
+            for r in rs:
+                if r["kind"] != tf.ENGINE_KIND:
+                    assert {tf.split_of(rid) for rid in r["source_rule_ids"]} == {split}, r["id"]
+    manifest = v2_manifest()
+    assert manifest["split"]["by_kind"][tf.ENGINE_KIND]["by"] == "seed"
+    assert manifest["split"]["by_kind"][tf.TEMPLATE_KIND]["by"] == "source rule id"
+
+
+def test_v2_composition_caps_and_balance():
+    units = []
+    for cls, n_yes, reasons in (("a", 30, {"r1": 25, "r2": 5}), ("b", 6, {"r3": 9}), ("c", 40, {"r4": 40})):
+        units += [tf.Unit(f"{cls}y{i}", tf.ENGINE_KIND, "A", "x", "direct", [], [], {"question_class": cls,
+                                                                                   "no_reason": None})
+                  for i in range(n_yes)]
+        for reason, n in reasons.items():
+            units += [tf.Unit(f"{cls}{reason}{i}", tf.ENGINE_KIND, "B", "x" if i % 2 else "not x", "direct", [], [],
+                              {"question_class": cls, "no_reason": reason}) for i in range(n)]
+    chosen = tf.select_engine(units, 40)
+    count = {}
+    for u in chosen:
+        key = (u.meta["question_class"], u.label, u.meta["no_reason"])
+        count[key] = count.get(key, 0) + 1
+    assert len(chosen) == 40
+    assert count[("b", "A", None)] == count[("b", "B", "r3")] == 6               # b is full at 6 pairs
+    assert count[("a", "A", None)] == count[("c", "A", None)] == 7               # the rest split evenly
+    assert count[("a", "B", "r1")] == 4 and count[("a", "B", "r2")] == 3         # the No half even over reasons
+    assert [u.id for u in tf.select_engine(list(reversed(units)), 40)] == [u.id for u in chosen]
+    manifest = v2_manifest()
+    counts = manifest["counts"]
+    rows = [r for r in v2_committed() if r["shape"] != "lookup-call"]
+    labels = [r["label"] for r in rows]
+    assert labels.count("A") == labels.count("B")
+    engine = [r for r in rows if r["kind"] == tf.ENGINE_KIND]
+    assert len(engine) <= tf.ENGINE_CAP == counts["composition"]["engine_cap"]
+    for cls in tf.ENGINE_CLASSES:
+        cls_labels = [r["label"] for r in engine if r["question_class"] == cls]
+        assert cls_labels and cls_labels.count("A") == cls_labels.count("B"), cls
+    for kind in (tf.TEMPLATE_KIND, tf.SCENARIO_KIND):
+        kind_labels = [r["label"] for r in rows if r["kind"] == kind]
+        assert kind_labels.count("A") == kind_labels.count("B") > 0, kind
+    table = tf.negation_table(rows)
+    for cell in ("negation", "no_negation"):
+        assert table[cell]["A"] and table[cell]["B"] and 0.40 <= table[cell]["yes_share"] <= 0.60, table
+    assert counts["label_by_negation"] == table
+    for key in ("by_kind", "by_class", "by_habit", "by_label", "by_shape", "by_no_reason"):
+        assert counts[key], key
+    fixture = v2_build()
+    fixture_engine = [r for r in v2_rows(fixture) if r["kind"] == tf.ENGINE_KIND and r["shape"] != "lookup-call"]
+    assert len(fixture_engine) <= V2_ENGINE_CAP
+
+
+def _get_card_calls(row: dict) -> list[str]:
+    return [c["function"]["arguments"]["slug"] for c in row["messages"][2]["tool_calls"]
+            if c["function"]["name"] == "get_card"]
+
+
+def test_v2_items_with_cards_preload_exactly_those_cards():
+    for rows in (v2_rows(v2_build()), v2_committed()):
+        with_cards = [r for r in rows if r["kind"] != tf.TEMPLATE_KIND]
+        assert any(r.get("cards") for r in with_cards)
+        for row in with_cards:
+            assert _get_card_calls(row) == row["cards"], (row["id"], _get_card_calls(row), row["cards"])
+            sent = [json.loads(m["content"]) for m in row["messages"] if m["role"] == "tool"]
+            got = [slug for t in sent if t["tool"] == "get_card" for slug in t["sources"]["card_slugs"]]
+            assert got[:len(row["cards"])] == row["cards"], row["id"]
+            assert all(c["function"]["name"] != "find_card" for c in row["messages"][2]["tool_calls"])
+    by_id = {r["id"]: r for r in v2_rows(v2_build())}
+    assert _get_card_calls(by_id["sc-card-yes"]) == ["mantis-blades"]
+    assert _get_card_calls(by_id["sc-hit-yes"]) == []  # cards: [] means no card steps, not name linking
+
+
+def test_v2_scenario_file_with_habit_and_why_goes_through_the_cli():
+    known = {r["id"] for r in tf.numbered_rules(tf.load_sources())}
+    with tempfile.TemporaryDirectory() as tmp:
+        path = _scenario_file(tmp, V2_SCENARIOS)
+        assert len(tf.load_scenarios(path, known, tf.known_card_slugs())) == len(V2_SCENARIOS)
+        bad_cases = {"empty habit": {**V2_SCENARIOS[0], "habit": ""},
+                     "unknown card": {**V2_SCENARIOS[0], "cards": ["no-such-card"]},
+                     "rule id query": {**V2_SCENARIOS[0], "lookup_query": "rule 9.3.2.1"},
+                     "unknown field": {**V2_SCENARIOS[0], "note": "x"}}
+        for name, bad in bad_cases.items():
+            try:
+                tf.load_scenarios(_scenario_file(tmp, [bad] + V2_SCENARIOS[1:]), known, tf.known_card_slugs())
+            except tf.BuildError:
+                continue
+            raise AssertionError(f"{name} was accepted")
+        out = Path(tmp) / "out"
+        rules_path = Path(tmp) / "fixture.jsonl"
+        write_jsonl_atomic(rules_path, V2_SCENARIOS)
+        with contextlib.redirect_stdout(io.StringIO()):
+            code = tf.main(["--dataset-name", tf.V2_DATASET, "--scenarios", str(rules_path),
+                            "--scenarios", str(ENGINE_FILE), "--engine-cap", "40", "--out", str(out)])
+        assert code == 0
+        rows = read_jsonl(out / "train.jsonl") + read_jsonl(out / "valid.jsonl")
+        manifest = json.loads((out / "manifest.json").read_text(encoding="utf-8"))
+    scenarios = [r for r in rows if r["kind"] == tf.SCENARIO_KIND and r["shape"] != "lookup-call"]
+    assert sorted(r["id"] for r in scenarios) == ["sc-card-no", "sc-card-yes", "sc-hit-no", "sc-hit-yes"]
+    assert all(r["habit"] in ("state", "permissive") for r in scenarios)
+    assert manifest["counts"]["by_habit"] == {"permissive": 2, "state": 2}
+    assert [s["path"] for s in manifest["item_sources"]][1].endswith("engine-positions-v1.jsonl")
+    assert "WHY-MARKER" not in json.dumps(rows)  # why is provenance only
+    assert all("why" not in r for r in rows)
+
+
+def test_v2_scenarios_on_gold_cards_are_dropped_and_engine_items_counted():
+    engine = engine_fixture()
+    gold_card = next(r["cards"][0] for r in engine)
+    names = tf.card_display_names()
+    with tempfile.TemporaryDirectory() as tmp:
+        gold = Path(tmp)
+        write_jsonl_atomic(gold / "fake.jsonl", [
+            {"id": "g1", "question": "Zebras sing in the rain at noon?", "choices": [], "cards": [gold_card]},
+            {"id": "g2", "question": "Which Gear is best?", "choices": [{"letter": "A", "text": "Mantis Blades"}]}])
+        linked = tf.gold_linked_cards(gold, names)
+        assert linked == {gold_card, "mantis-blades"}, linked
+        on_card = {**V2_SCENARIOS[0], "id": "sc-gold-yes", "cards": [gold_card]}
+        result = v2_build(scenarios=engine + copy.deepcopy(V2_SCENARIOS) + [on_card], gold_dir=gold)
+    ids = {r["id"] for r in v2_rows(result)}
+    assert not ids & {"sc-card-yes", "sc-card-no", "sc-gold-yes"}
+    gold_counts = result.manifest["counts"]["gold_cards"]
+    assert result.manifest["item_skips"]["scenario-drafted:gold_card_dropped"] == gold_counts["scenario_dropped"] == 3
+    on_gold = [r for r in engine if set(r["cards"]) & linked]
+    assert gold_counts["engine_pool_using_gold_card"] == len(on_gold) > 0
+    kept = [r for r in v2_rows(result) if r["kind"] == tf.ENGINE_KIND and r["shape"] != "lookup-call"
+            and set(r["cards"]) & linked]
+    assert kept and gold_counts["engine_kept_using_gold_card"] == len(kept)  # counted, never dropped
+    # sc-hit-yes/no survive, so after the drops the scenario labels are rebalanced to equal
+    labels = [r["label"] for r in v2_rows(result) if r["kind"] == tf.SCENARIO_KIND and r["shape"] != "lookup-call"]
+    assert sorted(r["id"] for r in v2_rows(result) if r["kind"] == tf.SCENARIO_KIND
+                  and r["shape"] != "lookup-call") == ["sc-hit-no", "sc-hit-yes"]
+    assert sorted(labels) == ["A", "B"], labels
+    committed = v2_manifest()["counts"]["gold_cards"]
+    assert committed["scenario_dropped"] > 0 and committed["engine_kept_using_gold_card"] >= 0
+
+
+def test_v2_build_is_deterministic_in_any_input_order():
+    first = v2_build()
+    again = v2_build(rule_rows=list(reversed(tf.load_sources())),
+                     scenarios=list(reversed(engine_fixture() + copy.deepcopy(V2_SCENARIOS))))
+    assert tf.output_texts(again) == tf.output_texts(first)
+
+
+def test_v2_passes_the_leak_guard_over_every_row():
+    gold_q, gold_all = tf.gold_texts()
+    rows = [{"id": r["id"], "statement": r["statement"], "target": r["messages"][-1]["content"]}
+            for r in v2_committed()]
+    report = tf.leak_guard(rows, gold_q, gold_all)
+    assert report.ok, report.violations[:3]
+    assert v2_manifest()["leak_guard"]["result"] == "pass"
+
+
 def run() -> None:
     tests = [value for name, value in globals().items() if name.startswith("test_") and callable(value)]
     for test in tests:

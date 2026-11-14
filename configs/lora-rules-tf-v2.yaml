@@ -1,0 +1,35 @@
+# mlx_lm.lora config for the combined rules true/false adapter (rules-tf-v2: rule templates, drafted
+# scenarios and engine-verified legality items, with search-lookup examples). The same settings as
+# configs/lora-rules-tf-v1.yaml except data, max_seq_length, iters and adapter_path. Not yet run.
+#
+#   mlx_lm.lora --config configs/lora-rules-tf-v2.yaml
+#
+# Data: scripts/build_tf_dataset.py --dataset-name rules-tf-v2 -> data/datasets/rules-tf-v2 ({"messages",
+# "tools"} rows). mask_prompt puts the loss on the final assistant message only: the answer of a direct or
+# lookup row, and the search_rules call itself of a lookup-call row.
+model: models/qwen3-8b-4bit
+train: true
+data: data/datasets/rules-tf-v2
+fine_tune_type: lora
+mask_prompt: true
+num_layers: 16
+lora_parameters:
+  rank: 8
+  dropout: 0.0
+  scale: 20.0
+learning_rate: 1.0e-5
+batch_size: 1
+grad_checkpoint: true
+# The manifest's size estimate (size_estimate) over all rows: min 3,712 / median 5,078 / max 6,257 tokens at
+# 4 characters a token, and 4,949 / 6,771 / 8,343 at 3 (the loop's pessimistic ratio). The longest rows are
+# lookup examples (preload + search result + answer). Rounded up to 9,216 so nothing is truncated: the target
+# is at the end of each example. Measure first with scripts/prompt_budget.py --tokenizer models/qwen3-8b-4bit.
+max_seq_length: 9216
+# One epoch at batch 1: the train split has 910 rows (manifest.json, split.train_rows).
+iters: 910
+steps_per_report: 10
+steps_per_eval: 100
+val_batches: -1
+save_every: 100
+adapter_path: models/adapters/rules-tf-v2
+seed: 0

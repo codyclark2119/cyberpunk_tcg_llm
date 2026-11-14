@@ -172,8 +172,52 @@ leak guard and split, except that the preload runs ``get_card`` on exactly their
 ``cards``, as the scorer does for a gold item with ``cards``. Their target states
 the deciding fact, quotes each cited rule from the snapshot (a leading "### Title"
 removed) and gives the one-line conclusion and ``Answer: X``; the label is the
-engine's. Each kind is balanced on its own. No set is built with them yet: the
-combined set is a later, separately versioned dataset.
+engine's. Each kind is balanced on its own. A drafted scenario row may also carry
+``cards`` (slugs, preloaded with ``get_card`` exactly as an engine row's are),
+``habit`` (the failure habit it drills), ``why`` (provenance for reviewers; never
+put into a prompt or a target) and ``lookup_query`` (see rules-tf-v2). ``--scenarios``
+may be given several times.
+
+rules-tf-v2 (``--dataset-name rules-tf-v2``; ``build_v2``). The combined set: all
+template pairs, all drafted scenarios and at most ``--engine-cap`` (400)
+engine-position items. ``build`` and rules-tf-v1 are untouched; v1 stays the default.
+
+  - Lookup examples. v1 drops an item whose preload does not show what its target
+    quotes. v2 keeps it when one search finds it: ``run_turn`` is driven by a scripted
+    stand-in that, after the preload, writes a Qwen3 ``search_rules`` tool call; the
+    loop parses it, runs the real tool and sends the real result to the second step,
+    so message shape, result text and call format are what inference produces. The
+    query is something a model could write from the question alone, never a rule id
+    (``check_query`` fails the build): a per-class phrase for engine items
+    (``ENGINE_QUERIES``), else the row's ``lookup_query``, else the statement's first
+    eight content words (``key_terms``). The item is kept only if the search shows the
+    rule (a template's sentence word for word, or every cited rule id of a scenario or
+    engine item); otherwise it is dropped and counted as a lookup miss (a template
+    pair goes whole). Because ``mask_prompt`` trains only the last message, a lookup
+    item gives two rows: ``lookup`` (preload, call, result, then the answer) and
+    ``lookup-call`` (the same preload, then the call itself as the target, after a
+    short think block); without the second the call would never be trained. Items
+    whose preload already shows the rule stay ``direct``: answer, no call. Lookup
+    items are capped at ``LOOKUP_SHARE_MAX`` (30%) of items, dropped in hash order
+    keeping labels balanced, so the adapter does not learn to always search.
+  - Split. Templates by rule id as in v1 (same salt); a scenario by its rule ids, and
+    dropped (``split-straddle``) when they hash to different splits, so no template
+    or scenario rule id is in both; engine items by seed, the lowest 10% of seeds by
+    ``sha256(ENGINE_SEED_SALT:<seed>)`` (at least one) to valid.
+  - Composition. Templates get the v1 negation balance; scenarios are trimmed to equal
+    labels; engine items are chosen by hash with Yes and No equal within each class,
+    the classes as even as their items allow and each class's No half as even across
+    its No reasons as they allow (``select_engine``). Labels are exactly 50/50 over the
+    answer rows and the negation 2x2 must stay within ``BALANCE_LIMIT`` (fail closed).
+  - Gold cards. A drafted scenario whose ``cards`` include a slug in any gold set's
+    ``cards`` field, or a card whose name with subtitle appears in a gold question or
+    choice, is dropped (``gold_card_dropped``): the eval asks about those cards.
+    Engine items on such cards are only counted (the engine decides their labels and
+    they ask only generic legality).
+
+The manifest records counts by kind, class, No reason, habit, label and shape, the
+lookup needs, hits and misses per kind, the split method per kind, the gold-card
+counts, the leak guard over every row (search queries included) and sizes by shape.
 
 Output: ``data/datasets/rules-tf-v1/{train,valid}.jsonl`` and ``manifest.json``
 (source paths and sha256s, both rules versions, counts by kind, mutation,
@@ -186,6 +230,9 @@ Usage:
     python scripts/build_tf_dataset.py
     python scripts/build_tf_dataset.py --check     # build in memory, compare with the committed files
     python scripts/build_tf_dataset.py --scenarios drafts.jsonl --out /tmp/tf
+    python scripts/build_tf_dataset.py --dataset-name rules-tf-v2 \
+        --scenarios data/datasets/sources/engine-positions-v1.jsonl \
+        --scenarios data/datasets/sources/scenarios-drafted-v1.jsonl [--check]
 """
 
 from __future__ import annotations
@@ -210,6 +257,7 @@ import eval_assistant  # noqa: E402  (the scorer: its wrapper, preload text and 
 from games.cyberpunk.assistant.loop import (ASSISTANT_PROMPT_VERSION, MAX_TOOL_CALLS,  # noqa: E402
                                             run_turn, split_thinking)
 from games.cyberpunk.assistant.preload import DEFAULT_PRELOAD_CHARS, DEFAULT_PRELOAD_K  # noqa: E402
+from games.cyberpunk.assistant.retrieval import tokens as search_tokens  # noqa: E402
 from games.cyberpunk.prompts import RULES_VERSION, TOURNAMENT_RULES_VERSION  # noqa: E402
 from harness.core.io import file_sha256, guard_shrink, read_jsonl, write_jsonl_atomic  # noqa: E402
 
@@ -232,6 +280,7 @@ LABEL_ANSWER = {"A": "Yes", "B": "No"}
 TEMPLATE_KIND = "rule-template"
 SCENARIO_KIND = "scenario-drafted"
 SCENARIO_FIELDS = ("id", "statement", "label", "source_rule_ids", "kind")
+SCENARIO_OPTIONAL_FIELDS = ("cards", "habit", "why", "lookup_query")
 ENGINE_KIND = "engine-position"  # scripts/build_engine_tf_items.py
 ENGINE_FIELDS = ("id", "kind", "statement", "label", "phrasing", "question_class", "no_reason", "deciding_fact",
                  "source_rule_ids", "cards", "provenance", "engine_check")
@@ -1110,6 +1159,28 @@ def _check_engine_row(row: dict, where: str, known_cards: set[str] | None) -> No
         raise BuildError(f"{where}: engine_check must name one of {list(ENGINE_ACTIONS)}")
 
 
+def _check_scenario_extras(row: dict, where: str, known_cards: set[str] | None) -> None:
+    """The optional fields of a ``scenario-drafted`` row: ``cards`` (slugs the preload fetches with ``get_card``),
+    ``habit`` (the failure habit it drills, counted in the v2 manifest), ``why`` (provenance only: never put into
+    a prompt or a target) and ``lookup_query`` (the search a lookup example makes; never a rule id)."""
+    if "cards" in row:
+        cards = row["cards"]
+        if not isinstance(cards, list) or not all(isinstance(c, str) for c in cards) or len(set(cards)) != len(cards):
+            raise BuildError(f"{where}: cards must be a list of distinct slugs")
+        if cards and known_cards is None:
+            raise BuildError(f"{where}: rows with cards need the card database to check them")
+        unknown = [c for c in cards if c not in (known_cards or set())]
+        if unknown:
+            raise BuildError(f"{where}: unknown card slug(s) {unknown}")
+    for key in ("habit", "why"):
+        if key in row and (not isinstance(row[key], str) or not row[key].strip()):
+            raise BuildError(f"{where}: {key} must be a non-empty string")
+    if "lookup_query" in row:
+        query = row["lookup_query"]
+        if not isinstance(query, str) or not 2 <= len(query.strip()) <= 500 or RULE_ID_RE.search(query):
+            raise BuildError(f"{where}: lookup_query must be 2-500 characters of search terms, never a rule id")
+
+
 def load_scenarios(path: Path, known_rules: set[str], known_cards: set[str] | None = None) -> list[dict]:
     """Drafted scenario and engine-position rows, checked strictly; any problem is a ``BuildError`` naming the row."""
     rows = read_jsonl(path, missing_ok=False)
@@ -1119,8 +1190,9 @@ def load_scenarios(path: Path, known_rules: set[str], known_cards: set[str] | No
         if not isinstance(row, dict):
             raise BuildError(f"{where}: not a JSON object")
         fields = ENGINE_FIELDS if row.get("kind") == ENGINE_KIND else SCENARIO_FIELDS
+        optional = () if row.get("kind") == ENGINE_KIND else SCENARIO_OPTIONAL_FIELDS
         missing = [f for f in fields if f not in row]
-        extra = sorted(set(row) - set(fields))
+        extra = sorted(set(row) - set(fields) - set(optional))
         if missing or extra:
             raise BuildError(f"{where}: missing fields {missing}, unexpected fields {extra}")
         if not isinstance(row["id"], str) or not re.fullmatch(r"[A-Za-z0-9][A-Za-z0-9._-]*", row["id"]):
@@ -1142,6 +1214,8 @@ def load_scenarios(path: Path, known_rules: set[str], known_cards: set[str] | No
             raise BuildError(f"{where}: kind must be {SCENARIO_KIND!r} or {ENGINE_KIND!r}")
         if row["kind"] == ENGINE_KIND:
             _check_engine_row(row, where, known_cards)
+        else:
+            _check_scenario_extras(row, where, known_cards)
     for kind in (SCENARIO_KIND, ENGINE_KIND):
         labels = [r["label"] for r in rows if r["kind"] == kind]
         if labels.count(True) * 2 != len(labels):
@@ -1374,7 +1448,7 @@ def build(rule_rows: list[dict], gold_dir: Path = GOLD_DIR, scenarios: list[dict
     for row in scenarios or []:
         label = "A" if row["label"] else "B"
         engine = row["kind"] == ENGINE_KIND
-        prompt = scorer_prompt(row["statement"], row["cards"] if engine else None)
+        prompt = scorer_prompt(row["statement"], row["cards"] if engine else row.get("cards"))
         if not set(row["source_rule_ids"]) <= prompt.preload_rule_ids:
             skip(row["kind"], "cited-rule-not-in-preload")
             continue
@@ -1508,6 +1582,622 @@ def build(rule_rows: list[dict], gold_dir: Path = GOLD_DIR, scenarios: list[dict
     return Build(out, manifest, final)
 
 
+# The combined set (rules-tf-v2) ------------------------------------------------------------
+#
+# See "rules-tf-v2" in the module docstring. Everything below reuses the v1 pieces (pairs, targets, the scorer's
+# prompt, the leak guard, the negation balance) and leaves ``build`` itself, and so rules-tf-v1, untouched.
+
+V2_DATASET = "rules-tf-v2"
+DATASETS = (DATASET, V2_DATASET)
+V2_BUILDER_VERSION = "build-tf-dataset-v2"
+ENGINE_CAP = 400              # engine-position items kept by default (--engine-cap)
+LOOKUP_SHARE_MAX = 0.30       # lookup items may be at most this share of all items
+ENGINE_SEED_SALT = "rules-tf-v2:seed"
+ENGINE_VALID_SHARE = 0.10     # share of engine seeds whose items go to valid
+SHAPES = ("direct", "lookup", "lookup-call")
+# The search a lookup example makes for an engine item: one phrase per question class, the words a player
+# would type for that kind of question. Never a rule id; checked against what the search returns.
+ENGINE_QUERIES = {
+    "attack-declare": "attack with a ready Unit during your Main phase",
+    "attack-target": "which rival Units can be attacked",
+    "block": "when can a Unit use Blocker",
+    "play-from-hand": "spend Eddies to pay the cost of a card",
+    "sell": "sell a card with a Sell Tag",
+}
+assert set(ENGINE_QUERIES) == set(ENGINE_CLASSES)
+RULE_ID_RE = re.compile(r"\b(?:TR\s+)?[A-Z]?\d+(?:\.\d+)+\b|\bTR\s+[A-Z0-9]\b|\brules?\s+\d", re.I)
+KEY_TERMS_MAX = 8
+KEY_TERM_STOPWORDS = frozenset("""
+a an the and or but of to in on at by for from with into onto as is are was were be been being it its this that
+these those you your yours they their them he she his her we our i me my can cannot may might must should shall
+will would could do does did not no never have has had need needs any each every only if when whenever while then
+than so such there here what which who whom whose how why also just one own same other another all both either
+neither nor yet still up out about over after before during until once now true false whether
+""".split())
+CALL_NOTE = "The preloaded results do not show the rule that decides this, so I search the rules for it."
+
+
+def key_terms(statement: str, limit: int = KEY_TERMS_MAX) -> str:
+    """A search query a model could write from the statement alone: its first ``limit`` content words, in order,
+    without function words, modals, negations, duplicates or anything shaped like a rule id."""
+    words, seen = [], set()
+    for word in re.findall(r"[A-Za-z][A-Za-z'\-]*[A-Za-z]|[A-Za-z]|\d+", statement.replace("’", "'")):
+        low = word.lower()
+        if low in KEY_TERM_STOPWORDS or low.endswith("n't") or low in seen:
+            continue
+        seen.add(low)
+        words.append(word)
+    return " ".join(words[:limit])
+
+
+def check_query(query: str, rule_ids: list[str]) -> str:
+    """``query`` when it names no rule id (the model must find the rule, not be handed it), else a BuildError."""
+    if RULE_ID_RE.search(query) or any(re.search(rf"(?<![\w.]){re.escape(r)}(?![\w]|\.\d)", query)
+                                       for r in rule_ids):
+        raise BuildError(f"lookup query {query!r} names a rule id")
+    return query
+
+
+class _LookupModel:
+    """Stands in for the MLX worker in a lookup example: its first step asks ``search_rules`` for ``query``, its
+    second answers. It keeps what it was sent at each step."""
+
+    def __init__(self, call_text: str):
+        self.call_text = call_text
+        self.steps: list[tuple[list[dict], list[dict], bool]] = []
+
+    async def generate(self, messages, tools, *, max_tokens, enable_thinking):
+        self.steps.append((copy.deepcopy(messages), copy.deepcopy(tools), enable_thinking))
+        text = self.call_text if len(self.steps) == 1 else "Answer: A"
+        return {"ok": True, "text": text, "finishReason": "stop", "promptTokens": 0, "generationTokens": 0,
+                "elapsedMs": 0}
+
+
+def call_text(think: str, query: str) -> str:
+    """What the model writes for the search step: a think block and one Qwen3 JSON tool call."""
+    call = json.dumps({"name": "search_rules", "arguments": {"query": query}}, ensure_ascii=False)
+    return f"<think>\n{think}\n</think>\n\n<tool_call>\n{call}\n</tool_call>"
+
+
+@dataclass
+class Lookup:
+    first: list[dict]          # the messages of the first step (the preload prompt)
+    messages: list[dict]       # the messages of the second step: first + the call + the real tool result
+    tools: list[dict]
+    call: dict                 # the assistant message the loop recorded for the call
+    rule_ids: set[str]         # rules the search returned
+    texts: list[str]           # every string in the search result
+    method: str
+    fallback_reason: str | None
+
+
+def scorer_lookup(statement: str, cards: list[str] | None, query: str, think: str) -> Lookup:
+    """Run the scorer's turn with a stand-in that searches ``query`` after the preload, then answers.
+
+    The call goes through the real ``run_turn``: its parser reads the tool call, ``call_tool`` runs the real
+    ``search_rules``, and the second step receives exactly the messages the MLX worker would.
+    """
+    item = eval_item(statement)
+    model = _LookupModel(call_text(think, query))
+    turn = asyncio.run(run_turn([], eval_assistant.question_message(item), model, max_tokens=EVAL_MAX_TOKENS,
+                                enable_thinking=True, preload=True, preload_text=eval_assistant.preload_text(item),
+                                preload_k=DEFAULT_PRELOAD_K, preload_chars=DEFAULT_PRELOAD_CHARS,
+                                max_tool_calls=MAX_TOOL_CALLS, preload_cards=cards))
+    searches = [s for s in turn.trace if s.get("kind") == "tool" and not s.get("auto")]
+    if len(model.steps) != 2 or not all(s[2] for s in model.steps) or len(searches) != 1 \
+            or searches[0]["tool"] != "search_rules" or not searches[0]["ok"] or turn.tool_calls != 1:
+        raise BuildError(f"the lookup turn did not run one search for {statement!r}")
+    second, tools, _ = model.steps[1]
+    call, result = second[-2], second[-1]
+    if call.get("role") != "assistant" or [c["function"] for c in call.get("tool_calls") or ()] != [
+            {"name": "search_rules", "arguments": {"query": query}}] or result.get("role") != "tool":
+        raise BuildError(f"the lookup turn did not record the search call for {statement!r}")
+    parsed = json.loads(result["content"])
+    return Lookup(model.steps[0][0], second, tools, call, set(searches[0]["sources"].get("rule_ids") or ()),
+                  _strings(parsed), searches[0]["result"].get("method"), searches[0]["result"].get("fallback_reason"))
+
+
+@dataclass
+class Unit:
+    """One item and its rows: one ``direct`` row, or a ``lookup`` row and its ``lookup-call`` row."""
+    id: str
+    kind: str
+    label: str
+    statement: str
+    shape: str
+    rows: list[dict]
+    rule_ids: list[str]
+    meta: dict
+
+    @property
+    def answer_row(self) -> dict:
+        return self.rows[0]
+
+
+class _Stats:
+    def __init__(self):
+        self.methods: dict[str, int] = {}
+        self.lookup_methods: dict[str, int] = {}
+        self.reasons: set[str] = set()
+        self.tools: set[str] = set()
+        self.lookup: dict[str, dict[str, int]] = {}
+
+    def look(self, kind: str, key: str) -> None:
+        cell = self.lookup.setdefault(kind, {"needed": 0, "hit": 0, "miss": 0})
+        cell[key] += 1
+
+
+def make_unit(statement: str, cards: list[str] | None, meta: dict, think: str, visible: str, query: str,
+              phrasing: str, shows, stats: _Stats) -> Unit | None:
+    """The item as a direct example when its preload shows what the target quotes, else as a lookup example
+    when one search for ``query`` shows it; None (a lookup miss) when neither does."""
+    prompt = scorer_prompt(statement, cards)
+    for m in prompt.search_methods:
+        stats.methods[m] = stats.methods.get(m, 0) + 1
+    stats.reasons.update(prompt.fallback_reasons)
+    stats.tools.add(json.dumps(prompt.tools, sort_keys=True))
+    target = target_text(think, visible)
+    base = {**meta, "statement": statement}
+    if shows(prompt.preload_texts, prompt.preload_rule_ids):
+        return Unit(meta["id"], meta["kind"], meta["label"], statement, "direct",
+                    [example_row(prompt, target, {**base, "shape": "direct"})], meta["source_rule_ids"], meta)
+    stats.look(meta["kind"], "needed")
+    query = check_query(query, meta["source_rule_ids"])
+    if not search_tokens(query):
+        stats.look(meta["kind"], "miss")
+        return None
+    lead = "The question" if phrasing == "question" else "The statement to judge"
+    look = scorer_lookup(statement, cards, query, f'{lead}: "{statement}" {CALL_NOTE}')
+    if look.first != prompt.messages:
+        raise BuildError(f"{meta['id']}: the lookup turn's first step differs from the preload prompt")
+    stats.lookup_methods[look.method] = stats.lookup_methods.get(look.method, 0) + 1
+    if look.fallback_reason:
+        stats.reasons.add(look.fallback_reason)
+    if not shows(prompt.preload_texts + look.texts, prompt.preload_rule_ids | look.rule_ids):
+        stats.look(meta["kind"], "miss")
+        return None
+    stats.look(meta["kind"], "hit")
+    answer = {**base, "shape": "lookup", "lookup_query": query,
+              "messages": [*look.messages, {"role": "assistant", "content": target}], "tools": look.tools}
+    call_message = {**look.call, "content": f"<think>\n{lead}: \"{statement}\" {CALL_NOTE}\n</think>\n\n"}
+    call = {**base, "id": f"{meta['id']}-call", "shape": "lookup-call", "lookup_query": query,
+            "messages": [*prompt.messages, call_message], "tools": prompt.tools}
+    return Unit(meta["id"], meta["kind"], meta["label"], statement, "lookup", [answer, call],
+                meta["source_rule_ids"], meta)
+
+
+# Gold-card overlap -----------------------------------------------------------------------------
+
+def card_display_names() -> dict[str, str]:
+    """slug -> the card's name with subtitle (``display_name``), from the card database."""
+    return {r["id"]: r["display_name"] for r in read_jsonl(REPO_ROOT / CARD_DATABASE, missing_ok=False)}
+
+
+def gold_linked_cards(gold_dir: Path, names: dict[str, str]) -> set[str]:
+    """Card slugs the eval asks about: every slug in a gold set's ``cards`` field, and every card whose name with
+    subtitle appears (as normalised words) in a gold question or choice."""
+    linked: set[str] = set()
+    texts = []
+    for path in sorted(gold_dir.glob("*.jsonl")):
+        for row in read_jsonl(path):
+            linked.update(row.get("cards") or ())
+            texts.append(" " + " ".join(normalise(row["question"])) + " ")
+            texts.extend(" " + " ".join(normalise(c["text"])) + " " for c in row.get("choices") or [])
+    for slug, name in names.items():
+        words = normalise(name)
+        if words and any(f" {' '.join(words)} " in t for t in texts):
+            linked.add(slug)
+    return linked
+
+
+# Composition -------------------------------------------------------------------------------
+
+def _waterfill(capacity: dict[str, int], total: int) -> dict[str, int]:
+    """Split ``total`` as evenly as the capacities allow (a full key's share goes to the others; leftovers go to
+    keys in sorted order)."""
+    alloc = {k: 0 for k in capacity}
+    left = min(total, sum(capacity.values()))
+    open_keys = sorted(k for k, c in capacity.items() if c > 0)
+    while left > 0 and open_keys:
+        share = max(1, left // len(open_keys))
+        for k in list(open_keys):
+            give = min(share, capacity[k] - alloc[k], left)
+            alloc[k] += give
+            left -= give
+            if alloc[k] == capacity[k]:
+                open_keys.remove(k)
+            if left == 0:
+                break
+    return alloc
+
+
+def _interleaved(units: list[Unit], salt: str) -> list[Unit]:
+    """Plain and negated statements alternately, each in hash order, so a pick from the front is not skewed
+    toward either."""
+    groups = [sorted((u for u in units if has_negation(u.statement) == neg), key=lambda u: (_h(u.id, salt), u.id))
+              for neg in (False, True)]
+    out = []
+    for i in range(max(len(g) for g in groups) if units else 0):
+        out.extend(g[i] for g in groups if i < len(g))
+    return out
+
+
+def select_engine(units: list[Unit], cap: int) -> list[Unit]:
+    """At most ``cap`` engine items, Yes and No equal within each class, classes as even as their items allow,
+    the No half of a class as even across its No reasons as they allow; picks within a (class, label, reason)
+    stratum alternate plain and negated statements in hash order."""
+    by_class: dict[str, dict[str, list[Unit]]] = {}
+    for u in units:
+        by_class.setdefault(u.meta["question_class"], {"A": [], "B": []})[u.label].append(u)
+    pairs = _waterfill({c: min(len(v["A"]), len(v["B"])) for c, v in by_class.items()}, cap // 2)
+    chosen = []
+    for cls in sorted(by_class):
+        for label in ("A", "B"):
+            strata: dict[str, list[Unit]] = {}
+            for u in by_class[cls][label]:
+                strata.setdefault(str(u.meta["no_reason"]), []).append(u)
+            quota = _waterfill({k: len(v) for k, v in strata.items()}, pairs[cls])
+            for key in sorted(strata):
+                chosen.extend(_interleaved(strata[key], f"engine:{cls}:{label}:{key}")[:quota[key]])
+    return chosen
+
+
+def balance_kind(units: list[Unit], salt: str) -> tuple[list[Unit], int]:
+    """The larger label trimmed by hash until Yes and No are equal; (kept, trimmed)."""
+    by_label = {lab: sorted((u for u in units if u.label == lab), key=lambda u: (_h(u.id, salt), u.id))
+                for lab in ("A", "B")}
+    keep = min(len(by_label["A"]), len(by_label["B"]))
+    return by_label["A"][:keep] + by_label["B"][:keep], len(units) - 2 * keep
+
+
+def cap_lookups(pairs: list[list[Unit]], singles: list[Unit]) -> tuple[list[list[Unit]], list[Unit], int]:
+    """Drop lookup items until they are at most ``LOOKUP_SHARE_MAX`` of all items, keeping labels balanced: a
+    template pair goes whole; scenario and engine lookups go as one Yes and one No of the same kind. Victims
+    are taken in hash order. Returns (pairs, singles, items dropped)."""
+    victims: list[tuple[int, str, list[Unit]]] = []
+    for pair in pairs:
+        if any(u.shape == "lookup" for u in pair):
+            victims.append((_h(pair[0].id, "lookup-cap"), pair[0].id, pair))
+    for kind in sorted({u.kind for u in singles}):
+        sides = [sorted((u for u in singles if u.kind == kind and u.shape == "lookup" and u.label == lab),
+                        key=lambda u: (_h(u.id, "lookup-cap"), u.id)) for lab in ("A", "B")]
+        for a, b in zip(*sides):
+            victims.append((_h(a.id, "lookup-cap"), a.id, [a, b]))
+    victims.sort(key=lambda v: (v[0], v[1]))
+    gone: set[str] = set()
+
+    def counts():
+        items = [u for p in pairs for u in p if u.id not in gone] + [u for u in singles if u.id not in gone]
+        return len(items), sum(u.shape == "lookup" for u in items)
+
+    for _, _, victim in victims:
+        total, lookups = counts()
+        if lookups <= LOOKUP_SHARE_MAX * total:
+            break
+        gone.update(u.id for u in victim)
+    total, lookups = counts()
+    if lookups > LOOKUP_SHARE_MAX * total:
+        raise BuildError(f"lookup items are {lookups} of {total}, over {LOOKUP_SHARE_MAX:.0%}")
+    return ([p for p in pairs if not any(u.id in gone for u in p)], [u for u in singles if u.id not in gone],
+            len(gone))
+
+
+def engine_valid_seeds(seeds: set[str]) -> set[str]:
+    """``ENGINE_VALID_SHARE`` of the seeds (at least one), the lowest by ``sha256(ENGINE_SEED_SALT:<seed>)``."""
+    n = max(1, round(len(seeds) * ENGINE_VALID_SHARE)) if seeds else 0
+    return set(sorted(seeds, key=lambda s: (_h(ENGINE_SEED_SALT, s), s))[:n])
+
+
+def scenario_split(rule_ids: list[str]) -> str | None:
+    """The split of a scenario by its rules (``split_of``), or None when its rules fall in different splits."""
+    splits = {split_of(r) for r in rule_ids}
+    return splits.pop() if len(splits) == 1 else None
+
+
+def build_v2(rule_rows: list[dict], gold_dir: Path = GOLD_DIR, scenarios: list[dict] | None = None, *,
+             engine_cap: int = ENGINE_CAP, scenario_sources: list[dict] | None = None) -> Build:
+    """rules-tf-v2: templates, drafted scenarios and engine items, with lookup examples (see the docstring)."""
+    rules = numbered_rules(rule_rows)
+    ids = [r["id"] for r in rules]
+    if len(set(ids)) != len(ids):
+        raise BuildError("duplicate rule ids in the sources")
+    rules_by_id = {r["id"]: r for r in rules}
+    set_case_evidence([r.get("text", "") for r in rule_rows])
+    skips: dict[str, int] = {}
+    excluded = document_rule_ids(rule_rows)
+    pairs = candidate_pairs(rules, skips, excluded)
+    choose_phrasing(pairs)
+    stats = _Stats()
+    item_skips: dict[str, int] = {}
+
+    def skip(kind: str, reason: str, n: int = 1) -> None:
+        key = f"{kind}:{reason}"
+        item_skips[key] = item_skips.get(key, 0) + n
+
+    template_pairs: list[list[Unit]] = []
+    for pair in pairs:
+        units = []
+        for role, item in zip(("yes", "no"), pair_items(pair)):
+            meta = {"id": "tf-" + hashlib.sha256(f"{pair.rule_id}\x1f{pair.sentence_index}\x1f{role}".encode())
+                    .hexdigest()[:12], "kind": TEMPLATE_KIND, "source_rule_ids": [pair.rule_id],
+                    "mutation": pair.mutation.kind, "phrasing": item.phrasing, "label": item.label,
+                    "answer": LABEL_ANSWER[item.label]}
+            unit = make_unit(item.statement, None, meta, item.think, item.visible, key_terms(item.statement),
+                             item.phrasing, lambda texts, _ids, raw=pair.raw: any(raw in t for t in texts), stats)
+            units.append(unit)
+        if any(u is None for u in units):
+            skip(TEMPLATE_KIND, "lookup-miss-pair-dropped")
+            continue
+        template_pairs.append(units)
+
+    names = card_display_names()
+    gold_cards = gold_linked_cards(gold_dir, names)
+    engine_pool_seeds: set[str] = set()
+    engine_gold_pool = 0
+    singles: list[Unit] = []
+    for row in sorted(scenarios or [], key=lambda r: r["id"]):
+        engine = row["kind"] == ENGINE_KIND
+        label = "A" if row["label"] else "B"
+        cards = row["cards"] if engine else row.get("cards")
+        if engine:
+            engine_pool_seeds.add(row["provenance"]["seed"])
+            engine_gold_pool += bool(set(row["cards"]) & gold_cards)
+        elif set(cards or ()) & gold_cards:
+            skip(SCENARIO_KIND, "gold_card_dropped")
+            continue
+        elif scenario_split(row["source_rule_ids"]) is None:
+            skip(SCENARIO_KIND, "split-straddle")
+            continue
+        phrasing = row["phrasing"] if engine else "statement"
+        meta = {"id": row["id"], "kind": row["kind"], "source_rule_ids": list(row["source_rule_ids"]),
+                "mutation": None, "phrasing": phrasing, "label": label, "answer": LABEL_ANSWER[label]}
+        if engine:
+            meta.update({"question_class": row["question_class"], "no_reason": row["no_reason"],
+                         "seed": row["provenance"]["seed"], "cards": list(row["cards"])})
+            query = ENGINE_QUERIES[row["question_class"]]
+            think, visible = engine_target(row, label, rules_by_id)
+        else:
+            meta.update({"habit": row.get("habit"), "cards": list(cards or [])})
+            query = row.get("lookup_query") or key_terms(row["statement"])
+            think, visible = scenario_target(row, label)  # ``why`` is provenance only: never in a prompt or target
+        need = set(row["source_rule_ids"])
+        unit = make_unit(row["statement"], cards, meta, think, visible, query, phrasing,
+                         lambda _texts, got, need=need: need <= got, stats)
+        if unit is None:
+            skip(row["kind"], "lookup-miss")
+            continue
+        singles.append(unit)
+    if len(stats.tools) > 1:
+        raise BuildError("the tool specs differed between items")
+
+    # Leak guard over every row: statements and targets, the search calls' thinking and queries included.
+    gold_q, gold_all = gold_texts(gold_dir)
+
+    def guard_rows(units):
+        out = []
+        for u in units:
+            for r in u.rows:
+                target = r["messages"][-1]["content"] + (f"\n{r['lookup_query']}" if r["shape"] == "lookup-call" else "")
+                out.append({"id": r["id"], "statement": r["statement"], "target": target})
+        return sorted(out, key=lambda g: g["id"])
+
+    all_units = [u for p in template_pairs for u in p] + singles
+    first = leak_guard(guard_rows(all_units), gold_q, gold_all)
+    tripped = {v["id"].removesuffix("-call") for v in first.violations}
+    leak_dropped = {}
+    kept_pairs = []
+    for p in template_pairs:
+        if any(u.id in tripped for u in p):
+            leak_dropped[TEMPLATE_KIND] = leak_dropped.get(TEMPLATE_KIND, 0) + len(p)
+        else:
+            kept_pairs.append(p)
+    for u in singles:
+        if u.id in tripped:
+            leak_dropped[u.kind] = leak_dropped.get(u.kind, 0) + 1
+    singles = [u for u in singles if u.id not in tripped]
+
+    # Templates: the v1 negation balance, on whole pairs.
+    by_first = {p[0].id: p for p in kept_pairs}
+    groups, balance_dropped = balance_negation([(p[0].rule_ids[0], [u.answer_row for u in p]) for p in kept_pairs])
+    kept_pairs = [by_first[rows[0]["id"]] for _, rows in groups]
+
+    # Scenarios: balanced on their own. Engine items: the capped, balanced selection.
+    scenario_units, trimmed = balance_kind([u for u in singles if u.kind == SCENARIO_KIND], "trim")
+    if trimmed:
+        skip(SCENARIO_KIND, "balance-trimmed", trimmed)
+    engine_available = [u for u in singles if u.kind == ENGINE_KIND]
+    engine_units = select_engine(engine_available, engine_cap)
+    if engine_available and len(engine_available) > len(engine_units):
+        skip(ENGINE_KIND, "composition-not-selected", len(engine_available) - len(engine_units))
+    before_cap = {"items": sum(len(p) for p in kept_pairs) + len(scenario_units) + len(engine_units),
+                  "lookup_items": sum(u.shape == "lookup" for u in [*(u for p in kept_pairs for u in p),
+                                                                   *scenario_units, *engine_units])}
+    kept_pairs, singles, cap_dropped = cap_lookups(kept_pairs, scenario_units + engine_units)
+
+    units = [u for p in kept_pairs for u in p] + singles
+    final = leak_guard(guard_rows(units), gold_q, gold_all)
+    if not final.ok:
+        raise BuildError(f"leak guard still fails after drops: {final.violations[:3]}")
+
+    valid_seeds = engine_valid_seeds(engine_pool_seeds)
+    out = {"train": [], "valid": []}
+    for u in units:
+        if u.kind == ENGINE_KIND:
+            split = "valid" if u.meta["seed"] in valid_seeds else "train"
+        elif u.kind == SCENARIO_KIND:
+            split = scenario_split(u.rule_ids)
+        else:
+            split = split_of(u.rule_ids[0])
+        out[split].extend(u.rows)
+    for split in out:
+        out[split].sort(key=lambda r: (rule_sort_key(r["source_rule_ids"][0]), r["kind"], r["id"]))
+
+    # Fail-closed checks on what is written.
+    rule_splits: dict[str, set[str]] = {}
+    seed_splits: dict[str, set[str]] = {}
+    for split, rows in out.items():
+        for r in rows:
+            if r["kind"] == ENGINE_KIND:
+                seed_splits.setdefault(r["seed"], set()).add(split)
+            else:
+                for rid in r["source_rule_ids"]:
+                    rule_splits.setdefault(rid, set()).add(split)
+    if any(len(s) > 1 for s in rule_splits.values()) or any(len(s) > 1 for s in seed_splits.values()):
+        raise BuildError("a template or scenario rule id, or an engine seed, is in both splits")
+    answer_rows = [u.answer_row for u in units]
+    for row in answer_rows:
+        letter, how = eval_assistant.parse_answer_letter(split_thinking(row["messages"][-1]["content"])[1],
+                                                         ["A", "B"])
+        if letter != row["label"]:
+            raise BuildError(f"{row['id']}: the scorer reads {letter} ({how}) from the target, not {row['label']}")
+    for u in units:
+        if u.shape == "lookup":
+            call = u.rows[1]["messages"][-1]
+            if "Answer:" in call["content"] or call["tool_calls"][0]["function"]["arguments"]["query"] != \
+                    u.rows[0]["lookup_query"]:
+                raise BuildError(f"{u.id}: the lookup-call row is not the search call")
+    labels = [r["label"] for r in answer_rows]
+    if labels.count("A") * 2 != len(labels):
+        raise BuildError("labels are not 50/50 overall")
+    table = negation_table(answer_rows)
+    low, high = BALANCE_LIMIT
+    if not all(c["A"] and c["B"] and low <= c["yes_share"] <= high for c in table.values()):
+        raise BuildError(f"negation predicts the label overall: {table}")
+    lookup_share = sum(u.shape == "lookup" for u in units) / len(units)
+    if lookup_share > LOOKUP_SHARE_MAX:
+        raise BuildError(f"lookup share {lookup_share} is over {LOOKUP_SHARE_MAX}")
+
+    def count(key, rows):
+        out_counts: dict[str, int] = {}
+        for r in rows:
+            k = str(r.get(key) if isinstance(key, str) else key(r))
+            out_counts[k] = out_counts.get(k, 0) + 1
+        return dict(sorted(out_counts.items()))
+
+    def kind_rows(kind):
+        return [r for r in answer_rows if r["kind"] == kind]
+
+    all_rows = out["train"] + out["valid"]
+    valid_ids = {r["id"] for r in out["valid"]}
+    sizes_by_shape = {}
+    for shape in SHAPES:
+        sizes = sorted(_estimate(r) for r in all_rows if r["shape"] == shape)
+        if sizes:
+            sizes_by_shape[shape] = {"rows": len(sizes), "chars": {"min": sizes[0], "median": int(statistics.median(sizes)),
+                                                                  "max": sizes[-1]},
+                                     "tokens_chars_div_4": {"min": sizes[0] // 4,
+                                                            "median": int(statistics.median(sizes)) // 4,
+                                                            "max": -(-sizes[-1] // 4)},
+                                     "tokens_chars_div_3": {"min": sizes[0] // 3,
+                                                            "median": int(statistics.median(sizes)) // 3,
+                                                            "max": -(-sizes[-1] // 3)}}
+    sizes = sorted(_estimate(r) for r in all_rows)
+    lookups_kept = count("kind", [u.answer_row for u in units if u.shape == "lookup"])
+    engine_rows = kind_rows(ENGINE_KIND)
+    manifest = {
+        "dataset": V2_DATASET, "builder_version": V2_BUILDER_VERSION,
+        "sources": [{"path": p, "sha256": file_sha256(REPO_ROOT / p)} for p in SOURCES],
+        "item_sources": scenario_sources or [],
+        "card_database": {"path": CARD_DATABASE, "sha256": file_sha256(REPO_ROOT / CARD_DATABASE)},
+        "rules_version": RULES_VERSION, "tournament_rules_version": TOURNAMENT_RULES_VERSION,
+        "assistant_prompt_version": ASSISTANT_PROMPT_VERSION, "eval_prompt_version": eval_assistant.EVAL_PROMPT_VERSION,
+        "prompt_shape": {"built_by": "loop.run_turn with a scripted stand-in model",
+                         "question_message": "eval_assistant.question_message",
+                         "preload_text": "eval_assistant.preload_text", "preload": True,
+                         "preload_k": DEFAULT_PRELOAD_K, "preload_chars": DEFAULT_PRELOAD_CHARS,
+                         "enable_thinking": True, "max_tokens": EVAL_MAX_TOKENS, "max_tool_calls": MAX_TOOL_CALLS,
+                         "choices": [f"{c['letter']}. {c['text']}" for c in CHOICES],
+                         "cards": "an item with cards preloads get_card on exactly those slugs, as the scorer does",
+                         "shapes": {"direct": "preload, then the target (no tool call): the preload shows the rule",
+                                    "lookup": ("preload, one search_rules call, its real result, then the target: "
+                                               "the preload does not show the rule and the search does"),
+                                    "lookup-call": ("the same item's first step: preload, then the target is the "
+                                                    "search call itself (mask_prompt trains only the last message, "
+                                                    "so without this row the call would never be trained)")},
+                         "target": "<think> short reasoning </think> + rule quote + one-line conclusion + Answer: X"},
+        "lookup": {"engine_queries": ENGINE_QUERIES,
+                   "other_queries": (f"the row's lookup_query, else the statement's first {KEY_TERMS_MAX} content "
+                                     "words (no function words, modals, negations or rule ids)"),
+                   "kept_only_if": ("the search result shows what the target quotes: the template's rule sentence "
+                                    "word for word, or every cited rule id of a scenario or engine item"),
+                   "by_kind": dict(sorted(stats.lookup.items())), "kept_by_kind": lookups_kept,
+                   "share_max": LOOKUP_SHARE_MAX, "before_cap": before_cap, "cap_dropped_items": cap_dropped,
+                   "share": round(lookup_share, 4),
+                   "search_methods": dict(sorted(stats.lookup_methods.items()))},
+        "preload_search": {"methods": dict(sorted(stats.methods.items())), "fallback_reasons": sorted(stats.reasons),
+                           "note": ("search_rules falls back to lexical BM25 when no usable rules index exists, as "
+                                    "the scorer does; a build where data/processed/corpus_index.npz is usable would "
+                                    "record 'hybrid' here")},
+        "split": {"train_rows": len(out["train"]), "valid_rows": len(out["valid"]),
+                  "train_items": sum(r["shape"] != "lookup-call" for r in out["train"]),
+                  "valid_items": sum(r["shape"] != "lookup-call" for r in out["valid"]),
+                  "by_kind": {
+                      TEMPLATE_KIND: {"by": "source rule id",
+                                      "hash": f"sha256('{SPLIT_SALT}:<rule id>') % 100 < {VALID_PERCENT}"},
+                      SCENARIO_KIND: {"by": "source rule ids (all must hash to the same split, else dropped as "
+                                            "split-straddle)",
+                                      "hash": f"sha256('{SPLIT_SALT}:<rule id>') % 100 < {VALID_PERCENT}"},
+                      ENGINE_KIND: {"by": "seed", "valid_share": ENGINE_VALID_SHARE,
+                                    "hash": f"the lowest sha256('{ENGINE_SEED_SALT}:<seed>')",
+                                    "valid_seeds": sorted(valid_seeds),
+                                    "seeds": len(engine_pool_seeds)}},
+                  "items_by_kind_and_split": count(lambda r: f"{r['kind']}:{'valid' if r['id'] in valid_ids else 'train'}",
+                                                   answer_rows)},
+        "counts": {"items": len(units), "rows": len(all_rows), "by_kind": count("kind", answer_rows),
+                   "by_label": count("label", answer_rows), "by_shape": count("shape", all_rows),
+                   "by_kind_and_shape": count(lambda r: f"{r['kind']}:{r['shape']}", all_rows),
+                   "by_kind_and_label": count(lambda r: f"{r['kind']}:{r['label']}", answer_rows),
+                   "lookup_call_rows_by_label": count("label", [r for r in all_rows if r["shape"] == "lookup-call"]),
+                   "by_class": count("question_class", engine_rows),
+                   "by_class_and_label": count(lambda r: f"{r['question_class']}:{r['label']}", engine_rows),
+                   "by_no_reason": count(lambda r: f"{r['question_class']}:{r['no_reason']}",
+                                         [r for r in engine_rows if r["label"] == "B"]),
+                   "by_habit": count("habit", kind_rows(SCENARIO_KIND)),
+                   "by_mutation": count("mutation", kind_rows(TEMPLATE_KIND)),
+                   "by_phrasing": count("phrasing", answer_rows),
+                   "label_by_negation": table,
+                   "label_by_negation_by_kind": {k: negation_table(kind_rows(k)) for k in
+                                                 (TEMPLATE_KIND, SCENARIO_KIND, ENGINE_KIND) if kind_rows(k)},
+                   "template_balance": {"band": list(BALANCE_BAND), "limit": list(BALANCE_LIMIT),
+                                        "pairs_dropped": balance_dropped},
+                   "composition": {"engine_cap": engine_cap, "engine_available": len(engine_available),
+                                   "engine_selected": len(engine_units), "engine_kept": len(engine_rows),
+                                   "scenarios_kept": len(kind_rows(SCENARIO_KIND)),
+                                   "templates_kept": len(kind_rows(TEMPLATE_KIND))},
+                   "gold_cards": {"rule": ("a scenario-drafted item whose cards include a slug in any gold set's "
+                                           "cards field, or a card whose name with subtitle appears in a gold "
+                                           "question or choice, is dropped (gold_card_dropped); engine items are "
+                                           "only counted"),
+                                  "gold_linked_cards": len(gold_cards),
+                                  "scenario_dropped": item_skips.get(f"{SCENARIO_KIND}:gold_card_dropped", 0),
+                                  "engine_pool_using_gold_card": engine_gold_pool,
+                                  "engine_kept_using_gold_card": sum(bool(set(r["cards"]) & gold_cards)
+                                                                     for r in engine_rows)},
+                   "rules_used": len({rid for r in answer_rows if r["kind"] != ENGINE_KIND
+                                      for rid in r["source_rule_ids"]}),
+                   "numbered_rules": len(rules),
+                   "document_rules_excluded": sorted(set(ids) & excluded, key=rule_sort_key)},
+        "skips": dict(sorted(skips.items())), "item_skips": dict(sorted(item_skips.items())),
+        "leak_guard": {"method": (f"normalised words (lowercase, brackets and punctuation removed); fails on a shared "
+                                  f"word {LEAK_NGRAM}-gram between any row's statement or target (a search call's "
+                                  "query included) and any gold question or choice, or a difflib.SequenceMatcher "
+                                  f"ratio >= {LEAK_RATIO} between a statement and any gold question"),
+                       "gold_files": sorted(p.name for p in gold_dir.glob("*.jsonl")),
+                       "gold_questions": len(gold_q), "leak_dropped": dict(sorted(leak_dropped.items())),
+                       "tripped_first_pass": first.violations, "result": "pass" if final.ok else "fail",
+                       "nearest": final.nearest},
+        "size_estimate": {"note": ("characters of the tool specs, every message and the tool calls, as the loop's "
+                                   "PromptGuard counts them; tokens at 4 and at 3 characters a token"),
+                          "chars": {"min": sizes[0], "median": int(statistics.median(sizes)), "max": sizes[-1]},
+                          "tokens_chars_div_4": {"min": sizes[0] // 4, "median": int(statistics.median(sizes)) // 4,
+                                                 "max": -(-sizes[-1] // 4)},
+                          "tokens_chars_div_3": {"min": sizes[0] // 3, "median": int(statistics.median(sizes)) // 3,
+                                                 "max": -(-sizes[-1] // 3)},
+                          "by_shape": sizes_by_shape},
+    }
+    return Build(out, manifest, final)
+
+
 def load_sources() -> list[dict]:
     return [row for p in SOURCES for row in read_jsonl(REPO_ROOT / p, missing_ok=False)]
 
@@ -1526,42 +2216,96 @@ def print_nearest(report: LeakReport) -> None:
         print(f"  {n['ratio']:.3f}  {n['id']}: {n['statement']!r}\n         ~ {n['gold']}: {n['gold_text']!r}")
 
 
+def item_source(path: Path) -> dict:
+    """A ``--scenarios`` file as the manifest records it: its path (repo-relative when inside the repo) and sha256."""
+    resolved = path.resolve()
+    try:
+        shown = str(resolved.relative_to(REPO_ROOT))
+    except ValueError:
+        shown = str(path)
+    return {"path": shown, "sha256": file_sha256(resolved)}
+
+
+def load_item_files(paths: list[Path], known_rules: set[str]) -> list[dict]:
+    """Every ``--scenarios`` file, each checked by ``load_scenarios``; an id in two files is a BuildError."""
+    rows: list[dict] = []
+    cards = known_card_slugs()
+    for path in paths:
+        rows.extend(load_scenarios(path, known_rules, cards))
+    seen = [r["id"] for r in rows]
+    if len(set(seen)) != len(seen):
+        raise BuildError("an item id appears in two --scenarios files")
+    return rows
+
+
+def print_v2(result: Build) -> None:
+    m = result.manifest
+    c = m["counts"]
+    print(f"items {c['items']} in {c['rows']} rows (train {m['split']['train_rows']}, valid "
+          f"{m['split']['valid_rows']}); labels {c['by_label']}")
+    print(f"by kind {c['by_kind']}; by shape {c['by_shape']}")
+    print(f"lookups {m['lookup']['by_kind']}; kept {m['lookup']['kept_by_kind']}; share {m['lookup']['share']} "
+          f"(cap dropped {m['lookup']['cap_dropped_items']} items)")
+    print(f"engine split by seed: valid seeds {m['split']['by_kind'][ENGINE_KIND]['valid_seeds']}; "
+          f"items by kind and split {m['split']['items_by_kind_and_split']}")
+    print(f"gold cards: {c['gold_cards']['scenario_dropped']} scenarios dropped; engine items using one: "
+          f"{c['gold_cards']['engine_kept_using_gold_card']} kept of {c['gold_cards']['engine_pool_using_gold_card']} "
+          "in the pool")
+    print(f"item skips {m['item_skips']}")
+    print(f"label by negation {c['label_by_negation']}")
+    for shape, size in m["size_estimate"]["by_shape"].items():
+        print(f"size {shape}: chars/4 {size['tokens_chars_div_4']}; chars/3 {size['tokens_chars_div_3']}")
+
+
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
-    parser.add_argument("--out", type=Path, default=OUT_DIR, help="output directory (default: %(default)s)")
-    parser.add_argument("--scenarios", type=Path, help="drafted scenario or engine-position items (JSONL) to add; see the docstring")
+    parser.add_argument("--dataset-name", choices=DATASETS, default=DATASET,
+                        help="which set to build (default: %(default)s, whose bytes never change)")
+    parser.add_argument("--out", type=Path, help="output directory (default: data/datasets/<dataset name>)")
+    parser.add_argument("--scenarios", type=Path, action="append", default=[],
+                        help="drafted scenario or engine-position items (JSONL) to add; repeat for several files")
+    parser.add_argument("--engine-cap", type=int, default=ENGINE_CAP,
+                        help="rules-tf-v2: the most engine-position items kept (default: %(default)s)")
     parser.add_argument("--force", action="store_true", help="allow writing a set less than half the current size")
     parser.add_argument("--check", action="store_true", help="build in memory and compare with --out; write nothing")
     args = parser.parse_args(argv)
+    out = args.out or REPO_ROOT / "data/datasets" / args.dataset_name
     rows = load_sources()
     try:
-        scenarios = (load_scenarios(args.scenarios, {r["id"] for r in numbered_rules(rows)}, known_card_slugs())
+        scenarios = (load_item_files(args.scenarios, {r["id"] for r in numbered_rules(rows)})
                      if args.scenarios else None)
-        result = build(rows, scenarios=scenarios)
+        if args.dataset_name == V2_DATASET:
+            result = build_v2(rows, scenarios=scenarios, engine_cap=args.engine_cap,
+                              scenario_sources=[item_source(p) for p in args.scenarios])
+        else:
+            result = build(rows, scenarios=scenarios)
     except BuildError as exc:
         print(f"error: {exc}", file=sys.stderr)
         return 1
     print_nearest(result.leak)
     m = result.manifest
-    print(f"leak guard: {m['leak_guard']['result']}; leak_dropped {m['leak_guard']['leak_dropped']}")
-    print(f"items {m['counts']['items']} (train {m['split']['train']}, valid {m['split']['valid']}); "
-          f"labels {m['counts']['by_label']}; mutations {m['counts']['by_mutation']}")
-    print(f"skips {m['skips']}")
-    table = m["counts"]["label_by_negation"]
-    print(f"label by negation (dropped {m['counts']['balance']['pairs_dropped']} pairs to balance): "
-          f"{'':12} Yes  No  Yes share")
-    for row in ("negation", "no_negation"):
-        print(f"  {row:12} {table[row]['A']:4} {table[row]['B']:3}  {table[row]['yes_share']}")
-    print(f"phrasing: question share {m['counts']['question_share']}")
-    print(f"size estimate (chars/4 tokens): {m['size_estimate']['tokens_chars_div_4']}; "
-          f"(chars/3): {m['size_estimate']['tokens_chars_div_3']}")
+    if args.dataset_name == V2_DATASET:
+        print_v2(result)
+    else:
+        print(f"leak guard: {m['leak_guard']['result']}; leak_dropped {m['leak_guard']['leak_dropped']}")
+        print(f"items {m['counts']['items']} (train {m['split']['train']}, valid {m['split']['valid']}); "
+              f"labels {m['counts']['by_label']}; mutations {m['counts']['by_mutation']}")
+        print(f"skips {m['skips']}")
+        table = m["counts"]["label_by_negation"]
+        print(f"label by negation (dropped {m['counts']['balance']['pairs_dropped']} pairs to balance): "
+              f"{'':12} Yes  No  Yes share")
+        for row in ("negation", "no_negation"):
+            print(f"  {row:12} {table[row]['A']:4} {table[row]['B']:3}  {table[row]['yes_share']}")
+        print(f"phrasing: question share {m['counts']['question_share']}")
+        print(f"size estimate (chars/4 tokens): {m['size_estimate']['tokens_chars_div_4']}; "
+              f"(chars/3): {m['size_estimate']['tokens_chars_div_3']}")
     texts = output_texts(result)
     if args.check:
-        stale = stale_files(args.out, texts)
+        stale = stale_files(out, texts)
         print("up to date" if not stale else f"differs: {', '.join(stale)}")
         return 1 if stale else 0
-    write_outputs(args.out, result, force=args.force)
-    print(f"Wrote {args.out}")
+    write_outputs(out, result, force=args.force)
+    print(f"Wrote {out}")
     return 0
 
 
