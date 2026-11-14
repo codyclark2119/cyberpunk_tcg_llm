@@ -115,7 +115,7 @@ import json
 import re
 import sys
 from concurrent.futures import ThreadPoolExecutor
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, Mapping
 
@@ -125,9 +125,16 @@ sys.path.insert(0, str(REPO_ROOT / "scripts"))
 
 import build_tf_dataset as tf  # noqa: E402  (leak guard, negation count, rule loading)
 from games.cyberpunk.engine_adapter import EngineWorker  # noqa: E402
+from games.cyberpunk.engine_positions import (MAX_DECISIONS, MAX_TURNS, Card, Position,  # noqa: E402,F401
+                                              attack_targets, card_data, check_public, decision_kind,
+                                              play_seed)
+from games.cyberpunk.engine_positions import PositionError as GenerationError  # noqa: E402
+from games.cyberpunk.engine_positions import field_units as _field_units  # noqa: E402
+from games.cyberpunk.engine_positions import offered_ids as _offered  # noqa: E402
+from games.cyberpunk.engine_positions import player as _player  # noqa: E402
 from games.cyberpunk.local_match import MatchSetup, load_default_setup  # noqa: E402
 from games.cyberpunk.policy_bot import baseline_action_id  # noqa: E402
-from games.cyberpunk.policy_prompt import visible_slugs  # noqa: E402
+from games.cyberpunk.policy_prompt import visible_slugs  # noqa: E402,F401  (re-exported for the tests)
 from harness.core.io import guard_shrink, read_jsonl, write_jsonl_atomic  # noqa: E402
 
 SOURCE_NAME = "engine-positions-v1"
@@ -137,8 +144,6 @@ OUT_PATH = REPO_ROOT / "data/datasets/sources" / f"{SOURCE_NAME}.jsonl"
 SEED_PREFIX = "engine-tf-v1"
 DEFAULT_SEEDS = 24
 DEFAULT_WORKERS = 4
-MAX_DECISIONS = 600
-MAX_TURNS = 40
 CAP_PER_KEY = 8          # items per (class, label, card)
 MAX_PER_CLASS = 300      # items per class after balancing (hash order), so no class dominates
 DEMO_MANIFESTS = REPO_ROOT / "packages/domain/src/demo-manifests.v1.json"
@@ -173,10 +178,6 @@ TYPE_TEXT = {"UNIT": "Unit", "GEAR": "Gear", "PROGRAM": "Program", "LEGEND": "Le
 ITEM_FIELDS = tf.ENGINE_FIELDS
 
 
-class GenerationError(Exception):
-    """A fail-closed problem: a missing rule id, a hidden card in a text, an engine answer out of shape."""
-
-
 def _h(*parts: Any) -> int:
     return int(hashlib.sha256("\x1f".join(str(p) for p in parts).encode("utf-8")).hexdigest(), 16)
 
@@ -196,30 +197,6 @@ def known_rule_ids(path: Path = RULES_PATH) -> set[str]:
 
 # Cards ----------------------------------------------------------------------------------------
 
-@dataclass(frozen=True)
-class Card:
-    slug: str
-    name: str
-    type: str
-    cost: int | None
-    sell_tag: bool
-    keywords: tuple[str, ...]
-
-
-def card_data(content: Mapping[str, Any]) -> dict[str, Card]:
-    """The engine content bundle's public card data by slug (``cardId``; only revision 1 is admitted)."""
-    out: dict[str, Card] = {}
-    for c in content.get("cards") or []:
-        if c.get("revision") != 1:
-            raise GenerationError(f"{c.get('id')}: only revision 1 cards are handled")
-        cost = c.get("printedCost") or {}
-        out[c["id"]] = Card(c["id"], c["displayName"], c["type"],
-                            cost.get("amount") if cost.get("kind") == "EDDIES" else None,
-                            bool((c.get("sellProfile") or {}).get("allowed")),
-                            tuple((c.get("mechanics") or {}).get("keywords") or c.get("keywords") or ()))
-    return out
-
-
 def deck_ids(initialization: Mapping[str, Any], path: Path = DEMO_MANIFESTS) -> list[str]:
     """The Demo manifest id of each initialization deck; a deck matching none is an error."""
     manifests = json.loads(path.read_text(encoding="utf-8"))
@@ -234,96 +211,6 @@ def deck_ids(initialization: Mapping[str, Any], path: Path = DEMO_MANIFESTS) -> 
         if key not in keyed:
             raise GenerationError("a deck matches no Demo manifest")
         out.append(keyed[key])
-    return out
-
-
-# Positions ------------------------------------------------------------------------------------
-
-@dataclass
-class Position:
-    seed: str
-    index: int
-    state_hash: str
-    observation: dict
-    actions: list[dict]
-    sold_this_turn: int
-    probes: dict[str, list[str]] = field(default_factory=dict)  # attacker publicId -> target publicIds
-
-
-def decision_kind(obs: Mapping[str, Any]) -> str | None:
-    """"main" (the active seat's Main phase decision), "react" (the defender's React Step decision) or None."""
-    if obs.get("resolutionStage") != "DECISION" or obs.get("outcome"):
-        return None
-    if obs.get("window") == "MAIN" and obs["actingSeat"] == obs["activeSeat"] == obs["viewerSeat"] \
-            and not obs.get("combat"):
-        return "main"
-    combat = obs.get("combat") or {}
-    if obs.get("window") == "RIVAL_REACT" and obs["actingSeat"] == obs["viewerSeat"] != obs["activeSeat"] \
-            and combat.get("defendingSeat") == obs["viewerSeat"]:
-        return "react"
-    return None
-
-
-def attack_targets(worker: EngineWorker, content: Mapping, state: Mapping, actor: str, action_id: str) -> list[str]:
-    """The card targets the engine offers once this attack is declared (applied to a copy of the state).
-
-    With several targets the engine asks for one (CHOOSE TARGET options); with one it locks it in, and the
-    attacker's observation shows it as the combat target. Gig-area targets are left out.
-    """
-    after = worker.apply_action(content=content, state=state, actor_id=actor, action_id=action_id)["state"]
-    model_input = worker.model_input(content=content, state=after, actor_id=after["timing"]["actingPlayer"])
-    obs = model_input["observation"]
-    combat = obs.get("combat") or {}
-    if combat.get("stage") == "ATTACK_TARGET_SELECTION":
-        out = []
-        for a in model_input["legalActions"]:
-            d = a["descriptor"]
-            if d.get("kind") != "CHOOSE" or d.get("choiceKind") != "TARGET":
-                raise GenerationError(f"unexpected action during target selection: {d.get('label')}")
-            if (d.get("option") or {}).get("kind") == "CARD":
-                out.append(d["option"]["publicId"])
-        return sorted(out)
-    target = combat.get("target") or {}
-    if target.get("kind") == "CARD":
-        return [target["cardInstanceId"]]
-    if target.get("kind") == "GIG_AREA":
-        return []
-    raise GenerationError(f"the attack produced no target: {combat}")
-
-
-def play_seed(worker: EngineWorker, setup: MatchSetup, seed: str, *, probe: bool = True,
-              max_decisions: int = MAX_DECISIONS, max_turns: int = MAX_TURNS) -> list[Position]:
-    """Play one baseline game and keep its Main and React decision positions (with attack probes)."""
-    s = setup.for_seed(seed)
-    content = s.content
-    created = worker.create_game(content=content, initialization=s.initialization)
-    state, state_hash = created["state"], created["stateHash"]
-    sold: collections.Counter = collections.Counter()
-    out: list[Position] = []
-    index = 0
-    while not state["match"].get("outcome") and index < max_decisions and state["timing"]["turn"] <= max_turns:
-        actor = state["timing"]["actingPlayer"]
-        model_input = worker.model_input(content=content, state=state, actor_id=actor)
-        actions = model_input["legalActions"]
-        if not actions:
-            break
-        obs = model_input["observation"]
-        key = (obs["viewerSeat"], obs["turn"])
-        kind = decision_kind(obs)
-        if kind:
-            position = Position(seed, index, state_hash, obs, actions, sold[key])
-            if kind == "main" and probe:
-                for a in actions:
-                    if a["descriptor"]["kind"] == "DECLARE_ATTACK":
-                        position.probes[a["descriptor"]["source"]["publicId"]] = attack_targets(
-                            worker, content, state, actor, a["actionId"])
-            out.append(position)
-        chosen = baseline_action_id(tuple(actions))
-        if next(a for a in actions if a["actionId"] == chosen)["descriptor"]["kind"] == "SELL_CARD":
-            sold[key] += 1
-        transition = worker.apply_action(content=content, state=state, actor_id=actor, action_id=chosen)
-        state, state_hash = transition["state"], transition["stateHash"]
-        index += 1
     return out
 
 
@@ -349,27 +236,12 @@ class Candidate:
         return json.dumps([self.question_class, self.facts], sort_keys=True)
 
 
-def _player(obs: Mapping, seat: int) -> Mapping:
-    return next(p for p in obs["players"] if p["seat"] == seat)
-
-
 def _plural(n: int, one: str, many: str | None = None) -> str:
     return f"{n} {one if n == 1 else (many or one + 's')}"
 
 
 def _kw(keywords) -> str:
     return " and ".join(KEYWORD_TEXT.get(k, f"[{k}]") for k in keywords)
-
-
-def _offered(actions: list[dict], kind: str) -> set[str]:
-    return {a["descriptor"]["source"]["publicId"] for a in actions
-            if a["descriptor"]["kind"] == kind and (a["descriptor"].get("source") or {}).get("kind") == "CARD"}
-
-
-def _field_units(player: Mapping, cards: Mapping[str, Card]) -> list[Mapping]:
-    """Face-up Units (and Legends gone solo) on a field; attached Gears share the zone and are left out."""
-    return [c for c in player["cards"] if c["zone"] == "BATTLEFIELD" and c["face"] == "UP" and c.get("content")
-            and cards[c["content"]["cardId"]].type in ("UNIT", "LEGEND")]
 
 
 def candidates(position: Position, cards: Mapping[str, Card], skips: collections.Counter) -> list[Candidate]:
@@ -607,24 +479,6 @@ def candidates(position: Position, cards: Mapping[str, Card], skips: collections
 def rule_ids_for(c: Candidate) -> list[str]:
     key = c.reason if c.reason is not None else c.yes_rule
     return list(RULE_IDS[(c.question_class, key)])
-
-
-# Hidden information ---------------------------------------------------------------------------
-
-def check_public(text: str, named: list[str], observation: Mapping, actions: list, cards: Mapping[str, Card]) -> None:
-    """Fail if the text names a card the acting seat cannot see, or ``named`` holds one.
-
-    Visible cards are exactly ``policy_prompt.visible_slugs`` of the seat's observation and offered actions
-    (the engine's observation never carries a rival's hand or any deck order).
-    """
-    visible = {s.split("@")[0] for s in visible_slugs(observation, actions)}
-    hidden = [s for s in named if s not in visible]
-    if hidden:
-        raise GenerationError(f"names cards the seat cannot see: {hidden}")
-    visible_names = {cards[s].name for s in visible if s in cards}
-    for card in cards.values():
-        if card.slug not in visible and card.name not in visible_names and card.name in text:
-            raise GenerationError(f"the text names {card.name}, which the seat cannot see")
 
 
 # Selection ------------------------------------------------------------------------------------
