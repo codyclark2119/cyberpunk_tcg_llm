@@ -161,6 +161,20 @@ sources), leak guard and split by rule (by their first cited rule), and are
 balanced on their own: after drops the larger label is trimmed by hash and
 counted. The committed set is built without it.
 
+The same file may also hold engine-verified legality items
+(``kind: "engine-position"``, written by ``scripts/build_engine_tf_items.py``):
+rows with exactly the fields ``ENGINE_FIELDS``, among them ``cards`` (slugs,
+each checked against the card database), ``question_class``, ``no_reason``,
+``deciding_fact``, ``phrasing``, ``provenance`` (engine identity, seed, deck ids,
+seat, turn, step, decision index, state hash) and ``engine_check``. They are
+validated as strictly (fail closed) and take the same prompt shape, preload check,
+leak guard and split, except that the preload runs ``get_card`` on exactly their
+``cards``, as the scorer does for a gold item with ``cards``. Their target states
+the deciding fact, quotes each cited rule from the snapshot (a leading "### Title"
+removed) and gives the one-line conclusion and ``Answer: X``; the label is the
+engine's. Each kind is balanced on its own. No set is built with them yet: the
+combined set is a later, separately versioned dataset.
+
 Output: ``data/datasets/rules-tf-v1/{train,valid}.jsonl`` and ``manifest.json``
 (source paths and sha256s, both rules versions, counts by kind, mutation,
 phrasing and label, skip reasons, the leak-guard result, the preload's search
@@ -218,6 +232,14 @@ LABEL_ANSWER = {"A": "Yes", "B": "No"}
 TEMPLATE_KIND = "rule-template"
 SCENARIO_KIND = "scenario-drafted"
 SCENARIO_FIELDS = ("id", "statement", "label", "source_rule_ids", "kind")
+ENGINE_KIND = "engine-position"  # scripts/build_engine_tf_items.py
+ENGINE_FIELDS = ("id", "kind", "statement", "label", "phrasing", "question_class", "no_reason", "deciding_fact",
+                 "source_rule_ids", "cards", "provenance", "engine_check")
+ENGINE_CLASSES = ("attack-declare", "attack-target", "play-from-hand", "sell", "block")
+ENGINE_PROVENANCE = {"generator": str, "engine": dict, "seed": str, "decks": list, "seat": int, "turn": int,
+                     "step": str, "decision_index": int, "state_hash": str}
+ENGINE_ACTIONS = ("DECLARE_ATTACK", "ATTACK_TARGET", "PLAY_CARD", "SELL_CARD", "DECLARE_BLOCKER")
+CARD_DATABASE = "data/processed/card_database.jsonl"
 MUTATIONS = ("polarity", "number", "state", "side", "quantifier")
 NEGATIVE_ADJECTIVE_RE = re.compile(r"\b(?:un|in|im|ir|il|non-?)\w+(?:able|ible)\b", re.I)
 
@@ -938,14 +960,18 @@ def eval_item(statement: str) -> dict:
     return {"question": statement, "choices": copy.deepcopy(CHOICES)}
 
 
-def scorer_prompt(statement: str) -> Prompt:
-    """The messages and tool specs the scorer's first model step sends for ``statement`` (preload on, thinking on)."""
+def scorer_prompt(statement: str, cards: list[str] | None = None) -> Prompt:
+    """The messages and tool specs the scorer's first model step sends for ``statement`` (preload on, thinking on).
+
+    ``cards`` are the item's linked card slugs: the scorer preloads exactly those with ``get_card`` (as it does
+    for a gold item with ``cards``); None keeps its usual card-name linking.
+    """
     item = eval_item(statement)
     model = _CaptureModel()
     turn = asyncio.run(run_turn([], eval_assistant.question_message(item), model, max_tokens=EVAL_MAX_TOKENS,
                                 enable_thinking=True, preload=True, preload_text=eval_assistant.preload_text(item),
                                 preload_k=DEFAULT_PRELOAD_K, preload_chars=DEFAULT_PRELOAD_CHARS,
-                                max_tool_calls=MAX_TOOL_CALLS))
+                                max_tool_calls=MAX_TOOL_CALLS, preload_cards=cards))
     if model.messages is None or model.enable_thinking is not True:
         raise BuildError(f"the loop never reached the model for {statement!r}")
     sent = [s for s in turn.trace if s.get("auto") and s.get("sent")]
@@ -1041,16 +1067,60 @@ def leak_guard(items: list[dict], gold_questions: list[dict], gold_all: list[dic
 
 # Scenario hook -----------------------------------------------------------------------------
 
-def load_scenarios(path: Path, known_rules: set[str]) -> list[dict]:
-    """Drafted scenario rows, checked strictly; any problem is a ``BuildError`` naming the row."""
+def known_card_slugs() -> set[str]:
+    """Every card slug the assistant's ``get_card`` can return (the card database's ids)."""
+    return {r["id"] for r in read_jsonl(REPO_ROOT / CARD_DATABASE, missing_ok=False)}
+
+
+def _check_engine_row(row: dict, where: str, known_cards: set[str] | None) -> None:
+    """The fields only an ``engine-position`` row has (scripts/build_engine_tf_items.py), checked strictly."""
+    if row["phrasing"] not in ("question", "statement"):
+        raise BuildError(f"{where}: phrasing must be question or statement")
+    if row["question_class"] not in ENGINE_CLASSES:
+        raise BuildError(f"{where}: unknown question_class {row['question_class']!r}")
+    if row["label"] and row["no_reason"] is not None:
+        raise BuildError(f"{where}: a Yes item has no no_reason")
+    if not row["label"] and (not isinstance(row["no_reason"], str) or not row["no_reason"]):
+        raise BuildError(f"{where}: a No item must name its no_reason")
+    if not isinstance(row["deciding_fact"], str) or len(row["deciding_fact"].split()) < 3:
+        raise BuildError(f"{where}: deciding_fact must be a sentence")
+    cards = row["cards"]
+    if not isinstance(cards, list) or not cards or not all(isinstance(c, str) for c in cards) \
+            or len(set(cards)) != len(cards):
+        raise BuildError(f"{where}: cards must be a non-empty list of distinct slugs")
+    if known_cards is None:
+        raise BuildError(f"{where}: engine-position rows need the card database to check their cards")
+    unknown = [c for c in cards if c not in known_cards]
+    if unknown:
+        raise BuildError(f"{where}: unknown card slug(s) {unknown}")
+    prov = row["provenance"]
+    if not isinstance(prov, dict) or set(prov) != set(ENGINE_PROVENANCE):
+        raise BuildError(f"{where}: provenance must hold exactly {sorted(ENGINE_PROVENANCE)}")
+    for key, kind in ENGINE_PROVENANCE.items():
+        if type(prov[key]) is not kind:
+            raise BuildError(f"{where}: provenance.{key} must be {kind.__name__}")
+    if not re.fullmatch(r"[0-9a-f]{64}", prov["state_hash"]):
+        raise BuildError(f"{where}: provenance.state_hash must be a sha256 hex digest")
+    if set(prov["engine"]) != {"version", "artifactHash"} or not all(isinstance(v, str) for v in prov["engine"].values()):
+        raise BuildError(f"{where}: provenance.engine must be the engine identity (version, artifactHash)")
+    if not prov["decks"] or not all(isinstance(d, str) for d in prov["decks"]):
+        raise BuildError(f"{where}: provenance.decks must list deck ids")
+    check = row["engine_check"]
+    if not isinstance(check, dict) or check.get("action") not in ENGINE_ACTIONS:
+        raise BuildError(f"{where}: engine_check must name one of {list(ENGINE_ACTIONS)}")
+
+
+def load_scenarios(path: Path, known_rules: set[str], known_cards: set[str] | None = None) -> list[dict]:
+    """Drafted scenario and engine-position rows, checked strictly; any problem is a ``BuildError`` naming the row."""
     rows = read_jsonl(path, missing_ok=False)
     seen: set[str] = set()
     for n, row in enumerate(rows, 1):
         where = f"{path}:{n}"
         if not isinstance(row, dict):
             raise BuildError(f"{where}: not a JSON object")
-        missing = [f for f in SCENARIO_FIELDS if f not in row]
-        extra = sorted(set(row) - set(SCENARIO_FIELDS))
+        fields = ENGINE_FIELDS if row.get("kind") == ENGINE_KIND else SCENARIO_FIELDS
+        missing = [f for f in fields if f not in row]
+        extra = sorted(set(row) - set(fields))
         if missing or extra:
             raise BuildError(f"{where}: missing fields {missing}, unexpected fields {extra}")
         if not isinstance(row["id"], str) or not re.fullmatch(r"[A-Za-z0-9][A-Za-z0-9._-]*", row["id"]):
@@ -1068,12 +1138,44 @@ def load_scenarios(path: Path, known_rules: set[str]) -> list[dict]:
         unknown = [i for i in ids if i not in known_rules]
         if unknown:
             raise BuildError(f"{where}: unknown rule id(s) {unknown}")
-        if row["kind"] != SCENARIO_KIND:
-            raise BuildError(f"{where}: kind must be {SCENARIO_KIND!r}")
-    trues = sum(1 for r in rows if r["label"])
-    if trues * 2 != len(rows):
-        raise BuildError(f"{path}: labels are not balanced ({trues} true, {len(rows) - trues} false)")
+        if row["kind"] not in (SCENARIO_KIND, ENGINE_KIND):
+            raise BuildError(f"{where}: kind must be {SCENARIO_KIND!r} or {ENGINE_KIND!r}")
+        if row["kind"] == ENGINE_KIND:
+            _check_engine_row(row, where, known_cards)
+    for kind in (SCENARIO_KIND, ENGINE_KIND):
+        labels = [r["label"] for r in rows if r["kind"] == kind]
+        if labels.count(True) * 2 != len(labels):
+            raise BuildError(f"{path}: {kind} labels are not balanced ({labels.count(True)} true, "
+                             f"{labels.count(False)} false)")
     return rows
+
+
+HEADING_RE = re.compile(r"^#+\s+.*?\s{2,}")
+
+
+def rule_quote(rule: dict) -> str:
+    """A rule's own text for a target to quote: id prefix, a leading "### Title" and EXAMPLE blocks removed."""
+    body = HEADING_RE.sub("", rule_body(rule["text"]).strip(), count=1)
+    quote = clean(body)
+    if not quote or quote.startswith("#") or "\n" in quote:
+        raise BuildError(f"{rule['id']}: no quotable rule text")
+    return quote
+
+
+def engine_target(row: dict, label: str, rules_by_id: dict[str, dict]) -> tuple[str, str]:
+    """The target of an engine-position item: the deciding fact, each cited rule quoted from the snapshot, the
+    one-line conclusion and the answer line. The label is the engine's; the rules explain it."""
+    quotes = [f'{rule_ref(r, capital=True)} says: "{rule_quote(rules_by_id[r])}"' for r in row["source_rule_ids"]]
+    answer = LABEL_ANSWER[label].lower()
+    if row["phrasing"] == "question":
+        think = (f'The question: "{row["statement"]}" The deciding fact: {row["deciding_fact"]} {" ".join(quotes)} '
+                 f"So by the rules the answer is {answer}.")
+    else:
+        truth = "true" if label == "A" else "false"
+        think = (f'The statement to judge: "{row["statement"]}" The deciding fact: {row["deciding_fact"]} '
+                 f"{' '.join(quotes)} So the statement is {truth}.")
+    visible = "\n".join(quotes) + f"\n{row['deciding_fact']}\n{_conclusion(row['phrasing'], label)}\nAnswer: {label}"
+    return think, visible
 
 
 def scenario_target(row: dict, label: str) -> tuple[str, str]:
@@ -1263,16 +1365,25 @@ def build(rule_rows: list[dict], gold_dir: Path = GOLD_DIR, scenarios: list[dict
 
     scenario_skips: dict[str, int] = {}
     scenario_rows: list[dict] = []
+    rules_by_id = {r["id"]: r for r in rules}
+
+    def skip(kind: str, reason: str) -> None:
+        key = reason if kind == SCENARIO_KIND else f"{kind}:{reason}"
+        scenario_skips[key] = scenario_skips.get(key, 0) + 1
+
     for row in scenarios or []:
         label = "A" if row["label"] else "B"
-        prompt = scorer_prompt(row["statement"])
+        engine = row["kind"] == ENGINE_KIND
+        prompt = scorer_prompt(row["statement"], row["cards"] if engine else None)
         if not set(row["source_rule_ids"]) <= prompt.preload_rule_ids:
-            scenario_skips["cited-rule-not-in-preload"] = scenario_skips.get("cited-rule-not-in-preload", 0) + 1
+            skip(row["kind"], "cited-rule-not-in-preload")
             continue
-        think, visible = scenario_target(row, label)
-        meta = {"id": row["id"], "kind": SCENARIO_KIND, "source_rule_ids": list(row["source_rule_ids"]),
-                "mutation": None, "phrasing": "statement", "label": label, "answer": LABEL_ANSWER[label],
-                "statement": row["statement"]}
+        think, visible = engine_target(row, label, rules_by_id) if engine else scenario_target(row, label)
+        meta = {"id": row["id"], "kind": row["kind"], "source_rule_ids": list(row["source_rule_ids"]),
+                "mutation": None, "phrasing": row["phrasing"] if engine else "statement", "label": label,
+                "answer": LABEL_ANSWER[label], "statement": row["statement"]}
+        if engine:
+            meta.update({"question_class": row["question_class"], "cards": list(row["cards"])})
         scenario_rows.append(example_row(prompt, target_text(think, visible), meta))
 
     gold_q, gold_all = gold_texts(gold_dir)
@@ -1293,14 +1404,17 @@ def build(rule_rows: list[dict], gold_dir: Path = GOLD_DIR, scenarios: list[dict
     scenario_kept = [r for r in scenario_rows if r["id"] not in tripped]
     scenario_leak = len(scenario_rows) - len(scenario_kept)
     leak_dropped += scenario_leak
-    # Scenarios are balanced on their own: after drops, the larger label is trimmed by hash.
-    by_label = {lab: sorted((r for r in scenario_kept if r["label"] == lab), key=lambda r: _h(r["id"], "trim"))
-                for lab in ("A", "B")}
-    keep = min(len(by_label["A"]), len(by_label["B"]))
-    trimmed = len(scenario_kept) - 2 * keep
-    if trimmed:
-        scenario_skips["balance-trimmed"] = trimmed
-    scenario_final = {r["id"] for lab in ("A", "B") for r in by_label[lab][:keep]}
+    # Scenario and engine-position items are balanced on their own, each kind separately: after drops, the
+    # larger label is trimmed by hash.
+    scenario_final: set[str] = set()
+    for kind in (SCENARIO_KIND, ENGINE_KIND):
+        by_label = {lab: sorted((r for r in scenario_kept if r["label"] == lab and r["kind"] == kind),
+                                key=lambda r: _h(r["id"], "trim")) for lab in ("A", "B")}
+        keep = min(len(by_label["A"]), len(by_label["B"]))
+        trimmed = len(by_label["A"]) + len(by_label["B"]) - 2 * keep
+        for _ in range(trimmed):
+            skip(kind, "balance-trimmed")
+        scenario_final |= {r["id"] for lab in ("A", "B") for r in by_label[lab][:keep]}
     scenario_kept = [r for r in scenario_kept if r["id"] in scenario_final]
 
     all_rows = [r for _, rows in kept_groups for r in rows] + scenario_kept
@@ -1315,7 +1429,7 @@ def build(rule_rows: list[dict], gold_dir: Path = GOLD_DIR, scenarios: list[dict
         out[split_of(row["source_rule_ids"][0])].append(row)
     for split in out:
         out[split].sort(key=lambda r: (rule_sort_key(r["source_rule_ids"][0]), r["kind"], r["id"]))
-        for kind in (TEMPLATE_KIND, SCENARIO_KIND):
+        for kind in (TEMPLATE_KIND, SCENARIO_KIND, ENGINE_KIND):
             labels = [r["label"] for r in out[split] if r["kind"] == kind]
             if labels.count("A") * 2 != len(labels) and kind == TEMPLATE_KIND:
                 raise BuildError(f"{split} {kind} labels are not 50/50")
@@ -1415,13 +1529,13 @@ def print_nearest(report: LeakReport) -> None:
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     parser.add_argument("--out", type=Path, default=OUT_DIR, help="output directory (default: %(default)s)")
-    parser.add_argument("--scenarios", type=Path, help="drafted scenario items (JSONL) to add; see the docstring")
+    parser.add_argument("--scenarios", type=Path, help="drafted scenario or engine-position items (JSONL) to add; see the docstring")
     parser.add_argument("--force", action="store_true", help="allow writing a set less than half the current size")
     parser.add_argument("--check", action="store_true", help="build in memory and compare with --out; write nothing")
     args = parser.parse_args(argv)
     rows = load_sources()
     try:
-        scenarios = (load_scenarios(args.scenarios, {r["id"] for r in numbered_rules(rows)})
+        scenarios = (load_scenarios(args.scenarios, {r["id"] for r in numbered_rules(rows)}, known_card_slugs())
                      if args.scenarios else None)
         result = build(rows, scenarios=scenarios)
     except BuildError as exc:
