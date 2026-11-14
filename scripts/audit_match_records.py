@@ -62,7 +62,7 @@ def main(argv: list[str] | None = None) -> int:
     if not paths:
         print(f"no match records found in {', '.join(args.paths) or str(DEFAULT_OUTPUT_DIR)}", file=sys.stderr)
         return 1
-    setup = load_setup_file(args.setup) if args.setup else load_default_setup(REPO_ROOT, node=args.node)
+    setup = load_setup_file(args.setup, args.node) if args.setup else load_default_setup(REPO_ROOT, node=args.node)
     report = audit_paths(paths, setup, running_engine(REPO_ROOT, args.node), node=args.node)
     if args.json:
         print(json.dumps(report, indent=1))

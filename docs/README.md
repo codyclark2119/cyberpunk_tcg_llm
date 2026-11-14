@@ -44,6 +44,7 @@ were recorded in their pull requests (#4, #7, #8); later batches have documents 
 | --- | --- | --- |
 | Candidate review tooling | — | [engine-candidate-admission.md](engine-candidate-admission.md) |
 | Coverage inventory (2026-11-14) | all 151 | [card-coverage-inventory.md](card-coverage-inventory.md): which cards are executable, the mechanic families the rest need, recommended order, open rules questions (`npm run coverage:cards`, play UI "Coverage" tab) |
+| Constructed games (2026-11-14) | reviewed pool | [constructed-format.md](constructed-format.md): the engine already plays CONSTRUCTED; two reference 40-card decks, deck files as setups in the runner, auditor and play UI |
 | V4 (2026-09-17) | Japantown Jonin | [contract](api-admission-batch-v4.md), [implementation status](api-admission-batch-v4-implementation-status.md), [validation](api-admission-batch-v4-validation.md) |
 | V5 (2026-09-18) | Detonate | [contract](api-admission-batch-v5.md), [implementation status](api-admission-batch-v5-implementation-status.md), [baseline completion runbook](api-admission-batch-v5-baseline-completion.md) |
 | V6 (2026-09-22) | Trust No One | [contract and executable slice](api-admission-batch-v6.md), [baseline verification](api-admission-batch-v6-verification.md) |

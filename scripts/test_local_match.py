@@ -333,6 +333,27 @@ async def test_setup_file_accepts_a_replay_fixture_and_summary_counts():
     assert summary["decisions"] == 2 * rows[-1]["decisions"] and summary["fallbacks"] == 0
 
 
+async def test_deck_file_plays_a_constructed_game_to_an_engine_outcome():
+    decks = REPO_ROOT / "tests/fixtures/constructed-reference-decks.v1.json"
+    setup = load_setup_file(decks, CTX["node"])
+    assert setup.source == "decks:constructed-reference-decks.v1.json"
+    assert setup.initialization["format"] == "CONSTRUCTED" and setup.engine == CTX["setup"].engine
+    assert [len(d["main"]) for d in setup.initialization["decks"]] == [40, 40]
+    rows, _ = await play(setup.for_seed("test-constructed"), baseline_pair(), ["baseline", "baseline"])
+    result = rows[-1]
+    assert result["status"] == "finished" and result["detail"] is None, result
+    assert result["reason"] in {"EMPTY_DRAW", "START_TURN_GIGS", "OVERTIME_GIGS"}
+    with tempfile.TemporaryDirectory() as tmp:
+        bad = Path(tmp) / "one-deck.json"
+        bad.write_text(json.dumps({"decks": [{"legends": [], "main": []}]}), encoding="utf-8")
+        try:
+            load_setup_file(bad, CTX["node"])
+        except ValueError as exc:
+            assert "deck file rejected" in str(exc)
+        else:
+            raise AssertionError("a deck file without two decks was accepted")
+
+
 async def test_every_row_records_its_index_and_the_baseline_pick():
     async def last(decision):
         return decision.legal_actions[-1]["actionId"]

@@ -26,8 +26,10 @@ in its local download metadata for this; a path alone is refused.
 
 Decks and format are whatever the engine's createGame accepts. By default the
 fixed Demo content and decks are used; pass --setup with a JSON object holding
-``content`` and ``initialization`` (an engine replay fixture also works) to play
-anything else. Match i uses seed <--seed>-<i>; with two baseline seats the same
+``content`` and ``initialization`` (an engine replay fixture also works), or a
+deck file with two decks (``{"decks": [{legends, main}, ...]}``, played as
+CONSTRUCTED on the reviewed cards, e.g. tests/fixtures/constructed-reference-decks.v1.json),
+to play anything else. Match i uses seed <--seed>-<i>; with two baseline seats the same
 seed always replays the same game.
 
 An mlx seat needs native arm64 Python on Apple Silicon and a downloaded model
@@ -121,7 +123,7 @@ def main():
     parser.add_argument("--seed", default="local", help="seed prefix; match i uses <seed>-<i>")
     parser.add_argument("--policy", nargs=2, choices=POLICIES, default=["baseline", "baseline"],
                         metavar=("SEAT0", "SEAT1"), help="policy per engine seat: baseline or mlx")
-    parser.add_argument("--setup", type=Path, help="JSON with content and initialization; default: fixed Demo decks")
+    parser.add_argument("--setup", type=Path, help="JSON with content and initialization, or a two-deck file played as CONSTRUCTED; default: fixed Demo decks")
     parser.add_argument("--output-dir", type=Path, default=DEFAULT_OUTPUT_DIR)
     parser.add_argument("--force", action="store_true", help="replace existing match records")
     parser.add_argument("--max-decisions", type=int, default=DEFAULT_MAX_DECISIONS)
@@ -148,7 +150,7 @@ def main():
     if args.training_dir is not None and not args.training_dir.is_absolute():
         args.training_dir = REPO_ROOT / args.training_dir
     logging.basicConfig(level=logging.WARNING, format="%(message)s")
-    setup = load_setup_file(args.setup) if args.setup else load_default_setup(REPO_ROOT, node=args.node)
+    setup = load_setup_file(args.setup, args.node) if args.setup else load_default_setup(REPO_ROOT, node=args.node)
     try:
         return asyncio.run(run(args, setup))
     except (FileExistsError, ValueError) as exc:
