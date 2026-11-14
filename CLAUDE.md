@@ -47,6 +47,7 @@ python scripts/test_cyberpunk.py && python scripts/test_harness_core.py
 python scripts/test_engine_candidates.py && python scripts/test_engine_adapter.py
 python scripts/test_policy_bot.py && python scripts/test_policy_mlx.py
 python scripts/test_local_match.py   # full baseline games on the real engine worker
+python scripts/test_audit_match_records.py   # replays match records on the engine worker
 python scripts/test_local_prompt.py && python scripts/test_training_records.py
 python scripts/test_validation_console.py && python scripts/test_play_app.py
 python scripts/test_assistant_tools.py && python scripts/test_assistant_deck_tools.py

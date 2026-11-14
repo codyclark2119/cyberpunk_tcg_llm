@@ -96,6 +96,14 @@ that is the worker re-validating the full content bundle and state on every
 request. Seat 0 won all of the few seeds tried; the baseline is a smoke-play
 heuristic, so that says nothing about deck strength.
 
+Update 2026-11-14: model games have since been run on the Mac. With prompt
+`local-choice-v4` and the 10 s budget, 20 matches per model against the baseline
+(both seats, 2026-11-12): Qwen3-8B-4bit won 16-4 and Qwen3-4B-4bit 14-6, with no
+fallbacks; the intervals overlap. See
+[local-strength-eval.md](local-strength-eval.md#results-2026-11-12). Records this
+runner writes can be checked against the engine with the
+[match record auditor](local-match-audit.md).
+
 ## Other changes
 
 - `scripts/benchmark_sim_bot.py` now draws its default positions from real
@@ -122,3 +130,9 @@ heuristic, so that says nothing about deck strength.
 - Scope 4 or later: real MLX games and benchmark runs on the Mac, prompt size
   versus the token cap, a faster worker path (the bundle is resent per request),
   and renaming the `sim_*` modules.
+
+(Update 2026-11-14: Mac MLX games, the benchmark, shorter prompts and the
+`policy_*` rename have since landed; see [local-time-budget.md](local-time-budget.md),
+[local-prompt-v3.md](local-prompt-v3.md) and
+[local-strength-eval.md](local-strength-eval.md). The per-request bundle resend is
+not addressed by those documents.)

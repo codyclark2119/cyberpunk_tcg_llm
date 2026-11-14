@@ -146,3 +146,7 @@ revision 2) are checked on an edited real position.
 - Gameplay quality was not measured, and no adapter has been trained on either
   format. Note that neither v2 nor v3 gives the model card rules text or costs,
   only slugs and live state.
+
+Update 2026-11-14: the Mac re-measurement (2026-11-12, M3 Max, v3, 100 decisions)
+reported prompt tokens min 509 / median 1,028 / max 1,180, below the estimates
+above. At the 10 s budget Qwen3-8B-4bit made 100/100 model choices (0 fallbacks), p50 about 1,433 ms, peak RSS about 5 GB; Qwen3-4B-4bit made 100/100, p50 about 835 ms, peak RSS about 2.6 GB.

@@ -107,3 +107,8 @@ budget, the header, the error codes in rows and the viewer fields.
 
 No Mac run was repeated for this change. The next Mac run should report the
 `errors` counts and `workerRestarts` alongside the selection counts.
+
+Update 2026-11-14: the Mac re-measurement at prompt v3 with the 10 s budget had no
+fallbacks: Qwen3-8B-4bit made 100/100 model choices (0 fallbacks), p50 about 1,433 ms, peak RSS about 5 GB; Qwen3-4B-4bit made 100/100, p50 about 835 ms, peak RSS about 2.6 GB. The strength eval at v4 (20 matches per model) also
+had 0 fallbacks for both models; see
+[local-strength-eval.md](local-strength-eval.md#results-2026-11-12).

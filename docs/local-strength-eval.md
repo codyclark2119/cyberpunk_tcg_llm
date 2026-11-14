@@ -4,6 +4,8 @@ Date: 2026-11-12. Engine identity at writing: unchanged (no engine, wire or work
 file was touched). Follows [local match records v3](local-match-records-v3.md) and
 [local prompt v4](local-prompt-v4.md). No real model ran for this change; the
 numbers below for Mac runs are estimates from earlier timings, not measurements.
+(Update 2026-11-14: the suggested run has since been made; see
+[Results 2026-11-12](#results-2026-11-12).)
 
 ## What it measures
 
@@ -103,6 +105,34 @@ interrupted (rerun the same command). Adding
 `--prompt-version local-choice-v3 --prompt-version local-choice-v4` compares both
 prompts on the same seeds and doubles the run. The play UI's "Strength" tab
 launches the same command and shows the summaries side by side.
+
+## Results 2026-11-12
+
+Added 2026-11-14. The suggested run above, on the Mac (M3 Max; master `1980ff9`,
+engine `0.4.1-engine-cleanup`), prompt `local-choice-v4`, 10 s budget, 20 matches
+per model against the baseline (10 seeds, the model in both seats). Summary:
+`local/strength/qwen3-v4-first/summary.json` on that machine (gitignored).
+
+| Model | W-L (seat 0 / seat 1) | Win rate [95% Wilson] | Baseline agreement | Fallbacks | Latency p50 / max | Input tokens median / max | Wall |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| Qwen3-8B-4bit | 16-4 (8-2 / 8-2) | 0.80 [0.58, 0.92] | 0.48 | 0 | 1,985 / 2,880 ms | 1,464 / 2,131 | 38 min |
+| Qwen3-4B-4bit | 14-6 (9-1 / 5-5) | 0.70 [0.48, 0.86] | 0.68 | 0 | 1,158 / 1,552 ms | 1,513 / 1,943 | 26 min |
+
+No draws, cap stops or engine errors. Both wall times fell inside the estimates above.
+
+Read with care:
+
+- The intervals overlap, so 20 matches do not separate the two models (see
+  [Reading the interval](#reading-the-interval)). Both beat the baseline more often
+  than not, but the baseline is a fixed smoke-play heuristic.
+- Agreement says how often a model chose what the baseline would have; the
+  stronger-looking 8B agreed with it less.
+- The largest prompt (2,131 tokens, 8B) is above the 2,000-token target set in
+  [local-prompt-v3.md](local-prompt-v3.md).
+- Only v4 was run; v3 and v4 were not compared on the same seeds.
+- The records were written under engine `0.4.1-engine-cleanup`. The
+  [match record auditor](local-match-audit.md) checks a record's engine identity
+  first, so on a later engine build it reports them stale instead of replaying them.
 
 ## Play UI
 

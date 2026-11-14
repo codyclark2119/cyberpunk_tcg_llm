@@ -166,6 +166,8 @@ subprocess is also stopped. To return to the portable heuristic, omit `--policy 
   saved action mapping. The model stays loaded between requests.
 - Qwen's chat template uses `enable_thinking=False`. Greedy decoding and a default
   16-token output cap keep the output short; gameplay quality is unmeasured.
+  (Update 2026-11-14: measured since; see the update under
+  [Validation boundary](#validation-boundary).)
 - The complete rendered prompt is counted before generation. Above 4096 tokens
   by default, it falls back without truncating state or dropping legal actions.
   All supplied snapshot fields remain opaque; the current prompt has no retrieval
@@ -245,6 +247,16 @@ unconditionally. It does not install MLX or download weights on Ubuntu.
 Actual MLX/Metal inference, M3 latency, live simulator matches and playing strength
 remain to be measured on the Mac. No engine identity input, generated baseline,
 corpus snapshot, gold dataset or existing evaluation result changes in this milestone.
+
+Update 2026-11-14: latency and strength have since been measured on the local
+engine (the simulator was retired, so no simulator match was ever run). On an M3 Max
+at prompt `local-choice-v3` with the 10 s budget, 100 benchmark decisions each:
+Qwen3-8B-4bit made 100/100 model choices (0 fallbacks), p50 about 1,433 ms, peak RSS about 5 GB; Qwen3-4B-4bit made 100/100, p50 about 835 ms, peak RSS about 2.6 GB. The first strength eval (prompt `local-choice-v4`, 20 matches per
+model against the baseline, 2026-11-12) gave the 8B 16-4 and the 4B 14-6, with
+overlapping 95% intervals, so it does not separate the two models; see
+[local-strength-eval.md](local-strength-eval.md#results-2026-11-12). Match records
+from these runs can be replayed on the engine with the
+[match record auditor](local-match-audit.md).
 
 References: [MLX-LM 0.31.3](https://github.com/ml-explore/mlx-lm/tree/v0.31.3),
 [Qwen3-8B](https://huggingface.co/Qwen/Qwen3-8B),
