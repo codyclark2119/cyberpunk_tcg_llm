@@ -1,0 +1,3805 @@
+{
+  "schemaVersion": 1,
+  "kind": "CYBERPUNK_CARD_COVERAGE_V1",
+  "note": "Planning report only. Families are review notes; admission still needs a reviewed CardRevisionSnapshot.",
+  "snapshot": {
+    "catalogSha256": "b96ca8d583ab087148c9ed3563379e6c42fd9e729188a042215bb503a8879c3d",
+    "cardCount": 151,
+    "familiesReviewedAt": "2026-11-14"
+  },
+  "totals": {
+    "cards": 151,
+    "admitted": 29,
+    "notAdmitted": 122,
+    "notAdmittedOnlyCoveredFamilies": 3,
+    "byAdmission": {
+      "NOT_ADMITTED": 122,
+      "SOURCE_MATCH": 29
+    }
+  },
+  "families": [
+    {
+      "family": "CONDITION_GIG",
+      "status": "PARTIAL",
+      "summary": "Conditions and filters on Gig values: min/max, value-pairs, even/odd, 8+, die type, counts compared with a Rival.",
+      "notes": "Conditions only, each a fixed shape.",
+      "cardCount": 40,
+      "notAdmittedCount": 36,
+      "soleBlockerCount": 0
+    },
+    {
+      "family": "CONDITION_BOARD",
+      "status": "PARTIAL",
+      "summary": "Generic target filters and board conditions: classification, cost, power, ready/spent, equipped, face-up, named, lowest power.",
+      "notes": "Documented as unsupported: generic condition/filter language. Each admitted filter is a literal.",
+      "cardCount": 34,
+      "notAdmittedCount": 30,
+      "soleBlockerCount": 0
+    },
+    {
+      "family": "DRAW",
+      "status": "PARTIAL",
+      "summary": "Draw cards, fixed or conditional.",
+      "notes": "Routed. Variable counts need SCALED_AMOUNT; 'may draw' needs an optional prompt.",
+      "cardCount": 38,
+      "notAdmittedCount": 28,
+      "soleBlockerCount": 0
+    },
+    {
+      "family": "TRIGGER_PLAY",
+      "status": "PARTIAL",
+      "summary": "[Play] abilities and Program bodies resolving when played.",
+      "notes": "Trigger WHEN_PLAYED.",
+      "cardCount": 27,
+      "notAdmittedCount": 24,
+      "soleBlockerCount": 0
+    },
+    {
+      "family": "SCALED_AMOUNT",
+      "status": "PARTIAL",
+      "summary": "Amounts computed from the board: 'for each', 'equal to'.",
+      "notes": "Only Royce's per-equipped-Gear modifier counts anything.",
+      "cardCount": 18,
+      "notAdmittedCount": 18,
+      "soleBlockerCount": 0
+    },
+    {
+      "family": "GEAR_EQUIP",
+      "status": "PARTIAL",
+      "summary": "Equip a Gear to a friendly Unit or face-up Legend; Gear power adds to its host.",
+      "notes": "Equip onto Units is supported for the admitted Gear. Gear on a Legend host in combat (a Go Solo Legend) is unsupported.",
+      "cardCount": 22,
+      "notAdmittedCount": 17,
+      "soleBlockerCount": 0
+    },
+    {
+      "family": "SPEND_ABILITY",
+      "status": "PARTIAL",
+      "summary": "Activated abilities with a [Spend] cost (and optional Eddie cost) on Legends, Units or Gear.",
+      "notes": "Admitted only for Kerry: The Last Rockerboy (a Unit). Face-up Legend [Spend] abilities and Gear [Spend] abilities are not.",
+      "cardCount": 17,
+      "notAdmittedCount": 17,
+      "soleBlockerCount": 0
+    },
+    {
+      "family": "TEMPORARY_BUFF",
+      "status": "PARTIAL",
+      "summary": "Power or keyword changes 'this turn' on a chosen Unit.",
+      "notes": "Fixed amounts on RIVAL_UNIT, SOURCE_SUBJECT or FRIENDLY_UNIT. Keyword grants, all-Unit and filtered targets are missing.",
+      "cardCount": 19,
+      "notAdmittedCount": 17,
+      "soleBlockerCount": 0
+    },
+    {
+      "family": "UNIT_DEFEAT",
+      "status": "PARTIAL",
+      "summary": "Defeat a Unit or Gear chosen with a filter.",
+      "notes": "Filters are fixed literals (power at most 5, power at most a friendly d20, Gear power at most 2).",
+      "cardCount": 18,
+      "notAdmittedCount": 16,
+      "soleBlockerCount": 0
+    },
+    {
+      "family": "ATTACK_PERMISSION",
+      "status": "PARTIAL",
+      "summary": "Who may attack what and when: can't attack, may attack ready/spent Units, must attack, can't be blocked.",
+      "notes": "Restrictions on the card itself are supported; permissions granted by effects, forced attacks and off-turn timing are not.",
+      "cardCount": 16,
+      "notAdmittedCount": 14,
+      "soleBlockerCount": 2
+    },
+    {
+      "family": "DECK_SEARCH_REVEAL",
+      "status": "PARTIAL",
+      "summary": "Top-of-deck manipulation: search/look/reveal top N, trash from the top (Trash N), bottom-deck the rest.",
+      "notes": "SEARCH_GEAR (count<=5, Gear with max cost, take<=2) only.",
+      "cardCount": 15,
+      "notAdmittedCount": 14,
+      "soleBlockerCount": 0
+    },
+    {
+      "family": "SPEND_OR_READY",
+      "status": "PARTIAL",
+      "summary": "Spend or ready Units and Legends by an effect, and 'can't ready' locks.",
+      "notes": "SPEND_UNIT (rival, cost at most 4) only; readying Units or Legends is missing.",
+      "cardCount": 15,
+      "notAdmittedCount": 14,
+      "soleBlockerCount": 0
+    },
+    {
+      "family": "DISCARD",
+      "status": "PARTIAL",
+      "summary": "Discard: self discard, a Rival discards, discard as a cost, discard a hand.",
+      "notes": "DISCARD_CARDS supports only the controller discarding exactly 1.",
+      "cardCount": 15,
+      "notAdmittedCount": 13,
+      "soleBlockerCount": 0
+    },
+    {
+      "family": "DURATION_DELAYED",
+      "status": "PARTIAL",
+      "summary": "Lasting and delayed effects: 'until your next turn', 'next time ... this turn', 'at the end of this turn'.",
+      "notes": "",
+      "cardCount": 14,
+      "notAdmittedCount": 12,
+      "soleBlockerCount": 0
+    },
+    {
+      "family": "COST_MODIFIER",
+      "status": "MISSING",
+      "summary": "Play-cost reductions, alternative costs, ability-cost and Go Solo cost changes.",
+      "notes": "",
+      "cardCount": 10,
+      "notAdmittedCount": 10,
+      "soleBlockerCount": 0
+    },
+    {
+      "family": "GIG_ADJUST",
+      "status": "PARTIAL",
+      "summary": "Increase, decrease, adjust or set Gig values.",
+      "notes": "Maxima are fixed literals; 'set to the value of another Gig' and 'adjust by exactly 1' are missing. MODIFY_GIG_VALUE is schema-only.",
+      "cardCount": 15,
+      "notAdmittedCount": 10,
+      "soleBlockerCount": 0
+    },
+    {
+      "family": "KEYWORD_QUICK",
+      "status": "PARTIAL",
+      "summary": "[Quick] timing: Programs and activated abilities usable in the react window.",
+      "notes": "Quick Programs are supported for Floor It, Reboot Optics and Detonate. Quick activated [Spend] abilities on Legends, Units and Gear are not offered in any react window yet.",
+      "cardCount": 12,
+      "notAdmittedCount": 10,
+      "soleBlockerCount": 0
+    },
+    {
+      "family": "UNIT_ZONE_MOVE",
+      "status": "MISSING",
+      "summary": "Move a Unit off the field other than defeat: bottom-deck it or return it to hand.",
+      "notes": "MOVE_CARD is schema-only with no handler.",
+      "cardCount": 10,
+      "notAdmittedCount": 10,
+      "soleBlockerCount": 0
+    },
+    {
+      "family": "PLAY_BY_EFFECT",
+      "status": "MISSING",
+      "summary": "Play a card by an effect: from hand, trash or deck top, for free or for its cost, with after-play riders.",
+      "notes": "",
+      "cardCount": 9,
+      "notAdmittedCount": 9,
+      "soleBlockerCount": 0
+    },
+    {
+      "family": "GO_SOLO",
+      "status": "PARTIAL",
+      "summary": "[Go Solo]: play a Legend as a ready Unit that can attack this turn and is removed when it leaves the field.",
+      "notes": "Supported only for Go Solo Legends with no other text or with Blocker (V: Corporate Exile, Goro: Hands Unclean). Go Solo Legends with Play/Attack/Defeated triggers, Go Solo cost changes and Gear on Legend hosts in combat are not.",
+      "cardCount": 10,
+      "notAdmittedCount": 8,
+      "soleBlockerCount": 0
+    },
+    {
+      "family": "MODAL_CHOICE",
+      "status": "MISSING",
+      "summary": "'Choose one effect' (and 'choose both instead' upgrades).",
+      "notes": "PendingChoice MODE exists for setup, search and Gig steps, but no ability carries modes.",
+      "cardCount": 8,
+      "notAdmittedCount": 8,
+      "soleBlockerCount": 0
+    },
+    {
+      "family": "STEAL_CONTROL",
+      "status": "MISSING",
+      "summary": "Gig control outside the ordinary attack steal: swap, extra steal, steal fewer, steal prevention.",
+      "notes": "Documented as unsupported (control transfer / steal).",
+      "cardCount": 8,
+      "notAdmittedCount": 8,
+      "soleBlockerCount": 0
+    },
+    {
+      "family": "TRIGGER_END_OF_TURN",
+      "status": "PARTIAL",
+      "summary": "'At the end of your turn' abilities.",
+      "notes": "Trigger WHEN_OWN_TURN_ENDS; only Eddie readying is routed.",
+      "cardCount": 9,
+      "notAdmittedCount": 8,
+      "soleBlockerCount": 0
+    },
+    {
+      "family": "TRIGGER_STEAL",
+      "status": "MISSING",
+      "summary": "Triggers when a Unit or Legend steals a Gig.",
+      "notes": "Only the history condition SUBJECT_STOLE_GIG_THIS_TURN exists (Delamain Cab); there is no steal trigger.",
+      "cardCount": 8,
+      "notAdmittedCount": 8,
+      "soleBlockerCount": 0
+    },
+    {
+      "family": "TURN_HISTORY",
+      "status": "PARTIAL",
+      "summary": "'First time each turn', 'this turn you played', 'if it stole or fought this turn'.",
+      "notes": "Guards FIRST_BLUE_UNIT_OR_GEAR_PLAY_PER_TURN and FIRST_FRIENDLY_ARASAKA_UNIT_ATTACK_PER_TURN.",
+      "cardCount": 11,
+      "notAdmittedCount": 8,
+      "soleBlockerCount": 0
+    },
+    {
+      "family": "CONDITION_STREET_CRED",
+      "status": "PARTIAL",
+      "summary": "Conditions on Street Cred.",
+      "notes": "Nearly complete as conditions; gating an effect mode on them is not.",
+      "cardCount": 13,
+      "notAdmittedCount": 7,
+      "soleBlockerCount": 0
+    },
+    {
+      "family": "KEYWORD_BLOCKER",
+      "status": "COVERED",
+      "summary": "Printed [Blocker] on a Unit, or granted to a Gear's host.",
+      "notes": "Keyword BLOCKER. Temporary grants by an effect are TEMPORARY_BUFF.",
+      "cardCount": 11,
+      "notAdmittedCount": 7,
+      "soleBlockerCount": 0
+    },
+    {
+      "family": "TRASH_RECURSION",
+      "status": "MISSING",
+      "summary": "Return a card from the trash (or from cards just trashed) to hand.",
+      "notes": "",
+      "cardCount": 7,
+      "notAdmittedCount": 7,
+      "soleBlockerCount": 0
+    },
+    {
+      "family": "TRIGGER_ATTACK",
+      "status": "PARTIAL",
+      "summary": "[Attack] abilities and 'when a Unit attacks' triggers.",
+      "notes": "Triggers WHEN_ATTACKING and WHEN_UNIT_ATTACKS.",
+      "cardCount": 14,
+      "notAdmittedCount": 7,
+      "soleBlockerCount": 0
+    },
+    {
+      "family": "EDDIE_ECONOMY",
+      "status": "PARTIAL",
+      "summary": "Ready Eddies, sell cards from unusual zones, pay Eddies during resolution.",
+      "notes": "READY_EDDIES (controller, 1 or 2) only.",
+      "cardCount": 8,
+      "notAdmittedCount": 6,
+      "soleBlockerCount": 0
+    },
+    {
+      "family": "TRIGGER_CALL",
+      "status": "PARTIAL",
+      "summary": "[Call] abilities of a Legend.",
+      "notes": "Trigger WHEN_CALLED; only Viktor's search is routed. Every other Call body needs its effects routed too.",
+      "cardCount": 7,
+      "notAdmittedCount": 6,
+      "soleBlockerCount": 0
+    },
+    {
+      "family": "TRIGGER_DEFEATED",
+      "status": "PARTIAL",
+      "summary": "[Defeated] abilities.",
+      "notes": "Trigger WHEN_DEFEATED, admitted only for Dexter: One Last Chance.",
+      "cardCount": 7,
+      "notAdmittedCount": 6,
+      "soleBlockerCount": 0
+    },
+    {
+      "family": "TRIGGER_WHEN_SPENT",
+      "status": "MISSING",
+      "summary": "WHEN_SPENT: 'when this Unit or Legend is spent' (includes Zetatech Faceplate).",
+      "notes": "Documented as unsupported; needs every spending path (attack, Blocker, [Spend] costs, effects) to emit one event.",
+      "cardCount": 6,
+      "notAdmittedCount": 6,
+      "soleBlockerCount": 0
+    },
+    {
+      "family": "FREE_CALL",
+      "status": "MISSING",
+      "summary": "Call a Legend by an effect or for free outside the normal Call.",
+      "notes": "",
+      "cardCount": 5,
+      "notAdmittedCount": 5,
+      "soleBlockerCount": 0
+    },
+    {
+      "family": "MASS_EFFECT",
+      "status": "MISSING",
+      "summary": "Effects on all Units or each player.",
+      "notes": "",
+      "cardCount": 5,
+      "notAdmittedCount": 5,
+      "soleBlockerCount": 0
+    },
+    {
+      "family": "FIGHT_MODIFIER",
+      "status": "PARTIAL",
+      "summary": "Fight-scoped rules: power while fighting, can't be defeated in a fight, wins all fights against, fight-outcome riders.",
+      "notes": "Only Reboot Optics' next-fight prevention.",
+      "cardCount": 5,
+      "notAdmittedCount": 4,
+      "soleBlockerCount": 0
+    },
+    {
+      "family": "KEYWORD_ADRENALINE",
+      "status": "COVERED",
+      "summary": "[Adrenaline]: the Unit can attack the turn it is played.",
+      "notes": "Keyword ADRENALINE (Riding Nomad). Conditional or granted Adrenaline also needs STATIC_MODIFIER or TEMPORARY_BUFF.",
+      "cardCount": 4,
+      "notAdmittedCount": 4,
+      "soleBlockerCount": 0
+    },
+    {
+      "family": "TRIGGER_FIGHT_RESULT",
+      "status": "PARTIAL",
+      "summary": "Triggers on winning or losing a fight, or winning by a margin.",
+      "notes": "Trigger WHEN_FIGHT_WON (Satori). Losing a fight and win margins are missing.",
+      "cardCount": 5,
+      "notAdmittedCount": 4,
+      "soleBlockerCount": 0
+    },
+    {
+      "family": "GEAR_MOVE_OR_SACRIFICE",
+      "status": "MISSING",
+      "summary": "Move Gear between hosts, or defeat a friendly Gear as a cost or choice.",
+      "notes": "",
+      "cardCount": 3,
+      "notAdmittedCount": 3,
+      "soleBlockerCount": 0
+    },
+    {
+      "family": "REPLACEMENT_EFFECT",
+      "status": "MISSING",
+      "summary": "'If X would ..., instead ...' replacement effects.",
+      "notes": "",
+      "cardCount": 3,
+      "notAdmittedCount": 3,
+      "soleBlockerCount": 0
+    },
+    {
+      "family": "STATIC_MODIFIER",
+      "status": "PARTIAL",
+      "summary": "Continuous modifiers: auras, while-attacking power, conditional keywords.",
+      "notes": "Each admitted modifier is a bespoke shape.",
+      "cardCount": 4,
+      "notAdmittedCount": 3,
+      "soleBlockerCount": 0
+    },
+    {
+      "family": "TRIGGER_BLOCKER_USED",
+      "status": "MISSING",
+      "summary": "'When this Unit uses [Blocker]' triggers.",
+      "notes": "Blocker redirection exists but emits no trigger.",
+      "cardCount": 3,
+      "notAdmittedCount": 3,
+      "soleBlockerCount": 0
+    },
+    {
+      "family": "TRIGGER_OTHER_EVENT",
+      "status": "MISSING",
+      "summary": "Other event triggers: another friendly Unit defeated, a Rival adjusting or swapping friendly Gigs.",
+      "notes": "",
+      "cardCount": 3,
+      "notAdmittedCount": 3,
+      "soleBlockerCount": 0
+    },
+    {
+      "family": "LEGEND_LOOK",
+      "status": "PARTIAL",
+      "summary": "Look at friendly face-down Legends.",
+      "notes": "One Legend, attack-triggered (Kiroshi Optics). 'All face-down Legends' is missing.",
+      "cardCount": 3,
+      "notAdmittedCount": 2,
+      "soleBlockerCount": 0
+    },
+    {
+      "family": "RIVAL_CHOICE",
+      "status": "MISSING",
+      "summary": "A Rival makes a choice for the controller's effect.",
+      "notes": "",
+      "cardCount": 2,
+      "notAdmittedCount": 2,
+      "soleBlockerCount": 0
+    },
+    {
+      "family": "VANILLA",
+      "status": "COVERED",
+      "summary": "No rules text beyond reminder or flavour text: ordinary play, attack and fight.",
+      "notes": "Psycho Squad, Animals Wrecker, Rockn Rockerboy and Emergency Atlus are admitted with no abilities.",
+      "cardCount": 4,
+      "notAdmittedCount": 2,
+      "soleBlockerCount": 0
+    },
+    {
+      "family": "GIG_ROLL",
+      "status": "MISSING",
+      "summary": "Hooks on rolling a Gig die: rerolls and triggers on rolled results.",
+      "notes": "",
+      "cardCount": 1,
+      "notAdmittedCount": 1,
+      "soleBlockerCount": 0
+    },
+    {
+      "family": "PROMO_NO_TEXT",
+      "status": "OUT_OF_SCOPE",
+      "summary": "Source record with no rules text, cost or RAM: not a playable card in this snapshot.",
+      "notes": "Rebecca: Having a Moment is reviewed with execution UNSUPPORTED as a negative fixture.",
+      "cardCount": 1,
+      "notAdmittedCount": 1,
+      "soleBlockerCount": 1
+    },
+    {
+      "family": "TRIGGER_CARD_PLAYED",
+      "status": "PARTIAL",
+      "summary": "'When you play a <filter> card' triggers.",
+      "notes": "Trigger WHEN_CARD_PLAYED with guard FIRST_BLUE_UNIT_OR_GEAR_PLAY_PER_TURN (Jackie: Pour One Out).",
+      "cardCount": 2,
+      "notAdmittedCount": 1,
+      "soleBlockerCount": 0
+    },
+    {
+      "family": "TRIGGER_START_OF_TURN",
+      "status": "MISSING",
+      "summary": "'At the start of your turn' abilities.",
+      "notes": "No start-of-turn trigger exists.",
+      "cardCount": 1,
+      "notAdmittedCount": 1,
+      "soleBlockerCount": 0
+    }
+  ],
+  "cards": [
+    {
+      "cardId": "6th-street-recruits",
+      "displayName": "6th Street Recruits",
+      "type": "UNIT",
+      "colors": [
+        "RED"
+      ],
+      "admission": "NOT_ADMITTED",
+      "revision": null,
+      "families": [
+        "CONDITION_GIG",
+        "GIG_ADJUST",
+        "TRIGGER_STEAL"
+      ],
+      "blockingFamilies": [
+        "CONDITION_GIG",
+        "GIG_ADJUST",
+        "TRIGGER_STEAL"
+      ],
+      "note": null
+    },
+    {
+      "cardId": "adam-smasher-ender-of-legends",
+      "displayName": "Adam Smasher: Ender of Legends",
+      "type": "LEGEND",
+      "colors": [
+        "RED"
+      ],
+      "admission": "NOT_ADMITTED",
+      "revision": null,
+      "families": [
+        "GO_SOLO",
+        "TRIGGER_PLAY",
+        "UNIT_DEFEAT"
+      ],
+      "blockingFamilies": [
+        "GO_SOLO",
+        "TRIGGER_PLAY",
+        "UNIT_DEFEAT"
+      ],
+      "note": null
+    },
+    {
+      "cardId": "adam-smasher-metal-over-meat",
+      "displayName": "Adam Smasher: Metal Over Meat",
+      "type": "UNIT",
+      "colors": [
+        "YELLOW"
+      ],
+      "admission": "NOT_ADMITTED",
+      "revision": null,
+      "families": [
+        "MASS_EFFECT",
+        "TRIGGER_PLAY",
+        "UNIT_DEFEAT"
+      ],
+      "blockingFamilies": [
+        "MASS_EFFECT",
+        "TRIGGER_PLAY",
+        "UNIT_DEFEAT"
+      ],
+      "note": null
+    },
+    {
+      "cardId": "adrenaline-converter",
+      "displayName": "Adrenaline Converter",
+      "type": "GEAR",
+      "colors": [
+        "YELLOW"
+      ],
+      "admission": "NOT_ADMITTED",
+      "revision": null,
+      "families": [
+        "CONDITION_GIG",
+        "GEAR_EQUIP",
+        "KEYWORD_ADRENALINE",
+        "STATIC_MODIFIER"
+      ],
+      "blockingFamilies": [
+        "CONDITION_GIG",
+        "GEAR_EQUIP",
+        "STATIC_MODIFIER"
+      ],
+      "note": null
+    },
+    {
+      "cardId": "afterparty-at-lizzie-s",
+      "displayName": "Afterparty at Lizzie's",
+      "type": "PROGRAM",
+      "colors": [
+        "YELLOW"
+      ],
+      "admission": "SOURCE_MATCH",
+      "revision": 1,
+      "families": [
+        "CONDITION_GIG",
+        "DRAW",
+        "GIG_ADJUST"
+      ],
+      "blockingFamilies": [],
+      "note": null
+    },
+    {
+      "cardId": "all-is-lost",
+      "displayName": "All is Lost",
+      "type": "PROGRAM",
+      "colors": [
+        "RED"
+      ],
+      "admission": "NOT_ADMITTED",
+      "revision": null,
+      "families": [
+        "DECK_SEARCH_REVEAL",
+        "TRASH_RECURSION"
+      ],
+      "blockingFamilies": [
+        "DECK_SEARCH_REVEAL",
+        "TRASH_RECURSION"
+      ],
+      "note": null
+    },
+    {
+      "cardId": "alt-cunningham-mother-of-daemons",
+      "displayName": "Alt Cunningham: Mother of Daemons",
+      "type": "UNIT",
+      "colors": [
+        "YELLOW"
+      ],
+      "admission": "NOT_ADMITTED",
+      "revision": null,
+      "families": [
+        "CONDITION_BOARD",
+        "CONDITION_GIG",
+        "DISCARD",
+        "DRAW",
+        "REPLACEMENT_EFFECT",
+        "STEAL_CONTROL",
+        "TRIGGER_WHEN_SPENT"
+      ],
+      "blockingFamilies": [
+        "CONDITION_BOARD",
+        "CONDITION_GIG",
+        "DISCARD",
+        "DRAW",
+        "REPLACEMENT_EFFECT",
+        "STEAL_CONTROL",
+        "TRIGGER_WHEN_SPENT"
+      ],
+      "note": null
+    },
+    {
+      "cardId": "alt-cunningham-soulkiller-architect",
+      "displayName": "Alt Cunningham: Soulkiller Architect",
+      "type": "LEGEND",
+      "colors": [
+        "BLUE"
+      ],
+      "admission": "NOT_ADMITTED",
+      "revision": null,
+      "families": [
+        "PLAY_BY_EFFECT",
+        "SPEND_ABILITY",
+        "UNIT_ZONE_MOVE"
+      ],
+      "blockingFamilies": [
+        "PLAY_BY_EFFECT",
+        "SPEND_ABILITY",
+        "UNIT_ZONE_MOVE"
+      ],
+      "note": "Plays a Program from trash at its cost, then bottom-decks it."
+    },
+    {
+      "cardId": "animals-wrecker",
+      "displayName": "Animals Wrecker",
+      "type": "UNIT",
+      "colors": [
+        "RED"
+      ],
+      "admission": "NOT_ADMITTED",
+      "revision": null,
+      "families": [
+        "VANILLA"
+      ],
+      "blockingFamilies": [],
+      "note": null
+    },
+    {
+      "cardId": "appetite-for-destruction",
+      "displayName": "Appetite for Destruction",
+      "type": "PROGRAM",
+      "colors": [
+        "RED"
+      ],
+      "admission": "NOT_ADMITTED",
+      "revision": null,
+      "families": [
+        "DURATION_DELAYED",
+        "STEAL_CONTROL",
+        "TRIGGER_FIGHT_RESULT"
+      ],
+      "blockingFamilies": [
+        "DURATION_DELAYED",
+        "STEAL_CONTROL",
+        "TRIGGER_FIGHT_RESULT"
+      ],
+      "note": null
+    },
+    {
+      "cardId": "arasaka-emergency-radioport",
+      "displayName": "Arasaka Emergency Radioport",
+      "type": "GEAR",
+      "colors": [
+        "RED"
+      ],
+      "admission": "NOT_ADMITTED",
+      "revision": null,
+      "families": [
+        "CONDITION_BOARD",
+        "FREE_CALL",
+        "GEAR_EQUIP",
+        "LEGEND_LOOK",
+        "TRIGGER_WHEN_SPENT"
+      ],
+      "blockingFamilies": [
+        "CONDITION_BOARD",
+        "FREE_CALL",
+        "GEAR_EQUIP",
+        "LEGEND_LOOK",
+        "TRIGGER_WHEN_SPENT"
+      ],
+      "note": null
+    },
+    {
+      "cardId": "augmented-negotiators",
+      "displayName": "Augmented Negotiators",
+      "type": "UNIT",
+      "colors": [
+        "YELLOW"
+      ],
+      "admission": "NOT_ADMITTED",
+      "revision": null,
+      "families": [
+        "DISCARD",
+        "KEYWORD_BLOCKER",
+        "TRIGGER_BLOCKER_USED"
+      ],
+      "blockingFamilies": [
+        "DISCARD",
+        "TRIGGER_BLOCKER_USED"
+      ],
+      "note": null
+    },
+    {
+      "cardId": "bonnie-and-clyde",
+      "displayName": "Bonnie and Clyde",
+      "type": "PROGRAM",
+      "colors": [
+        "RED"
+      ],
+      "admission": "NOT_ADMITTED",
+      "revision": null,
+      "families": [
+        "CONDITION_GIG",
+        "UNIT_DEFEAT"
+      ],
+      "blockingFamilies": [
+        "CONDITION_GIG",
+        "UNIT_DEFEAT"
+      ],
+      "note": null
+    },
+    {
+      "cardId": "bootleg-black-sapphire-show",
+      "displayName": "Bootleg Black Sapphire Show",
+      "type": "PROGRAM",
+      "colors": [
+        "YELLOW"
+      ],
+      "admission": "NOT_ADMITTED",
+      "revision": null,
+      "families": [
+        "CONDITION_GIG",
+        "DRAW",
+        "EDDIE_ECONOMY"
+      ],
+      "blockingFamilies": [
+        "CONDITION_GIG",
+        "DRAW",
+        "EDDIE_ECONOMY"
+      ],
+      "note": null
+    },
+    {
+      "cardId": "caliber-totentanz-s-top-dog",
+      "displayName": "Caliber: Totentanz's Top Dog",
+      "type": "UNIT",
+      "colors": [
+        "YELLOW"
+      ],
+      "admission": "NOT_ADMITTED",
+      "revision": null,
+      "families": [
+        "CONDITION_GIG",
+        "DISCARD",
+        "TRIGGER_DEFEATED",
+        "TRIGGER_PLAY",
+        "UNIT_DEFEAT"
+      ],
+      "blockingFamilies": [
+        "CONDITION_GIG",
+        "DISCARD",
+        "TRIGGER_DEFEATED",
+        "TRIGGER_PLAY",
+        "UNIT_DEFEAT"
+      ],
+      "note": null
+    },
+    {
+      "cardId": "carnage-at-the-colosseum",
+      "displayName": "Carnage at the Colosseum",
+      "type": "PROGRAM",
+      "colors": [
+        "RED"
+      ],
+      "admission": "NOT_ADMITTED",
+      "revision": null,
+      "families": [
+        "CONDITION_BOARD",
+        "CONDITION_GIG",
+        "COST_MODIFIER",
+        "SCALED_AMOUNT",
+        "UNIT_DEFEAT"
+      ],
+      "blockingFamilies": [
+        "CONDITION_BOARD",
+        "CONDITION_GIG",
+        "COST_MODIFIER",
+        "SCALED_AMOUNT",
+        "UNIT_DEFEAT"
+      ],
+      "note": null
+    },
+    {
+      "cardId": "chrome-fang",
+      "displayName": "Chrome Fang",
+      "type": "UNIT",
+      "colors": [
+        "RED"
+      ],
+      "admission": "NOT_ADMITTED",
+      "revision": null,
+      "families": [
+        "CONDITION_GIG",
+        "DURATION_DELAYED",
+        "STEAL_CONTROL",
+        "TRIGGER_PLAY"
+      ],
+      "blockingFamilies": [
+        "CONDITION_GIG",
+        "DURATION_DELAYED",
+        "STEAL_CONTROL",
+        "TRIGGER_PLAY"
+      ],
+      "note": null
+    },
+    {
+      "cardId": "chrome-reverie",
+      "displayName": "Chrome Reverie",
+      "type": "PROGRAM",
+      "colors": [
+        "BLUE"
+      ],
+      "admission": "NOT_ADMITTED",
+      "revision": null,
+      "families": [
+        "ATTACK_PERMISSION",
+        "CONDITION_GIG",
+        "DURATION_DELAYED",
+        "FREE_CALL"
+      ],
+      "blockingFamilies": [
+        "ATTACK_PERMISSION",
+        "CONDITION_GIG",
+        "DURATION_DELAYED",
+        "FREE_CALL"
+      ],
+      "note": null
+    },
+    {
+      "cardId": "corpo-security",
+      "displayName": "Corpo Security",
+      "type": "UNIT",
+      "colors": [
+        "GREEN"
+      ],
+      "admission": "SOURCE_MATCH",
+      "revision": 1,
+      "families": [
+        "ATTACK_PERMISSION",
+        "KEYWORD_BLOCKER"
+      ],
+      "blockingFamilies": [],
+      "note": null
+    },
+    {
+      "cardId": "corporate-surveillance",
+      "displayName": "Corporate Surveillance",
+      "type": "PROGRAM",
+      "colors": [
+        "GREEN"
+      ],
+      "admission": "SOURCE_MATCH",
+      "revision": 1,
+      "families": [
+        "SPEND_OR_READY"
+      ],
+      "blockingFamilies": [],
+      "note": null
+    },
+    {
+      "cardId": "cyberpsychosis",
+      "displayName": "Cyberpsychosis",
+      "type": "PROGRAM",
+      "colors": [
+        "YELLOW"
+      ],
+      "admission": "NOT_ADMITTED",
+      "revision": null,
+      "families": [
+        "CONDITION_BOARD",
+        "DURATION_DELAYED",
+        "KEYWORD_QUICK",
+        "SCALED_AMOUNT",
+        "TEMPORARY_BUFF",
+        "TURN_HISTORY",
+        "UNIT_DEFEAT"
+      ],
+      "blockingFamilies": [
+        "CONDITION_BOARD",
+        "DURATION_DELAYED",
+        "KEYWORD_QUICK",
+        "SCALED_AMOUNT",
+        "TEMPORARY_BUFF",
+        "TURN_HISTORY",
+        "UNIT_DEFEAT"
+      ],
+      "note": null
+    },
+    {
+      "cardId": "deadman-transmitter",
+      "displayName": "Deadman Transmitter",
+      "type": "GEAR",
+      "colors": [
+        "RED"
+      ],
+      "admission": "NOT_ADMITTED",
+      "revision": null,
+      "families": [
+        "GEAR_EQUIP",
+        "REPLACEMENT_EFFECT"
+      ],
+      "blockingFamilies": [
+        "GEAR_EQUIP",
+        "REPLACEMENT_EFFECT"
+      ],
+      "note": null
+    },
+    {
+      "cardId": "delamain-cab",
+      "displayName": "Delamain Cab",
+      "type": "UNIT",
+      "colors": [
+        "BLUE"
+      ],
+      "admission": "SOURCE_MATCH",
+      "revision": 1,
+      "families": [
+        "EDDIE_ECONOMY",
+        "TRIGGER_END_OF_TURN",
+        "TURN_HISTORY"
+      ],
+      "blockingFamilies": [],
+      "note": null
+    },
+    {
+      "cardId": "delamain-rideshare-ai",
+      "displayName": "Delamain: Rideshare AI",
+      "type": "UNIT",
+      "colors": [
+        "BLUE"
+      ],
+      "admission": "NOT_ADMITTED",
+      "revision": null,
+      "families": [
+        "DRAW",
+        "TRIGGER_PLAY"
+      ],
+      "blockingFamilies": [
+        "DRAW",
+        "TRIGGER_PLAY"
+      ],
+      "note": null
+    },
+    {
+      "cardId": "detonate",
+      "displayName": "Detonate",
+      "type": "PROGRAM",
+      "colors": [
+        "RED"
+      ],
+      "admission": "NOT_ADMITTED",
+      "revision": null,
+      "families": [
+        "KEYWORD_QUICK",
+        "UNIT_DEFEAT"
+      ],
+      "blockingFamilies": [
+        "KEYWORD_QUICK",
+        "UNIT_DEFEAT"
+      ],
+      "note": null
+    },
+    {
+      "cardId": "dexter-deshawn-off-the-grid",
+      "displayName": "Dexter DeShawn: Off the Grid",
+      "type": "LEGEND",
+      "colors": [
+        "RED"
+      ],
+      "admission": "NOT_ADMITTED",
+      "revision": null,
+      "families": [
+        "DRAW",
+        "GIG_ADJUST",
+        "MODAL_CHOICE",
+        "SPEND_ABILITY",
+        "TEMPORARY_BUFF",
+        "TRIGGER_CALL"
+      ],
+      "blockingFamilies": [
+        "DRAW",
+        "GIG_ADJUST",
+        "MODAL_CHOICE",
+        "SPEND_ABILITY",
+        "TEMPORARY_BUFF",
+        "TRIGGER_CALL"
+      ],
+      "note": null
+    },
+    {
+      "cardId": "dexter-deshawn-one-last-chance",
+      "displayName": "Dexter DeShawn: One Last Chance",
+      "type": "UNIT",
+      "colors": [
+        "YELLOW"
+      ],
+      "admission": "SOURCE_MATCH",
+      "revision": 1,
+      "families": [
+        "CONDITION_STREET_CRED",
+        "DRAW",
+        "GIG_ADJUST",
+        "TRIGGER_ATTACK",
+        "TRIGGER_DEFEATED",
+        "TRIGGER_PLAY"
+      ],
+      "blockingFamilies": [],
+      "note": null
+    },
+    {
+      "cardId": "don-t-fear-the-reaper",
+      "displayName": "(Don't Fear) The Reaper",
+      "type": "PROGRAM",
+      "colors": [
+        "GREEN"
+      ],
+      "admission": "NOT_ADMITTED",
+      "revision": null,
+      "families": [
+        "CONDITION_BOARD",
+        "MASS_EFFECT",
+        "SPEND_OR_READY",
+        "UNIT_DEFEAT"
+      ],
+      "blockingFamilies": [
+        "CONDITION_BOARD",
+        "MASS_EFFECT",
+        "SPEND_OR_READY",
+        "UNIT_DEFEAT"
+      ],
+      "note": null
+    },
+    {
+      "cardId": "dum-dum-maelstrom-triggerman",
+      "displayName": "Dum Dum: Maelstrom Triggerman",
+      "type": "LEGEND",
+      "colors": [
+        "YELLOW"
+      ],
+      "admission": "NOT_ADMITTED",
+      "revision": null,
+      "families": [
+        "DRAW",
+        "GEAR_MOVE_OR_SACRIFICE",
+        "KEYWORD_QUICK",
+        "SCALED_AMOUNT",
+        "SPEND_ABILITY",
+        "TEMPORARY_BUFF",
+        "TRIGGER_CALL"
+      ],
+      "blockingFamilies": [
+        "DRAW",
+        "GEAR_MOVE_OR_SACRIFICE",
+        "KEYWORD_QUICK",
+        "SCALED_AMOUNT",
+        "SPEND_ABILITY",
+        "TEMPORARY_BUFF",
+        "TRIGGER_CALL"
+      ],
+      "note": null
+    },
+    {
+      "cardId": "dying-night-v-s-pistol",
+      "displayName": "Dying Night: V's Pistol",
+      "type": "GEAR",
+      "colors": [
+        "BLUE"
+      ],
+      "admission": "SOURCE_MATCH",
+      "revision": 1,
+      "families": [
+        "CONDITION_BOARD",
+        "DURATION_DELAYED",
+        "EDDIE_ECONOMY",
+        "GEAR_EQUIP",
+        "GIG_ADJUST",
+        "TRIGGER_ATTACK"
+      ],
+      "blockingFamilies": [],
+      "note": null
+    },
+    {
+      "cardId": "el-sombrero-n-la-venganza-lenta",
+      "displayName": "El Sombrerón: La Venganza Lenta",
+      "type": "UNIT",
+      "colors": [
+        "RED"
+      ],
+      "admission": "NOT_ADMITTED",
+      "revision": null,
+      "families": [
+        "CONDITION_GIG",
+        "EDDIE_ECONOMY",
+        "SCALED_AMOUNT",
+        "TEMPORARY_BUFF",
+        "TRIGGER_ATTACK"
+      ],
+      "blockingFamilies": [
+        "CONDITION_GIG",
+        "EDDIE_ECONOMY",
+        "SCALED_AMOUNT",
+        "TEMPORARY_BUFF",
+        "TRIGGER_ATTACK"
+      ],
+      "note": null
+    },
+    {
+      "cardId": "emergency-atlus",
+      "displayName": "Emergency Atlus",
+      "type": "UNIT",
+      "colors": [
+        "GREEN"
+      ],
+      "admission": "SOURCE_MATCH",
+      "revision": 1,
+      "families": [
+        "VANILLA"
+      ],
+      "blockingFamilies": [],
+      "note": null
+    },
+    {
+      "cardId": "evelyn-parker-beautiful-enigma",
+      "displayName": "Evelyn Parker: Beautiful Enigma",
+      "type": "LEGEND",
+      "colors": [
+        "BLUE"
+      ],
+      "admission": "NOT_ADMITTED",
+      "revision": null,
+      "families": [
+        "ATTACK_PERMISSION",
+        "CONDITION_BOARD",
+        "DURATION_DELAYED",
+        "EDDIE_ECONOMY",
+        "SPEND_ABILITY",
+        "TRIGGER_STEAL"
+      ],
+      "blockingFamilies": [
+        "ATTACK_PERMISSION",
+        "CONDITION_BOARD",
+        "DURATION_DELAYED",
+        "EDDIE_ECONOMY",
+        "SPEND_ABILITY",
+        "TRIGGER_STEAL"
+      ],
+      "note": null
+    },
+    {
+      "cardId": "evelyn-parker-scheming-siren",
+      "displayName": "Evelyn Parker: Scheming Siren",
+      "type": "UNIT",
+      "colors": [
+        "BLUE"
+      ],
+      "admission": "SOURCE_MATCH",
+      "revision": 1,
+      "families": [
+        "CONDITION_STREET_CRED",
+        "DISCARD",
+        "DRAW",
+        "TRIGGER_ATTACK"
+      ],
+      "blockingFamilies": [],
+      "note": null
+    },
+    {
+      "cardId": "field-operator",
+      "displayName": "Field Operator",
+      "type": "UNIT",
+      "colors": [
+        "GREEN"
+      ],
+      "admission": "SOURCE_MATCH",
+      "revision": 1,
+      "families": [
+        "CONDITION_STREET_CRED",
+        "DRAW",
+        "TRIGGER_PLAY"
+      ],
+      "blockingFamilies": [],
+      "note": null
+    },
+    {
+      "cardId": "floor-it",
+      "displayName": "Floor It",
+      "type": "PROGRAM",
+      "colors": [
+        "BLUE"
+      ],
+      "admission": "SOURCE_MATCH",
+      "revision": 1,
+      "families": [
+        "DRAW",
+        "KEYWORD_QUICK",
+        "TEMPORARY_BUFF"
+      ],
+      "blockingFamilies": [],
+      "note": null
+    },
+    {
+      "cardId": "fool-on-the-hill",
+      "displayName": "Fool on the Hill",
+      "type": "PROGRAM",
+      "colors": [
+        "GREEN"
+      ],
+      "admission": "NOT_ADMITTED",
+      "revision": null,
+      "families": [
+        "DECK_SEARCH_REVEAL",
+        "DRAW",
+        "RIVAL_CHOICE"
+      ],
+      "blockingFamilies": [
+        "DECK_SEARCH_REVEAL",
+        "DRAW",
+        "RIVAL_CHOICE"
+      ],
+      "note": null
+    },
+    {
+      "cardId": "gilded-mato-n",
+      "displayName": "Gilded Matón",
+      "type": "UNIT",
+      "colors": [
+        "YELLOW"
+      ],
+      "admission": "NOT_ADMITTED",
+      "revision": null,
+      "families": [
+        "GEAR_MOVE_OR_SACRIFICE",
+        "TRIGGER_PLAY",
+        "UNIT_DEFEAT"
+      ],
+      "blockingFamilies": [
+        "GEAR_MOVE_OR_SACRIFICE",
+        "TRIGGER_PLAY",
+        "UNIT_DEFEAT"
+      ],
+      "note": null
+    },
+    {
+      "cardId": "gorilla-arms",
+      "displayName": "Gorilla Arms",
+      "type": "GEAR",
+      "colors": [
+        "YELLOW"
+      ],
+      "admission": "NOT_ADMITTED",
+      "revision": null,
+      "families": [
+        "CONDITION_GIG",
+        "GEAR_EQUIP",
+        "STEAL_CONTROL",
+        "TRIGGER_STEAL",
+        "TURN_HISTORY"
+      ],
+      "blockingFamilies": [
+        "CONDITION_GIG",
+        "GEAR_EQUIP",
+        "STEAL_CONTROL",
+        "TRIGGER_STEAL",
+        "TURN_HISTORY"
+      ],
+      "note": null
+    },
+    {
+      "cardId": "goro-takemura-hands-unclean",
+      "displayName": "Goro Takemura: Hands Unclean",
+      "type": "LEGEND",
+      "colors": [
+        "GREEN"
+      ],
+      "admission": "SOURCE_MATCH",
+      "revision": 1,
+      "families": [
+        "GO_SOLO",
+        "KEYWORD_BLOCKER"
+      ],
+      "blockingFamilies": [],
+      "note": null
+    },
+    {
+      "cardId": "goro-takemura-losing-his-way",
+      "displayName": "Goro Takemura: Losing His Way",
+      "type": "UNIT",
+      "colors": [
+        "GREEN"
+      ],
+      "admission": "SOURCE_MATCH",
+      "revision": 1,
+      "families": [
+        "CONDITION_BOARD",
+        "TEMPORARY_BUFF",
+        "TRIGGER_ATTACK"
+      ],
+      "blockingFamilies": [],
+      "note": null
+    },
+    {
+      "cardId": "goro-takemura-vengeful-bodyguard",
+      "displayName": "Goro Takemura: Vengeful Bodyguard",
+      "type": "LEGEND",
+      "colors": [
+        "GREEN"
+      ],
+      "admission": "NOT_ADMITTED",
+      "revision": null,
+      "families": [
+        "CONDITION_BOARD",
+        "CONDITION_GIG",
+        "DISCARD",
+        "DRAW",
+        "KEYWORD_QUICK",
+        "SPEND_ABILITY",
+        "TEMPORARY_BUFF",
+        "TRIGGER_BLOCKER_USED"
+      ],
+      "blockingFamilies": [
+        "CONDITION_BOARD",
+        "CONDITION_GIG",
+        "DISCARD",
+        "DRAW",
+        "KEYWORD_QUICK",
+        "SPEND_ABILITY",
+        "TEMPORARY_BUFF",
+        "TRIGGER_BLOCKER_USED"
+      ],
+      "note": null
+    },
+    {
+      "cardId": "gunpoint-diplomacy",
+      "displayName": "Gunpoint Diplomacy",
+      "type": "PROGRAM",
+      "colors": [
+        "RED"
+      ],
+      "admission": "NOT_ADMITTED",
+      "revision": null,
+      "families": [
+        "ATTACK_PERMISSION",
+        "CONDITION_STREET_CRED",
+        "DURATION_DELAYED",
+        "MODAL_CHOICE",
+        "RIVAL_CHOICE",
+        "TEMPORARY_BUFF"
+      ],
+      "blockingFamilies": [
+        "ATTACK_PERMISSION",
+        "CONDITION_STREET_CRED",
+        "DURATION_DELAYED",
+        "MODAL_CHOICE",
+        "RIVAL_CHOICE",
+        "TEMPORARY_BUFF"
+      ],
+      "note": null
+    },
+    {
+      "cardId": "hacked-corpo",
+      "displayName": "Hacked Corpo",
+      "type": "UNIT",
+      "colors": [
+        "BLUE"
+      ],
+      "admission": "NOT_ADMITTED",
+      "revision": null,
+      "families": [
+        "DECK_SEARCH_REVEAL",
+        "TRASH_RECURSION",
+        "TRIGGER_PLAY"
+      ],
+      "blockingFamilies": [
+        "DECK_SEARCH_REVEAL",
+        "TRASH_RECURSION",
+        "TRIGGER_PLAY"
+      ],
+      "note": null
+    },
+    {
+      "cardId": "hanako-arasaka-daughter-of-the-emperor",
+      "displayName": "Hanako Arasaka: Daughter of the Emperor",
+      "type": "LEGEND",
+      "colors": [
+        "GREEN"
+      ],
+      "admission": "NOT_ADMITTED",
+      "revision": null,
+      "families": [
+        "CONDITION_GIG",
+        "DRAW",
+        "SCALED_AMOUNT",
+        "SPEND_ABILITY",
+        "STEAL_CONTROL",
+        "TRIGGER_START_OF_TURN"
+      ],
+      "blockingFamilies": [
+        "CONDITION_GIG",
+        "DRAW",
+        "SCALED_AMOUNT",
+        "SPEND_ABILITY",
+        "STEAL_CONTROL",
+        "TRIGGER_START_OF_TURN"
+      ],
+      "note": null
+    },
+    {
+      "cardId": "hanako-arasaka-in-a-gilded-cage",
+      "displayName": "Hanako Arasaka: In a Gilded Cage",
+      "type": "UNIT",
+      "colors": [
+        "YELLOW"
+      ],
+      "admission": "NOT_ADMITTED",
+      "revision": null,
+      "families": [
+        "CONDITION_GIG",
+        "DECK_SEARCH_REVEAL",
+        "TRIGGER_PLAY"
+      ],
+      "blockingFamilies": [
+        "CONDITION_GIG",
+        "DECK_SEARCH_REVEAL",
+        "TRIGGER_PLAY"
+      ],
+      "note": null
+    },
+    {
+      "cardId": "heywood-ripperdoc",
+      "displayName": "Heywood Ripperdoc",
+      "type": "UNIT",
+      "colors": [
+        "YELLOW"
+      ],
+      "admission": "NOT_ADMITTED",
+      "revision": null,
+      "families": [
+        "CONDITION_GIG",
+        "DRAW",
+        "TRIGGER_PLAY",
+        "UNIT_DEFEAT"
+      ],
+      "blockingFamilies": [
+        "CONDITION_GIG",
+        "DRAW",
+        "TRIGGER_PLAY",
+        "UNIT_DEFEAT"
+      ],
+      "note": null
+    },
+    {
+      "cardId": "industrial-assembly",
+      "displayName": "Industrial Assembly",
+      "type": "PROGRAM",
+      "colors": [
+        "RED"
+      ],
+      "admission": "SOURCE_MATCH",
+      "revision": 1,
+      "families": [
+        "CONDITION_GIG",
+        "DRAW",
+        "GIG_ADJUST"
+      ],
+      "blockingFamilies": [],
+      "note": null
+    },
+    {
+      "cardId": "jacked-in-voodoo-boy",
+      "displayName": "Jacked-In Voodoo Boy",
+      "type": "UNIT",
+      "colors": [
+        "BLUE"
+      ],
+      "admission": "NOT_ADMITTED",
+      "revision": null,
+      "families": [
+        "ATTACK_PERMISSION",
+        "TURN_HISTORY"
+      ],
+      "blockingFamilies": [
+        "ATTACK_PERMISSION",
+        "TURN_HISTORY"
+      ],
+      "note": null
+    },
+    {
+      "cardId": "jackie-welles-mama-s-favorite",
+      "displayName": "Jackie Welles: Mama's Favorite",
+      "type": "LEGEND",
+      "colors": [
+        "GREEN"
+      ],
+      "admission": "NOT_ADMITTED",
+      "revision": null,
+      "families": [
+        "EDDIE_ECONOMY",
+        "GO_SOLO",
+        "REPLACEMENT_EFFECT"
+      ],
+      "blockingFamilies": [
+        "EDDIE_ECONOMY",
+        "GO_SOLO",
+        "REPLACEMENT_EFFECT"
+      ],
+      "note": null
+    },
+    {
+      "cardId": "jackie-welles-pour-one-out-for-me",
+      "displayName": "Jackie Welles: Pour One Out For Me",
+      "type": "LEGEND",
+      "colors": [
+        "BLUE"
+      ],
+      "admission": "SOURCE_MATCH",
+      "revision": 1,
+      "families": [
+        "CONDITION_GIG",
+        "DRAW",
+        "GIG_ADJUST",
+        "TRIGGER_CARD_PLAYED",
+        "TURN_HISTORY"
+      ],
+      "blockingFamilies": [],
+      "note": null
+    },
+    {
+      "cardId": "jackie-welles-ride-or-die-choom",
+      "displayName": "Jackie Welles: Ride or Die Choom",
+      "type": "UNIT",
+      "colors": [
+        "YELLOW"
+      ],
+      "admission": "NOT_ADMITTED",
+      "revision": null,
+      "families": [
+        "CONDITION_GIG",
+        "DRAW",
+        "SCALED_AMOUNT",
+        "TEMPORARY_BUFF",
+        "TRIGGER_ATTACK",
+        "TRIGGER_DEFEATED"
+      ],
+      "blockingFamilies": [
+        "CONDITION_GIG",
+        "DRAW",
+        "SCALED_AMOUNT",
+        "TEMPORARY_BUFF",
+        "TRIGGER_ATTACK",
+        "TRIGGER_DEFEATED"
+      ],
+      "note": null
+    },
+    {
+      "cardId": "japantown-jonin",
+      "displayName": "Japantown Jonin",
+      "type": "UNIT",
+      "colors": [
+        "RED"
+      ],
+      "admission": "NOT_ADMITTED",
+      "revision": null,
+      "families": [
+        "TEMPORARY_BUFF",
+        "TRIGGER_PLAY"
+      ],
+      "blockingFamilies": [
+        "TEMPORARY_BUFF",
+        "TRIGGER_PLAY"
+      ],
+      "note": null
+    },
+    {
+      "cardId": "johnny-silverhand-never-stop-fighting",
+      "displayName": "Johnny Silverhand: Never Stop Fighting",
+      "type": "UNIT",
+      "colors": [
+        "RED"
+      ],
+      "admission": "NOT_ADMITTED",
+      "revision": null,
+      "families": [
+        "CONDITION_BOARD",
+        "FIGHT_MODIFIER",
+        "SPEND_OR_READY",
+        "TRIGGER_FIGHT_RESULT",
+        "TURN_HISTORY"
+      ],
+      "blockingFamilies": [
+        "CONDITION_BOARD",
+        "FIGHT_MODIFIER",
+        "SPEND_OR_READY",
+        "TRIGGER_FIGHT_RESULT",
+        "TURN_HISTORY"
+      ],
+      "note": "Erratum 01: the Beta Iconic Rare printing cannot be sold either; sellability, not a mechanic."
+    },
+    {
+      "cardId": "johnny-silverhand-rocking-renegade",
+      "displayName": "Johnny Silverhand: Rocking Renegade",
+      "type": "LEGEND",
+      "colors": [
+        "RED"
+      ],
+      "admission": "NOT_ADMITTED",
+      "revision": null,
+      "families": [
+        "ATTACK_PERMISSION",
+        "CONDITION_BOARD",
+        "CONDITION_GIG",
+        "COST_MODIFIER",
+        "SCALED_AMOUNT",
+        "SPEND_ABILITY",
+        "TEMPORARY_BUFF"
+      ],
+      "blockingFamilies": [
+        "ATTACK_PERMISSION",
+        "CONDITION_BOARD",
+        "CONDITION_GIG",
+        "COST_MODIFIER",
+        "SCALED_AMOUNT",
+        "SPEND_ABILITY",
+        "TEMPORARY_BUFF"
+      ],
+      "note": null
+    },
+    {
+      "cardId": "judy-a-lvarez-braindance-maestro",
+      "displayName": "Judy Álvarez: Braindance Maestro",
+      "type": "LEGEND",
+      "colors": [
+        "BLUE"
+      ],
+      "admission": "NOT_ADMITTED",
+      "revision": null,
+      "families": [
+        "CONDITION_BOARD",
+        "DECK_SEARCH_REVEAL",
+        "SPEND_ABILITY",
+        "TEMPORARY_BUFF",
+        "TRASH_RECURSION",
+        "TRIGGER_CARD_PLAYED"
+      ],
+      "blockingFamilies": [
+        "CONDITION_BOARD",
+        "DECK_SEARCH_REVEAL",
+        "SPEND_ABILITY",
+        "TEMPORARY_BUFF",
+        "TRASH_RECURSION",
+        "TRIGGER_CARD_PLAYED"
+      ],
+      "note": null
+    },
+    {
+      "cardId": "judy-a-lvarez-nothing-to-doubt",
+      "displayName": "Judy Álvarez: Nothing to Doubt",
+      "type": "UNIT",
+      "colors": [
+        "BLUE"
+      ],
+      "admission": "NOT_ADMITTED",
+      "revision": null,
+      "families": [
+        "DECK_SEARCH_REVEAL",
+        "PLAY_BY_EFFECT",
+        "SPEND_ABILITY"
+      ],
+      "blockingFamilies": [
+        "DECK_SEARCH_REVEAL",
+        "PLAY_BY_EFFECT",
+        "SPEND_ABILITY"
+      ],
+      "note": "Erratum 04 changes the artist credit only."
+    },
+    {
+      "cardId": "kerry-eurodyne-axe-attitude-audience",
+      "displayName": "Kerry Eurodyne: Axe, Attitude, Audience",
+      "type": "LEGEND",
+      "colors": [
+        "YELLOW"
+      ],
+      "admission": "NOT_ADMITTED",
+      "revision": null,
+      "families": [
+        "CONDITION_GIG",
+        "DRAW",
+        "GIG_ROLL"
+      ],
+      "blockingFamilies": [
+        "CONDITION_GIG",
+        "DRAW",
+        "GIG_ROLL"
+      ],
+      "note": null
+    },
+    {
+      "cardId": "kerry-eurodyne-the-last-rockerboy",
+      "displayName": "Kerry Eurodyne: The Last Rockerboy",
+      "type": "UNIT",
+      "colors": [
+        "RED"
+      ],
+      "admission": "NOT_ADMITTED",
+      "revision": null,
+      "families": [
+        "CONDITION_GIG",
+        "DRAW",
+        "SPEND_ABILITY"
+      ],
+      "blockingFamilies": [
+        "CONDITION_GIG",
+        "DRAW",
+        "SPEND_ABILITY"
+      ],
+      "note": null
+    },
+    {
+      "cardId": "kiroshi-optics",
+      "displayName": "Kiroshi Optics",
+      "type": "GEAR",
+      "colors": [
+        "YELLOW"
+      ],
+      "admission": "SOURCE_MATCH",
+      "revision": 1,
+      "families": [
+        "GEAR_EQUIP",
+        "LEGEND_LOOK",
+        "TRIGGER_ATTACK"
+      ],
+      "blockingFamilies": [],
+      "note": "Erratum 02 changes reminder text only."
+    },
+    {
+      "cardId": "la-llorona-ghost-of-the-past",
+      "displayName": "La Llorona: Ghost of the Past",
+      "type": "UNIT",
+      "colors": [
+        "RED"
+      ],
+      "admission": "NOT_ADMITTED",
+      "revision": null,
+      "families": [
+        "GIG_ADJUST",
+        "KEYWORD_BLOCKER",
+        "TRIGGER_BLOCKER_USED"
+      ],
+      "blockingFamilies": [
+        "GIG_ADJUST",
+        "TRIGGER_BLOCKER_USED"
+      ],
+      "note": null
+    },
+    {
+      "cardId": "les-e-le-mens",
+      "displayName": "Les Élémens",
+      "type": "PROGRAM",
+      "colors": [
+        "BLUE"
+      ],
+      "admission": "NOT_ADMITTED",
+      "revision": null,
+      "families": [
+        "CONDITION_BOARD",
+        "UNIT_ZONE_MOVE"
+      ],
+      "blockingFamilies": [
+        "CONDITION_BOARD",
+        "UNIT_ZONE_MOVE"
+      ],
+      "note": null
+    },
+    {
+      "cardId": "live-with-the-aftermath",
+      "displayName": "Live with the Aftermath",
+      "type": "PROGRAM",
+      "colors": [
+        "YELLOW"
+      ],
+      "admission": "NOT_ADMITTED",
+      "revision": null,
+      "families": [
+        "MASS_EFFECT",
+        "UNIT_DEFEAT"
+      ],
+      "blockingFamilies": [
+        "MASS_EFFECT",
+        "UNIT_DEFEAT"
+      ],
+      "note": null
+    },
+    {
+      "cardId": "lizzy-wizzy-delicate-weapon",
+      "displayName": "Lizzy Wizzy: Delicate Weapon",
+      "type": "UNIT",
+      "colors": [
+        "BLUE"
+      ],
+      "admission": "NOT_ADMITTED",
+      "revision": null,
+      "families": [
+        "KEYWORD_BLOCKER",
+        "PLAY_BY_EFFECT",
+        "TRIGGER_PLAY",
+        "UNIT_ZONE_MOVE"
+      ],
+      "blockingFamilies": [
+        "PLAY_BY_EFFECT",
+        "TRIGGER_PLAY",
+        "UNIT_ZONE_MOVE"
+      ],
+      "note": null
+    },
+    {
+      "cardId": "maelstrom-goons",
+      "displayName": "Maelstrom Goons",
+      "type": "UNIT",
+      "colors": [
+        "YELLOW"
+      ],
+      "admission": "NOT_ADMITTED",
+      "revision": null,
+      "families": [
+        "CONDITION_BOARD",
+        "DISCARD",
+        "TRIGGER_STEAL"
+      ],
+      "blockingFamilies": [
+        "CONDITION_BOARD",
+        "DISCARD",
+        "TRIGGER_STEAL"
+      ],
+      "note": null
+    },
+    {
+      "cardId": "maelstrom-zealots",
+      "displayName": "Maelstrom Zealots",
+      "type": "UNIT",
+      "colors": [
+        "GREEN"
+      ],
+      "admission": "NOT_ADMITTED",
+      "revision": null,
+      "families": [
+        "TRIGGER_FIGHT_RESULT",
+        "UNIT_DEFEAT"
+      ],
+      "blockingFamilies": [
+        "TRIGGER_FIGHT_RESULT",
+        "UNIT_DEFEAT"
+      ],
+      "note": null
+    },
+    {
+      "cardId": "maman-brigitte-spirit-of-death",
+      "displayName": "Maman Brigitte: Spirit of Death",
+      "type": "UNIT",
+      "colors": [
+        "BLUE"
+      ],
+      "admission": "NOT_ADMITTED",
+      "revision": null,
+      "families": [
+        "CONDITION_BOARD",
+        "DISCARD",
+        "TRIGGER_PLAY",
+        "UNIT_ZONE_MOVE"
+      ],
+      "blockingFamilies": [
+        "CONDITION_BOARD",
+        "DISCARD",
+        "TRIGGER_PLAY",
+        "UNIT_ZONE_MOVE"
+      ],
+      "note": null
+    },
+    {
+      "cardId": "mandibular-upgrade",
+      "displayName": "Mandibular Upgrade",
+      "type": "GEAR",
+      "colors": [
+        "YELLOW"
+      ],
+      "admission": "SOURCE_MATCH",
+      "revision": 1,
+      "families": [
+        "GEAR_EQUIP",
+        "KEYWORD_BLOCKER"
+      ],
+      "blockingFamilies": [],
+      "note": null
+    },
+    {
+      "cardId": "mantis-blades",
+      "displayName": "Mantis Blades",
+      "type": "GEAR",
+      "colors": [
+        "RED"
+      ],
+      "admission": "SOURCE_MATCH",
+      "revision": 1,
+      "families": [
+        "GEAR_EQUIP"
+      ],
+      "blockingFamilies": [],
+      "note": null
+    },
+    {
+      "cardId": "maxtac-av",
+      "displayName": "MaxTac AV",
+      "type": "UNIT",
+      "colors": [
+        "GREEN"
+      ],
+      "admission": "NOT_ADMITTED",
+      "revision": null,
+      "families": [
+        "STEAL_CONTROL",
+        "TRIGGER_PLAY"
+      ],
+      "blockingFamilies": [
+        "STEAL_CONTROL",
+        "TRIGGER_PLAY"
+      ],
+      "note": null
+    },
+    {
+      "cardId": "maxtac-heavy",
+      "displayName": "MaxTac Heavy",
+      "type": "UNIT",
+      "colors": [
+        "GREEN"
+      ],
+      "admission": "NOT_ADMITTED",
+      "revision": null,
+      "families": [
+        "COST_MODIFIER",
+        "SCALED_AMOUNT"
+      ],
+      "blockingFamilies": [
+        "COST_MODIFIER",
+        "SCALED_AMOUNT"
+      ],
+      "note": null
+    },
+    {
+      "cardId": "maxtac-squadron",
+      "displayName": "MaxTac Squadron",
+      "type": "UNIT",
+      "colors": [
+        "GREEN"
+      ],
+      "admission": "NOT_ADMITTED",
+      "revision": null,
+      "families": [
+        "CONDITION_BOARD",
+        "SPEND_OR_READY",
+        "TRIGGER_END_OF_TURN"
+      ],
+      "blockingFamilies": [
+        "CONDITION_BOARD",
+        "SPEND_OR_READY",
+        "TRIGGER_END_OF_TURN"
+      ],
+      "note": null
+    },
+    {
+      "cardId": "maxtac-suppression-team",
+      "displayName": "MaxTac Suppression Team",
+      "type": "UNIT",
+      "colors": [
+        "YELLOW"
+      ],
+      "admission": "NOT_ADMITTED",
+      "revision": null,
+      "families": [
+        "ATTACK_PERMISSION"
+      ],
+      "blockingFamilies": [
+        "ATTACK_PERMISSION"
+      ],
+      "note": null
+    },
+    {
+      "cardId": "memory-relapse",
+      "displayName": "Memory Relapse",
+      "type": "PROGRAM",
+      "colors": [
+        "GREEN"
+      ],
+      "admission": "NOT_ADMITTED",
+      "revision": null,
+      "families": [
+        "CONDITION_STREET_CRED",
+        "DRAW",
+        "DURATION_DELAYED",
+        "SPEND_OR_READY"
+      ],
+      "blockingFamilies": [
+        "CONDITION_STREET_CRED",
+        "DRAW",
+        "DURATION_DELAYED",
+        "SPEND_OR_READY"
+      ],
+      "note": null
+    },
+    {
+      "cardId": "meredith-stout-stone-cold-corpo",
+      "displayName": "Meredith Stout: Stone Cold Corpo",
+      "type": "UNIT",
+      "colors": [
+        "RED"
+      ],
+      "admission": "NOT_ADMITTED",
+      "revision": null,
+      "families": [
+        "FIGHT_MODIFIER",
+        "KEYWORD_BLOCKER",
+        "TRASH_RECURSION",
+        "TRIGGER_OTHER_EVENT"
+      ],
+      "blockingFamilies": [
+        "FIGHT_MODIFIER",
+        "TRASH_RECURSION",
+        "TRIGGER_OTHER_EVENT"
+      ],
+      "note": null
+    },
+    {
+      "cardId": "minotaur",
+      "displayName": "Minotaur",
+      "type": "UNIT",
+      "colors": [
+        "RED"
+      ],
+      "admission": "SOURCE_MATCH",
+      "revision": 1,
+      "families": [
+        "CONDITION_STREET_CRED",
+        "TRIGGER_PLAY",
+        "UNIT_DEFEAT"
+      ],
+      "blockingFamilies": [],
+      "note": null
+    },
+    {
+      "cardId": "misty-olszewski-mender-of-broken-spirits",
+      "displayName": "Misty Olszewski: Mender of Broken Spirits",
+      "type": "UNIT",
+      "colors": [
+        "BLUE"
+      ],
+      "admission": "NOT_ADMITTED",
+      "revision": null,
+      "families": [
+        "ATTACK_PERMISSION",
+        "DECK_SEARCH_REVEAL",
+        "EDDIE_ECONOMY",
+        "TRIGGER_END_OF_TURN"
+      ],
+      "blockingFamilies": [
+        "ATTACK_PERMISSION",
+        "DECK_SEARCH_REVEAL",
+        "EDDIE_ECONOMY",
+        "TRIGGER_END_OF_TURN"
+      ],
+      "note": null
+    },
+    {
+      "cardId": "modded-kusanagi",
+      "displayName": "Modded Kusanagi",
+      "type": "UNIT",
+      "colors": [
+        "BLUE"
+      ],
+      "admission": "NOT_ADMITTED",
+      "revision": null,
+      "families": [
+        "KEYWORD_ADRENALINE",
+        "TRIGGER_END_OF_TURN",
+        "UNIT_ZONE_MOVE"
+      ],
+      "blockingFamilies": [
+        "TRIGGER_END_OF_TURN",
+        "UNIT_ZONE_MOVE"
+      ],
+      "note": null
+    },
+    {
+      "cardId": "modded-muramasa",
+      "displayName": "Modded Muramasa",
+      "type": "UNIT",
+      "colors": [
+        "BLUE"
+      ],
+      "admission": "NOT_ADMITTED",
+      "revision": null,
+      "families": [
+        "CONDITION_STREET_CRED",
+        "SPEND_OR_READY",
+        "TRIGGER_END_OF_TURN"
+      ],
+      "blockingFamilies": [
+        "CONDITION_STREET_CRED",
+        "SPEND_OR_READY",
+        "TRIGGER_END_OF_TURN"
+      ],
+      "note": null
+    },
+    {
+      "cardId": "mox-inciters",
+      "displayName": "Mox Inciters",
+      "type": "UNIT",
+      "colors": [
+        "BLUE"
+      ],
+      "admission": "NOT_ADMITTED",
+      "revision": null,
+      "families": [
+        "ATTACK_PERMISSION",
+        "DURATION_DELAYED",
+        "KEYWORD_BLOCKER",
+        "TRIGGER_PLAY"
+      ],
+      "blockingFamilies": [
+        "ATTACK_PERMISSION",
+        "DURATION_DELAYED",
+        "TRIGGER_PLAY"
+      ],
+      "note": null
+    },
+    {
+      "cardId": "mt0d12-flathead",
+      "displayName": "MT0D12 Flathead",
+      "type": "UNIT",
+      "colors": [
+        "BLUE"
+      ],
+      "admission": "SOURCE_MATCH",
+      "revision": 1,
+      "families": [
+        "ATTACK_PERMISSION",
+        "CONDITION_STREET_CRED"
+      ],
+      "blockingFamilies": [],
+      "note": null
+    },
+    {
+      "cardId": "muamar-reyes-el-capita-n",
+      "displayName": "Muamar Reyes: El Capitán",
+      "type": "LEGEND",
+      "colors": [
+        "YELLOW"
+      ],
+      "admission": "NOT_ADMITTED",
+      "revision": null,
+      "families": [
+        "DRAW",
+        "FIGHT_MODIFIER",
+        "GIG_ADJUST",
+        "MODAL_CHOICE",
+        "SPEND_ABILITY",
+        "TRIGGER_CALL"
+      ],
+      "blockingFamilies": [
+        "DRAW",
+        "FIGHT_MODIFIER",
+        "GIG_ADJUST",
+        "MODAL_CHOICE",
+        "SPEND_ABILITY",
+        "TRIGGER_CALL"
+      ],
+      "note": null
+    },
+    {
+      "cardId": "nadia-fighting-through-grief",
+      "displayName": "Nadia: Fighting Through Grief",
+      "type": "UNIT",
+      "colors": [
+        "GREEN"
+      ],
+      "admission": "NOT_ADMITTED",
+      "revision": null,
+      "families": [
+        "ATTACK_PERMISSION",
+        "CONDITION_GIG"
+      ],
+      "blockingFamilies": [
+        "ATTACK_PERMISSION",
+        "CONDITION_GIG"
+      ],
+      "note": null
+    },
+    {
+      "cardId": "netwatch-netdriver",
+      "displayName": "NetWatch Netdriver",
+      "type": "GEAR",
+      "colors": [
+        "BLUE"
+      ],
+      "admission": "NOT_ADMITTED",
+      "revision": null,
+      "families": [
+        "DRAW",
+        "GEAR_EQUIP",
+        "TRIGGER_WHEN_SPENT"
+      ],
+      "blockingFamilies": [
+        "DRAW",
+        "GEAR_EQUIP",
+        "TRIGGER_WHEN_SPENT"
+      ],
+      "note": null
+    },
+    {
+      "cardId": "nocturne-op55-n1",
+      "displayName": "Nocturne OP55 N1",
+      "type": "PROGRAM",
+      "colors": [
+        "BLUE"
+      ],
+      "admission": "NOT_ADMITTED",
+      "revision": null,
+      "families": [
+        "ATTACK_PERMISSION",
+        "CONDITION_BOARD",
+        "COST_MODIFIER",
+        "DRAW",
+        "DURATION_DELAYED",
+        "GO_SOLO",
+        "MODAL_CHOICE"
+      ],
+      "blockingFamilies": [
+        "ATTACK_PERMISSION",
+        "CONDITION_BOARD",
+        "COST_MODIFIER",
+        "DRAW",
+        "DURATION_DELAYED",
+        "GO_SOLO",
+        "MODAL_CHOICE"
+      ],
+      "note": "Erratum 03 changes the artist credit only."
+    },
+    {
+      "cardId": "octant",
+      "displayName": "Octant",
+      "type": "UNIT",
+      "colors": [
+        "RED"
+      ],
+      "admission": "NOT_ADMITTED",
+      "revision": null,
+      "families": [
+        "CONDITION_GIG",
+        "COST_MODIFIER",
+        "SCALED_AMOUNT"
+      ],
+      "blockingFamilies": [
+        "CONDITION_GIG",
+        "COST_MODIFIER",
+        "SCALED_AMOUNT"
+      ],
+      "note": null
+    },
+    {
+      "cardId": "offduty-malfini",
+      "displayName": "Offduty Malfini",
+      "type": "UNIT",
+      "colors": [
+        "YELLOW"
+      ],
+      "admission": "NOT_ADMITTED",
+      "revision": null,
+      "families": [
+        "SPEND_OR_READY",
+        "TRIGGER_PLAY"
+      ],
+      "blockingFamilies": [
+        "SPEND_OR_READY",
+        "TRIGGER_PLAY"
+      ],
+      "note": null
+    },
+    {
+      "cardId": "over-the-edge",
+      "displayName": "Over the Edge",
+      "type": "PROGRAM",
+      "colors": [
+        "RED"
+      ],
+      "admission": "SOURCE_MATCH",
+      "revision": 1,
+      "families": [
+        "CONDITION_GIG",
+        "UNIT_DEFEAT"
+      ],
+      "blockingFamilies": [],
+      "note": null
+    },
+    {
+      "cardId": "overwatch-panam-s-gift",
+      "displayName": "Overwatch: Panam's Gift",
+      "type": "GEAR",
+      "colors": [
+        "GREEN"
+      ],
+      "admission": "NOT_ADMITTED",
+      "revision": null,
+      "families": [
+        "CONDITION_BOARD",
+        "DISCARD",
+        "GEAR_EQUIP",
+        "KEYWORD_QUICK",
+        "SPEND_ABILITY",
+        "UNIT_DEFEAT"
+      ],
+      "blockingFamilies": [
+        "CONDITION_BOARD",
+        "DISCARD",
+        "GEAR_EQUIP",
+        "KEYWORD_QUICK",
+        "SPEND_ABILITY",
+        "UNIT_DEFEAT"
+      ],
+      "note": "No equip reminder text; [Spend] on a Gear. See rules question Q1."
+    },
+    {
+      "cardId": "pacifica-netrunner",
+      "displayName": "Pacifica Netrunner",
+      "type": "UNIT",
+      "colors": [
+        "GREEN"
+      ],
+      "admission": "NOT_ADMITTED",
+      "revision": null,
+      "families": [
+        "CONDITION_STREET_CRED",
+        "DURATION_DELAYED",
+        "SPEND_OR_READY",
+        "TRIGGER_PLAY"
+      ],
+      "blockingFamilies": [
+        "CONDITION_STREET_CRED",
+        "DURATION_DELAYED",
+        "SPEND_OR_READY",
+        "TRIGGER_PLAY"
+      ],
+      "note": null
+    },
+    {
+      "cardId": "padre-man-of-the-cross",
+      "displayName": "Padre: Man of the Cross",
+      "type": "LEGEND",
+      "colors": [
+        "GREEN"
+      ],
+      "admission": "NOT_ADMITTED",
+      "revision": null,
+      "families": [
+        "DRAW",
+        "GIG_ADJUST",
+        "MODAL_CHOICE",
+        "SPEND_ABILITY",
+        "SPEND_OR_READY",
+        "TRIGGER_CALL"
+      ],
+      "blockingFamilies": [
+        "DRAW",
+        "GIG_ADJUST",
+        "MODAL_CHOICE",
+        "SPEND_ABILITY",
+        "SPEND_OR_READY",
+        "TRIGGER_CALL"
+      ],
+      "note": null
+    },
+    {
+      "cardId": "panam-palmer-nomad-cavalry",
+      "displayName": "Panam Palmer: Nomad Cavalry",
+      "type": "LEGEND",
+      "colors": [
+        "GREEN"
+      ],
+      "admission": "NOT_ADMITTED",
+      "revision": null,
+      "families": [
+        "CONDITION_BOARD",
+        "GEAR_EQUIP",
+        "GEAR_MOVE_OR_SACRIFICE",
+        "SPEND_ABILITY",
+        "SPEND_OR_READY",
+        "TRIGGER_END_OF_TURN"
+      ],
+      "blockingFamilies": [
+        "CONDITION_BOARD",
+        "GEAR_EQUIP",
+        "GEAR_MOVE_OR_SACRIFICE",
+        "SPEND_ABILITY",
+        "SPEND_OR_READY",
+        "TRIGGER_END_OF_TURN"
+      ],
+      "note": null
+    },
+    {
+      "cardId": "panam-palmer-strength-through-family",
+      "displayName": "Panam Palmer: Strength Through Family",
+      "type": "UNIT",
+      "colors": [
+        "GREEN"
+      ],
+      "admission": "NOT_ADMITTED",
+      "revision": null,
+      "families": [
+        "DISCARD",
+        "DRAW",
+        "FREE_CALL",
+        "SCALED_AMOUNT",
+        "TRIGGER_ATTACK"
+      ],
+      "blockingFamilies": [
+        "DISCARD",
+        "DRAW",
+        "FREE_CALL",
+        "SCALED_AMOUNT",
+        "TRIGGER_ATTACK"
+      ],
+      "note": null
+    },
+    {
+      "cardId": "peace-offering",
+      "displayName": "Peace Offering",
+      "type": "PROGRAM",
+      "colors": [
+        "GREEN"
+      ],
+      "admission": "NOT_ADMITTED",
+      "revision": null,
+      "families": [
+        "CONDITION_GIG",
+        "DRAW",
+        "GIG_ADJUST"
+      ],
+      "blockingFamilies": [
+        "CONDITION_GIG",
+        "DRAW",
+        "GIG_ADJUST"
+      ],
+      "note": null
+    },
+    {
+      "cardId": "pepe-najarro-working-doubles",
+      "displayName": "Pepe Najarro: Working Doubles",
+      "type": "UNIT",
+      "colors": [
+        "GREEN"
+      ],
+      "admission": "NOT_ADMITTED",
+      "revision": null,
+      "families": [
+        "CONDITION_BOARD",
+        "CONDITION_GIG",
+        "SPEND_OR_READY",
+        "TRIGGER_ATTACK"
+      ],
+      "blockingFamilies": [
+        "CONDITION_BOARD",
+        "CONDITION_GIG",
+        "SPEND_OR_READY",
+        "TRIGGER_ATTACK"
+      ],
+      "note": null
+    },
+    {
+      "cardId": "placide-voodoo-sentinel",
+      "displayName": "Placide: Voodoo Sentinel",
+      "type": "UNIT",
+      "colors": [
+        "BLUE"
+      ],
+      "admission": "NOT_ADMITTED",
+      "revision": null,
+      "families": [
+        "DISCARD",
+        "TRIGGER_ATTACK",
+        "TRIGGER_PLAY",
+        "UNIT_ZONE_MOVE"
+      ],
+      "blockingFamilies": [
+        "DISCARD",
+        "TRIGGER_ATTACK",
+        "TRIGGER_PLAY",
+        "UNIT_ZONE_MOVE"
+      ],
+      "note": null
+    },
+    {
+      "cardId": "psycho-squad",
+      "displayName": "Psycho Squad",
+      "type": "UNIT",
+      "colors": [
+        "BLUE"
+      ],
+      "admission": "SOURCE_MATCH",
+      "revision": 1,
+      "families": [
+        "VANILLA"
+      ],
+      "blockingFamilies": [],
+      "note": null
+    },
+    {
+      "cardId": "pyramid-song",
+      "displayName": "Pyramid Song",
+      "type": "PROGRAM",
+      "colors": [
+        "BLUE"
+      ],
+      "admission": "NOT_ADMITTED",
+      "revision": null,
+      "families": [
+        "CONDITION_BOARD",
+        "CONDITION_GIG",
+        "MODAL_CHOICE",
+        "TEMPORARY_BUFF",
+        "UNIT_ZONE_MOVE"
+      ],
+      "blockingFamilies": [
+        "CONDITION_BOARD",
+        "CONDITION_GIG",
+        "MODAL_CHOICE",
+        "TEMPORARY_BUFF",
+        "UNIT_ZONE_MOVE"
+      ],
+      "note": null
+    },
+    {
+      "cardId": "rebecca-having-a-moment",
+      "displayName": "Rebecca: Having a Moment",
+      "type": "LEGEND",
+      "colors": [
+        "RED"
+      ],
+      "admission": "NOT_ADMITTED",
+      "revision": null,
+      "families": [
+        "PROMO_NO_TEXT"
+      ],
+      "blockingFamilies": [
+        "PROMO_NO_TEXT"
+      ],
+      "note": null
+    },
+    {
+      "cardId": "reboot-optics",
+      "displayName": "Reboot Optics",
+      "type": "PROGRAM",
+      "colors": [
+        "BLUE"
+      ],
+      "admission": "SOURCE_MATCH",
+      "revision": 1,
+      "families": [
+        "DURATION_DELAYED",
+        "FIGHT_MODIFIER",
+        "KEYWORD_QUICK"
+      ],
+      "blockingFamilies": [],
+      "note": null
+    },
+    {
+      "cardId": "riding-nomad",
+      "displayName": "Riding Nomad",
+      "type": "UNIT",
+      "colors": [
+        "GREEN"
+      ],
+      "admission": "NOT_ADMITTED",
+      "revision": null,
+      "families": [
+        "KEYWORD_ADRENALINE"
+      ],
+      "blockingFamilies": [],
+      "note": null
+    },
+    {
+      "cardId": "riot-shield",
+      "displayName": "Riot Shield",
+      "type": "GEAR",
+      "colors": [
+        "GREEN"
+      ],
+      "admission": "NOT_ADMITTED",
+      "revision": null,
+      "families": [
+        "COST_MODIFIER",
+        "GEAR_EQUIP",
+        "GO_SOLO",
+        "KEYWORD_BLOCKER"
+      ],
+      "blockingFamilies": [
+        "COST_MODIFIER",
+        "GEAR_EQUIP",
+        "GO_SOLO"
+      ],
+      "note": null
+    },
+    {
+      "cardId": "rita-wheeler-no-stupid-questions",
+      "displayName": "Rita Wheeler: No Stupid Questions",
+      "type": "UNIT",
+      "colors": [
+        "BLUE"
+      ],
+      "admission": "NOT_ADMITTED",
+      "revision": null,
+      "families": [
+        "DISCARD",
+        "DRAW",
+        "KEYWORD_BLOCKER",
+        "TRIGGER_WHEN_SPENT",
+        "TURN_HISTORY"
+      ],
+      "blockingFamilies": [
+        "DISCARD",
+        "DRAW",
+        "TRIGGER_WHEN_SPENT",
+        "TURN_HISTORY"
+      ],
+      "note": null
+    },
+    {
+      "cardId": "river-ward-detective-on-the-hunt",
+      "displayName": "River Ward: Detective on the Hunt",
+      "type": "LEGEND",
+      "colors": [
+        "YELLOW"
+      ],
+      "admission": "NOT_ADMITTED",
+      "revision": null,
+      "families": [
+        "CONDITION_BOARD",
+        "DECK_SEARCH_REVEAL",
+        "GEAR_EQUIP",
+        "KEYWORD_QUICK",
+        "PLAY_BY_EFFECT",
+        "SPEND_ABILITY",
+        "TRIGGER_OTHER_EVENT"
+      ],
+      "blockingFamilies": [
+        "CONDITION_BOARD",
+        "DECK_SEARCH_REVEAL",
+        "GEAR_EQUIP",
+        "KEYWORD_QUICK",
+        "PLAY_BY_EFFECT",
+        "SPEND_ABILITY",
+        "TRIGGER_OTHER_EVENT"
+      ],
+      "note": null
+    },
+    {
+      "cardId": "rockn-rockerboy",
+      "displayName": "Rockn' Rockerboy",
+      "type": "UNIT",
+      "colors": [
+        "YELLOW"
+      ],
+      "admission": "NOT_ADMITTED",
+      "revision": null,
+      "families": [
+        "VANILLA"
+      ],
+      "blockingFamilies": [],
+      "note": null
+    },
+    {
+      "cardId": "rogue-amendiares-preem-solo",
+      "displayName": "Rogue Amendiares: Preem Solo",
+      "type": "LEGEND",
+      "colors": [
+        "YELLOW"
+      ],
+      "admission": "NOT_ADMITTED",
+      "revision": null,
+      "families": [
+        "CONDITION_GIG",
+        "DISCARD",
+        "DRAW",
+        "GO_SOLO",
+        "TRIGGER_STEAL"
+      ],
+      "blockingFamilies": [
+        "CONDITION_GIG",
+        "DISCARD",
+        "DRAW",
+        "GO_SOLO",
+        "TRIGGER_STEAL"
+      ],
+      "note": null
+    },
+    {
+      "cardId": "rogue-amendiares-queen-of-the-afterlife",
+      "displayName": "Rogue Amendiares: Queen of the Afterlife",
+      "type": "UNIT",
+      "colors": [
+        "BLUE"
+      ],
+      "admission": "NOT_ADMITTED",
+      "revision": null,
+      "families": [
+        "CONDITION_GIG",
+        "EDDIE_ECONOMY",
+        "KEYWORD_QUICK",
+        "SCALED_AMOUNT",
+        "SPEND_ABILITY",
+        "TEMPORARY_BUFF",
+        "TRIGGER_STEAL",
+        "TURN_HISTORY"
+      ],
+      "blockingFamilies": [
+        "CONDITION_GIG",
+        "EDDIE_ECONOMY",
+        "KEYWORD_QUICK",
+        "SCALED_AMOUNT",
+        "SPEND_ABILITY",
+        "TEMPORARY_BUFF",
+        "TRIGGER_STEAL",
+        "TURN_HISTORY"
+      ],
+      "note": null
+    },
+    {
+      "cardId": "royce-don-t-call-me-simon",
+      "displayName": "Royce: Don't Call Me Simon",
+      "type": "UNIT",
+      "colors": [
+        "RED"
+      ],
+      "admission": "NOT_ADMITTED",
+      "revision": null,
+      "families": [
+        "CONDITION_STREET_CRED",
+        "TRIGGER_PLAY",
+        "UNIT_DEFEAT"
+      ],
+      "blockingFamilies": [
+        "CONDITION_STREET_CRED",
+        "TRIGGER_PLAY",
+        "UNIT_DEFEAT"
+      ],
+      "note": null
+    },
+    {
+      "cardId": "royce-psycho-on-the-edge",
+      "displayName": "Royce: Psycho on the Edge",
+      "type": "LEGEND",
+      "colors": [
+        "RED"
+      ],
+      "admission": "NOT_ADMITTED",
+      "revision": null,
+      "families": [
+        "GEAR_EQUIP",
+        "GO_SOLO",
+        "SCALED_AMOUNT",
+        "STATIC_MODIFIER"
+      ],
+      "blockingFamilies": [
+        "GEAR_EQUIP",
+        "GO_SOLO",
+        "SCALED_AMOUNT",
+        "STATIC_MODIFIER"
+      ],
+      "note": "Admitted revision covers the static power query only; Go Solo and combat as a Legend-as-Unit remain unsupported (docs/executable-card-coverage.md)."
+    },
+    {
+      "cardId": "ruthless-lowlife",
+      "displayName": "Ruthless Lowlife",
+      "type": "UNIT",
+      "colors": [
+        "RED"
+      ],
+      "admission": "NOT_ADMITTED",
+      "revision": null,
+      "families": [
+        "ATTACK_PERMISSION"
+      ],
+      "blockingFamilies": [
+        "ATTACK_PERMISSION"
+      ],
+      "note": null
+    },
+    {
+      "cardId": "saburo-arasaka-stubborn-patriarch",
+      "displayName": "Saburo Arasaka: Stubborn Patriarch",
+      "type": "LEGEND",
+      "colors": [
+        "GREEN"
+      ],
+      "admission": "SOURCE_MATCH",
+      "revision": 1,
+      "families": [
+        "STATIC_MODIFIER"
+      ],
+      "blockingFamilies": [],
+      "note": null
+    },
+    {
+      "cardId": "safety-override",
+      "displayName": "Safety Override",
+      "type": "PROGRAM",
+      "colors": [
+        "YELLOW"
+      ],
+      "admission": "NOT_ADMITTED",
+      "revision": null,
+      "families": [
+        "DURATION_DELAYED",
+        "KEYWORD_QUICK",
+        "TRIGGER_FIGHT_RESULT",
+        "UNIT_DEFEAT"
+      ],
+      "blockingFamilies": [
+        "DURATION_DELAYED",
+        "KEYWORD_QUICK",
+        "TRIGGER_FIGHT_RESULT",
+        "UNIT_DEFEAT"
+      ],
+      "note": null
+    },
+    {
+      "cardId": "sandayu-oda-hanako-s-guardian",
+      "displayName": "Sandayu Oda: Hanako's Guardian",
+      "type": "UNIT",
+      "colors": [
+        "GREEN"
+      ],
+      "admission": "NOT_ADMITTED",
+      "revision": null,
+      "families": [
+        "ATTACK_PERMISSION",
+        "CONDITION_GIG",
+        "SCALED_AMOUNT",
+        "SPEND_OR_READY",
+        "TRIGGER_PLAY"
+      ],
+      "blockingFamilies": [
+        "ATTACK_PERMISSION",
+        "CONDITION_GIG",
+        "SCALED_AMOUNT",
+        "SPEND_OR_READY",
+        "TRIGGER_PLAY"
+      ],
+      "note": null
+    },
+    {
+      "cardId": "sandevistan",
+      "displayName": "Sandevistan",
+      "type": "GEAR",
+      "colors": [
+        "GREEN"
+      ],
+      "admission": "NOT_ADMITTED",
+      "revision": null,
+      "families": [
+        "GEAR_EQUIP",
+        "SPEND_OR_READY",
+        "TRIGGER_END_OF_TURN"
+      ],
+      "blockingFamilies": [
+        "GEAR_EQUIP",
+        "SPEND_OR_READY",
+        "TRIGGER_END_OF_TURN"
+      ],
+      "note": null
+    },
+    {
+      "cardId": "sasha-yakovleva-won-t-let-you-down",
+      "displayName": "Sasha Yakovleva: Won't Let You Down",
+      "type": "LEGEND",
+      "colors": [
+        "BLUE"
+      ],
+      "admission": "NOT_ADMITTED",
+      "revision": null,
+      "families": [
+        "DECK_SEARCH_REVEAL",
+        "DISCARD",
+        "GO_SOLO",
+        "SCALED_AMOUNT",
+        "TEMPORARY_BUFF",
+        "TRIGGER_ATTACK",
+        "TRIGGER_DEFEATED"
+      ],
+      "blockingFamilies": [
+        "DECK_SEARCH_REVEAL",
+        "DISCARD",
+        "GO_SOLO",
+        "SCALED_AMOUNT",
+        "TEMPORARY_BUFF",
+        "TRIGGER_ATTACK",
+        "TRIGGER_DEFEATED"
+      ],
+      "note": null
+    },
+    {
+      "cardId": "satori-sword-of-saburo",
+      "displayName": "Satori: Sword of Saburo",
+      "type": "GEAR",
+      "colors": [
+        "RED"
+      ],
+      "admission": "SOURCE_MATCH",
+      "revision": 1,
+      "families": [
+        "DRAW",
+        "GEAR_EQUIP",
+        "TRIGGER_FIGHT_RESULT"
+      ],
+      "blockingFamilies": [],
+      "note": null
+    },
+    {
+      "cardId": "saul-bright-stormrider",
+      "displayName": "Saul Bright: Stormrider",
+      "type": "UNIT",
+      "colors": [
+        "GREEN"
+      ],
+      "admission": "NOT_ADMITTED",
+      "revision": null,
+      "families": [
+        "SPEND_OR_READY",
+        "STATIC_MODIFIER",
+        "TRIGGER_END_OF_TURN"
+      ],
+      "blockingFamilies": [
+        "SPEND_OR_READY",
+        "STATIC_MODIFIER",
+        "TRIGGER_END_OF_TURN"
+      ],
+      "note": null
+    },
+    {
+      "cardId": "screw-lovelorn-fool",
+      "displayName": "Screw: Lovelorn Fool",
+      "type": "UNIT",
+      "colors": [
+        "RED"
+      ],
+      "admission": "NOT_ADMITTED",
+      "revision": null,
+      "families": [
+        "TRASH_RECURSION",
+        "TRIGGER_DEFEATED"
+      ],
+      "blockingFamilies": [
+        "TRASH_RECURSION",
+        "TRIGGER_DEFEATED"
+      ],
+      "note": null
+    },
+    {
+      "cardId": "secondhand-bombus",
+      "displayName": "Secondhand Bombus",
+      "type": "UNIT",
+      "colors": [
+        "YELLOW"
+      ],
+      "admission": "SOURCE_MATCH",
+      "revision": 1,
+      "families": [
+        "KEYWORD_BLOCKER"
+      ],
+      "blockingFamilies": [],
+      "note": null
+    },
+    {
+      "cardId": "shattered-memories",
+      "displayName": "Shattered Memories",
+      "type": "PROGRAM",
+      "colors": [
+        "RED"
+      ],
+      "admission": "NOT_ADMITTED",
+      "revision": null,
+      "families": [
+        "CONDITION_GIG",
+        "DISCARD",
+        "DRAW",
+        "MASS_EFFECT"
+      ],
+      "blockingFamilies": [
+        "CONDITION_GIG",
+        "DISCARD",
+        "DRAW",
+        "MASS_EFFECT"
+      ],
+      "note": null
+    },
+    {
+      "cardId": "sketchy-ripper",
+      "displayName": "Sketchy Ripper",
+      "type": "UNIT",
+      "colors": [
+        "YELLOW"
+      ],
+      "admission": "NOT_ADMITTED",
+      "revision": null,
+      "families": [
+        "DECK_SEARCH_REVEAL",
+        "TRIGGER_ATTACK"
+      ],
+      "blockingFamilies": [
+        "DECK_SEARCH_REVEAL",
+        "TRIGGER_ATTACK"
+      ],
+      "note": null
+    },
+    {
+      "cardId": "swordwise-huscle",
+      "displayName": "Swordwise Huscle",
+      "type": "UNIT",
+      "colors": [
+        "RED"
+      ],
+      "admission": "SOURCE_MATCH",
+      "revision": 1,
+      "families": [
+        "CONDITION_BOARD",
+        "DRAW",
+        "TRIGGER_ATTACK"
+      ],
+      "blockingFamilies": [],
+      "note": null
+    },
+    {
+      "cardId": "synapse-burnout",
+      "displayName": "Synapse Burnout",
+      "type": "PROGRAM",
+      "colors": [
+        "GREEN"
+      ],
+      "admission": "NOT_ADMITTED",
+      "revision": null,
+      "families": [
+        "FIGHT_MODIFIER",
+        "KEYWORD_QUICK",
+        "SCALED_AMOUNT",
+        "TEMPORARY_BUFF"
+      ],
+      "blockingFamilies": [
+        "FIGHT_MODIFIER",
+        "KEYWORD_QUICK",
+        "SCALED_AMOUNT",
+        "TEMPORARY_BUFF"
+      ],
+      "note": null
+    },
+    {
+      "cardId": "t-bug-amateur-philosopher",
+      "displayName": "T-Bug: Amateur Philosopher",
+      "type": "UNIT",
+      "colors": [
+        "YELLOW"
+      ],
+      "admission": "NOT_ADMITTED",
+      "revision": null,
+      "families": [
+        "FREE_CALL",
+        "LEGEND_LOOK",
+        "TRIGGER_DEFEATED"
+      ],
+      "blockingFamilies": [
+        "FREE_CALL",
+        "LEGEND_LOOK",
+        "TRIGGER_DEFEATED"
+      ],
+      "note": null
+    },
+    {
+      "cardId": "take-control",
+      "displayName": "Take Control",
+      "type": "PROGRAM",
+      "colors": [
+        "GREEN"
+      ],
+      "admission": "NOT_ADMITTED",
+      "revision": null,
+      "families": [
+        "CONDITION_BOARD",
+        "DRAW",
+        "KEYWORD_QUICK",
+        "STEAL_CONTROL"
+      ],
+      "blockingFamilies": [
+        "CONDITION_BOARD",
+        "DRAW",
+        "KEYWORD_QUICK",
+        "STEAL_CONTROL"
+      ],
+      "note": null
+    },
+    {
+      "cardId": "tetratronic-rippler",
+      "displayName": "Tetratronic Rippler",
+      "type": "GEAR",
+      "colors": [
+        "BLUE"
+      ],
+      "admission": "NOT_ADMITTED",
+      "revision": null,
+      "families": [
+        "DECK_SEARCH_REVEAL",
+        "GEAR_EQUIP",
+        "TRIGGER_WHEN_SPENT"
+      ],
+      "blockingFamilies": [
+        "DECK_SEARCH_REVEAL",
+        "GEAR_EQUIP",
+        "TRIGGER_WHEN_SPENT"
+      ],
+      "note": null
+    },
+    {
+      "cardId": "the-heist",
+      "displayName": "The Heist",
+      "type": "PROGRAM",
+      "colors": [
+        "YELLOW"
+      ],
+      "admission": "NOT_ADMITTED",
+      "revision": null,
+      "families": [
+        "CONDITION_GIG",
+        "DECK_SEARCH_REVEAL",
+        "GEAR_EQUIP",
+        "PLAY_BY_EFFECT",
+        "TRASH_RECURSION"
+      ],
+      "blockingFamilies": [
+        "CONDITION_GIG",
+        "DECK_SEARCH_REVEAL",
+        "GEAR_EQUIP",
+        "PLAY_BY_EFFECT",
+        "TRASH_RECURSION"
+      ],
+      "note": null
+    },
+    {
+      "cardId": "the-relic-experimental-biochip",
+      "displayName": "The Relic: Experimental Biochip",
+      "type": "GEAR",
+      "colors": [
+        "YELLOW"
+      ],
+      "admission": "NOT_ADMITTED",
+      "revision": null,
+      "families": [
+        "GEAR_EQUIP",
+        "PLAY_BY_EFFECT",
+        "TRIGGER_DEFEATED",
+        "UNIT_ZONE_MOVE"
+      ],
+      "blockingFamilies": [
+        "GEAR_EQUIP",
+        "PLAY_BY_EFFECT",
+        "TRIGGER_DEFEATED",
+        "UNIT_ZONE_MOVE"
+      ],
+      "note": "No equip reminder text; 'this Unit' on a Gear. See rules questions Q1 and Q2."
+    },
+    {
+      "cardId": "three-mouths-one-desire",
+      "displayName": "Three Mouths, One Desire",
+      "type": "PROGRAM",
+      "colors": [
+        "BLUE"
+      ],
+      "admission": "NOT_ADMITTED",
+      "revision": null,
+      "families": [
+        "CONDITION_GIG",
+        "DECK_SEARCH_REVEAL",
+        "SCALED_AMOUNT"
+      ],
+      "blockingFamilies": [
+        "CONDITION_GIG",
+        "DECK_SEARCH_REVEAL",
+        "SCALED_AMOUNT"
+      ],
+      "note": null
+    },
+    {
+      "cardId": "towerfall",
+      "displayName": "Towerfall",
+      "type": "PROGRAM",
+      "colors": [
+        "BLUE"
+      ],
+      "admission": "NOT_ADMITTED",
+      "revision": null,
+      "families": [
+        "CONDITION_BOARD",
+        "CONDITION_STREET_CRED",
+        "MASS_EFFECT",
+        "MODAL_CHOICE",
+        "TEMPORARY_BUFF",
+        "UNIT_ZONE_MOVE"
+      ],
+      "blockingFamilies": [
+        "CONDITION_BOARD",
+        "CONDITION_STREET_CRED",
+        "MASS_EFFECT",
+        "MODAL_CHOICE",
+        "TEMPORARY_BUFF",
+        "UNIT_ZONE_MOVE"
+      ],
+      "note": null
+    },
+    {
+      "cardId": "trauma-team-operatives",
+      "displayName": "Trauma Team Operatives",
+      "type": "UNIT",
+      "colors": [
+        "YELLOW"
+      ],
+      "admission": "NOT_ADMITTED",
+      "revision": null,
+      "families": [
+        "COST_MODIFIER",
+        "SCALED_AMOUNT"
+      ],
+      "blockingFamilies": [
+        "COST_MODIFIER",
+        "SCALED_AMOUNT"
+      ],
+      "note": null
+    },
+    {
+      "cardId": "trust-no-one",
+      "displayName": "Trust No One",
+      "type": "PROGRAM",
+      "colors": [
+        "BLUE"
+      ],
+      "admission": "NOT_ADMITTED",
+      "revision": null,
+      "families": [
+        "CONDITION_GIG",
+        "DRAW",
+        "GIG_ADJUST"
+      ],
+      "blockingFamilies": [
+        "CONDITION_GIG",
+        "DRAW",
+        "GIG_ADJUST"
+      ],
+      "note": null
+    },
+    {
+      "cardId": "tyger-s-whisper",
+      "displayName": "Tyger's Whisper",
+      "type": "UNIT",
+      "colors": [
+        "GREEN"
+      ],
+      "admission": "NOT_ADMITTED",
+      "revision": null,
+      "families": [
+        "FREE_CALL",
+        "TRIGGER_PLAY"
+      ],
+      "blockingFamilies": [
+        "FREE_CALL",
+        "TRIGGER_PLAY"
+      ],
+      "note": null
+    },
+    {
+      "cardId": "unlikely-bond",
+      "displayName": "Unlikely Bond",
+      "type": "PROGRAM",
+      "colors": [
+        "BLUE"
+      ],
+      "admission": "NOT_ADMITTED",
+      "revision": null,
+      "families": [
+        "CONDITION_BOARD",
+        "UNIT_ZONE_MOVE"
+      ],
+      "blockingFamilies": [
+        "CONDITION_BOARD",
+        "UNIT_ZONE_MOVE"
+      ],
+      "note": null
+    },
+    {
+      "cardId": "v-corporate-exile",
+      "displayName": "V: Corporate Exile",
+      "type": "LEGEND",
+      "colors": [
+        "BLUE"
+      ],
+      "admission": "SOURCE_MATCH",
+      "revision": 1,
+      "families": [
+        "GO_SOLO"
+      ],
+      "blockingFamilies": [],
+      "note": null
+    },
+    {
+      "cardId": "v-roamer-of-the-badlands",
+      "displayName": "V: Roamer of the Badlands",
+      "type": "UNIT",
+      "colors": [
+        "RED"
+      ],
+      "admission": "NOT_ADMITTED",
+      "revision": null,
+      "families": [
+        "CONDITION_GIG",
+        "DRAW",
+        "GIG_ADJUST",
+        "TRIGGER_END_OF_TURN",
+        "TRIGGER_STEAL"
+      ],
+      "blockingFamilies": [
+        "CONDITION_GIG",
+        "DRAW",
+        "GIG_ADJUST",
+        "TRIGGER_END_OF_TURN",
+        "TRIGGER_STEAL"
+      ],
+      "note": null
+    },
+    {
+      "cardId": "v-streetkid",
+      "displayName": "V: Streetkid",
+      "type": "LEGEND",
+      "colors": [
+        "RED"
+      ],
+      "admission": "NOT_ADMITTED",
+      "revision": null,
+      "families": [
+        "CONDITION_BOARD",
+        "DECK_SEARCH_REVEAL",
+        "GO_SOLO",
+        "TRASH_RECURSION",
+        "TRIGGER_CALL"
+      ],
+      "blockingFamilies": [
+        "CONDITION_BOARD",
+        "DECK_SEARCH_REVEAL",
+        "GO_SOLO",
+        "TRASH_RECURSION",
+        "TRIGGER_CALL"
+      ],
+      "note": null
+    },
+    {
+      "cardId": "valentino-guerrera",
+      "displayName": "Valentino Guerrera",
+      "type": "UNIT",
+      "colors": [
+        "RED"
+      ],
+      "admission": "NOT_ADMITTED",
+      "revision": null,
+      "families": [
+        "ATTACK_PERMISSION",
+        "CONDITION_STREET_CRED"
+      ],
+      "blockingFamilies": [
+        "ATTACK_PERMISSION",
+        "CONDITION_STREET_CRED"
+      ],
+      "note": null
+    },
+    {
+      "cardId": "valentino-street-racer",
+      "displayName": "Valentino Street Racer",
+      "type": "UNIT",
+      "colors": [
+        "GREEN"
+      ],
+      "admission": "NOT_ADMITTED",
+      "revision": null,
+      "families": [
+        "CONDITION_BOARD",
+        "KEYWORD_ADRENALINE",
+        "TEMPORARY_BUFF",
+        "TRIGGER_PLAY"
+      ],
+      "blockingFamilies": [
+        "CONDITION_BOARD",
+        "TEMPORARY_BUFF",
+        "TRIGGER_PLAY"
+      ],
+      "note": null
+    },
+    {
+      "cardId": "viktor-vektor-drop-your-illusions",
+      "displayName": "Viktor Vektor: Drop Your Illusions",
+      "type": "UNIT",
+      "colors": [
+        "YELLOW"
+      ],
+      "admission": "NOT_ADMITTED",
+      "revision": null,
+      "families": [
+        "CONDITION_BOARD",
+        "COST_MODIFIER",
+        "TURN_HISTORY"
+      ],
+      "blockingFamilies": [
+        "CONDITION_BOARD",
+        "COST_MODIFIER",
+        "TURN_HISTORY"
+      ],
+      "note": null
+    },
+    {
+      "cardId": "viktor-vektor-sit-down-and-relax",
+      "displayName": "Viktor Vektor: Sit Down and Relax",
+      "type": "LEGEND",
+      "colors": [
+        "YELLOW"
+      ],
+      "admission": "SOURCE_MATCH",
+      "revision": 1,
+      "families": [
+        "DECK_SEARCH_REVEAL",
+        "TRIGGER_CALL"
+      ],
+      "blockingFamilies": [],
+      "note": null
+    },
+    {
+      "cardId": "viktor-vektor-you-might-feel-a-little-pinch",
+      "displayName": "Viktor Vektor: You Might Feel a Little Pinch",
+      "type": "UNIT",
+      "colors": [
+        "YELLOW"
+      ],
+      "admission": "NOT_ADMITTED",
+      "revision": null,
+      "families": [
+        "CONDITION_BOARD",
+        "GEAR_EQUIP",
+        "PLAY_BY_EFFECT",
+        "TRIGGER_PLAY"
+      ],
+      "blockingFamilies": [
+        "CONDITION_BOARD",
+        "GEAR_EQUIP",
+        "PLAY_BY_EFFECT",
+        "TRIGGER_PLAY"
+      ],
+      "note": null
+    },
+    {
+      "cardId": "wakako-okada-peace-and-harmony",
+      "displayName": "Wakako Okada: Peace and Harmony",
+      "type": "LEGEND",
+      "colors": [
+        "BLUE"
+      ],
+      "admission": "NOT_ADMITTED",
+      "revision": null,
+      "families": [
+        "DRAW",
+        "GIG_ADJUST",
+        "MODAL_CHOICE",
+        "SPEND_ABILITY",
+        "TEMPORARY_BUFF",
+        "TRIGGER_CALL"
+      ],
+      "blockingFamilies": [
+        "DRAW",
+        "GIG_ADJUST",
+        "MODAL_CHOICE",
+        "SPEND_ABILITY",
+        "TEMPORARY_BUFF",
+        "TRIGGER_CALL"
+      ],
+      "note": null
+    },
+    {
+      "cardId": "we-gotta-live-together",
+      "displayName": "We Gotta Live Together",
+      "type": "PROGRAM",
+      "colors": [
+        "GREEN"
+      ],
+      "admission": "NOT_ADMITTED",
+      "revision": null,
+      "families": [
+        "CONDITION_GIG",
+        "COST_MODIFIER",
+        "PLAY_BY_EFFECT"
+      ],
+      "blockingFamilies": [
+        "CONDITION_GIG",
+        "COST_MODIFIER",
+        "PLAY_BY_EFFECT"
+      ],
+      "note": null
+    },
+    {
+      "cardId": "westbrook-netrunner",
+      "displayName": "Westbrook Netrunner",
+      "type": "UNIT",
+      "colors": [
+        "BLUE"
+      ],
+      "admission": "NOT_ADMITTED",
+      "revision": null,
+      "families": [
+        "CONDITION_GIG",
+        "DURATION_DELAYED",
+        "STEAL_CONTROL",
+        "TRIGGER_PLAY"
+      ],
+      "blockingFamilies": [
+        "CONDITION_GIG",
+        "DURATION_DELAYED",
+        "STEAL_CONTROL",
+        "TRIGGER_PLAY"
+      ],
+      "note": null
+    },
+    {
+      "cardId": "wild-in-the-streets",
+      "displayName": "Wild in the Streets",
+      "type": "PROGRAM",
+      "colors": [
+        "GREEN"
+      ],
+      "admission": "NOT_ADMITTED",
+      "revision": null,
+      "families": [
+        "CONDITION_BOARD",
+        "UNIT_DEFEAT"
+      ],
+      "blockingFamilies": [
+        "CONDITION_BOARD",
+        "UNIT_DEFEAT"
+      ],
+      "note": null
+    },
+    {
+      "cardId": "wraith-marauders",
+      "displayName": "Wraith Marauders",
+      "type": "UNIT",
+      "colors": [
+        "GREEN"
+      ],
+      "admission": "NOT_ADMITTED",
+      "revision": null,
+      "families": [
+        "CONDITION_BOARD",
+        "CONDITION_GIG",
+        "SPEND_OR_READY",
+        "TRIGGER_STEAL"
+      ],
+      "blockingFamilies": [
+        "CONDITION_BOARD",
+        "CONDITION_GIG",
+        "SPEND_OR_READY",
+        "TRIGGER_STEAL"
+      ],
+      "note": null
+    },
+    {
+      "cardId": "yorinobu-arasaka-embracing-destruction",
+      "displayName": "Yorinobu Arasaka: Embracing Destruction",
+      "type": "LEGEND",
+      "colors": [
+        "RED"
+      ],
+      "admission": "SOURCE_MATCH",
+      "revision": 1,
+      "families": [
+        "CONDITION_BOARD",
+        "CONDITION_STREET_CRED",
+        "DISCARD",
+        "DRAW",
+        "TRIGGER_ATTACK",
+        "TURN_HISTORY"
+      ],
+      "blockingFamilies": [],
+      "note": null
+    },
+    {
+      "cardId": "yorinobu-arasaka-steel-dragon",
+      "displayName": "Yorinobu Arasaka: Steel Dragon",
+      "type": "UNIT",
+      "colors": [
+        "RED"
+      ],
+      "admission": "NOT_ADMITTED",
+      "revision": null,
+      "families": [
+        "ATTACK_PERMISSION",
+        "CONDITION_BOARD",
+        "DRAW",
+        "PLAY_BY_EFFECT",
+        "TRIGGER_OTHER_EVENT",
+        "TRIGGER_PLAY",
+        "TURN_HISTORY"
+      ],
+      "blockingFamilies": [
+        "ATTACK_PERMISSION",
+        "CONDITION_BOARD",
+        "DRAW",
+        "PLAY_BY_EFFECT",
+        "TRIGGER_OTHER_EVENT",
+        "TRIGGER_PLAY",
+        "TURN_HISTORY"
+      ],
+      "note": null
+    },
+    {
+      "cardId": "zetatech-berserk",
+      "displayName": "Zetatech Berserk",
+      "type": "GEAR",
+      "colors": [
+        "GREEN"
+      ],
+      "admission": "NOT_ADMITTED",
+      "revision": null,
+      "families": [
+        "COST_MODIFIER",
+        "GEAR_EQUIP",
+        "SCALED_AMOUNT"
+      ],
+      "blockingFamilies": [
+        "COST_MODIFIER",
+        "GEAR_EQUIP",
+        "SCALED_AMOUNT"
+      ],
+      "note": "No equip reminder text. See rules question Q1."
+    },
+    {
+      "cardId": "zetatech-faceplate",
+      "displayName": "Zetatech Faceplate",
+      "type": "GEAR",
+      "colors": [
+        "YELLOW"
+      ],
+      "admission": "NOT_ADMITTED",
+      "revision": null,
+      "families": [
+        "CONDITION_GIG",
+        "DRAW",
+        "GEAR_EQUIP",
+        "GIG_ADJUST",
+        "TRIGGER_WHEN_SPENT"
+      ],
+      "blockingFamilies": [
+        "CONDITION_GIG",
+        "DRAW",
+        "GEAR_EQUIP",
+        "GIG_ADJUST",
+        "TRIGGER_WHEN_SPENT"
+      ],
+      "note": null
+    }
+  ],
+  "rulesQuestions": [
+    {
+      "id": "Q1",
+      "cards": [
+        "overwatch-panam-s-gift",
+        "zetatech-berserk",
+        "the-relic-experimental-biochip"
+      ],
+      "question": "These Gear print no equip reminder text. Are they equipped like every other Gear (Kiroshi erratum says all Gear share the reminder), and what does [Spend] on Overwatch spend: the Gear's host?"
+    },
+    {
+      "id": "Q2",
+      "cards": [
+        "the-relic-experimental-biochip"
+      ],
+      "question": "The Relic is a Gear whose [Defeated] says 'bottom-deck this Unit'. Is 'this Unit' the Gear itself, its host, or the played Unit; and does [Defeated] fire when the Gear or its host is defeated?"
+    },
+    {
+      "id": "Q3",
+      "cards": [
+        "adam-smasher-ender-of-legends",
+        "sasha-yakovleva-won-t-let-you-down"
+      ],
+      "question": "Do [Play], [Attack] and [Defeated] on a Legend fire when it is played or acts through [Go Solo], and does [Defeated] fire when a Go Solo Legend is removed from the game instead of trashed?"
+    },
+    {
+      "id": "Q4",
+      "cards": [
+        "johnny-silverhand-rocking-renegade",
+        "sandayu-oda-hanako-s-guardian"
+      ],
+      "question": "'Can attack spent rival Units the turn it's played': does it apply to a Unit already played this turn, only to one played later this turn, or both?"
+    },
+    {
+      "id": "Q5",
+      "cards": [
+        "rogue-amendiares-preem-solo",
+        "westbrook-netrunner"
+      ],
+      "question": "When does a Legend steal a Gig: only as a Go Solo Unit, or also some other way? Westbrook restricts 'rival Legends' stealing."
+    },
+    {
+      "id": "Q6",
+      "cards": [
+        "alt-cunningham-mother-of-daemons",
+        "gorilla-arms",
+        "appetite-for-destruction",
+        "take-control"
+      ],
+      "question": "How do steal modifiers stack in one attack: an extra steal (Gorilla Arms, Appetite), 'steals 1 fewer' (Take Control) and a prevented steal (Alt: Mother of Daemons), including the 10-power extra steal?"
+    },
+    {
+      "id": "Q7",
+      "cards": [
+        "jackie-welles-mama-s-favorite",
+        "deadman-transmitter"
+      ],
+      "question": "Two replacement effects for the same defeat (Mama's Favorite and Deadman Transmitter): who chooses the order, and does defeating Jackie 'instead' remove it from the game or trash it?"
+    },
+    {
+      "id": "Q8",
+      "cards": [
+        "netwatch-netdriver",
+        "tetratronic-rippler",
+        "zetatech-faceplate",
+        "arasaka-emergency-radioport",
+        "rita-wheeler-no-stupid-questions",
+        "alt-cunningham-mother-of-daemons"
+      ],
+      "question": "Which spending counts as 'is spent' (attacking, using [Blocker], paying a [Spend] cost, being spent by a rival effect such as Corporate Surveillance), and does a card that enters the field spent trigger it?"
+    },
+    {
+      "id": "Q9",
+      "cards": [
+        "kerry-eurodyne-axe-attitude-audience"
+      ],
+      "question": "Does the reroll replace the first result before 'min or max value' draws are checked, and does a Gig rolled as a d20 at its max also count as a max for the d20 draw-3 clause only once?"
+    },
+    {
+      "id": "Q10",
+      "cards": [
+        "muamar-reyes-el-capita-n"
+      ],
+      "question": "Muamar's '[Spend] Adjust a Gig by 1' (no 'up to'): must it change the value, and in which direction may it go at a die's min or max?"
+    },
+    {
+      "id": "Q11",
+      "cards": [
+        "shattered-memories"
+      ],
+      "question": "'Each player discards their hand and may draw 5': who decides each player's draw, and in which order do players act?"
+    },
+    {
+      "id": "Q12",
+      "cards": [
+        "misty-olszewski-mender-of-broken-spirits"
+      ],
+      "question": "Misty chooses among card types 'Unit, Gear and Program'. Is Legend a choosable type (a Legend can't be in the deck), and is the list exhaustive?"
+    }
+  ]
+}

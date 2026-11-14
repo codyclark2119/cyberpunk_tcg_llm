@@ -1,0 +1,1922 @@
+{
+  "schemaVersion": 1,
+  "kind": "CYBERPUNK_MECHANIC_FAMILIES_V1",
+  "reviewedAt": "2026-11-14",
+  "authority": "REVIEW_NOTES_ONLY",
+  "note": "Hand-authored by reading each card's errata-applied text. Families say what an engine needs to execute a card; they are never executable mechanics and never admit a card.",
+  "snapshot": {
+    "catalogSha256": "b96ca8d583ab087148c9ed3563379e6c42fd9e729188a042215bb503a8879c3d",
+    "cardCount": 151
+  },
+  "statusMeaning": {
+    "COVERED": "Existing engine support executes this family for a new card that needs nothing else in it.",
+    "PARTIAL": "Bespoke shapes exist behind per-card execution scopes; generalizing them is scope 3 (generic effect language).",
+    "MISSING": "No engine support; a scope 4 family PR.",
+    "OUT_OF_SCOPE": "Not an engine question; the card is not playable from this source snapshot."
+  },
+  "vocabulary": {
+    "ATTACK_PERMISSION": {
+      "status": "PARTIAL",
+      "summary": "Who may attack what and when: can't attack, may attack ready/spent Units, must attack, can't be blocked.",
+      "coveredBy": {
+        "executionScopes": [
+          "COMBAT_RESTRICTIONS_V1",
+          "ATTACK_PREVENTION_V1"
+        ],
+        "effectKinds": [
+          "CANNOT_ATTACK",
+          "CANNOT_ATTACK_GIG_AREA",
+          "CANNOT_BE_BLOCKED",
+          "RIVAL_LAGGING_UNITS_CANNOT_ATTACK"
+        ]
+      },
+      "notes": "Restrictions on the card itself are supported; permissions granted by effects, forced attacks and off-turn timing are not."
+    },
+    "CONDITION_BOARD": {
+      "status": "PARTIAL",
+      "summary": "Generic target filters and board conditions: classification, cost, power, ready/spent, equipped, face-up, named, lowest power.",
+      "coveredBy": {
+        "executionScopes": [
+          "ATTACK_CONDITION_POWER_V1",
+          "COMBAT_ATTACK_V1",
+          "GEAR_DELAYED_ATTACK_V1"
+        ],
+        "effectKinds": [
+          "ALL_FRIENDLY_LEGENDS_FACE_UP",
+          "SOURCE_POWER_AT_LEAST",
+          "SUBJECT_IS_UNIT_NAMED"
+        ]
+      },
+      "notes": "Documented as unsupported: generic condition/filter language. Each admitted filter is a literal."
+    },
+    "CONDITION_GIG": {
+      "status": "PARTIAL",
+      "summary": "Conditions and filters on Gig values: min/max, value-pairs, even/odd, 8+, die type, counts compared with a Rival.",
+      "coveredBy": {
+        "executionScopes": [
+          "VALUE_CONDITIONS_V1",
+          "MIN_GIG_PROGRAM_V1",
+          "NONCOMBAT_PLAY_V1"
+        ],
+        "effectKinds": [
+          "GIG_VALUE_AT_LEAST",
+          "DISTINCT_GIG_VALUES",
+          "DISTINCT_GIG_DIE_TYPES",
+          "GIG_COUNT",
+          "GIG_VALUE"
+        ]
+      },
+      "notes": "Conditions only, each a fixed shape."
+    },
+    "CONDITION_STREET_CRED": {
+      "status": "PARTIAL",
+      "summary": "Conditions on Street Cred.",
+      "coveredBy": {
+        "executionScopes": [
+          "VALUE_CONDITIONS_V1",
+          "TARGETED_DEFEAT_V1",
+          "ATTACK_ORDERED_EFFECTS_V1",
+          "FIRST_ATTACK_HISTORY_V1",
+          "COMBAT_RESTRICTIONS_V1",
+          "COMBAT_TRIGGERS_V1"
+        ],
+        "effectKinds": [
+          "STREET_CRED_IS_EVEN",
+          "STREET_CRED_LESS_THAN_RIVAL",
+          "STREET_CRED_GREATER_THAN_RIVAL",
+          "STREET_CRED_DIFFERENCE_AT_LEAST",
+          "STREET_CRED_LESS_THAN_VALUE"
+        ]
+      },
+      "notes": "Nearly complete as conditions; gating an effect mode on them is not."
+    },
+    "COST_MODIFIER": {
+      "status": "MISSING",
+      "summary": "Play-cost reductions, alternative costs, ability-cost and Go Solo cost changes.",
+      "coveredBy": {
+        "executionScopes": [],
+        "effectKinds": []
+      },
+      "notes": ""
+    },
+    "DECK_SEARCH_REVEAL": {
+      "status": "PARTIAL",
+      "summary": "Top-of-deck manipulation: search/look/reveal top N, trash from the top (Trash N), bottom-deck the rest.",
+      "coveredBy": {
+        "executionScopes": [
+          "NONCOMBAT_SLICE_V1"
+        ],
+        "effectKinds": [
+          "SEARCH_GEAR"
+        ]
+      },
+      "notes": "SEARCH_GEAR (count<=5, Gear with max cost, take<=2) only."
+    },
+    "DISCARD": {
+      "status": "PARTIAL",
+      "summary": "Discard: self discard, a Rival discards, discard as a cost, discard a hand.",
+      "coveredBy": {
+        "executionScopes": [
+          "ATTACK_ORDERED_EFFECTS_V1",
+          "FIRST_ATTACK_HISTORY_V1"
+        ],
+        "effectKinds": [
+          "DISCARD_CARDS"
+        ]
+      },
+      "notes": "DISCARD_CARDS supports only the controller discarding exactly 1."
+    },
+    "DRAW": {
+      "status": "PARTIAL",
+      "summary": "Draw cards, fixed or conditional.",
+      "coveredBy": {
+        "executionScopes": [
+          "NONCOMBAT_SLICE_V1",
+          "VALUE_CONDITIONS_V1",
+          "MIN_GIG_PROGRAM_V1"
+        ],
+        "effectKinds": [
+          "DRAW",
+          "CONDITIONAL_DRAW"
+        ]
+      },
+      "notes": "Routed. Variable counts need SCALED_AMOUNT; 'may draw' needs an optional prompt."
+    },
+    "DURATION_DELAYED": {
+      "status": "PARTIAL",
+      "summary": "Lasting and delayed effects: 'until your next turn', 'next time ... this turn', 'at the end of this turn'.",
+      "coveredBy": {
+        "executionScopes": [
+          "COMBAT_REACT_V1",
+          "GEAR_DELAYED_ATTACK_V1"
+        ],
+        "effectKinds": [
+          "CREATE_NEXT_RIVAL_FIGHT_PREVENTION",
+          "REGISTER_END_TURN_EFFECT"
+        ]
+      },
+      "notes": ""
+    },
+    "EDDIE_ECONOMY": {
+      "status": "PARTIAL",
+      "summary": "Ready Eddies, sell cards from unusual zones, pay Eddies during resolution.",
+      "coveredBy": {
+        "executionScopes": [
+          "END_TURN_HISTORY_V1",
+          "GEAR_DELAYED_ATTACK_V1"
+        ],
+        "effectKinds": [
+          "READY_EDDIES"
+        ]
+      },
+      "notes": "READY_EDDIES (controller, 1 or 2) only."
+    },
+    "FIGHT_MODIFIER": {
+      "status": "PARTIAL",
+      "summary": "Fight-scoped rules: power while fighting, can't be defeated in a fight, wins all fights against, fight-outcome riders.",
+      "coveredBy": {
+        "executionScopes": [
+          "COMBAT_REACT_V1"
+        ],
+        "effectKinds": [
+          "CREATE_NEXT_RIVAL_FIGHT_PREVENTION"
+        ]
+      },
+      "notes": "Only Reboot Optics' next-fight prevention."
+    },
+    "FREE_CALL": {
+      "status": "MISSING",
+      "summary": "Call a Legend by an effect or for free outside the normal Call.",
+      "coveredBy": {
+        "executionScopes": [],
+        "effectKinds": []
+      },
+      "notes": ""
+    },
+    "GEAR_EQUIP": {
+      "status": "PARTIAL",
+      "summary": "Equip a Gear to a friendly Unit or face-up Legend; Gear power adds to its host.",
+      "coveredBy": {
+        "executionScopes": [
+          "NONCOMBAT_PLAY_V1",
+          "GEAR_CAPABILITIES_V1",
+          "GEAR_PRIVATE_LOOK_V1",
+          "GEAR_DELAYED_ATTACK_V1",
+          "COMBAT_TRIGGERS_V1"
+        ],
+        "effectKinds": [
+          "GRANT_PRINTED_POWER_TO_HOST"
+        ]
+      },
+      "notes": "Equip onto Units is supported for the admitted Gear. Gear on a Legend host in combat (a Go Solo Legend) is unsupported."
+    },
+    "GEAR_MOVE_OR_SACRIFICE": {
+      "status": "MISSING",
+      "summary": "Move Gear between hosts, or defeat a friendly Gear as a cost or choice.",
+      "coveredBy": {
+        "executionScopes": [],
+        "effectKinds": []
+      },
+      "notes": ""
+    },
+    "GIG_ADJUST": {
+      "status": "PARTIAL",
+      "summary": "Increase, decrease, adjust or set Gig values.",
+      "coveredBy": {
+        "executionScopes": [
+          "NONCOMBAT_PLAY_V1",
+          "VALUE_CONDITIONS_V1",
+          "MIN_GIG_PROGRAM_V1",
+          "COMBAT_TRIGGERS_V1",
+          "GEAR_DELAYED_ATTACK_V1"
+        ],
+        "effectKinds": [
+          "ADJUST_GIG_UP_TO",
+          "DECREASE_GIG_UP_TO",
+          "OPTIONAL_DECREASE_FRIENDLY_GIG_THEN_DRAW_IF_MIN"
+        ]
+      },
+      "notes": "Maxima are fixed literals; 'set to the value of another Gig' and 'adjust by exactly 1' are missing. MODIFY_GIG_VALUE is schema-only."
+    },
+    "GIG_ROLL": {
+      "status": "MISSING",
+      "summary": "Hooks on rolling a Gig die: rerolls and triggers on rolled results.",
+      "coveredBy": {
+        "executionScopes": [],
+        "effectKinds": []
+      },
+      "notes": ""
+    },
+    "GO_SOLO": {
+      "status": "PARTIAL",
+      "summary": "[Go Solo]: play a Legend as a ready Unit that can attack this turn and is removed when it leaves the field.",
+      "coveredBy": {
+        "executionScopes": [
+          "FIELD_LEGENDS_V1"
+        ],
+        "effectKinds": []
+      },
+      "notes": "Supported only for Go Solo Legends with no other text or with Blocker (V: Corporate Exile, Goro: Hands Unclean). Go Solo Legends with Play/Attack/Defeated triggers, Go Solo cost changes and Gear on Legend hosts in combat are not."
+    },
+    "KEYWORD_ADRENALINE": {
+      "status": "COVERED",
+      "summary": "[Adrenaline]: the Unit can attack the turn it is played.",
+      "coveredBy": {
+        "executionScopes": [
+          "COMBAT_RESTRICTIONS_V1"
+        ],
+        "effectKinds": []
+      },
+      "notes": "Keyword ADRENALINE (Riding Nomad). Conditional or granted Adrenaline also needs STATIC_MODIFIER or TEMPORARY_BUFF."
+    },
+    "KEYWORD_BLOCKER": {
+      "status": "COVERED",
+      "summary": "Printed [Blocker] on a Unit, or granted to a Gear's host.",
+      "coveredBy": {
+        "executionScopes": [
+          "COMBAT_RESTRICTIONS_V1",
+          "GEAR_CAPABILITIES_V1"
+        ],
+        "effectKinds": [
+          "GRANT_KEYWORD_TO_HOST"
+        ]
+      },
+      "notes": "Keyword BLOCKER. Temporary grants by an effect are TEMPORARY_BUFF."
+    },
+    "KEYWORD_QUICK": {
+      "status": "PARTIAL",
+      "summary": "[Quick] timing: Programs and activated abilities usable in the react window.",
+      "coveredBy": {
+        "executionScopes": [
+          "COMBAT_REACT_V1",
+          "TARGETED_GEAR_DEFEAT_V1"
+        ],
+        "effectKinds": []
+      },
+      "notes": "Quick Programs are supported for Floor It, Reboot Optics and Detonate. Quick activated [Spend] abilities on Legends, Units and Gear are not offered in any react window yet."
+    },
+    "LEGEND_LOOK": {
+      "status": "PARTIAL",
+      "summary": "Look at friendly face-down Legends.",
+      "coveredBy": {
+        "executionScopes": [
+          "GEAR_PRIVATE_LOOK_V1"
+        ],
+        "effectKinds": [
+          "LOOK_AT_FRIENDLY_FACE_DOWN_LEGEND"
+        ]
+      },
+      "notes": "One Legend, attack-triggered (Kiroshi Optics). 'All face-down Legends' is missing."
+    },
+    "MASS_EFFECT": {
+      "status": "MISSING",
+      "summary": "Effects on all Units or each player.",
+      "coveredBy": {
+        "executionScopes": [],
+        "effectKinds": []
+      },
+      "notes": ""
+    },
+    "MODAL_CHOICE": {
+      "status": "MISSING",
+      "summary": "'Choose one effect' (and 'choose both instead' upgrades).",
+      "coveredBy": {
+        "executionScopes": [],
+        "effectKinds": []
+      },
+      "notes": "PendingChoice MODE exists for setup, search and Gig steps, but no ability carries modes."
+    },
+    "PLAY_BY_EFFECT": {
+      "status": "MISSING",
+      "summary": "Play a card by an effect: from hand, trash or deck top, for free or for its cost, with after-play riders.",
+      "coveredBy": {
+        "executionScopes": [],
+        "effectKinds": []
+      },
+      "notes": ""
+    },
+    "PROMO_NO_TEXT": {
+      "status": "OUT_OF_SCOPE",
+      "summary": "Source record with no rules text, cost or RAM: not a playable card in this snapshot.",
+      "coveredBy": {
+        "executionScopes": [
+          "NONCOMBAT_SLICE_V1"
+        ],
+        "effectKinds": []
+      },
+      "notes": "Rebecca: Having a Moment is reviewed with execution UNSUPPORTED as a negative fixture."
+    },
+    "REPLACEMENT_EFFECT": {
+      "status": "MISSING",
+      "summary": "'If X would ..., instead ...' replacement effects.",
+      "coveredBy": {
+        "executionScopes": [],
+        "effectKinds": []
+      },
+      "notes": ""
+    },
+    "RIVAL_CHOICE": {
+      "status": "MISSING",
+      "summary": "A Rival makes a choice for the controller's effect.",
+      "coveredBy": {
+        "executionScopes": [],
+        "effectKinds": []
+      },
+      "notes": ""
+    },
+    "SCALED_AMOUNT": {
+      "status": "PARTIAL",
+      "summary": "Amounts computed from the board: 'for each', 'equal to'.",
+      "coveredBy": {
+        "executionScopes": [
+          "NONCOMBAT_SLICE_V1"
+        ],
+        "effectKinds": [
+          "POWER_PER_EQUIPPED_GEAR_DURING_OWN_TURN"
+        ]
+      },
+      "notes": "Only Royce's per-equipped-Gear modifier counts anything."
+    },
+    "SPEND_ABILITY": {
+      "status": "PARTIAL",
+      "summary": "Activated abilities with a [Spend] cost (and optional Eddie cost) on Legends, Units or Gear.",
+      "coveredBy": {
+        "executionScopes": [
+          "NONCOMBAT_PLAY_V1"
+        ],
+        "effectKinds": [
+          "SPEND_SOURCE",
+          "PAYMENT_COST"
+        ]
+      },
+      "notes": "Admitted only for Kerry: The Last Rockerboy (a Unit). Face-up Legend [Spend] abilities and Gear [Spend] abilities are not."
+    },
+    "SPEND_OR_READY": {
+      "status": "PARTIAL",
+      "summary": "Spend or ready Units and Legends by an effect, and 'can't ready' locks.",
+      "coveredBy": {
+        "executionScopes": [
+          "TARGETED_SPEND_V1"
+        ],
+        "effectKinds": [
+          "SPEND_UNIT"
+        ]
+      },
+      "notes": "SPEND_UNIT (rival, cost at most 4) only; readying Units or Legends is missing."
+    },
+    "STATIC_MODIFIER": {
+      "status": "PARTIAL",
+      "summary": "Continuous modifiers: auras, while-attacking power, conditional keywords.",
+      "coveredBy": {
+        "executionScopes": [
+          "ATTACKING_AURA_V1",
+          "NONCOMBAT_SLICE_V1",
+          "GEAR_CAPABILITIES_V1"
+        ],
+        "effectKinds": [
+          "FRIENDLY_ARASAKA_ATTACKING_UNIT_POWER",
+          "POWER_PER_EQUIPPED_GEAR_DURING_OWN_TURN",
+          "POWER",
+          "KEYWORD",
+          "GRANT_KEYWORD_TO_HOST"
+        ]
+      },
+      "notes": "Each admitted modifier is a bespoke shape."
+    },
+    "STEAL_CONTROL": {
+      "status": "MISSING",
+      "summary": "Gig control outside the ordinary attack steal: swap, extra steal, steal fewer, steal prevention.",
+      "coveredBy": {
+        "executionScopes": [],
+        "effectKinds": []
+      },
+      "notes": "Documented as unsupported (control transfer / steal)."
+    },
+    "TEMPORARY_BUFF": {
+      "status": "PARTIAL",
+      "summary": "Power or keyword changes 'this turn' on a chosen Unit.",
+      "coveredBy": {
+        "executionScopes": [
+          "COMBAT_TRIGGERS_V1",
+          "COMBAT_REACT_V1",
+          "ATTACK_CONDITION_POWER_V1"
+        ],
+        "effectKinds": [
+          "POWER_UNTIL_END_OF_TURN"
+        ]
+      },
+      "notes": "Fixed amounts on RIVAL_UNIT, SOURCE_SUBJECT or FRIENDLY_UNIT. Keyword grants, all-Unit and filtered targets are missing."
+    },
+    "TRASH_RECURSION": {
+      "status": "MISSING",
+      "summary": "Return a card from the trash (or from cards just trashed) to hand.",
+      "coveredBy": {
+        "executionScopes": [],
+        "effectKinds": []
+      },
+      "notes": ""
+    },
+    "TRIGGER_ATTACK": {
+      "status": "PARTIAL",
+      "summary": "[Attack] abilities and 'when a Unit attacks' triggers.",
+      "coveredBy": {
+        "executionScopes": [
+          "COMBAT_TRIGGERS_V1",
+          "ATTACK_ORDERED_EFFECTS_V1",
+          "ATTACK_CONDITION_POWER_V1",
+          "GEAR_PRIVATE_LOOK_V1",
+          "FIRST_ATTACK_HISTORY_V1",
+          "GEAR_DELAYED_ATTACK_V1"
+        ],
+        "effectKinds": [
+          "DRAW",
+          "DISCARD_CARDS",
+          "POWER_UNTIL_END_OF_TURN",
+          "LOOK_AT_FRIENDLY_FACE_DOWN_LEGEND"
+        ]
+      },
+      "notes": "Triggers WHEN_ATTACKING and WHEN_UNIT_ATTACKS."
+    },
+    "TRIGGER_BLOCKER_USED": {
+      "status": "MISSING",
+      "summary": "'When this Unit uses [Blocker]' triggers.",
+      "coveredBy": {
+        "executionScopes": [],
+        "effectKinds": []
+      },
+      "notes": "Blocker redirection exists but emits no trigger."
+    },
+    "TRIGGER_CALL": {
+      "status": "PARTIAL",
+      "summary": "[Call] abilities of a Legend.",
+      "coveredBy": {
+        "executionScopes": [
+          "NONCOMBAT_SLICE_V1"
+        ],
+        "effectKinds": [
+          "SEARCH_GEAR",
+          "DRAW"
+        ]
+      },
+      "notes": "Trigger WHEN_CALLED; only Viktor's search is routed. Every other Call body needs its effects routed too."
+    },
+    "TRIGGER_CARD_PLAYED": {
+      "status": "PARTIAL",
+      "summary": "'When you play a <filter> card' triggers.",
+      "coveredBy": {
+        "executionScopes": [
+          "COMBAT_TRIGGERS_V1"
+        ],
+        "effectKinds": [
+          "OPTIONAL_DECREASE_FRIENDLY_GIG_THEN_DRAW_IF_MIN"
+        ]
+      },
+      "notes": "Trigger WHEN_CARD_PLAYED with guard FIRST_BLUE_UNIT_OR_GEAR_PLAY_PER_TURN (Jackie: Pour One Out)."
+    },
+    "TRIGGER_DEFEATED": {
+      "status": "PARTIAL",
+      "summary": "[Defeated] abilities.",
+      "coveredBy": {
+        "executionScopes": [
+          "COMBAT_TRIGGERS_V1"
+        ],
+        "effectKinds": [
+          "CONDITIONAL_DRAW"
+        ]
+      },
+      "notes": "Trigger WHEN_DEFEATED, admitted only for Dexter: One Last Chance."
+    },
+    "TRIGGER_END_OF_TURN": {
+      "status": "PARTIAL",
+      "summary": "'At the end of your turn' abilities.",
+      "coveredBy": {
+        "executionScopes": [
+          "END_TURN_HISTORY_V1",
+          "GEAR_DELAYED_ATTACK_V1"
+        ],
+        "effectKinds": [
+          "READY_EDDIES",
+          "REGISTER_END_TURN_EFFECT"
+        ]
+      },
+      "notes": "Trigger WHEN_OWN_TURN_ENDS; only Eddie readying is routed."
+    },
+    "TRIGGER_FIGHT_RESULT": {
+      "status": "PARTIAL",
+      "summary": "Triggers on winning or losing a fight, or winning by a margin.",
+      "coveredBy": {
+        "executionScopes": [
+          "COMBAT_TRIGGERS_V1"
+        ],
+        "effectKinds": []
+      },
+      "notes": "Trigger WHEN_FIGHT_WON (Satori). Losing a fight and win margins are missing."
+    },
+    "TRIGGER_OTHER_EVENT": {
+      "status": "MISSING",
+      "summary": "Other event triggers: another friendly Unit defeated, a Rival adjusting or swapping friendly Gigs.",
+      "coveredBy": {
+        "executionScopes": [],
+        "effectKinds": []
+      },
+      "notes": ""
+    },
+    "TRIGGER_PLAY": {
+      "status": "PARTIAL",
+      "summary": "[Play] abilities and Program bodies resolving when played.",
+      "coveredBy": {
+        "executionScopes": [
+          "NONCOMBAT_PLAY_V1",
+          "COMBAT_TRIGGERS_V1",
+          "VALUE_CONDITIONS_V1",
+          "TARGETED_DEFEAT_V1",
+          "MIN_GIG_PROGRAM_V1"
+        ],
+        "effectKinds": [
+          "POWER_UNTIL_END_OF_TURN",
+          "CONDITIONAL_DRAW",
+          "DEFEAT_UNIT",
+          "ADJUST_GIG_UP_TO"
+        ]
+      },
+      "notes": "Trigger WHEN_PLAYED."
+    },
+    "TRIGGER_START_OF_TURN": {
+      "status": "MISSING",
+      "summary": "'At the start of your turn' abilities.",
+      "coveredBy": {
+        "executionScopes": [],
+        "effectKinds": []
+      },
+      "notes": "No start-of-turn trigger exists."
+    },
+    "TRIGGER_STEAL": {
+      "status": "MISSING",
+      "summary": "Triggers when a Unit or Legend steals a Gig.",
+      "coveredBy": {
+        "executionScopes": [],
+        "effectKinds": []
+      },
+      "notes": "Only the history condition SUBJECT_STOLE_GIG_THIS_TURN exists (Delamain Cab); there is no steal trigger."
+    },
+    "TRIGGER_WHEN_SPENT": {
+      "status": "MISSING",
+      "summary": "WHEN_SPENT: 'when this Unit or Legend is spent' (includes Zetatech Faceplate).",
+      "coveredBy": {
+        "executionScopes": [],
+        "effectKinds": []
+      },
+      "notes": "Documented as unsupported; needs every spending path (attack, Blocker, [Spend] costs, effects) to emit one event."
+    },
+    "TURN_HISTORY": {
+      "status": "PARTIAL",
+      "summary": "'First time each turn', 'this turn you played', 'if it stole or fought this turn'.",
+      "coveredBy": {
+        "executionScopes": [
+          "END_TURN_HISTORY_V1",
+          "FIRST_ATTACK_HISTORY_V1",
+          "COMBAT_TRIGGERS_V1"
+        ],
+        "effectKinds": [
+          "SUBJECT_STOLE_GIG_THIS_TURN"
+        ]
+      },
+      "notes": "Guards FIRST_BLUE_UNIT_OR_GEAR_PLAY_PER_TURN and FIRST_FRIENDLY_ARASAKA_UNIT_ATTACK_PER_TURN."
+    },
+    "UNIT_DEFEAT": {
+      "status": "PARTIAL",
+      "summary": "Defeat a Unit or Gear chosen with a filter.",
+      "coveredBy": {
+        "executionScopes": [
+          "TARGETED_DEFEAT_V1",
+          "TARGETED_GEAR_DEFEAT_V1"
+        ],
+        "effectKinds": [
+          "DEFEAT_UNIT"
+        ]
+      },
+      "notes": "Filters are fixed literals (power at most 5, power at most a friendly d20, Gear power at most 2)."
+    },
+    "UNIT_ZONE_MOVE": {
+      "status": "MISSING",
+      "summary": "Move a Unit off the field other than defeat: bottom-deck it or return it to hand.",
+      "coveredBy": {
+        "executionScopes": [],
+        "effectKinds": []
+      },
+      "notes": "MOVE_CARD is schema-only with no handler."
+    },
+    "VANILLA": {
+      "status": "COVERED",
+      "summary": "No rules text beyond reminder or flavour text: ordinary play, attack and fight.",
+      "coveredBy": {
+        "executionScopes": [
+          "COMBAT_ATTACK_V1",
+          "COMBAT_RESTRICTIONS_V1"
+        ],
+        "effectKinds": []
+      },
+      "notes": "Psycho Squad, Animals Wrecker, Rockn Rockerboy and Emergency Atlus are admitted with no abilities."
+    }
+  },
+  "cards": {
+    "6th-street-recruits": {
+      "families": [
+        "TRIGGER_STEAL",
+        "CONDITION_GIG",
+        "GIG_ADJUST"
+      ]
+    },
+    "adam-smasher-ender-of-legends": {
+      "families": [
+        "GO_SOLO",
+        "TRIGGER_PLAY",
+        "UNIT_DEFEAT"
+      ]
+    },
+    "adam-smasher-metal-over-meat": {
+      "families": [
+        "TRIGGER_PLAY",
+        "MASS_EFFECT",
+        "UNIT_DEFEAT"
+      ]
+    },
+    "adrenaline-converter": {
+      "families": [
+        "GEAR_EQUIP",
+        "STATIC_MODIFIER",
+        "KEYWORD_ADRENALINE",
+        "CONDITION_GIG"
+      ]
+    },
+    "afterparty-at-lizzie-s": {
+      "families": [
+        "GIG_ADJUST",
+        "CONDITION_GIG",
+        "DRAW"
+      ]
+    },
+    "all-is-lost": {
+      "families": [
+        "DECK_SEARCH_REVEAL",
+        "TRASH_RECURSION"
+      ]
+    },
+    "alt-cunningham-mother-of-daemons": {
+      "families": [
+        "TRIGGER_WHEN_SPENT",
+        "CONDITION_BOARD",
+        "DRAW",
+        "REPLACEMENT_EFFECT",
+        "STEAL_CONTROL",
+        "DISCARD",
+        "CONDITION_GIG"
+      ]
+    },
+    "alt-cunningham-soulkiller-architect": {
+      "families": [
+        "SPEND_ABILITY",
+        "PLAY_BY_EFFECT",
+        "UNIT_ZONE_MOVE"
+      ],
+      "note": "Plays a Program from trash at its cost, then bottom-decks it."
+    },
+    "animals-wrecker": {
+      "families": [
+        "VANILLA"
+      ]
+    },
+    "appetite-for-destruction": {
+      "families": [
+        "DURATION_DELAYED",
+        "TRIGGER_FIGHT_RESULT",
+        "STEAL_CONTROL"
+      ]
+    },
+    "arasaka-emergency-radioport": {
+      "families": [
+        "GEAR_EQUIP",
+        "TRIGGER_WHEN_SPENT",
+        "LEGEND_LOOK",
+        "FREE_CALL",
+        "CONDITION_BOARD"
+      ]
+    },
+    "augmented-negotiators": {
+      "families": [
+        "KEYWORD_BLOCKER",
+        "TRIGGER_BLOCKER_USED",
+        "DISCARD"
+      ]
+    },
+    "bonnie-and-clyde": {
+      "families": [
+        "UNIT_DEFEAT",
+        "CONDITION_GIG"
+      ]
+    },
+    "bootleg-black-sapphire-show": {
+      "families": [
+        "EDDIE_ECONOMY",
+        "CONDITION_GIG",
+        "DRAW"
+      ]
+    },
+    "caliber-totentanz-s-top-dog": {
+      "families": [
+        "TRIGGER_PLAY",
+        "UNIT_DEFEAT",
+        "TRIGGER_DEFEATED",
+        "DISCARD",
+        "CONDITION_GIG"
+      ]
+    },
+    "carnage-at-the-colosseum": {
+      "families": [
+        "COST_MODIFIER",
+        "SCALED_AMOUNT",
+        "CONDITION_GIG",
+        "UNIT_DEFEAT",
+        "CONDITION_BOARD"
+      ]
+    },
+    "chrome-fang": {
+      "families": [
+        "TRIGGER_PLAY",
+        "DURATION_DELAYED",
+        "STEAL_CONTROL",
+        "CONDITION_GIG"
+      ]
+    },
+    "chrome-reverie": {
+      "families": [
+        "ATTACK_PERMISSION",
+        "DURATION_DELAYED",
+        "CONDITION_GIG",
+        "FREE_CALL"
+      ]
+    },
+    "corpo-security": {
+      "families": [
+        "ATTACK_PERMISSION",
+        "KEYWORD_BLOCKER"
+      ]
+    },
+    "corporate-surveillance": {
+      "families": [
+        "SPEND_OR_READY"
+      ]
+    },
+    "cyberpsychosis": {
+      "families": [
+        "KEYWORD_QUICK",
+        "TEMPORARY_BUFF",
+        "SCALED_AMOUNT",
+        "CONDITION_BOARD",
+        "TURN_HISTORY",
+        "DURATION_DELAYED",
+        "UNIT_DEFEAT"
+      ]
+    },
+    "deadman-transmitter": {
+      "families": [
+        "GEAR_EQUIP",
+        "REPLACEMENT_EFFECT"
+      ]
+    },
+    "delamain-cab": {
+      "families": [
+        "TRIGGER_END_OF_TURN",
+        "TURN_HISTORY",
+        "EDDIE_ECONOMY"
+      ]
+    },
+    "delamain-rideshare-ai": {
+      "families": [
+        "TRIGGER_PLAY",
+        "DRAW"
+      ]
+    },
+    "detonate": {
+      "families": [
+        "KEYWORD_QUICK",
+        "UNIT_DEFEAT"
+      ]
+    },
+    "dexter-deshawn-off-the-grid": {
+      "families": [
+        "TRIGGER_CALL",
+        "MODAL_CHOICE",
+        "TEMPORARY_BUFF",
+        "DRAW",
+        "SPEND_ABILITY",
+        "GIG_ADJUST"
+      ]
+    },
+    "dexter-deshawn-one-last-chance": {
+      "families": [
+        "TRIGGER_PLAY",
+        "TRIGGER_ATTACK",
+        "GIG_ADJUST",
+        "TRIGGER_DEFEATED",
+        "CONDITION_STREET_CRED",
+        "DRAW"
+      ]
+    },
+    "don-t-fear-the-reaper": {
+      "families": [
+        "MASS_EFFECT",
+        "SPEND_OR_READY",
+        "UNIT_DEFEAT",
+        "CONDITION_BOARD"
+      ]
+    },
+    "dum-dum-maelstrom-triggerman": {
+      "families": [
+        "TRIGGER_CALL",
+        "GEAR_MOVE_OR_SACRIFICE",
+        "DRAW",
+        "KEYWORD_QUICK",
+        "SPEND_ABILITY",
+        "TEMPORARY_BUFF",
+        "SCALED_AMOUNT"
+      ]
+    },
+    "dying-night-v-s-pistol": {
+      "families": [
+        "GEAR_EQUIP",
+        "TRIGGER_ATTACK",
+        "GIG_ADJUST",
+        "DURATION_DELAYED",
+        "CONDITION_BOARD",
+        "EDDIE_ECONOMY"
+      ]
+    },
+    "el-sombrero-n-la-venganza-lenta": {
+      "families": [
+        "TRIGGER_ATTACK",
+        "EDDIE_ECONOMY",
+        "TEMPORARY_BUFF",
+        "SCALED_AMOUNT",
+        "CONDITION_GIG"
+      ]
+    },
+    "emergency-atlus": {
+      "families": [
+        "VANILLA"
+      ]
+    },
+    "evelyn-parker-beautiful-enigma": {
+      "families": [
+        "TRIGGER_STEAL",
+        "CONDITION_BOARD",
+        "EDDIE_ECONOMY",
+        "SPEND_ABILITY",
+        "ATTACK_PERMISSION",
+        "DURATION_DELAYED"
+      ]
+    },
+    "evelyn-parker-scheming-siren": {
+      "families": [
+        "TRIGGER_ATTACK",
+        "DRAW",
+        "CONDITION_STREET_CRED",
+        "DISCARD"
+      ]
+    },
+    "field-operator": {
+      "families": [
+        "TRIGGER_PLAY",
+        "CONDITION_STREET_CRED",
+        "DRAW"
+      ]
+    },
+    "floor-it": {
+      "families": [
+        "KEYWORD_QUICK",
+        "TEMPORARY_BUFF",
+        "DRAW"
+      ]
+    },
+    "fool-on-the-hill": {
+      "families": [
+        "DECK_SEARCH_REVEAL",
+        "RIVAL_CHOICE",
+        "DRAW"
+      ]
+    },
+    "gilded-mato-n": {
+      "families": [
+        "TRIGGER_PLAY",
+        "GEAR_MOVE_OR_SACRIFICE",
+        "UNIT_DEFEAT"
+      ]
+    },
+    "gorilla-arms": {
+      "families": [
+        "GEAR_EQUIP",
+        "TRIGGER_STEAL",
+        "TURN_HISTORY",
+        "STEAL_CONTROL",
+        "CONDITION_GIG"
+      ]
+    },
+    "goro-takemura-hands-unclean": {
+      "families": [
+        "GO_SOLO",
+        "KEYWORD_BLOCKER"
+      ]
+    },
+    "goro-takemura-losing-his-way": {
+      "families": [
+        "TRIGGER_ATTACK",
+        "CONDITION_BOARD",
+        "TEMPORARY_BUFF"
+      ]
+    },
+    "goro-takemura-vengeful-bodyguard": {
+      "families": [
+        "KEYWORD_QUICK",
+        "SPEND_ABILITY",
+        "TEMPORARY_BUFF",
+        "CONDITION_BOARD",
+        "CONDITION_GIG",
+        "TRIGGER_BLOCKER_USED",
+        "DISCARD",
+        "DRAW"
+      ]
+    },
+    "gunpoint-diplomacy": {
+      "families": [
+        "CONDITION_STREET_CRED",
+        "RIVAL_CHOICE",
+        "MODAL_CHOICE",
+        "ATTACK_PERMISSION",
+        "DURATION_DELAYED",
+        "TEMPORARY_BUFF"
+      ]
+    },
+    "hacked-corpo": {
+      "families": [
+        "TRIGGER_PLAY",
+        "DECK_SEARCH_REVEAL",
+        "TRASH_RECURSION"
+      ]
+    },
+    "hanako-arasaka-daughter-of-the-emperor": {
+      "families": [
+        "SPEND_ABILITY",
+        "STEAL_CONTROL",
+        "TRIGGER_START_OF_TURN",
+        "DRAW",
+        "SCALED_AMOUNT",
+        "CONDITION_GIG"
+      ]
+    },
+    "hanako-arasaka-in-a-gilded-cage": {
+      "families": [
+        "TRIGGER_PLAY",
+        "DECK_SEARCH_REVEAL",
+        "CONDITION_GIG"
+      ]
+    },
+    "heywood-ripperdoc": {
+      "families": [
+        "TRIGGER_PLAY",
+        "UNIT_DEFEAT",
+        "CONDITION_GIG",
+        "DRAW"
+      ]
+    },
+    "industrial-assembly": {
+      "families": [
+        "GIG_ADJUST",
+        "CONDITION_GIG",
+        "DRAW"
+      ]
+    },
+    "jacked-in-voodoo-boy": {
+      "families": [
+        "ATTACK_PERMISSION",
+        "TURN_HISTORY"
+      ]
+    },
+    "jackie-welles-mama-s-favorite": {
+      "families": [
+        "GO_SOLO",
+        "REPLACEMENT_EFFECT",
+        "EDDIE_ECONOMY"
+      ]
+    },
+    "jackie-welles-pour-one-out-for-me": {
+      "families": [
+        "TRIGGER_CARD_PLAYED",
+        "TURN_HISTORY",
+        "GIG_ADJUST",
+        "CONDITION_GIG",
+        "DRAW"
+      ]
+    },
+    "jackie-welles-ride-or-die-choom": {
+      "families": [
+        "TRIGGER_ATTACK",
+        "TEMPORARY_BUFF",
+        "SCALED_AMOUNT",
+        "CONDITION_GIG",
+        "TRIGGER_DEFEATED",
+        "DRAW"
+      ]
+    },
+    "japantown-jonin": {
+      "families": [
+        "TRIGGER_PLAY",
+        "TEMPORARY_BUFF"
+      ]
+    },
+    "johnny-silverhand-never-stop-fighting": {
+      "families": [
+        "TRIGGER_FIGHT_RESULT",
+        "TURN_HISTORY",
+        "SPEND_OR_READY",
+        "FIGHT_MODIFIER",
+        "CONDITION_BOARD"
+      ],
+      "note": "Erratum 01: the Beta Iconic Rare printing cannot be sold either; sellability, not a mechanic."
+    },
+    "johnny-silverhand-rocking-renegade": {
+      "families": [
+        "SPEND_ABILITY",
+        "ATTACK_PERMISSION",
+        "CONDITION_BOARD",
+        "TEMPORARY_BUFF",
+        "COST_MODIFIER",
+        "SCALED_AMOUNT",
+        "CONDITION_GIG"
+      ]
+    },
+    "judy-a-lvarez-braindance-maestro": {
+      "families": [
+        "TRIGGER_CARD_PLAYED",
+        "CONDITION_BOARD",
+        "TEMPORARY_BUFF",
+        "SPEND_ABILITY",
+        "DECK_SEARCH_REVEAL",
+        "TRASH_RECURSION"
+      ]
+    },
+    "judy-a-lvarez-nothing-to-doubt": {
+      "families": [
+        "SPEND_ABILITY",
+        "DECK_SEARCH_REVEAL",
+        "PLAY_BY_EFFECT"
+      ],
+      "note": "Erratum 04 changes the artist credit only."
+    },
+    "kerry-eurodyne-axe-attitude-audience": {
+      "families": [
+        "GIG_ROLL",
+        "CONDITION_GIG",
+        "DRAW"
+      ]
+    },
+    "kerry-eurodyne-the-last-rockerboy": {
+      "families": [
+        "SPEND_ABILITY",
+        "CONDITION_GIG",
+        "DRAW"
+      ]
+    },
+    "kiroshi-optics": {
+      "families": [
+        "GEAR_EQUIP",
+        "TRIGGER_ATTACK",
+        "LEGEND_LOOK"
+      ],
+      "note": "Erratum 02 changes reminder text only."
+    },
+    "la-llorona-ghost-of-the-past": {
+      "families": [
+        "KEYWORD_BLOCKER",
+        "TRIGGER_BLOCKER_USED",
+        "GIG_ADJUST"
+      ]
+    },
+    "les-e-le-mens": {
+      "families": [
+        "UNIT_ZONE_MOVE",
+        "CONDITION_BOARD"
+      ]
+    },
+    "live-with-the-aftermath": {
+      "families": [
+        "MASS_EFFECT",
+        "UNIT_DEFEAT"
+      ]
+    },
+    "lizzy-wizzy-delicate-weapon": {
+      "families": [
+        "TRIGGER_PLAY",
+        "PLAY_BY_EFFECT",
+        "UNIT_ZONE_MOVE",
+        "KEYWORD_BLOCKER"
+      ]
+    },
+    "maelstrom-goons": {
+      "families": [
+        "TRIGGER_STEAL",
+        "CONDITION_BOARD",
+        "DISCARD"
+      ]
+    },
+    "maelstrom-zealots": {
+      "families": [
+        "TRIGGER_FIGHT_RESULT",
+        "UNIT_DEFEAT"
+      ]
+    },
+    "maman-brigitte-spirit-of-death": {
+      "families": [
+        "TRIGGER_PLAY",
+        "DISCARD",
+        "UNIT_ZONE_MOVE",
+        "CONDITION_BOARD"
+      ]
+    },
+    "mandibular-upgrade": {
+      "families": [
+        "GEAR_EQUIP",
+        "KEYWORD_BLOCKER"
+      ]
+    },
+    "mantis-blades": {
+      "families": [
+        "GEAR_EQUIP"
+      ]
+    },
+    "maxtac-av": {
+      "families": [
+        "TRIGGER_PLAY",
+        "STEAL_CONTROL"
+      ]
+    },
+    "maxtac-heavy": {
+      "families": [
+        "COST_MODIFIER",
+        "SCALED_AMOUNT"
+      ]
+    },
+    "maxtac-squadron": {
+      "families": [
+        "TRIGGER_END_OF_TURN",
+        "CONDITION_BOARD",
+        "SPEND_OR_READY"
+      ]
+    },
+    "maxtac-suppression-team": {
+      "families": [
+        "ATTACK_PERMISSION"
+      ]
+    },
+    "memory-relapse": {
+      "families": [
+        "SPEND_OR_READY",
+        "DURATION_DELAYED",
+        "CONDITION_STREET_CRED",
+        "DRAW"
+      ]
+    },
+    "meredith-stout-stone-cold-corpo": {
+      "families": [
+        "KEYWORD_BLOCKER",
+        "FIGHT_MODIFIER",
+        "TRIGGER_OTHER_EVENT",
+        "TRASH_RECURSION"
+      ]
+    },
+    "minotaur": {
+      "families": [
+        "TRIGGER_PLAY",
+        "CONDITION_STREET_CRED",
+        "UNIT_DEFEAT"
+      ]
+    },
+    "misty-olszewski-mender-of-broken-spirits": {
+      "families": [
+        "ATTACK_PERMISSION",
+        "TRIGGER_END_OF_TURN",
+        "DECK_SEARCH_REVEAL",
+        "EDDIE_ECONOMY"
+      ]
+    },
+    "modded-kusanagi": {
+      "families": [
+        "KEYWORD_ADRENALINE",
+        "TRIGGER_END_OF_TURN",
+        "UNIT_ZONE_MOVE"
+      ]
+    },
+    "modded-muramasa": {
+      "families": [
+        "TRIGGER_END_OF_TURN",
+        "CONDITION_STREET_CRED",
+        "SPEND_OR_READY"
+      ]
+    },
+    "mox-inciters": {
+      "families": [
+        "TRIGGER_PLAY",
+        "ATTACK_PERMISSION",
+        "DURATION_DELAYED",
+        "KEYWORD_BLOCKER"
+      ]
+    },
+    "mt0d12-flathead": {
+      "families": [
+        "ATTACK_PERMISSION",
+        "CONDITION_STREET_CRED"
+      ]
+    },
+    "muamar-reyes-el-capita-n": {
+      "families": [
+        "TRIGGER_CALL",
+        "MODAL_CHOICE",
+        "FIGHT_MODIFIER",
+        "DRAW",
+        "SPEND_ABILITY",
+        "GIG_ADJUST"
+      ]
+    },
+    "nadia-fighting-through-grief": {
+      "families": [
+        "ATTACK_PERMISSION",
+        "CONDITION_GIG"
+      ]
+    },
+    "netwatch-netdriver": {
+      "families": [
+        "GEAR_EQUIP",
+        "TRIGGER_WHEN_SPENT",
+        "DRAW"
+      ]
+    },
+    "nocturne-op55-n1": {
+      "families": [
+        "COST_MODIFIER",
+        "CONDITION_BOARD",
+        "MODAL_CHOICE",
+        "DRAW",
+        "ATTACK_PERMISSION",
+        "DURATION_DELAYED",
+        "GO_SOLO"
+      ],
+      "note": "Erratum 03 changes the artist credit only."
+    },
+    "octant": {
+      "families": [
+        "COST_MODIFIER",
+        "SCALED_AMOUNT",
+        "CONDITION_GIG"
+      ]
+    },
+    "offduty-malfini": {
+      "families": [
+        "TRIGGER_PLAY",
+        "SPEND_OR_READY"
+      ]
+    },
+    "over-the-edge": {
+      "families": [
+        "UNIT_DEFEAT",
+        "CONDITION_GIG"
+      ]
+    },
+    "overwatch-panam-s-gift": {
+      "families": [
+        "GEAR_EQUIP",
+        "KEYWORD_QUICK",
+        "SPEND_ABILITY",
+        "DISCARD",
+        "UNIT_DEFEAT",
+        "CONDITION_BOARD"
+      ],
+      "note": "No equip reminder text; [Spend] on a Gear. See rules question Q1."
+    },
+    "pacifica-netrunner": {
+      "families": [
+        "TRIGGER_PLAY",
+        "CONDITION_STREET_CRED",
+        "SPEND_OR_READY",
+        "DURATION_DELAYED"
+      ]
+    },
+    "padre-man-of-the-cross": {
+      "families": [
+        "TRIGGER_CALL",
+        "MODAL_CHOICE",
+        "SPEND_OR_READY",
+        "DRAW",
+        "SPEND_ABILITY",
+        "GIG_ADJUST"
+      ]
+    },
+    "panam-palmer-nomad-cavalry": {
+      "families": [
+        "SPEND_ABILITY",
+        "GEAR_EQUIP",
+        "GEAR_MOVE_OR_SACRIFICE",
+        "SPEND_OR_READY",
+        "TRIGGER_END_OF_TURN",
+        "CONDITION_BOARD"
+      ]
+    },
+    "panam-palmer-strength-through-family": {
+      "families": [
+        "FREE_CALL",
+        "TRIGGER_ATTACK",
+        "DISCARD",
+        "DRAW",
+        "SCALED_AMOUNT"
+      ]
+    },
+    "peace-offering": {
+      "families": [
+        "GIG_ADJUST",
+        "CONDITION_GIG",
+        "DRAW"
+      ]
+    },
+    "pepe-najarro-working-doubles": {
+      "families": [
+        "TRIGGER_ATTACK",
+        "CONDITION_GIG",
+        "SPEND_OR_READY",
+        "CONDITION_BOARD"
+      ]
+    },
+    "placide-voodoo-sentinel": {
+      "families": [
+        "TRIGGER_PLAY",
+        "TRIGGER_ATTACK",
+        "DISCARD",
+        "UNIT_ZONE_MOVE"
+      ]
+    },
+    "psycho-squad": {
+      "families": [
+        "VANILLA"
+      ]
+    },
+    "pyramid-song": {
+      "families": [
+        "MODAL_CHOICE",
+        "CONDITION_GIG",
+        "TEMPORARY_BUFF",
+        "UNIT_ZONE_MOVE",
+        "CONDITION_BOARD"
+      ]
+    },
+    "rebecca-having-a-moment": {
+      "families": [
+        "PROMO_NO_TEXT"
+      ]
+    },
+    "reboot-optics": {
+      "families": [
+        "KEYWORD_QUICK",
+        "FIGHT_MODIFIER",
+        "DURATION_DELAYED"
+      ]
+    },
+    "riding-nomad": {
+      "families": [
+        "KEYWORD_ADRENALINE"
+      ]
+    },
+    "riot-shield": {
+      "families": [
+        "GEAR_EQUIP",
+        "KEYWORD_BLOCKER",
+        "COST_MODIFIER",
+        "GO_SOLO"
+      ]
+    },
+    "rita-wheeler-no-stupid-questions": {
+      "families": [
+        "KEYWORD_BLOCKER",
+        "TRIGGER_WHEN_SPENT",
+        "TURN_HISTORY",
+        "DRAW",
+        "DISCARD"
+      ]
+    },
+    "river-ward-detective-on-the-hunt": {
+      "families": [
+        "KEYWORD_QUICK",
+        "SPEND_ABILITY",
+        "PLAY_BY_EFFECT",
+        "GEAR_EQUIP",
+        "TRIGGER_OTHER_EVENT",
+        "CONDITION_BOARD",
+        "DECK_SEARCH_REVEAL"
+      ]
+    },
+    "rockn-rockerboy": {
+      "families": [
+        "VANILLA"
+      ]
+    },
+    "rogue-amendiares-preem-solo": {
+      "families": [
+        "GO_SOLO",
+        "TRIGGER_STEAL",
+        "CONDITION_GIG",
+        "DRAW",
+        "DISCARD"
+      ]
+    },
+    "rogue-amendiares-queen-of-the-afterlife": {
+      "families": [
+        "TRIGGER_STEAL",
+        "TURN_HISTORY",
+        "CONDITION_GIG",
+        "EDDIE_ECONOMY",
+        "KEYWORD_QUICK",
+        "SPEND_ABILITY",
+        "TEMPORARY_BUFF",
+        "SCALED_AMOUNT"
+      ]
+    },
+    "royce-don-t-call-me-simon": {
+      "families": [
+        "TRIGGER_PLAY",
+        "UNIT_DEFEAT",
+        "CONDITION_STREET_CRED"
+      ]
+    },
+    "royce-psycho-on-the-edge": {
+      "families": [
+        "GO_SOLO",
+        "STATIC_MODIFIER",
+        "SCALED_AMOUNT",
+        "GEAR_EQUIP"
+      ],
+      "note": "Admitted revision covers the static power query only; Go Solo and combat as a Legend-as-Unit remain unsupported (docs/executable-card-coverage.md)."
+    },
+    "ruthless-lowlife": {
+      "families": [
+        "ATTACK_PERMISSION"
+      ]
+    },
+    "saburo-arasaka-stubborn-patriarch": {
+      "families": [
+        "STATIC_MODIFIER"
+      ]
+    },
+    "safety-override": {
+      "families": [
+        "KEYWORD_QUICK",
+        "DURATION_DELAYED",
+        "TRIGGER_FIGHT_RESULT",
+        "UNIT_DEFEAT"
+      ]
+    },
+    "sandayu-oda-hanako-s-guardian": {
+      "families": [
+        "TRIGGER_PLAY",
+        "SPEND_OR_READY",
+        "SCALED_AMOUNT",
+        "CONDITION_GIG",
+        "ATTACK_PERMISSION"
+      ]
+    },
+    "sandevistan": {
+      "families": [
+        "GEAR_EQUIP",
+        "TRIGGER_END_OF_TURN",
+        "SPEND_OR_READY"
+      ]
+    },
+    "sasha-yakovleva-won-t-let-you-down": {
+      "families": [
+        "GO_SOLO",
+        "TRIGGER_ATTACK",
+        "DECK_SEARCH_REVEAL",
+        "TEMPORARY_BUFF",
+        "SCALED_AMOUNT",
+        "TRIGGER_DEFEATED",
+        "DISCARD"
+      ]
+    },
+    "satori-sword-of-saburo": {
+      "families": [
+        "GEAR_EQUIP",
+        "TRIGGER_FIGHT_RESULT",
+        "DRAW"
+      ]
+    },
+    "saul-bright-stormrider": {
+      "families": [
+        "STATIC_MODIFIER",
+        "TRIGGER_END_OF_TURN",
+        "SPEND_OR_READY"
+      ]
+    },
+    "screw-lovelorn-fool": {
+      "families": [
+        "TRIGGER_DEFEATED",
+        "TRASH_RECURSION"
+      ]
+    },
+    "secondhand-bombus": {
+      "families": [
+        "KEYWORD_BLOCKER"
+      ]
+    },
+    "shattered-memories": {
+      "families": [
+        "MASS_EFFECT",
+        "DISCARD",
+        "DRAW",
+        "CONDITION_GIG"
+      ]
+    },
+    "sketchy-ripper": {
+      "families": [
+        "TRIGGER_ATTACK",
+        "DECK_SEARCH_REVEAL"
+      ]
+    },
+    "swordwise-huscle": {
+      "families": [
+        "TRIGGER_ATTACK",
+        "CONDITION_BOARD",
+        "DRAW"
+      ]
+    },
+    "synapse-burnout": {
+      "families": [
+        "KEYWORD_QUICK",
+        "TEMPORARY_BUFF",
+        "SCALED_AMOUNT",
+        "FIGHT_MODIFIER"
+      ]
+    },
+    "t-bug-amateur-philosopher": {
+      "families": [
+        "TRIGGER_DEFEATED",
+        "LEGEND_LOOK",
+        "FREE_CALL"
+      ]
+    },
+    "take-control": {
+      "families": [
+        "KEYWORD_QUICK",
+        "STEAL_CONTROL",
+        "CONDITION_BOARD",
+        "DRAW"
+      ]
+    },
+    "tetratronic-rippler": {
+      "families": [
+        "GEAR_EQUIP",
+        "TRIGGER_WHEN_SPENT",
+        "DECK_SEARCH_REVEAL"
+      ]
+    },
+    "the-heist": {
+      "families": [
+        "DECK_SEARCH_REVEAL",
+        "TRASH_RECURSION",
+        "CONDITION_GIG",
+        "PLAY_BY_EFFECT",
+        "GEAR_EQUIP"
+      ]
+    },
+    "the-relic-experimental-biochip": {
+      "families": [
+        "GEAR_EQUIP",
+        "TRIGGER_DEFEATED",
+        "PLAY_BY_EFFECT",
+        "UNIT_ZONE_MOVE"
+      ],
+      "note": "No equip reminder text; 'this Unit' on a Gear. See rules questions Q1 and Q2."
+    },
+    "three-mouths-one-desire": {
+      "families": [
+        "DECK_SEARCH_REVEAL",
+        "SCALED_AMOUNT",
+        "CONDITION_GIG"
+      ]
+    },
+    "towerfall": {
+      "families": [
+        "MODAL_CHOICE",
+        "CONDITION_STREET_CRED",
+        "MASS_EFFECT",
+        "TEMPORARY_BUFF",
+        "UNIT_ZONE_MOVE",
+        "CONDITION_BOARD"
+      ]
+    },
+    "trauma-team-operatives": {
+      "families": [
+        "COST_MODIFIER",
+        "SCALED_AMOUNT"
+      ]
+    },
+    "trust-no-one": {
+      "families": [
+        "GIG_ADJUST",
+        "CONDITION_GIG",
+        "DRAW"
+      ]
+    },
+    "tyger-s-whisper": {
+      "families": [
+        "TRIGGER_PLAY",
+        "FREE_CALL"
+      ]
+    },
+    "unlikely-bond": {
+      "families": [
+        "UNIT_ZONE_MOVE",
+        "CONDITION_BOARD"
+      ]
+    },
+    "v-corporate-exile": {
+      "families": [
+        "GO_SOLO"
+      ]
+    },
+    "v-roamer-of-the-badlands": {
+      "families": [
+        "TRIGGER_STEAL",
+        "GIG_ADJUST",
+        "TRIGGER_END_OF_TURN",
+        "CONDITION_GIG",
+        "DRAW"
+      ]
+    },
+    "v-streetkid": {
+      "families": [
+        "TRIGGER_CALL",
+        "DECK_SEARCH_REVEAL",
+        "TRASH_RECURSION",
+        "CONDITION_BOARD",
+        "GO_SOLO"
+      ]
+    },
+    "valentino-guerrera": {
+      "families": [
+        "ATTACK_PERMISSION",
+        "CONDITION_STREET_CRED"
+      ]
+    },
+    "valentino-street-racer": {
+      "families": [
+        "TRIGGER_PLAY",
+        "TEMPORARY_BUFF",
+        "KEYWORD_ADRENALINE",
+        "CONDITION_BOARD"
+      ]
+    },
+    "viktor-vektor-drop-your-illusions": {
+      "families": [
+        "COST_MODIFIER",
+        "TURN_HISTORY",
+        "CONDITION_BOARD"
+      ]
+    },
+    "viktor-vektor-sit-down-and-relax": {
+      "families": [
+        "TRIGGER_CALL",
+        "DECK_SEARCH_REVEAL"
+      ]
+    },
+    "viktor-vektor-you-might-feel-a-little-pinch": {
+      "families": [
+        "TRIGGER_PLAY",
+        "PLAY_BY_EFFECT",
+        "GEAR_EQUIP",
+        "CONDITION_BOARD"
+      ]
+    },
+    "wakako-okada-peace-and-harmony": {
+      "families": [
+        "TRIGGER_CALL",
+        "MODAL_CHOICE",
+        "TEMPORARY_BUFF",
+        "DRAW",
+        "SPEND_ABILITY",
+        "GIG_ADJUST"
+      ]
+    },
+    "we-gotta-live-together": {
+      "families": [
+        "COST_MODIFIER",
+        "CONDITION_GIG",
+        "PLAY_BY_EFFECT"
+      ]
+    },
+    "westbrook-netrunner": {
+      "families": [
+        "TRIGGER_PLAY",
+        "DURATION_DELAYED",
+        "STEAL_CONTROL",
+        "CONDITION_GIG"
+      ]
+    },
+    "wild-in-the-streets": {
+      "families": [
+        "UNIT_DEFEAT",
+        "CONDITION_BOARD"
+      ]
+    },
+    "wraith-marauders": {
+      "families": [
+        "TRIGGER_STEAL",
+        "SPEND_OR_READY",
+        "CONDITION_BOARD",
+        "CONDITION_GIG"
+      ]
+    },
+    "yorinobu-arasaka-embracing-destruction": {
+      "families": [
+        "TRIGGER_ATTACK",
+        "TURN_HISTORY",
+        "CONDITION_BOARD",
+        "DRAW",
+        "CONDITION_STREET_CRED",
+        "DISCARD"
+      ]
+    },
+    "yorinobu-arasaka-steel-dragon": {
+      "families": [
+        "TRIGGER_PLAY",
+        "PLAY_BY_EFFECT",
+        "ATTACK_PERMISSION",
+        "TRIGGER_OTHER_EVENT",
+        "TURN_HISTORY",
+        "CONDITION_BOARD",
+        "DRAW"
+      ]
+    },
+    "zetatech-berserk": {
+      "families": [
+        "GEAR_EQUIP",
+        "COST_MODIFIER",
+        "SCALED_AMOUNT"
+      ],
+      "note": "No equip reminder text. See rules question Q1."
+    },
+    "zetatech-faceplate": {
+      "families": [
+        "GEAR_EQUIP",
+        "TRIGGER_WHEN_SPENT",
+        "GIG_ADJUST",
+        "CONDITION_GIG",
+        "DRAW"
+      ]
+    }
+  },
+  "rulesQuestions": [
+    {
+      "id": "Q1",
+      "cards": [
+        "overwatch-panam-s-gift",
+        "zetatech-berserk",
+        "the-relic-experimental-biochip"
+      ],
+      "question": "These Gear print no equip reminder text. Are they equipped like every other Gear (Kiroshi erratum says all Gear share the reminder), and what does [Spend] on Overwatch spend: the Gear's host?"
+    },
+    {
+      "id": "Q2",
+      "cards": [
+        "the-relic-experimental-biochip"
+      ],
+      "question": "The Relic is a Gear whose [Defeated] says 'bottom-deck this Unit'. Is 'this Unit' the Gear itself, its host, or the played Unit; and does [Defeated] fire when the Gear or its host is defeated?"
+    },
+    {
+      "id": "Q3",
+      "cards": [
+        "adam-smasher-ender-of-legends",
+        "sasha-yakovleva-won-t-let-you-down"
+      ],
+      "question": "Do [Play], [Attack] and [Defeated] on a Legend fire when it is played or acts through [Go Solo], and does [Defeated] fire when a Go Solo Legend is removed from the game instead of trashed?"
+    },
+    {
+      "id": "Q4",
+      "cards": [
+        "johnny-silverhand-rocking-renegade",
+        "sandayu-oda-hanako-s-guardian"
+      ],
+      "question": "'Can attack spent rival Units the turn it's played': does it apply to a Unit already played this turn, only to one played later this turn, or both?"
+    },
+    {
+      "id": "Q5",
+      "cards": [
+        "rogue-amendiares-preem-solo",
+        "westbrook-netrunner"
+      ],
+      "question": "When does a Legend steal a Gig: only as a Go Solo Unit, or also some other way? Westbrook restricts 'rival Legends' stealing."
+    },
+    {
+      "id": "Q6",
+      "cards": [
+        "alt-cunningham-mother-of-daemons",
+        "gorilla-arms",
+        "appetite-for-destruction",
+        "take-control"
+      ],
+      "question": "How do steal modifiers stack in one attack: an extra steal (Gorilla Arms, Appetite), 'steals 1 fewer' (Take Control) and a prevented steal (Alt: Mother of Daemons), including the 10-power extra steal?"
+    },
+    {
+      "id": "Q7",
+      "cards": [
+        "jackie-welles-mama-s-favorite",
+        "deadman-transmitter"
+      ],
+      "question": "Two replacement effects for the same defeat (Mama's Favorite and Deadman Transmitter): who chooses the order, and does defeating Jackie 'instead' remove it from the game or trash it?"
+    },
+    {
+      "id": "Q8",
+      "cards": [
+        "netwatch-netdriver",
+        "tetratronic-rippler",
+        "zetatech-faceplate",
+        "arasaka-emergency-radioport",
+        "rita-wheeler-no-stupid-questions",
+        "alt-cunningham-mother-of-daemons"
+      ],
+      "question": "Which spending counts as 'is spent' (attacking, using [Blocker], paying a [Spend] cost, being spent by a rival effect such as Corporate Surveillance), and does a card that enters the field spent trigger it?"
+    },
+    {
+      "id": "Q9",
+      "cards": [
+        "kerry-eurodyne-axe-attitude-audience"
+      ],
+      "question": "Does the reroll replace the first result before 'min or max value' draws are checked, and does a Gig rolled as a d20 at its max also count as a max for the d20 draw-3 clause only once?"
+    },
+    {
+      "id": "Q10",
+      "cards": [
+        "muamar-reyes-el-capita-n"
+      ],
+      "question": "Muamar's '[Spend] Adjust a Gig by 1' (no 'up to'): must it change the value, and in which direction may it go at a die's min or max?"
+    },
+    {
+      "id": "Q11",
+      "cards": [
+        "shattered-memories"
+      ],
+      "question": "'Each player discards their hand and may draw 5': who decides each player's draw, and in which order do players act?"
+    },
+    {
+      "id": "Q12",
+      "cards": [
+        "misty-olszewski-mender-of-broken-spirits"
+      ],
+      "question": "Misty chooses among card types 'Unit, Gear and Program'. Is Legend a choosable type (a Legend can't be in the deck), and is the list exhaustive?"
+    }
+  ]
+}

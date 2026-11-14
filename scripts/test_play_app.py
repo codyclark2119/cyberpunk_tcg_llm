@@ -34,7 +34,8 @@ sys.path.insert(0, str(REPO_ROOT))
 from fastapi.testclient import TestClient
 
 from games.cyberpunk.local_match import SEAT_MODEL_FIELDS, load_default_setup
-from games.cyberpunk.play_app import (HUMAN_REASON, PLAY_HTML, build_play_app, is_loopback, mlx_available,
+from games.cyberpunk.play_app import (COVERAGE_REPORT, HUMAN_REASON, PLAY_HTML, PlayError, build_play_app, is_loopback,
+                                      load_coverage, mlx_available,
                                       training_dir_for)
 from games.cyberpunk.policy_bot import DEFAULT_DECISION_BUDGET_MS, baseline_action_id
 from games.cyberpunk.policy_prompt import PROMPT_VERSION, SYSTEM_PROMPT
@@ -80,7 +81,9 @@ def test_page_is_the_play_ui_and_self_contained():
                    'kv("Agrees with baseline"', 'kv("Raw output", d.rawOutput)', "agreementText(REC.summary.agreement)",
                    "s.modelRevision", 'id="bTraining"', "CONFIG.trainingDir",
                    # The Audit tab (scripts/test_audit_match_records.py exercises /api/audit).
-                   'data-tab="audit"', "/api/audit", "renderAudit"):
+                   'data-tab="audit"', "/api/audit", "renderAudit",
+                   # The Coverage tab.
+                   'data-tab="coverage"', "/api/coverage", "renderCoverage", 'id="cFamily"'):
         assert needle in PLAY_HTML, needle
 
 
@@ -348,6 +351,33 @@ def test_token_is_required_when_one_is_set_and_loopback_needs_none():
         assert guarded.get("/api/records", headers={"x-token": "sekret"}).status_code == 200
         assert guarded.get("/?t=sekret").status_code == 200
         assert guarded.get("/api/records").status_code == 200, "token cookie was not kept"
+
+
+def test_coverage_tab_serves_the_committed_report_and_refuses_others():
+    response = client().get("/api/coverage")
+    assert response.status_code == 200, response.text
+    report = response.json()
+    committed = json.loads(COVERAGE_REPORT.read_text(encoding="utf-8"))
+    assert report == committed and report["kind"] == "CYBERPUNK_CARD_COVERAGE_V1"
+    totals = report["totals"]
+    assert totals["cards"] == len(report["cards"]) == totals["admitted"] + totals["notAdmitted"]
+    assert all(c["blockingFamilies"] == [] for c in report["cards"] if c["admission"] == "SOURCE_MATCH")
+    names = {f["family"] for f in report["families"]}
+    assert all(set(c["families"]) <= names for c in report["cards"])
+    with tempfile.TemporaryDirectory() as tmp:
+        missing = Path(tmp) / "none.json"
+        try:
+            load_coverage(missing)
+            raise AssertionError("a missing report must be refused")
+        except PlayError as exc:
+            assert exc.status == 404 and "coverage:cards" in str(exc)
+        wrong = Path(tmp) / "wrong.json"
+        wrong.write_text(json.dumps({"kind": "SOMETHING_ELSE"}), encoding="utf-8")
+        try:
+            load_coverage(wrong)
+            raise AssertionError("a report of another kind must be refused")
+        except PlayError as exc:
+            assert exc.status == 500
 
 
 def run(node):

@@ -1,44 +1,18 @@
-import { createHash } from "node:crypto";
-import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { CardRevisionSnapshotSchema } from "@tcg/domain";
 import { demoReferenceContext } from "../tests/demo-format-fixture";
-import { EngineCandidateManifestV1Schema, EngineCardCandidateV1Schema, reviewEngineCandidateCatalogV1 } from "./lib/engine-candidates";
+import { reviewEngineCandidateCatalogV1 } from "./lib/engine-candidates";
+import { loadVerifiedCandidates } from "./lib/card-coverage";
 
 function arg(name: string) {
     const i = process.argv.indexOf(name);
     return i >= 0 ? process.argv[i + 1] : undefined;
 }
-function sha256(data: string | Buffer) {
-    return createHash("sha256").update(data).digest("hex");
-}
-function readJson(path: string) { return JSON.parse(readFileSync(path, "utf8")); }
-function readJsonl(path: string) {
-    return readFileSync(path, "utf8").split(/\r?\n/).filter(Boolean).map(line => JSON.parse(line));
-}
 
 // Usage: npm run review:engine-candidates -- [--candidate-dir data/engine-candidates] [--strict-reviewed]
 const candidateDir = resolve(arg("--candidate-dir") ?? fileURLToPath(new URL("../data/engine-candidates", import.meta.url)));
-const aiRoot = resolve(candidateDir, "../..");
-const manifestPath = resolve(candidateDir, "manifest.v1.json");
-const catalogPath = resolve(candidateDir, "card-catalog.v1.jsonl");
-const manifest = EngineCandidateManifestV1Schema.parse(readJson(manifestPath));
-const catalogBytes = readFileSync(catalogPath);
-if (sha256(catalogBytes) !== manifest.catalogSha256) throw new Error("candidate catalog SHA-256 does not match manifest");
-const candidates = readJsonl(catalogPath).map(value => EngineCardCandidateV1Schema.parse(value));
-if (candidates.length !== manifest.recordCount) throw new Error(`candidate record count ${candidates.length} != manifest ${manifest.recordCount}`);
-const errataCount = candidates.reduce((n, candidate) => n + candidate.errata.length, 0);
-if (errataCount !== manifest.errataCount) throw new Error(`candidate errata count ${errataCount} != manifest ${manifest.errataCount}`);
-for (const [pathKey, hashKey] of [
-    ["cardDatabasePath", "cardDatabaseSha256"],
-    ["cardIndexPath", "cardIndexSha256"],
-    ["errataPath", "errataSha256"]
-] as const) {
-    const sourcePath = resolve(aiRoot, manifest.source[pathKey]);
-    const actual = sha256(readFileSync(sourcePath));
-    if (actual !== manifest.source[hashKey]) throw new Error(`${pathKey} SHA-256 does not match manifest`);
-}
+const { manifest, candidates } = loadVerifiedCandidates(candidateDir);
 
 const reviewedCards = demoReferenceContext().content.cards
     .filter(card => card.schemaVersion === 2 && card.provenance.reviewed)
