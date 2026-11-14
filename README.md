@@ -874,3 +874,36 @@ python scripts/build_engine_tf_items.py --check     # regenerate and compare byt
 python scripts/build_engine_tf_items.py --verify 40 # replay 40 committed items on the engine
 python scripts/test_engine_tf_items.py
 ```
+
+### Engine oracle position catalog
+
+`scripts/build_oracle_positions.py` builds the catalog that the planned `engine_check` assistant tool
+will search (plan section 4, PR 1). It writes `data/oracle/positions-v1.jsonl`, an index of real engine
+positions, plus `positions-v1.manifest.json`. Games are played the same way as for the engine-tf
+items: Demo decks, baseline policy on both seats, one position per Main phase or React Step decision.
+The seeds come from their own prefix, `engine-oracle-v1-<n>`. The engine-tf items (`engine-tf-v1`) and
+the tool's future held-out eval (`engine-oracle-eval-v1`) use other prefixes, and the tests check that
+no seed is shared. Each row has:
+
+- a stable `position_id`, the seed, decision index and state hash;
+- public facts for each card the acting seat can see: slug, side, area, ready or spent (in play only),
+  lagging, played this turn, cost, and for its own hand whether its ready payment pieces cover the cost;
+- every action the engine offers, with its kind, source and target slug, label and `actionId`. Each
+  `DECLARE_ATTACK` also lists the targets the engine offers next, read from a copy of the state;
+- the engine identity.
+
+The seat-visibility check that the engine-tf items use runs on every row. The shared helpers live in
+`games/cyberpunk/engine_positions.py`. Full states are not committed; they are cached in the gitignored
+`local/oracle-cache/`. `load_position(position_id)` reads one, or on a miss replays that one seed. It
+raises `stale_positions` if the engine identity or the worker-recomputed state hash disagrees with the
+index.
+
+Limits: only the 29 Demo cards can appear. Facts are only what the acting seat sees. "Not offered" is a
+fact about the listed positions, not a rule reason. The manifest reports per-card coverage and the
+cards never seen in some state.
+
+```bash
+python scripts/build_oracle_positions.py          # about 2 minutes; writes the index, manifest and cache
+python scripts/build_oracle_positions.py --check  # regenerate and compare bytes (also in the tests)
+python scripts/test_engine_positions.py
+```
