@@ -66,7 +66,7 @@ py-local-match       | quick | "$PY" scripts/test_local_match.py               |
 py-local-prompt      | quick | "$PY" scripts/test_local_prompt.py              | line:PASS local prompt: 13/13
 py-training-records  | quick | "$PY" scripts/test_training_records.py         | line:PASS training records: 12/12
 py-validation-console| quick | "$PY" scripts/test_validation_console.py        | line:PASS validation console: 8/8
-py-play-app          | quick | "$PY" scripts/test_play_app.py                  | line:PASS local play UI: 13/13
+py-play-app          | quick | "$PY" scripts/test_play_app.py                  | line:PASS local play UI: 14/14
 py-strength-eval     | quick | "$PY" scripts/test_strength_eval.py             | line:PASS strength eval: 10/10
 py-assistant-tools   | quick | "$PY" scripts/test_assistant_tools.py           | line:PASS assistant tools: 17/17
 py-assistant-decks   | quick | "$PY" scripts/test_assistant_deck_tools.py      | line:PASS assistant deck tools: 12/12

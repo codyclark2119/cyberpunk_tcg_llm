@@ -47,6 +47,10 @@ The "Audit" tab replays chosen records (or all of them) on the engine worker wit
 and shows each record's verdict (clean, stale, mismatch, unreadable), its problems,
 and per policy the model choices, fallback reasons, error codes and baseline
 agreement (docs/local-match-audit.md).
+The "Coverage" tab shows ``data/engine-candidates/card-coverage.v1.json`` (written by
+``npm run coverage:cards``): which of the snapshot's cards the engine can execute,
+the mechanic families each card still needs, and the open rules questions
+(docs/card-coverage-inventory.md).
 
 The app is the monitor's ``build_app`` (token middleware and job routes) with
 its generic console page replaced by this one.
@@ -99,6 +103,8 @@ PROMPT_SIZE_MAX_MATCHES = 5
 PROMPT_SIZE_CHARS_PER_TOKEN = 3.0
 # The Audit tab replays at most this many records per request.
 AUDIT_MAX_RECORDS = 200
+# The Coverage tab's report, written by ``npm run coverage:cards``.
+COVERAGE_REPORT = REPO_ROOT / "data" / "engine-candidates" / "card-coverage.v1.json"
 # Model slots and prompt-version slots the Strength tab offers per run.
 STRENGTH_MODEL_SLOTS = 3
 STRENGTH_PROMPT_SLOTS = 2
@@ -106,6 +112,19 @@ STRENGTH_DEFAULT_MATCHES = 20
 # Public card-catalog fields the page may show for a card the observation names.
 CARD_FIELDS = ("displayName", "name", "type", "colors", "power", "printedCost", "ram", "keywords",
                "tags", "rulesText")
+
+
+def load_coverage(path: Path = COVERAGE_REPORT) -> dict:
+    """The card coverage report, refused unless it is the V1 report the CLI writes."""
+    try:
+        report = json.loads(Path(path).read_text(encoding="utf-8"))
+    except FileNotFoundError:
+        raise PlayError(f"No coverage report at {path}; run npm run coverage:cards.", 404) from None
+    except (OSError, ValueError) as exc:
+        raise PlayError(f"Coverage report unreadable: {exc}", 500) from None
+    if not isinstance(report, dict) or report.get("kind") != "CYBERPUNK_CARD_COVERAGE_V1":
+        raise PlayError("Coverage report is not a CYBERPUNK_CARD_COVERAGE_V1 report.", 500)
+    return report
 
 
 def mlx_available() -> bool:
@@ -613,7 +632,8 @@ class PlayState:
 
 def build_play_app(records_dir: Path = DEFAULT_OUTPUT_DIR, *, token: str | None = None, node: str = "node",
                    setup_loader: Callable[[], MatchSetup] | None = None, mlx_model: str | None = None,
-                   mlx_adapter: str | None = None, strength_models: list[str] | None = None):
+                   mlx_adapter: str | None = None, strength_models: list[str] | None = None,
+                   coverage_path: Path = COVERAGE_REPORT):
     """The FastAPI app: the monitor's app (token, job routes) plus the play, record and strength routes.
 
     ``strength_models`` are the model directories the Strength tab may launch
@@ -726,6 +746,13 @@ def build_play_app(records_dir: Path = DEFAULT_OUTPUT_DIR, *, token: str | None 
                 return refused(PlayError("Send a JSON object."))
             try:
                 return await play.audit(payload)
+            except PlayError as exc:
+                return refused(exc)
+
+        @app.get("/api/coverage")
+        def coverage():
+            try:
+                return load_coverage(coverage_path)
             except PlayError as exc:
                 return refused(exc)
 
@@ -853,7 +880,7 @@ pre{white-space:pre-wrap;word-break:break-word;font-size:12px;max-height:360px;o
 </head>
 <body>
 <header><h1>Cyberpunk TCG local play</h1>
-<nav><button data-tab="play" class="on">Play a bot</button><button data-tab="bots">Bot vs bot</button><button data-tab="records">Match records</button><button data-tab="prompt">Prompt size</button><button data-tab="strength">Strength</button><button data-tab="audit">Audit</button></nav>
+<nav><button data-tab="play" class="on">Play a bot</button><button data-tab="bots">Bot vs bot</button><button data-tab="records">Match records</button><button data-tab="prompt">Prompt size</button><button data-tab="strength">Strength</button><button data-tab="audit">Audit</button><button data-tab="coverage">Coverage</button></nav>
 <span class="muted" id="hdr"></span></header>
 <main>
 <section id="play" class="on">
@@ -948,6 +975,22 @@ pre{white-space:pre-wrap;word-break:break-word;font-size:12px;max-height:360px;o
   <div class="panel" id="aList"></div>
   <div id="aOut"></div>
 </section>
+<section id="coverage">
+  <div class="panel">
+    <div class="row">
+      <label>Admission<select id="cStatus"><option value="">all</option><option value="admitted">admitted</option><option value="not">not admitted</option></select></label>
+      <label>Type<select id="cType"><option value="">all</option></select></label>
+      <label>Color<select id="cColor"><option value="">all</option></select></label>
+      <label>Family<select id="cFamily"><option value="">all</option></select></label>
+      <button class="ghost" id="cRefresh">Refresh</button>
+    </div>
+    <div class="muted">Which snapshot cards the engine can execute (a reviewed revision whose source matches) and the mechanic
+      families each card's text needs. Families are review notes, never mechanics; a card still enters only through reviewed
+      admission. Regenerate with <code>npm run coverage:cards</code>.</div>
+    <div class="err" id="cErr"></div>
+  </div>
+  <div id="cOut"></div>
+</section>
 <section id="records">
   <div class="panel"><div class="row"><button class="ghost" id="rRefresh">Refresh</button><span class="muted" id="rDir"></span></div>
   <div id="rList"></div></div>
@@ -989,6 +1032,7 @@ document.querySelectorAll("nav button").forEach(b => b.addEventListener("click",
   if (b.dataset.tab === "bots") loadHistory();
   if (b.dataset.tab === "strength") loadStrength();
   if (b.dataset.tab === "audit") loadAuditList();
+  if (b.dataset.tab === "coverage") loadCoverage();
 }));
 function showTab(name) { document.querySelector('nav button[data-tab="' + name + '"]').click(); }
 
@@ -1259,6 +1303,52 @@ function renderAudit(report) {
       h("div", {class: "muted"}, "engine " + report.engine.version + " / " + report.engine.artifactHash.slice(0, 12) + ", setup " + report.setup),
       h("table", {}, h("tr", {}, ["Policy", "Decisions", "Model choices", "Fallbacks", "Reasons", "Error codes", "Baseline agreement"].map(x => h("th", {}, x))), policies)),
     h("div", {class: "panel"}, h("table", {}, h("tr", {}, ["Verdict", "Record", "Status", "Replayed", "Counts per seat", "Problems"].map(x => h("th", {}, x))), rows)));
+}
+
+/* ---------- coverage ---------- */
+let COV = null;
+async function loadCoverage(force) {
+  $("cErr").textContent = "";
+  if (COV && !force) { renderCoverage(); return; }
+  try { COV = await api("/api/coverage"); } catch (e) { $("cErr").textContent = e.message; $("cOut").replaceChildren(); return; }
+  const keep = id => $(id).value;
+  const opts = (id, values) => { const v = keep(id); fill($(id), [""].concat(values)); $(id).options[0].textContent = "all"; $(id).value = values.includes(v) ? v : ""; };
+  opts("cType", [...new Set(COV.cards.map(c => c.type))].sort());
+  opts("cColor", [...new Set(COV.cards.flatMap(c => c.colors))].sort());
+  opts("cFamily", COV.families.map(f => f.family).sort());
+  renderCoverage();
+}
+["cStatus", "cType", "cColor", "cFamily"].forEach(id => $(id).addEventListener("change", () => renderCoverage()));
+$("cRefresh").addEventListener("click", () => loadCoverage(true));
+function coverageFilter(c) {
+  const st = $("cStatus").value, ty = $("cType").value, co = $("cColor").value, fa = $("cFamily").value;
+  if (st === "admitted" && c.admission !== "SOURCE_MATCH") return false;
+  if (st === "not" && c.admission === "SOURCE_MATCH") return false;
+  if (ty && c.type !== ty) return false;
+  if (co && !c.colors.includes(co)) return false;
+  if (fa && !c.families.includes(fa)) return false;
+  return true;
+}
+function renderCoverage() {
+  if (!COV) return;
+  const t = COV.totals, cards = COV.cards.filter(coverageFilter);
+  const fams = COV.families.map(f => h("tr", {},
+    h("td", {class: "click", onclick: () => { $("cFamily").value = f.family; renderCoverage(); }}, f.family),
+    h("td", {class: f.status === "COVERED" ? "" : "warn"}, f.status), h("td", {}, f.cardCount), h("td", {}, f.notAdmittedCount),
+    h("td", {}, f.soleBlockerCount), h("td", {}, f.summary)));
+  const rows = cards.map(c => h("tr", {},
+    h("td", {}, c.cardId), h("td", {}, c.displayName), h("td", {}, c.type), h("td", {}, c.colors.join(" ")),
+    h("td", {class: c.admission === "SOURCE_MATCH" ? "" : "warn"}, c.admission + (c.revision === null ? "" : " r" + c.revision)),
+    h("td", {}, c.families.join(", ")), h("td", {}, c.blockingFamilies.join(", ")), h("td", {}, c.note || "")));
+  const qs = COV.rulesQuestions.map(q => h("li", {}, h("b", {}, q.id + " "), q.question, h("span", {class: "muted"}, " (" + q.cards.join(", ") + ")")));
+  $("cOut").replaceChildren(
+    h("div", {class: "panel"}, h("div", {class: "banner"}, t.admitted + " of " + t.cards + " cards executable; " + t.notAdmitted + " not admitted (" +
+        t.notAdmittedOnlyCoveredFamilies + " need only covered families)"),
+      h("div", {class: "muted"}, "catalog " + COV.snapshot.catalogSha256.slice(0, 12) + ", families reviewed " + COV.snapshot.familiesReviewedAt),
+      h("table", {}, h("tr", {}, ["Family", "Engine support", "Cards", "Not admitted", "Sole blocker", "What it covers"].map(x => h("th", {}, x))), fams)),
+    h("div", {class: "panel"}, h("div", {class: "muted"}, cards.length + " cards shown"),
+      h("table", {}, h("tr", {}, ["Slug", "Name", "Type", "Colors", "Admission", "Families", "Still needs", "Note"].map(x => h("th", {}, x))), rows)),
+    h("div", {class: "panel"}, h("div", {class: "banner"}, "Open rules questions"), h("ul", {}, qs)));
 }
 
 /* ---------- strength ---------- */
