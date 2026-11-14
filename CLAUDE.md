@@ -53,6 +53,7 @@ python scripts/test_assistant_tools.py && python scripts/test_assistant_deck_too
 python scripts/test_assistant_loop.py && python scripts/test_assistant_ui.py
 python scripts/test_assistant_eval.py && python scripts/test_assistant_retrieval.py
 python scripts/test_tf_dataset.py   # rules-only true/false LoRA set: mutations, balance, leak guard
+python scripts/test_engine_tf_items.py   # engine-verified legality items: replays labels on the engine
 python scripts/check_deck_rules.py --negative-control
 ```
 

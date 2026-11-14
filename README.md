@@ -780,3 +780,39 @@ python scripts/eval_assistant.py --set data/gold/quiz_mc_2026-11-13.jsonl --mode
 python scripts/eval_assistant.py --set data/gold/quiz_mc_2026-11-13.jsonl --model models/qwen3-8b-4bit --adapter models/adapters/rules-tf-v1 --name q2-tf1-8b-s3 --max-tokens 4096 --sample 40 --seed 3 --pass-mark 35
 python scripts/eval_assistant.py --set data/gold/official_basic_test.jsonl --model models/qwen3-8b-4bit --adapter models/adapters/rules-tf-v1 --name off-tf1-8b --max-tokens 4096 --pass-mark 34
 ```
+
+### Engine-verified legality items
+
+`scripts/build_engine_tf_items.py` writes a second kind of training item,
+`data/datasets/sources/engine-positions-v1.jsonl` (plus `engine-positions-v1.manifest.json`):
+"Can you do X now?" questions about real game positions, labelled by the engine. The 8B assistant
+misjudges ready/spent, attack targets, timing and costs, and the engine is the authority on all of
+them: at each decision point it lists exactly the legal actions. The script plays the fixed Demo decks
+on the engine worker with the baseline policy on both seats (24 seeds), and at Main phase and React
+Step decisions asks about five action kinds: declaring an attack, an attack's target (the offered
+attack is applied to a copy of the state to see which targets the engine then offers), playing a card
+from hand, selling, and using [BLOCKER]. A Yes item describes an action the engine offers; a No item a
+plausible one in the same position that it does not offer (a spent or lagging attacker, a ready
+target, a card the seat cannot pay for, a non-[QUICK] card in the React Step, a card without a Sell
+Tag, a second sale, a spent or non-Blocker Unit). Questions use only the acting seat's public
+observation (a hidden card in a text fails the build); Python decides no label.
+
+A consistency audit gives each item a signature (its class and every fact its text states, card
+identities left out) and drops every item whose signature carries both labels: such a text is missing
+a deciding fact. On the committed snapshot no signature conflicts; the manifest counts it per class.
+No items whose facts show no reason are never kept. Each class and reason cites one rule id from
+`data/processed/rules.jsonl` (checked, fail closed), which the target quotes later. Items are deduped,
+capped per (class, label, card), exactly 50/50 per class and overall, and pass the same leak guard as
+the template set. `build_tf_dataset.py --scenarios` accepts the file (`kind: "engine-position"`,
+validated strictly, cards preloaded with `get_card` as the scorer does); no set is built from it yet.
+
+Limits: only the admitted Demo card pool (25 cards appear), only legality questions, and only positions
+the baseline policy reaches with the two Demo decks; the label holds for this engine version (recorded
+in each item's provenance with the seed, decks, decision index and state hash).
+
+```bash
+python scripts/build_engine_tf_items.py             # about 3 minutes; needs node and npm dependencies
+python scripts/build_engine_tf_items.py --check     # regenerate and compare bytes (also in the tests)
+python scripts/build_engine_tf_items.py --verify 40 # replay 40 committed items on the engine
+python scripts/test_engine_tf_items.py
+```
