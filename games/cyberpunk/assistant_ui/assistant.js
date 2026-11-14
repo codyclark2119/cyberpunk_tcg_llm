@@ -153,9 +153,88 @@ function retrievalRows(report) {
   }
   return rows;
 }
+// Where a held deck came from, as people say it. The one place internal source values get a label;
+// any value not listed here is shown as it is.
+const DECK_SOURCE_LABELS = {public_deck: "public deck", text: "pasted list", pasted: "pasted list", deck: "deck structure"};
+function deckSourceLabel(value) {
+  return Object.prototype.hasOwnProperty.call(DECK_SOURCE_LABELS, value) ? DECK_SOURCE_LABELS[value] : String(value ?? "");
+}
+// A turn's sources by kind, each a list of distinct strings (anything else is dropped).
+function sourceGroups(sources) {
+  const s = sources || {};
+  const list = (ids) => [...new Set((Array.isArray(ids) ? ids : []).filter((id) => typeof id === "string" && id))];
+  return {cards: list(s.card_slugs), rules: list(s.rule_ids), errata: list(s.errata_ids), decks: list(s.deck_ids),
+    chunks: list(s.chunk_ids)};
+}
+// A public deck's name from the /api/decks index, or a short form of its id until the index loads.
+function deckName(id, decks) {
+  const found = (decks || []).find((d) => d && d.id === id);
+  return found && found.name ? found.name : "deck " + String(id).slice(0, 8);
+}
+// Session persistence: the session id the server knows this chat by, and the last turns as the
+// /api/chat route returned them, so a reload shows the same log and continues the same session.
+const SESSION_ID_RE = /^[A-Za-z0-9_-]{1,64}$/;
+const MAX_KEPT_TURNS = 30;
+function validSessionId(value) {
+  return typeof value === "string" && SESSION_ID_RE.test(value);
+}
+function capTurns(turns, max = MAX_KEPT_TURNS) {
+  return (Array.isArray(turns) ? turns : [])
+    .filter((t) => t && typeof t.question === "string" && t.data && typeof t.data === "object" && !Array.isArray(t.data))
+    .slice(-max);
+}
+// How many history messages the server held after the last kept turn (0 for none or a new chat).
+function lastHistory(turns) {
+  const kept = capTurns(turns);
+  const n = kept.length ? kept[kept.length - 1].data.historyMessages : 0;
+  return typeof n === "number" && n > 0 ? n : 0;
+}
+// The server keeps history per session and makes a new, empty one for an id it does not know (after
+// a restart, or when it dropped the oldest sessions). It cannot say so, but the reply's
+// historyMessages can: had it kept ours, an answered turn would hold more than this turn's two
+// messages, and a refused one would hold what it held before.
+function sessionLost(previousHistory, data) {
+  if (!(previousHistory > 0) || !data || typeof data.historyMessages !== "number") return false;
+  return data.historyMessages <= (data.ok ? 2 : 0);
+}
+function elapsedText(ms) {
+  return "waiting " + Math.max(0, Math.floor((ms || 0) / 1000)) + " s";
+}
 // pure:end
 
-const state = {tools: [], current: null, decks: [], lastDeck: null, maxToolCalls: 6, busy: false};
+// Theme ---------------------------------------------------------------------------------
+// Dark by default; light on request. With no stored choice the page follows the system
+// setting (the stylesheet does that by itself). The script sits in <head>, so a stored choice is
+// on <html> before the body is parsed or painted: no flash of the other theme. The choice is a
+// per-browser convenience, so storage failures are ignored.
+const THEME_KEY = "cyberpunk-assistant-theme";
+(function applyStoredTheme() {
+  let stored = null;
+  try { stored = localStorage.getItem(THEME_KEY); } catch (err) { stored = null; }
+  if (stored === "light" || stored === "dark") document.documentElement.setAttribute("data-theme", stored);
+})();
+function systemTheme() {
+  return window.matchMedia && window.matchMedia("(prefers-color-scheme: light)").matches ? "light" : "dark";
+}
+function currentTheme() {
+  const set = document.documentElement.getAttribute("data-theme");
+  return set === "light" || set === "dark" ? set : systemTheme();
+}
+function showThemeToggle() {
+  const next = currentTheme() === "dark" ? "light" : "dark";
+  const button = $("themeToggle");
+  button.textContent = next === "light" ? "Light" : "Dark";
+  button.setAttribute("aria-label", "Switch to the " + next + " theme");
+}
+function toggleTheme() {
+  const next = currentTheme() === "dark" ? "light" : "dark";
+  document.documentElement.setAttribute("data-theme", next);
+  try { localStorage.setItem(THEME_KEY, next); } catch (err) { /* private window or blocked storage */ }
+  showThemeToggle();
+}
+
+const state = {tools: [], current: null, decks: [], lastDeck: null, maxToolCalls: 6, busy: false, serverHistory: 0,
+  abort: null, waitTimer: null};
 // Arguments the schema types do not fully describe get their own control.
 const LONG_TEXT = 1000;
 const $ = (id) => document.getElementById(id);
@@ -167,9 +246,9 @@ function el(tag, attrs, text) {
   return node;
 }
 
-async function postJson(url, body) {
+async function postJson(url, body, signal) {
   const response = await fetch(url, {method: "POST", headers: {"Content-Type": "application/json"},
-    body: JSON.stringify(body)});
+    body: JSON.stringify(body), signal});
   let data;
   try { data = await response.json(); } catch (err) { data = {ok: false, error: "HTTP " + response.status}; }
   return [response, data];
@@ -183,7 +262,6 @@ function showTab(name) {
   }
   if (name === "Eval" && !evalState.loaded) loadEval().catch((err) => { $("evalSetStatus").textContent = "Could not load: " + err; });
 }
-for (const b of document.querySelectorAll("nav button")) b.addEventListener("click", () => showTab(b.dataset.tab));
 
 // Status badges ---------------------------------------------------------------------
 const MODEL_TEXT = {none: "no model configured", idle: "model idle (loads on first question)", loading: "model loading …",
@@ -214,7 +292,42 @@ function newSession() {
   crypto.getRandomValues(bytes);
   return Array.from(bytes, (b) => b.toString(16).padStart(2, "0")).join("");
 }
-const chatSession = newSession();
+// The session id and the log live in this tab's session storage: a reload keeps them, a new tab
+// starts its own chat. Every access is inside a try; without storage the page works as before.
+const SESSION_KEY = "cyberpunk-assistant-session", LOG_KEY = "cyberpunk-assistant-log", DECK_KEY = "cyberpunk-assistant-deck";
+function storeGet(key) {
+  try { return sessionStorage.getItem(key); } catch (err) { return null; }
+}
+function storeSet(key, value) {
+  try { sessionStorage.setItem(key, value); return true; } catch (err) { return false; }
+}
+function storeRemove(key) {
+  try { sessionStorage.removeItem(key); } catch (err) { /* blocked storage: nothing was kept */ }
+}
+function storedJson(key, fallback) {
+  try { return JSON.parse(storeGet(key) || "null") ?? fallback; } catch (err) { return fallback; }
+}
+function loadSessionId() {
+  const kept = storeGet(SESSION_KEY);
+  if (validSessionId(kept)) return kept;
+  const fresh = newSession();
+  storeSet(SESSION_KEY, fresh);
+  return fresh;
+}
+const chatSession = loadSessionId();
+let keptTurns = [];
+// Keep the last turns; when storage is full, drop the oldest until the rest fit.
+function rememberTurn(question, data) {
+  keptTurns = capTurns(keptTurns.concat([{question, data}]));
+  for (let turns = keptTurns; turns.length; turns = turns.slice(1)) {
+    if (storeSet(LOG_KEY, JSON.stringify(turns))) return;
+  }
+  storeRemove(LOG_KEY);
+}
+function forgetTurns() {
+  keptTurns = [];
+  storeRemove(LOG_KEY);
+}
 
 function jsonPre(label, value) {
   const wrap = el("div");
@@ -245,26 +358,80 @@ function traceRow(step) {
 
 function sourceButtons(sources) {
   const box = el("div", {class: "sources"});
-  const s = sources || {};
-  const slugs = s.card_slugs || [], rules = s.rule_ids || [], errata = s.errata_ids || [];
-  if (!slugs.length && !rules.length && !errata.length) return null;
+  const g = sourceGroups(sources);
+  if (!g.cards.length && !g.rules.length && !g.errata.length && !g.decks.length && !g.chunks.length) return null;
   box.appendChild(el("span", {class: "muted"}, "Sources:"));
   // Cited cards: a slug placeholder each, replaced by a compact tile once the batch route answers.
-  if (slugs.length) {
+  if (g.cards.length) {
     const cards = el("div", {class: "srccards"});
-    for (const slug of slugs) cards.appendChild(tileButton(slug));
+    for (const slug of g.cards) cards.appendChild(tileButton(slug));
     box.appendChild(cards);
   }
-  for (const id of rules) {
+  for (const id of g.rules) {
     const b = el("button", {type: "button", title: "rule from get_rule"}, "rule " + id);
     b.addEventListener("click", () => showSource("get_rule", {rule_id: id}, "rule " + id));
     box.appendChild(b);
   }
-  if (errata.length) box.appendChild(el("span", {class: "muted"}, errata.length + " erratum/errata applied"));
+  // Public decks a deck tool compared against: a chip each that opens the deck in the side panel.
+  for (const id of g.decks) {
+    const b = el("button", {type: "button", class: "deckchip", "data-deck": id, title: "public deck " + id}, deckName(id, state.decks));
+    b.addEventListener("click", () => showDeck(id));
+    box.appendChild(b);
+  }
+  if (g.errata.length) box.appendChild(el("span", {class: "muted"}, g.errata.length + " erratum/errata applied"));
+  // Passages search_rules returned: a count, with the ids one click away.
+  if (g.chunks.length) {
+    const d = el("details", {class: "chunks"});
+    d.appendChild(el("summary", {}, g.chunks.length + " passage(s) searched"));
+    const ul = el("ul", {class: "plain"});
+    for (const id of g.chunks) ul.appendChild(el("li", {}, id));
+    d.appendChild(ul);
+    box.appendChild(d);
+  }
   return box;
 }
+// Deck chips made before /api/decks answered get their names once it does.
+function nameDeckChips() {
+  for (const b of document.querySelectorAll("button.deckchip[data-deck]")) b.textContent = deckName(b.dataset.deck, state.decks);
+}
+// A cited slug in the answer shows the card's name once its tile is loaded (the same batch request
+// as the Sources tiles); the slug stays in its title and accessible name.
+function nameCite(button) {
+  const slug = button.dataset.card;
+  button.setAttribute("title", slug);
+  fetchTiles([slug]).then(([card]) => {
+    if (!card || !card.display_name) return;
+    button.textContent = card.display_name;
+    button.setAttribute("aria-label", card.display_name + " (card " + slug + ")");
+  }).catch(() => {});
+}
 
-function showTurn(question, data) {
+async function copyText(text) {
+  try {
+    if (navigator.clipboard && window.isSecureContext) { await navigator.clipboard.writeText(text); return true; }
+  } catch (err) { /* fall back to selecting a hidden textarea */ }
+  try {
+    const area = el("textarea", {readonly: "", "aria-hidden": "true", style: "position:fixed;top:-200px;left:0;opacity:0"});
+    area.value = text;
+    document.body.appendChild(area);
+    area.select();
+    const ok = document.execCommand("copy");
+    area.remove();
+    return ok;
+  } catch (err) {
+    return false;
+  }
+}
+function copyButton(text) {
+  const b = el("button", {type: "button", class: "small copy", title: "Copy this answer's text"}, "Copy");
+  b.addEventListener("click", async () => {
+    const ok = await copyText(text);
+    $("chatStatus").textContent = ok ? "Answer copied." : "Could not copy: select the answer and copy it by hand.";
+  });
+  return b;
+}
+
+function showTurn(question, data, restored) {
   $("chatLog").appendChild(el("div", {class: "msg q"}, question));
   const answer = el("div", {class: "msg a"});
   for (const flag of answerFlags(data, state.maxToolCalls)) answer.appendChild(el("div", {class: "flag"}, flag));
@@ -275,6 +442,10 @@ function showTurn(question, data) {
     body.innerHTML = mdToHtml(data.answer || data.error || "No answer.");
   });
   answer.appendChild(body);
+  for (const cite of body.querySelectorAll("button.cite[data-card]")) nameCite(cite);
+  const bar = el("div", {class: "msgtools"});
+  bar.appendChild(copyButton(String(data.answer || data.error || "")));
+  answer.appendChild(bar);
   const src = sourceButtons(data.sources);
   if (src) answer.appendChild(src);
   if (data.trace && data.trace.length) {
@@ -287,7 +458,20 @@ function showTurn(question, data) {
     answer.appendChild(d);
   }
   $("chatLog").appendChild(answer);
-  answer.scrollIntoView({block: "nearest"});
+  if (!restored) answer.scrollIntoView({block: "nearest"});
+}
+
+// After a reload: the kept log, the deck as it was last shown, and the server history count the
+// next reply is checked against.
+function restoreChat() {
+  const turns = capTurns(storedJson(LOG_KEY, []));
+  showHeldDeck(storedJson(DECK_KEY, null), true);
+  if (!turns.length) return;
+  keptTurns = turns;
+  state.serverHistory = lastHistory(turns);
+  $("chatLog").appendChild(el("div", {class: "restored"}, "Restored " + turns.length + " earlier turn(s) from this tab"));
+  for (const t of turns) showTurn(t.question, t.data, true);
+  $("chatStatus").textContent = "Restored the log of this tab's chat. The next question continues it.";
 }
 
 function setBusy(busy) {
@@ -298,31 +482,70 @@ function setBusy(busy) {
   if (busy) statusTimer = setInterval(() => loadStatus().catch(() => {}), 2000);
 }
 
+// While an answer is pending: elapsed seconds and a control that stops waiting for it.
+function startWaiting(controller) {
+  state.abort = controller;
+  const started = Date.now();
+  const timer = $("chatTimer");
+  timer.textContent = elapsedText(0);
+  timer.hidden = false;
+  $("chatStop").hidden = false;
+  clearInterval(state.waitTimer);
+  state.waitTimer = setInterval(() => { timer.textContent = elapsedText(Date.now() - started); }, 1000);
+}
+function stopWaiting() {
+  clearInterval(state.waitTimer);
+  state.waitTimer = null;
+  state.abort = null;
+  $("chatTimer").hidden = true;
+  $("chatStop").hidden = true;
+}
+
 async function sendChat() {
   const question = $("chatInput").value.trim();
   if (!question || state.busy) return;
+  const controller = new AbortController();
   setBusy(true);
+  startWaiting(controller);
   $("chatStatus").textContent = "Working … (the first question also loads the model)";
   loadStatus().catch(() => {});
   try {
     const [response, data] = await postJson("/api/chat", {session: chatSession, message: question,
-      thinking: $("thinkToggle").checked, preload: $("preloadToggle").checked});
+      thinking: $("thinkToggle").checked, preload: $("preloadToggle").checked}, controller.signal);
+    const lost = sessionLost(state.serverHistory, data);
     showTurn(question, data);
-    $("chatStatus").textContent = data.ok ? "" : "Refused (" + (data.error_kind || data.stopReason || response.status) + ")";
+    rememberTurn(question, data);
+    if (typeof data.historyMessages === "number") state.serverHistory = data.historyMessages;
+    if ("deckInContext" in data) showHeldDeck(data.deckInContext);
+    const notice = lost ? "The server no longer had this chat (it may have restarted), so this answer did not see " +
+      "the earlier turns" + (data.deckInContext ? "" : " or a deck loaded before") + "; the chat continues from here. " : "";
+    $("chatStatus").textContent = notice + (data.ok ? "" : "Refused (" + (data.error_kind || data.stopReason || response.status) + ")");
     if (data.ok) $("chatInput").value = "";
   } catch (err) {
-    $("chatStatus").textContent = "Request failed: " + err;
+    $("chatStatus").textContent = err && err.name === "AbortError" ?
+      "Stopped waiting. The model may still finish that answer, and your next question waits for it." :
+      "Request failed: " + err;
   } finally {
+    stopWaiting();
     setBusy(false);
     loadStatus().catch(() => {});
+    $("chatInput").focus();
   }
 }
 
 async function newChat() {
-  const [, data] = await postJson("/api/chat/reset", {session: chatSession});
-  $("chatLog").textContent = "";
-  $("chatStatus").textContent = data.ok ? "New chat: history cleared" + (data.deck ? "; the loaded deck stays until you clear it." : ".") :
-    "Could not reset: " + data.error;
+  if (state.busy) return;
+  try {
+    const [, data] = await postJson("/api/chat/reset", {session: chatSession});
+    if (!data.ok) { $("chatStatus").textContent = "Could not reset: " + data.error; return; }
+    $("chatLog").textContent = "";
+    forgetTurns();
+    state.serverHistory = 0;
+    showHeldDeck(data.deck || null);
+    $("chatStatus").textContent = "New chat: history cleared" + (data.deck ? "; the loaded deck stays until you clear it." : ".");
+  } catch (err) {
+    $("chatStatus").textContent = "Could not start a new chat: " + err + ". The log is unchanged.";
+  }
 }
 
 // Source side panel -------------------------------------------------------------------
@@ -343,7 +566,14 @@ async function showSource(tool, args, label) {
   const body = $("sideBody");
   body.className = "muted";
   body.textContent = "Loading " + tool + " …";
-  const [, data] = await postJson("/api/tools/" + encodeURIComponent(tool), args);
+  let data;
+  try {
+    [, data] = await postJson("/api/tools/" + encodeURIComponent(tool), args);
+  } catch (err) {
+    body.className = "err";
+    body.textContent = "Request failed: " + err;
+    return;
+  }
   body.textContent = "";
   if (!data.ok) { body.className = "err"; body.textContent = (data.error_kind || "error") + ": " + data.error; return; }
   body.className = "";
@@ -498,10 +728,48 @@ async function showCard(slug) {
   body.appendChild(row);
 }
 
+// A public deck from a turn's sources, in the side panel: what parse_deck returns for its id, with a
+// tile per card and a button that loads it into the chat.
+async function showDeck(id) {
+  $("sideTitle").textContent = deckName(id, state.decks);
+  const body = $("sideBody");
+  body.className = "muted";
+  body.textContent = "Loading deck …";
+  let data;
+  try {
+    [, data] = await postJson("/api/tools/parse_deck", {deck_id: id});
+  } catch (err) {
+    body.className = "err";
+    body.textContent = "Request failed: " + err;
+    return;
+  }
+  if (!data.ok || !data.result || !data.result.deck) {
+    body.className = "err";
+    body.textContent = (data.error_kind || "error") + ": " + (data.error || "no deck");
+    return;
+  }
+  const deck = data.result.deck;
+  body.className = "";
+  body.textContent = "";
+  body.appendChild(factsList({name: deck.name, format: (deck.format || {}).name, source: deckSourceLabel((deck.source || {}).kind),
+    cards: (deck.counts || {}).legends + " Legends + " + (deck.counts || {}).deck, id}));
+  const tiles = el("div", {class: "srccards"});
+  for (const c of data.result.cards || []) {
+    const item = el("span", {class: "deckcard"});
+    item.appendChild(el("span", {class: "qty"}, c.quantity + "\u00d7"));
+    item.appendChild(tileButton(c.slug));
+    tiles.appendChild(item);
+  }
+  body.appendChild(tiles);
+  const row = el("div", {class: "row"});
+  const load = el("button", {type: "button", class: "small"}, "Load into this chat");
+  load.addEventListener("click", () => { if (!state.busy) loadDeck({deck_id: id}); });
+  row.appendChild(load);
+  body.appendChild(row);
+}
+
 // Hovering or focusing a cited slug in an answer shows its compact tile, once it is loaded.
-const tilePop = el("div", {id: "tilePop", role: "tooltip"});
-tilePop.hidden = true;
-document.body.appendChild(tilePop);
+let tilePop = null;
 function showPop(target) {
   const card = tileCache.get(target.dataset.card);
   if (!card) return;
@@ -516,17 +784,18 @@ function showPop(target) {
 function citeTarget(event) {
   return event.target && event.target.closest ? event.target.closest("button.cite[data-card]") : null;
 }
-for (const type of ["mouseover", "focusin"]) document.addEventListener(type, (e) => { const t = citeTarget(e); if (t) showPop(t); });
-for (const type of ["mouseout", "focusout"]) document.addEventListener(type, (e) => { if (citeTarget(e)) tilePop.hidden = true; });
-document.addEventListener("keydown", (e) => { if (e.key === "Escape") tilePop.hidden = true; });
 
 // Deck panel ------------------------------------------------------------------------
-function showHeldDeck(brief) {
+// The held deck's line above the log; kept with the log so a reload shows it (marked as last known,
+// since only the next reply says what the server still holds).
+function showHeldDeck(brief, restored) {
   const note = $("deckNote");
   note.textContent = "";
+  if (brief) storeSet(DECK_KEY, JSON.stringify(brief)); else storeRemove(DECK_KEY);
   if (!brief) { note.appendChild(el("span", {class: "muted"}, "No deck loaded.")); return; }
   note.appendChild(el("span", {}, "Deck in context: " + (brief.name || "(unnamed)") + " · " + brief.legends +
-    " Legends + " + brief.deck + " cards" + (brief.format ? " · " + brief.format : "") + " · " + brief.source));
+    " Legends + " + brief.deck + " cards" + (brief.format ? " · " + brief.format : "") + " · " + deckSourceLabel(brief.source) +
+    (restored ? " (as of before the reload)" : "")));
   const clear = el("button", {type: "button", class: "small"}, "Clear");
   clear.addEventListener("click", clearDeck);
   note.appendChild(clear);
@@ -609,11 +878,16 @@ async function loadDeck(args) {
 }
 
 async function clearDeck() {
-  const [, data] = await postJson("/api/deck/clear", {session: chatSession});
-  $("deckResult").textContent = "";
   $("deckStatus").className = "status";
-  $("deckStatus").textContent = data.ok ? "Deck cleared: later questions do not include it." : "Could not clear: " + data.error;
-  showHeldDeck(null);
+  try {
+    const [, data] = await postJson("/api/deck/clear", {session: chatSession});
+    if (!data.ok) { $("deckStatus").textContent = "Could not clear: " + data.error; return; }
+    $("deckResult").textContent = "";
+    $("deckStatus").textContent = "Deck cleared: later questions do not include it.";
+    showHeldDeck(null);
+  } catch (err) {
+    $("deckStatus").textContent = "Request failed: " + err;
+  }
 }
 
 function fillDeckPick() {
@@ -631,7 +905,8 @@ async function loadDecks() {
   if (!response.ok) return;
   state.decks = (await response.json()).decks;
   fillDeckPick();
-  if (state.current) pick(state.current.name);
+  nameDeckChips();
+  if (state.current) pick(state.current.name, true);  // a re-render: the hash stays what the person chose
 }
 
 function deckPicker() {
@@ -1119,75 +1394,66 @@ async function pollRetrJob() {
 }
 
 // Wiring ----------------------------------------------------------------------------
+// The script runs in <head> (so the stored theme applies before anything paints); everything that
+// needs the page's elements waits for them here.
 // Example chips only fill the input box; the question goes through the same path as any other.
-for (const chip of document.querySelectorAll("#chips button")) {
-  chip.addEventListener("click", () => { $("chatInput").value = chip.dataset.example; $("chatInput").focus(); });
+function wireChips() {
+  for (const chip of document.querySelectorAll("#chips button")) {
+    chip.addEventListener("click", () => { $("chatInput").value = chip.dataset.example; $("chatInput").focus(); });
+  }
 }
-$("chatSend").addEventListener("click", sendChat);
-// A citation link in an answer opens its card tile or rule in the side panel.
-$("chatLog").addEventListener("click", (e) => {
-  const cite = e.target.closest ? e.target.closest("button.cite") : null;
-  if (!cite) return;
-  if (cite.dataset.card) showCard(cite.dataset.card).catch((err) => { $("sideBody").textContent = "Could not load: " + err; });
-  else if (cite.dataset.rule) showSource("get_rule", {rule_id: cite.dataset.rule}, "rule " + cite.dataset.rule);
-});
-$("chatInput").addEventListener("keydown", (e) => {
-  if (e.key === "Enter" && !e.shiftKey && !e.isComposing) { e.preventDefault(); sendChat(); }
-});
-$("chatNew").addEventListener("click", () => newChat().catch((err) => { $("chatStatus").textContent = "Request failed: " + err; }));
-$("deckLoadText").addEventListener("click", () => {
-  const text = $("deckText").value.trim();
-  if (text) loadDeck({text}); else $("deckStatus").textContent = "Paste a deck list first.";
-});
-$("deckLoadPick").addEventListener("click", () => {
-  const id = $("deckPick").value;
-  if (id) loadDeck({deck_id: id}); else $("deckStatus").textContent = "Pick a public deck first.";
-});
-$("deckClear").addEventListener("click", () => clearDeck().catch((err) => { $("deckStatus").textContent = "Request failed: " + err; }));
-$("runBtn").addEventListener("click", run);
-$("toolForm").addEventListener("keydown", (e) => {
-  if (e.key === "Enter" && e.target.tagName !== "TEXTAREA") { e.preventDefault(); run(); }
-});
-$("evalSetPick").addEventListener("change", () => loadSet($("evalSetPick").value).catch((err) => { $("evalSetStatus").textContent = "Could not load: " + err; }));
-$("evalRunBtn").addEventListener("click", startEval);
-$("evalRunsRefresh").addEventListener("click", () => loadRuns().catch((err) => { $("evalRuns").textContent = "Could not load: " + err; }));
-$("retrRefresh").addEventListener("click", () => loadRetr().catch((err) => { $("retrReports").textContent = "Could not load: " + err; }));
-$("retrBuildBtn").addEventListener("click", () => startRetrJob(retrState.data ? retrState.data.buildActionId : "build-rules-index", {}));
-$("retrMeasureBtn").addEventListener("click", () => startRetrJob(retrState.data ? retrState.data.measureActionId : "eval-retrieval",
-  {name: $("retrName").value.trim(), force: $("retrForce").checked}));
-showHeldDeck(null);
-loadStatus().catch(() => { $("modelBadge").textContent = "status unavailable"; });
-loadTools().then(loadDecks).catch((err) => { $("status").textContent = "Could not load tools: " + err; });
-// Theme ---------------------------------------------------------------------------------
-// Dark by default; light on request. With no stored choice the page follows the system
-// setting. The choice is a per-browser convenience, so storage failures are ignored.
-const THEME_KEY = "cyberpunk-assistant-theme";
-function systemTheme() {
-  return window.matchMedia && window.matchMedia("(prefers-color-scheme: light)").matches ? "light" : "dark";
-}
-function currentTheme() {
-  const set = document.documentElement.getAttribute("data-theme");
-  return set === "light" || set === "dark" ? set : systemTheme();
-}
-function showThemeToggle() {
-  const next = currentTheme() === "dark" ? "light" : "dark";
-  const button = $("themeToggle");
-  button.textContent = next === "light" ? "Light" : "Dark";
-  button.setAttribute("aria-label", "Switch to the " + next + " theme");
-}
-(function initTheme() {
-  let stored = null;
-  try { stored = localStorage.getItem(THEME_KEY); } catch (err) { stored = null; }
-  if (stored === "light" || stored === "dark") document.documentElement.setAttribute("data-theme", stored);
+
+function wirePage() {
+  for (const b of document.querySelectorAll("nav button")) b.addEventListener("click", () => showTab(b.dataset.tab));
+  tilePop = el("div", {id: "tilePop", role: "tooltip"});
+  tilePop.hidden = true;
+  document.body.appendChild(tilePop);
+  for (const type of ["mouseover", "focusin"]) document.addEventListener(type, (e) => { const t = citeTarget(e); if (t) showPop(t); });
+  for (const type of ["mouseout", "focusout"]) document.addEventListener(type, (e) => { if (citeTarget(e)) tilePop.hidden = true; });
+  document.addEventListener("keydown", (e) => { if (e.key === "Escape") tilePop.hidden = true; });
+  wireChips();
+  $("chatSend").addEventListener("click", sendChat);
+  $("chatStop").addEventListener("click", () => { if (state.abort) state.abort.abort(); });
+  // A citation link in an answer opens its card tile or rule in the side panel.
+  $("chatLog").addEventListener("click", (e) => {
+    const cite = e.target.closest ? e.target.closest("button.cite") : null;
+    if (!cite) return;
+    if (cite.dataset.card) showCard(cite.dataset.card).catch((err) => { $("sideBody").textContent = "Could not load: " + err; });
+    else if (cite.dataset.rule) showSource("get_rule", {rule_id: cite.dataset.rule}, "rule " + cite.dataset.rule);
+  });
+  // Enter sends, Shift+Enter is a new line; nothing is sent while an answer is pending.
+  $("chatInput").addEventListener("keydown", (e) => {
+    if (e.key === "Enter" && !e.shiftKey && !e.isComposing) { e.preventDefault(); sendChat(); }
+  });
+  $("chatNew").addEventListener("click", () => newChat());
+  $("deckLoadText").addEventListener("click", () => {
+    const text = $("deckText").value.trim();
+    if (text) loadDeck({text}); else $("deckStatus").textContent = "Paste a deck list first.";
+  });
+  $("deckLoadPick").addEventListener("click", () => {
+    const id = $("deckPick").value;
+    if (id) loadDeck({deck_id: id}); else $("deckStatus").textContent = "Pick a public deck first.";
+  });
+  $("deckClear").addEventListener("click", () => clearDeck());
+  $("runBtn").addEventListener("click", run);
+  $("toolForm").addEventListener("keydown", (e) => {
+    if (e.key === "Enter" && e.target.tagName !== "TEXTAREA") { e.preventDefault(); run(); }
+  });
+  $("evalSetPick").addEventListener("change", () => loadSet($("evalSetPick").value).catch((err) => { $("evalSetStatus").textContent = "Could not load: " + err; }));
+  $("evalRunBtn").addEventListener("click", startEval);
+  $("evalRunsRefresh").addEventListener("click", () => loadRuns().catch((err) => { $("evalRuns").textContent = "Could not load: " + err; }));
+  $("retrRefresh").addEventListener("click", () => loadRetr().catch((err) => { $("retrReports").textContent = "Could not load: " + err; }));
+  $("retrBuildBtn").addEventListener("click", () => startRetrJob(retrState.data ? retrState.data.buildActionId : "build-rules-index", {}));
+  $("retrMeasureBtn").addEventListener("click", () => startRetrJob(retrState.data ? retrState.data.measureActionId : "eval-retrieval",
+    {name: $("retrName").value.trim(), force: $("retrForce").checked}));
   showThemeToggle();
   if (window.matchMedia) {
     const query = window.matchMedia("(prefers-color-scheme: light)");
     if (query.addEventListener) query.addEventListener("change", showThemeToggle);
   }
-})();
-$("themeToggle").addEventListener("click", () => {
-  const next = currentTheme() === "dark" ? "light" : "dark";
-  document.documentElement.setAttribute("data-theme", next);
-  try { localStorage.setItem(THEME_KEY, next); } catch (err) { /* private window or blocked storage */ }
-  showThemeToggle();
-});
+  $("themeToggle").addEventListener("click", toggleTheme);
+  restoreChat();
+  loadStatus().catch(() => { $("modelBadge").textContent = "status unavailable"; });
+  loadTools().then(loadDecks).catch((err) => { $("status").textContent = "Could not load tools: " + err; });
+}
+if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", wirePage); else wirePage();

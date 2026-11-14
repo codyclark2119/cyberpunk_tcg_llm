@@ -7,6 +7,8 @@
 <title>Cyberpunk TCG assistant</title>
 <style>
 __STYLE__</style>
+<script>
+__SCRIPT__</script>
 </head>
 <body>
 <header>
@@ -26,7 +28,11 @@ __STYLE__</style>
       <div class="chips" id="chips">__EXAMPLES__</div>
       <div class="chatrow">
         <textarea id="chatInput" placeholder="Ask about a card, a rule or a deck (Enter sends, Shift+Enter for a new line)"></textarea>
-        <button class="go" id="chatSend" type="button">Send</button>
+        <div class="sendcol">
+          <button class="go" id="chatSend" type="button">Send</button>
+          <button class="small" id="chatStop" type="button" hidden>Stop waiting</button>
+          <span class="timer" id="chatTimer" hidden></span>
+        </div>
       </div>
       <div class="chatopts">
         <label class="inline"><input type="checkbox" id="thinkToggle"> think first (slower)</label>
@@ -123,7 +129,5 @@ __STYLE__</style>
   </div>
 </section>
 </div>
-<script>
-__SCRIPT__</script>
 </body>
 </html>
