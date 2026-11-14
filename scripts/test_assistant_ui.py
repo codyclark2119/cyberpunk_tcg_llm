@@ -32,6 +32,7 @@ from games.cyberpunk.assistant.decks import public_deck_index
 from games.cyberpunk.assistant.loop import (ASSISTANT_PROMPT_VERSION, DECK_CONTEXT_CLOSE, DECK_CONTEXT_OPEN,
                                             MAX_TOOL_CALLS, SYSTEM_PROMPT, build_messages, run_turn)
 from games.cyberpunk.assistant_app import (ASSISTANT_HTML, EXAMPLE_QUESTIONS, ChatService, build_assistant_app)
+from games.cyberpunk.assistant_ui import UI_DIR, assemble_page
 from games.cyberpunk.prompts import RULES_VERSION
 
 LOCAL = {"host": "127.0.0.1:8767"}
@@ -113,6 +114,46 @@ def test_page_is_self_contained_and_its_script_parses():
                    'id="chatNew"', 'id="deckPick"', 'id="deckClear"', 'id="sideBody"', "__EXAMPLES__"):
         assert (needle in ASSISTANT_HTML) is (needle != "__EXAMPLES__"), needle
     assert ASSISTANT_HTML.index('id="tabTools" hidden') > 0, "the Chat tab is the default"
+
+
+def test_page_is_assembled_from_its_files_with_one_style_and_one_script():
+    assert assemble_page(EXAMPLE_QUESTIONS) == ASSISTANT_HTML
+    assert len(re.findall(r"<style>(.*?)</style>", ASSISTANT_HTML, re.S)) == 1
+    assert ASSISTANT_HTML.count("<style") == 1 and ASSISTANT_HTML.count("<script") == 1
+    for placeholder in ("__STYLE__", "__SCRIPT__", "__EXAMPLES__"):
+        assert placeholder not in ASSISTANT_HTML, placeholder
+    style = re.findall(r"<style>(.*?)</style>", ASSISTANT_HTML, re.S)[0]
+    assert style == "\n" + (UI_DIR / "assistant.css").read_text(encoding="utf-8")
+    assert page_script() == "\n" + (UI_DIR / "assistant.js").read_text(encoding="utf-8")
+
+
+def test_theme_tokens_toggle_and_live_regions():
+    style = re.findall(r"<style>(.*?)</style>", ASSISTANT_HTML, re.S)[0]
+    # The project's cyberpunk palette is the default (dark) theme: acid accent, cyan labels.
+    root = style[style.index(":root{"):]
+    root = root[:root.index("}")]
+    for token in ("--bg:#080b0d", "--panel:#11171a", "--line:#263238", "--ink:#f2f5f2", "--muted:#9aa8a2",
+                  "--acid:#d8ff2f", "--accent:#d8ff2f", "--cyan:#47e8ff", "--warn:#ff6978"):
+        assert token in root, token
+    # The light variant: an explicit choice, or the system setting when nothing explicit is set.
+    assert ':root[data-theme="light"]{' in style
+    assert '@media (prefers-color-scheme: light){:root:not([data-theme="dark"]){' in style
+    assert ":focus-visible{outline:2px solid var(--accent)" in style
+    assert ASSISTANT_HTML.count('id="themeToggle"') == 1
+    toggle = ASSISTANT_HTML[ASSISTANT_HTML.index('id="themeToggle"') - 40:]
+    assert toggle.index("<button") < toggle.index('id="themeToggle"') and 'type="button"' in toggle[:120]
+    script = page_script()
+    assert '$("themeToggle").addEventListener("click"' in script
+    assert 'document.documentElement.setAttribute("data-theme", next)' in script
+    # Storage is a convenience: every access is inside a try, and the page works without it.
+    for access in ("localStorage.getItem(THEME_KEY)", "localStorage.setItem(THEME_KEY, next)"):
+        assert script.count(access) == 1, access
+        line = script[script.rindex("\n", 0, script.index(access)):script.index(access)]
+        assert "try {" in line, access
+    assert script.count("localStorage") == 2
+    for element in ('<div id="chatLog" role="log" aria-live="polite">',
+                    '<div class="status" id="chatStatus" role="status" aria-live="polite">'):
+        assert ASSISTANT_HTML.count(element) == 1, element
 
 
 def test_no_unescaped_html_sinks():
@@ -362,12 +403,17 @@ def test_example_chips_are_suggestions_only():
     assert [label for label, _ in EXAMPLE_QUESTIONS] == ["Rules", "Deckbuilding", "Matchup", "Combo"]
     loop_source = (REPO_ROOT / "games/cyberpunk/assistant/loop.py").read_text(encoding="utf-8")
     app_source = (REPO_ROOT / "games/cyberpunk/assistant_app.py").read_text(encoding="utf-8")
-    app_python = app_source[:app_source.index('ASSISTANT_HTML = r"""')]
+    # The page's files hold a placeholder, never the questions or their name: assemble_page renders
+    # whatever the app passes it.
+    ui_source = "".join(f.read_text(encoding="utf-8") for f in sorted(UI_DIR.iterdir()) if f.is_file())
+    assert "__EXAMPLES__" in ui_source and "EXAMPLE_QUESTIONS" not in ui_source
     for _, question in EXAMPLE_QUESTIONS:
-        assert question not in loop_source and app_python.count(question) == 1, question
+        assert question not in loop_source and app_source.count(question) == 1, question
+        assert question not in ui_source, question
         assert f'data-example="{question}"' in ASSISTANT_HTML
     # Named only in __all__, its definition and the HTML render: no route or helper reads it.
     assert app_source.count("EXAMPLE_QUESTIONS") == 3 and "EXAMPLE_QUESTIONS" not in loop_source
+    assert "ASSISTANT_HTML = assemble_page(EXAMPLE_QUESTIONS)" in app_source
     # The script only copies a chip into the input box.
     script = page_script()
     wiring = script[script.index('document.querySelectorAll("#chips button")'):]
