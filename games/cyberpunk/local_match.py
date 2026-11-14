@@ -107,12 +107,26 @@ def load_default_setup(app_root: str | Path = REPO_ROOT, node: str = "node") -> 
     return MatchSetup(value["content"], value["initialization"], "demo")
 
 
-def load_setup_file(path: str | Path) -> MatchSetup:
-    """Read a JSON object with ``content`` and ``initialization`` (a replay fixture also qualifies)."""
-    value = json.loads(Path(path).read_text(encoding="utf-8"))
+def load_setup_file(path: str | Path, node: str = "node", app_root: str | Path = REPO_ROOT) -> MatchSetup:
+    """Read a setup file: either ``content`` and ``initialization`` (a replay fixture also
+    qualifies), or a deck file ``{"decks": [two {legends, main}]}``.
+
+    A deck file becomes a CONSTRUCTED game on the reviewed content bundle, built by
+    ``scripts/local-match-setup.ts --decks``; the engine's createGame judges the decks.
+    """
+    path = Path(path)
+    value = json.loads(path.read_text(encoding="utf-8"))
+    if isinstance(value, dict) and "decks" in value and "content" not in value:
+        completed = subprocess.run([node, "--import", "tsx", SETUP_SCRIPT, "--decks", str(path.resolve())],
+                                   cwd=Path(app_root).resolve(), capture_output=True, text=True,
+                                   encoding="utf-8", check=False)
+        if completed.returncode != 0:
+            raise ValueError(f"deck file rejected: {completed.stderr.strip()[-500:]}")
+        built = json.loads(completed.stdout)
+        return MatchSetup(built["content"], built["initialization"], f"decks:{path.name}")
     if not isinstance(value, dict) or "content" not in value or "initialization" not in value:
-        raise ValueError("A setup file must be a JSON object with content and initialization.")
-    return MatchSetup(value["content"], value["initialization"], f"file:{Path(path).name}")
+        raise ValueError("A setup file must be a JSON object with content and initialization, or a deck file with two decks.")
+    return MatchSetup(value["content"], value["initialization"], f"file:{path.name}")
 
 
 def _decision(match_id: str, index: int, actor: str, model_input: Mapping[str, Any],

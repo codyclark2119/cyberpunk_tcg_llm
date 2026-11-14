@@ -189,7 +189,7 @@ def main():
     parser.add_argument("--matches", type=int, default=20,
                         help="matches per configuration, even: each seed once per seat (default 20)")
     parser.add_argument("--seed", default="strength", help="seed prefix; seeds are <seed>-0, <seed>-1, ...")
-    parser.add_argument("--setup", type=Path, help="JSON with content and initialization; default: fixed Demo decks")
+    parser.add_argument("--setup", type=Path, help="JSON with content and initialization, or a two-deck file played as CONSTRUCTED; default: fixed Demo decks")
     parser.add_argument("--max-decisions", type=int, default=DEFAULT_MAX_DECISIONS)
     parser.add_argument("--max-turns", type=int, default=DEFAULT_MAX_TURNS)
     parser.add_argument("--output-root", type=Path, default=DEFAULT_OUTPUT_ROOT,
@@ -226,7 +226,7 @@ def main():
     if platform.system() != "Darwin" or platform.machine() != "arm64":
         parser.error("An mlx seat requires native arm64 Python on Apple Silicon macOS")
     logging.basicConfig(level=logging.WARNING, format="%(message)s")
-    setup = load_setup_file(args.setup) if args.setup else load_default_setup(REPO_ROOT, node=args.node)
+    setup = load_setup_file(args.setup, args.node) if args.setup else load_default_setup(REPO_ROOT, node=args.node)
     try:
         return asyncio.run(run(args, setup))
     except (FileExistsError, ValueError) as exc:

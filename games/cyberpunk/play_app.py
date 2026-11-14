@@ -201,7 +201,7 @@ def bot_match_action(records_dir: Path, node: str = "node") -> dict:
              "default": "baseline", "label": "Seat 0 policy"},
             {"key": "seat1", "type": "choice", "choices": list(BOT_POLICIES), "default": "baseline",
              "label": "Seat 1 policy"},
-            {"name": "--setup", "type": "text", "default": "", "label": "Setup file (blank: Demo)"},
+            {"name": "--setup", "type": "text", "default": "", "label": "Setup or deck file (blank: Demo)"},
             {"name": "--max-decisions", "type": "int", "default": DEFAULT_MAX_DECISIONS,
              "label": "Max decisions"},
             {"name": "--max-turns", "type": "int", "default": DEFAULT_MAX_TURNS, "label": "Max turns"},
@@ -472,7 +472,7 @@ class PlayState:
         if target.suffix != ".json" or not target.is_file():
             raise PlayError("setup must name an existing .json file.")
         try:
-            return load_setup_file(target)
+            return await asyncio.to_thread(load_setup_file, target, self.node)
         except (ValueError, OSError) as exc:
             raise PlayError(f"setup file rejected: {exc}") from None
 
@@ -889,7 +889,7 @@ pre{white-space:pre-wrap;word-break:break-word;font-size:12px;max-height:360px;o
       <label>Your seat<select id="pSeat"><option value="0">Seat 0</option><option value="1">Seat 1</option></select></label>
       <label>Bot policy<select id="pPolicy"></select></label>
       <label>Seed<input id="pSeed" placeholder="auto"></label>
-      <label>Setup file<input id="pSetup" placeholder="blank: fixed Demo decks" size="28"></label>
+      <label>Setup file<input id="pSetup" placeholder="blank: Demo; or setup/deck .json" title="Blank plays the fixed Demo decks. A .json file holds either content and initialization, or two decks ({decks: [{legends, main}]}) played as CONSTRUCTED, e.g. tests/fixtures/constructed-reference-decks.v1.json" size="28"></label>
       <label>Max turns<input id="pTurns" type="number" min="0" style="width:80px"></label>
       <label>Bot budget ms<input id="pBudget" type="number" min="1" step="500" style="width:90px"></label>
       <button class="go" id="pStart">Start match</button>
@@ -905,7 +905,7 @@ pre{white-space:pre-wrap;word-break:break-word;font-size:12px;max-height:360px;o
       <label>Seed prefix<input id="bSeed" value="local"></label>
       <label>Seat 0<select id="bP0"></select></label>
       <label>Seat 1<select id="bP1"></select></label>
-      <label>Setup file<input id="bSetup" placeholder="blank: fixed Demo decks" size="24"></label>
+      <label>Setup file<input id="bSetup" placeholder="blank: Demo; or setup/deck .json" title="Blank plays the fixed Demo decks. A .json file holds either content and initialization, or two decks ({decks: [{legends, main}]}) played as CONSTRUCTED, e.g. tests/fixtures/constructed-reference-decks.v1.json" size="24"></label>
       <label>Max decisions<input id="bMaxD" type="number" min="1" style="width:90px"></label>
       <label>Max turns<input id="bMaxT" type="number" min="0" style="width:80px"></label>
       <label>Bot budget ms<input id="bBudget" type="number" min="1" step="500" style="width:90px"></label>
@@ -961,7 +961,7 @@ pre{white-space:pre-wrap;word-break:break-word;font-size:12px;max-height:360px;o
 <section id="audit">
   <div class="panel">
     <div class="row">
-      <label>Setup file<input id="aSetup" placeholder="blank: fixed Demo decks" size="28"></label>
+      <label>Setup file<input id="aSetup" placeholder="blank: Demo; or setup/deck .json" title="Blank plays the fixed Demo decks. A .json file holds either content and initialization, or two decks ({decks: [{legends, main}]}) played as CONSTRUCTED, e.g. tests/fixtures/constructed-reference-decks.v1.json" size="28"></label>
       <button class="go" id="aSelected">Audit selected</button>
       <button class="ghost" id="aAll">Audit all</button>
       <button class="ghost" id="aRefresh">Refresh</button>
