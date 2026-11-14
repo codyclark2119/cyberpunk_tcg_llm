@@ -1,0 +1,586 @@
+{
+ "dataset": "rules-tf-v2",
+ "builder_version": "build-tf-dataset-v2",
+ "sources": [
+  {
+   "path": "data/processed/rules.jsonl",
+   "sha256": "9af082081781af7bd0060ab6065713998d05b22a8636c4bb554031e76bf1523f"
+  },
+  {
+   "path": "data/processed/tournament_rules.jsonl",
+   "sha256": "daec9b7d846672f06a1e23fad0a92b45f8dcff6a1fbd2c8bbeb3f4abb7cb88a1"
+  }
+ ],
+ "item_sources": [
+  {
+   "path": "data/datasets/sources/engine-positions-v1.jsonl",
+   "sha256": "3ba23a3dad713ce86c4b50cf587833c877c7ed5dd0e32adc3bdf99a74daf274b"
+  },
+  {
+   "path": "data/datasets/sources/scenarios-drafted-v1.jsonl",
+   "sha256": "47bab23f91c9bce7fcd3b8b08f2c7ea1d2aa900a753ededc72ff38c073e97827"
+  }
+ ],
+ "card_database": {
+  "path": "data/processed/card_database.jsonl",
+  "sha256": "73cfaedc59d73168779179292b04cd9362f2b48df8d8d95e8d37c4db4863ec72"
+ },
+ "rules_version": "2026-10-29",
+ "tournament_rules_version": "2026-10-28",
+ "assistant_prompt_version": "assistant-chat-v7",
+ "eval_prompt_version": "eval-mc-v1",
+ "prompt_shape": {
+  "built_by": "loop.run_turn with a scripted stand-in model",
+  "question_message": "eval_assistant.question_message",
+  "preload_text": "eval_assistant.preload_text",
+  "preload": true,
+  "preload_k": 5,
+  "preload_chars": 8000,
+  "enable_thinking": true,
+  "max_tokens": 4096,
+  "max_tool_calls": 6,
+  "choices": [
+   "A. Yes",
+   "B. No"
+  ],
+  "cards": "an item with cards preloads get_card on exactly those slugs, as the scorer does",
+  "shapes": {
+   "direct": "preload, then the target (no tool call): the preload shows the rule",
+   "lookup": "preload, one search_rules call, its real result, then the target: the preload does not show the rule and the search does",
+   "lookup-call": "the same item's first step: preload, then the target is the search call itself (mask_prompt trains only the last message, so without this row the call would never be trained)"
+  },
+  "target": "<think> short reasoning </think> + rule quote + one-line conclusion + Answer: X"
+ },
+ "lookup": {
+  "engine_queries": {
+   "attack-declare": "attack with a ready Unit during your Main phase",
+   "attack-target": "which rival Units can be attacked",
+   "block": "when can a Unit use Blocker",
+   "play-from-hand": "spend Eddies to pay the cost of a card",
+   "sell": "sell a card with a Sell Tag"
+  },
+  "other_queries": "the row's lookup_query, else the statement's first 8 content words (no function words, modals, negations or rule ids)",
+  "kept_only_if": "the search result shows what the target quotes: the template's rule sentence word for word, or every cited rule id of a scenario or engine item",
+  "by_kind": {
+   "engine-position": {
+    "needed": 309,
+    "hit": 300,
+    "miss": 9
+   },
+   "rule-template": {
+    "needed": 29,
+    "hit": 1,
+    "miss": 28
+   },
+   "scenario-drafted": {
+    "needed": 59,
+    "hit": 1,
+    "miss": 58
+   }
+  },
+  "kept_by_kind": {
+   "engine-position": 141,
+   "rule-template": 1,
+   "scenario-drafted": 1
+  },
+  "share_max": 0.3,
+  "before_cap": {
+   "items": 836,
+   "lookup_items": 143
+  },
+  "cap_dropped_items": 0,
+  "share": 0.1711,
+  "search_methods": {
+   "lexical-bm25-rules": 397
+  }
+ },
+ "preload_search": {
+  "methods": {
+   "lexical-bm25-rules": 1536
+  },
+  "fallback_reasons": [
+   "no rules index at data/processed/corpus_index.npz (build it on the Mac with scripts/build_rules_index.py)"
+  ],
+  "note": "search_rules falls back to lexical BM25 when no usable rules index exists, as the scorer does; a build where data/processed/corpus_index.npz is usable would record 'hybrid' here"
+ },
+ "split": {
+  "train_rows": 910,
+  "valid_rows": 69,
+  "train_items": 770,
+  "valid_items": 66,
+  "by_kind": {
+   "rule-template": {
+    "by": "source rule id",
+    "hash": "sha256('rules-tf-v1:<rule id>') % 100 < 10"
+   },
+   "scenario-drafted": {
+    "by": "source rule ids (all must hash to the same split, else dropped as split-straddle)",
+    "hash": "sha256('rules-tf-v1:<rule id>') % 100 < 10"
+   },
+   "engine-position": {
+    "by": "seed",
+    "valid_share": 0.1,
+    "hash": "the lowest sha256('rules-tf-v2:seed:<seed>')",
+    "valid_seeds": [
+     "engine-tf-v1-4",
+     "engine-tf-v1-6"
+    ],
+    "seeds": 24
+   }
+  },
+  "items_by_kind_and_split": {
+   "engine-position:train": 380,
+   "engine-position:valid": 20,
+   "rule-template:train": 200,
+   "rule-template:valid": 24,
+   "scenario-drafted:train": 190,
+   "scenario-drafted:valid": 22
+  }
+ },
+ "counts": {
+  "items": 836,
+  "rows": 979,
+  "by_kind": {
+   "engine-position": 400,
+   "rule-template": 224,
+   "scenario-drafted": 212
+  },
+  "by_label": {
+   "A": 418,
+   "B": 418
+  },
+  "by_shape": {
+   "direct": 693,
+   "lookup": 143,
+   "lookup-call": 143
+  },
+  "by_kind_and_shape": {
+   "engine-position:direct": 259,
+   "engine-position:lookup": 141,
+   "engine-position:lookup-call": 141,
+   "rule-template:direct": 223,
+   "rule-template:lookup": 1,
+   "rule-template:lookup-call": 1,
+   "scenario-drafted:direct": 211,
+   "scenario-drafted:lookup": 1,
+   "scenario-drafted:lookup-call": 1
+  },
+  "by_kind_and_label": {
+   "engine-position:A": 200,
+   "engine-position:B": 200,
+   "rule-template:A": 112,
+   "rule-template:B": 112,
+   "scenario-drafted:A": 106,
+   "scenario-drafted:B": 106
+  },
+  "lookup_call_rows_by_label": {
+   "A": 66,
+   "B": 77
+  },
+  "by_class": {
+   "attack-declare": 102,
+   "attack-target": 102,
+   "block": 48,
+   "play-from-hand": 100,
+   "sell": 48
+  },
+  "by_class_and_label": {
+   "attack-declare:A": 51,
+   "attack-declare:B": 51,
+   "attack-target:A": 51,
+   "attack-target:B": 51,
+   "block:A": 24,
+   "block:B": 24,
+   "play-from-hand:A": 50,
+   "play-from-hand:B": 50,
+   "sell:A": 24,
+   "sell:B": 24
+  },
+  "by_no_reason": {
+   "attack-declare:lagging": 17,
+   "attack-declare:outside-main": 17,
+   "attack-declare:spent": 17,
+   "attack-target:ready-target": 51,
+   "block:no-blocker": 19,
+   "block:spent": 5,
+   "play-from-hand:no-equip-target": 1,
+   "play-from-hand:outside-main": 25,
+   "play-from-hand:unaffordable": 24,
+   "sell:already-sold": 6,
+   "sell:no-sell-tag": 14,
+   "sell:outside-main": 4
+  },
+  "by_habit": {
+   "effect-vs-cost": 12,
+   "negated-statement": 40,
+   "permissive": 22,
+   "sequence": 37,
+   "specific-over-general": 17,
+   "state": 47,
+   "tournament": 37
+  },
+  "by_mutation": {
+   "number": 26,
+   "polarity": 190,
+   "quantifier": 6,
+   "side": 2
+  },
+  "by_phrasing": {
+   "question": 279,
+   "statement": 557
+  },
+  "label_by_negation": {
+   "negation": {
+    "A": 200,
+    "B": 162,
+    "yes_share": 0.5525
+   },
+   "no_negation": {
+    "A": 218,
+    "B": 256,
+    "yes_share": 0.4599
+   }
+  },
+  "label_by_negation_by_kind": {
+   "rule-template": {
+    "negation": {
+     "A": 43,
+     "B": 52,
+     "yes_share": 0.4526
+    },
+    "no_negation": {
+     "A": 69,
+     "B": 60,
+     "yes_share": 0.5349
+    }
+   },
+   "scenario-drafted": {
+    "negation": {
+     "A": 37,
+     "B": 28,
+     "yes_share": 0.5692
+    },
+    "no_negation": {
+     "A": 69,
+     "B": 78,
+     "yes_share": 0.4694
+    }
+   },
+   "engine-position": {
+    "negation": {
+     "A": 120,
+     "B": 82,
+     "yes_share": 0.5941
+    },
+    "no_negation": {
+     "A": 80,
+     "B": 118,
+     "yes_share": 0.404
+    }
+   }
+  },
+  "template_balance": {
+   "band": [
+    0.45,
+    0.55
+   ],
+   "limit": [
+    0.4,
+    0.6
+   ],
+   "pairs_dropped": 125
+  },
+  "composition": {
+   "engine_cap": 400,
+   "engine_available": 735,
+   "engine_selected": 400,
+   "engine_kept": 400,
+   "scenarios_kept": 212,
+   "templates_kept": 224
+  },
+  "gold_cards": {
+   "rule": "a scenario-drafted item whose cards include a slug in any gold set's cards field, or a card whose name with subtitle appears in a gold question or choice, is dropped (gold_card_dropped); engine items are only counted",
+   "gold_linked_cards": 37,
+   "scenario_dropped": 24,
+   "engine_pool_using_gold_card": 262,
+   "engine_kept_using_gold_card": 159
+  },
+  "rules_used": 258,
+  "numbered_rules": 732,
+  "document_rules_excluded": [
+   "1.1",
+   "1.2",
+   "1.3"
+  ]
+ },
+ "skips": {
+  "abbreviation": 18,
+  "colon-or-semicolon": 15,
+  "context-pronoun": 119,
+  "context-reference": 139,
+  "cross-reference": 32,
+  "document-meta": 6,
+  "example-text": 25,
+  "fragment": 25,
+  "heading": 131,
+  "length": 81,
+  "list-or-table": 223,
+  "mutation-refused": 28,
+  "no-mutation-applies": 226,
+  "not-a-declarative-sentence": 109,
+  "number-in-condition": 3,
+  "number-label": 2,
+  "number-like-word": 4,
+  "number-several": 8,
+  "number-zero-or-one": 16,
+  "parenthetical": 52,
+  "polarity-descriptive-tournament": 40,
+  "polarity-embedded": 7,
+  "polarity-extra-negation": 24,
+  "polarity-late-copula": 6,
+  "polarity-may-be": 9,
+  "polarity-negative-word": 3,
+  "polarity-other-modal": 1,
+  "polarity-several-sites": 24,
+  "quotation": 29,
+  "side-in-condition": 2,
+  "side-not-restrictive": 4,
+  "side-noun": 28,
+  "side-several": 9,
+  "state-not-restrictive": 1,
+  "state-several": 1,
+  "subordinate-opening": 2,
+  "two-negations": 29
+ },
+ "item_skips": {
+  "engine-position:composition-not-selected": 335,
+  "engine-position:lookup-miss": 9,
+  "rule-template:lookup-miss-pair-dropped": 17,
+  "scenario-drafted:balance-trimmed": 2,
+  "scenario-drafted:gold_card_dropped": 24,
+  "scenario-drafted:lookup-miss": 58,
+  "scenario-drafted:split-straddle": 4
+ },
+ "leak_guard": {
+  "method": "normalised words (lowercase, brackets and punctuation removed); fails on a shared word 8-gram between any row's statement or target (a search call's query included) and any gold question or choice, or a difflib.SequenceMatcher ratio >= 0.8 between a statement and any gold question",
+  "gold_files": [
+   "official_basic_test.jsonl",
+   "quiz_mc_2026-11-12.jsonl",
+   "quiz_mc_2026-11-13.jsonl"
+  ],
+  "gold_questions": 144,
+  "leak_dropped": {
+   "rule-template": 12
+  },
+  "tripped_first_pass": [
+   {
+    "id": "tf-0bf93c77c7f3",
+    "statement": "If an effect requires you to reveal and move a card from a hidden area, you do not have to reveal the card before moving it to another area.",
+    "shared_ngram": "a hidden area you do not have to",
+    "ngram_gold": "official_basic_test.jsonl:official-e1d1543a",
+    "ratio": 0.4127,
+    "ratio_gold": "official_basic_test.jsonl:official-e1d1543a"
+   },
+   {
+    "id": "tf-21744048b12e",
+    "statement": "A game value cannot be a negative number.",
+    "shared_ngram": "a game value can be a negative number",
+    "ngram_gold": "official_basic_test.jsonl:official-1159bb04",
+    "ratio": 0.875,
+    "ratio_gold": "official_basic_test.jsonl:official-1159bb04"
+   },
+   {
+    "id": "tf-280df5c2bf50",
+    "statement": "Players may not use officially released Cyberpunk TCG cards in any language.",
+    "shared_ngram": "may use officially released cyberpunk tcg cards in",
+    "ngram_gold": "quiz_mc_2026-11-12.jsonl:cody-quiz-18",
+    "ratio": 0.6875,
+    "ratio_gold": "quiz_mc_2026-11-12.jsonl:cody-quiz-18"
+   },
+   {
+    "id": "tf-3682f2031f67",
+    "statement": "Can a game value be a negative number?",
+    "shared_ngram": "a game value can be a negative number",
+    "ngram_gold": "official_basic_test.jsonl:official-1159bb04",
+    "ratio": 0.875,
+    "ratio_gold": "official_basic_test.jsonl:official-1159bb04"
+   },
+   {
+    "id": "tf-37e8ff65d5ef",
+    "statement": "If an effect requires you to reveal and move a card from a hidden area, do you have to reveal the card before moving it to another area?",
+    "shared_ngram": "do you have to reveal the card before",
+    "ngram_gold": "official_basic_test.jsonl:official-d67f61fe",
+    "ratio": 0.4407,
+    "ratio_gold": "official_basic_test.jsonl:official-d67f61fe"
+   },
+   {
+    "id": "tf-4a5b1a229b05",
+    "statement": "Are Gig dice represented by d4, d6, d8, d10, d12, d20?",
+    "shared_ngram": null,
+    "ngram_gold": null,
+    "ratio": 0.8333,
+    "ratio_gold": "quiz_mc_2026-11-12.jsonl:cody-quiz-10"
+   },
+   {
+    "id": "tf-5681b934984c",
+    "statement": "Do both players have to agree to a gameplay rewind before it's enacted?",
+    "shared_ngram": "agree to a gameplay rewind before its enacted",
+    "ngram_gold": "official_basic_test.jsonl:official-6c282e07",
+    "ratio": 0.4444,
+    "ratio_gold": "official_basic_test.jsonl:official-6c282e07"
+   },
+   {
+    "id": "tf-7f595e1e7e06",
+    "statement": "Gig dice are not represented by d4, d6, d8, d10, d12, d20.",
+    "shared_ngram": null,
+    "ngram_gold": null,
+    "ratio": 0.88,
+    "ratio_gold": "quiz_mc_2026-11-12.jsonl:cody-quiz-10"
+   },
+   {
+    "id": "tf-a742bcae7b63",
+    "statement": "May players use officially released Cyberpunk TCG cards in any language?",
+    "shared_ngram": "may use officially released cyberpunk tcg cards in",
+    "ngram_gold": "quiz_mc_2026-11-12.jsonl:cody-quiz-18",
+    "ratio": 0.6452,
+    "ratio_gold": "quiz_mc_2026-11-12.jsonl:cody-quiz-18"
+   },
+   {
+    "id": "tf-a946efddc135",
+    "statement": "When you search for a card in a hidden area, do you have to reveal any information about your findings if you fail to find a valid target?",
+    "shared_ngram": "a card in a hidden area you do",
+    "ngram_gold": "official_basic_test.jsonl:official-e1d1543a",
+    "ratio": 0.871,
+    "ratio_gold": "official_basic_test.jsonl:official-e1d1543a"
+   },
+   {
+    "id": "tf-c772131ca8f8",
+    "statement": "When you search for a card in a hidden area, you do not have to reveal any information about your findings if you fail to find a valid target.",
+    "shared_ngram": "a card in a hidden area you do",
+    "ngram_gold": "official_basic_test.jsonl:official-e1d1543a",
+    "ratio": 0.9206,
+    "ratio_gold": "official_basic_test.jsonl:official-e1d1543a"
+   },
+   {
+    "id": "tf-d12aebb949e9",
+    "statement": "Both players do not have to agree to a gameplay rewind before it's enacted.",
+    "shared_ngram": "agree to a gameplay rewind before its enacted",
+    "ngram_gold": "official_basic_test.jsonl:official-6c282e07",
+    "ratio": 0.4348,
+    "ratio_gold": "official_basic_test.jsonl:official-6c282e07"
+   }
+  ],
+  "result": "pass",
+  "nearest": [
+   {
+    "id": "tf-b46d146e53a8",
+    "statement": "You may not activate \"activated effects\" as an action during your Main Phase.",
+    "gold": "official_basic_test.jsonl:official-5d81d41f",
+    "gold_text": "If a Unit in your hand has a “Sell Tag,” you may sell it as an action during your main phase.",
+    "ratio": 0.5294
+   },
+   {
+    "id": "tf-e135fe39963f",
+    "statement": "You may not Call a Legend as an action during your main phase.",
+    "gold": "official_basic_test.jsonl:official-5d81d41f",
+    "gold_text": "If a Unit in your hand has a “Sell Tag,” you may sell it as an action during your main phase.",
+    "ratio": 0.5294
+   },
+   {
+    "id": "tf-9a9752e249b4",
+    "statement": "Chroming Up Sealed events at the LGS-level or side events are run with 9 Cyberpunk TCG booster packs.",
+    "gold": "quiz_mc_2026-11-12.jsonl:cody-quiz-20",
+    "gold_text": "For a \"Pre-release\" Rules event at the LGS level or side events, how many Cyberpunk TCG booster packs are to be used?",
+    "ratio": 0.5238
+   },
+   {
+    "id": "tf-bfeeaad02acf",
+    "statement": "Chroming Up Sealed events at the LGS-level or side events are run with 8 Cyberpunk TCG booster packs.",
+    "gold": "quiz_mc_2026-11-12.jsonl:cody-quiz-20",
+    "gold_text": "For a \"Pre-release\" Rules event at the LGS level or side events, how many Cyberpunk TCG booster packs are to be used?",
+    "ratio": 0.5238
+   },
+   {
+    "id": "scn-0107",
+    "statement": "A [QUICK] effect may be used only during the React Step.",
+    "gold": "quiz_mc_2026-11-12.jsonl:cody-quiz-23",
+    "gold_text": "If a Unit has the Quick keyword, it can only be activated during the React step.",
+    "ratio": 0.5185
+   }
+  ]
+ },
+ "size_estimate": {
+  "note": "characters of the tool specs, every message and the tool calls, as the loop's PromptGuard counts them; tokens at 4 and at 3 characters a token",
+  "chars": {
+   "min": 14849,
+   "median": 20313,
+   "max": 25028
+  },
+  "tokens_chars_div_4": {
+   "min": 3712,
+   "median": 5078,
+   "max": 6257
+  },
+  "tokens_chars_div_3": {
+   "min": 4949,
+   "median": 6771,
+   "max": 8343
+  },
+  "by_shape": {
+   "direct": {
+    "rows": 693,
+    "chars": {
+     "min": 14849,
+     "median": 19644,
+     "max": 22772
+    },
+    "tokens_chars_div_4": {
+     "min": 3712,
+     "median": 4911,
+     "max": 5693
+    },
+    "tokens_chars_div_3": {
+     "min": 4949,
+     "median": 6548,
+     "max": 7591
+    }
+   },
+   "lookup": {
+    "rows": 143,
+    "chars": {
+     "min": 17590,
+     "median": 23754,
+     "max": 25028
+    },
+    "tokens_chars_div_4": {
+     "min": 4397,
+     "median": 5938,
+     "max": 6257
+    },
+    "tokens_chars_div_3": {
+     "min": 5863,
+     "median": 7918,
+     "max": 8343
+    }
+   },
+   "lookup-call": {
+    "rows": 143,
+    "chars": {
+     "min": 15302,
+     "median": 21096,
+     "max": 22252
+    },
+    "tokens_chars_div_4": {
+     "min": 3825,
+     "median": 5274,
+     "max": 5563
+    },
+    "tokens_chars_div_3": {
+     "min": 5100,
+     "median": 7032,
+     "max": 7418
+    }
+   }
+  }
+ }
+}
