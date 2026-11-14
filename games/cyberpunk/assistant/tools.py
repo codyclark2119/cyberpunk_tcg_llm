@@ -762,6 +762,45 @@ from games.cyberpunk.assistant.decks import DECK_TOOLS  # noqa: E402
 
 TOOLS.update((t.name, t) for t in DECK_TOOLS)
 
+
+def _engine_check(args: dict) -> tuple[dict, dict]:
+    """``engine_check`` (``engine_oracle.py``): the engine's recorded verdict, never a legality judgment here."""
+    from games.cyberpunk.assistant import engine_oracle
+
+    for key in ("card", "target"):
+        if key in args:
+            _require_card(args[key])
+    try:
+        result = engine_oracle.engine_check(
+            args["play"], args["card"], target=args.get("target"), step=args.get("step"),
+            card_state=args.get("card_state"), target_state=args.get("target_state"),
+            lagging=args.get("lagging"), played_this_turn=args.get("played_this_turn"),
+            limit=args.get("limit", engine_oracle.MAX_EXAMPLES))
+    except engine_oracle.OracleError as exc:
+        raise ToolError(exc.kind, str(exc), **exc.extra) from exc
+    return result, _sources(card_slugs=[args["card"], args.get("target")])
+
+
+def _engine_check_tool() -> Tool:
+    from games.cyberpunk.assistant import engine_oracle as eo
+
+    slug = {"type": "string", "pattern": SLUG_PATTERN, "description": "Card slug, e.g. v-streetkid."}
+    return Tool("engine_check", eo.DESCRIPTION,
+                _object({"play": {"type": "string", "enum": list(eo.PLAYS)},
+                         "card": slug,
+                         "target": {**slug, "description": "Rival Unit, for attack_target."},
+                         "step": {"type": "string", "enum": list(eo.STEPS)},
+                         "card_state": {"type": "string", "enum": list(eo.STATES)},
+                         "target_state": {"type": "string", "enum": list(eo.STATES)},
+                         "lagging": {"type": "string", "enum": list(eo.YES_NO)},
+                         "played_this_turn": {"type": "string", "enum": list(eo.YES_NO)},
+                         "limit": _int(None, 1, eo.MAX_EXAMPLES)},
+                        ["play", "card"]),
+                _engine_check)
+
+
+TOOLS["engine_check"] = _engine_check_tool()
+
 _JSON_TYPES = {"string": str, "integer": int, "boolean": bool, "object": dict, "array": list}
 
 
