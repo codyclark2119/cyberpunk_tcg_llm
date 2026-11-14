@@ -67,6 +67,14 @@ values; Apple Silicon only) and "Measure retrieval"
 ``/api/eval/retrieval`` (index status and each report's recall per method) with
 ``/api/eval/retrieval/<name>.json`` for one report's per-question hits.
 
+Card tiles (2026-11-14): ``GET /api/card/<slug>`` returns ``{ok, card}``, the
+display payload ``assistant_ui/card_view.py`` builds from ``get_card``'s facts
+(text as keyword/trigger/symbol/rule segments, errata beside it), or a 404
+``{ok: false, error: "not_found", did_you_mean}``; ``GET /api/cards?slugs=a,b``
+returns ``{ok, cards, missing}`` for up to ``MAX_BATCH`` distinct slugs. Both are
+read-only and behind the same Host guard. The page shows cited cards, links in
+an answer's prose and an eval item's linked cards as tiles (text only, no art).
+
 DNS rebinding: a page on another site can resolve its own hostname to
 127.0.0.1 and then talk to this server from the victim's browser. Loopback
 needs no token, so the guard here is the Host header: unless the app was
@@ -93,6 +101,7 @@ from games.cyberpunk.assistant.loop import (ASSISTANT_PROMPT_VERSION, DEFAULT_PR
                                             default_max_tokens, run_turn)
 from games.cyberpunk.assistant.tools import TOOLS, call_tool, cards, index_status
 from games.cyberpunk.assistant_ui import assemble_page
+from games.cyberpunk.assistant_ui.card_view import MAX_BATCH, CardNotFound, card_tile, card_tiles
 from games.cyberpunk.config import REPO_ROOT
 from games.cyberpunk.prompts import RULES_VERSION, TOURNAMENT_RULES_VERSION
 from harness.core.webui.monitor import build_app
@@ -534,6 +543,28 @@ def build_assistant_app(*, token: str | None = None, lan: bool = False, chat: Ch
             if not isinstance(session, str) or not SESSION_RE.match(session):
                 return chat_refusal("invalid_arguments", "session must be 1-64 letters, digits, - or _.", 400), None
             return payload, session
+
+        # Card tiles (read-only): the page's display of a card, built from get_card's facts.
+        @app.get("/api/card/{slug}")
+        def get_card_tile(slug: str):
+            try:
+                return {"ok": True, "card": card_tile(slug)}
+            except CardNotFound as exc:
+                return JSONResponse({"ok": False, "error": "not_found", "slug": slug, "message": str(exc),
+                                     "did_you_mean": exc.did_you_mean}, status_code=404)
+
+        @app.get("/api/cards")
+        def get_card_tiles(slugs: str = ""):
+            wanted = [s for s in (part.strip() for part in slugs.split(",")) if s]
+            if not wanted:
+                return JSONResponse({"ok": False, "error": "invalid_arguments",
+                                     "message": "Pass slugs=a,b (comma-separated)."}, status_code=400)
+            try:
+                found, missing = card_tiles(wanted)
+            except ValueError as exc:
+                return JSONResponse({"ok": False, "error": "too_many", "limit": MAX_BATCH, "message": str(exc)},
+                                    status_code=400)
+            return {"ok": True, "cards": found, "missing": missing}
 
         @app.get("/api/status")
         def status():

@@ -4,27 +4,59 @@ const ESCAPES = {"&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#
 function escapeHtml(value) {
   return String(value).replace(/[&<>"']/g, (c) => ESCAPES[c]);
 }
-// Inline markdown on one line: `code` and **bold** only. Every piece is escaped
+// Citation links: a turn's cited card slugs and rule ids, and only those, become buttons in its
+// answer (so a word that merely looks like a slug or a number is never linked). Ids are matched in
+// already-escaped text and must look like an id (letters, digits, space, dot, dash), so nothing a
+// model or tool wrote can reach an attribute.
+const SAFE_ID_RE = /^[A-Za-z0-9][A-Za-z0-9 .-]{0,79}$/;
+const MAX_CITATIONS = 64;
+let activeCitations = null;  // set by withCitations while one answer renders
+function citationLinks(sources) {
+  const s = sources || {};
+  const safe = (ids) => [...new Set((Array.isArray(ids) ? ids : []).filter((id) => typeof id === "string" && SAFE_ID_RE.test(id)))]
+    .slice(0, MAX_CITATIONS);
+  return {cards: safe(s.card_slugs), rules: safe(s.rule_ids)};
+}
+function withCitations(sources, render) {
+  activeCitations = citationLinks(sources);
+  try { return render(); } finally { activeCitations = null; }
+}
+function linkCitations(safe, links) {
+  if (!links) return safe;
+  const kind = new Map();
+  for (const id of links.rules || []) kind.set(id, "rule");
+  for (const id of links.cards || []) kind.set(id, "card");
+  if (!kind.size) return safe;
+  const alternation = [...kind.keys()].sort((a, b) => b.length - a.length)
+    .map((id) => id.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")).join("|");
+  // Not inside a longer id or number: "9.2" never links inside "19.2" or "9.2.1", a slug never
+  // inside a longer slug, and an entity's digits (&#39;) never link.
+  const re = new RegExp("(?<![A-Za-z0-9_.#-])(" + alternation + ")(?![A-Za-z0-9_-]|\\.[0-9])", "g");
+  return safe.replace(re, (id) => '<button type="button" class="cite" data-' + kind.get(id) + '="' + id + '">' + id + "</button>");
+}
+// Inline markdown on one line: `code` and **bold** only, plus citation links. Every piece is escaped
 // before a tag is added, and the only tags added are fixed literals.
-function inlineMd(raw) {
+function inlineMd(raw, links) {
   const parts = String(raw).split("`");
   return parts.map((part, i) => {
-    const safe = escapeHtml(part);
+    const safe = linkCitations(escapeHtml(part), links);
     if (i % 2 === 1 && i < parts.length - 1) return "<code>" + safe + "</code>";
     const text = i % 2 === 1 ? "`" + safe : safe;  // an unmatched backtick stays literal
     return text.replace(/\*\*([^*]+?)\*\*/g, "<strong>$1</strong>");
   }).join("");
 }
 const UL_RE = /^\s*[-*]\s+/, OL_RE = /^\s*\d+[.)]\s+/;
-// Model text to HTML: paragraphs, bulleted and numbered lists, bold, inline code. Nothing else.
-function mdToHtml(text) {
+// Model text to HTML: paragraphs, bulleted and numbered lists, bold, inline code and the turn's
+// citation links. Nothing else.
+function mdToHtml(text, links = activeCitations) {
   const out = [];
+  const inline = (t) => inlineMd(t, links);
   for (const block of String(text ?? "").replace(/\r\n?/g, "\n").split(/\n[ \t]*\n/)) {
     let kind = null, items = [];
     const flush = () => {
       if (!items.length) return;
-      if (kind === "p") out.push("<p>" + items.map(inlineMd).join("<br>") + "</p>");
-      else out.push("<" + kind + ">" + items.map((t) => "<li>" + inlineMd(t) + "</li>").join("") + "</" + kind + ">");
+      if (kind === "p") out.push("<p>" + items.map(inline).join("<br>") + "</p>");
+      else out.push("<" + kind + ">" + items.map((t) => "<li>" + inline(t) + "</li>").join("") + "</" + kind + ">");
       items = [];
     };
     for (const line of block.split("\n")) {
@@ -36,6 +68,11 @@ function mdToHtml(text) {
     flush();
   }
   return out.join("");
+}
+// A tile's text segments back to the card's plain text (keywords, triggers and symbols in [brackets]).
+function segmentsText(segments) {
+  return (segments || []).map((s) => s.kind === "keyword" || s.kind === "trigger" || s.kind === "symbol" ?
+    "[" + s.value + "]" : s.value).join("");
 }
 function ms(value) { return Math.round(value || 0) + " ms"; }
 // One line per trace step (shown with textContent).
@@ -212,10 +249,11 @@ function sourceButtons(sources) {
   const slugs = s.card_slugs || [], rules = s.rule_ids || [], errata = s.errata_ids || [];
   if (!slugs.length && !rules.length && !errata.length) return null;
   box.appendChild(el("span", {class: "muted"}, "Sources:"));
-  for (const slug of slugs) {
-    const b = el("button", {type: "button", title: "card facts from get_card"}, slug);
-    b.addEventListener("click", () => showSource("get_card", {slug}, slug));
-    box.appendChild(b);
+  // Cited cards: a slug placeholder each, replaced by a compact tile once the batch route answers.
+  if (slugs.length) {
+    const cards = el("div", {class: "srccards"});
+    for (const slug of slugs) cards.appendChild(tileButton(slug));
+    box.appendChild(cards);
   }
   for (const id of rules) {
     const b = el("button", {type: "button", title: "rule from get_rule"}, "rule " + id);
@@ -231,8 +269,11 @@ function showTurn(question, data) {
   const answer = el("div", {class: "msg a"});
   for (const flag of answerFlags(data, state.maxToolCalls)) answer.appendChild(el("div", {class: "flag"}, flag));
   const body = el("div", {class: data.ok ? "" : "err"});
-  // The one HTML sink on the page: mdToHtml escapes everything before adding its few fixed tags.
-  body.innerHTML = mdToHtml(data.answer || data.error || "No answer.");
+  // The one HTML sink on the page: mdToHtml escapes everything before adding its few fixed tags,
+  // and links only this turn's cited ids (citationLinks).
+  withCitations(data.sources, () => {
+    body.innerHTML = mdToHtml(data.answer || data.error || "No answer.");
+  });
   answer.appendChild(body);
   const src = sourceButtons(data.sources);
   if (src) answer.appendChild(src);
@@ -314,6 +355,170 @@ async function showSource(tool, args, label) {
   body.appendChild(el("div", {class: "muted", style: "font-size:11px"}, tool + " · snapshot " + data.rules_version +
     " · tournament rules " + data.tournament_rules_version));
 }
+
+// Card tiles ------------------------------------------------------------------------
+// Text tiles from /api/card(s) (card_view.py): name, cost, type line, stats, keyword and trigger
+// chips, the card text with its keywords marked, errata. Built with createElement/textContent only.
+// The accent comes from the card's own colour value through data-color; the stylesheet maps the
+// colours in the data to tokens and falls back to a neutral one for any other value.
+const TILE_BATCH = 24;
+const tileCache = new Map(), tileWaiting = new Map();
+let tileQueue = [];
+// Tiles asked for in the same tick go out together, TILE_BATCH slugs per /api/cards request.
+function requestTile(slug) {
+  if (tileCache.has(slug)) return Promise.resolve(tileCache.get(slug));
+  if (tileWaiting.has(slug)) return tileWaiting.get(slug);
+  const promise = new Promise((resolve) => {
+    tileQueue.push([slug, resolve]);
+    if (tileQueue.length === 1) setTimeout(flushTiles, 0);
+  });
+  tileWaiting.set(slug, promise);
+  return promise;
+}
+async function flushTiles() {
+  const queue = tileQueue;
+  tileQueue = [];
+  for (let i = 0; i < queue.length; i += TILE_BATCH) {
+    const chunk = queue.slice(i, i + TILE_BATCH);
+    try {
+      const [, data] = await getJson("/api/cards?slugs=" + encodeURIComponent(chunk.map(([slug]) => slug).join(",")));
+      for (const card of (data && data.cards) || []) tileCache.set(card.slug, card);
+    } catch (err) { /* a slug stays a slug button */ }
+    for (const [slug, resolve] of chunk) { tileWaiting.delete(slug); resolve(tileCache.get(slug) || null); }
+  }
+}
+async function fetchTiles(slugs) {
+  return (await Promise.all(slugs.map(requestTile))).filter(Boolean);
+}
+
+// tile:start  (only createElement, createTextNode, setAttribute, appendChild and textContent)
+function tileNode(tag, cls, text) {
+  const node = document.createElement(tag);
+  if (cls) node.setAttribute("class", cls);
+  if (text !== undefined && text !== null) node.textContent = String(text);
+  return node;
+}
+function cardTile(card, expanded) {
+  const part = expanded ? "div" : "span";
+  const tile = tileNode(expanded ? "article" : "span", "tile " + (expanded ? "expanded" : "compact"));
+  tile.setAttribute("data-color", String(card.color ?? ""));
+  const head = tileNode(part, "tile-head");
+  head.appendChild(tileNode("span", "tile-name", card.display_name || card.slug));
+  if (card.has_errata) {
+    const badge = tileNode("span", "tile-errata", "errata");
+    badge.setAttribute("title", "Errata supersede the printed text");
+    head.appendChild(badge);
+  }
+  if (card.cost !== null && card.cost !== undefined) {
+    const cost = tileNode("span", "tile-cost", card.cost);
+    cost.setAttribute("title", "cost " + card.cost);
+    head.appendChild(cost);
+  }
+  tile.appendChild(head);
+  tile.appendChild(tileNode(part, "tile-type", [card.card_type, card.color].concat(card.classifications || [])
+    .filter((v) => v !== null && v !== undefined && v !== "").join(" · ")));
+  const stats = [["Power", card.power], ["RAM", card.ram]].filter(([, v]) => v !== null && v !== undefined);
+  if (stats.length) {
+    const row = tileNode(part, "tile-stats");
+    for (const [label, value] of stats) {
+      const stat = tileNode("span", "tile-stat", label + " ");
+      stat.appendChild(tileNode("b", "", value));
+      row.appendChild(stat);
+    }
+    tile.appendChild(row);
+  }
+  const chips = [...(card.keywords || []).map((k) => ["keyword", k]), ...(card.timing_triggers || []).map((t) => ["trigger", t])];
+  if (chips.length) {
+    const row = tileNode(part, "tile-chips");
+    for (const [kind, value] of chips) row.appendChild(tileNode("span", "chip chip-" + kind, value));
+    tile.appendChild(row);
+  }
+  if (!expanded) return tile;
+  const text = tileNode("div", "tile-text");
+  for (const seg of card.segments || []) {
+    if (seg.kind === "text") text.appendChild(document.createTextNode(seg.value));
+    else text.appendChild(tileNode("span", "chip chip-" + (["keyword", "trigger", "symbol", "rule"].includes(seg.kind) ? seg.kind : "text"), seg.value));
+  }
+  if ((card.segments || []).length) tile.appendChild(text);
+  if ((card.errata || []).length) {
+    const box = tileNode("div", "tile-errlist");
+    box.appendChild(tileNode("div", "tile-errhead", card.errata_note || "Errata"));
+    for (const e of card.errata) {
+      const item = tileNode("div", "tile-erratum");
+      item.appendChild(tileNode("div", "tile-errtitle", e.heading + (e.variant ? " (" + e.variant + ")" : "")));
+      item.appendChild(tileNode("div", "", e.text));
+      box.appendChild(item);
+    }
+    tile.appendChild(box);
+  }
+  tile.appendChild(tileNode("div", "tile-foot", [card.rarity, card.set, card.slug].filter(Boolean).join(" · ")));
+  return tile;
+}
+// tile:end
+
+// A button that opens the card in the side panel: the slug until its tile arrives, then the tile.
+function tileButton(slug) {
+  const b = el("button", {type: "button", class: "tilebtn pending", "data-card": slug, title: "card " + slug}, slug);
+  b.addEventListener("click", () => showCard(slug).catch((err) => { $("sideBody").textContent = "Could not load: " + err; }));
+  fetchTiles([slug]).then(([card]) => {
+    if (!card) return;
+    b.textContent = "";
+    b.classList.remove("pending");
+    b.setAttribute("title", card.display_name + " (" + slug + ")");
+    b.appendChild(cardTile(card, false));
+  }).catch(() => {});
+  return b;
+}
+
+async function showCard(slug) {
+  $("sideTitle").textContent = slug;
+  const body = $("sideBody");
+  let card = tileCache.get(slug);
+  if (!card) {
+    body.className = "muted";
+    body.textContent = "Loading " + slug + " …";
+    const [, data] = await getJson("/api/card/" + encodeURIComponent(slug));
+    if (!data.ok) {
+      body.className = "err";
+      body.textContent = (data.error || "error") + ": " + slug + ((data.did_you_mean || []).length ?
+        " · did you mean " + data.did_you_mean.join(", ") : "");
+      return;
+    }
+    card = data.card;
+    tileCache.set(slug, card);
+  }
+  $("sideTitle").textContent = card.display_name;
+  body.className = "";
+  body.textContent = "";
+  body.appendChild(cardTile(card, true));
+  const row = el("div", {class: "row"});
+  const raw = el("button", {type: "button", class: "small"}, "Raw facts (get_card)");
+  raw.addEventListener("click", () => showSource("get_card", {slug}, slug));
+  row.appendChild(raw);
+  body.appendChild(row);
+}
+
+// Hovering or focusing a cited slug in an answer shows its compact tile, once it is loaded.
+const tilePop = el("div", {id: "tilePop", role: "tooltip"});
+tilePop.hidden = true;
+document.body.appendChild(tilePop);
+function showPop(target) {
+  const card = tileCache.get(target.dataset.card);
+  if (!card) return;
+  tilePop.textContent = "";
+  tilePop.appendChild(cardTile(card, false));
+  tilePop.hidden = false;
+  const r = target.getBoundingClientRect();
+  const top = r.bottom + 6 + tilePop.offsetHeight > window.innerHeight ? r.top - 6 - tilePop.offsetHeight : r.bottom + 6;
+  tilePop.style.top = Math.max(4, top) + "px";
+  tilePop.style.left = Math.max(4, Math.min(r.left, window.innerWidth - tilePop.offsetWidth - 4)) + "px";
+}
+function citeTarget(event) {
+  return event.target && event.target.closest ? event.target.closest("button.cite[data-card]") : null;
+}
+for (const type of ["mouseover", "focusin"]) document.addEventListener(type, (e) => { const t = citeTarget(e); if (t) showPop(t); });
+for (const type of ["mouseout", "focusout"]) document.addEventListener(type, (e) => { if (citeTarget(e)) tilePop.hidden = true; });
+document.addEventListener("keydown", (e) => { if (e.key === "Escape") tilePop.hidden = true; });
 
 // Deck panel ------------------------------------------------------------------------
 function showHeldDeck(brief) {
@@ -547,6 +752,7 @@ async function run() {
     const data = await response.json();
     $("output").className = data.ok ? "" : "err";
     $("output").textContent = JSON.stringify(data, null, 2);
+    showToolTiles(tool.name, data);
     if (data.ok) {
       const s = data.sources || {};
       const bits = [];
@@ -569,6 +775,23 @@ async function run() {
   } finally {
     $("runBtn").disabled = false;
   }
+}
+
+// The cards a tool result names, as tiles above its JSON: one expanded tile for get_card, else compact.
+function showToolTiles(name, data) {
+  const box = $("toolTiles");
+  box.textContent = "";
+  const slugs = (data.ok && data.sources && data.sources.card_slugs) || [];
+  box.hidden = !slugs.length;
+  if (!slugs.length) return;
+  if (name === "get_card" && slugs.length === 1) {
+    fetchTiles(slugs).then(([card]) => { if (card) box.appendChild(cardTile(card, true)); }).catch(() => {});
+    return;
+  }
+  const row = el("div", {class: "srccards"});
+  for (const slug of slugs.slice(0, TILE_BATCH)) row.appendChild(tileButton(slug));
+  box.appendChild(row);
+  if (slugs.length > TILE_BATCH) box.appendChild(el("div", {class: "muted", style: "font-size:12px"}, "and " + (slugs.length - TILE_BATCH) + " more in the JSON below"));
 }
 
 // Eval tab --------------------------------------------------------------------------
@@ -620,7 +843,15 @@ async function loadSet(name) {
       (item.answer_key_by ? " · keyed by " + item.answer_key_by : "") + (item.source ? " · " + item.source : "")));
     box.appendChild(el("div", {class: "qtext"}, item.question));
     const linked = linkedCardsText(item);
-    if (linked) box.appendChild(el("div", {class: "muted linked", style: "font-size:12px"}, linked));
+    if (linked && item.cards.length) {
+      // Compact tiles; the text line stays for screen readers and as the fallback.
+      const line = el("div", {class: "linked"});
+      line.appendChild(el("div", {class: "muted", style: "font-size:12px"}, linked));
+      const tiles = el("div", {class: "srccards"});
+      for (const slug of item.cards) tiles.appendChild(tileButton(slug));
+      line.appendChild(tiles);
+      box.appendChild(line);
+    } else if (linked) box.appendChild(el("div", {class: "muted linked", style: "font-size:12px"}, linked));
     const ul = el("ul", {class: "choices"});
     for (const c of item.choices) {
       const cls = c.letter === item.correct ? "key" : (item.known_incorrect || []).includes(c.letter) ? "known" : "";
@@ -893,6 +1124,13 @@ for (const chip of document.querySelectorAll("#chips button")) {
   chip.addEventListener("click", () => { $("chatInput").value = chip.dataset.example; $("chatInput").focus(); });
 }
 $("chatSend").addEventListener("click", sendChat);
+// A citation link in an answer opens its card tile or rule in the side panel.
+$("chatLog").addEventListener("click", (e) => {
+  const cite = e.target.closest ? e.target.closest("button.cite") : null;
+  if (!cite) return;
+  if (cite.dataset.card) showCard(cite.dataset.card).catch((err) => { $("sideBody").textContent = "Could not load: " + err; });
+  else if (cite.dataset.rule) showSource("get_rule", {rule_id: cite.dataset.rule}, "rule " + cite.dataset.rule);
+});
 $("chatInput").addEventListener("keydown", (e) => {
   if (e.key === "Enter" && !e.shiftKey && !e.isComposing) { e.preventDefault(); sendChat(); }
 });

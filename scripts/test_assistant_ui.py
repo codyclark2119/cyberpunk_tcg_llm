@@ -33,6 +33,8 @@ from games.cyberpunk.assistant.loop import (ASSISTANT_PROMPT_VERSION, DECK_CONTE
                                             MAX_TOOL_CALLS, SYSTEM_PROMPT, build_messages, run_turn)
 from games.cyberpunk.assistant_app import (ASSISTANT_HTML, EXAMPLE_QUESTIONS, ChatService, build_assistant_app)
 from games.cyberpunk.assistant_ui import UI_DIR, assemble_page
+from games.cyberpunk.assistant_ui.card_view import MAX_BATCH, card_tile, text_segments
+from games.cyberpunk.markup import to_plain_text
 from games.cyberpunk.prompts import RULES_VERSION
 
 LOCAL = {"host": "127.0.0.1:8767"}
@@ -445,6 +447,238 @@ def test_host_check_applies_to_the_new_routes():
     with TestClient(build_assistant_app(token="sekret", lan=True)) as guarded:
         assert guarded.get("/api/status").status_code == 401
         assert guarded.post("/api/deck", json={"session": "s", "text": "1 V"}).status_code == 401
+
+
+# Card tiles ---------------------------------------------------------------------------------
+
+# A DOM stand-in for node: elements keep attributes, children and text, and any HTML-parsing API throws.
+FAKE_DOM = r"""
+class FakeNode {
+  constructor(tag) { this.tag = tag; this.attrs = {}; this.children = []; }
+  setAttribute(k, v) { this.attrs[k] = String(v); }
+  appendChild(child) { this.children.push(child); return child; }
+  set textContent(v) { this.children = [{text: String(v)}]; }
+  get textContent() { return this.children.map((c) => c.text !== undefined ? c.text : c.textContent).join(""); }
+  set innerHTML(v) { throw new Error("innerHTML used"); }
+  set outerHTML(v) { throw new Error("outerHTML used"); }
+  insertAdjacentHTML() { throw new Error("insertAdjacentHTML used"); }
+}
+const document = {createElement: (tag) => new FakeNode(tag), createTextNode: (t) => ({text: String(t)}),
+                  write() { throw new Error("document.write used"); }};
+function tree(n) { return n.text !== undefined ? {text: n.text} : {tag: n.tag, attrs: n.attrs, children: n.children.map(tree)}; }
+"""
+
+
+def run_tiles(expression: str, payload) -> object:
+    """Evaluate ``expression`` against the page's tile builder (tile:start..tile:end) on FAKE_DOM."""
+    script = page_script()
+    region = script[script.index("// tile:start"):script.index("// tile:end")]
+    program = (f'"use strict";\n{FAKE_DOM}\n{region}\nconst input = JSON.parse(require("fs").readFileSync(0, "utf8"));\n'
+               f"process.stdout.write(JSON.stringify({expression}));\n")
+    proc = subprocess.run([CTX["node"], "-e", program], input=json.dumps(payload), capture_output=True, text=True)
+    assert proc.returncode == 0, proc.stderr[:800]
+    return json.loads(proc.stdout)
+
+
+def _walk(node):
+    yield node
+    for child in node.get("children", []):
+        yield from _walk(child)
+
+
+def _text(node) -> str:
+    return "".join(n["text"] for n in _walk(node) if "text" in n)
+
+
+def _sample_cards():
+    """Real cards from the snapshot, chosen by what they carry, never by name."""
+    with_all = next(c for c in tools.cards() if c.get("keywords") and c.get("timing_triggers")
+                    and c.get("cost") is not None and c.get("power") is not None and c.get("ram") is not None)
+    with_errata = next(c for c in tools.cards() if c["id"] in tools.errata_by_slug())
+    with_symbol = next(c for c in tools.cards() if "{" + "Spend}" in (c.get("text_markup") or ""))
+    return with_all, with_errata, with_symbol
+
+
+def test_card_tile_route_returns_the_payload():
+    card, errata_card, _ = _sample_cards()
+    with client_for() as client:
+        response = client.get(f"/api/card/{card['id']}", headers=LOCAL)
+        assert response.status_code == 200, response.text
+        body = response.json()
+        assert body["ok"] is True and body["card"] == card_tile(card["id"])
+        tile = body["card"]
+        for field in ("display_name", "name", "subname", "card_type", "color", "cost", "power", "ram", "rarity", "set"):
+            assert tile[field] == card.get(field), field
+        assert tile["slug"] == card["id"] and tile["text"] == card["text"]
+        assert tile["classifications"] == card["classifications"] and tile["keywords"] == card["keywords"]
+        assert tile["timing_triggers"] == card["timing_triggers"] and tile["has_errata"] is False
+        assert {s["kind"] for s in tile["segments"]} >= {"text", "keyword", "trigger"}
+        erratum = client.get(f"/api/card/{errata_card['id']}", headers=LOCAL).json()["card"]
+        expected = tools.get_card(errata_card["id"])["result"]
+        assert erratum["has_errata"] is True and erratum["errata_note"] == expected["errata_note"]
+        assert [e["id"] for e in erratum["errata"]] == [e["id"] for e in expected["errata"]]
+        assert [e["text"] for e in erratum["errata"]] == [e["text"] for e in expected["errata"]]
+        # An unknown slug: 404 with get_card's own suggestions.
+        bogus = card["id"][:-3]
+        assert bogus not in tools.cards_by_slug()
+        try:
+            tools._require_card(bogus)
+            raise AssertionError("a bogus slug resolved")
+        except tools.ToolError as exc:
+            suggestions = exc.extra["did_you_mean"]
+        missing = client.get(f"/api/card/{bogus}", headers=LOCAL)
+        assert missing.status_code == 404 and missing.json()["ok"] is False
+        assert missing.json()["error"] == "not_found" and missing.json()["did_you_mean"] == suggestions
+        assert card["id"] in suggestions
+        # Both routes sit behind the Host check.
+        for path in (f"/api/card/{card['id']}", f"/api/cards?slugs={card['id']}"):
+            assert client.get(path, headers={"host": "evil.example:8767"}).status_code == 403, path
+            assert client.get(path, headers={**LOCAL, "origin": "http://evil.example"}).status_code == 403, path
+
+
+def test_card_tile_batch_route_keeps_order_reports_misses_and_caps():
+    slugs = [c["id"] for c in tools.cards()]
+    with client_for() as client:
+        wanted = [slugs[2], "no-such-card", slugs[0], slugs[2]]
+        body = client.get("/api/cards", params={"slugs": ",".join(wanted)}, headers=LOCAL).json()
+        assert body["ok"] and [c["slug"] for c in body["cards"]] == [slugs[2], slugs[0]]
+        assert body["cards"][0] == card_tile(slugs[2])
+        assert [m["slug"] for m in body["missing"]] == ["no-such-card"]
+        full = client.get("/api/cards", params={"slugs": ",".join(slugs[:MAX_BATCH])}, headers=LOCAL)
+        assert full.status_code == 200 and len(full.json()["cards"]) == MAX_BATCH == 24
+        over = client.get("/api/cards", params={"slugs": ",".join(slugs[:MAX_BATCH + 1])}, headers=LOCAL)
+        assert over.status_code == 400 and over.json() == {**over.json(), "ok": False, "error": "too_many",
+                                                           "limit": MAX_BATCH}
+        # Repeats count once toward the cap.
+        repeated = client.get("/api/cards", params={"slugs": ",".join([slugs[0]] * 40)}, headers=LOCAL).json()
+        assert repeated["ok"] and len(repeated["cards"]) == 1
+        for empty in ("", " , ,"):
+            assert client.get("/api/cards", params={"slugs": empty}, headers=LOCAL).status_code == 400
+    # The page asks for tiles in batches of the same size.
+    assert f"const TILE_BATCH = {MAX_BATCH};" in page_script()
+
+
+def test_tile_segments_cover_every_cards_text():
+    script_checks = []
+    for card in tools.cards():
+        segments = card_tile(card["id"])["segments"]
+        rebuilt = "".join(f"[{s['value']}]" if s["kind"] in ("keyword", "trigger", "symbol") else s["value"]
+                          for s in segments)
+        assert rebuilt == card["text"] == to_plain_text(card.get("text_markup") or ""), card["id"]
+        assert all(s["value"] for s in segments) and all(
+            a["kind"] != "text" or b["kind"] != "text" for a, b in zip(segments, segments[1:])), card["id"]
+        script_checks.append(segments)
+    # The page's own reading of segments agrees.
+    assert run_pure("input.map(segmentsText)", script_checks) == [c["text"] for c in tools.cards()]
+
+
+def test_unknown_token_stays_visible():
+    segments = text_segments("{Mystery} then {Blocker}, {Play} pay {Spend} per {7.6} and {[GIGS](#rule-x)} or [A](b).")
+    assert segments == [{"kind": "text", "value": "{Mystery} then "}, {"kind": "keyword", "value": "Blocker"},
+                        {"kind": "text", "value": ", "}, {"kind": "trigger", "value": "Play"},
+                        {"kind": "text", "value": " pay "}, {"kind": "symbol", "value": "Spend"},
+                        {"kind": "text", "value": " per "}, {"kind": "rule", "value": "7.6"},
+                        {"kind": "text", "value": " and GIGS or A."}]
+    assert text_segments("") == [] and text_segments(None) == []
+    assert text_segments("{}") == [{"kind": "text", "value": "{}"}]
+    # Shown on a tile, the unknown token is still there as text.
+    tile = run_tiles("tree(cardTile(input, true))", {"slug": "x", "display_name": "X", "color": "Mauve",
+                                                    "segments": segments})
+    assert "{Mystery} then " in _text(tile)
+
+
+def test_tiles_build_without_html_sinks():
+    script = page_script()
+    region = script[script.index("// tile:start"):script.index("// tile:end")]
+    for banned in ("innerHTML", "outerHTML", "insertAdjacentHTML", "document.write", "DOMParser"):
+        assert banned not in region, banned
+    for helper in ("function tileButton", "function showCard", "function showToolTiles", "function showPop",
+                   "function fetchTiles", "function flushTiles", "function requestTile"):
+        body = script[script.index(helper):]
+        body = body[:body.index("\n}\n")]
+        assert "innerHTML" not in body, helper
+    cards = [card_tile(c["id"]) for c in _sample_cards()]
+    hostile = {**cards[0], "display_name": HOSTILE[0], "color": '"><script>x</script>', "classifications": [HOSTILE[1]],
+               "keywords": [HOSTILE[3]], "segments": [{"kind": "text", "value": HOSTILE[4]},
+                                                       {"kind": "<b>", "value": HOSTILE[0]}],
+               "errata": [{"heading": HOSTILE[2], "variant": None, "text": HOSTILE[1]}], "has_errata": True}
+    built = run_tiles("input.map((c) => [tree(cardTile(c, true)), tree(cardTile(c, false))])", cards + [hostile])
+    for card, (expanded, compact) in zip(cards + [hostile], built):
+        assert expanded["tag"] == "article" and expanded["attrs"]["class"] == "tile expanded"
+        assert compact["tag"] == "span" and compact["attrs"]["class"] == "tile compact"
+        assert expanded["attrs"]["data-color"] == compact["attrs"]["data-color"] == card["color"]
+        # A compact tile lives inside a button: phrasing elements only.
+        assert {n["tag"] for n in _walk(compact) if "tag" in n} <= {"span", "b"}
+        text = _text(expanded)
+        assert card["display_name"] in text and _text(compact).startswith(card["display_name"])
+        for value in card["keywords"] + card.get("timing_triggers", []):
+            assert value in _text(compact), value
+        if card is not hostile:
+            assert segmentsText_py(card["segments"]).replace("[", "").replace("]", "") in text.replace("[", "").replace("]", "")
+            classes = [n["attrs"].get("class") for n in _walk(expanded) if "tag" in n]
+            assert ("tile-errata" in classes) is card["has_errata"] and ("tile-errlist" in classes) is card["has_errata"]
+            if card.get("cost") is not None:
+                assert any(n["attrs"].get("class") == "tile-cost" and _text(n) == str(card["cost"])
+                           for n in _walk(compact) if "tag" in n)
+    # Hostile strings arrive as text nodes, and an unknown segment kind gets a fixed class.
+    expanded = built[-1][0]
+    assert HOSTILE[0] in _text(expanded) and HOSTILE[4] in _text(expanded)
+    assert all(n["attrs"].get("class") != "chip chip-<b>" for n in _walk(expanded) if "tag" in n)
+    # Colour: every colour in the snapshot has a token in both themes, any other value is neutral,
+    # and no card name or slug is written into the page's files.
+    style = (UI_DIR / "assistant.css").read_text(encoding="utf-8")
+    for colour in tools.snapshot_values("color"):
+        assert f'.tile[data-color="{colour}"]{{--tile-accent:var(--c-{colour.lower()})}}' in style, colour
+        assert style.count(f"--c-{colour.lower()}:") == 3, colour
+    assert ".tile{--tile-accent:var(--c-none);" in style and style.count("--c-none:") == 3
+    ui_source = "".join(f.read_text(encoding="utf-8") for f in sorted(UI_DIR.iterdir()) if f.is_file())
+    for card in tools.cards():
+        assert card["id"] not in ui_source, card["id"]
+
+
+def segmentsText_py(segments) -> str:
+    return "".join(f"[{s['value']}]" if s["kind"] in ("keyword", "trigger", "symbol") else s["value"] for s in segments)
+
+
+def test_answer_links_only_cited_ids_and_stays_escaped():
+    slug, other = tools.cards()[0]["id"], tools.cards()[1]["id"]
+    sources = {"card_slugs": [slug, '"><img src=x onerror=alert(1)>', "bad id!"], "rule_ids": ["9.2", "TR 3.4.2"]}
+    links = run_pure("citationLinks(input)", sources)
+    assert links == {"cards": [slug], "rules": ["9.2", "TR 3.4.2"]}, links
+    answer = (f"See `{slug}` and {slug}, not {other} or {slug}-x. Rule 9.2. applies; 19.2, 9.2.1 and 9.20 do not; "
+              f"TR 3.4.2 too. <img src=x onerror=\"alert(1)\"> **{slug}** '9.2 &#39;9.2")
+    html = run_pure("mdToHtml(input.answer, citationLinks(input.sources))", {"answer": answer, "sources": sources})
+    card_link = f'<button type="button" class="cite" data-card="{slug}">{slug}</button>'
+    assert html.count(card_link) == 3, html
+    assert f"<code>{card_link}</code>" in html and f"<strong>{card_link}</strong>" in html
+    assert f"{slug}-x" in html and f'data-card="{other}"' not in html
+    rule_link = '<button type="button" class="cite" data-rule="9.2">9.2</button>'
+    assert html.count(rule_link) == 3 and "Rule " + rule_link + "." in html
+    assert " &#39;" + rule_link in html and "&amp;#39;" + rule_link in html
+    # An escaped entity's own digits are never an id: a cited rule "39" stays out of "&#39;".
+    entity = run_pure("mdToHtml(input, {cards: [], rules: ['39']})", "it's 39")
+    assert entity == '<p>it&#39;s <button type="button" class="cite" data-rule="39">39</button></p>', entity
+    for unlinked in ("19.2,", "9.2.1", "9.20"):
+        assert unlinked in html.replace(rule_link, "@"), unlinked
+    assert '<button type="button" class="cite" data-rule="TR 3.4.2">TR 3.4.2</button>' in html
+    assert "&lt;img src=x onerror=&quot;alert(1)&quot;&gt;" in html and "<img" not in html
+    cite = re.compile(r'<button type="button" class="cite" data-(card|rule)="[A-Za-z0-9 .-]+">[A-Za-z0-9 .-]+</button>')
+    leftover = ALLOWED_TAGS.sub("", cite.sub("", html))
+    assert "<" not in leftover and ">" not in leftover, leftover
+    # No sources (or the hostile answers with them) links nothing new and escapes as before.
+    assert run_pure("mdToHtml(input)", answer) == run_pure("mdToHtml(input, null)", answer)
+    assert "cite" not in run_pure("mdToHtml(input)", answer)
+    rendered = run_pure("input.h.map((t) => mdToHtml(t, citationLinks(input.s)))", {"h": HOSTILE, "s": sources})
+    assert rendered == run_pure("input.map(mdToHtml)", HOSTILE)
+    # The answer sink runs inside withCitations with this turn's sources, and clicks open the side panel.
+    script = page_script()
+    turn = script[script.index("function showTurn"):]
+    turn = turn[:turn.index("\n}\n")]
+    assert "withCitations(data.sources, () => {" in turn
+    assert run_pure("[withCitations({card_slugs: ['a-b']}, () => mdToHtml('a-b')), mdToHtml('a-b')]", None) == [
+        '<p><button type="button" class="cite" data-card="a-b">a-b</button></p>', "<p>a-b</p>"]
+    assert '$("chatLog").addEventListener("click"' in script and "showCard(cite.dataset.card)" in script
+    assert 'showSource("get_rule", {rule_id: cite.dataset.rule}, "rule " + cite.dataset.rule)' in script
 
 
 def run(node: str) -> None:
