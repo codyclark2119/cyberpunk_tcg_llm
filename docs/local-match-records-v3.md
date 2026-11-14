@@ -167,3 +167,6 @@ page shows "n/a".
   33/33 (was 32/32): `Selection.details` comes only from the policy's own request.
 
 No real model ran for this change.
+
+Update 2026-11-14: [local-match-audit.md](local-match-audit.md) replays v3 records
+on the running engine and checks these fields against what the runner would write.

@@ -150,3 +150,10 @@ prompt equal `report()` and `largest_prompt()` on the same games.
   (600) since the rival's in-play cards often lose their text.
 - An adapter trained under v3 is not valid for v4: the prompt fingerprint
   changes with `PROMPT_VERSION` and `SYSTEM_PROMPT`.
+
+Update 2026-11-14: the first strength eval ran at v4 (2026-11-12, 10 s budget,
+20 matches per model). Worker-reported input tokens: Qwen3-8B median 1,464 / max
+2,131, Qwen3-4B median 1,513 / max 1,943, so the largest prompt went above the
+2,000-token target. Decision p50 was about 2.0 s (8B) and 1.2 s (4B). v3 and v4 were
+not compared on the same seeds. See
+[local-strength-eval.md](local-strength-eval.md#results-2026-11-12).
