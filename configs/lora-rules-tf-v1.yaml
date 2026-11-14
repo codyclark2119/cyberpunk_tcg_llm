@@ -20,13 +20,13 @@ lora_parameters:
 learning_rate: 1.0e-5
 batch_size: 1
 grad_checkpoint: true
-# The manifest's size estimate puts the longest example at 5,612 tokens at 4 characters a token and 7,482
+# The manifest's size estimate puts the longest example at 5,357 tokens at 4 characters a token and 7,143
 # at 3 (the loop's pessimistic ratio for JSON-heavy prompts). Rounded up to 8,192 so nothing is truncated:
 # the target is at the end of each example, so truncation would cut the answer. mlx-lm warns if any
 # example is longer; measure first with scripts/prompt_budget.py --tokenizer models/qwen3-8b-4bit.
 max_seq_length: 8192
-# About one epoch at batch 1: the train split has 462 examples (manifest.json, split.train).
-iters: 462
+# About one epoch at batch 1: the train split has 198 examples (manifest.json, split.train).
+iters: 198
 steps_per_report: 10
 steps_per_eval: 100
 val_batches: -1

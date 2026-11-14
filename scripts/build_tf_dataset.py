@@ -26,18 +26,18 @@ clause (after a leading "If/When ...," clause, before the first subordinator):
 flipping a word inside a condition ("When you can't pay, ...") would not negate
 the rule.
 
-  - ``polarity``: the main clause's one site flips (can/cannot, may/may not,
-    must/need not, must not/may, should/should not, is considered/is not
-    considered, never/always, is/is not, does not/does, has/does not have).
-    Only when it is the main clause's only site, with no other modal or
-    negation, "only", "unless", "except" and the like in it, never on "may be"
-    (as often "might be" as "is allowed to be"), and on a plain is/has/does
-    only within the first nine words (further in it is likely inside a
-    clause) and only in the Comprehensive Rules (a plain "is" in the
+  - ``polarity``: the main clause's one site flips in the sentence itself
+    (can/cannot, may/may not, must/does not have to, must not/may,
+    should/should not, is considered/is not considered, never/always,
+    is/is not, does not/does, has/does not have), so a negation is always
+    in-sentence and natural; "must still" becomes "does not have to", agreeing
+    with the subject. Only when it is the main clause's only site, with no
+    other modal or negation, "only", "unless", "except" and the like in it, no
+    adjective that is itself negative ("indistinguishable"), never on "may
+    be" (as often "might be" as "is allowed to be"), and on a plain
+    is/has/does only within the first nine words (further in it is likely
+    inside a clause) and only in the Comprehensive Rules (a plain "is" in the
     Tournament Rules often describes an infraction rather than states a rule).
-  - ``permissive``: a sentence allowing something ("<subject> may/can X")
-    becomes "it is not allowed for <subject> to X", the "nothing explicitly
-    permits it" trap.
   - ``number``: the sentence's one number moves by one (a word with its digit,
     "three (3)", counts as one number). Not when any other digit is present
     (a range "40-50", "7-card", "Bo3"), not for 0 or 1 (the noun after it would
@@ -53,38 +53,46 @@ the rule.
     negation (the side partition is not complete: fixer-area dice are neither
     friendly nor rival), no second state or side word including the noun
     Rival, and not the verb ("can be spent").
-  - ``quantifier``: a clause-initial "Only X" becomes "Not only X", and a
-    clause-initial "Each/Every X" becomes "Only one X".
+  - ``quantifier``: a clause-initial "Each/Every X" becomes "Only one X".
 
 A sentence with no mutation that applies unambiguously is skipped, and each
 skip is counted by reason in the manifest. Several conditions that make a
 sentence unsafe to judge on its own also skip it: a pronoun or "this/these/
 also/if so" that points outside the sentence, a quotation longer than three
 words or holding a word a mutation could act on, a colon, a list item, a
-heading, an abbreviation, a parenthesis, fewer than 5 or more than 45 words.
+heading, an abbreviation, a parenthesis, fewer than 5 or more than 45 words,
+or a second negation (no item may hold two). Rules about the rules document
+itself are excluded structurally: every row under the unnumbered section
+titled "Official Rules Document" (1.1-1.3), found by ``parent`` links, and any
+sentence whose main-clause subject is the document ("The Official Rules ...",
+"This document ...", as in 1.4.1); both are counted as ``document-meta``.
 When a sentence allows several mutations one is picked by a hash of the rule id
 and the sentence, so the pick does not depend on input order.
 
-Phrasing. Each pair is phrased one of four ways, so "not" is no cue to the
-label and questions sit beside statements as in the quizzes:
+Phrasing. No wrapper ("It is not true that ...") and no rewrite ("it is not
+allowed for ...") is used: the only negations are the rules' own and the
+in-sentence polarity flips, so the natural 2x2 is
 
-  - ``statement``: the true sentence (Yes) and its false twin (No);
-  - ``negated``: "It is not true that <false twin>" (Yes) and "It is not true
-    that <true sentence>" (No), so both items carry "not";
-  - ``lexical`` (polarity twins of a can/may/must rule): the true sentence (Yes)
-    and "It is forbidden/optional for <subject> to X" (No), so neither does;
-  - ``question``: "Can <subject> X?" from the true sentence (Yes) and from the
-    twin (No) for number, state and side twins of a can/may sentence; for a
-    polarity twin of a can/may sentence, "Can <subject> X?" and "Is it true
-    that <subject> cannot X?", labelled by what the rule says.
+  - a positive rule verbatim: Yes, no negation; negated: No, with negation;
+  - a negative rule verbatim: Yes, with negation; un-negated: No, without.
 
-About a third of eligible pairs become questions and about one other pair in
-five is negated (by hash); the rest start as statements, and while the items
-containing a negation lean to one label, statements leaning that way become
-lexical or negated (in hash order) until Yes and No items with a negation are
-equal. Most rules allow or require something, so their statement twins carry
-the "not"; balancing that keeps negations at about 70% of items rather than half.
-The phrasing depends only on the pairs, never on their order.
+Each pair is a ``statement`` (the true sentence and its twin) or, whenever it
+has a natural question form, a ``question`` (about a third of items): the
+main clause's modal or auxiliary is inverted ("Can you ...?", "May a player
+...?", "Does a Unit have to ...?", "Is the fixer area ...?"), a leading
+condition kept in front; never "Is it true that". A sentence whose subject is
+a pronoun, longer than six words, or starts with only/some/any/not is not
+inverted. For number, state and side twins both items are questions the rule
+answers Yes and No; for a polarity twin the side the rule says yes to is
+asked, the other stays a statement, so a question's label is never just its
+polarity.
+
+Negation balance. Most rules allow or require something, so negations sit
+mostly on the No side. After the leak guard, whole pairs of the
+over-represented shape are dropped in hash order until the Yes share among
+items with a negation, and among items without one, are both within 45-55%;
+the build fails if they cannot be brought within 40-60%. The 2x2 and the drop
+count are in the manifest. Labels stay exactly 50/50.
 
 Validity. A pair is dropped when the source sentence is not visible, word for
 word, in the preloaded tool results of either of its prompts: the target
@@ -177,7 +185,7 @@ import json
 import re
 import statistics
 import sys
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from pathlib import Path
 
 REPO_ROOT = Path(__file__).resolve().parent.parent
@@ -199,8 +207,8 @@ GOLD_DIR = REPO_ROOT / "data/gold"
 SPLIT_SALT = DATASET
 VALID_PERCENT = 10
 EVAL_MAX_TOKENS = 4096  # the v7 commands' --max-tokens; the stand-in model ignores it
-QUESTION_EVERY = 3      # about one eligible pair in three becomes a question
-NEGATED_EVERY = 5       # about one other pair in five is always phrased "It is not true that ..."
+BALANCE_BAND = (0.45, 0.55)   # pairs are dropped until the Yes share with and without a negation is in here
+BALANCE_LIMIT = (0.40, 0.60)  # ... and the build fails if it cannot get them inside this
 LEAK_NGRAM = 8
 LEAK_RATIO = 0.8
 MIN_WORDS, MAX_WORDS = 5, 45
@@ -210,7 +218,8 @@ LABEL_ANSWER = {"A": "Yes", "B": "No"}
 TEMPLATE_KIND = "rule-template"
 SCENARIO_KIND = "scenario-drafted"
 SCENARIO_FIELDS = ("id", "statement", "label", "source_rule_ids", "kind")
-MUTATIONS = ("polarity", "permissive", "number", "state", "side", "quantifier")
+MUTATIONS = ("polarity", "number", "state", "side", "quantifier")
+NEGATIVE_ADJECTIVE_RE = re.compile(r"\b(?:un|in|im|ir|il|non-?)\w+(?:able|ible)\b", re.I)
 
 
 class BuildError(Exception):
@@ -266,7 +275,7 @@ IMPERATIVES = {"draw", "place", "shuffle", "choose", "roll", "put", "pay", "spen
 def declarative(text: str) -> str:
     """An instruction made a statement: "Draw 6 cards." -> "You draw 6 cards." (also after "If X, ").
 
-    A bare instruction is not a statement to judge, and "It is not true that draw 6 cards" is not English.
+    A bare instruction is not a statement to judge, and "Can draw 6 cards?" is not a question.
     """
     prefix = CLAUSE_PREFIX_RE.match(text).group(0)
     rest = text[len(prefix):]
@@ -381,7 +390,7 @@ POLARITY_FORMS = [
     (r"\b(?:doesn't|don't|isn't|aren't)\b", lambda m: _CONTRACTED[m.group().lower()], True),
     (r"\bcan\b", "cannot", False),
     (r"\bmay\b", "may not", False),
-    (r"\bmust\b", "need not", False),
+    (r"\bmust\b", "does not have to", False),  # agreement is fixed in mutate_polarity
     (r"\bshould\b", "should not", False),
     (r"\b(is|are) considered\b", r"\1 not considered", False),
     (r"\balways\b", "never", False),
@@ -471,6 +480,21 @@ def mutate_polarity(text: str, deontic_only: bool = False) -> Mutation | str | N
     rest = text[span[0]:site.start] + text[site.end:span[1]]
     if NEGATION_RE.search(rest) or RESTRICTOR_RE.search(main):
         return "polarity-extra-negation"
+    if NEGATIVE_ADJECTIVE_RE.search(main):
+        return "polarity-negative-word"  # "should not be indistinguishable" reads as two negations
+    if site.text.lower() == "must":
+        subject = text[span[0]:site.start].strip()
+        if not subject:
+            return "polarity-agreement"
+        new = ("do not have to" if is_plural(subject) else "does not have to")
+        after = text[site.end:]
+        following = after.split(" ", 2)[1] if len(after.split(" ", 2)) > 1 else ""
+        if following.lower() == "still":  # "must still meet" -> "does not have to meet"
+            twin = text[:site.start] + new + after[len(" still"):]
+            return Mutation("polarity", twin, f"{site.text} still", new)
+        if following.lower() in ("also", "always", "only", "first", "never", "then"):
+            return "polarity-adverb"
+        return Mutation("polarity", _replace(text, site.start, site.end, new), site.text, new)
     return Mutation("polarity", _replace(text, site.start, site.end, site.replacement), site.text, site.replacement)
 
 
@@ -485,36 +509,84 @@ LOWERABLE = {"you", "a", "an", "the", "each", "every", "players", "player", "you
              "record", "report", "ensure", "submit", "bring", "forgo", "trash", "discard", "judges", "event",
              "events", "tournament", "organizers", "competitors", "participants", "decklists", "on", "upon",
              "unless", "since", "although", "even", "whether", "throughout", "within", "outside", "following",
-             "card", "cards", "effects", "an", "pieces", "spectators", "judge", "it", "always", "never", "some"}
+             "card", "cards", "effects", "pieces", "spectators", "judge", "it", "always", "never", "some"}
+
+
+CASE_EVIDENCE: dict[str, tuple[int, int]] = {}  # word -> (lowercase uses, capitalised mid-sentence uses)
+
+
+def set_case_evidence(texts: list[str]) -> None:
+    """Count how the sources spell each word, so a sentence-initial "Face-down cards" can be lowered when it
+    moves behind an inverted verb while "Legends" or "Gig" (game terms, capitalised mid-sentence) stay."""
+    CASE_EVIDENCE.clear()
+    for text in texts:
+        for m in re.finditer(r"(?<=[a-z,] )([A-Z][\w-]*)|\b([a-z][\w-]*)", text):
+            word = (m.group(1) or m.group(2)).lower()
+            low, cap = CASE_EVIDENCE.get(word, (0, 0))
+            CASE_EVIDENCE[word] = (low + 1, cap) if m.group(2) else (low, cap + 1)
 
 
 def lcfirst(text: str) -> str:
     first = text.split(" ", 1)[0]
-    lower = first.lower() in LOWERABLE or (first.endswith("ing") and first[1:].islower())  # "Moving a card"
+    low, cap = CASE_EVIDENCE.get(first.lower(), (0, 0))
+    lower = (first.lower() in LOWERABLE or (first.endswith("ing") and first[1:].islower())  # "Moving a card"
+             or (first[1:].islower() or "-" in first) and low > 2 * cap)
     return text[0].lower() + text[1:] if lower else text
 
 
-@dataclass(frozen=True)
-class Clause:
-    prefix: str    # "If X, " or ""
-    subject: str
-    modal: ModalSite
-    rest: str      # after the modal, without the final period
+PLURAL_HEADS = {"dice", "people", "you", "we", "they"}
 
 
-def parse_clause(text: str, modals: tuple[str, ...] = ("can", "may")) -> Clause | None:
-    """``<prefix>, <subject> <modal> <rest>.``: the main clause's one site is one of ``modals``, after a short
-    plain subject."""
+def is_plural(subject: str) -> bool:
+    """Whether ``subject`` takes "do"/"are": "you", "both/all ...", or a head noun ending in s ("Card sleeves")."""
+    words = [w.lower() for w in subject.split()]
+    if words[0] in ("you", "we", "they", "both", "all") or words[-1] in PLURAL_HEADS:
+        return True
+    if words[0] in ("a", "an", "each", "every", "this", "that", "one"):
+        return False
+    head = words[-1]
+    return head.endswith("s") and not head.endswith(("ss", "'s", "us", "is"))
+
+
+# How a main-clause site turns into a question: (lead word, does the rule as written say yes?).
+# "have to" and "have" leads take Do/Does by the subject; is/are keep their own form.
+QUESTION_FORMS = {
+    "can": ("Can", True), "cannot": ("Can", False), "can't": ("Can", False), "can not": ("Can", False),
+    "may": ("May", True), "may not": ("May", False), "must not": ("May", False), "mustn't": ("May", False),
+    "must": ("have to", True), "need not": ("have to", False), "do not have to": ("have to", False),
+    "does not have to": ("have to", False), "don't have to": ("have to", False),
+    "doesn't have to": ("have to", False),
+    "should": ("Should", True), "should not": ("Should", False), "shouldn't": ("Should", False),
+    "is": ("Is", True), "are": ("Are", True), "is not": ("Is", False), "are not": ("Are", False),
+    "isn't": ("Is", False), "aren't": ("Are", False),
+    "is considered": ("Is", True), "are considered": ("Are", True),
+    "is not considered": ("Is", False), "are not considered": ("Are", False),
+    "does not": ("Does", False), "do not": ("Do", False), "doesn't": ("Does", False), "don't": ("Do", False),
+    "has": ("have", True), "have": ("have", True),
+}
+
+
+def to_question(text: str) -> tuple[str, bool] | None:
+    """(a yes/no question made by inverting the main clause's modal or auxiliary, whether ``text`` answers it yes).
+
+    "If X, you cannot Y." -> ("If X, can you Y?", False); "Card sleeves must follow Z." -> ("Do card sleeves have
+    to follow Z?", True). None when the clause has no single invertible site after a short plain subject
+    (never/always, "may be", a pronoun or clause as subject), so no "Is it true that ..." form is ever needed.
+    """
     sites, span = main_sites(text)
-    if span is None or len(sites) != 1 or sites[0].negative or sites[0].text.lower() not in modals:
+    if span is None or len(sites) != 1:
         return None
     site = sites[0]
-    if site.text.lower() == "may" and text[site.end:].split(" ", 2)[1:2] == ["be"]:
+    key = re.sub(r"\s+", " ", site.text.lower())
+    if key not in QUESTION_FORMS:
         return None
+    if key.startswith("may") and text[site.end:].split(" ", 2)[1:2] == ["be"]:
+        return None
+    lead, says_yes = QUESTION_FORMS[key]
     prefix = text[:span[0]]
     subject = text[span[0]:site.start].strip()
     words = subject.split()
-    if not 1 <= len(words) <= 5 or not all(SUBJECT_WORD_RE.match(w) for w in words):
+    if not 1 <= len(words) <= 6 or not all(SUBJECT_WORD_RE.match(w) for w in words):
         return None
     if (words[0].lower() in PRONOUN_START or words[0].lower() in ("only", "not", "some", "most", "many", "any")
             or SUBORDINATOR_RE.search(subject)):
@@ -522,45 +594,16 @@ def parse_clause(text: str, modals: tuple[str, ...] = ("can", "may")) -> Clause 
     rest = text[site.end:].strip()
     if not rest.endswith(".") or len(rest.split()) < 2:
         return None
-    return Clause(prefix, subject, site, rest[:-1])
-
-
-LEXICAL_WORDS = {"can": "forbidden", "may": "forbidden", "must": "optional"}
-
-
-def lexical_twin(text: str) -> str | None:
-    """The negation of a can/may/must sentence with no "not": "It is forbidden/optional for <subject> to X."."""
-    clause = parse_clause(text, tuple(LEXICAL_WORDS))
-    if clause is None:
-        return None
-    lead = "it" if clause.prefix else "It"
-    word = LEXICAL_WORDS[clause.modal.text.lower()]
-    return f"{clause.prefix}{lead} is {word} for {lcfirst(clause.subject)} to {clause.rest}."
-
-
-def to_question(text: str) -> str | None:
-    clause = parse_clause(text)
-    if clause is None:
-        return None
-    subject = lcfirst(clause.subject)
-    lead = f"{clause.prefix}can" if clause.prefix else "Can"
-    return f"{lead} {subject} {clause.rest}?"
-
-
-def mutate_permissive(text: str) -> Mutation | str | None:
-    clause = parse_clause(text)
-    if clause is None:
-        return None
-    start, end = main_clause(text)
-    main = text[start:clause.modal.start] + text[clause.modal.end:end]
-    if NEGATION_RE.search(main) or RESTRICTOR_RE.search(main) or OTHER_MODAL_RE.search(main):
-        return "permissive-extra-negation"
-    subject = clause.subject[0].lower() + clause.subject[1:] if clause.subject.split()[0].lower() in LOWERABLE \
-        else clause.subject
-    lead = "it" if clause.prefix else "It"
-    new = f"{lead} is not allowed for {subject} to {clause.rest}"
-    twin = f"{clause.prefix}{new}."
-    return Mutation("permissive", twin, f"{clause.subject} {clause.modal.text} {clause.rest}", new)
+    rest = rest[:-1]
+    if lead == "have to":
+        rest = re.sub(r"^still\s+", "", rest)
+        lead, rest = ("Do" if is_plural(subject) else "Does"), f"have to {rest}"
+    elif lead == "have":
+        lead, rest = ("Do" if is_plural(subject) else "Does"), f"have {rest}"
+    if key.endswith("considered"):
+        rest = f"considered {rest}"
+    lead = lead.lower() if prefix else lead
+    return f"{prefix}{lead} {lcfirst(subject)} {rest}?", says_yes
 
 
 NUMBER_WORDS = ["zero", "one", "two", "three", "four", "five", "six", "seven", "eight", "nine", "ten", "eleven",
@@ -702,24 +745,19 @@ def mutate_quantifier(text: str) -> Mutation | str | None:
     prefix = text[:span[0]]
     clause = text[span[0]:]
     first = clause.split(" ", 1)[0]
-    if first.lower() not in ("only", "each", "every"):
+    if first.lower() not in ("each", "every"):
         return None
     main = text[span[0]:span[1]]
     others = NEGATION_RE.search(main) or OTHER_MODAL_RE.search(main) or re.search(
         r"\b(unless|except|otherwise|instead|rather)\b", main, re.I)
     if others:
         return "quantifier-extra-negation"
-    if first.lower() == "only":
-        if len(ONLY_RE.findall(text)) != 1:
-            return "quantifier-several"
-        new = "Not only" if not prefix else "not only"
-    else:
-        if len(EACH_RE.findall(text)) != 1 or ONLY_RE.search(text):
-            return "quantifier-several"
-        noun = clause.split()[1] if len(clause.split()) > 1 else ""
-        if not noun or noun.endswith("s") and not noun.endswith("ss"):
-            return "quantifier-plural"
-        new = "Only one" if not prefix else "only one"
+    if len(EACH_RE.findall(text)) != 1 or ONLY_RE.search(text):
+        return "quantifier-several"
+    noun = clause.split()[1] if len(clause.split()) > 1 else ""
+    if not noun or noun.endswith("s") and not noun.endswith("ss"):
+        return "quantifier-plural"
+    new = "Only one" if not prefix else "only one"
     start = len(prefix)
     return Mutation("quantifier", _replace(text, start, start + len(first), new), first, new)
 
@@ -727,7 +765,7 @@ def mutate_quantifier(text: str) -> Mutation | str | None:
 def mutations_for(text: str, salt: str, tournament: bool = False) -> tuple[list[Mutation], list[str]]:
     """Every mutation that applies unambiguously, and the reasons the ones that looked applicable were refused."""
     found, refused = [], []
-    for result in (mutate_polarity(text, deontic_only=tournament), mutate_permissive(text), mutate_number(text, salt), mutate_state(text),
+    for result in (mutate_polarity(text, deontic_only=tournament), mutate_number(text, salt), mutate_state(text),
                    mutate_side(text), mutate_quantifier(text)):
         if isinstance(result, Mutation):
             if result.text != text:
@@ -739,15 +777,15 @@ def mutations_for(text: str, salt: str, tournament: bool = False) -> tuple[list[
 
 # Phrasing and targets ----------------------------------------------------------------------
 
-NEG_TOKEN_RE = re.compile(r"\b(not|cannot|never|no)\b|n't\b", re.I)
+NEG_TOKEN_RE = re.compile(r"\b(not|cannot|never|no|none|nothing|neither|nor)\b|n't\b", re.I)
+
+
+def negation_count(text: str) -> int:
+    return len(NEG_TOKEN_RE.findall(text))
 
 
 def has_negation(text: str) -> bool:
-    return bool(NEG_TOKEN_RE.search(text))
-
-
-def negated(text: str) -> str:
-    return f"It is not true that {lcfirst(text[:-1] if text.endswith('.') else text)}."
+    return negation_count(text) > 0
 
 
 def rule_ref(rule_id: str, capital: bool = False) -> str:
@@ -769,9 +807,6 @@ def _conclusion(phrasing: str, label: str) -> str:
 
 
 def _difference(mutation: Mutation) -> str:
-    if mutation.kind == "permissive":
-        return ("says it is not allowed, but the rule allows it; the rules are permissive, so nothing else has to "
-                "permit it")
     return f'says "{mutation.new}" where the rule says "{mutation.old}"'
 
 
@@ -783,95 +818,78 @@ class Pair:
     true_text: str
     mutation: Mutation
     phrasing: str = ""
-    items: list[dict] = field(default_factory=list)
 
 
-def pair_items(pair: Pair) -> list[tuple[str, str, str, str]]:
-    """(statement, label, think, visible) for the Yes item and the No item of ``pair``."""
-    rid, quote, m = pair.rule_id, clean(pair.raw), pair.mutation  # the rule as written, not made declarative
-    ref, Ref = rule_ref(rid), rule_ref(rid, capital=True)
-    false_text = m.text
-    out = []
-    if pair.phrasing == "statement":
-        out.append((true_text := pair.true_text, "A",
-                    f'The statement to judge: "{true_text}" {Ref} says: "{quote}" The statement says the same '
-                    f"thing as the rule{', including its negation' if has_negation(true_text) else ''}, so it is true.",
-                    _visible(Ref, quote, _conclusion("statement", "A"), "A")))
-        out.append((false_text, "B",
-                    f'The statement to judge: "{false_text}" {Ref} says: "{quote}" The statement {_difference(m)}, '
-                    "so it contradicts the rule and is false.",
-                    _visible(Ref, quote, _conclusion("statement", "B"), "B")))
-    elif pair.phrasing == "negated":
-        yes, no = negated(false_text), negated(pair.true_text)
-        out.append((yes, "A",
-                    f'The statement to judge: "{yes}" It denies that "{false_text}" {Ref} says: "{quote}" '
-                    f"What it denies {_difference(m)}, so what it denies is false, and the statement, which denies "
-                    "it, is true.",
-                    _visible(Ref, quote, _conclusion("negated", "A"), "A")))
-        out.append((no, "B",
-                    f'The statement to judge: "{no}" It denies that "{pair.true_text}" {Ref} says: "{quote}" '
-                    f"That is exactly what {ref} says, so what it denies is true, and the statement, which denies "
-                    "it, is false.",
-                    _visible(Ref, quote, _conclusion("negated", "B"), "B")))
-    elif pair.phrasing == "question":
-        out.extend(question_items(pair) or ())
-    elif pair.phrasing == "lexical":
-        twin = lexical_twin(pair.true_text)
-        word = LEXICAL_WORDS[m.old.lower()]
-        out.append((pair.true_text, "A",
-                    f'The statement to judge: "{pair.true_text}" {Ref} says: "{quote}" The statement says the same '
-                    "thing as the rule, so it is true.",
-                    _visible(Ref, quote, _conclusion("statement", "A"), "A")))
-        out.append((twin, "B",
-                    f'The statement to judge: "{twin}" {Ref} says: "{quote}" The statement says it is {word} where '
-                    f'the rule says "{m.old}", so it contradicts the rule and is false.',
-                    _visible(Ref, quote, _conclusion("statement", "B"), "B")))
-    else:
-        raise BuildError(f"unknown phrasing {pair.phrasing!r}")
-    return out
+@dataclass(frozen=True)
+class Item:
+    statement: str
+    label: str
+    phrasing: str     # "statement" or "question"
+    think: str
+    visible: str
 
 
-QUESTION_MODALS = ("can", "can't", "cannot", "can not", "may", "may not")
+def question_pair(pair: Pair) -> list[tuple[str, str, bool]] | None:
+    """The pair with questions where they read naturally: [(text, phrasing, is the text true)] for its two items.
 
-
-def question_items(pair: Pair) -> list[tuple[str, str, str, str]] | None:
-    """The pair as two questions, or None when it cannot be asked as one.
-
-    A number, state or side twin of a can/may sentence asks "Can <subject> X?" of the sentence (Yes) and of
-    the twin (No). A polarity twin of a can/may sentence asks "Can <subject> X?" of whichever of the two
-    says "can" or "may" (Yes when that is the rule) and "Is it true that <subject> cannot X?" of the other.
+    A number, state or side twin asks the inverted question of the rule and of the twin ("Can you choose a
+    ready Unit?" yes, "... a spent Unit?" no). A polarity twin inverts to the same question as the rule, so
+    the question stands in for whichever of the two has no negation, and the other stays a statement: "You
+    cannot X" gives the statement (true) and "Can you X?" (no); "You may X" gives "May you X?" (yes) and the
+    twin "You may not X" (false). None when no natural question can be made.
     """
-    m, rid, quote = pair.mutation, pair.rule_id, clean(pair.raw)
-    Ref = rule_ref(rid, capital=True)
+    m = pair.mutation
     if m.kind in ("number", "state", "side"):
         yes, no = to_question(pair.true_text), to_question(m.text)
-        if not yes or not no:
+        if not yes or not no or not yes[1] or not no[1]:
             return None
-        return [(yes, "A", f'The question: "{yes}" {Ref} says: "{quote}" The question asks about exactly what the '
-                           "rule allows, so the answer is yes.",
-                 _visible(Ref, quote, _conclusion("question", "A"), "A")),
-                (no, "B", f'The question: "{no}" {Ref} says: "{quote}" The question {_difference(m)}, so the rule '
-                          "does not allow what it asks about and the answer is no.",
-                 _visible(Ref, quote, _conclusion("question", "B"), "B"))]
-    if m.kind != "polarity" or m.old.lower() not in QUESTION_MODALS:
+        return [(yes[0], "question", True), (no[0], "question", False)]
+    if m.kind != "polarity":
         return None
-    rule_allows = m.old.lower() in ("can", "may")
-    positive, negative = (pair.true_text, m.text) if rule_allows else (m.text, pair.true_text)
-    ask = to_question(positive)
-    if not ask or not negative.endswith("."):
+    asked = to_question(pair.true_text)
+    if asked is None or to_question(m.text) is None or to_question(m.text)[0] != asked[0]:
         return None
-    deny = f"Is it true that {lcfirst(negative[:-1])}?"
-    can_label, deny_label = ("A", "B") if rule_allows else ("B", "A")
-    verdict = "allows" if rule_allows else "forbids"
-    return sorted([
-        (ask, can_label, f'The question: "{ask}" {Ref} says: "{quote}" The rule {verdict} it, so the answer is '
-                         f"{LABEL_ANSWER[can_label].lower()}.",
-         _visible(Ref, quote, _conclusion("question", can_label), can_label)),
-        (deny, deny_label, f'The question asks whether "{negative[:-1]}" is true. {Ref} says: "{quote}" '
-                           + ("That is what the rule says" if deny_label == "A" else "The rule says the opposite")
-                           + f", so the answer is {LABEL_ANSWER[deny_label].lower()}.",
-         _visible(Ref, quote, _conclusion("question", deny_label), deny_label)),
-    ], key=lambda item: item[1])
+    if asked[1]:  # the rule says yes: the question is the Yes item, the negated twin the No item
+        return [(asked[0], "question", True), (m.text, "statement", False)]
+    return [(pair.true_text, "statement", True), (asked[0], "question", False)]
+
+
+def pair_items(pair: Pair) -> list[Item]:
+    """The Yes item and the No item of ``pair`` as phrased (``statement`` or ``question``)."""
+    rid, quote, m = pair.rule_id, clean(pair.raw), pair.mutation  # the rule as written, not made declarative
+    Ref = rule_ref(rid, capital=True)
+    if pair.phrasing == "question":
+        texts = question_pair(pair)
+        if texts is None:
+            raise BuildError(f"{rid}: no question form")
+    elif pair.phrasing == "statement":
+        texts = [(pair.true_text, "statement", True), (m.text, "statement", False)]
+    else:
+        raise BuildError(f"unknown phrasing {pair.phrasing!r}")
+    items = []
+    for text, phrasing, true in texts:
+        if phrasing == "statement":
+            label = "A" if true else "B"
+            if true:
+                think = (f'The statement to judge: "{text}" {Ref} says: "{quote}" The statement says the same thing '
+                         "as the rule, so it is true.")
+            else:
+                think = (f'The statement to judge: "{text}" {Ref} says: "{quote}" The statement {_difference(m)}, '
+                         "so it contradicts the rule and is false.")
+        else:
+            says_yes = to_question(pair.true_text if true else m.text)[1]
+            label = "A" if says_yes == true else "B"
+            answer = LABEL_ANSWER[label].lower()
+            if true or m.kind == "polarity":
+                think = f'The question: "{text}" {Ref} says: "{quote}" So by the rule the answer is {answer}.'
+            else:
+                think = (f'The question: "{text}" {Ref} says: "{quote}" The question {_difference(m)}, so by the '
+                         f"rule the answer is {answer}.")
+        items.append(Item(text, label, phrasing, think, _visible(Ref, quote, _conclusion(phrasing, label), label)))
+    items.sort(key=lambda i: i.label)
+    if [i.label for i in items] != ["A", "B"]:
+        raise BuildError(f"{rid}: a pair must hold one Yes and one No item")
+    return items
 
 
 def target_text(think: str, visible: str) -> str:
@@ -1079,16 +1097,47 @@ def split_of(rule_id: str) -> str:
     return "valid" if _h(SPLIT_SALT, rule_id) % 100 < VALID_PERCENT else "train"
 
 
-def candidate_pairs(rules: list[dict], skips: dict[str, int]) -> list[Pair]:
+DOCUMENT_HEADING = "Official Rules Document"
+DOCUMENT_SUBJECT_RE = re.compile(r"^(the official rules|the comprehensive rules|the tournament rules|this document|"
+                                 r"these rules)\b", re.I)
+
+
+def document_rule_ids(rows: list[dict]) -> set[str]:
+    """Rules about the rules document itself: every row under the unnumbered heading titled
+    ``DOCUMENT_HEADING`` (1.1-1.3: "This is an exhaustive document...", the language note), found by the
+    rows' ``parent`` links, not by their wording."""
+    children: dict[str, list[str]] = {}
+    for r in rows:
+        if r.get("parent"):
+            children.setdefault(r["parent"], []).append(r["id"])
+    out: set[str] = set()
+    stack = [r["id"] for r in rows if r.get("kind") == "section" and not r.get("is_numbered")
+             and r.get("title") == DOCUMENT_HEADING]
+    while stack:
+        current = stack.pop()
+        for child in children.get(current, ()):
+            if child not in out:
+                out.add(child)
+                stack.append(child)
+    return out
+
+
+def candidate_pairs(rules: list[dict], skips: dict[str, int], exclude: set[str] = frozenset()) -> list[Pair]:
     """One pair per usable sentence, in rule order (input order never matters)."""
     pairs = []
     for rule in sorted(rules, key=lambda r: rule_sort_key(r["id"])):
         for index, raw in enumerate(raw_sentences(rule_body(rule["text"]))):
             text = clean(raw)
-            reason = sentence_skip(raw, text)
+            reason = "document-meta" if rule["id"] in exclude else sentence_skip(raw, text)
             text = declarative(text)
+            span = main_clause(text)
+            if reason is None and span and DOCUMENT_SUBJECT_RE.match(text[span[0]:]):
+                reason = "document-meta"  # "The Official Rules are in second-person ...": about the document
+            if reason is None and negation_count(text) > 1:
+                reason = "two-negations"
             if reason is None:
                 found, refused = mutations_for(text, f"{rule['id']}:{index}", rule["id"].startswith("TR "))
+                found = [m for m in found if negation_count(m.text) <= 1]
                 if not found:
                     reason = refused[0] if len(set(refused)) == 1 else ("mutation-refused" if refused
                                                                         else "no-mutation-applies")
@@ -1100,48 +1149,63 @@ def candidate_pairs(rules: list[dict], skips: dict[str, int]) -> list[Pair]:
     return pairs
 
 
-def lexical_eligible(pair: Pair) -> bool:
-    """A polarity pair from a rule that allows or requires something, whose twin can be said with no "not"."""
-    return (pair.mutation.kind == "polarity" and pair.mutation.old.lower() in LEXICAL_WORDS
-            and lexical_twin(pair.true_text) is not None)
-
-
-def _negation_balance(pair: Pair) -> int:
-    """Yes items minus No items of ``pair`` (as phrased now) that contain a negation."""
-    return sum((1 if label == "A" else -1) * has_negation(statement) for statement, label, *_ in pair_items(pair))
-
-
 def choose_phrasing(pairs: list[Pair]) -> None:
-    """Give every pair a phrasing so that a negation is no cue to the label, with as few negations as that allows.
-
-    About one eligible pair in ``QUESTION_EVERY`` becomes a question and about one other pair in
-    ``NEGATED_EVERY`` is negated ("It is not true that ..."), both by hash, so double negations are drilled
-    whatever the balance. The rest start as statements. A statement pair from a rule that allows something
-    has its "not" on the No item, one from a rule that forbids on the Yes item; negating a pair puts "not"
-    on both, and a ``lexical`` pair (a can/may/must rule's twin said as "It is forbidden/optional for
-    <subject> to X") on neither. So while the items with a negation lean to one label, statement pairs
-    leaning that way become lexical where they can and negated otherwise, in hash order, until the Yes and
-    No items with a negation are equal (or no such pair is left).
-    The choice depends only on the pairs, never on their order.
-    """
-    rest = []
+    """A pair that has a natural question form is asked (about a third of items); the rest are statements.
+    The choice depends only on the pair, never on input order."""
     for pair in pairs:
-        h = _h(pair.rule_id, pair.true_text, "phrasing")
-        if h % QUESTION_EVERY == 0 and question_items(pair):
-            pair.phrasing = "question"
-        elif (h >> 16) % NEGATED_EVERY == 0:
-            pair.phrasing = "negated"
-        else:
-            pair.phrasing = "statement"
-            rest.append((h, pair))
-    balance = sum(_negation_balance(p) for p in pairs)
-    for _, pair in sorted(rest, key=lambda r: (r[0], r[1].rule_id, r[1].sentence_index)):
-        if balance == 0:
+        pair.phrasing = "question" if question_pair(pair) else "statement"
+
+
+def negation_table(rows: list[dict]) -> dict:
+    """The 2x2 of label by whether the statement has a negation, with the Yes share of each row of it."""
+    table = {"negation": {"A": 0, "B": 0}, "no_negation": {"A": 0, "B": 0}}
+    for r in rows:
+        table["negation" if has_negation(r["statement"]) else "no_negation"][r["label"]] += 1
+    for cells in list(table.values()):
+        total = cells["A"] + cells["B"]
+        cells["yes_share"] = round(cells["A"] / total, 4) if total else None
+    return table
+
+
+def _shares(groups: list[tuple[str, list[dict]]]) -> tuple[float, float]:
+    t = negation_table([r for _, rows in groups for r in rows])
+    return t["negation"]["yes_share"] or 0.5, t["no_negation"]["yes_share"] or 0.5
+
+
+def balance_negation(groups: list[tuple[str, list[dict]]]) -> tuple[list[tuple[str, list[dict]]], int]:
+    """Drop whole pairs, in hash order, until a negation does not predict the label.
+
+    Most rules allow or require something, so their negated twins put "not" on the No side and their own
+    wording puts the plain form on the Yes side. While the Yes share among items with a negation, or among
+    items without one, falls outside ``BALANCE_BAND``, a pair of the over-represented shape (Yes plain + No
+    negated, or Yes negated + No plain) is dropped. Each pair keeps one Yes and one No, so labels stay 50/50.
+    Fails closed if the shares cannot be brought within ``BALANCE_LIMIT``.
+    """
+    lo, hi = BALANCE_BAND
+    kept = sorted(groups, key=lambda g: (_h(g[1][0]["id"], "balance"), g[1][0]["id"]))
+    dropped = 0
+    while True:
+        neg_yes, plain_yes = _shares(kept)
+        if lo <= neg_yes <= hi and lo <= plain_yes <= hi:
             break
-        lean = _negation_balance(pair)
-        if lean and (lean > 0) == (balance > 0):
-            pair.phrasing = "lexical" if lexical_eligible(pair) else "negated"
-            balance += _negation_balance(pair) - lean
+        if neg_yes < lo or plain_yes > hi:
+            shape = {("A", False), ("B", True)}  # rule allows: Yes plain, No negated
+        else:
+            shape = {("A", True), ("B", False)}  # rule forbids: Yes negated, No plain
+        victim = next((g for g in kept if {(r["label"], has_negation(r["statement"])) for r in g[1]} == shape), None)
+        if victim is None:
+            break
+        kept.remove(victim)
+        dropped += 1
+    neg_yes, plain_yes = _shares(kept)
+    low, high = BALANCE_LIMIT
+    table = negation_table([r for _, rows in kept for r in rows])
+    if not all(cells["A"] and cells["B"] for cells in table.values()):
+        raise BuildError(f"negation balance left an empty cell: {table}")
+    if not (low <= neg_yes <= high and low <= plain_yes <= high):
+        raise BuildError(f"negation still predicts the label: Yes share {neg_yes} with a negation, "
+                         f"{plain_yes} without")
+    return sorted(kept, key=lambda g: (rule_sort_key(g[0]), g[1][0]["id"])), dropped
 
 
 @dataclass
@@ -1165,8 +1229,10 @@ def build(rule_rows: list[dict], gold_dir: Path = GOLD_DIR, scenarios: list[dict
     ids = [r["id"] for r in rules]
     if len(set(ids)) != len(ids):
         raise BuildError("duplicate rule ids in the sources")
+    set_case_evidence([r.get("text", "") for r in rule_rows])
     skips: dict[str, int] = {}
-    pairs = candidate_pairs(rules, skips)
+    excluded = document_rule_ids(rule_rows)
+    pairs = candidate_pairs(rules, skips, excluded)
     choose_phrasing(pairs)
 
     methods: dict[str, int] = {}
@@ -1175,9 +1241,8 @@ def build(rule_rows: list[dict], gold_dir: Path = GOLD_DIR, scenarios: list[dict
     staged: list[tuple[str, list[dict]]] = []  # (group key, rows) -- a group is dropped whole
     for pair in pairs:
         rows = []
-        for role, (statement, label, think, visible) in zip(("yes", "no"), pair_items(pair)):
-            if statement is None:
-                raise BuildError(f"no statement for {pair.rule_id}")
+        for role, item in zip(("yes", "no"), pair_items(pair)):
+            statement, label = item.statement, item.label
             prompt = scorer_prompt(statement)
             for m in prompt.search_methods:
                 methods[m] = methods.get(m, 0) + 1
@@ -1188,9 +1253,9 @@ def build(rule_rows: list[dict], gold_dir: Path = GOLD_DIR, scenarios: list[dict
             tools_seen.add(json.dumps(prompt.tools, sort_keys=True))
             meta = {"id": "tf-" + hashlib.sha256(f"{pair.rule_id}\x1f{pair.sentence_index}\x1f{role}".encode())
                     .hexdigest()[:12], "kind": TEMPLATE_KIND, "source_rule_ids": [pair.rule_id],
-                    "mutation": pair.mutation.kind, "phrasing": pair.phrasing, "label": label,
+                    "mutation": pair.mutation.kind, "phrasing": item.phrasing, "label": label,
                     "answer": LABEL_ANSWER[label], "statement": statement}
-            rows.append(example_row(prompt, target_text(think, visible), meta))
+            rows.append(example_row(prompt, target_text(item.think, item.visible), meta))
         if rows is None:
             skips["source-not-in-preload"] = skips.get("source-not-in-preload", 0) + 1
             continue
@@ -1224,6 +1289,7 @@ def build(rule_rows: list[dict], gold_dir: Path = GOLD_DIR, scenarios: list[dict
             leak_dropped += len(rows)
         else:
             kept_groups.append((key, rows))
+    kept_groups, balance_dropped = balance_negation(kept_groups)
     scenario_kept = [r for r in scenario_rows if r["id"] not in tripped]
     scenario_leak = len(scenario_rows) - len(scenario_kept)
     leak_dropped += scenario_leak
@@ -1271,8 +1337,7 @@ def build(rule_rows: list[dict], gold_dir: Path = GOLD_DIR, scenarios: list[dict
 
     sizes = sorted(_estimate(r) for r in all_rows)
     target_sizes = sorted(len(r["messages"][-1]["content"]) for r in all_rows)
-    neg_by_label = {lab: sum(1 for r in all_rows if r["label"] == lab and has_negation(r["statement"]))
-                    for lab in ("A", "B")}
+    templates = [r for r in all_rows if r["kind"] == TEMPLATE_KIND]
     manifest = {
         "dataset": DATASET, "builder_version": BUILDER_VERSION,
         "sources": [{"path": p, "sha256": file_sha256(REPO_ROOT / p)} for p in SOURCES],
@@ -1298,9 +1363,14 @@ def build(rule_rows: list[dict], gold_dir: Path = GOLD_DIR, scenarios: list[dict
                    "by_phrasing": count("phrasing"),
                    "by_mutation_and_label": count("ml", [{"ml": f"{r['mutation']}:{r['label']}"} for r in all_rows
                                                         if r["kind"] == TEMPLATE_KIND]),
-                   "negated_statements_by_label": neg_by_label,
+                   "question_share": round(sum(r["phrasing"] == "question" for r in all_rows) / len(all_rows), 4),
+                   "label_by_negation": negation_table(all_rows),
+                   "label_by_negation_templates": negation_table(templates),
+                   "balance": {"band": list(BALANCE_BAND), "limit": list(BALANCE_LIMIT),
+                               "pairs_dropped": balance_dropped},
                    "rules_used": len({r["source_rule_ids"][0] for r in all_rows}),
-                   "numbered_rules": len(rules)},
+                   "numbered_rules": len(rules),
+                   "document_rules_excluded": sorted(set(ids) & excluded, key=rule_sort_key)},
         "skips": dict(sorted(skips.items())), "scenario_skips": dict(sorted(scenario_skips.items())),
         "leak_guard": {"method": (f"normalised words (lowercase, brackets and punctuation removed); fails on a shared "
                                   f"word {LEAK_NGRAM}-gram between an item's statement or target and any gold "
@@ -1363,6 +1433,12 @@ def main(argv: list[str] | None = None) -> int:
     print(f"items {m['counts']['items']} (train {m['split']['train']}, valid {m['split']['valid']}); "
           f"labels {m['counts']['by_label']}; mutations {m['counts']['by_mutation']}")
     print(f"skips {m['skips']}")
+    table = m["counts"]["label_by_negation"]
+    print(f"label by negation (dropped {m['counts']['balance']['pairs_dropped']} pairs to balance): "
+          f"{'':12} Yes  No  Yes share")
+    for row in ("negation", "no_negation"):
+        print(f"  {row:12} {table[row]['A']:4} {table[row]['B']:3}  {table[row]['yes_share']}")
+    print(f"phrasing: question share {m['counts']['question_share']}")
     print(f"size estimate (chars/4 tokens): {m['size_estimate']['tokens_chars_div_4']}; "
           f"(chars/3): {m['size_estimate']['tokens_chars_div_3']}")
     texts = output_texts(result)

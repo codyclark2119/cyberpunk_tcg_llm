@@ -6,7 +6,9 @@ so every way it could teach the wrong thing must be pinned. A false twin that
 is still true teaches a wrong rule; a label skew re-teaches the lean toward No;
 a rule in both splits hides overfitting; a prompt that differs from the
 scorer's trains a shape the model never sees; a target the scorer cannot parse
-trains an answer it will not read; EXAMPLE text or a gold question in the items
+trains an answer it will not read; a negation that predicts the label, a
+wrapper ("It is not true that") or a double negative teaches a shortcut or
+unnatural English; EXAMPLE text or a gold question in the items
 breaks "rules text only" and "never train on the eval set". Most tests call the
 code on fixtures (a test over the committed files pins the data, not the code);
 the committed files are then checked to be exactly what the code builds.
@@ -78,7 +80,7 @@ def _single_edit(source: str, mutation: tf.Mutation) -> None:
 def test_polarity_flips_the_one_modal():
     cases = {
         "Players may not look at their Rival's hand during a game.": ("may not", "may"),
-        "Card sleeves must follow current regulations for the game format.": ("must", "need not"),
+        "Card sleeves must follow current regulations for the game format.": ("must", "do not have to"),
         "You can't look at or change the order of cards in your deck.": ("can't", "can"),
         "The trash is a public area of the game.": ("is", "is not"),
         "A persistent effect never becomes pending during a game.": ("never", "always"),
@@ -88,12 +90,31 @@ def test_polarity_flips_the_one_modal():
         m = tf.mutate_polarity(source)
         assert isinstance(m, tf.Mutation) and m.kind == "polarity" and (m.old, m.new) == (old, new), (source, m)
         _single_edit(source, m)
+    m = tf.mutate_polarity("A Unit must still meet the conditions to attack.")
+    assert m.text == "A Unit does not have to meet the conditions to attack.", m  # never "need not still meet"
+    assert tf.mutate_polarity("Bottom-decked cards should not be indistinguishable from the deck.") \
+        == "polarity-negative-word"
 
 
-def test_permissive_says_an_allowed_thing_is_not_allowed():
-    m = tf.mutate_permissive("At any point, you may concede the game.")
-    assert m.kind == "permissive" and m.text == "At any point, it is not allowed for you to concede the game."
-    assert tf.mutate_permissive("You cannot concede the game at any point.") is None  # forbids: not permissive
+def test_questions_invert_the_modal_naturally():
+    cases = {
+        "You cannot look at face-down cards in the Eddies area.":
+            ("Can you look at face-down cards in the Eddies area?", False),
+        "If an effect requires a target, you must choose a legal target.":
+            ("If an effect requires a target, do you have to choose a legal target?", True),
+        "A Unit must still meet the conditions to attack.": ("Does a Unit have to meet the conditions to attack?", True),
+        "Players may not offer compensation for a draw.": ("May players offer compensation for a draw?", False),
+        "The fixer area is a public area.": ("Is the fixer area a public area?", True),
+        "Your deck is not a public area.": ("Is your deck a public area?", False),
+        "A Unit does not inherit Tags from its equipped Gear.": ("Does a Unit inherit Tags from its equipped Gear?", False),
+    }
+    for source, expected in cases.items():
+        assert tf.to_question(source) == expected, (source, tf.to_question(source))
+    for source in ("It can attack during your turn.",                   # pronoun subject
+                   "Side events may be casual or competition-level events.",  # "may be"
+                   "Only ready Units can attack during the Main phase.",      # restricted subject
+                   "A persistent effect never becomes pending."):              # no invertible site
+        assert tf.to_question(source) is None, source
 
 
 def test_number_moves_the_one_number():
@@ -131,9 +152,8 @@ def test_state_and_side_swap_one_restrictive_word():
     assert tf.mutate_side("Pieces are not considered friendly Gigs here.") in ("side-negated", "side-not-restrictive")
 
 
-def test_quantifier_only_and_each():
-    m = tf.mutate_quantifier("Only ready Units can attack during the Main phase.")
-    assert m.text == "Not only ready Units can attack during the Main phase."
+def test_quantifier_each_becomes_only_one():
+    assert tf.mutate_quantifier("Only ready Units can attack during the Main phase.") is None  # no "Not only"
     m = tf.mutate_quantifier("Each player shuffles their deck before the game.")
     assert m.text == "Only one player shuffles their deck before the game."
     assert tf.mutate_quantifier("Each player can't shuffle their deck.") == "quantifier-extra-negation"
@@ -184,8 +204,62 @@ def test_labels_are_exactly_balanced():
         assert result.manifest["counts"]["by_label"]["A"] == result.manifest["counts"]["by_label"]["B"]
     rows = committed_rows()
     assert [r["label"] for r in rows].count("A") * 2 == len(rows)
-    neg = {lab: sum(tf.has_negation(r["statement"]) for r in rows if r["label"] == lab) for lab in "AB"}
-    assert neg["A"] == neg["B"] > 0  # "not" is on both labels, equally: it is no cue
+
+
+def test_negation_does_not_predict_the_label():
+    for rows in (subset_build().rows["train"] + subset_build().rows["valid"], committed_rows()):
+        table = tf.negation_table(rows)
+        for cell in ("negation", "no_negation"):
+            assert table[cell]["A"] and table[cell]["B"], table
+            assert 0.40 <= table[cell]["yes_share"] <= 0.60, table
+    plain = [(f"1.{i}", [{"id": f"p{i}-yes", "label": "A", "statement": "You may draw a card."},
+                         {"id": f"p{i}-no", "label": "B", "statement": "You may not draw a card."}]) for i in range(8)]
+    neg = [(f"2.{i}", [{"id": f"q{i}-yes", "label": "A", "statement": "You cannot draw a card."},
+                       {"id": f"q{i}-no", "label": "B", "statement": "You can draw a card."}]) for i in range(2)]
+    kept, dropped = tf.balance_negation(plain + neg)
+    table = tf.negation_table([r for _, g in kept for r in g])
+    assert dropped == 6 and table["negation"]["yes_share"] == 0.5, (dropped, table)
+    try:
+        tf.balance_negation(plain)  # every pair the same shape: nothing can balance it
+    except tf.BuildError:
+        pass
+    else:
+        raise AssertionError("an all-positive set must fail closed")
+
+
+def test_statements_are_natural_with_at_most_one_negation():
+    wrapper = re.compile(r"not true that|is it true|not allowed for|forbidden|optional for|need not|not only", re.I)
+    for row in committed_rows() + subset_build().rows["train"]:
+        statement = row["statement"]
+        assert not wrapper.search(statement), statement
+        assert tf.negation_count(statement) <= 1, statement
+        if row["phrasing"] == "question":
+            assert statement.endswith("?") and statement.count("?") == 1, statement
+        else:
+            assert re.search(r"\.[\"\u201d]?\Z", statement) and "?" not in statement, statement
+    assert tf.negation_count("You cannot not draw.") == 2
+    skips: dict = {}
+    assert tf.candidate_pairs([rule("3.1", "3.1. You cannot draw a card unless no effect is pending.")], skips) == []
+    assert skips == {"two-negations": 1}, skips
+
+
+def test_about_a_third_of_items_are_questions():
+    rows = committed_rows()
+    share = sum(r["phrasing"] == "question" for r in rows) / len(rows)
+    assert 0.25 <= share <= 0.40, share
+    assert {r["phrasing"] for r in rows} == {"statement", "question"}
+
+
+def test_rules_about_the_document_are_excluded():
+    rows = tf.load_sources()
+    excluded = tf.document_rule_ids(rows)
+    assert {"1.1", "1.2", "1.3"} <= excluded and not any(i.startswith(("2.", "5.", "TR")) for i in excluded), excluded
+    skips: dict = {}
+    pairs = tf.candidate_pairs([rule("1.4.1", "1.4.1. The Official Rules are written in second-person perspective."),
+                                rule("2.5", "2.5. The trash is a public area of the game.")], skips)
+    assert [p.rule_id for p in pairs] == ["2.5"] and skips == {"document-meta": 1}, (pairs, skips)
+    used = {r["source_rule_ids"][0] for r in committed_rows()}
+    assert not used & (excluded | {"1.4.1"}), used & excluded
 
 
 def test_split_never_shares_a_rule():
@@ -297,19 +371,29 @@ def test_build_drops_whole_pairs_that_leak():
     rows = [r for split in subset_build().rows.values() for r in split]
     chosen = None
     for yes in (r for r in rows if r["label"] == "A"):
-        twin = next(r for r in rows if r["label"] == "B" and r["source_rule_ids"] == yes["source_rule_ids"]
-                    and r["mutation"] == yes["mutation"] and r["phrasing"] == yes["phrasing"])
-        gold = [{"source": "g1", "text": yes["statement"]}]
+        same_rule = [r for r in rows if r["source_rule_ids"] == yes["source_rule_ids"]]
+        if len(same_rule) != 2:  # one pair from this rule, so its other row is the twin
+            continue
+        twin = next(r for r in same_rule if r["label"] == "B")
+        # Twins differ by one word, so a gold copy of either trips both; a gold question holding only an
+        # 8-gram of the Yes statement that the twin lacks trips the Yes item alone.
+        twin_grams = tf.ngrams(tf.normalise(twin["statement"] + " " + twin["messages"][-1]["content"]))
+        own = sorted(tf.ngrams(tf.normalise(yes["statement"])) - twin_grams)
+        if not own:
+            continue
+        gold = [{"source": "g1", "text": " ".join(own[0])}]
         alone = tf.leak_guard([{"id": twin["id"], "statement": twin["statement"],
                                 "target": twin["messages"][-1]["content"]}], gold, gold)
-        if alone.ok:
-            chosen = (yes, twin)
+        hit = tf.leak_guard([{"id": yes["id"], "statement": yes["statement"],
+                              "target": yes["messages"][-1]["content"]}], gold, gold)
+        if alone.ok and not hit.ok:
+            chosen = (yes, twin, gold[0]["text"])
             break
     assert chosen, "no pair in the fixture where only one item trips"
-    yes, twin = chosen
+    yes, twin, text = chosen
     with tempfile.TemporaryDirectory() as tmp:
         gold_dir = Path(tmp)
-        write_jsonl_atomic(gold_dir / "fake.jsonl", [{"id": "g1", "question": yes["statement"], "choices": []}])
+        write_jsonl_atomic(gold_dir / "fake.jsonl", [{"id": "g1", "question": text, "choices": []}])
         result = tf.build(subset_rows(), gold_dir=gold_dir)
     ids = {r["id"] for split in result.rows.values() for r in split}
     assert yes["id"] not in ids and twin["id"] not in ids

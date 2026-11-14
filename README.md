@@ -739,10 +739,15 @@ explicitly permits" something. `scripts/build_tf_dataset.py` (plan "LoRA on rule
 approved 2026-11-13) writes an SFT set that drills judging a statement, as written, against the rule in
 front of it, built only from `data/processed/rules.jsonl` and `tournament_rules.jsonl`. Every usable
 rule sentence (EXAMPLE blocks excluded) gives a true restatement and a false twin made by one typed
-mutation (polarity, permissive "it is not allowed", number, ready/spent, friendly/rival, only/each);
-a sentence where no mutation is unambiguous is skipped and counted by reason. Pairs are phrased as
-statements, "It is not true that ..." statements, "forbidden/optional" twins or "Can you ...?"
-questions so that "not" sits on Yes and No items equally, and Yes/No is exactly 50/50. Each example is
+mutation (polarity, number, ready/spent, friendly/rival, each/only one); a
+sentence where no mutation is unambiguous is skipped and counted by reason, and rules about the rules
+document itself (the "Official Rules Document" section, 1.1-1.3, and 1.4.1) are excluded structurally.
+Negations are only the rules' own and in-sentence flips (may/may not, can/cannot, must/does not have to,
+is/is not), never a wrapper, and no item holds two. About a third of items are natural questions made by
+inverting the modal ("Can you ...?", "Does a Unit have to ...?"), never "Is it true that". Pairs are
+dropped by hash until the Yes share among items with a negation, and among items without one, are both
+within 45-55% (the 2x2 is in the manifest), so "not" does not predict the label; Yes/No is exactly 50/50.
+Each example is
 the scorer's own first-step prompt (v7 system prompt, preload, `eval-mc-v1` wrapper, tool specs; built
 by calling `run_turn` with a capturing stand-in model) plus a target: a short `<think>` block, the rule
 quoted by number, the one-line conclusion and `Answer: A|B`. The split is by rule id (about 10% valid).
@@ -761,7 +766,7 @@ gold sets would make the quiz score meaningless.
 `source_rule_ids`, `kind: "scenario-drafted"`), checked strictly and balanced on their own; the committed
 set has none. `configs/lora-rules-tf-v1.yaml` holds the `mlx_lm.lora` settings (mlx-lm 0.31.3 key names
 checked against its source): rank 8, 16 layers, lr 1e-5, batch 1, grad checkpointing, `mask_prompt`,
-max sequence 8,192 (the manifest's longest example is 5.6k tokens at 4 characters a token, 7.5k at 3),
+max sequence 8,192 (the manifest's longest example is 5.4k tokens at 4 characters a token, 7.1k at 3),
 one epoch. On the Mac (not yet run):
 
 ```bash
