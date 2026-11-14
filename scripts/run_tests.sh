@@ -77,6 +77,7 @@ py-assistant-retrieval | quick | "$PY" scripts/test_assistant_retrieval.py    | 
 py-assistant-prompt  | quick | "$PY" scripts/test_assistant_prompt.py          | line:PASS assistant prompt: 16/16
 py-tf-dataset        | quick | "$PY" scripts/test_tf_dataset.py               | line:PASS tf dataset: 26/26
 py-engine-tf-items   | quick | "$PY" scripts/test_engine_tf_items.py          | line:PASS engine tf items: 14/14
+py-match-audit       | quick | "$PY" scripts/test_audit_match_records.py      | line:PASS match record audit: 12/12
 deck-rules           | full  | "$PY" scripts/check_deck_rules.py --negative-control | contains:agree:    272/272;;contains:reproduce budget AND usage exactly: 272/272;;absent:<-- LOOK
 integration          | full  | prepare_integration && npm run test:integration | tap:3
 '

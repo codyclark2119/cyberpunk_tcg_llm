@@ -66,6 +66,11 @@ bot-vs-bot form has a "Log training records" checkbox that passes
 baseline seats log nothing. `GET /api/records/{name}` also returns `summary`
 (`schemaVersion`, `agreement`), and `GET /api/play/config` returns `trainingDir`.
 
+Update 2026-11-14 ([local-match-audit.md](local-match-audit.md)): an "Audit" tab
+replays the selected records, or all of them, on the engine worker through
+`POST /api/audit` and shows each record's verdict, its problems and the per-policy
+counts. The record list (`GET /api/records`) also gives each record's engine version.
+
 ## Records
 
 Human matches write the same JSONL as the runner (`local/matches/<seed>.jsonl`).
