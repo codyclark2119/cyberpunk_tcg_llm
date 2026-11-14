@@ -31,11 +31,12 @@ from games.cyberpunk.assistant import tools
 from games.cyberpunk.assistant.decks import public_deck_index
 from games.cyberpunk.assistant.loop import (ASSISTANT_PROMPT_VERSION, DECK_CONTEXT_CLOSE, DECK_CONTEXT_OPEN,
                                             MAX_TOOL_CALLS, SYSTEM_PROMPT, build_messages, run_turn)
-from games.cyberpunk.assistant_app import (ASSISTANT_HTML, EXAMPLE_QUESTIONS, ChatService, build_assistant_app)
+from games.cyberpunk.assistant_app import (ASSISTANT_HTML, EXAMPLE_QUESTIONS, SESSION_RE, ChatService,
+                                           build_assistant_app)
 from games.cyberpunk.assistant_ui import UI_DIR, assemble_page
 from games.cyberpunk.assistant_ui.card_view import MAX_BATCH, card_tile, text_segments
 from games.cyberpunk.markup import to_plain_text
-from games.cyberpunk.prompts import RULES_VERSION
+from games.cyberpunk.prompts import RULES_VERSION, TOURNAMENT_RULES_VERSION
 
 LOCAL = {"host": "127.0.0.1:8767"}
 CTX: dict = {}
@@ -201,7 +202,9 @@ def test_status_reports_snapshot_and_model_state():
     with client_for() as client:
         body = client.get("/api/status", headers=LOCAL).json()
     assert body["rulesVersion"] == RULES_VERSION and body["cardCount"] == len(tools.cards()) > 0
-    assert body["tournamentRulesVersion"] == "2026-10-28"
+    # The page shows the date the app reads from prompts.py, so a snapshot refresh needs no edit here.
+    assert body["tournamentRulesVersion"] == TOURNAMENT_RULES_VERSION
+    assert re.fullmatch(r"\d{4}-\d{2}-\d{2}", TOURNAMENT_RULES_VERSION), TOURNAMENT_RULES_VERSION
     # The page's snapshot badge names both documents' dates.
     assert '"snapshot " + data.rulesVersion + " · tournament rules " + data.tournamentRulesVersion' in ASSISTANT_HTML
     assert body["promptVersion"] == ASSISTANT_PROMPT_VERSION and body["maxToolCalls"] == MAX_TOOL_CALLS
@@ -679,6 +682,336 @@ def test_answer_links_only_cited_ids_and_stays_escaped():
         '<p><button type="button" class="cite" data-card="a-b">a-b</button></p>', "<p>a-b</p>"]
     assert '$("chatLog").addEventListener("click"' in script and "showCard(cite.dataset.card)" in script
     assert 'showSource("get_rule", {rule_id: cite.dataset.rule}, "rule " + cite.dataset.rule)' in script
+
+
+# Session persistence, the composer, copy and error handling ---------------------------------
+
+# A DOM stand-in for the chat functions: elements by id with the properties those functions set,
+# listeners that tests can fire, and storage that can be made to fail.
+CHAT_DOM = r"""
+class Node {
+  constructor(tag, id) { this.tag = tag; this.id = id; this.attrs = {}; this.children = []; this.listeners = {};
+    this.hidden = false; this.disabled = false; this.readOnly = false; this.value = ""; this.focused = 0;
+    this.classList = {add() {}, remove() {}, toggle() {}}; this.dataset = {}; }
+  setAttribute(k, v) { this.attrs[k] = String(v); if (k.startsWith("data-")) this.dataset[k.slice(5)] = String(v); }
+  appendChild(child) { this.children.push(child); return child; }
+  set textContent(v) { this.children = v === "" ? [] : [{text: String(v)}]; }
+  get textContent() { return this.children.map((c) => c.text !== undefined ? c.text : c.textContent).join(""); }
+  addEventListener(type, fn) { (this.listeners[type] = this.listeners[type] || []).push(fn); }
+  focus() { this.focused += 1; }
+  select() {}
+  remove() {}
+  scrollIntoView() {}
+  querySelectorAll() { return []; }
+}
+const els = {};
+const $ = (id) => els[id] || (els[id] = new Node("div", id));
+function makeStorage(failing, limit) {
+  const data = {};
+  return {data, getItem(k) { if (failing) throw new Error("blocked"); return k in data ? data[k] : null; },
+    setItem(k, v) { if (failing || (limit && String(v).length > limit)) throw new Error("quota"); data[k] = String(v); },
+    removeItem(k) { if (failing) throw new Error("blocked"); delete data[k]; }};
+}
+const document = {createElement: (tag) => new Node(tag), createTextNode: (t) => ({text: String(t)}),
+  body: new Node("body"), execCommand: () => true, querySelectorAll: () => []};
+function tree(n) { return n.text !== undefined ? {text: n.text} : {tag: n.tag, attrs: n.attrs, children: n.children.map(tree)}; }
+"""
+
+
+def js_function(script: str, name: str) -> str:
+    """One top-level function of the page script, by name, through its closing brace."""
+    match = re.search(rf"^(async )?function {name}\(", script, re.M)
+    assert match, name
+    start = match.start()
+    return script[start:script.index("\n}\n", start) + 3]
+
+
+def js_const(script: str, name: str) -> str:
+    match = re.search(rf"^(const|let) {name}\b.*$", script, re.M)
+    assert match, name
+    return match.group(0) + "\n"
+
+
+def run_chat(functions, consts, body: str, payload=None, prelude: str = "") -> object:
+    """Run ``body`` (an async block that sets ``out``) over the named page functions on CHAT_DOM."""
+    script = page_script()
+    pure = script[script.index("// pure:start"):script.index("// pure:end")]
+    code = "".join(js_const(script, c) for c in consts) + "".join(js_function(script, f) for f in functions)
+    program = (f'"use strict";\n{CHAT_DOM}\n{pure}\n{prelude}\n{code}\n'
+               f'const input = JSON.parse(require("fs").readFileSync(0, "utf8"));\nlet out = null;\n'
+               f"(async () => {{ {body} }})().then(() => process.stdout.write(JSON.stringify(out)),"
+               f" (err) => {{ process.stderr.write(String(err && err.stack || err)); process.exit(1); }});\n")
+    proc = subprocess.run([CTX["node"], "-e", program], input=json.dumps(payload), capture_output=True, text=True)
+    assert proc.returncode == 0, proc.stderr[:1200]
+    return json.loads(proc.stdout)
+
+
+STORE_FUNCS = ["newSession", "storeGet", "storeSet", "storeRemove", "storedJson", "loadSessionId", "rememberTurn",
+               "forgetTurns"]
+
+
+def test_storage_access_is_guarded_and_optional():
+    script = page_script()
+    # Every storage access, session or theme, is on a line that opens a try.
+    for name in ("sessionStorage", "localStorage"):
+        for match in re.finditer(name, script):
+            line = script[script.rindex("\n", 0, match.start()):script.index("\n", match.start())]
+            assert "try {" in line, line
+    assert script.count("sessionStorage.") == 3 and script.count("localStorage") == 2
+    for helper in ("function storeGet", "function storeSet", "function storeRemove"):
+        assert script.count(helper) == 1, helper
+    # With storage blocked the page still gets a valid session id and keeps nothing, without throwing.
+    out = run_chat(STORE_FUNCS, ["SESSION_KEY"], """
+      globalThis.sessionStorage = makeStorage(true);
+      globalThis.keptTurns = [];
+      const id = loadSessionId();
+      out = {id, again: loadSessionId(), json: storedJson(LOG_KEY, "fallback")};
+    """, prelude="")
+    assert re.fullmatch(r"[0-9a-f]{24}", out["id"]) and out["id"] != out["again"] and out["json"] == "fallback"
+
+
+def test_session_id_and_log_survive_a_reload_and_new_chat_clears_the_log():
+    script = page_script()
+    assert "const chatSession = loadSessionId();" in script and "newSession();\n" not in script.replace(
+        "const fresh = newSession();\n", "")
+    # The page's session id check and the server's agree.
+    ids = ["abc", "a" * 64, "a" * 65, "", "a b", "../x", "x\n", "A-b_9", None, 7]
+    assert run_pure("input.map(validSessionId)", ids) == [
+        isinstance(i, str) and bool(SESSION_RE.match(i)) and "\n" not in i for i in ids]
+    out = run_chat(STORE_FUNCS + ["el", "newChat", "showHeldDeck"], ["SESSION_KEY"], """
+      globalThis.sessionStorage = makeStorage(false);
+      globalThis.state = {busy: false, serverHistory: 0};
+      globalThis.keptTurns = [];
+      globalThis.postJson = async (url, body) => { posted.push([url, body]); return [null, {ok: true, deck: null}]; };
+      const posted = [];
+      const first = loadSessionId();
+      globalThis.chatSession = first;
+      for (let i = 0; i < 35; i++) rememberTurn("q" + i, {ok: true, answer: "a" + i, historyMessages: 8});
+      const kept = JSON.parse(sessionStorage.data[LOG_KEY]);
+      keptTurns = [];  // a reload
+      const second = loadSessionId();
+      const restored = capTurns(storedJson(LOG_KEY, []));
+      $("chatLog").textContent = "log";
+      await newChat();
+      out = {first, second, kept: kept.map((t) => t.question), restored: restored.length,
+             afterNew: sessionStorage.data[LOG_KEY] ?? null, idAfterNew: sessionStorage.data[SESSION_KEY], posted,
+             log: $("chatLog").textContent, status: $("chatStatus").textContent, history: state.serverHistory};
+    """, prelude="")
+    assert out["first"] == out["second"] == out["idAfterNew"], "a reload must keep the server session"
+    assert out["kept"] == [f"q{i}" for i in range(5, 35)] and out["restored"] == 30
+    assert out["afterNew"] is None and out["log"] == "" and out["history"] == 0
+    assert out["posted"] == [["/api/chat/reset", {"session": out["first"]}]]
+    assert out["status"] == "New chat: history cleared.", out["status"]
+    # Full storage drops the oldest kept turns until the rest fit.
+    out = run_chat(STORE_FUNCS, ["SESSION_KEY"], """
+      globalThis.sessionStorage = makeStorage(false, 400);
+      globalThis.keptTurns = [];
+      for (let i = 0; i < 10; i++) rememberTurn("q" + i, {ok: true, answer: "x".repeat(60)});
+      out = JSON.parse(sessionStorage.data[LOG_KEY]).map((t) => t.question);
+    """)
+    assert 0 < len(out) < 10 and out[-1] == "q9", out
+    # The pure helpers behind restore and the lost-session notice.
+    turns = [{"question": "a", "data": {"historyMessages": 2}}, {"question": 5, "data": {}}, {"question": "b"},
+             {"question": "c", "data": {"historyMessages": 4}}]
+    assert run_pure("[capTurns(input).map((t) => t.question), lastHistory(input), lastHistory([]), capTurns(null)]",
+                    turns) == [["a", "c"], 4, 0, []]
+    cases = [[0, {"ok": True, "historyMessages": 2}], [4, {"ok": True, "historyMessages": 6}],
+             [4, {"ok": True, "historyMessages": 2}], [8, {"ok": True, "historyMessages": 8}],
+             [4, {"ok": False, "historyMessages": 4}], [4, {"ok": False, "historyMessages": 0}], [4, {"ok": False}]]
+    assert run_pure("input.map(([h, d]) => sessionLost(h, d))", cases) == [False, False, True, False, False, True, False]
+    # What the server does with a session it lost (a restart is a new app): a fresh, empty history,
+    # which is exactly what sessionLost reads.
+    with client_for(ScriptedModel(["One.", "Two."])) as client:
+        one = client.post("/api/chat", json={"session": "kept", "message": "q"}, headers=LOCAL).json()
+        two = client.post("/api/chat", json={"session": "kept", "message": "q"}, headers=LOCAL).json()
+    with client_for(ScriptedModel(["Three."])) as restarted:
+        three = restarted.post("/api/chat", json={"session": "kept", "message": "q"}, headers=LOCAL).json()
+    assert run_pure("[sessionLost(input[0].historyMessages, input[1]), sessionLost(input[1].historyMessages, input[2])]",
+                    [one, two, three]) == [False, True]
+    turn = js_function(script, "sendChat")
+    assert "sessionLost(state.serverHistory, data)" in turn and "rememberTurn(question, data)" in turn
+    assert "The server no longer had this chat" in turn
+    assert "restoreChat();" in js_function(script, "wirePage")
+
+
+def test_new_chat_and_other_post_callers_surface_errors():
+    out = run_chat(STORE_FUNCS + ["newChat", "showHeldDeck"], ["SESSION_KEY"], """
+      globalThis.sessionStorage = makeStorage(false);
+      globalThis.state = {busy: false, serverHistory: 4};
+      globalThis.chatSession = "s";
+      globalThis.keptTurns = [{question: "q", data: {}}];
+      globalThis.postJson = async () => { throw new TypeError("Failed to fetch"); };
+      $("chatLog").textContent = "log";
+      await newChat();
+      out = {status: $("chatStatus").textContent, log: $("chatLog").textContent, kept: keptTurns.length, h: state.serverHistory};
+    """)
+    assert out == {"status": "Could not start a new chat: TypeError: Failed to fetch. The log is unchanged.",
+                   "log": "log", "kept": 1, "h": 4}, out
+    script = page_script()
+    # Each chat-page caller of postJson handles a rejected request itself.
+    for name in ("newChat", "sendChat", "clearDeck", "showSource", "showDeck", "loadDeck", "saveNote", "startEval",
+                 "startRetrJob"):
+        body = js_function(script, name)
+        assert "postJson(" in body and "try {" in body and "catch (err)" in body, name
+    assert script.count("postJson(") == 10, "the definition and the callers above; a new caller needs a test here"
+
+
+def test_composer_disables_send_while_pending_and_can_stop_waiting():
+    script = page_script()
+    funcs = ["setBusy", "startWaiting", "stopWaiting", "sendChat", "rememberTurn", "storeSet", "storeRemove"]
+    out = run_chat(funcs, ["statusTimer"], """
+      globalThis.sessionStorage = makeStorage(false);
+      globalThis.LOG_KEY = "log";
+      globalThis.state = {busy: false, serverHistory: 0, abort: null, waitTimer: null, maxToolCalls: 6};
+      globalThis.keptTurns = [];
+      globalThis.chatSession = "s1";
+      globalThis.loadStatus = async () => {};
+      const shown = [];
+      globalThis.showTurn = (q, d) => shown.push(q);
+      globalThis.showHeldDeck = () => {};
+      let release = null;
+      globalThis.postJson = (url, body, signal) => new Promise((resolve, reject) => {
+        release = () => resolve([{status: 200}, {ok: true, answer: "A", historyMessages: 2, deckInContext: null}]);
+        signal.addEventListener("abort", () => { const e = new Error("aborted"); e.name = "AbortError"; reject(e); });
+      });
+      $("chatInput").value = "first question";
+      const pending = sendChat();
+      const during = {send: $("chatSend").disabled, ro: $("chatInput").readOnly, stop: $("chatStop").hidden,
+        timer: $("chatTimer").textContent, timerHidden: $("chatTimer").hidden, aborter: state.abort instanceof AbortController};
+      await sendChat();  // a second send while pending does nothing
+      state.abort.abort();
+      await pending;
+      const stopped = {send: $("chatSend").disabled, stop: $("chatStop").hidden, timer: $("chatTimer").hidden,
+        status: $("chatStatus").textContent, focus: $("chatInput").focused, value: $("chatInput").value, shown: shown.length};
+      const second = sendChat();
+      release();
+      await second;
+      out = {during, stopped, after: {send: $("chatSend").disabled, value: $("chatInput").value, shown, focus: $("chatInput").focused,
+        status: $("chatStatus").textContent, history: state.serverHistory}};
+    """)
+    assert out["during"] == {"send": True, "ro": True, "stop": False, "timer": "waiting 0 s", "timerHidden": False,
+                             "aborter": True}, out
+    assert out["stopped"]["send"] is False and out["stopped"]["stop"] is True and out["stopped"]["timer"] is True
+    assert out["stopped"]["status"].startswith("Stopped waiting.") and out["stopped"]["focus"] == 1
+    assert out["stopped"]["value"] == "first question" and out["stopped"]["shown"] == 0
+    assert out["after"] == {"send": False, "value": "", "shown": ["first question"], "focus": 2, "status": "",
+                            "history": 2}, out
+    assert run_pure("[elapsedText(0), elapsedText(12999), elapsedText(-5)]", None) == [
+        "waiting 0 s", "waiting 12 s", "waiting 0 s"]
+    # Enter sends, Shift+Enter does not; the stop control aborts the pending fetch.
+    wiring = js_function(script, "wirePage")
+    assert 'if (e.key === "Enter" && !e.shiftKey && !e.isComposing) { e.preventDefault(); sendChat(); }' in wiring
+    assert '$("chatStop").addEventListener("click", () => { if (state.abort) state.abort.abort(); });' in wiring
+    assert "new AbortController()" in js_function(script, "sendChat")
+    assert "signal" in js_function(script, "postJson")
+    for needle in ('id="chatStop" type="button" hidden', 'id="chatTimer" hidden'):
+        assert ASSISTANT_HTML.count(needle) == 1, needle
+
+
+def test_copy_button_is_on_every_answer_and_reports_through_the_status():
+    script = page_script()
+    assert "bar.appendChild(copyButton(" in js_function(script, "showTurn")
+    copy = js_function(script, "copyText")
+    assert "navigator.clipboard.writeText(text)" in copy and 'document.execCommand("copy")' in copy
+    assert copy.count("try {") == 2 and copy.count("catch (err)") == 2
+    out = run_chat(["el", "copyText", "copyButton"], [], """
+      const results = [];
+      for (const [clip, exec] of [[true, false], [false, true], [false, false]]) {
+        globalThis.window = {isSecureContext: true};
+        Object.defineProperty(globalThis, "navigator", {configurable: true, writable: true, value: clip ?
+          {clipboard: {writeText: async (t) => { results.push("clip:" + t); }}} :
+          {clipboard: {writeText: async () => { throw new Error("denied"); }}}});
+        document.execCommand = () => { if (!exec) throw new Error("no"); results.push("exec"); return true; };
+        const b = copyButton("**answer**");
+        await b.listeners.click[0]();
+        results.push($("chatStatus").textContent);
+      }
+      out = results;
+    """)
+    assert out == ["clip:**answer**", "Answer copied.", "exec", "Answer copied.",
+                   "Could not copy: select the answer and copy it by hand."], out
+    assert '<div class="status" id="chatStatus" role="status" aria-live="polite">' in ASSISTANT_HTML
+
+
+def test_deck_and_passage_sources_render_and_deck_sources_get_labels():
+    assert run_pure("input.map(deckSourceLabel)", ["public_deck", "text", "pasted", "deck", "imported", None]) == [
+        "public deck", "pasted list", "pasted list", "deck structure", "imported", ""]
+    script = page_script()
+    assert script.count("DECK_SOURCE_LABELS = {") == 1, "labels are mapped in one place"
+    assert "deckSourceLabel(brief.source)" in js_function(script, "showHeldDeck")
+    assert "brief.source)" not in js_function(script, "showHeldDeck").replace("deckSourceLabel(brief.source)", "")
+    groups = run_pure("sourceGroups(input)", {"card_slugs": ["a", "a", 3], "deck_ids": ["d1", ""], "chunk_ids": ["rule:9.2"]})
+    assert groups == {"cards": ["a"], "rules": [], "errata": [], "decks": ["d1"], "chunks": ["rule:9.2"]}
+    deck = public_deck_index()[0]
+    sources = {"card_slugs": ["x-card"], "rule_ids": ["9.2"], "deck_ids": [deck["id"], "ffffffff-0000"],
+               "chunk_ids": ["rule:9.2", "rule:9.3"], "errata_ids": []}
+    out = run_chat(["el", "sourceButtons", "nameDeckChips"], [], """
+      globalThis.state = {decks: input.decks};
+      const opened = [];
+      globalThis.tileButton = (slug) => el("span", {"data-card": slug}, slug);
+      globalThis.showSource = (tool, args) => opened.push([tool, args]);
+      globalThis.showDeck = (id) => opened.push(["deck", id]);
+      const box = sourceButtons(input.sources);
+      const chips = box.children.filter((c) => c.attrs && c.attrs.class === "deckchip");
+      for (const c of chips) c.listeners.click[0]();
+      out = {tree: tree(box), chips: chips.map((c) => c.textContent), opened, none: sourceButtons({deck_ids: [], chunk_ids: []})};
+    """, {"sources": sources, "decks": public_deck_index()})
+    assert out["chips"] == [deck["name"], "deck ffffffff"], out["chips"]
+    assert out["opened"] == [["deck", deck["id"]], ["deck", "ffffffff-0000"]] and out["none"] is None
+    chunks = next(n for n in _walk(out["tree"]) if n.get("attrs", {}).get("class") == "chunks")
+    assert _text(chunks) == "2 passage(s) searched" + "rule:9.2" + "rule:9.3"
+    # The deck chip opens what an existing route returns for that id, and offers to load it.
+    show = js_function(script, "showDeck")
+    assert 'postJson("/api/tools/parse_deck", {deck_id: id})' in show and "loadDeck({deck_id: id})" in show
+    assert "innerHTML" not in show and "innerHTML" not in js_function(script, "sourceButtons")
+    assert "nameDeckChips();" in js_function(script, "loadDecks")
+
+
+def test_cited_slugs_show_the_card_name_from_the_same_batch():
+    script = page_script()
+    turn = js_function(script, "showTurn")
+    # Names come from fetchTiles (the batched /api/cards request the Sources tiles share), before
+    # the Sources row asks for the same slugs in the same tick.
+    assert turn.index("nameCite(cite)") < turn.index("sourceButtons(data.sources)")
+    name = js_function(script, "nameCite")
+    assert "fetchTiles([slug])" in name and "fetch(" not in name.replace("fetchTiles(", "")
+    assert "innerHTML" not in name
+    out = run_chat(["el", "nameCite"], [], """
+      const fetched = [];
+      globalThis.fetchTiles = async (slugs) => { fetched.push(...slugs); return [{slug: slugs[0], display_name: "<b>V</b>: Streetkid"}]; };
+      const b = el("button", {type: "button", class: "cite", "data-card": "v-streetkid"}, "v-streetkid");
+      nameCite(b);
+      await new Promise((r) => setTimeout(r, 0));
+      out = {text: b.textContent, attrs: b.attrs, fetched};
+    """)
+    assert out["text"] == "<b>V</b>: Streetkid" and out["fetched"] == ["v-streetkid"]
+    assert out["attrs"]["title"] == "v-streetkid" and out["attrs"]["aria-label"] == "<b>V</b>: Streetkid (card v-streetkid)"
+
+
+def test_theme_applies_before_the_body_from_the_one_script():
+    html = ASSISTANT_HTML
+    assert html.index("<script>") < html.index("</head>") < html.index("<body>"), "the script must run in <head>"
+    script = page_script()
+    assert script.index("applyStoredTheme") < script.index("function wirePage")
+    assert 'if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", wirePage); else wirePage();' in script
+    # Run the whole script as the head parser would (no body yet): nothing touches an element, and a
+    # stored theme is already on <html>.
+    for stored, failing in (("light", False), ("dark", False), (None, True)):
+        program = ("const attrs = {}; let waited = null; const storeData = {};\n"
+                   "const document = {readyState: 'loading', documentElement: {setAttribute(k, v) { attrs[k] = v; }, "
+                   "getAttribute(k) { return attrs[k] ?? null; }}, getElementById() { throw new Error('element read in head'); }, "
+                   "querySelectorAll() { throw new Error('query in head'); }, body: null, "
+                   "addEventListener(t, f) { if (t === 'DOMContentLoaded') waited = f; }};\n"
+                   "const window = {matchMedia: () => ({matches: false})};\n"
+                   f"const failing = {json.dumps(failing)};\n"
+                   "const store = {getItem(k) { if (failing) throw new Error('x'); return k === 'cyberpunk-assistant-theme' ? "
+                   f"{json.dumps(stored)} : null; }}, setItem() {{ if (failing) throw new Error('x'); }}, removeItem() {{}}}};\n"
+                   "globalThis.localStorage = store; globalThis.sessionStorage = store;\n"
+                   f"{script}\nprocess.stdout.write(JSON.stringify([attrs['data-theme'] ?? null, typeof waited]));\n")
+        proc = subprocess.run([CTX["node"], "-e", program], capture_output=True, text=True)
+        assert proc.returncode == 0, proc.stderr[:800]
+        assert json.loads(proc.stdout) == [stored, "function"], (stored, proc.stdout)
+
 
 
 def run(node: str) -> None:

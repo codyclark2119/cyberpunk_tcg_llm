@@ -192,3 +192,19 @@ button.cite:hover{border-bottom-style:solid}
 .linked{margin:4px 0}
 .tooltiles{margin-bottom:10px}
 #tilePop{position:fixed;z-index:20;pointer-events:none;filter:drop-shadow(0 6px 14px rgba(0,0,0,.35))}
+
+/* Chat polish: the pending state, the copy button, deck and passage sources, the restored log. */
+.sendcol{display:flex;flex-direction:column;gap:4px;align-items:stretch}
+.timer{font:600 11px/1.4 var(--mono);color:var(--accent);text-align:center;letter-spacing:.04em}
+.msgtools{display:flex;justify-content:flex-end;margin-top:4px}
+.msgtools button.copy{padding:1px 8px;font-size:10px;color:var(--muted)}
+.msgtools button.copy:hover{color:var(--accent)}
+.sources button.deckchip{color:var(--ink);border-color:var(--line-strong);border-left:3px solid var(--accent)}
+.sources button.deckchip:hover{border-color:var(--accent)}
+details.chunks{width:100%}
+details.chunks>summary{cursor:pointer;color:var(--muted);font:11px var(--mono)}
+details.chunks ul{font:11px var(--mono);color:var(--muted);margin:2px 0}
+.deckcard{display:inline-flex;align-items:flex-start;gap:4px}
+.deckcard .qty{font:700 11px/22px var(--mono);color:var(--muted)}
+.restored{font:700 10px/1.4 var(--mono);text-transform:uppercase;letter-spacing:.12em;color:var(--muted);text-align:center;
+  border-bottom:1px dashed var(--line-strong);padding-bottom:4px}
