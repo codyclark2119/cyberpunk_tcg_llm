@@ -1,0 +1,273 @@
+{
+ "source": "engine-positions-v1",
+ "generator_version": "build-engine-tf-items-v1",
+ "kind": "engine-position",
+ "engine": {
+  "version": "0.4.2-lag-order",
+  "artifactHash": "ec49548098063d0a543a8ce1db2fa7452efbee96e15fc92f73c60e15bc9e308c"
+ },
+ "ruleset": {
+  "id": "beta",
+  "version": "demo-overtime-1",
+  "hash": "0cf3dcd40766cd4b699e16842a0b6a66d3b1ecdf9b678986bf7686139dc800ab"
+ },
+ "content_manifest_hash": "61d0235216867c86f4a5407eceb1f183f5283be91461b3c03b6538dff18a74f0",
+ "decks": [
+  "ARASAKA_DEMO_V1",
+  "MERC_DEMO_V1"
+ ],
+ "format": "DEMO_STARTER_V1",
+ "seeds": {
+  "prefix": "engine-tf-v1",
+  "count": 24,
+  "first": "engine-tf-v1-0",
+  "last": "engine-tf-v1-23"
+ },
+ "policy": "baseline_action_id on both seats",
+ "limits": {
+  "max_decisions": 600,
+  "max_turns": 40
+ },
+ "positions": 1258,
+ "candidates": 14115,
+ "counts": {
+  "items": 744,
+  "by_class_and_label": {
+   "attack-declare:no": 86,
+   "attack-declare:yes": 86,
+   "attack-target:no": 88,
+   "attack-target:yes": 88,
+   "block:no": 24,
+   "block:yes": 24,
+   "play-from-hand:no": 150,
+   "play-from-hand:yes": 150,
+   "sell:no": 24,
+   "sell:yes": 24
+  },
+  "by_class_and_no_reason": {
+   "attack-declare:lagging": 30,
+   "attack-declare:outside-main": 31,
+   "attack-declare:spent": 25,
+   "attack-target:ready-target": 88,
+   "block:no-blocker": 19,
+   "block:spent": 5,
+   "play-from-hand:no-equip-target": 10,
+   "play-from-hand:outside-main": 37,
+   "play-from-hand:unaffordable": 103,
+   "sell:already-sold": 6,
+   "sell:no-sell-tag": 14,
+   "sell:outside-main": 4
+  },
+  "by_phrasing": {
+   "question": 378,
+   "statement": 366
+  },
+  "by_seat": {
+   "0": 358,
+   "1": 386
+  },
+  "by_step": {
+   "MAIN": 622,
+   "RIVAL_REACT": 122
+  },
+  "seeds_used": 24,
+  "turns": {
+   "01": 35,
+   "02": 26,
+   "03": 33,
+   "04": 42,
+   "05": 49,
+   "06": 52,
+   "07": 63,
+   "08": 69,
+   "09": 77,
+   "10": 93,
+   "11": 102,
+   "12": 41,
+   "13": 32,
+   "14": 24,
+   "15": 6
+  },
+  "distinct_cards": 25,
+  "by_rule_ids": {
+   "11.28.1": 19,
+   "11.30.1": 37,
+   "11.30.2": 2,
+   "4.10.1": 10,
+   "5.8.1.3": 251,
+   "5.8.2.2": 42,
+   "8.11.1": 6,
+   "8.15": 31,
+   "9.3.1": 111,
+   "9.3.1.1": 30,
+   "9.3.2.1": 176,
+   "9.9": 5,
+   "9.9,11.28.2": 24
+  }
+ },
+ "audit": {
+  "signature": "question class + every fact the text states, card identities left out",
+  "by_class": {
+   "attack-declare": {
+    "candidates": 1952,
+    "signatures": 17,
+    "conflicting_signatures": 0,
+    "dropped": 0,
+    "dropped_share": 0.0
+   },
+   "attack-target": {
+    "candidates": 2064,
+    "signatures": 90,
+    "conflicting_signatures": 0,
+    "dropped": 0,
+    "dropped_share": 0.0
+   },
+   "play-from-hand": {
+    "candidates": 4815,
+    "signatures": 530,
+    "conflicting_signatures": 0,
+    "dropped": 0,
+    "dropped_share": 0.0
+   },
+   "sell": {
+    "candidates": 4815,
+    "signatures": 6,
+    "conflicting_signatures": 0,
+    "dropped": 0,
+    "dropped_share": 0.0
+   },
+   "block": {
+    "candidates": 469,
+    "signatures": 6,
+    "conflicting_signatures": 0,
+    "dropped": 0,
+    "dropped_share": 0.0
+   }
+  }
+ },
+ "drops": {
+  "leak_guard": 0,
+  "duplicate-text": 9901,
+  "cap": 3179,
+  "balance": 291
+ },
+ "skips": {
+  "attack-declare:restricted": 258
+ },
+ "selection": {
+  "cap_per_class_label_card": 8,
+  "max_per_class": 300,
+  "order": "sha256 of the item id"
+ },
+ "rule_ids": {
+  "attack-declare:yes": [
+   "9.3.1"
+  ],
+  "attack-declare:spent": [
+   "9.3.1"
+  ],
+  "attack-declare:lagging": [
+   "9.3.1.1"
+  ],
+  "attack-declare:outside-main": [
+   "8.15"
+  ],
+  "attack-declare:no-target": [
+   "9.3.2.4"
+  ],
+  "attack-target:yes": [
+   "9.3.2.1"
+  ],
+  "attack-target:ready-target": [
+   "9.3.2.1"
+  ],
+  "play-from-hand:yes": [
+   "5.8.1.3"
+  ],
+  "play-from-hand:yes-react": [
+   "11.30.2"
+  ],
+  "play-from-hand:unaffordable": [
+   "5.8.1.3"
+  ],
+  "play-from-hand:outside-main": [
+   "11.30.1"
+  ],
+  "play-from-hand:no-equip-target": [
+   "4.10.1"
+  ],
+  "sell:yes": [
+   "5.8.2.2"
+  ],
+  "sell:no-sell-tag": [
+   "5.8.2.2"
+  ],
+  "sell:already-sold": [
+   "8.11.1"
+  ],
+  "sell:outside-main": [
+   "5.8.2.2"
+  ],
+  "block:yes": [
+   "9.9",
+   "11.28.2"
+  ],
+  "block:spent": [
+   "9.9"
+  ],
+  "block:no-blocker": [
+   "11.28.1"
+  ],
+  "block:already-target": [
+   "11.28.3.1"
+  ]
+ },
+ "leak_guard": {
+  "gold_files": [
+   "official_basic_test.jsonl",
+   "quiz_mc_2026-11-12.jsonl",
+   "quiz_mc_2026-11-13.jsonl"
+  ],
+  "gold_questions": 144,
+  "dropped": 0,
+  "tripped_first_pass": [],
+  "result": "pass",
+  "nearest": [
+   {
+    "id": "ep-12ee5e1d1d75cb",
+    "statement": "It is your turn, in your Main phase. You have Floor It in your hand; its card has a Sell Tag. You have sold 0 cards this turn. You may sell Floor It now.",
+    "gold": "official_basic_test.jsonl:official-5d81d41f",
+    "gold_text": "If a Unit in your hand has a “Sell Tag,” you may sell it as an action during your main phase.",
+    "ratio": 0.4
+   },
+   {
+    "id": "ep-09f061bb5391cb",
+    "statement": "It is your turn, in your Main phase. You have Corporate Surveillance in your hand; its card has a Sell Tag. You have sold 0 cards this turn. You may sell Corporate Surveillance now.",
+    "gold": "official_basic_test.jsonl:official-5d81d41f",
+    "gold_text": "If a Unit in your hand has a “Sell Tag,” you may sell it as an action during your main phase.",
+    "ratio": 0.3636
+   },
+   {
+    "id": "ep-4333d25fe8a2fc",
+    "statement": "It is your turn, in your Main phase. You have Mandibular Upgrade in your hand; its card has a Sell Tag. You have sold 0 cards this turn. You may sell Mandibular Upgrade now.",
+    "gold": "official_basic_test.jsonl:official-5d81d41f",
+    "gold_text": "If a Unit in your hand has a “Sell Tag,” you may sell it as an action during your main phase.",
+    "ratio": 0.3636
+   },
+   {
+    "id": "ep-74e7bbecc117ca",
+    "statement": "It is your turn, in your Main phase. You have Kiroshi Optics in your hand; its card has a Sell Tag. You have sold 0 cards this turn. You may sell Kiroshi Optics now.",
+    "gold": "official_basic_test.jsonl:official-5d81d41f",
+    "gold_text": "If a Unit in your hand has a “Sell Tag,” you may sell it as an action during your main phase.",
+    "ratio": 0.3636
+   },
+   {
+    "id": "ep-78334507fbb593",
+    "statement": "It is your turn, in your Main phase. You have Mantis Blades in your hand; its card has a Sell Tag. You have sold 0 cards this turn. You may sell Mantis Blades now.",
+    "gold": "official_basic_test.jsonl:official-5d81d41f",
+    "gold_text": "If a Unit in your hand has a “Sell Tag,” you may sell it as an action during your main phase.",
+    "ratio": 0.3636
+   }
+  ]
+ }
+}
