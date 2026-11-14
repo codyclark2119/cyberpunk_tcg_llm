@@ -1,0 +1,129 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="dark light">
+<title>Cyberpunk TCG assistant</title>
+<style>
+__STYLE__</style>
+</head>
+<body>
+<header>
+  <div class="brand"><span class="eyebrow">Local tools · offline</span><h1>Cyberpunk TCG assistant</h1></div>
+  <nav><button type="button" id="tabBtnChat" class="on" data-tab="Chat">Chat</button><button type="button" id="tabBtnTools" data-tab="Tools">Tools</button><button type="button" id="tabBtnEval" data-tab="Eval">Eval</button></nav>
+  <span class="badge" id="snapshot">snapshot …</span>
+  <span class="badge" id="modelBadge">model …</span>
+  <button class="small theme" id="themeToggle" type="button" aria-label="Switch to the light theme">Light</button>
+</header>
+<div class="wrap">
+<section id="tabChat">
+  <div class="chatgrid">
+    <div class="panel">
+      <p class="muted" style="margin:0 0 8px">The local model answers from tool results only; every tool it ran is in the trace under its answer. Strategy, combos and matchups are its judgment.</p>
+      <div class="decknote" id="deckNote"></div>
+      <div id="chatLog" role="log" aria-live="polite"></div>
+      <div class="chips" id="chips">__EXAMPLES__</div>
+      <div class="chatrow">
+        <textarea id="chatInput" placeholder="Ask about a card, a rule or a deck (Enter sends, Shift+Enter for a new line)"></textarea>
+        <button class="go" id="chatSend" type="button">Send</button>
+      </div>
+      <div class="chatopts">
+        <label class="inline"><input type="checkbox" id="thinkToggle"> think first (slower)</label>
+        <label class="inline" title="Run search_rules on the question and get_card or find_card on each card name before the model speaks"><input type="checkbox" id="preloadToggle"> look up rules and cards first</label>
+        <button class="small" id="chatNew" type="button">New chat</button>
+      </div>
+      <div class="status" id="chatStatus" role="status" aria-live="polite"></div>
+    </div>
+    <aside>
+      <div class="panel">
+        <h2>Deck</h2>
+        <p class="muted" style="margin:0 0 6px;font-size:12px">Paste a list or pick a public deck. A deck that fully resolves is held for this chat and given to the model with every question until you clear it.</p>
+        <textarea id="deckText" class="x" spellcheck="false" placeholder="Legends&#10;1 V: Streetkid&#10;...&#10;Deck&#10;3 Kiroshi Optics&#10;..."></textarea>
+        <div class="row"><button class="small" id="deckLoadText" type="button">Load pasted list</button></div>
+        <div class="row"><select id="deckPick"><option value="">(public decks loading …)</option></select><button class="small" id="deckLoadPick" type="button">Load</button></div>
+        <div class="row"><button class="small" id="deckClear" type="button">Clear deck</button></div>
+        <div class="status" id="deckStatus"></div>
+        <div id="deckResult"></div>
+      </div>
+      <div class="panel">
+        <h2 id="sideTitle">Source</h2>
+        <div id="sideBody" class="muted">Click a card slug or rule id under an answer to see what the tools return for it.</div>
+      </div>
+    </aside>
+  </div>
+</section>
+<section id="tabTools" hidden>
+  <div class="panel"><ul class="tools" id="toolList"></ul></div>
+  <div>
+    <div class="panel">
+      <p class="muted" style="margin:0 0 6px">Run any card, rules or deck tool by hand. A tool's result is exactly what the model receives.</p>
+      <h2 id="toolName" style="margin:0;font-size:15px">Pick a tool</h2>
+      <p id="toolDesc" class="muted"></p>
+      <form id="toolForm" autocomplete="off"></form>
+      <button class="go" id="runBtn" type="button" disabled>Run</button>
+      <div class="status" id="status"></div>
+    </div>
+    <div class="panel"><pre id="output" class="muted">No result yet.</pre></div>
+  </div>
+</section>
+<section id="tabEval" hidden>
+  <div>
+    <div class="panel">
+      <h2>Set</h2>
+      <p class="muted" style="margin:0 0 6px;font-size:12px">Multiple-choice gold sets from data/gold (eval only, never training data). The key is highlighted and known-incorrect options are struck through. Notes save to a sidecar under eval/notes; the set itself is never edited here.</p>
+      <div class="row"><select id="evalSetPick"></select></div>
+      <div class="status" id="evalSetStatus"></div>
+      <div id="evalSetBody"></div>
+    </div>
+  </div>
+  <div>
+    <div class="panel">
+      <h2>Run</h2>
+      <p class="muted" style="margin:0 0 6px;font-size:12px">Runs scripts/eval_assistant.py on the selected set with this page's model. One job at a time; chat pauses while it runs.</p>
+      <div class="muted" id="evalModel" style="font-size:12px"></div>
+      <div class="evalrun">
+        <label>Run name<input type="text" id="evalName" maxlength="80" placeholder="baseline-qwen3-8b"></label>
+        <label>Max tokens per step<input type="number" id="evalMaxTokens" min="1" max="16384" step="1"></label>
+        <label>Max tool calls per question<input type="number" id="evalMaxToolCalls" min="1" max="16" step="1"></label>
+        <label>First N (0: all)<input type="number" id="evalLimit" min="0" step="1" value="0"></label>
+        <label>Only these ids<input type="text" id="evalIds" placeholder="cody-quiz-01,cody-quiz-03"></label>
+        <label>Sample N keyed questions<input type="number" id="evalSample" min="1" step="1" placeholder="e.g. 40 (needs a seed)"></label>
+        <label>Seed<input type="number" id="evalSeed" min="0" step="1" placeholder="e.g. 1"></label>
+        <label>Pass mark<input type="number" id="evalPassMark" min="1" step="1" placeholder="e.g. 35"></label>
+        <label class="inline"><input type="checkbox" id="evalThinking"> think first</label>
+        <label class="inline"><input type="checkbox" id="evalPreload"> look up rules and cards first</label>
+        <label class="inline"><input type="checkbox" id="evalForce"> replace a run of this name</label>
+        <label class="inline"><input type="checkbox" id="evalResume"> resume an incomplete run of this name</label>
+      </div>
+      <button class="go" id="evalRunBtn" type="button">Run eval</button>
+      <div class="status" id="evalRunStatus"></div>
+      <pre id="evalLog" class="muted" hidden></pre>
+    </div>
+    <div class="panel">
+      <h2>Runs</h2>
+      <div class="row"><button class="small" id="evalRunsRefresh" type="button">Refresh</button></div>
+      <div id="evalRuns" class="muted">No runs loaded.</div>
+      <div id="evalRunBody"></div>
+    </div>
+    <div class="panel">
+      <h2>Retrieval</h2>
+      <p class="muted" style="margin:0 0 6px;font-size:12px">How often search_rules returns a rule each quiz question needs (scripts/eval_retrieval.py). The expected rules are an unreviewed Claude draft in eval/sets: a measurement aid, not gold, never training data. Build rules index embeds every rule for hybrid search (Apple Silicon only; a git-ignored build artifact).</p>
+      <div class="muted" id="retrIndex" style="font-size:12px">Index status not loaded.</div>
+      <div class="evalrun">
+        <label>Report name<input type="text" id="retrName" maxlength="80" placeholder="retrieval-quiz"></label>
+        <label class="inline"><input type="checkbox" id="retrForce"> replace a report of this name</label>
+      </div>
+      <div class="row"><button class="go" id="retrMeasureBtn" type="button">Measure retrieval</button><button class="small" id="retrBuildBtn" type="button">Build rules index</button><button class="small" id="retrRefresh" type="button">Refresh</button></div>
+      <div class="status" id="retrStatus"></div>
+      <pre id="retrLog" class="muted" hidden></pre>
+      <div id="retrReports" class="muted">No reports loaded.</div>
+      <div id="retrReportBody"></div>
+    </div>
+  </div>
+</section>
+</div>
+<script>
+__SCRIPT__</script>
+</body>
+</html>
