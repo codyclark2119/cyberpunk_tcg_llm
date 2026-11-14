@@ -763,8 +763,8 @@ and must pass, and the five nearest pairs are printed and recorded. Training on 
 gold sets would make the quiz score meaningless.
 
 `--scenarios FILE` adds drafted scenario items (`id`, `statement`, `label` true/false,
-`source_rule_ids`, `kind: "scenario-drafted"`), checked strictly and balanced on their own; the committed
-set has none. `configs/lora-rules-tf-v1.yaml` holds the `mlx_lm.lora` settings (mlx-lm 0.31.3 key names
+`source_rule_ids`, `kind: "scenario-drafted"`, optionally `cards`, `habit`, `why`, `lookup_query`), checked
+strictly and balanced on their own; the committed v1 set has none. `configs/lora-rules-tf-v1.yaml` holds the `mlx_lm.lora` settings (mlx-lm 0.31.3 key names
 checked against its source): rank 8, 16 layers, lr 1e-5, batch 1, grad checkpointing, `mask_prompt`,
 max sequence 8,192 (the manifest's longest example is 5.4k tokens at 4 characters a token, 7.1k at 3),
 one epoch. On the Mac (not yet run):
@@ -779,6 +779,50 @@ python scripts/eval_assistant.py --set data/gold/quiz_mc_2026-11-13.jsonl --mode
 python scripts/eval_assistant.py --set data/gold/quiz_mc_2026-11-13.jsonl --model models/qwen3-8b-4bit --adapter models/adapters/rules-tf-v1 --name q2-tf1-8b-s2 --max-tokens 4096 --sample 40 --seed 2 --pass-mark 35
 python scripts/eval_assistant.py --set data/gold/quiz_mc_2026-11-13.jsonl --model models/qwen3-8b-4bit --adapter models/adapters/rules-tf-v1 --name q2-tf1-8b-s3 --max-tokens 4096 --sample 40 --seed 3 --pass-mark 35
 python scripts/eval_assistant.py --set data/gold/official_basic_test.jsonl --model models/qwen3-8b-4bit --adapter models/adapters/rules-tf-v1 --name off-tf1-8b --max-tokens 4096 --pass-mark 34
+```
+
+#### rules-tf-v2: the combined set
+
+`data/datasets/rules-tf-v2` (`--dataset-name rules-tf-v2`; v1 stays the default and byte-identical) combines
+all template pairs, the 300 drafted scenarios in `data/datasets/sources/scenarios-drafted-v1.jsonl`
+(statements written from one or two rules, each with the failure `habit` it drills and a `why` kept as
+provenance only, never in a prompt) and at most 400 engine-position items (`--engine-cap`). What changes
+from v1:
+
+- **Lookup examples.** An item whose preload does not show its rule is no longer dropped when one
+  `search_rules` call finds it: the builder drives the real `run_turn` with a scripted stand-in that makes
+  the call after the preload, so the call format and the tool result are exactly what inference produces.
+  The query is written from the question alone, never a rule id: one phrase per engine question class,
+  else the row's `lookup_query`, else the statement's key terms. Items the search does not find are
+  dropped and counted per kind. Because `mask_prompt` trains only the last message, each lookup item is two
+  rows: `lookup` (call, result, answer) and `lookup-call` (the call itself as the target). Items whose
+  preload shows the rule stay `direct` (answer, no call). Lookup items are capped at 30% of items.
+- **Split.** Engine items by seed (10% of seeds to valid); templates and scenarios by rule id, with no
+  rule id in both splits (a scenario whose rules hash to different splits is dropped).
+- **Composition.** Engine items are chosen by hash, Yes and No equal per class and spread across classes
+  and No reasons; labels are exactly 50/50 and the negation 2x2 stays within 40-60%.
+- **Gold cards.** A drafted scenario about a card the gold sets link (`cards`) or name (name with
+  subtitle in a question or choice) is dropped (`gold_card_dropped`); engine items on such cards are only
+  counted, since the engine decides their labels and they ask only generic legality.
+
+The manifest records counts by kind, class, No reason, habit, label and shape, lookup hits and misses per
+kind, the split method per kind, the gold-card counts and sizes by shape. On the current snapshot: 836
+items in 979 rows (train 910, valid 69): 224 template, 212 scenario and 400 engine items, 143 of them
+lookups (141 engine, 1 template, 1 scenario). Key-term queries find little for templates and scenarios
+(their preload already searched the same words; long Tournament Rules rows are cut at 1,500 characters), so
+most of their lookup candidates are misses. `configs/lora-rules-tf-v2.yaml` has v1's settings with
+`max_seq_length` 9,216 (the longest row, a lookup, is 6.3k tokens at 4 characters a token and 8.3k at 3)
+and one epoch (910 iterations). On the Mac (not yet run):
+
+```bash
+python scripts/build_tf_dataset.py --dataset-name rules-tf-v2 --scenarios data/datasets/sources/engine-positions-v1.jsonl --scenarios data/datasets/sources/scenarios-drafted-v1.jsonl --check
+python scripts/prompt_budget.py --tokenizer models/qwen3-8b-4bit
+mlx_lm.lora --config configs/lora-rules-tf-v2.yaml
+python scripts/stamp_adapter.py models/adapters/rules-tf-v2 --dataset data/datasets/rules-tf-v2
+python scripts/eval_assistant.py --set data/gold/quiz_mc_2026-11-13.jsonl --model models/qwen3-8b-4bit --adapter models/adapters/rules-tf-v2 --name q2-tf2-8b-s1 --max-tokens 4096 --sample 40 --seed 1 --pass-mark 35
+python scripts/eval_assistant.py --set data/gold/quiz_mc_2026-11-13.jsonl --model models/qwen3-8b-4bit --adapter models/adapters/rules-tf-v2 --name q2-tf2-8b-s2 --max-tokens 4096 --sample 40 --seed 2 --pass-mark 35
+python scripts/eval_assistant.py --set data/gold/quiz_mc_2026-11-13.jsonl --model models/qwen3-8b-4bit --adapter models/adapters/rules-tf-v2 --name q2-tf2-8b-s3 --max-tokens 4096 --sample 40 --seed 3 --pass-mark 35
+python scripts/eval_assistant.py --set data/gold/official_basic_test.jsonl --model models/qwen3-8b-4bit --adapter models/adapters/rules-tf-v2 --name off-tf2-8b --max-tokens 4096 --pass-mark 34
 ```
 
 ### Engine-verified legality items
@@ -804,7 +848,7 @@ No items whose facts show no reason are never kept. Each class and reason cites 
 `data/processed/rules.jsonl` (checked, fail closed), which the target quotes later. Items are deduped,
 capped per (class, label, card), exactly 50/50 per class and overall, and pass the same leak guard as
 the template set. `build_tf_dataset.py --scenarios` accepts the file (`kind: "engine-position"`,
-validated strictly, cards preloaded with `get_card` as the scorer does); no set is built from it yet.
+validated strictly, cards preloaded with `get_card` as the scorer does); rules-tf-v2 uses it.
 
 Limits: only the admitted Demo card pool (25 cards appear), only legality questions, and only positions
 the baseline policy reaches with the two Demo decks; the label holds for this engine version (recorded
