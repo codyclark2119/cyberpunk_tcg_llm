@@ -2270,6 +2270,11 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--check", action="store_true", help="build in memory and compare with --out; write nothing")
     args = parser.parse_args(argv)
     out = args.out or REPO_ROOT / "data/datasets" / args.dataset_name
+    if args.check:
+        frozen = frozen_check(out)
+        if frozen is not None:
+            print(frozen[1])
+            return frozen[0]
     rows = load_sources()
     try:
         scenarios = (load_item_files(args.scenarios, {r["id"] for r in numbered_rules(rows)})
@@ -2307,6 +2312,37 @@ def main(argv: list[str] | None = None) -> int:
     write_outputs(out, result, force=args.force)
     print(f"Wrote {out}")
     return 0
+
+
+def frozen_check(out: Path) -> tuple[int, str] | None:
+    """``--check`` for a set built under an earlier assistant prompt: verify it as a record, don't rebuild it.
+
+    Every example embeds the system prompt and tool specs of the prompt version it was built under, so a later
+    prompt (v8 added the ``engine_check`` tool) would rebuild different bytes. A committed set records what an
+    adapter was trained on (rules-tf-v2's step-400 adapter, 2026-11-14), so it is frozen, not regenerated:
+    its rule sources must still hash the same and every example must still carry its own prompt version.
+    Returns None when the committed manifest names the current prompt (then the normal rebuild check runs).
+    """
+    manifest_file = out / "manifest.json"
+    if not manifest_file.exists():
+        return None
+    manifest = json.loads(manifest_file.read_text(encoding="utf-8"))
+    built_under = manifest.get("assistant_prompt_version")
+    if built_under == ASSISTANT_PROMPT_VERSION:
+        return None
+    problems = [f"source {src['path']} changed" for src in manifest.get("sources", [])
+                if file_sha256(REPO_ROOT / src["path"]) != src["sha256"]]
+    stamp = f"Prompt {built_under}."
+    for split in ("train", "valid"):
+        for row in read_jsonl(out / f"{split}.jsonl"):
+            system = next((m["content"] for m in row["messages"] if m["role"] == "system"), "")
+            if stamp not in system:
+                problems.append(f"{split} {row.get('id')} lacks {stamp!r}")
+                break
+    if problems:
+        return 1, f"frozen set {out.name} (built under {built_under}) is damaged: {'; '.join(problems)}"
+    return 0, (f"frozen: {out.name} was built under {built_under} (current {ASSISTANT_PROMPT_VERSION}); "
+               "sources and prompt stamps verified, not rebuilt")
 
 
 def output_texts(result: Build) -> dict[str, str]:

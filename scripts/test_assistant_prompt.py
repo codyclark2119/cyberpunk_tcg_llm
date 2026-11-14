@@ -32,6 +32,7 @@ from games.cyberpunk.assistant import golden_rules
 from games.cyberpunk.assistant import preload as preload_module
 from games.cyberpunk.assistant import tools
 from games.cyberpunk.assistant.loop import (ANSWERING_GUIDANCE, ASSISTANT_PROMPT_VERSION, DEFAULT_MAX_TOKENS,
+                                            ENGINE_GUIDANCE,
                                             DEFAULT_THINKING_MAX_TOKENS, SYSTEM_PROMPT, run_turn,
                                             tool_specs_sha256)
 from games.cyberpunk.assistant.preload import DEFAULT_PRELOAD_CHARS, fit_result, link_cards
@@ -51,14 +52,22 @@ V7_ADDITION_MAX_CHARS = 2400
 GOLDEN_RULES_MAX_CHARS = 1600   # ~400 tokens
 
 
+V8_ADDITION_MAX_CHARS = 280     # ~70 tokens: one guidance line for engine_check
+ENGINE_CHECK_SPEC_MAX_CHARS = 1100  # ~275 tokens: the v8 tool's spec, in every model step
+
+
 def v7_addition() -> str:
     return f"\n\n{golden_rules.snapshot_block()}\n\n{ANSWERING_GUIDANCE}"
 
 
+def v8_addition() -> str:
+    return f"\n{ENGINE_GUIDANCE}"
+
+
 def base_prompt() -> str:
-    """The system prompt without v7's addition: the v5 wording, which the older budgets measure."""
-    assert v7_addition() in SYSTEM_PROMPT
-    return SYSTEM_PROMPT.replace(v7_addition(), "")
+    """The system prompt without v7's and v8's additions: the v5 wording, which the older budgets measure."""
+    assert v7_addition() + v8_addition() in SYSTEM_PROMPT
+    return SYSTEM_PROMPT.replace(v7_addition() + v8_addition(), "")
 
 
 def call(name: str, **arguments) -> str:
@@ -130,6 +139,17 @@ def test_lean_specs_keep_every_name_and_schema():
     before["search_rules"]["properties"]["doc"] = {"type": "string", "enum": ["comprehensive", "tournament"]}
     # And one since (2026-11-13, prompt v5): get_rule gains an optional ``offset`` to read a long rule in parts.
     before["get_rule"]["properties"]["offset"] = {"type": "integer", "minimum": 0, "maximum": 100000}
+    # And a new tool (2026-11-14, prompt v8): engine_check, pinned here in full so any later change is deliberate.
+    slug = {"type": "string", "pattern": tools.SLUG_PATTERN}
+    state = {"type": "string", "enum": ["ready", "spent"]}
+    yes_no = {"type": "string", "enum": ["yes", "no"]}
+    before["engine_check"] = {
+        "type": "object", "additionalProperties": False, "required": ["play", "card"],
+        "properties": {"play": {"type": "string", "enum": ["attack", "attack_target", "play_from_hand", "sell",
+                                                           "block"]},
+                       "card": slug, "target": slug, "step": {"type": "string", "enum": ["main", "react"]},
+                       "card_state": state, "target_state": state, "lagging": yes_no, "played_this_turn": yes_no,
+                       "limit": {"type": "integer", "minimum": 1, "maximum": 3}}}
     for rule_id in ("9", "9.3.2", "11.24.", "3.18.1.2.2.1"):
         assert re.search(old_pattern, rule_id) and re.search(tools.RULE_NUMBER_PATTERN, rule_id), rule_id
     specs = tools.tool_specs()
@@ -143,8 +163,12 @@ def test_lean_specs_keep_every_name_and_schema():
         assert 1 <= len(sentences) <= 3 and len(description) <= 160, (spec["function"]["name"], description)
     # The lean specs' saving is measured against the v5-wording prompt; v7's deliberate addition has its own
     # budget (test_v7_addition_stays_under_its_budget).
-    total = sum(len(json.dumps(s, ensure_ascii=False)) for s in specs) + len(base_prompt())
+    # engine_check (v8) is a new tool with its own budget below, so the saving is measured without it.
+    lean = [s for s in specs if s["function"]["name"] != "engine_check"]
+    total = sum(len(json.dumps(s, ensure_ascii=False)) for s in lean) + len(base_prompt())
     assert total < BEFORE_TOTAL_CHARS * 0.85, total
+    engine_spec = next(s for s in specs if s["function"]["name"] == "engine_check")
+    assert len(json.dumps(engine_spec, ensure_ascii=False)) <= ENGINE_CHECK_SPEC_MAX_CHARS
 
 
 def test_prompt_budget_reports_chars_and_tokens_when_it_can():
@@ -155,7 +179,7 @@ def test_prompt_budget_reports_chars_and_tokens_when_it_can():
     assert set(report) == {"prompt_version", "tool_specs_sha256", "tools", "tool_count", "tool_chars",
                            "system_prompt_chars", "total_chars", "tool_tokens", "system_prompt_tokens",
                            "rendered_prefix_tokens", "tokenizer_note"}
-    assert [r["tool"] for r in report["tools"]] == list(tools.TOOLS) and report["tool_count"] == 12
+    assert [r["tool"] for r in report["tools"]] == list(tools.TOOLS) and report["tool_count"] == 13
     assert all(set(r) == {"tool", "chars", "description_chars", "tokens"} and r["tokens"] is None
                for r in report["tools"])
     by_name = {r["tool"]: r for r in report["tools"]}
@@ -208,7 +232,7 @@ def test_system_prompt_v4_warns_from_the_snapshot_wording():
                    # v4: policy is answered from the Tournament Rules and cited; what neither covers is not covered.
                    "Tournament procedure, penalties, deck registration, event policy: use the Tournament Rules "
                    "(TR 3.4.2), cite them. Anything in neither is not covered.",
-                   "Snapshot 2026-10-29, TR 2026-10-28. Prompt assistant-chat-v7."):
+                   "Snapshot 2026-10-29, TR 2026-10-28. Prompt assistant-chat-v8."):
         assert needle in SYSTEM_PROMPT, needle
     assert "not in the snapshot" not in SYSTEM_PROMPT, "v3's 'policy is not in the snapshot' is gone"
     assert "rule:TR 3.4.2" in {d["doc_id"] for d in tools.rule_docs()}, "the prompt's example id exists"
@@ -264,8 +288,21 @@ def test_golden_rules_fail_closed():
 def test_v7_addition_stays_under_its_budget():
     added = v7_addition()
     assert len(added) <= V7_ADDITION_MAX_CHARS, len(added)
-    assert len(SYSTEM_PROMPT) == len(base_prompt()) + len(added)
-    assert ASSISTANT_PROMPT_VERSION == "assistant-chat-v7" and "Prompt assistant-chat-v7." in SYSTEM_PROMPT
+    assert len(SYSTEM_PROMPT) == len(base_prompt()) + len(added) + len(v8_addition())
+    assert ASSISTANT_PROMPT_VERSION == "assistant-chat-v8" and "Prompt assistant-chat-v8." in SYSTEM_PROMPT
+
+
+def test_v8_engine_guidance_is_one_short_general_line():
+    added = v8_addition()
+    assert len(added) <= V8_ADDITION_MAX_CHARS, len(added)
+    assert added.count("\n") == 1 and ENGINE_GUIDANCE.startswith("- ")
+    for needle in ("engine_check", "Give its verdict and a position id", "never call a play legal that it did not offer",
+                   "hints, not rules"):
+        assert needle in ENGINE_GUIDANCE, needle
+    assert "engine_check" in tools.TOOLS
+    for card in read_jsonl(CARDS_JSONL):
+        for name in {card["name"], card["display_name"], card["id"]}:
+            assert not re.search(rf"(?<!\w){re.escape(name)}(?!\w)", added, re.I), f"v8's line names a card: {name}"
 
 
 def test_answering_guidance_says_each_point_and_names_no_card():

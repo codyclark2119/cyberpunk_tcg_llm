@@ -98,7 +98,8 @@ def test_a_small_real_run_is_deterministic():
 def test_committed_file_is_what_the_code_builds():
     with contextlib.redirect_stdout(io.StringIO()) as out:
         code = ep.main(["--check"])
-    assert code == 0 and "up to date" in out.getvalue(), out.getvalue()[-500:]
+    # Up to date under the current prompt, or frozen as a record of the prompt it was built under (v7).
+    assert code == 0 and ("up to date" in out.getvalue() or "frozen: rules-tf-v1" in out.getvalue()), out.getvalue()[-500:]
 
 
 def test_committed_sample_replays_to_the_recorded_hash_and_labels():
@@ -322,7 +323,8 @@ def test_dataset_builder_runs_engine_rows_through_prompt_preload_split_and_guard
 def test_rules_tf_v1_is_byte_identical():
     with contextlib.redirect_stdout(io.StringIO()) as out:
         code = tf.main(["--check"])
-    assert code == 0 and "up to date" in out.getvalue()
+    # Up to date under the current prompt, or frozen as a record of the prompt it was built under (v7).
+    assert code == 0 and ("up to date" in out.getvalue() or "frozen: rules-tf-v1" in out.getvalue())
 
 
 def run() -> None:

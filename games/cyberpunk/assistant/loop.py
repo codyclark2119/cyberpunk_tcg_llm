@@ -94,7 +94,9 @@ from games.cyberpunk.prompts import RULES_VERSION, TOURNAMENT_RULES_VERSION
 # the snapshot) and ``ANSWERING_GUIDANCE``, general answering rules aimed at the 8B model's repeated misses:
 # a lean toward No when nothing "explicitly permits" it, polarity slips on negated statements, effect text
 # read as a cost, the first retrieved rule taken over a more specific one, and never searching past the preload.
-ASSISTANT_PROMPT_VERSION = "assistant-chat-v7"
+# v8 (2026-11-14): adds the ``engine_check`` tool (``engine_oracle.py``: what the game engine offered in recorded
+# Demo positions) and ``ENGINE_GUIDANCE``, one line on reporting its verdict; v7's wording is unchanged.
+ASSISTANT_PROMPT_VERSION = "assistant-chat-v8"
 MAX_TOOL_CALLS = 6
 MAX_TOOL_CALLS_LIMIT = 16           # the most a run may allow (scripts/eval_assistant.py --max-tool-calls)
 MAX_TOKENS_LIMIT = 16384            # per model step; same as scripts/mlx_chat_worker.py (see the docstring)
@@ -114,6 +116,11 @@ ANSWERING_GUIDANCE = """How to answer:
 - When two retrieved rules seem to conflict, the more specific one wins, and card text beats the rules (2.5). Check every preloaded rule before answering, not only the first.
 - If the preloaded rules don't settle it, call search_rules or get_rule before answering."""
 
+# v8: general on purpose, like the guidance above (scripts/test_assistant_prompt.py checks it names no card).
+ENGINE_GUIDANCE = ("- For whether a play can be made, engine_check shows what the game engine offered in real positions. "
+                   "Give its verdict and a position id; never call a play legal that it did not offer. "
+                   "Its facts_that_split are hints, not rules.")
+
 
 def system_prompt(max_tool_calls: int = MAX_TOOL_CALLS) -> str:
     """The system prompt stating ``max_tool_calls``; at the default it is exactly ``SYSTEM_PROMPT``."""
@@ -132,6 +139,7 @@ Warning: some terms here are the reverse of other card games. In these rules an 
 {golden_rules.snapshot_block()}
 
 {ANSWERING_GUIDANCE}
+{ENGINE_GUIDANCE}
 
 Snapshot {RULES_VERSION}, TR {TOURNAMENT_RULES_VERSION}. Prompt {ASSISTANT_PROMPT_VERSION}."""
 

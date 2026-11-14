@@ -288,7 +288,27 @@ def test_build_is_deterministic_in_any_input_order():
 def test_committed_set_is_exactly_what_the_code_builds():
     with contextlib.redirect_stdout(io.StringIO()):
         code = tf.main(["--check"])
-    assert code == 0, "data/datasets/rules-tf-v1 is stale: rerun scripts/build_tf_dataset.py"
+    assert code == 0, "data/datasets/rules-tf-v1 is stale or damaged: see scripts/build_tf_dataset.py --check"
+
+
+def test_a_set_built_under_an_older_prompt_is_checked_as_a_frozen_record():
+    import shutil
+    manifest = json.loads((COMMITTED / "manifest.json").read_text(encoding="utf-8"))
+    if manifest["assistant_prompt_version"] == tf.ASSISTANT_PROMPT_VERSION:
+        return  # built under the current prompt: the rebuild check above covers it
+    with tempfile.TemporaryDirectory() as tmp:
+        copy_dir = Path(tmp) / "rules-tf-v1"
+        shutil.copytree(COMMITTED, copy_dir)
+        with contextlib.redirect_stdout(io.StringIO()) as out:
+            assert tf.main(["--check", "--out", str(copy_dir)]) == 0
+        assert "frozen" in out.getvalue()
+        rows = read_jsonl(copy_dir / "train.jsonl")
+        stamp = f"Prompt {manifest['assistant_prompt_version']}."
+        rows[0]["messages"][0]["content"] = rows[0]["messages"][0]["content"].replace(stamp, "Prompt other.")
+        write_jsonl_atomic(copy_dir / "train.jsonl", rows)
+        with contextlib.redirect_stdout(io.StringIO()) as out:
+            assert tf.main(["--check", "--out", str(copy_dir)]) == 1, "a damaged frozen set must fail"
+        assert "damaged" in out.getvalue()
 
 
 def test_item_rows_record_their_provenance_not_the_rule_text():
@@ -301,17 +321,28 @@ def test_item_rows_record_their_provenance_not_the_rule_text():
 
 # Prompt shape and target ----------------------------------------------------------------------
 
-def _check_prompt(row: dict) -> None:
+def built_under(directory: Path) -> str:
+    return json.loads((directory / "manifest.json").read_text(encoding="utf-8"))["assistant_prompt_version"]
+
+
+def _check_prompt(row: dict, prompt_version: str | None = None) -> None:
+    """``prompt_version``: a committed set frozen under an older prompt keeps that prompt's system message and
+    tool specs (see build_tf_dataset.frozen_check); everything after the system message must still match."""
     item = {"question": row["statement"], "choices": [{"letter": "A", "text": "Yes"}, {"letter": "B", "text": "No"}]}
     messages = row["messages"]
-    assert messages[0] == {"role": "system", "content": system_prompt()}
+    frozen = prompt_version is not None and prompt_version != tf.ASSISTANT_PROMPT_VERSION
+    if frozen:
+        assert messages[0]["role"] == "system" and f"Prompt {prompt_version}." in messages[0]["content"]
+    else:
+        assert messages[0] == {"role": "system", "content": system_prompt()}
     assert messages[1] == {"role": "user", "content": eval_assistant.question_message(item)}
     sent = [s for s in preload(eval_assistant.preload_text(item)) if s.sent]
     assert messages[2] == {"role": "assistant", "content": "", "tool_calls": [
         {"type": "function", "function": {"name": s.tool, "arguments": s.arguments}} for s in sent]}
     assert messages[3:-1] == [{"role": "tool", "content": s.content} for s in sent]
     assert messages[-1]["role"] == "assistant" and len(messages) == 4 + len(sent)
-    assert row["tools"] == tool_specs()
+    if not frozen:
+        assert row["tools"] == tool_specs()
 
 
 def test_examples_use_the_real_system_prompt_preload_and_wrapper():
@@ -320,7 +351,7 @@ def test_examples_use_the_real_system_prompt_preload_and_wrapper():
             _check_prompt(row)
     rows = committed_rows()
     for row in rows[:: max(1, len(rows) // 12)]:
-        _check_prompt(row)
+        _check_prompt(row, built_under(COMMITTED))
     assert "A. Yes\nB. No" in rows[0]["messages"][1]["content"]
 
 
@@ -587,11 +618,16 @@ def test_v2_committed_set_is_exactly_what_the_code_builds():
     assert code == 0, "data/datasets/rules-tf-v2 is stale: rerun the v2 build command in the README"
 
 
-def _check_lookup(row: dict, rows_by_id: dict) -> None:
+def _check_lookup(row: dict, rows_by_id: dict, prompt_version: str | None = None) -> None:
     """A lookup row: preload, the search call, its real result holding a cited rule, then an answer the
-    scorer reads as the label; its lookup-call row is the same first step with the call as the target."""
+    scorer reads as the label; its lookup-call row is the same first step with the call as the target.
+    ``prompt_version``: as in ``_check_prompt``, a frozen committed set keeps its own system message."""
     messages = row["messages"]
-    assert messages[0] == {"role": "system", "content": system_prompt()}
+    frozen = prompt_version is not None and prompt_version != tf.ASSISTANT_PROMPT_VERSION
+    if frozen:
+        assert f"Prompt {prompt_version}." in messages[0]["content"]
+    else:
+        assert messages[0] == {"role": "system", "content": system_prompt()}
     call = _search_call(row)
     assert messages[-3]["role"] == "assistant" and messages[-3]["content"] == ""
     assert call == {"name": "search_rules", "arguments": {"query": row["lookup_query"]}}
@@ -611,7 +647,7 @@ def _check_lookup(row: dict, rows_by_id: dict) -> None:
     assert target["content"].startswith("<think>\n") and target["content"].endswith("\n</think>\n\n")
     # the preload part is exactly the scorer's prompt for this statement
     prompt = tf.scorer_prompt(row["statement"], row.get("cards") if row["kind"] != tf.TEMPLATE_KIND else None)
-    assert messages[:-3] == prompt.messages
+    assert messages[1:-3] == prompt.messages[1:] if frozen else messages[:-3] == prompt.messages
 
 
 def test_v2_lookup_examples_hold_the_call_the_real_result_and_the_answer():
@@ -626,7 +662,7 @@ def test_v2_lookup_examples_hold_the_call_the_real_result_and_the_answer():
     committed = v2_committed()
     by_id = {r["id"]: r for r in committed}
     for row in [r for r in committed if r["shape"] == "lookup"][::7]:
-        _check_lookup(row, by_id)
+        _check_lookup(row, by_id, v2_manifest()["assistant_prompt_version"])
     # direct rows: no call after the preload, the answer straight away
     for row in [r for r in committed if r["shape"] == "direct"][::40]:
         assert row["messages"][-2]["role"] == "tool" and "tool_calls" not in row["messages"][-1]

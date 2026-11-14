@@ -877,8 +877,8 @@ python scripts/test_engine_tf_items.py
 
 ### Engine oracle position catalog
 
-`scripts/build_oracle_positions.py` builds the catalog that the planned `engine_check` assistant tool
-will search (plan section 4, PR 1). It writes `data/oracle/positions-v1.jsonl`, an index of real engine
+`scripts/build_oracle_positions.py` builds the catalog that the `engine_check` assistant tool
+searches (plan section 4, PR 1). It writes `data/oracle/positions-v1.jsonl`, an index of real engine
 positions, plus `positions-v1.manifest.json`. Games are played the same way as for the engine-tf
 items: Demo decks, baseline policy on both seats, one position per Main phase or React Step decision.
 The seeds come from their own prefix, `engine-oracle-v1-<n>`. The engine-tf items (`engine-tf-v1`) and
@@ -906,4 +906,28 @@ cards never seen in some state.
 python scripts/build_oracle_positions.py          # about 2 minutes; writes the index, manifest and cache
 python scripts/build_oracle_positions.py --check  # regenerate and compare bytes (also in the tests)
 python scripts/test_engine_positions.py
+```
+
+### engine_check: the assistant asks the engine
+
+`engine_check` (`games/cyberpunk/assistant/engine_oracle.py`, prompt `assistant-chat-v8`) answers "can this
+play be made?" from the catalog above, never from the model's reasoning and never by running the engine at
+question time. Arguments: `play` (`attack`, `attack_target`, `play_from_hand`, `sell`, `block`), `card` (slug),
+`target` (rival Unit slug, `attack_target` only) and optional filters `step`, `card_state`, `target_state`,
+`lagging`, `played_this_turn`. Every friendly copy of the card in every matching position is one match:
+
+- `offered`: the engine listed that action for that exact copy in every match (for `attack_target`, the
+  target was among the targets offered after declaring that attack);
+- `not_offered`: it never did; a fact about these positions, not a rule reason;
+- `depends`: both happened. Examples of each come back, with `facts_that_split`, the fact values seen
+  only where it was not offered (observational hints for the model to check against the rules);
+- a card outside the 29 Demo cards is refused with `no_position`, telling the model to answer from rules and
+  card text and say the engine did not check it.
+
+Each example gives the position id, seed, state hash, the card's public facts and the engine's label and
+`actionId`. v8 adds one line to the system prompt: give the verdict and a position id, never call a play
+legal that it did not offer. The quiz has not been re-run under v8.
+
+```bash
+python scripts/test_engine_check.py   # verdicts recounted from the index independently; refusals
 ```
