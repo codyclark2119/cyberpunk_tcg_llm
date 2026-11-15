@@ -2,7 +2,7 @@ import { readFileSync, writeFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { CardRevisionSnapshotSchema } from "@tcg/domain";
-import { demoReferenceContext } from "../tests/demo-format-fixture";
+import { reviewedUnionContext } from "../tests/reviewed-union-fixture";
 import { reviewEngineCandidateCatalogV1 } from "./lib/engine-candidates";
 import { buildCardCoverageReport, loadVerifiedCandidates } from "./lib/card-coverage";
 
@@ -20,7 +20,7 @@ const familiesPath = resolve(candidateDir, "mechanic-families.v1.json");
 const outPath = resolve(arg("--out") ?? resolve(candidateDir, "card-coverage.v1.json"));
 
 const verified = loadVerifiedCandidates(candidateDir);
-const reviewedCards = demoReferenceContext().content.cards
+const reviewedCards = reviewedUnionContext().content.cards
     .filter(card => card.schemaVersion === 2 && card.provenance.reviewed)
     .map(card => CardRevisionSnapshotSchema.parse(card));
 const reviews = reviewEngineCandidateCatalogV1(verified.candidates, reviewedCards);

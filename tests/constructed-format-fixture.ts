@@ -1,7 +1,8 @@
 import { readFileSync } from "node:fs";
 import { z } from "zod";
 import { DeckSchema, type Deck } from "@tcg/domain";
-import { demoStarterContext, demoStarterInput } from "./demo-starter-fixture";
+import { demoStarterInput } from "./demo-starter-fixture";
+import { reviewedUnionContext } from "./reviewed-union-fixture";
 
 // CONSTRUCTED games on the reviewed executable revisions (plan section 6, scope 2).
 // The engine already initializes and plays CONSTRUCTED decks under the reviewed
@@ -35,9 +36,9 @@ export function constructedDeck(deck: DeckFile["decks"][number]): Deck {
     for (const id of expand(deck.main)) counts.set(id, (counts.get(id) ?? 0) + 1);
     return DeckSchema.parse({ name: deck.id ?? "constructed", legends: deck.legends, cards: [...counts].map(([cardId, quantity]) => ({ cardId, quantity })) });
 }
-/** The reviewed content (every executable revision) and its turn-slice ruleset. */
+/** Every reviewed executable revision of a real card, under the union of their turn-slice gates. */
 export function constructedContext() {
-    return demoStarterContext();
+    return reviewedUnionContext();
 }
 /** A createGame input for two CONSTRUCTED decks; players and matchId as in the Demo input. */
 export function constructedInput(seed: string, file: DeckFile = constructedReferenceDecks()) {
