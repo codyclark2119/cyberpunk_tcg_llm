@@ -6,8 +6,8 @@
     "manifest": {
       "schemaVersion": 1,
       "engine": {
-        "version": "0.4.2-lag-order",
-        "artifactHash": "ec49548098063d0a543a8ce1db2fa7452efbee96e15fc92f73c60e15bc9e308c"
+        "version": "0.4.3-defeat-filter-v7",
+        "artifactHash": "563517fb9b5b53fd9e2988d0c1590b3fae74bb4fc284c8d1df522a12f15653ee"
       },
       "ruleset": {
         "id": "beta",
@@ -272,7 +272,7 @@
         }
       ]
     },
-    "manifestHash": "d373bf7d6fad15a44c1d3646c66e2338d8de90165c59fe822f5a6166446800f4",
+    "manifestHash": "1bcbd0e4c91a81919e14c43705b1df6b507d12c026e91a2e933818c03e7d6aae",
     "ruleset": {
       "id": "beta",
       "version": "targeted-defeat-1",
@@ -4785,9 +4785,9 @@
         "rulesetId": "beta",
         "rulesetVersion": "targeted-defeat-1",
         "rulesetHash": "398765437d8511cd7d2e82eb63cfdf2b70e169f10be7d9c01faffc4dcf8233ea",
-        "contentManifestHash": "d373bf7d6fad15a44c1d3646c66e2338d8de90165c59fe822f5a6166446800f4",
-        "engineVersion": "0.4.2-lag-order",
-        "engineArtifactHash": "ec49548098063d0a543a8ce1db2fa7452efbee96e15fc92f73c60e15bc9e308c",
+        "contentManifestHash": "1bcbd0e4c91a81919e14c43705b1df6b507d12c026e91a2e933818c03e7d6aae",
+        "engineVersion": "0.4.3-defeat-filter-v7",
+        "engineArtifactHash": "563517fb9b5b53fd9e2988d0c1590b3fae74bb4fc284c8d1df522a12f15653ee",
         "cards": [
           {
             "cardId": "afterparty-at-lizzie-s",
@@ -7172,8 +7172,8 @@
           }
         }
       ],
-      "stateHash": "82e93ac8afb743dde13bb2e191ae0a02eaa9fb6cd7c08306fae01da132496ce8",
-      "positionHash": "e62c6d1c53449dab0f25d2da91666dc589538c3cff52e7dfc5d83ac957840943",
+      "stateHash": "c9bcbf6f803628708e63e55332df9175fff1cfd21884379486767baab016c89b",
+      "positionHash": "630c778215870d8457c5c3df7c7794230c1bf6c9bd09880c838c0b3ecf5f67b6",
       "observationHash": "c4c8b9471c306ff6e5c934d30217c4cd67f29f2dae0f89ce2022663d7ff1a9ab",
       "step": "CUT_DECISION"
     },
@@ -7945,8 +7945,8 @@
           }
         }
       ],
-      "stateHash": "2b5f1e0efcaa3280fdf53afa1b6544e5a0c31f986790f4d17a481635713f5f94",
-      "positionHash": "de241ab79f9fa37cbc44ef6b7c1c735f4f52fe397481590720ab7e1ac09758bc",
+      "stateHash": "c3f7ddbf83f72cd560769c88379b2f8d72e910f7a15e64b41810fe3c3b3ed9db",
+      "positionHash": "55a418a36c9113bb577c3c1810d467d3447b24831f70512141d37e31c29d9df6",
       "observationHash": "66997ff1cf45b0abcd19d70ae286768c7de8d4267d5ab2dd849de99997f44498",
       "step": "CUT_DECISION"
     },
@@ -8746,8 +8746,8 @@
           }
         }
       ],
-      "stateHash": "9b59c97808f9389be813fa3db6abc1ea4f2264c13480b7d4b64d952792cb2f33",
-      "positionHash": "905cf3fe183fcfe1eaa69a90e1711e7a307ba052e610bd6c8a69f34def19e966",
+      "stateHash": "01c895fec435a56bc599649cc2fea4290dd91438dd75fad94bf154dc6c9a8977",
+      "positionHash": "0830782e4bdaeea7b77c9d4e63096333936c4dc7107e576f68b27e25dcaa7280",
       "observationHash": "1054ea0ee15e88861fba8a017881425d9396fe09599d807fa1581a1ba28933d3",
       "step": "CUT_DECISION"
     },
@@ -8934,8 +8934,8 @@
           }
         }
       ],
-      "stateHash": "8c506393cc88434141d0114b105fe68fb9ad17126897576986af52ce052f7631",
-      "positionHash": "aa8a958523140cf91490d32f4665a0bd65c9517ac4c1dfcf28c4f6ff56473de2",
+      "stateHash": "8eb660aa5c3eb9edf444c1268b82c04989a159eeda45095386ab9fe685fbafa1",
+      "positionHash": "aeb04dc260fa9327b556e186073da4cc17095964c98087f2febb16ac8672c3cb",
       "observationHash": "93844c06fd6d6dc6be358f82c69bdce1c76018495f4f3584e0dc90dd84fbe43a",
       "step": "CUT_DECISION"
     },
@@ -9330,8 +9330,8 @@
           }
         }
       ],
-      "stateHash": "404e09348e791db84e8336e9899994ad776997e6ceab535ac1feea89380a99e7",
-      "positionHash": "70297c85d4f19d2e3e18a0c062d221c14e6b786fcf450d6fe7b2b9357fde742f",
+      "stateHash": "b3160b3c30c4194826b4cc30b6706f5ea66d3b42f9b7560eaeeba56c055f6b27",
+      "positionHash": "44f8dd753d6185321f9b7feb8a0272def1d221ae87107d7171ca9e14678465cc",
       "observationHash": "b580a9c83bc58b68a1efe25525910c4e1bea63f6bf58052daf96d4c2858b3fbd",
       "step": "MULLIGAN_DECISION"
     },
@@ -9707,8 +9707,8 @@
           }
         }
       ],
-      "stateHash": "326e0aef6622b8afabbb7464fc30330288ebb02a0895a989dbb4745e6b731977",
-      "positionHash": "28424bd4d3a9361037e21201217715040facf678b240048ee99759541bfcd77c",
+      "stateHash": "e42c45fffb22b11bcca0cbab8d6a9c2097d2d662e88f4a222fedb7d89e185c1e",
+      "positionHash": "19f0d641a1a716af32614e274f6a0cda668e0d6efd3ee58f9d93cb1aad6730c7",
       "observationHash": "e6ac46042ab46011b0ab7d4deaeff48393674717c3f1f986043ee369fe2ec6af",
       "step": "MULLIGAN_DECISION"
     },
@@ -10141,8 +10141,8 @@
           }
         }
       ],
-      "stateHash": "df712a05aadc14ef1add7ce08e12093c16d472878db4fd6133045d8bcb0380c8",
-      "positionHash": "672f030e80fd319ed6c739825e725db18a26f9ac8275727019bf0e09eab74df9",
+      "stateHash": "7821f05a8059257916506231b545b94a8f14abe6624591dc0d37c32188bb747e",
+      "positionHash": "7899f8f5fad27f7f18dbcb2234fbcfd49e5ccb555fe01b98004dd129024c90f3",
       "observationHash": "d4dee0a672998d2a3a6f2351af3c8c80660abb0d52cd3ca42a7ff5f7eeece330",
       "step": "CHOOSE_GIG"
     },
@@ -10589,8 +10589,8 @@
           }
         }
       ],
-      "stateHash": "7382ee89818883847993d8a1389703b4e2ac22594346fd011b144a3168a20486",
-      "positionHash": "61f11e1094dc20e10370b8a7c8490c3a640c35f8f089dcc3eeac502c7a78fca7",
+      "stateHash": "4a1993affc64ee6ef3d11b6e5752d135eec2239def3178433fd579bb52b1f31c",
+      "positionHash": "091ff08d67bdd193487e397bac51b2e0c0b94cac935c8f5520dcb0e238716e96",
       "observationHash": "5d63b12e82153ef67b945566249faf630497a72d45adaef9e510cce5547dd11c",
       "step": "MAIN"
     },
@@ -11085,8 +11085,8 @@
           }
         }
       ],
-      "stateHash": "268d2a6beb84e4c2228495b50d017e75f5a441a3a089bd7883c8b9cc71acde26",
-      "positionHash": "99b03984f74a6610e44a2bb40a89efbd04073828ebf7f52613550d525eb00482",
+      "stateHash": "95bd4e7a31800c2bf56e772a40750cf9e4144bbe1928efb1fd04b18f6d082f16",
+      "positionHash": "e418b010b4132627d56713b41c4d7259de43e251f605898076029c843388489c",
       "observationHash": "4ed390181f697854edfdca590f0934f872ccfcff59ff8b50152004a9e98f2d9d",
       "step": "MAIN"
     },
@@ -11571,8 +11571,8 @@
           }
         }
       ],
-      "stateHash": "5556d741f713c23ae185bc6a8a5dd4889e4be09c2506affe735fd3c86985b471",
-      "positionHash": "a04b476ab6881f6ae2c57c6bc5c3e5b4bb9a9cad9839929a9edd39335490a537",
+      "stateHash": "76d06710fcf5331980edbe0df5335939685888170aca5818aedf4c33d3a6fa95",
+      "positionHash": "0020679525b2354b2bc31b150a6df92b86c71f9f4f4aedf4e074c816aa8f5018",
       "observationHash": "f89c8b41f2be477648feb4002d0909589080a3e0a2f28884f973648efb96042e",
       "step": "CHOOSE_GIG"
     },
@@ -12031,8 +12031,8 @@
           }
         }
       ],
-      "stateHash": "c871dfd45577377412f066cbfaeb40400dc3dc04457a034089cdfb61e4442129",
-      "positionHash": "8a85a7bbea76933b1d526de372677093a333953b45acb346e52b0f19c8fb0080",
+      "stateHash": "ac53cd8d7dc9ed86d561698690b746b8928165490d4629cd9e05acf150ebae4e",
+      "positionHash": "b0f83b4835c192aa70b0de91bddce928440b4cf9308b9dece9aef0f7c7043738",
       "observationHash": "31ff3c5516b44416d24a1ba54f6ad0359cfea4be9b844bbb053752255757bc3b",
       "step": "MAIN"
     },
@@ -12551,8 +12551,8 @@
           }
         }
       ],
-      "stateHash": "bb2b2f01d470a1eb84b71edb24e67a7edbbf02e4841788a5f79c0b04710a14ec",
-      "positionHash": "f1456fd3b8ec5ee5a64956722bd9746048e708a5bb7504372af1d351a5306d65",
+      "stateHash": "40e98f8f4d4e5960b4234293629f7eab5d92023d3781bec682448ce6759fe119",
+      "positionHash": "ce896f0f5ac7b635ecb6b618c064df8280a59669e4a24a7b2007f423d0158a45",
       "observationHash": "d7a7618ee34897b8ff3194e10221153799aefd0df615eb99b00120ec6a128067",
       "step": "MAIN"
     },
@@ -13022,8 +13022,8 @@
           }
         }
       ],
-      "stateHash": "e0c34b027472e10a0a453fb3987089cd82e4752f12a62673040b8ef837b544d7",
-      "positionHash": "93e1035a1ba001bdb62443153a077bd7db8a6993dd4976ddebc2dded2506fe6b",
+      "stateHash": "bc7c70af01499cc1d72d141b0aa12a1ff219d95534fc2185d6b1b07b0870e287",
+      "positionHash": "71ee4c74358706a55dc2011c7f30d22055e2ab6df3adb28f62c7b80939c508a6",
       "observationHash": "7b759a7f6717f428bcf20d4f6e51b5bc5ba895b09faf06052b33777849964100",
       "step": "PAYMENT_SELECTION"
     },
@@ -13472,8 +13472,8 @@
           }
         }
       ],
-      "stateHash": "576bcbf08447174ee8d5a02a9df63651b43cc22bf86b301add082276804f35a4",
-      "positionHash": "6402fae5f1b47588e24ed31f2abc649b42efc494d5f46b6788d3706d5e440562",
+      "stateHash": "af23e8fca5f278538b9fb7a3a4e687fc7234fcfb9ea6728a133ddff7b9d4457e",
+      "positionHash": "ab6d66bf936881a3e5b7c2b5abfba6e50cada21dfbaa74247c78ce08c8693dc5",
       "observationHash": "a690bf17b32f66797d5c38e927429d15ba9b2225aa44957dfcd5d0c35668639f",
       "step": "PAYMENT_SELECTION"
     },
@@ -13907,8 +13907,8 @@
           }
         }
       ],
-      "stateHash": "39025830e8213e9a56bc4570fd05c6c3d02bd54f521bbfb24af08cf96d175f0d",
-      "positionHash": "0b3b9e13bb117be6ffca3a33c8b3950af440c9b65c628cd0f8dd1b743ee943b7",
+      "stateHash": "cb30584190568e632548540585a0a3092d614702970338758cae4ce1894b7ee3",
+      "positionHash": "8e9ed56a643f754e4dacb40be58eed2c9cdc088e1552e6784760878d187bee18",
       "observationHash": "f8716a4b5a3ad3db39c4bf272bdc6f4a519fa4aa1274b1f44ce86dcc97213078",
       "step": "PAYMENT_SELECTION"
     },
@@ -14386,8 +14386,8 @@
           }
         }
       ],
-      "stateHash": "e84cb285d9a9b524d6abe255b08d566960f028818437c88526a2693f8644e010",
-      "positionHash": "fcde5dea9b5f6657483691688b5b3deae11ff6eb3c17f0c1abe71383d24ae27d",
+      "stateHash": "8550eb58956daf4030bbeb3f813f506b0730e88f6fcc4c341101aeb128bc420b",
+      "positionHash": "c7a4efa8de1312c379fea26ac8236cc9e7d6fe17e3067c7fb8f758b781cfd41a",
       "observationHash": "5e92c0d96d4fba99476b7fb26b84527c4e4670df1ce639e300590420fd56de14",
       "step": "TARGET_SELECTION"
     },
@@ -14832,8 +14832,8 @@
           }
         }
       ],
-      "stateHash": "1bcae3e0881115a53938f7b1079bc0d095ae8910d09675d4681af610bbbf11dc",
-      "positionHash": "ae0e908dfe867848bac05c237f692da793626bbc40f04baca7744a20400a4a08",
+      "stateHash": "cb5d1817f161b424e46be99317f21a6fe1ce7c70cbebcbf8edd865da42e08087",
+      "positionHash": "1e23a4779ee8bbaadb1410cab46f7772287edf2b766bb258c4deb47566ec0296",
       "observationHash": "27be2620fd6149b3227366a86d2de52a8d0a4f1fb35b2d0d7eb6a0c2c9b5ad69",
       "step": "AMOUNT_SELECTION"
     },
@@ -15299,8 +15299,8 @@
           }
         }
       ],
-      "stateHash": "e92e7da52f053b053b14dcc94071602d9ab7f8553de461f9957422eb2e97be35",
-      "positionHash": "c23550427a3719e78d8fef0461528434339957f2819366d9ae3ce77d185fe270",
+      "stateHash": "e45c2a2727c80d5cf45dc70a08a02b3837b7f92763cb12778bceec547e84be7e",
+      "positionHash": "852dec4b21176cfe417bf179ec74758a59958c2a1bb799d632598f12b6bb5877",
       "observationHash": "e18644cda08757bf183f814b3684c072b3eaa6ed2260830766b923b13ccca6d1",
       "step": "MAIN"
     },
@@ -15811,8 +15811,8 @@
           }
         }
       ],
-      "stateHash": "d70b1c506d1cee67037364361bc7da58f7548c8e2a946f7bd55346173c594a69",
-      "positionHash": "257b2d534afab06a0e8082c6ba053c9a229e2a3b80beb3232d39413cce15d308",
+      "stateHash": "f31eb6bb4638525f23918d1250b7c8289ca8e51e34aa6da43b92b5deda42dbb2",
+      "positionHash": "26f74f0f209d92922fe856faf3182167722cc6e171528e18a896563b31b2120b",
       "observationHash": "d9f0deb4ae5c75b048f6308d77fb2f087afa5fa7c3514fa468cf00e0c418f046",
       "step": "CHOOSE_GIG"
     },
@@ -16289,8 +16289,8 @@
           }
         }
       ],
-      "stateHash": "9100ab90406e1cedd6bd3d326b61e80879abf650b4660fa0bde489afab6a30d5",
-      "positionHash": "d7d6a7d8ad1f1d1eba9ee094ab0f519e3d39d692f549776a2f1ba2cd4f22f933",
+      "stateHash": "644ba250d5e07a6aa160565a08c848418a76a81de39e9b73704fdeb9b1464708",
+      "positionHash": "b49b608af65f89cefbb5e0f99242fe2c0c6995d3c6582a644ebb8cb3f0279211",
       "observationHash": "d08779bfe601613e0ddaf537dcdd1b6adf5d810fd375de1de4e461cfd9e1f997",
       "step": "MAIN"
     },
@@ -16851,8 +16851,8 @@
           }
         }
       ],
-      "stateHash": "2d757c243e8195cc853ed2311964b717112d2b014852c7f4e736c55220d60ca5",
-      "positionHash": "24dc09a02f456ddd74967167205891760422324eb8c57b4e3005aedc62b39560",
+      "stateHash": "16542291e08d1ebe212b9610c48d49262b4646e81192d46fc7293d5986b5d33b",
+      "positionHash": "cbb44bca40a6bbff014b66802e9da4def57924996fbdc8f2ea24b51ee84a974c",
       "observationHash": "bfb7a2e36158b41d79947cc0c5c899ec679c1c6f1f47d182756128528ecaf9f2",
       "step": "MAIN"
     },
@@ -17436,8 +17436,8 @@
           }
         }
       ],
-      "stateHash": "a231f96a627a735289f7e3ef9534a61aa6630624adb4fed48f464b12ff785188",
-      "positionHash": "c8f32ac06238d1661e03bb7656fee40edfd844f888338260b03d0c12ccf36309",
+      "stateHash": "3b2ff0c220a540a7f12629e3f5ce7701fe38820b6d2c6e6d581eb10943510e9b",
+      "positionHash": "2bddab1199c293b864ba14fe5a45c29078313671d81191031695972d25916b86",
       "observationHash": "a2d2e6209f53701940b91a589494a3bc5c166ab0d2c32ffcc16c9c1d1550a0ca",
       "step": "CHOOSE_GIG"
     },
@@ -17912,8 +17912,8 @@
           }
         }
       ],
-      "stateHash": "d415b6b33153c281131f6bc27c172451472fdc152f2f408ab15778e8fb223c0f",
-      "positionHash": "d857cd739b1241dff41e1ee46acb63573ed4b9a93298860a800e768961965c6e",
+      "stateHash": "dceb29f52779d16f5a9223efe823e1df7d248dd3e5c76bab2165059fcb9e33e4",
+      "positionHash": "a266de41fa1cd6c8a477016527485df5dc99e2ff8eb12e26dd691645a7f62841",
       "observationHash": "e93cc7919f474cd1ec5168a772e721df2f7893ba0705212c5e2973f4de1818c4",
       "step": "MAIN"
     },
@@ -18484,8 +18484,8 @@
           }
         }
       ],
-      "stateHash": "4234443167451dba2314afc72e320979e18d3071fd05e714e4e937db8fe45a68",
-      "positionHash": "f2ca17a5d0d0c3404c636cbfeadbcde0321bffe50fe01c7f9366bbeb14909b38",
+      "stateHash": "f02ae0449b16f9638a4c6f2769ec8648e6042bfc79f2b1e03819547c7244b55e",
+      "positionHash": "fedc93e4a6dca5517ea15b168171ae38c8cfb4c63152c08dc07488a9d5b97582",
       "observationHash": "02aa61b73fc394726397969f0bb6d011a3c14a3a513c6e307064da65e2c4c4eb",
       "step": "MAIN"
     },
@@ -18995,8 +18995,8 @@
           }
         }
       ],
-      "stateHash": "1e80f66e517e4c9ead8af65ab29c36bf531b8c6e4ecfa87ff154e859ea153774",
-      "positionHash": "2a5007202f166fb45d5160b8231e03b18b2cfc5e5fb486370eacd8f875c0903e",
+      "stateHash": "38781fe3651c1e55d2d55d5e2f9ae33fd71c5a880078697e7c0ced54df656c2a",
+      "positionHash": "d1fd99ae01a9cb61962efcffc6ad88b5e337578fafe898b470c90fa1263bbefd",
       "observationHash": "56c34a1c497d1340c0464b5601b3863861557d0d924cf6ba6e3bf79e5b725a21",
       "step": "PAYMENT_SELECTION"
     },
@@ -19488,8 +19488,8 @@
           }
         }
       ],
-      "stateHash": "488385354da22afd9bf95c7236bfc88da911922969453e4a406d6b927ed7bfcb",
-      "positionHash": "16b02ce0c55e570f80cf38d3f3c0c71709c982696fd44c2e7dd621058d3bd092",
+      "stateHash": "605e7f187e07857df61ac6cdfa906362a3e75ebf274570313ad3afe3e4d745ee",
+      "positionHash": "7107ed0034151ad1d4fa325045357b3ab0945e2b8621c298d21ef86b6fd0713c",
       "observationHash": "c642cf83ed1d30d204f0b3b7220fdd2b3d67f05d4c5a6a499d8903af5a025340",
       "step": "PAYMENT_SELECTION"
     },
@@ -19966,8 +19966,8 @@
           }
         }
       ],
-      "stateHash": "b37d24d09ec09808cbc88ec73140df2c48e49a06685853264b6b7fbc5eb311a6",
-      "positionHash": "8ebb70c216767fd7e80f8b0b0810d83743213d06db7f345b24972e4c5ce1afdc",
+      "stateHash": "a2b51485a9d133edb7543b88b11d60a1e7051ef0bbbe161d20b4cc882c111a01",
+      "positionHash": "29859c9754d40740793ceb1433575ed457da88c29588037464b835f6a8297ca4",
       "observationHash": "8abe6f96e4157081c0f12376f6a3e3783b62aeac797ed71d755a4f4e4d8c3f7d",
       "step": "PAYMENT_SELECTION"
     },
@@ -20471,8 +20471,8 @@
           }
         }
       ],
-      "stateHash": "8e63593e229732e21498abdbf939ae02fe9f2a6c3d39368ff3ec3b7c2999d8c5",
-      "positionHash": "8a9911b9d4704dbc384cb534deeac9dfa6dffcf92815d6ef60659db17bda7ad7",
+      "stateHash": "4d3b9ab855ccacd2799955d8b8aa7891bb505faa872e1d1f9e9d54e79569bf22",
+      "positionHash": "db159e3a9f1b4cd94c6fe3ad78e49f9ac021d21e95e1f4ead4f88520e9c94661",
       "observationHash": "48f07c96ca36ab59454ab362a3ec564e94867d95af4cecd0c2b463e7281ed615",
       "step": "MAIN"
     },
@@ -21009,8 +21009,8 @@
           }
         }
       ],
-      "stateHash": "77785c638c42985d22d4742f701810d2707cfe097c0b43532c0f3e92c67bc12d",
-      "positionHash": "d308af1b0e48693b98d14118fd176e83d6d0e7a8e12f2414060da3706927f730",
+      "stateHash": "73dde538373e27e79e3bbe96b3ac10cbe9ef2b95f0746a715146905fcafe3625",
+      "positionHash": "a3dea4fbc72ddc580fce4ec4f76572b94c6225e4c41c75f8860f1222cda94240",
       "observationHash": "45bea71ad5f5df64330864944b2b9683591587b85c830d8705864857589f1637",
       "step": "CHOOSE_GIG"
     },
@@ -21517,8 +21517,8 @@
           }
         }
       ],
-      "stateHash": "66cc0387a38504babf0e76f71e49418b5e80efb516e10254504dc9fee8b48f2d",
-      "positionHash": "8cf0b8205cb741cbcf447a03bc1c3eb0d5be3353026684798153bbbafd5beeda",
+      "stateHash": "441fe3a84f7e027975ce2bb390c4058918ef7218a957c1b79dfde17a57e5306d",
+      "positionHash": "c9091f3c42d9f8e33606189ef93ea70db70d5011190f386fd648db24fb07661c",
       "observationHash": "ffdc6edfc9a51b8179169eed682b9b0511676cdca919314fbc8c415064c37c92",
       "step": "MAIN"
     },
@@ -22121,8 +22121,8 @@
           }
         }
       ],
-      "stateHash": "d054df2728f83290e9ed97fd80610b241dcc90eea91cd73cc2c9fd60dfae36f2",
-      "positionHash": "6df732f5dc2853632f1e4d4e8e1482b350d9db212df19f68dbcac21b4e6bdbbe",
+      "stateHash": "fecb99e9f62bdd859b703f7f19a1d03a88f2e8926f6e78d8397cc455c2b3b282",
+      "positionHash": "85802a2bb2bcf283ad3dcf1e33ef29b37d6f52e483686b9c0fd2996f57a5a84d",
       "observationHash": "95cd9e198f09ce5eb529dc9e3cf9b15f26a0e0c41585e7616edf8de3bc4545f3",
       "step": "MAIN"
     },
@@ -22748,8 +22748,8 @@
           }
         }
       ],
-      "stateHash": "276f17d8efc6fd0eb4c4503eac869f045c243ed0e9d367159eb02f5ea2732ad9",
-      "positionHash": "e09f9b0e118e357787ed2742c628ebbd56898ad9d7d33315759fc9f418ed44f7",
+      "stateHash": "24a28ee56ec2d74359510f673bbcda742bbf09316810c0d0acc485e1798db3a5",
+      "positionHash": "65132207f0929128ace30f9ca15c98d5de057a46c35afd8997c621714bc7eeae",
       "observationHash": "fba8f7741145fd81f994b9361bee7e12b1ea0a98952b2b55894a0a928a9d9fbd",
       "step": "CHOOSE_GIG"
     },
@@ -23240,8 +23240,8 @@
           }
         }
       ],
-      "stateHash": "d3e5cc4f543eb9fb04f439cbb9f29d55f2f85a08c58da49627e615b17dbe6427",
-      "positionHash": "0c7c6bd91f8ea40c2765a3bc27f704eb796f0a1f9d9c5093aa514cb31941bb4e",
+      "stateHash": "5732c000c9f26baa61a00a0dbb208c56c108c8ca5bdd24275398cff70f092d24",
+      "positionHash": "143b58a12b799267619abf15eaf45ee4c7c0cfe24cb13cc227310bfeea835c57",
       "observationHash": "c7d4144d95c3b98580d96505fa98a9dfbe1ddc9712aed01a636d3e32e9135796",
       "step": "MAIN"
     },
@@ -23840,8 +23840,8 @@
           }
         }
       ],
-      "stateHash": "888dd694a21661e08e71e0223aa61d495e35d4ade3a224a68c25623a1edc1787",
-      "positionHash": "1ea0b77698a16bf92542395bf7fbedda0e23e4930f9c7ef6cf775643d53b79e5",
+      "stateHash": "c943fc2a7c694c78148b95bced5e1835772bdc1d44b10d66df6ee6fabb6feeee",
+      "positionHash": "c73242634d30c4e482822e574726ddca39a910c7f704cc030e3675545be69b4d",
       "observationHash": "aa116c5e0b4611c3186da75a7e625d30fd0970748b50f9df70d0cc1e0e43e65a",
       "step": "MAIN"
     },
@@ -24391,8 +24391,8 @@
           }
         }
       ],
-      "stateHash": "435c71348378c0276c862a42a5267f3ae47f38a246158bd81713c781a2ebc8a9",
-      "positionHash": "4204653466929c042b0658c5686342f839b22e2dd08a4afa50848fc882793201",
+      "stateHash": "8d446940fcb60f2fbb325939af59f672236b3ba580a890217041787dfddd1686",
+      "positionHash": "4d584be2db095276156bc475714c0cac8af526283f52fb6347eff40ad7201303",
       "observationHash": "684c634648e9dcd8532d15b6a639cedcbd93e6f570d0b43d67164215fc7419c5",
       "step": "PAYMENT_SELECTION"
     },
@@ -24939,8 +24939,8 @@
           }
         }
       ],
-      "stateHash": "30f5fecc5c19d636d0f987b42042d566495f8007101b065d788ab1d78ef5cd48",
-      "positionHash": "2219141d3b327d21e40e0a11afeba139f883da95fe0e6819c0140423dfacb584",
+      "stateHash": "c7759075f14b0f3e23dee60b857fe21ba39857fec77cdd226585d1bd56099b86",
+      "positionHash": "a97ed16052eefd56a05bb34c45ed5061ae351e1fb8a5292e7ca8f9b33aedd76a",
       "observationHash": "a221fb1ec408f8ebf0fd22579d5953a3d8ce0c566c147eb92d2bb923fe2f9822",
       "step": "TARGET_SELECTION"
     },
@@ -25446,8 +25446,8 @@
           }
         }
       ],
-      "stateHash": "f9ea0c427d2aab90a14d3ac1cec0e28210e6eae6915eff83053fc0a5cacdd533",
-      "positionHash": "3ebe1d3d238a3bf7fcc0a54907134db2b830192d93ed3452e523aad2b002c290",
+      "stateHash": "b42b8e082dd5d611147baa134c0ffc0307fa6b92a1577a8ee40188bfa4896e02",
+      "positionHash": "1a30413ed152f7f8a1b13737dca13e48ff9d93cd277814307f9f6ff895227ebe",
       "observationHash": "87aabd8e3e080125955d472e6d0d20f65df29cb78e8b050b3c9a613cfbac7e1c",
       "step": "MAIN"
     },
@@ -26044,8 +26044,8 @@
           }
         }
       ],
-      "stateHash": "4c89d5d59ec0ee2a2b429fb2b9718bf8e2c28d08ed369f6a35895c5a37392422",
-      "positionHash": "d10a09db9a614c0f9290b09fc31b4a28a3436673704d450af585a81de07a6d46",
+      "stateHash": "ac0e654efe3dad052ca17cb8396b43e62699f6db9538afeb6bdf4fd9f15ab256",
+      "positionHash": "6d7b81ce9e8b0dcd0c598b975f5f71051f725df9f6e925ab5b3e3c106c783824",
       "observationHash": "3023dc4e0f745f4c1143098ab0b76fedf28a5dd6a8142614e29974f7dc8c68a9",
       "step": "CHOOSE_GIG"
     },
@@ -26586,8 +26586,8 @@
           }
         }
       ],
-      "stateHash": "2a5e9ed5ac1325d39cbbdfbdd61cec44f90bed3aa144d7ac96e8afc07a2dbf64",
-      "positionHash": "24f72d465047233d3b38cef29d8d2403f18075df6ffe39ea1973987bd39fc954",
+      "stateHash": "35c57e703a20283784ac4a588fb517bf6e92c0dd628d1ff07d5a866155eb4275",
+      "positionHash": "800f6419837c26a6bad91b44b39911237ed86e6274df3dceaf1c41308a44a537",
       "observationHash": "394c1cafc7f1d915fb464bdcb45faf1ff6870e47f9c8cabfa1ad8d043cf633de",
       "step": "MAIN"
     },
@@ -27236,8 +27236,8 @@
           }
         }
       ],
-      "stateHash": "dd6537c643a053f0aba402dcb56d0f7416e33662b2e1ede61a7c79888f93e701",
-      "positionHash": "5780285aa9092e67880b5c86e4f515b3592b8996fd2f1f7fa383558420c36300",
+      "stateHash": "0798c16dfdf2366f9879269eba20f750f23c8f38e2a6fd810bbfc5a02050cde0",
+      "positionHash": "859fe85473aba7f3409df8842cc9b219699c271a72d133100e10f910084ae761",
       "observationHash": "c3949f070c2cbf01dd547ae9626181fbbdb06dd79b8911cad2f25be8503160cf",
       "step": "MAIN"
     },
@@ -27932,8 +27932,8 @@
           }
         }
       ],
-      "stateHash": "3fa908bbf971117a6d68dcfd94b7b3b21469cba7164482d4ccb17eaeb9ccd4b4",
-      "positionHash": "da03b3ba3e19a4a1aab487533f9c220e8854de1fbd6bae41311b5ed7aac0fdcf",
+      "stateHash": "3244adf47efe8a18c4459363ec005c167a6b5a671c2d43b03cf4f0e698240a10",
+      "positionHash": "b0c0082aa6f7d5aca0569e91300bf2bcacf524c5df77135b92cbddefe9de36bb",
       "observationHash": "558c1c1b1cf71044a5f5269fcab0dbcb509e5fb616916fffc7aedff289df2ad1",
       "step": "TARGET_SELECTION"
     },
@@ -28499,8 +28499,8 @@
           }
         }
       ],
-      "stateHash": "8a34c3e63c1afb203e6438b031cbf9102df2e4b92c5e78ebc0b9fb9a12d8fc21",
-      "positionHash": "4f01b36bbb88459bd241d8aadf0bc01118f4bf5dcde5689672f84b0c1b3be4a1",
+      "stateHash": "b32f0c0dbc160c43ff2160253bcb69131a061ed5d00d864d91a944696bec5a40",
+      "positionHash": "3d74fb0fc45f8a79d253dac72e29cf8f8d06c79b6c0636d325ae354fc73af303",
       "observationHash": "0dd0be48e67ec745646feb61aad03f581dc410e6881f3fc8d9126e18488d36f3",
       "step": "DEFEAT_ORDER_SELECTION"
     },
@@ -29163,8 +29163,8 @@
           }
         }
       ],
-      "stateHash": "0146681eb9a1c80c75ddef0b2b18fce2d9f93e74d660ae3a0ff75d4d7508f02d",
-      "positionHash": "dfebc306f0d4ead0a7448b5773e72acfa72f5a9d5d073c00b20b5b076332f0aa",
+      "stateHash": "a41f74d65ae0880f237acb70a22ce46def2636fb0ebca7dcce8bab7c4c8d219c",
+      "positionHash": "7cddd02db92baef374ceb69635870b95b1745a1ee2f62c087913fc40287e96fe",
       "observationHash": "e2a9eb53679869a3f91e12588788cdb3683dc217867e577be2b9a286622b0e31",
       "step": "MAIN"
     }
@@ -29173,13 +29173,13 @@
     {
       "schemaVersion": 2,
       "positionId": "MINOTAUR-0",
-      "engineVersion": "0.4.2-lag-order",
-      "engineArtifactHash": "ec49548098063d0a543a8ce1db2fa7452efbee96e15fc92f73c60e15bc9e308c",
+      "engineVersion": "0.4.3-defeat-filter-v7",
+      "engineArtifactHash": "563517fb9b5b53fd9e2988d0c1590b3fae74bb4fc284c8d1df522a12f15653ee",
       "manifest": {
         "schemaVersion": 1,
         "engine": {
-          "version": "0.4.2-lag-order",
-          "artifactHash": "ec49548098063d0a543a8ce1db2fa7452efbee96e15fc92f73c60e15bc9e308c"
+          "version": "0.4.3-defeat-filter-v7",
+          "artifactHash": "563517fb9b5b53fd9e2988d0c1590b3fae74bb4fc284c8d1df522a12f15653ee"
         },
         "ruleset": {
           "id": "beta",
@@ -29444,7 +29444,7 @@
           }
         ]
       },
-      "contentManifestHash": "d373bf7d6fad15a44c1d3646c66e2338d8de90165c59fe822f5a6166446800f4",
+      "contentManifestHash": "1bcbd0e4c91a81919e14c43705b1df6b507d12c026e91a2e933818c03e7d6aae",
       "state": {
         "setup": {
           "stage": "FIRST_PLAYER",
@@ -29459,9 +29459,9 @@
           "rulesetId": "beta",
           "rulesetVersion": "targeted-defeat-1",
           "rulesetHash": "398765437d8511cd7d2e82eb63cfdf2b70e169f10be7d9c01faffc4dcf8233ea",
-          "contentManifestHash": "d373bf7d6fad15a44c1d3646c66e2338d8de90165c59fe822f5a6166446800f4",
-          "engineVersion": "0.4.2-lag-order",
-          "engineArtifactHash": "ec49548098063d0a543a8ce1db2fa7452efbee96e15fc92f73c60e15bc9e308c",
+          "contentManifestHash": "1bcbd0e4c91a81919e14c43705b1df6b507d12c026e91a2e933818c03e7d6aae",
+          "engineVersion": "0.4.3-defeat-filter-v7",
+          "engineArtifactHash": "563517fb9b5b53fd9e2988d0c1590b3fae74bb4fc284c8d1df522a12f15653ee",
           "cards": [
             {
               "cardId": "afterparty-at-lizzie-s",
@@ -31562,7 +31562,7 @@
           "counter": 1
         }
       },
-      "stateHash": "e5c4cf58a35095e78d7e4c54c57285741f887b04e7eeba1401b978442be5d984",
+      "stateHash": "565a95a689f2beceb18176f620b5779d9e158ef18ac2bb81fef16826b6f9bc80",
       "observation": {
         "schemaVersion": 1,
         "viewerSeat": 0,
@@ -31708,7 +31708,7 @@
           }
         }
       ],
-      "positionHash": "c5f4a44a1b26721089cfe4520de449dfc7e048db2c092a56b6ff89b8c312118a",
+      "positionHash": "28ed1ac83cd7e917762a9dad1cd81f4fca6332c5c4921b22027bceeeddecf5bd",
       "provenance": {
         "generator": "manual-fixture",
         "revision": "1",
@@ -31718,13 +31718,13 @@
     {
       "schemaVersion": 2,
       "positionId": "MINOTAUR-1",
-      "engineVersion": "0.4.2-lag-order",
-      "engineArtifactHash": "ec49548098063d0a543a8ce1db2fa7452efbee96e15fc92f73c60e15bc9e308c",
+      "engineVersion": "0.4.3-defeat-filter-v7",
+      "engineArtifactHash": "563517fb9b5b53fd9e2988d0c1590b3fae74bb4fc284c8d1df522a12f15653ee",
       "manifest": {
         "schemaVersion": 1,
         "engine": {
-          "version": "0.4.2-lag-order",
-          "artifactHash": "ec49548098063d0a543a8ce1db2fa7452efbee96e15fc92f73c60e15bc9e308c"
+          "version": "0.4.3-defeat-filter-v7",
+          "artifactHash": "563517fb9b5b53fd9e2988d0c1590b3fae74bb4fc284c8d1df522a12f15653ee"
         },
         "ruleset": {
           "id": "beta",
@@ -31989,7 +31989,7 @@
           }
         ]
       },
-      "contentManifestHash": "d373bf7d6fad15a44c1d3646c66e2338d8de90165c59fe822f5a6166446800f4",
+      "contentManifestHash": "1bcbd0e4c91a81919e14c43705b1df6b507d12c026e91a2e933818c03e7d6aae",
       "state": {
         "setup": {
           "stage": "MAIN_CUT",
@@ -32004,9 +32004,9 @@
           "rulesetId": "beta",
           "rulesetVersion": "targeted-defeat-1",
           "rulesetHash": "398765437d8511cd7d2e82eb63cfdf2b70e169f10be7d9c01faffc4dcf8233ea",
-          "contentManifestHash": "d373bf7d6fad15a44c1d3646c66e2338d8de90165c59fe822f5a6166446800f4",
-          "engineVersion": "0.4.2-lag-order",
-          "engineArtifactHash": "ec49548098063d0a543a8ce1db2fa7452efbee96e15fc92f73c60e15bc9e308c",
+          "contentManifestHash": "1bcbd0e4c91a81919e14c43705b1df6b507d12c026e91a2e933818c03e7d6aae",
+          "engineVersion": "0.4.3-defeat-filter-v7",
+          "engineArtifactHash": "563517fb9b5b53fd9e2988d0c1590b3fae74bb4fc284c8d1df522a12f15653ee",
           "cards": [
             {
               "cardId": "afterparty-at-lizzie-s",
@@ -34268,7 +34268,7 @@
           "counter": 83
         }
       },
-      "stateHash": "82e93ac8afb743dde13bb2e191ae0a02eaa9fb6cd7c08306fae01da132496ce8",
+      "stateHash": "c9bcbf6f803628708e63e55332df9175fff1cfd21884379486767baab016c89b",
       "observation": {
         "schemaVersion": 1,
         "viewerSeat": 1,
@@ -35014,7 +35014,7 @@
           }
         }
       ],
-      "positionHash": "e62c6d1c53449dab0f25d2da91666dc589538c3cff52e7dfc5d83ac957840943",
+      "positionHash": "630c778215870d8457c5c3df7c7794230c1bf6c9bd09880c838c0b3ecf5f67b6",
       "provenance": {
         "generator": "manual-fixture",
         "revision": "1",
@@ -35024,13 +35024,13 @@
     {
       "schemaVersion": 2,
       "positionId": "MINOTAUR-2",
-      "engineVersion": "0.4.2-lag-order",
-      "engineArtifactHash": "ec49548098063d0a543a8ce1db2fa7452efbee96e15fc92f73c60e15bc9e308c",
+      "engineVersion": "0.4.3-defeat-filter-v7",
+      "engineArtifactHash": "563517fb9b5b53fd9e2988d0c1590b3fae74bb4fc284c8d1df522a12f15653ee",
       "manifest": {
         "schemaVersion": 1,
         "engine": {
-          "version": "0.4.2-lag-order",
-          "artifactHash": "ec49548098063d0a543a8ce1db2fa7452efbee96e15fc92f73c60e15bc9e308c"
+          "version": "0.4.3-defeat-filter-v7",
+          "artifactHash": "563517fb9b5b53fd9e2988d0c1590b3fae74bb4fc284c8d1df522a12f15653ee"
         },
         "ruleset": {
           "id": "beta",
@@ -35295,7 +35295,7 @@
           }
         ]
       },
-      "contentManifestHash": "d373bf7d6fad15a44c1d3646c66e2338d8de90165c59fe822f5a6166446800f4",
+      "contentManifestHash": "1bcbd0e4c91a81919e14c43705b1df6b507d12c026e91a2e933818c03e7d6aae",
       "state": {
         "setup": {
           "stage": "MAIN_CUT",
@@ -35310,9 +35310,9 @@
           "rulesetId": "beta",
           "rulesetVersion": "targeted-defeat-1",
           "rulesetHash": "398765437d8511cd7d2e82eb63cfdf2b70e169f10be7d9c01faffc4dcf8233ea",
-          "contentManifestHash": "d373bf7d6fad15a44c1d3646c66e2338d8de90165c59fe822f5a6166446800f4",
-          "engineVersion": "0.4.2-lag-order",
-          "engineArtifactHash": "ec49548098063d0a543a8ce1db2fa7452efbee96e15fc92f73c60e15bc9e308c",
+          "contentManifestHash": "1bcbd0e4c91a81919e14c43705b1df6b507d12c026e91a2e933818c03e7d6aae",
+          "engineVersion": "0.4.3-defeat-filter-v7",
+          "engineArtifactHash": "563517fb9b5b53fd9e2988d0c1590b3fae74bb4fc284c8d1df522a12f15653ee",
           "cards": [
             {
               "cardId": "afterparty-at-lizzie-s",
@@ -37574,7 +37574,7 @@
           "counter": 83
         }
       },
-      "stateHash": "2b5f1e0efcaa3280fdf53afa1b6544e5a0c31f986790f4d17a481635713f5f94",
+      "stateHash": "c3f7ddbf83f72cd560769c88379b2f8d72e910f7a15e64b41810fe3c3b3ed9db",
       "observation": {
         "schemaVersion": 1,
         "viewerSeat": 0,
@@ -38320,7 +38320,7 @@
           }
         }
       ],
-      "positionHash": "de241ab79f9fa37cbc44ef6b7c1c735f4f52fe397481590720ab7e1ac09758bc",
+      "positionHash": "55a418a36c9113bb577c3c1810d467d3447b24831f70512141d37e31c29d9df6",
       "provenance": {
         "generator": "manual-fixture",
         "revision": "1",
@@ -38330,13 +38330,13 @@
     {
       "schemaVersion": 2,
       "positionId": "MINOTAUR-3",
-      "engineVersion": "0.4.2-lag-order",
-      "engineArtifactHash": "ec49548098063d0a543a8ce1db2fa7452efbee96e15fc92f73c60e15bc9e308c",
+      "engineVersion": "0.4.3-defeat-filter-v7",
+      "engineArtifactHash": "563517fb9b5b53fd9e2988d0c1590b3fae74bb4fc284c8d1df522a12f15653ee",
       "manifest": {
         "schemaVersion": 1,
         "engine": {
-          "version": "0.4.2-lag-order",
-          "artifactHash": "ec49548098063d0a543a8ce1db2fa7452efbee96e15fc92f73c60e15bc9e308c"
+          "version": "0.4.3-defeat-filter-v7",
+          "artifactHash": "563517fb9b5b53fd9e2988d0c1590b3fae74bb4fc284c8d1df522a12f15653ee"
         },
         "ruleset": {
           "id": "beta",
@@ -38601,7 +38601,7 @@
           }
         ]
       },
-      "contentManifestHash": "d373bf7d6fad15a44c1d3646c66e2338d8de90165c59fe822f5a6166446800f4",
+      "contentManifestHash": "1bcbd0e4c91a81919e14c43705b1df6b507d12c026e91a2e933818c03e7d6aae",
       "state": {
         "setup": {
           "stage": "LEGEND_CUT",
@@ -38616,9 +38616,9 @@
           "rulesetId": "beta",
           "rulesetVersion": "targeted-defeat-1",
           "rulesetHash": "398765437d8511cd7d2e82eb63cfdf2b70e169f10be7d9c01faffc4dcf8233ea",
-          "contentManifestHash": "d373bf7d6fad15a44c1d3646c66e2338d8de90165c59fe822f5a6166446800f4",
-          "engineVersion": "0.4.2-lag-order",
-          "engineArtifactHash": "ec49548098063d0a543a8ce1db2fa7452efbee96e15fc92f73c60e15bc9e308c",
+          "contentManifestHash": "1bcbd0e4c91a81919e14c43705b1df6b507d12c026e91a2e933818c03e7d6aae",
+          "engineVersion": "0.4.3-defeat-filter-v7",
+          "engineArtifactHash": "563517fb9b5b53fd9e2988d0c1590b3fae74bb4fc284c8d1df522a12f15653ee",
           "cards": [
             {
               "cardId": "afterparty-at-lizzie-s",
@@ -40724,7 +40724,7 @@
           "counter": 87
         }
       },
-      "stateHash": "9b59c97808f9389be813fa3db6abc1ea4f2264c13480b7d4b64d952792cb2f33",
+      "stateHash": "01c895fec435a56bc599649cc2fea4290dd91438dd75fad94bf154dc6c9a8977",
       "observation": {
         "schemaVersion": 1,
         "viewerSeat": 1,
@@ -40885,7 +40885,7 @@
           }
         }
       ],
-      "positionHash": "905cf3fe183fcfe1eaa69a90e1711e7a307ba052e610bd6c8a69f34def19e966",
+      "positionHash": "0830782e4bdaeea7b77c9d4e63096333936c4dc7107e576f68b27e25dcaa7280",
       "provenance": {
         "generator": "manual-fixture",
         "revision": "1",
@@ -40895,13 +40895,13 @@
     {
       "schemaVersion": 2,
       "positionId": "MINOTAUR-4",
-      "engineVersion": "0.4.2-lag-order",
-      "engineArtifactHash": "ec49548098063d0a543a8ce1db2fa7452efbee96e15fc92f73c60e15bc9e308c",
+      "engineVersion": "0.4.3-defeat-filter-v7",
+      "engineArtifactHash": "563517fb9b5b53fd9e2988d0c1590b3fae74bb4fc284c8d1df522a12f15653ee",
       "manifest": {
         "schemaVersion": 1,
         "engine": {
-          "version": "0.4.2-lag-order",
-          "artifactHash": "ec49548098063d0a543a8ce1db2fa7452efbee96e15fc92f73c60e15bc9e308c"
+          "version": "0.4.3-defeat-filter-v7",
+          "artifactHash": "563517fb9b5b53fd9e2988d0c1590b3fae74bb4fc284c8d1df522a12f15653ee"
         },
         "ruleset": {
           "id": "beta",
@@ -41166,7 +41166,7 @@
           }
         ]
       },
-      "contentManifestHash": "d373bf7d6fad15a44c1d3646c66e2338d8de90165c59fe822f5a6166446800f4",
+      "contentManifestHash": "1bcbd0e4c91a81919e14c43705b1df6b507d12c026e91a2e933818c03e7d6aae",
       "state": {
         "setup": {
           "stage": "LEGEND_CUT",
@@ -41181,9 +41181,9 @@
           "rulesetId": "beta",
           "rulesetVersion": "targeted-defeat-1",
           "rulesetHash": "398765437d8511cd7d2e82eb63cfdf2b70e169f10be7d9c01faffc4dcf8233ea",
-          "contentManifestHash": "d373bf7d6fad15a44c1d3646c66e2338d8de90165c59fe822f5a6166446800f4",
-          "engineVersion": "0.4.2-lag-order",
-          "engineArtifactHash": "ec49548098063d0a543a8ce1db2fa7452efbee96e15fc92f73c60e15bc9e308c",
+          "contentManifestHash": "1bcbd0e4c91a81919e14c43705b1df6b507d12c026e91a2e933818c03e7d6aae",
+          "engineVersion": "0.4.3-defeat-filter-v7",
+          "engineArtifactHash": "563517fb9b5b53fd9e2988d0c1590b3fae74bb4fc284c8d1df522a12f15653ee",
           "cards": [
             {
               "cardId": "afterparty-at-lizzie-s",
@@ -43289,7 +43289,7 @@
           "counter": 87
         }
       },
-      "stateHash": "8c506393cc88434141d0114b105fe68fb9ad17126897576986af52ce052f7631",
+      "stateHash": "8eb660aa5c3eb9edf444c1268b82c04989a159eeda45095386ab9fe685fbafa1",
       "observation": {
         "schemaVersion": 1,
         "viewerSeat": 0,
@@ -43450,7 +43450,7 @@
           }
         }
       ],
-      "positionHash": "aa8a958523140cf91490d32f4665a0bd65c9517ac4c1dfcf28c4f6ff56473de2",
+      "positionHash": "aeb04dc260fa9327b556e186073da4cc17095964c98087f2febb16ac8672c3cb",
       "provenance": {
         "generator": "manual-fixture",
         "revision": "1",
@@ -43460,13 +43460,13 @@
     {
       "schemaVersion": 2,
       "positionId": "MINOTAUR-5",
-      "engineVersion": "0.4.2-lag-order",
-      "engineArtifactHash": "ec49548098063d0a543a8ce1db2fa7452efbee96e15fc92f73c60e15bc9e308c",
+      "engineVersion": "0.4.3-defeat-filter-v7",
+      "engineArtifactHash": "563517fb9b5b53fd9e2988d0c1590b3fae74bb4fc284c8d1df522a12f15653ee",
       "manifest": {
         "schemaVersion": 1,
         "engine": {
-          "version": "0.4.2-lag-order",
-          "artifactHash": "ec49548098063d0a543a8ce1db2fa7452efbee96e15fc92f73c60e15bc9e308c"
+          "version": "0.4.3-defeat-filter-v7",
+          "artifactHash": "563517fb9b5b53fd9e2988d0c1590b3fae74bb4fc284c8d1df522a12f15653ee"
         },
         "ruleset": {
           "id": "beta",
@@ -43731,7 +43731,7 @@
           }
         ]
       },
-      "contentManifestHash": "d373bf7d6fad15a44c1d3646c66e2338d8de90165c59fe822f5a6166446800f4",
+      "contentManifestHash": "1bcbd0e4c91a81919e14c43705b1df6b507d12c026e91a2e933818c03e7d6aae",
       "state": {
         "setup": {
           "stage": "MULLIGAN",
@@ -43746,9 +43746,9 @@
           "rulesetId": "beta",
           "rulesetVersion": "targeted-defeat-1",
           "rulesetHash": "398765437d8511cd7d2e82eb63cfdf2b70e169f10be7d9c01faffc4dcf8233ea",
-          "contentManifestHash": "d373bf7d6fad15a44c1d3646c66e2338d8de90165c59fe822f5a6166446800f4",
-          "engineVersion": "0.4.2-lag-order",
-          "engineArtifactHash": "ec49548098063d0a543a8ce1db2fa7452efbee96e15fc92f73c60e15bc9e308c",
+          "contentManifestHash": "1bcbd0e4c91a81919e14c43705b1df6b507d12c026e91a2e933818c03e7d6aae",
+          "engineVersion": "0.4.3-defeat-filter-v7",
+          "engineArtifactHash": "563517fb9b5b53fd9e2988d0c1590b3fae74bb4fc284c8d1df522a12f15653ee",
           "cards": [
             {
               "cardId": "afterparty-at-lizzie-s",
@@ -45852,7 +45852,7 @@
           "counter": 87
         }
       },
-      "stateHash": "404e09348e791db84e8336e9899994ad776997e6ceab535ac1feea89380a99e7",
+      "stateHash": "b3160b3c30c4194826b4cc30b6706f5ea66d3b42f9b7560eaeeba56c055f6b27",
       "observation": {
         "schemaVersion": 1,
         "viewerSeat": 0,
@@ -46204,7 +46204,7 @@
           }
         }
       ],
-      "positionHash": "70297c85d4f19d2e3e18a0c062d221c14e6b786fcf450d6fe7b2b9357fde742f",
+      "positionHash": "44f8dd753d6185321f9b7feb8a0272def1d221ae87107d7171ca9e14678465cc",
       "provenance": {
         "generator": "manual-fixture",
         "revision": "1",
@@ -46214,13 +46214,13 @@
     {
       "schemaVersion": 2,
       "positionId": "MINOTAUR-6",
-      "engineVersion": "0.4.2-lag-order",
-      "engineArtifactHash": "ec49548098063d0a543a8ce1db2fa7452efbee96e15fc92f73c60e15bc9e308c",
+      "engineVersion": "0.4.3-defeat-filter-v7",
+      "engineArtifactHash": "563517fb9b5b53fd9e2988d0c1590b3fae74bb4fc284c8d1df522a12f15653ee",
       "manifest": {
         "schemaVersion": 1,
         "engine": {
-          "version": "0.4.2-lag-order",
-          "artifactHash": "ec49548098063d0a543a8ce1db2fa7452efbee96e15fc92f73c60e15bc9e308c"
+          "version": "0.4.3-defeat-filter-v7",
+          "artifactHash": "563517fb9b5b53fd9e2988d0c1590b3fae74bb4fc284c8d1df522a12f15653ee"
         },
         "ruleset": {
           "id": "beta",
@@ -46485,7 +46485,7 @@
           }
         ]
       },
-      "contentManifestHash": "d373bf7d6fad15a44c1d3646c66e2338d8de90165c59fe822f5a6166446800f4",
+      "contentManifestHash": "1bcbd0e4c91a81919e14c43705b1df6b507d12c026e91a2e933818c03e7d6aae",
       "state": {
         "setup": {
           "stage": "MULLIGAN",
@@ -46500,9 +46500,9 @@
           "rulesetId": "beta",
           "rulesetVersion": "targeted-defeat-1",
           "rulesetHash": "398765437d8511cd7d2e82eb63cfdf2b70e169f10be7d9c01faffc4dcf8233ea",
-          "contentManifestHash": "d373bf7d6fad15a44c1d3646c66e2338d8de90165c59fe822f5a6166446800f4",
-          "engineVersion": "0.4.2-lag-order",
-          "engineArtifactHash": "ec49548098063d0a543a8ce1db2fa7452efbee96e15fc92f73c60e15bc9e308c",
+          "contentManifestHash": "1bcbd0e4c91a81919e14c43705b1df6b507d12c026e91a2e933818c03e7d6aae",
+          "engineVersion": "0.4.3-defeat-filter-v7",
+          "engineArtifactHash": "563517fb9b5b53fd9e2988d0c1590b3fae74bb4fc284c8d1df522a12f15653ee",
           "cards": [
             {
               "cardId": "afterparty-at-lizzie-s",
@@ -48606,7 +48606,7 @@
           "counter": 87
         }
       },
-      "stateHash": "326e0aef6622b8afabbb7464fc30330288ebb02a0895a989dbb4745e6b731977",
+      "stateHash": "e42c45fffb22b11bcca0cbab8d6a9c2097d2d662e88f4a222fedb7d89e185c1e",
       "observation": {
         "schemaVersion": 1,
         "viewerSeat": 1,
@@ -48958,7 +48958,7 @@
           }
         }
       ],
-      "positionHash": "28424bd4d3a9361037e21201217715040facf678b240048ee99759541bfcd77c",
+      "positionHash": "19f0d641a1a716af32614e274f6a0cda668e0d6efd3ee58f9d93cb1aad6730c7",
       "provenance": {
         "generator": "manual-fixture",
         "revision": "1",
@@ -48968,13 +48968,13 @@
     {
       "schemaVersion": 2,
       "positionId": "MINOTAUR-7",
-      "engineVersion": "0.4.2-lag-order",
-      "engineArtifactHash": "ec49548098063d0a543a8ce1db2fa7452efbee96e15fc92f73c60e15bc9e308c",
+      "engineVersion": "0.4.3-defeat-filter-v7",
+      "engineArtifactHash": "563517fb9b5b53fd9e2988d0c1590b3fae74bb4fc284c8d1df522a12f15653ee",
       "manifest": {
         "schemaVersion": 1,
         "engine": {
-          "version": "0.4.2-lag-order",
-          "artifactHash": "ec49548098063d0a543a8ce1db2fa7452efbee96e15fc92f73c60e15bc9e308c"
+          "version": "0.4.3-defeat-filter-v7",
+          "artifactHash": "563517fb9b5b53fd9e2988d0c1590b3fae74bb4fc284c8d1df522a12f15653ee"
         },
         "ruleset": {
           "id": "beta",
@@ -49239,7 +49239,7 @@
           }
         ]
       },
-      "contentManifestHash": "d373bf7d6fad15a44c1d3646c66e2338d8de90165c59fe822f5a6166446800f4",
+      "contentManifestHash": "1bcbd0e4c91a81919e14c43705b1df6b507d12c026e91a2e933818c03e7d6aae",
       "state": {
         "schemaVersion": 2,
         "match": {
@@ -49249,9 +49249,9 @@
           "rulesetId": "beta",
           "rulesetVersion": "targeted-defeat-1",
           "rulesetHash": "398765437d8511cd7d2e82eb63cfdf2b70e169f10be7d9c01faffc4dcf8233ea",
-          "contentManifestHash": "d373bf7d6fad15a44c1d3646c66e2338d8de90165c59fe822f5a6166446800f4",
-          "engineVersion": "0.4.2-lag-order",
-          "engineArtifactHash": "ec49548098063d0a543a8ce1db2fa7452efbee96e15fc92f73c60e15bc9e308c",
+          "contentManifestHash": "1bcbd0e4c91a81919e14c43705b1df6b507d12c026e91a2e933818c03e7d6aae",
+          "engineVersion": "0.4.3-defeat-filter-v7",
+          "engineArtifactHash": "563517fb9b5b53fd9e2988d0c1590b3fae74bb4fc284c8d1df522a12f15653ee",
           "cards": [
             {
               "cardId": "afterparty-at-lizzie-s",
@@ -51356,7 +51356,7 @@
           "counter": 87
         }
       },
-      "stateHash": "df712a05aadc14ef1add7ce08e12093c16d472878db4fd6133045d8bcb0380c8",
+      "stateHash": "7821f05a8059257916506231b545b94a8f14abe6624591dc0d37c32188bb747e",
       "observation": {
         "schemaVersion": 1,
         "viewerSeat": 0,
@@ -51766,7 +51766,7 @@
           }
         }
       ],
-      "positionHash": "672f030e80fd319ed6c739825e725db18a26f9ac8275727019bf0e09eab74df9",
+      "positionHash": "7899f8f5fad27f7f18dbcb2234fbcfd49e5ccb555fe01b98004dd129024c90f3",
       "provenance": {
         "generator": "manual-fixture",
         "revision": "1",
@@ -51776,13 +51776,13 @@
     {
       "schemaVersion": 2,
       "positionId": "MINOTAUR-8",
-      "engineVersion": "0.4.2-lag-order",
-      "engineArtifactHash": "ec49548098063d0a543a8ce1db2fa7452efbee96e15fc92f73c60e15bc9e308c",
+      "engineVersion": "0.4.3-defeat-filter-v7",
+      "engineArtifactHash": "563517fb9b5b53fd9e2988d0c1590b3fae74bb4fc284c8d1df522a12f15653ee",
       "manifest": {
         "schemaVersion": 1,
         "engine": {
-          "version": "0.4.2-lag-order",
-          "artifactHash": "ec49548098063d0a543a8ce1db2fa7452efbee96e15fc92f73c60e15bc9e308c"
+          "version": "0.4.3-defeat-filter-v7",
+          "artifactHash": "563517fb9b5b53fd9e2988d0c1590b3fae74bb4fc284c8d1df522a12f15653ee"
         },
         "ruleset": {
           "id": "beta",
@@ -52047,7 +52047,7 @@
           }
         ]
       },
-      "contentManifestHash": "d373bf7d6fad15a44c1d3646c66e2338d8de90165c59fe822f5a6166446800f4",
+      "contentManifestHash": "1bcbd0e4c91a81919e14c43705b1df6b507d12c026e91a2e933818c03e7d6aae",
       "state": {
         "schemaVersion": 2,
         "match": {
@@ -52057,9 +52057,9 @@
           "rulesetId": "beta",
           "rulesetVersion": "targeted-defeat-1",
           "rulesetHash": "398765437d8511cd7d2e82eb63cfdf2b70e169f10be7d9c01faffc4dcf8233ea",
-          "contentManifestHash": "d373bf7d6fad15a44c1d3646c66e2338d8de90165c59fe822f5a6166446800f4",
-          "engineVersion": "0.4.2-lag-order",
-          "engineArtifactHash": "ec49548098063d0a543a8ce1db2fa7452efbee96e15fc92f73c60e15bc9e308c",
+          "contentManifestHash": "1bcbd0e4c91a81919e14c43705b1df6b507d12c026e91a2e933818c03e7d6aae",
+          "engineVersion": "0.4.3-defeat-filter-v7",
+          "engineArtifactHash": "563517fb9b5b53fd9e2988d0c1590b3fae74bb4fc284c8d1df522a12f15653ee",
           "cards": [
             {
               "cardId": "afterparty-at-lizzie-s",
@@ -54167,7 +54167,7 @@
           "counter": 88
         }
       },
-      "stateHash": "7382ee89818883847993d8a1389703b4e2ac22594346fd011b144a3168a20486",
+      "stateHash": "4a1993affc64ee6ef3d11b6e5752d135eec2239def3178433fd579bb52b1f31c",
       "observation": {
         "schemaVersion": 1,
         "viewerSeat": 0,
@@ -54626,7 +54626,7 @@
           }
         }
       ],
-      "positionHash": "61f11e1094dc20e10370b8a7c8490c3a640c35f8f089dcc3eeac502c7a78fca7",
+      "positionHash": "091ff08d67bdd193487e397bac51b2e0c0b94cac935c8f5520dcb0e238716e96",
       "provenance": {
         "generator": "manual-fixture",
         "revision": "1",
@@ -54636,13 +54636,13 @@
     {
       "schemaVersion": 2,
       "positionId": "MINOTAUR-9",
-      "engineVersion": "0.4.2-lag-order",
-      "engineArtifactHash": "ec49548098063d0a543a8ce1db2fa7452efbee96e15fc92f73c60e15bc9e308c",
+      "engineVersion": "0.4.3-defeat-filter-v7",
+      "engineArtifactHash": "563517fb9b5b53fd9e2988d0c1590b3fae74bb4fc284c8d1df522a12f15653ee",
       "manifest": {
         "schemaVersion": 1,
         "engine": {
-          "version": "0.4.2-lag-order",
-          "artifactHash": "ec49548098063d0a543a8ce1db2fa7452efbee96e15fc92f73c60e15bc9e308c"
+          "version": "0.4.3-defeat-filter-v7",
+          "artifactHash": "563517fb9b5b53fd9e2988d0c1590b3fae74bb4fc284c8d1df522a12f15653ee"
         },
         "ruleset": {
           "id": "beta",
@@ -54907,7 +54907,7 @@
           }
         ]
       },
-      "contentManifestHash": "d373bf7d6fad15a44c1d3646c66e2338d8de90165c59fe822f5a6166446800f4",
+      "contentManifestHash": "1bcbd0e4c91a81919e14c43705b1df6b507d12c026e91a2e933818c03e7d6aae",
       "state": {
         "schemaVersion": 2,
         "match": {
@@ -54917,9 +54917,9 @@
           "rulesetId": "beta",
           "rulesetVersion": "targeted-defeat-1",
           "rulesetHash": "398765437d8511cd7d2e82eb63cfdf2b70e169f10be7d9c01faffc4dcf8233ea",
-          "contentManifestHash": "d373bf7d6fad15a44c1d3646c66e2338d8de90165c59fe822f5a6166446800f4",
-          "engineVersion": "0.4.2-lag-order",
-          "engineArtifactHash": "ec49548098063d0a543a8ce1db2fa7452efbee96e15fc92f73c60e15bc9e308c",
+          "contentManifestHash": "1bcbd0e4c91a81919e14c43705b1df6b507d12c026e91a2e933818c03e7d6aae",
+          "engineVersion": "0.4.3-defeat-filter-v7",
+          "engineArtifactHash": "563517fb9b5b53fd9e2988d0c1590b3fae74bb4fc284c8d1df522a12f15653ee",
           "cards": [
             {
               "cardId": "afterparty-at-lizzie-s",
@@ -57028,7 +57028,7 @@
           "counter": 88
         }
       },
-      "stateHash": "268d2a6beb84e4c2228495b50d017e75f5a441a3a089bd7883c8b9cc71acde26",
+      "stateHash": "95bd4e7a31800c2bf56e772a40750cf9e4144bbe1928efb1fd04b18f6d082f16",
       "observation": {
         "schemaVersion": 1,
         "viewerSeat": 0,
@@ -57435,7 +57435,7 @@
           }
         }
       ],
-      "positionHash": "99b03984f74a6610e44a2bb40a89efbd04073828ebf7f52613550d525eb00482",
+      "positionHash": "e418b010b4132627d56713b41c4d7259de43e251f605898076029c843388489c",
       "provenance": {
         "generator": "manual-fixture",
         "revision": "1",
@@ -57445,13 +57445,13 @@
     {
       "schemaVersion": 2,
       "positionId": "MINOTAUR-10",
-      "engineVersion": "0.4.2-lag-order",
-      "engineArtifactHash": "ec49548098063d0a543a8ce1db2fa7452efbee96e15fc92f73c60e15bc9e308c",
+      "engineVersion": "0.4.3-defeat-filter-v7",
+      "engineArtifactHash": "563517fb9b5b53fd9e2988d0c1590b3fae74bb4fc284c8d1df522a12f15653ee",
       "manifest": {
         "schemaVersion": 1,
         "engine": {
-          "version": "0.4.2-lag-order",
-          "artifactHash": "ec49548098063d0a543a8ce1db2fa7452efbee96e15fc92f73c60e15bc9e308c"
+          "version": "0.4.3-defeat-filter-v7",
+          "artifactHash": "563517fb9b5b53fd9e2988d0c1590b3fae74bb4fc284c8d1df522a12f15653ee"
         },
         "ruleset": {
           "id": "beta",
@@ -57716,7 +57716,7 @@
           }
         ]
       },
-      "contentManifestHash": "d373bf7d6fad15a44c1d3646c66e2338d8de90165c59fe822f5a6166446800f4",
+      "contentManifestHash": "1bcbd0e4c91a81919e14c43705b1df6b507d12c026e91a2e933818c03e7d6aae",
       "state": {
         "schemaVersion": 2,
         "match": {
@@ -57726,9 +57726,9 @@
           "rulesetId": "beta",
           "rulesetVersion": "targeted-defeat-1",
           "rulesetHash": "398765437d8511cd7d2e82eb63cfdf2b70e169f10be7d9c01faffc4dcf8233ea",
-          "contentManifestHash": "d373bf7d6fad15a44c1d3646c66e2338d8de90165c59fe822f5a6166446800f4",
-          "engineVersion": "0.4.2-lag-order",
-          "engineArtifactHash": "ec49548098063d0a543a8ce1db2fa7452efbee96e15fc92f73c60e15bc9e308c",
+          "contentManifestHash": "1bcbd0e4c91a81919e14c43705b1df6b507d12c026e91a2e933818c03e7d6aae",
+          "engineVersion": "0.4.3-defeat-filter-v7",
+          "engineArtifactHash": "563517fb9b5b53fd9e2988d0c1590b3fae74bb4fc284c8d1df522a12f15653ee",
           "cards": [
             {
               "cardId": "afterparty-at-lizzie-s",
@@ -59837,7 +59837,7 @@
           "counter": 88
         }
       },
-      "stateHash": "5556d741f713c23ae185bc6a8a5dd4889e4be09c2506affe735fd3c86985b471",
+      "stateHash": "76d06710fcf5331980edbe0df5335939685888170aca5818aedf4c33d3a6fa95",
       "observation": {
         "schemaVersion": 1,
         "viewerSeat": 1,
@@ -60259,7 +60259,7 @@
           }
         }
       ],
-      "positionHash": "a04b476ab6881f6ae2c57c6bc5c3e5b4bb9a9cad9839929a9edd39335490a537",
+      "positionHash": "0020679525b2354b2bc31b150a6df92b86c71f9f4f4aedf4e074c816aa8f5018",
       "provenance": {
         "generator": "manual-fixture",
         "revision": "1",
@@ -60269,13 +60269,13 @@
     {
       "schemaVersion": 2,
       "positionId": "MINOTAUR-11",
-      "engineVersion": "0.4.2-lag-order",
-      "engineArtifactHash": "ec49548098063d0a543a8ce1db2fa7452efbee96e15fc92f73c60e15bc9e308c",
+      "engineVersion": "0.4.3-defeat-filter-v7",
+      "engineArtifactHash": "563517fb9b5b53fd9e2988d0c1590b3fae74bb4fc284c8d1df522a12f15653ee",
       "manifest": {
         "schemaVersion": 1,
         "engine": {
-          "version": "0.4.2-lag-order",
-          "artifactHash": "ec49548098063d0a543a8ce1db2fa7452efbee96e15fc92f73c60e15bc9e308c"
+          "version": "0.4.3-defeat-filter-v7",
+          "artifactHash": "563517fb9b5b53fd9e2988d0c1590b3fae74bb4fc284c8d1df522a12f15653ee"
         },
         "ruleset": {
           "id": "beta",
@@ -60540,7 +60540,7 @@
           }
         ]
       },
-      "contentManifestHash": "d373bf7d6fad15a44c1d3646c66e2338d8de90165c59fe822f5a6166446800f4",
+      "contentManifestHash": "1bcbd0e4c91a81919e14c43705b1df6b507d12c026e91a2e933818c03e7d6aae",
       "state": {
         "schemaVersion": 2,
         "match": {
@@ -60550,9 +60550,9 @@
           "rulesetId": "beta",
           "rulesetVersion": "targeted-defeat-1",
           "rulesetHash": "398765437d8511cd7d2e82eb63cfdf2b70e169f10be7d9c01faffc4dcf8233ea",
-          "contentManifestHash": "d373bf7d6fad15a44c1d3646c66e2338d8de90165c59fe822f5a6166446800f4",
-          "engineVersion": "0.4.2-lag-order",
-          "engineArtifactHash": "ec49548098063d0a543a8ce1db2fa7452efbee96e15fc92f73c60e15bc9e308c",
+          "contentManifestHash": "1bcbd0e4c91a81919e14c43705b1df6b507d12c026e91a2e933818c03e7d6aae",
+          "engineVersion": "0.4.3-defeat-filter-v7",
+          "engineArtifactHash": "563517fb9b5b53fd9e2988d0c1590b3fae74bb4fc284c8d1df522a12f15653ee",
           "cards": [
             {
               "cardId": "afterparty-at-lizzie-s",
@@ -62664,7 +62664,7 @@
           "counter": 89
         }
       },
-      "stateHash": "c871dfd45577377412f066cbfaeb40400dc3dc04457a034089cdfb61e4442129",
+      "stateHash": "ac53cd8d7dc9ed86d561698690b746b8928165490d4629cd9e05acf150ebae4e",
       "observation": {
         "schemaVersion": 1,
         "viewerSeat": 1,
@@ -63147,7 +63147,7 @@
           }
         }
       ],
-      "positionHash": "8a85a7bbea76933b1d526de372677093a333953b45acb346e52b0f19c8fb0080",
+      "positionHash": "b0f83b4835c192aa70b0de91bddce928440b4cf9308b9dece9aef0f7c7043738",
       "provenance": {
         "generator": "manual-fixture",
         "revision": "1",
@@ -63157,13 +63157,13 @@
     {
       "schemaVersion": 2,
       "positionId": "MINOTAUR-12",
-      "engineVersion": "0.4.2-lag-order",
-      "engineArtifactHash": "ec49548098063d0a543a8ce1db2fa7452efbee96e15fc92f73c60e15bc9e308c",
+      "engineVersion": "0.4.3-defeat-filter-v7",
+      "engineArtifactHash": "563517fb9b5b53fd9e2988d0c1590b3fae74bb4fc284c8d1df522a12f15653ee",
       "manifest": {
         "schemaVersion": 1,
         "engine": {
-          "version": "0.4.2-lag-order",
-          "artifactHash": "ec49548098063d0a543a8ce1db2fa7452efbee96e15fc92f73c60e15bc9e308c"
+          "version": "0.4.3-defeat-filter-v7",
+          "artifactHash": "563517fb9b5b53fd9e2988d0c1590b3fae74bb4fc284c8d1df522a12f15653ee"
         },
         "ruleset": {
           "id": "beta",
@@ -63428,7 +63428,7 @@
           }
         ]
       },
-      "contentManifestHash": "d373bf7d6fad15a44c1d3646c66e2338d8de90165c59fe822f5a6166446800f4",
+      "contentManifestHash": "1bcbd0e4c91a81919e14c43705b1df6b507d12c026e91a2e933818c03e7d6aae",
       "state": {
         "schemaVersion": 2,
         "match": {
@@ -63438,9 +63438,9 @@
           "rulesetId": "beta",
           "rulesetVersion": "targeted-defeat-1",
           "rulesetHash": "398765437d8511cd7d2e82eb63cfdf2b70e169f10be7d9c01faffc4dcf8233ea",
-          "contentManifestHash": "d373bf7d6fad15a44c1d3646c66e2338d8de90165c59fe822f5a6166446800f4",
-          "engineVersion": "0.4.2-lag-order",
-          "engineArtifactHash": "ec49548098063d0a543a8ce1db2fa7452efbee96e15fc92f73c60e15bc9e308c",
+          "contentManifestHash": "1bcbd0e4c91a81919e14c43705b1df6b507d12c026e91a2e933818c03e7d6aae",
+          "engineVersion": "0.4.3-defeat-filter-v7",
+          "engineArtifactHash": "563517fb9b5b53fd9e2988d0c1590b3fae74bb4fc284c8d1df522a12f15653ee",
           "cards": [
             {
               "cardId": "afterparty-at-lizzie-s",
@@ -65553,7 +65553,7 @@
           "counter": 89
         }
       },
-      "stateHash": "bb2b2f01d470a1eb84b71edb24e67a7edbbf02e4841788a5f79c0b04710a14ec",
+      "stateHash": "40e98f8f4d4e5960b4234293629f7eab5d92023d3781bec682448ce6759fe119",
       "observation": {
         "schemaVersion": 1,
         "viewerSeat": 1,
@@ -65996,7 +65996,7 @@
           }
         }
       ],
-      "positionHash": "f1456fd3b8ec5ee5a64956722bd9746048e708a5bb7504372af1d351a5306d65",
+      "positionHash": "ce896f0f5ac7b635ecb6b618c064df8280a59669e4a24a7b2007f423d0158a45",
       "provenance": {
         "generator": "manual-fixture",
         "revision": "1",
@@ -66006,13 +66006,13 @@
     {
       "schemaVersion": 2,
       "positionId": "MINOTAUR-13",
-      "engineVersion": "0.4.2-lag-order",
-      "engineArtifactHash": "ec49548098063d0a543a8ce1db2fa7452efbee96e15fc92f73c60e15bc9e308c",
+      "engineVersion": "0.4.3-defeat-filter-v7",
+      "engineArtifactHash": "563517fb9b5b53fd9e2988d0c1590b3fae74bb4fc284c8d1df522a12f15653ee",
       "manifest": {
         "schemaVersion": 1,
         "engine": {
-          "version": "0.4.2-lag-order",
-          "artifactHash": "ec49548098063d0a543a8ce1db2fa7452efbee96e15fc92f73c60e15bc9e308c"
+          "version": "0.4.3-defeat-filter-v7",
+          "artifactHash": "563517fb9b5b53fd9e2988d0c1590b3fae74bb4fc284c8d1df522a12f15653ee"
         },
         "ruleset": {
           "id": "beta",
@@ -66277,7 +66277,7 @@
           }
         ]
       },
-      "contentManifestHash": "d373bf7d6fad15a44c1d3646c66e2338d8de90165c59fe822f5a6166446800f4",
+      "contentManifestHash": "1bcbd0e4c91a81919e14c43705b1df6b507d12c026e91a2e933818c03e7d6aae",
       "state": {
         "schemaVersion": 2,
         "match": {
@@ -66287,9 +66287,9 @@
           "rulesetId": "beta",
           "rulesetVersion": "targeted-defeat-1",
           "rulesetHash": "398765437d8511cd7d2e82eb63cfdf2b70e169f10be7d9c01faffc4dcf8233ea",
-          "contentManifestHash": "d373bf7d6fad15a44c1d3646c66e2338d8de90165c59fe822f5a6166446800f4",
-          "engineVersion": "0.4.2-lag-order",
-          "engineArtifactHash": "ec49548098063d0a543a8ce1db2fa7452efbee96e15fc92f73c60e15bc9e308c",
+          "contentManifestHash": "1bcbd0e4c91a81919e14c43705b1df6b507d12c026e91a2e933818c03e7d6aae",
+          "engineVersion": "0.4.3-defeat-filter-v7",
+          "engineArtifactHash": "563517fb9b5b53fd9e2988d0c1590b3fae74bb4fc284c8d1df522a12f15653ee",
           "cards": [
             {
               "cardId": "afterparty-at-lizzie-s",
@@ -68453,7 +68453,7 @@
           "counter": 89
         }
       },
-      "stateHash": "e0c34b027472e10a0a453fb3987089cd82e4752f12a62673040b8ef837b544d7",
+      "stateHash": "bc7c70af01499cc1d72d141b0aa12a1ff219d95534fc2185d6b1b07b0870e287",
       "observation": {
         "schemaVersion": 1,
         "viewerSeat": 1,
@@ -68879,7 +68879,7 @@
           }
         }
       ],
-      "positionHash": "93e1035a1ba001bdb62443153a077bd7db8a6993dd4976ddebc2dded2506fe6b",
+      "positionHash": "71ee4c74358706a55dc2011c7f30d22055e2ab6df3adb28f62c7b80939c508a6",
       "provenance": {
         "generator": "manual-fixture",
         "revision": "1",
@@ -68889,13 +68889,13 @@
     {
       "schemaVersion": 2,
       "positionId": "MINOTAUR-14",
-      "engineVersion": "0.4.2-lag-order",
-      "engineArtifactHash": "ec49548098063d0a543a8ce1db2fa7452efbee96e15fc92f73c60e15bc9e308c",
+      "engineVersion": "0.4.3-defeat-filter-v7",
+      "engineArtifactHash": "563517fb9b5b53fd9e2988d0c1590b3fae74bb4fc284c8d1df522a12f15653ee",
       "manifest": {
         "schemaVersion": 1,
         "engine": {
-          "version": "0.4.2-lag-order",
-          "artifactHash": "ec49548098063d0a543a8ce1db2fa7452efbee96e15fc92f73c60e15bc9e308c"
+          "version": "0.4.3-defeat-filter-v7",
+          "artifactHash": "563517fb9b5b53fd9e2988d0c1590b3fae74bb4fc284c8d1df522a12f15653ee"
         },
         "ruleset": {
           "id": "beta",
@@ -69160,7 +69160,7 @@
           }
         ]
       },
-      "contentManifestHash": "d373bf7d6fad15a44c1d3646c66e2338d8de90165c59fe822f5a6166446800f4",
+      "contentManifestHash": "1bcbd0e4c91a81919e14c43705b1df6b507d12c026e91a2e933818c03e7d6aae",
       "state": {
         "schemaVersion": 2,
         "match": {
@@ -69170,9 +69170,9 @@
           "rulesetId": "beta",
           "rulesetVersion": "targeted-defeat-1",
           "rulesetHash": "398765437d8511cd7d2e82eb63cfdf2b70e169f10be7d9c01faffc4dcf8233ea",
-          "contentManifestHash": "d373bf7d6fad15a44c1d3646c66e2338d8de90165c59fe822f5a6166446800f4",
-          "engineVersion": "0.4.2-lag-order",
-          "engineArtifactHash": "ec49548098063d0a543a8ce1db2fa7452efbee96e15fc92f73c60e15bc9e308c",
+          "contentManifestHash": "1bcbd0e4c91a81919e14c43705b1df6b507d12c026e91a2e933818c03e7d6aae",
+          "engineVersion": "0.4.3-defeat-filter-v7",
+          "engineArtifactHash": "563517fb9b5b53fd9e2988d0c1590b3fae74bb4fc284c8d1df522a12f15653ee",
           "cards": [
             {
               "cardId": "afterparty-at-lizzie-s",
@@ -71334,7 +71334,7 @@
           "counter": 89
         }
       },
-      "stateHash": "576bcbf08447174ee8d5a02a9df63651b43cc22bf86b301add082276804f35a4",
+      "stateHash": "af23e8fca5f278538b9fb7a3a4e687fc7234fcfb9ea6728a133ddff7b9d4457e",
       "observation": {
         "schemaVersion": 1,
         "viewerSeat": 1,
@@ -71745,7 +71745,7 @@
           }
         }
       ],
-      "positionHash": "6402fae5f1b47588e24ed31f2abc649b42efc494d5f46b6788d3706d5e440562",
+      "positionHash": "ab6d66bf936881a3e5b7c2b5abfba6e50cada21dfbaa74247c78ce08c8693dc5",
       "provenance": {
         "generator": "manual-fixture",
         "revision": "1",
@@ -71755,13 +71755,13 @@
     {
       "schemaVersion": 2,
       "positionId": "MINOTAUR-15",
-      "engineVersion": "0.4.2-lag-order",
-      "engineArtifactHash": "ec49548098063d0a543a8ce1db2fa7452efbee96e15fc92f73c60e15bc9e308c",
+      "engineVersion": "0.4.3-defeat-filter-v7",
+      "engineArtifactHash": "563517fb9b5b53fd9e2988d0c1590b3fae74bb4fc284c8d1df522a12f15653ee",
       "manifest": {
         "schemaVersion": 1,
         "engine": {
-          "version": "0.4.2-lag-order",
-          "artifactHash": "ec49548098063d0a543a8ce1db2fa7452efbee96e15fc92f73c60e15bc9e308c"
+          "version": "0.4.3-defeat-filter-v7",
+          "artifactHash": "563517fb9b5b53fd9e2988d0c1590b3fae74bb4fc284c8d1df522a12f15653ee"
         },
         "ruleset": {
           "id": "beta",
@@ -72026,7 +72026,7 @@
           }
         ]
       },
-      "contentManifestHash": "d373bf7d6fad15a44c1d3646c66e2338d8de90165c59fe822f5a6166446800f4",
+      "contentManifestHash": "1bcbd0e4c91a81919e14c43705b1df6b507d12c026e91a2e933818c03e7d6aae",
       "state": {
         "schemaVersion": 2,
         "match": {
@@ -72036,9 +72036,9 @@
           "rulesetId": "beta",
           "rulesetVersion": "targeted-defeat-1",
           "rulesetHash": "398765437d8511cd7d2e82eb63cfdf2b70e169f10be7d9c01faffc4dcf8233ea",
-          "contentManifestHash": "d373bf7d6fad15a44c1d3646c66e2338d8de90165c59fe822f5a6166446800f4",
-          "engineVersion": "0.4.2-lag-order",
-          "engineArtifactHash": "ec49548098063d0a543a8ce1db2fa7452efbee96e15fc92f73c60e15bc9e308c",
+          "contentManifestHash": "1bcbd0e4c91a81919e14c43705b1df6b507d12c026e91a2e933818c03e7d6aae",
+          "engineVersion": "0.4.3-defeat-filter-v7",
+          "engineArtifactHash": "563517fb9b5b53fd9e2988d0c1590b3fae74bb4fc284c8d1df522a12f15653ee",
           "cards": [
             {
               "cardId": "afterparty-at-lizzie-s",
@@ -74197,7 +74197,7 @@
           "counter": 89
         }
       },
-      "stateHash": "39025830e8213e9a56bc4570fd05c6c3d02bd54f521bbfb24af08cf96d175f0d",
+      "stateHash": "cb30584190568e632548540585a0a3092d614702970338758cae4ce1894b7ee3",
       "observation": {
         "schemaVersion": 1,
         "viewerSeat": 1,
@@ -74593,7 +74593,7 @@
           }
         }
       ],
-      "positionHash": "0b3b9e13bb117be6ffca3a33c8b3950af440c9b65c628cd0f8dd1b743ee943b7",
+      "positionHash": "8e9ed56a643f754e4dacb40be58eed2c9cdc088e1552e6784760878d187bee18",
       "provenance": {
         "generator": "manual-fixture",
         "revision": "1",
@@ -74603,13 +74603,13 @@
     {
       "schemaVersion": 2,
       "positionId": "MINOTAUR-16",
-      "engineVersion": "0.4.2-lag-order",
-      "engineArtifactHash": "ec49548098063d0a543a8ce1db2fa7452efbee96e15fc92f73c60e15bc9e308c",
+      "engineVersion": "0.4.3-defeat-filter-v7",
+      "engineArtifactHash": "563517fb9b5b53fd9e2988d0c1590b3fae74bb4fc284c8d1df522a12f15653ee",
       "manifest": {
         "schemaVersion": 1,
         "engine": {
-          "version": "0.4.2-lag-order",
-          "artifactHash": "ec49548098063d0a543a8ce1db2fa7452efbee96e15fc92f73c60e15bc9e308c"
+          "version": "0.4.3-defeat-filter-v7",
+          "artifactHash": "563517fb9b5b53fd9e2988d0c1590b3fae74bb4fc284c8d1df522a12f15653ee"
         },
         "ruleset": {
           "id": "beta",
@@ -74874,7 +74874,7 @@
           }
         ]
       },
-      "contentManifestHash": "d373bf7d6fad15a44c1d3646c66e2338d8de90165c59fe822f5a6166446800f4",
+      "contentManifestHash": "1bcbd0e4c91a81919e14c43705b1df6b507d12c026e91a2e933818c03e7d6aae",
       "state": {
         "schemaVersion": 2,
         "match": {
@@ -74884,9 +74884,9 @@
           "rulesetId": "beta",
           "rulesetVersion": "targeted-defeat-1",
           "rulesetHash": "398765437d8511cd7d2e82eb63cfdf2b70e169f10be7d9c01faffc4dcf8233ea",
-          "contentManifestHash": "d373bf7d6fad15a44c1d3646c66e2338d8de90165c59fe822f5a6166446800f4",
-          "engineVersion": "0.4.2-lag-order",
-          "engineArtifactHash": "ec49548098063d0a543a8ce1db2fa7452efbee96e15fc92f73c60e15bc9e308c",
+          "contentManifestHash": "1bcbd0e4c91a81919e14c43705b1df6b507d12c026e91a2e933818c03e7d6aae",
+          "engineVersion": "0.4.3-defeat-filter-v7",
+          "engineArtifactHash": "563517fb9b5b53fd9e2988d0c1590b3fae74bb4fc284c8d1df522a12f15653ee",
           "cards": [
             {
               "cardId": "afterparty-at-lizzie-s",
@@ -77066,7 +77066,7 @@
           "counter": 89
         }
       },
-      "stateHash": "e84cb285d9a9b524d6abe255b08d566960f028818437c88526a2693f8644e010",
+      "stateHash": "8550eb58956daf4030bbeb3f813f506b0730e88f6fcc4c341101aeb128bc420b",
       "observation": {
         "schemaVersion": 1,
         "viewerSeat": 1,
@@ -77480,7 +77480,7 @@
           }
         }
       ],
-      "positionHash": "fcde5dea9b5f6657483691688b5b3deae11ff6eb3c17f0c1abe71383d24ae27d",
+      "positionHash": "c7a4efa8de1312c379fea26ac8236cc9e7d6fe17e3067c7fb8f758b781cfd41a",
       "provenance": {
         "generator": "manual-fixture",
         "revision": "1",
@@ -77490,13 +77490,13 @@
     {
       "schemaVersion": 2,
       "positionId": "MINOTAUR-17",
-      "engineVersion": "0.4.2-lag-order",
-      "engineArtifactHash": "ec49548098063d0a543a8ce1db2fa7452efbee96e15fc92f73c60e15bc9e308c",
+      "engineVersion": "0.4.3-defeat-filter-v7",
+      "engineArtifactHash": "563517fb9b5b53fd9e2988d0c1590b3fae74bb4fc284c8d1df522a12f15653ee",
       "manifest": {
         "schemaVersion": 1,
         "engine": {
-          "version": "0.4.2-lag-order",
-          "artifactHash": "ec49548098063d0a543a8ce1db2fa7452efbee96e15fc92f73c60e15bc9e308c"
+          "version": "0.4.3-defeat-filter-v7",
+          "artifactHash": "563517fb9b5b53fd9e2988d0c1590b3fae74bb4fc284c8d1df522a12f15653ee"
         },
         "ruleset": {
           "id": "beta",
@@ -77761,7 +77761,7 @@
           }
         ]
       },
-      "contentManifestHash": "d373bf7d6fad15a44c1d3646c66e2338d8de90165c59fe822f5a6166446800f4",
+      "contentManifestHash": "1bcbd0e4c91a81919e14c43705b1df6b507d12c026e91a2e933818c03e7d6aae",
       "state": {
         "schemaVersion": 2,
         "match": {
@@ -77771,9 +77771,9 @@
           "rulesetId": "beta",
           "rulesetVersion": "targeted-defeat-1",
           "rulesetHash": "398765437d8511cd7d2e82eb63cfdf2b70e169f10be7d9c01faffc4dcf8233ea",
-          "contentManifestHash": "d373bf7d6fad15a44c1d3646c66e2338d8de90165c59fe822f5a6166446800f4",
-          "engineVersion": "0.4.2-lag-order",
-          "engineArtifactHash": "ec49548098063d0a543a8ce1db2fa7452efbee96e15fc92f73c60e15bc9e308c",
+          "contentManifestHash": "1bcbd0e4c91a81919e14c43705b1df6b507d12c026e91a2e933818c03e7d6aae",
+          "engineVersion": "0.4.3-defeat-filter-v7",
+          "engineArtifactHash": "563517fb9b5b53fd9e2988d0c1590b3fae74bb4fc284c8d1df522a12f15653ee",
           "cards": [
             {
               "cardId": "afterparty-at-lizzie-s",
@@ -79958,7 +79958,7 @@
           "counter": 89
         }
       },
-      "stateHash": "1bcae3e0881115a53938f7b1079bc0d095ae8910d09675d4681af610bbbf11dc",
+      "stateHash": "cb5d1817f161b424e46be99317f21a6fe1ce7c70cbebcbf8edd865da42e08087",
       "observation": {
         "schemaVersion": 1,
         "viewerSeat": 1,
@@ -80387,7 +80387,7 @@
           }
         }
       ],
-      "positionHash": "ae0e908dfe867848bac05c237f692da793626bbc40f04baca7744a20400a4a08",
+      "positionHash": "1e23a4779ee8bbaadb1410cab46f7772287edf2b766bb258c4deb47566ec0296",
       "provenance": {
         "generator": "manual-fixture",
         "revision": "1",
@@ -80397,13 +80397,13 @@
     {
       "schemaVersion": 2,
       "positionId": "MINOTAUR-18",
-      "engineVersion": "0.4.2-lag-order",
-      "engineArtifactHash": "ec49548098063d0a543a8ce1db2fa7452efbee96e15fc92f73c60e15bc9e308c",
+      "engineVersion": "0.4.3-defeat-filter-v7",
+      "engineArtifactHash": "563517fb9b5b53fd9e2988d0c1590b3fae74bb4fc284c8d1df522a12f15653ee",
       "manifest": {
         "schemaVersion": 1,
         "engine": {
-          "version": "0.4.2-lag-order",
-          "artifactHash": "ec49548098063d0a543a8ce1db2fa7452efbee96e15fc92f73c60e15bc9e308c"
+          "version": "0.4.3-defeat-filter-v7",
+          "artifactHash": "563517fb9b5b53fd9e2988d0c1590b3fae74bb4fc284c8d1df522a12f15653ee"
         },
         "ruleset": {
           "id": "beta",
@@ -80668,7 +80668,7 @@
           }
         ]
       },
-      "contentManifestHash": "d373bf7d6fad15a44c1d3646c66e2338d8de90165c59fe822f5a6166446800f4",
+      "contentManifestHash": "1bcbd0e4c91a81919e14c43705b1df6b507d12c026e91a2e933818c03e7d6aae",
       "state": {
         "schemaVersion": 2,
         "match": {
@@ -80678,9 +80678,9 @@
           "rulesetId": "beta",
           "rulesetVersion": "targeted-defeat-1",
           "rulesetHash": "398765437d8511cd7d2e82eb63cfdf2b70e169f10be7d9c01faffc4dcf8233ea",
-          "contentManifestHash": "d373bf7d6fad15a44c1d3646c66e2338d8de90165c59fe822f5a6166446800f4",
-          "engineVersion": "0.4.2-lag-order",
-          "engineArtifactHash": "ec49548098063d0a543a8ce1db2fa7452efbee96e15fc92f73c60e15bc9e308c",
+          "contentManifestHash": "1bcbd0e4c91a81919e14c43705b1df6b507d12c026e91a2e933818c03e7d6aae",
+          "engineVersion": "0.4.3-defeat-filter-v7",
+          "engineArtifactHash": "563517fb9b5b53fd9e2988d0c1590b3fae74bb4fc284c8d1df522a12f15653ee",
           "cards": [
             {
               "cardId": "afterparty-at-lizzie-s",
@@ -82796,7 +82796,7 @@
           "counter": 89
         }
       },
-      "stateHash": "e92e7da52f053b053b14dcc94071602d9ab7f8553de461f9957422eb2e97be35",
+      "stateHash": "e45c2a2727c80d5cf45dc70a08a02b3837b7f92763cb12778bceec547e84be7e",
       "observation": {
         "schemaVersion": 1,
         "viewerSeat": 1,
@@ -83208,7 +83208,7 @@
           }
         }
       ],
-      "positionHash": "c23550427a3719e78d8fef0461528434339957f2819366d9ae3ce77d185fe270",
+      "positionHash": "852dec4b21176cfe417bf179ec74758a59958c2a1bb799d632598f12b6bb5877",
       "provenance": {
         "generator": "manual-fixture",
         "revision": "1",
@@ -83218,13 +83218,13 @@
     {
       "schemaVersion": 2,
       "positionId": "MINOTAUR-19",
-      "engineVersion": "0.4.2-lag-order",
-      "engineArtifactHash": "ec49548098063d0a543a8ce1db2fa7452efbee96e15fc92f73c60e15bc9e308c",
+      "engineVersion": "0.4.3-defeat-filter-v7",
+      "engineArtifactHash": "563517fb9b5b53fd9e2988d0c1590b3fae74bb4fc284c8d1df522a12f15653ee",
       "manifest": {
         "schemaVersion": 1,
         "engine": {
-          "version": "0.4.2-lag-order",
-          "artifactHash": "ec49548098063d0a543a8ce1db2fa7452efbee96e15fc92f73c60e15bc9e308c"
+          "version": "0.4.3-defeat-filter-v7",
+          "artifactHash": "563517fb9b5b53fd9e2988d0c1590b3fae74bb4fc284c8d1df522a12f15653ee"
         },
         "ruleset": {
           "id": "beta",
@@ -83489,7 +83489,7 @@
           }
         ]
       },
-      "contentManifestHash": "d373bf7d6fad15a44c1d3646c66e2338d8de90165c59fe822f5a6166446800f4",
+      "contentManifestHash": "1bcbd0e4c91a81919e14c43705b1df6b507d12c026e91a2e933818c03e7d6aae",
       "state": {
         "schemaVersion": 2,
         "match": {
@@ -83499,9 +83499,9 @@
           "rulesetId": "beta",
           "rulesetVersion": "targeted-defeat-1",
           "rulesetHash": "398765437d8511cd7d2e82eb63cfdf2b70e169f10be7d9c01faffc4dcf8233ea",
-          "contentManifestHash": "d373bf7d6fad15a44c1d3646c66e2338d8de90165c59fe822f5a6166446800f4",
-          "engineVersion": "0.4.2-lag-order",
-          "engineArtifactHash": "ec49548098063d0a543a8ce1db2fa7452efbee96e15fc92f73c60e15bc9e308c",
+          "contentManifestHash": "1bcbd0e4c91a81919e14c43705b1df6b507d12c026e91a2e933818c03e7d6aae",
+          "engineVersion": "0.4.3-defeat-filter-v7",
+          "engineArtifactHash": "563517fb9b5b53fd9e2988d0c1590b3fae74bb4fc284c8d1df522a12f15653ee",
           "cards": [
             {
               "cardId": "afterparty-at-lizzie-s",
@@ -85615,7 +85615,7 @@
           "counter": 89
         }
       },
-      "stateHash": "d70b1c506d1cee67037364361bc7da58f7548c8e2a946f7bd55346173c594a69",
+      "stateHash": "f31eb6bb4638525f23918d1250b7c8289ca8e51e34aa6da43b92b5deda42dbb2",
       "observation": {
         "schemaVersion": 1,
         "viewerSeat": 0,
@@ -86055,7 +86055,7 @@
           }
         }
       ],
-      "positionHash": "257b2d534afab06a0e8082c6ba053c9a229e2a3b80beb3232d39413cce15d308",
+      "positionHash": "26f74f0f209d92922fe856faf3182167722cc6e171528e18a896563b31b2120b",
       "provenance": {
         "generator": "manual-fixture",
         "revision": "1",
@@ -86065,13 +86065,13 @@
     {
       "schemaVersion": 2,
       "positionId": "MINOTAUR-20",
-      "engineVersion": "0.4.2-lag-order",
-      "engineArtifactHash": "ec49548098063d0a543a8ce1db2fa7452efbee96e15fc92f73c60e15bc9e308c",
+      "engineVersion": "0.4.3-defeat-filter-v7",
+      "engineArtifactHash": "563517fb9b5b53fd9e2988d0c1590b3fae74bb4fc284c8d1df522a12f15653ee",
       "manifest": {
         "schemaVersion": 1,
         "engine": {
-          "version": "0.4.2-lag-order",
-          "artifactHash": "ec49548098063d0a543a8ce1db2fa7452efbee96e15fc92f73c60e15bc9e308c"
+          "version": "0.4.3-defeat-filter-v7",
+          "artifactHash": "563517fb9b5b53fd9e2988d0c1590b3fae74bb4fc284c8d1df522a12f15653ee"
         },
         "ruleset": {
           "id": "beta",
@@ -86336,7 +86336,7 @@
           }
         ]
       },
-      "contentManifestHash": "d373bf7d6fad15a44c1d3646c66e2338d8de90165c59fe822f5a6166446800f4",
+      "contentManifestHash": "1bcbd0e4c91a81919e14c43705b1df6b507d12c026e91a2e933818c03e7d6aae",
       "state": {
         "schemaVersion": 2,
         "match": {
@@ -86346,9 +86346,9 @@
           "rulesetId": "beta",
           "rulesetVersion": "targeted-defeat-1",
           "rulesetHash": "398765437d8511cd7d2e82eb63cfdf2b70e169f10be7d9c01faffc4dcf8233ea",
-          "contentManifestHash": "d373bf7d6fad15a44c1d3646c66e2338d8de90165c59fe822f5a6166446800f4",
-          "engineVersion": "0.4.2-lag-order",
-          "engineArtifactHash": "ec49548098063d0a543a8ce1db2fa7452efbee96e15fc92f73c60e15bc9e308c",
+          "contentManifestHash": "1bcbd0e4c91a81919e14c43705b1df6b507d12c026e91a2e933818c03e7d6aae",
+          "engineVersion": "0.4.3-defeat-filter-v7",
+          "engineArtifactHash": "563517fb9b5b53fd9e2988d0c1590b3fae74bb4fc284c8d1df522a12f15653ee",
           "cards": [
             {
               "cardId": "afterparty-at-lizzie-s",
@@ -88464,7 +88464,7 @@
           "counter": 90
         }
       },
-      "stateHash": "9100ab90406e1cedd6bd3d326b61e80879abf650b4660fa0bde489afab6a30d5",
+      "stateHash": "644ba250d5e07a6aa160565a08c848418a76a81de39e9b73704fdeb9b1464708",
       "observation": {
         "schemaVersion": 1,
         "viewerSeat": 0,
@@ -88989,7 +88989,7 @@
           }
         }
       ],
-      "positionHash": "d7d6a7d8ad1f1d1eba9ee094ab0f519e3d39d692f549776a2f1ba2cd4f22f933",
+      "positionHash": "b49b608af65f89cefbb5e0f99242fe2c0c6995d3c6582a644ebb8cb3f0279211",
       "provenance": {
         "generator": "manual-fixture",
         "revision": "1",
@@ -88999,13 +88999,13 @@
     {
       "schemaVersion": 2,
       "positionId": "MINOTAUR-21",
-      "engineVersion": "0.4.2-lag-order",
-      "engineArtifactHash": "ec49548098063d0a543a8ce1db2fa7452efbee96e15fc92f73c60e15bc9e308c",
+      "engineVersion": "0.4.3-defeat-filter-v7",
+      "engineArtifactHash": "563517fb9b5b53fd9e2988d0c1590b3fae74bb4fc284c8d1df522a12f15653ee",
       "manifest": {
         "schemaVersion": 1,
         "engine": {
-          "version": "0.4.2-lag-order",
-          "artifactHash": "ec49548098063d0a543a8ce1db2fa7452efbee96e15fc92f73c60e15bc9e308c"
+          "version": "0.4.3-defeat-filter-v7",
+          "artifactHash": "563517fb9b5b53fd9e2988d0c1590b3fae74bb4fc284c8d1df522a12f15653ee"
         },
         "ruleset": {
           "id": "beta",
@@ -89270,7 +89270,7 @@
           }
         ]
       },
-      "contentManifestHash": "d373bf7d6fad15a44c1d3646c66e2338d8de90165c59fe822f5a6166446800f4",
+      "contentManifestHash": "1bcbd0e4c91a81919e14c43705b1df6b507d12c026e91a2e933818c03e7d6aae",
       "state": {
         "schemaVersion": 2,
         "match": {
@@ -89280,9 +89280,9 @@
           "rulesetId": "beta",
           "rulesetVersion": "targeted-defeat-1",
           "rulesetHash": "398765437d8511cd7d2e82eb63cfdf2b70e169f10be7d9c01faffc4dcf8233ea",
-          "contentManifestHash": "d373bf7d6fad15a44c1d3646c66e2338d8de90165c59fe822f5a6166446800f4",
-          "engineVersion": "0.4.2-lag-order",
-          "engineArtifactHash": "ec49548098063d0a543a8ce1db2fa7452efbee96e15fc92f73c60e15bc9e308c",
+          "contentManifestHash": "1bcbd0e4c91a81919e14c43705b1df6b507d12c026e91a2e933818c03e7d6aae",
+          "engineVersion": "0.4.3-defeat-filter-v7",
+          "engineArtifactHash": "563517fb9b5b53fd9e2988d0c1590b3fae74bb4fc284c8d1df522a12f15653ee",
           "cards": [
             {
               "cardId": "afterparty-at-lizzie-s",
@@ -91398,7 +91398,7 @@
           "counter": 90
         }
       },
-      "stateHash": "2d757c243e8195cc853ed2311964b717112d2b014852c7f4e736c55220d60ca5",
+      "stateHash": "16542291e08d1ebe212b9610c48d49262b4646e81192d46fc7293d5986b5d33b",
       "observation": {
         "schemaVersion": 1,
         "viewerSeat": 0,
@@ -91883,7 +91883,7 @@
           }
         }
       ],
-      "positionHash": "24dc09a02f456ddd74967167205891760422324eb8c57b4e3005aedc62b39560",
+      "positionHash": "cbb44bca40a6bbff014b66802e9da4def57924996fbdc8f2ea24b51ee84a974c",
       "provenance": {
         "generator": "manual-fixture",
         "revision": "1",
@@ -91893,13 +91893,13 @@
     {
       "schemaVersion": 2,
       "positionId": "MINOTAUR-22",
-      "engineVersion": "0.4.2-lag-order",
-      "engineArtifactHash": "ec49548098063d0a543a8ce1db2fa7452efbee96e15fc92f73c60e15bc9e308c",
+      "engineVersion": "0.4.3-defeat-filter-v7",
+      "engineArtifactHash": "563517fb9b5b53fd9e2988d0c1590b3fae74bb4fc284c8d1df522a12f15653ee",
       "manifest": {
         "schemaVersion": 1,
         "engine": {
-          "version": "0.4.2-lag-order",
-          "artifactHash": "ec49548098063d0a543a8ce1db2fa7452efbee96e15fc92f73c60e15bc9e308c"
+          "version": "0.4.3-defeat-filter-v7",
+          "artifactHash": "563517fb9b5b53fd9e2988d0c1590b3fae74bb4fc284c8d1df522a12f15653ee"
         },
         "ruleset": {
           "id": "beta",
@@ -92164,7 +92164,7 @@
           }
         ]
       },
-      "contentManifestHash": "d373bf7d6fad15a44c1d3646c66e2338d8de90165c59fe822f5a6166446800f4",
+      "contentManifestHash": "1bcbd0e4c91a81919e14c43705b1df6b507d12c026e91a2e933818c03e7d6aae",
       "state": {
         "schemaVersion": 2,
         "match": {
@@ -92174,9 +92174,9 @@
           "rulesetId": "beta",
           "rulesetVersion": "targeted-defeat-1",
           "rulesetHash": "398765437d8511cd7d2e82eb63cfdf2b70e169f10be7d9c01faffc4dcf8233ea",
-          "contentManifestHash": "d373bf7d6fad15a44c1d3646c66e2338d8de90165c59fe822f5a6166446800f4",
-          "engineVersion": "0.4.2-lag-order",
-          "engineArtifactHash": "ec49548098063d0a543a8ce1db2fa7452efbee96e15fc92f73c60e15bc9e308c",
+          "contentManifestHash": "1bcbd0e4c91a81919e14c43705b1df6b507d12c026e91a2e933818c03e7d6aae",
+          "engineVersion": "0.4.3-defeat-filter-v7",
+          "engineArtifactHash": "563517fb9b5b53fd9e2988d0c1590b3fae74bb4fc284c8d1df522a12f15653ee",
           "cards": [
             {
               "cardId": "afterparty-at-lizzie-s",
@@ -94292,7 +94292,7 @@
           "counter": 90
         }
       },
-      "stateHash": "a231f96a627a735289f7e3ef9534a61aa6630624adb4fed48f464b12ff785188",
+      "stateHash": "3b2ff0c220a540a7f12629e3f5ce7701fe38820b6d2c6e6d581eb10943510e9b",
       "observation": {
         "schemaVersion": 1,
         "viewerSeat": 1,
@@ -94730,7 +94730,7 @@
           }
         }
       ],
-      "positionHash": "c8f32ac06238d1661e03bb7656fee40edfd844f888338260b03d0c12ccf36309",
+      "positionHash": "2bddab1199c293b864ba14fe5a45c29078313671d81191031695972d25916b86",
       "provenance": {
         "generator": "manual-fixture",
         "revision": "1",
@@ -94740,13 +94740,13 @@
     {
       "schemaVersion": 2,
       "positionId": "MINOTAUR-23",
-      "engineVersion": "0.4.2-lag-order",
-      "engineArtifactHash": "ec49548098063d0a543a8ce1db2fa7452efbee96e15fc92f73c60e15bc9e308c",
+      "engineVersion": "0.4.3-defeat-filter-v7",
+      "engineArtifactHash": "563517fb9b5b53fd9e2988d0c1590b3fae74bb4fc284c8d1df522a12f15653ee",
       "manifest": {
         "schemaVersion": 1,
         "engine": {
-          "version": "0.4.2-lag-order",
-          "artifactHash": "ec49548098063d0a543a8ce1db2fa7452efbee96e15fc92f73c60e15bc9e308c"
+          "version": "0.4.3-defeat-filter-v7",
+          "artifactHash": "563517fb9b5b53fd9e2988d0c1590b3fae74bb4fc284c8d1df522a12f15653ee"
         },
         "ruleset": {
           "id": "beta",
@@ -95011,7 +95011,7 @@
           }
         ]
       },
-      "contentManifestHash": "d373bf7d6fad15a44c1d3646c66e2338d8de90165c59fe822f5a6166446800f4",
+      "contentManifestHash": "1bcbd0e4c91a81919e14c43705b1df6b507d12c026e91a2e933818c03e7d6aae",
       "state": {
         "schemaVersion": 2,
         "match": {
@@ -95021,9 +95021,9 @@
           "rulesetId": "beta",
           "rulesetVersion": "targeted-defeat-1",
           "rulesetHash": "398765437d8511cd7d2e82eb63cfdf2b70e169f10be7d9c01faffc4dcf8233ea",
-          "contentManifestHash": "d373bf7d6fad15a44c1d3646c66e2338d8de90165c59fe822f5a6166446800f4",
-          "engineVersion": "0.4.2-lag-order",
-          "engineArtifactHash": "ec49548098063d0a543a8ce1db2fa7452efbee96e15fc92f73c60e15bc9e308c",
+          "contentManifestHash": "1bcbd0e4c91a81919e14c43705b1df6b507d12c026e91a2e933818c03e7d6aae",
+          "engineVersion": "0.4.3-defeat-filter-v7",
+          "engineArtifactHash": "563517fb9b5b53fd9e2988d0c1590b3fae74bb4fc284c8d1df522a12f15653ee",
           "cards": [
             {
               "cardId": "afterparty-at-lizzie-s",
@@ -97141,7 +97141,7 @@
           "counter": 91
         }
       },
-      "stateHash": "d415b6b33153c281131f6bc27c172451472fdc152f2f408ab15778e8fb223c0f",
+      "stateHash": "dceb29f52779d16f5a9223efe823e1df7d248dd3e5c76bab2165059fcb9e33e4",
       "observation": {
         "schemaVersion": 1,
         "viewerSeat": 1,
@@ -97676,7 +97676,7 @@
           }
         }
       ],
-      "positionHash": "d857cd739b1241dff41e1ee46acb63573ed4b9a93298860a800e768961965c6e",
+      "positionHash": "a266de41fa1cd6c8a477016527485df5dc99e2ff8eb12e26dd691645a7f62841",
       "provenance": {
         "generator": "manual-fixture",
         "revision": "1",
@@ -97686,13 +97686,13 @@
     {
       "schemaVersion": 2,
       "positionId": "MINOTAUR-24",
-      "engineVersion": "0.4.2-lag-order",
-      "engineArtifactHash": "ec49548098063d0a543a8ce1db2fa7452efbee96e15fc92f73c60e15bc9e308c",
+      "engineVersion": "0.4.3-defeat-filter-v7",
+      "engineArtifactHash": "563517fb9b5b53fd9e2988d0c1590b3fae74bb4fc284c8d1df522a12f15653ee",
       "manifest": {
         "schemaVersion": 1,
         "engine": {
-          "version": "0.4.2-lag-order",
-          "artifactHash": "ec49548098063d0a543a8ce1db2fa7452efbee96e15fc92f73c60e15bc9e308c"
+          "version": "0.4.3-defeat-filter-v7",
+          "artifactHash": "563517fb9b5b53fd9e2988d0c1590b3fae74bb4fc284c8d1df522a12f15653ee"
         },
         "ruleset": {
           "id": "beta",
@@ -97957,7 +97957,7 @@
           }
         ]
       },
-      "contentManifestHash": "d373bf7d6fad15a44c1d3646c66e2338d8de90165c59fe822f5a6166446800f4",
+      "contentManifestHash": "1bcbd0e4c91a81919e14c43705b1df6b507d12c026e91a2e933818c03e7d6aae",
       "state": {
         "schemaVersion": 2,
         "match": {
@@ -97967,9 +97967,9 @@
           "rulesetId": "beta",
           "rulesetVersion": "targeted-defeat-1",
           "rulesetHash": "398765437d8511cd7d2e82eb63cfdf2b70e169f10be7d9c01faffc4dcf8233ea",
-          "contentManifestHash": "d373bf7d6fad15a44c1d3646c66e2338d8de90165c59fe822f5a6166446800f4",
-          "engineVersion": "0.4.2-lag-order",
-          "engineArtifactHash": "ec49548098063d0a543a8ce1db2fa7452efbee96e15fc92f73c60e15bc9e308c",
+          "contentManifestHash": "1bcbd0e4c91a81919e14c43705b1df6b507d12c026e91a2e933818c03e7d6aae",
+          "engineVersion": "0.4.3-defeat-filter-v7",
+          "engineArtifactHash": "563517fb9b5b53fd9e2988d0c1590b3fae74bb4fc284c8d1df522a12f15653ee",
           "cards": [
             {
               "cardId": "afterparty-at-lizzie-s",
@@ -100087,7 +100087,7 @@
           "counter": 91
         }
       },
-      "stateHash": "4234443167451dba2314afc72e320979e18d3071fd05e714e4e937db8fe45a68",
+      "stateHash": "f02ae0449b16f9638a4c6f2769ec8648e6042bfc79f2b1e03819547c7244b55e",
       "observation": {
         "schemaVersion": 1,
         "viewerSeat": 1,
@@ -100570,7 +100570,7 @@
           }
         }
       ],
-      "positionHash": "f2ca17a5d0d0c3404c636cbfeadbcde0321bffe50fe01c7f9366bbeb14909b38",
+      "positionHash": "fedc93e4a6dca5517ea15b168171ae38c8cfb4c63152c08dc07488a9d5b97582",
       "provenance": {
         "generator": "manual-fixture",
         "revision": "1",
@@ -100580,13 +100580,13 @@
     {
       "schemaVersion": 2,
       "positionId": "MINOTAUR-25",
-      "engineVersion": "0.4.2-lag-order",
-      "engineArtifactHash": "ec49548098063d0a543a8ce1db2fa7452efbee96e15fc92f73c60e15bc9e308c",
+      "engineVersion": "0.4.3-defeat-filter-v7",
+      "engineArtifactHash": "563517fb9b5b53fd9e2988d0c1590b3fae74bb4fc284c8d1df522a12f15653ee",
       "manifest": {
         "schemaVersion": 1,
         "engine": {
-          "version": "0.4.2-lag-order",
-          "artifactHash": "ec49548098063d0a543a8ce1db2fa7452efbee96e15fc92f73c60e15bc9e308c"
+          "version": "0.4.3-defeat-filter-v7",
+          "artifactHash": "563517fb9b5b53fd9e2988d0c1590b3fae74bb4fc284c8d1df522a12f15653ee"
         },
         "ruleset": {
           "id": "beta",
@@ -100851,7 +100851,7 @@
           }
         ]
       },
-      "contentManifestHash": "d373bf7d6fad15a44c1d3646c66e2338d8de90165c59fe822f5a6166446800f4",
+      "contentManifestHash": "1bcbd0e4c91a81919e14c43705b1df6b507d12c026e91a2e933818c03e7d6aae",
       "state": {
         "schemaVersion": 2,
         "match": {
@@ -100861,9 +100861,9 @@
           "rulesetId": "beta",
           "rulesetVersion": "targeted-defeat-1",
           "rulesetHash": "398765437d8511cd7d2e82eb63cfdf2b70e169f10be7d9c01faffc4dcf8233ea",
-          "contentManifestHash": "d373bf7d6fad15a44c1d3646c66e2338d8de90165c59fe822f5a6166446800f4",
-          "engineVersion": "0.4.2-lag-order",
-          "engineArtifactHash": "ec49548098063d0a543a8ce1db2fa7452efbee96e15fc92f73c60e15bc9e308c",
+          "contentManifestHash": "1bcbd0e4c91a81919e14c43705b1df6b507d12c026e91a2e933818c03e7d6aae",
+          "engineVersion": "0.4.3-defeat-filter-v7",
+          "engineArtifactHash": "563517fb9b5b53fd9e2988d0c1590b3fae74bb4fc284c8d1df522a12f15653ee",
           "cards": [
             {
               "cardId": "afterparty-at-lizzie-s",
@@ -103039,7 +103039,7 @@
           "counter": 91
         }
       },
-      "stateHash": "1e80f66e517e4c9ead8af65ab29c36bf531b8c6e4ecfa87ff154e859ea153774",
+      "stateHash": "38781fe3651c1e55d2d55d5e2f9ae33fd71c5a880078697e7c0ced54df656c2a",
       "observation": {
         "schemaVersion": 1,
         "viewerSeat": 1,
@@ -103508,7 +103508,7 @@
           }
         }
       ],
-      "positionHash": "2a5007202f166fb45d5160b8231e03b18b2cfc5e5fb486370eacd8f875c0903e",
+      "positionHash": "d1fd99ae01a9cb61962efcffc6ad88b5e337578fafe898b470c90fa1263bbefd",
       "provenance": {
         "generator": "manual-fixture",
         "revision": "1",
@@ -103518,13 +103518,13 @@
     {
       "schemaVersion": 2,
       "positionId": "MINOTAUR-26",
-      "engineVersion": "0.4.2-lag-order",
-      "engineArtifactHash": "ec49548098063d0a543a8ce1db2fa7452efbee96e15fc92f73c60e15bc9e308c",
+      "engineVersion": "0.4.3-defeat-filter-v7",
+      "engineArtifactHash": "563517fb9b5b53fd9e2988d0c1590b3fae74bb4fc284c8d1df522a12f15653ee",
       "manifest": {
         "schemaVersion": 1,
         "engine": {
-          "version": "0.4.2-lag-order",
-          "artifactHash": "ec49548098063d0a543a8ce1db2fa7452efbee96e15fc92f73c60e15bc9e308c"
+          "version": "0.4.3-defeat-filter-v7",
+          "artifactHash": "563517fb9b5b53fd9e2988d0c1590b3fae74bb4fc284c8d1df522a12f15653ee"
         },
         "ruleset": {
           "id": "beta",
@@ -103789,7 +103789,7 @@
           }
         ]
       },
-      "contentManifestHash": "d373bf7d6fad15a44c1d3646c66e2338d8de90165c59fe822f5a6166446800f4",
+      "contentManifestHash": "1bcbd0e4c91a81919e14c43705b1df6b507d12c026e91a2e933818c03e7d6aae",
       "state": {
         "schemaVersion": 2,
         "match": {
@@ -103799,9 +103799,9 @@
           "rulesetId": "beta",
           "rulesetVersion": "targeted-defeat-1",
           "rulesetHash": "398765437d8511cd7d2e82eb63cfdf2b70e169f10be7d9c01faffc4dcf8233ea",
-          "contentManifestHash": "d373bf7d6fad15a44c1d3646c66e2338d8de90165c59fe822f5a6166446800f4",
-          "engineVersion": "0.4.2-lag-order",
-          "engineArtifactHash": "ec49548098063d0a543a8ce1db2fa7452efbee96e15fc92f73c60e15bc9e308c",
+          "contentManifestHash": "1bcbd0e4c91a81919e14c43705b1df6b507d12c026e91a2e933818c03e7d6aae",
+          "engineVersion": "0.4.3-defeat-filter-v7",
+          "engineArtifactHash": "563517fb9b5b53fd9e2988d0c1590b3fae74bb4fc284c8d1df522a12f15653ee",
           "cards": [
             {
               "cardId": "afterparty-at-lizzie-s",
@@ -105975,7 +105975,7 @@
           "counter": 91
         }
       },
-      "stateHash": "488385354da22afd9bf95c7236bfc88da911922969453e4a406d6b927ed7bfcb",
+      "stateHash": "605e7f187e07857df61ac6cdfa906362a3e75ebf274570313ad3afe3e4d745ee",
       "observation": {
         "schemaVersion": 1,
         "viewerSeat": 1,
@@ -106429,7 +106429,7 @@
           }
         }
       ],
-      "positionHash": "16b02ce0c55e570f80cf38d3f3c0c71709c982696fd44c2e7dd621058d3bd092",
+      "positionHash": "7107ed0034151ad1d4fa325045357b3ab0945e2b8621c298d21ef86b6fd0713c",
       "provenance": {
         "generator": "manual-fixture",
         "revision": "1",
@@ -106439,13 +106439,13 @@
     {
       "schemaVersion": 2,
       "positionId": "MINOTAUR-27",
-      "engineVersion": "0.4.2-lag-order",
-      "engineArtifactHash": "ec49548098063d0a543a8ce1db2fa7452efbee96e15fc92f73c60e15bc9e308c",
+      "engineVersion": "0.4.3-defeat-filter-v7",
+      "engineArtifactHash": "563517fb9b5b53fd9e2988d0c1590b3fae74bb4fc284c8d1df522a12f15653ee",
       "manifest": {
         "schemaVersion": 1,
         "engine": {
-          "version": "0.4.2-lag-order",
-          "artifactHash": "ec49548098063d0a543a8ce1db2fa7452efbee96e15fc92f73c60e15bc9e308c"
+          "version": "0.4.3-defeat-filter-v7",
+          "artifactHash": "563517fb9b5b53fd9e2988d0c1590b3fae74bb4fc284c8d1df522a12f15653ee"
         },
         "ruleset": {
           "id": "beta",
@@ -106710,7 +106710,7 @@
           }
         ]
       },
-      "contentManifestHash": "d373bf7d6fad15a44c1d3646c66e2338d8de90165c59fe822f5a6166446800f4",
+      "contentManifestHash": "1bcbd0e4c91a81919e14c43705b1df6b507d12c026e91a2e933818c03e7d6aae",
       "state": {
         "schemaVersion": 2,
         "match": {
@@ -106720,9 +106720,9 @@
           "rulesetId": "beta",
           "rulesetVersion": "targeted-defeat-1",
           "rulesetHash": "398765437d8511cd7d2e82eb63cfdf2b70e169f10be7d9c01faffc4dcf8233ea",
-          "contentManifestHash": "d373bf7d6fad15a44c1d3646c66e2338d8de90165c59fe822f5a6166446800f4",
-          "engineVersion": "0.4.2-lag-order",
-          "engineArtifactHash": "ec49548098063d0a543a8ce1db2fa7452efbee96e15fc92f73c60e15bc9e308c",
+          "contentManifestHash": "1bcbd0e4c91a81919e14c43705b1df6b507d12c026e91a2e933818c03e7d6aae",
+          "engineVersion": "0.4.3-defeat-filter-v7",
+          "engineArtifactHash": "563517fb9b5b53fd9e2988d0c1590b3fae74bb4fc284c8d1df522a12f15653ee",
           "cards": [
             {
               "cardId": "afterparty-at-lizzie-s",
@@ -108893,7 +108893,7 @@
           "counter": 91
         }
       },
-      "stateHash": "b37d24d09ec09808cbc88ec73140df2c48e49a06685853264b6b7fbc5eb311a6",
+      "stateHash": "a2b51485a9d133edb7543b88b11d60a1e7051ef0bbbe161d20b4cc882c111a01",
       "observation": {
         "schemaVersion": 1,
         "viewerSeat": 1,
@@ -109332,7 +109332,7 @@
           }
         }
       ],
-      "positionHash": "8ebb70c216767fd7e80f8b0b0810d83743213d06db7f345b24972e4c5ce1afdc",
+      "positionHash": "29859c9754d40740793ceb1433575ed457da88c29588037464b835f6a8297ca4",
       "provenance": {
         "generator": "manual-fixture",
         "revision": "1",
@@ -109342,13 +109342,13 @@
     {
       "schemaVersion": 2,
       "positionId": "MINOTAUR-28",
-      "engineVersion": "0.4.2-lag-order",
-      "engineArtifactHash": "ec49548098063d0a543a8ce1db2fa7452efbee96e15fc92f73c60e15bc9e308c",
+      "engineVersion": "0.4.3-defeat-filter-v7",
+      "engineArtifactHash": "563517fb9b5b53fd9e2988d0c1590b3fae74bb4fc284c8d1df522a12f15653ee",
       "manifest": {
         "schemaVersion": 1,
         "engine": {
-          "version": "0.4.2-lag-order",
-          "artifactHash": "ec49548098063d0a543a8ce1db2fa7452efbee96e15fc92f73c60e15bc9e308c"
+          "version": "0.4.3-defeat-filter-v7",
+          "artifactHash": "563517fb9b5b53fd9e2988d0c1590b3fae74bb4fc284c8d1df522a12f15653ee"
         },
         "ruleset": {
           "id": "beta",
@@ -109613,7 +109613,7 @@
           }
         ]
       },
-      "contentManifestHash": "d373bf7d6fad15a44c1d3646c66e2338d8de90165c59fe822f5a6166446800f4",
+      "contentManifestHash": "1bcbd0e4c91a81919e14c43705b1df6b507d12c026e91a2e933818c03e7d6aae",
       "state": {
         "schemaVersion": 2,
         "match": {
@@ -109623,9 +109623,9 @@
           "rulesetId": "beta",
           "rulesetVersion": "targeted-defeat-1",
           "rulesetHash": "398765437d8511cd7d2e82eb63cfdf2b70e169f10be7d9c01faffc4dcf8233ea",
-          "contentManifestHash": "d373bf7d6fad15a44c1d3646c66e2338d8de90165c59fe822f5a6166446800f4",
-          "engineVersion": "0.4.2-lag-order",
-          "engineArtifactHash": "ec49548098063d0a543a8ce1db2fa7452efbee96e15fc92f73c60e15bc9e308c",
+          "contentManifestHash": "1bcbd0e4c91a81919e14c43705b1df6b507d12c026e91a2e933818c03e7d6aae",
+          "engineVersion": "0.4.3-defeat-filter-v7",
+          "engineArtifactHash": "563517fb9b5b53fd9e2988d0c1590b3fae74bb4fc284c8d1df522a12f15653ee",
           "cards": [
             {
               "cardId": "afterparty-at-lizzie-s",
@@ -111745,7 +111745,7 @@
           "counter": 91
         }
       },
-      "stateHash": "8e63593e229732e21498abdbf939ae02fe9f2a6c3d39368ff3ec3b7c2999d8c5",
+      "stateHash": "4d3b9ab855ccacd2799955d8b8aa7891bb505faa872e1d1f9e9d54e79569bf22",
       "observation": {
         "schemaVersion": 1,
         "viewerSeat": 1,
@@ -112197,7 +112197,7 @@
           }
         }
       ],
-      "positionHash": "8a9911b9d4704dbc384cb534deeac9dfa6dffcf92815d6ef60659db17bda7ad7",
+      "positionHash": "db159e3a9f1b4cd94c6fe3ad78e49f9ac021d21e95e1f4ead4f88520e9c94661",
       "provenance": {
         "generator": "manual-fixture",
         "revision": "1",
@@ -112207,13 +112207,13 @@
     {
       "schemaVersion": 2,
       "positionId": "MINOTAUR-29",
-      "engineVersion": "0.4.2-lag-order",
-      "engineArtifactHash": "ec49548098063d0a543a8ce1db2fa7452efbee96e15fc92f73c60e15bc9e308c",
+      "engineVersion": "0.4.3-defeat-filter-v7",
+      "engineArtifactHash": "563517fb9b5b53fd9e2988d0c1590b3fae74bb4fc284c8d1df522a12f15653ee",
       "manifest": {
         "schemaVersion": 1,
         "engine": {
-          "version": "0.4.2-lag-order",
-          "artifactHash": "ec49548098063d0a543a8ce1db2fa7452efbee96e15fc92f73c60e15bc9e308c"
+          "version": "0.4.3-defeat-filter-v7",
+          "artifactHash": "563517fb9b5b53fd9e2988d0c1590b3fae74bb4fc284c8d1df522a12f15653ee"
         },
         "ruleset": {
           "id": "beta",
@@ -112478,7 +112478,7 @@
           }
         ]
       },
-      "contentManifestHash": "d373bf7d6fad15a44c1d3646c66e2338d8de90165c59fe822f5a6166446800f4",
+      "contentManifestHash": "1bcbd0e4c91a81919e14c43705b1df6b507d12c026e91a2e933818c03e7d6aae",
       "state": {
         "schemaVersion": 2,
         "match": {
@@ -112488,9 +112488,9 @@
           "rulesetId": "beta",
           "rulesetVersion": "targeted-defeat-1",
           "rulesetHash": "398765437d8511cd7d2e82eb63cfdf2b70e169f10be7d9c01faffc4dcf8233ea",
-          "contentManifestHash": "d373bf7d6fad15a44c1d3646c66e2338d8de90165c59fe822f5a6166446800f4",
-          "engineVersion": "0.4.2-lag-order",
-          "engineArtifactHash": "ec49548098063d0a543a8ce1db2fa7452efbee96e15fc92f73c60e15bc9e308c",
+          "contentManifestHash": "1bcbd0e4c91a81919e14c43705b1df6b507d12c026e91a2e933818c03e7d6aae",
+          "engineVersion": "0.4.3-defeat-filter-v7",
+          "engineArtifactHash": "563517fb9b5b53fd9e2988d0c1590b3fae74bb4fc284c8d1df522a12f15653ee",
           "cards": [
             {
               "cardId": "afterparty-at-lizzie-s",
@@ -114608,7 +114608,7 @@
           "counter": 91
         }
       },
-      "stateHash": "77785c638c42985d22d4742f701810d2707cfe097c0b43532c0f3e92c67bc12d",
+      "stateHash": "73dde538373e27e79e3bbe96b3ac10cbe9ef2b95f0746a715146905fcafe3625",
       "observation": {
         "schemaVersion": 1,
         "viewerSeat": 0,
@@ -115078,7 +115078,7 @@
           }
         }
       ],
-      "positionHash": "d308af1b0e48693b98d14118fd176e83d6d0e7a8e12f2414060da3706927f730",
+      "positionHash": "a3dea4fbc72ddc580fce4ec4f76572b94c6225e4c41c75f8860f1222cda94240",
       "provenance": {
         "generator": "manual-fixture",
         "revision": "1",
@@ -115088,13 +115088,13 @@
     {
       "schemaVersion": 2,
       "positionId": "MINOTAUR-30",
-      "engineVersion": "0.4.2-lag-order",
-      "engineArtifactHash": "ec49548098063d0a543a8ce1db2fa7452efbee96e15fc92f73c60e15bc9e308c",
+      "engineVersion": "0.4.3-defeat-filter-v7",
+      "engineArtifactHash": "563517fb9b5b53fd9e2988d0c1590b3fae74bb4fc284c8d1df522a12f15653ee",
       "manifest": {
         "schemaVersion": 1,
         "engine": {
-          "version": "0.4.2-lag-order",
-          "artifactHash": "ec49548098063d0a543a8ce1db2fa7452efbee96e15fc92f73c60e15bc9e308c"
+          "version": "0.4.3-defeat-filter-v7",
+          "artifactHash": "563517fb9b5b53fd9e2988d0c1590b3fae74bb4fc284c8d1df522a12f15653ee"
         },
         "ruleset": {
           "id": "beta",
@@ -115359,7 +115359,7 @@
           }
         ]
       },
-      "contentManifestHash": "d373bf7d6fad15a44c1d3646c66e2338d8de90165c59fe822f5a6166446800f4",
+      "contentManifestHash": "1bcbd0e4c91a81919e14c43705b1df6b507d12c026e91a2e933818c03e7d6aae",
       "state": {
         "schemaVersion": 2,
         "match": {
@@ -115369,9 +115369,9 @@
           "rulesetId": "beta",
           "rulesetVersion": "targeted-defeat-1",
           "rulesetHash": "398765437d8511cd7d2e82eb63cfdf2b70e169f10be7d9c01faffc4dcf8233ea",
-          "contentManifestHash": "d373bf7d6fad15a44c1d3646c66e2338d8de90165c59fe822f5a6166446800f4",
-          "engineVersion": "0.4.2-lag-order",
-          "engineArtifactHash": "ec49548098063d0a543a8ce1db2fa7452efbee96e15fc92f73c60e15bc9e308c",
+          "contentManifestHash": "1bcbd0e4c91a81919e14c43705b1df6b507d12c026e91a2e933818c03e7d6aae",
+          "engineVersion": "0.4.3-defeat-filter-v7",
+          "engineArtifactHash": "563517fb9b5b53fd9e2988d0c1590b3fae74bb4fc284c8d1df522a12f15653ee",
           "cards": [
             {
               "cardId": "afterparty-at-lizzie-s",
@@ -117491,7 +117491,7 @@
           "counter": 92
         }
       },
-      "stateHash": "66cc0387a38504babf0e76f71e49418b5e80efb516e10254504dc9fee8b48f2d",
+      "stateHash": "441fe3a84f7e027975ce2bb390c4058918ef7218a957c1b79dfde17a57e5306d",
       "observation": {
         "schemaVersion": 1,
         "viewerSeat": 0,
@@ -118058,7 +118058,7 @@
           }
         }
       ],
-      "positionHash": "8cf0b8205cb741cbcf447a03bc1c3eb0d5be3353026684798153bbbafd5beeda",
+      "positionHash": "c9091f3c42d9f8e33606189ef93ea70db70d5011190f386fd648db24fb07661c",
       "provenance": {
         "generator": "manual-fixture",
         "revision": "1",
@@ -118068,13 +118068,13 @@
     {
       "schemaVersion": 2,
       "positionId": "MINOTAUR-31",
-      "engineVersion": "0.4.2-lag-order",
-      "engineArtifactHash": "ec49548098063d0a543a8ce1db2fa7452efbee96e15fc92f73c60e15bc9e308c",
+      "engineVersion": "0.4.3-defeat-filter-v7",
+      "engineArtifactHash": "563517fb9b5b53fd9e2988d0c1590b3fae74bb4fc284c8d1df522a12f15653ee",
       "manifest": {
         "schemaVersion": 1,
         "engine": {
-          "version": "0.4.2-lag-order",
-          "artifactHash": "ec49548098063d0a543a8ce1db2fa7452efbee96e15fc92f73c60e15bc9e308c"
+          "version": "0.4.3-defeat-filter-v7",
+          "artifactHash": "563517fb9b5b53fd9e2988d0c1590b3fae74bb4fc284c8d1df522a12f15653ee"
         },
         "ruleset": {
           "id": "beta",
@@ -118339,7 +118339,7 @@
           }
         ]
       },
-      "contentManifestHash": "d373bf7d6fad15a44c1d3646c66e2338d8de90165c59fe822f5a6166446800f4",
+      "contentManifestHash": "1bcbd0e4c91a81919e14c43705b1df6b507d12c026e91a2e933818c03e7d6aae",
       "state": {
         "schemaVersion": 2,
         "match": {
@@ -118349,9 +118349,9 @@
           "rulesetId": "beta",
           "rulesetVersion": "targeted-defeat-1",
           "rulesetHash": "398765437d8511cd7d2e82eb63cfdf2b70e169f10be7d9c01faffc4dcf8233ea",
-          "contentManifestHash": "d373bf7d6fad15a44c1d3646c66e2338d8de90165c59fe822f5a6166446800f4",
-          "engineVersion": "0.4.2-lag-order",
-          "engineArtifactHash": "ec49548098063d0a543a8ce1db2fa7452efbee96e15fc92f73c60e15bc9e308c",
+          "contentManifestHash": "1bcbd0e4c91a81919e14c43705b1df6b507d12c026e91a2e933818c03e7d6aae",
+          "engineVersion": "0.4.3-defeat-filter-v7",
+          "engineArtifactHash": "563517fb9b5b53fd9e2988d0c1590b3fae74bb4fc284c8d1df522a12f15653ee",
           "cards": [
             {
               "cardId": "afterparty-at-lizzie-s",
@@ -120471,7 +120471,7 @@
           "counter": 92
         }
       },
-      "stateHash": "d054df2728f83290e9ed97fd80610b241dcc90eea91cd73cc2c9fd60dfae36f2",
+      "stateHash": "fecb99e9f62bdd859b703f7f19a1d03a88f2e8926f6e78d8397cc455c2b3b282",
       "observation": {
         "schemaVersion": 1,
         "viewerSeat": 0,
@@ -120998,7 +120998,7 @@
           }
         }
       ],
-      "positionHash": "6df732f5dc2853632f1e4d4e8e1482b350d9db212df19f68dbcac21b4e6bdbbe",
+      "positionHash": "85802a2bb2bcf283ad3dcf1e33ef29b37d6f52e483686b9c0fd2996f57a5a84d",
       "provenance": {
         "generator": "manual-fixture",
         "revision": "1",
@@ -121008,13 +121008,13 @@
     {
       "schemaVersion": 2,
       "positionId": "MINOTAUR-32",
-      "engineVersion": "0.4.2-lag-order",
-      "engineArtifactHash": "ec49548098063d0a543a8ce1db2fa7452efbee96e15fc92f73c60e15bc9e308c",
+      "engineVersion": "0.4.3-defeat-filter-v7",
+      "engineArtifactHash": "563517fb9b5b53fd9e2988d0c1590b3fae74bb4fc284c8d1df522a12f15653ee",
       "manifest": {
         "schemaVersion": 1,
         "engine": {
-          "version": "0.4.2-lag-order",
-          "artifactHash": "ec49548098063d0a543a8ce1db2fa7452efbee96e15fc92f73c60e15bc9e308c"
+          "version": "0.4.3-defeat-filter-v7",
+          "artifactHash": "563517fb9b5b53fd9e2988d0c1590b3fae74bb4fc284c8d1df522a12f15653ee"
         },
         "ruleset": {
           "id": "beta",
@@ -121279,7 +121279,7 @@
           }
         ]
       },
-      "contentManifestHash": "d373bf7d6fad15a44c1d3646c66e2338d8de90165c59fe822f5a6166446800f4",
+      "contentManifestHash": "1bcbd0e4c91a81919e14c43705b1df6b507d12c026e91a2e933818c03e7d6aae",
       "state": {
         "schemaVersion": 2,
         "match": {
@@ -121289,9 +121289,9 @@
           "rulesetId": "beta",
           "rulesetVersion": "targeted-defeat-1",
           "rulesetHash": "398765437d8511cd7d2e82eb63cfdf2b70e169f10be7d9c01faffc4dcf8233ea",
-          "contentManifestHash": "d373bf7d6fad15a44c1d3646c66e2338d8de90165c59fe822f5a6166446800f4",
-          "engineVersion": "0.4.2-lag-order",
-          "engineArtifactHash": "ec49548098063d0a543a8ce1db2fa7452efbee96e15fc92f73c60e15bc9e308c",
+          "contentManifestHash": "1bcbd0e4c91a81919e14c43705b1df6b507d12c026e91a2e933818c03e7d6aae",
+          "engineVersion": "0.4.3-defeat-filter-v7",
+          "engineArtifactHash": "563517fb9b5b53fd9e2988d0c1590b3fae74bb4fc284c8d1df522a12f15653ee",
           "cards": [
             {
               "cardId": "afterparty-at-lizzie-s",
@@ -123411,7 +123411,7 @@
           "counter": 92
         }
       },
-      "stateHash": "276f17d8efc6fd0eb4c4503eac869f045c243ed0e9d367159eb02f5ea2732ad9",
+      "stateHash": "24a28ee56ec2d74359510f673bbcda742bbf09316810c0d0acc485e1798db3a5",
       "observation": {
         "schemaVersion": 1,
         "viewerSeat": 1,
@@ -123865,7 +123865,7 @@
           }
         }
       ],
-      "positionHash": "e09f9b0e118e357787ed2742c628ebbd56898ad9d7d33315759fc9f418ed44f7",
+      "positionHash": "65132207f0929128ace30f9ca15c98d5de057a46c35afd8997c621714bc7eeae",
       "provenance": {
         "generator": "manual-fixture",
         "revision": "1",
@@ -123875,13 +123875,13 @@
     {
       "schemaVersion": 2,
       "positionId": "MINOTAUR-33",
-      "engineVersion": "0.4.2-lag-order",
-      "engineArtifactHash": "ec49548098063d0a543a8ce1db2fa7452efbee96e15fc92f73c60e15bc9e308c",
+      "engineVersion": "0.4.3-defeat-filter-v7",
+      "engineArtifactHash": "563517fb9b5b53fd9e2988d0c1590b3fae74bb4fc284c8d1df522a12f15653ee",
       "manifest": {
         "schemaVersion": 1,
         "engine": {
-          "version": "0.4.2-lag-order",
-          "artifactHash": "ec49548098063d0a543a8ce1db2fa7452efbee96e15fc92f73c60e15bc9e308c"
+          "version": "0.4.3-defeat-filter-v7",
+          "artifactHash": "563517fb9b5b53fd9e2988d0c1590b3fae74bb4fc284c8d1df522a12f15653ee"
         },
         "ruleset": {
           "id": "beta",
@@ -124146,7 +124146,7 @@
           }
         ]
       },
-      "contentManifestHash": "d373bf7d6fad15a44c1d3646c66e2338d8de90165c59fe822f5a6166446800f4",
+      "contentManifestHash": "1bcbd0e4c91a81919e14c43705b1df6b507d12c026e91a2e933818c03e7d6aae",
       "state": {
         "schemaVersion": 2,
         "match": {
@@ -124156,9 +124156,9 @@
           "rulesetId": "beta",
           "rulesetVersion": "targeted-defeat-1",
           "rulesetHash": "398765437d8511cd7d2e82eb63cfdf2b70e169f10be7d9c01faffc4dcf8233ea",
-          "contentManifestHash": "d373bf7d6fad15a44c1d3646c66e2338d8de90165c59fe822f5a6166446800f4",
-          "engineVersion": "0.4.2-lag-order",
-          "engineArtifactHash": "ec49548098063d0a543a8ce1db2fa7452efbee96e15fc92f73c60e15bc9e308c",
+          "contentManifestHash": "1bcbd0e4c91a81919e14c43705b1df6b507d12c026e91a2e933818c03e7d6aae",
+          "engineVersion": "0.4.3-defeat-filter-v7",
+          "engineArtifactHash": "563517fb9b5b53fd9e2988d0c1590b3fae74bb4fc284c8d1df522a12f15653ee",
           "cards": [
             {
               "cardId": "afterparty-at-lizzie-s",
@@ -126280,7 +126280,7 @@
           "counter": 93
         }
       },
-      "stateHash": "d3e5cc4f543eb9fb04f439cbb9f29d55f2f85a08c58da49627e615b17dbe6427",
+      "stateHash": "5732c000c9f26baa61a00a0dbb208c56c108c8ca5bdd24275398cff70f092d24",
       "observation": {
         "schemaVersion": 1,
         "viewerSeat": 1,
@@ -126843,7 +126843,7 @@
           }
         }
       ],
-      "positionHash": "0c7c6bd91f8ea40c2765a3bc27f704eb796f0a1f9d9c5093aa514cb31941bb4e",
+      "positionHash": "143b58a12b799267619abf15eaf45ee4c7c0cfe24cb13cc227310bfeea835c57",
       "provenance": {
         "generator": "manual-fixture",
         "revision": "1",
@@ -126853,13 +126853,13 @@
     {
       "schemaVersion": 2,
       "positionId": "MINOTAUR-34",
-      "engineVersion": "0.4.2-lag-order",
-      "engineArtifactHash": "ec49548098063d0a543a8ce1db2fa7452efbee96e15fc92f73c60e15bc9e308c",
+      "engineVersion": "0.4.3-defeat-filter-v7",
+      "engineArtifactHash": "563517fb9b5b53fd9e2988d0c1590b3fae74bb4fc284c8d1df522a12f15653ee",
       "manifest": {
         "schemaVersion": 1,
         "engine": {
-          "version": "0.4.2-lag-order",
-          "artifactHash": "ec49548098063d0a543a8ce1db2fa7452efbee96e15fc92f73c60e15bc9e308c"
+          "version": "0.4.3-defeat-filter-v7",
+          "artifactHash": "563517fb9b5b53fd9e2988d0c1590b3fae74bb4fc284c8d1df522a12f15653ee"
         },
         "ruleset": {
           "id": "beta",
@@ -127124,7 +127124,7 @@
           }
         ]
       },
-      "contentManifestHash": "d373bf7d6fad15a44c1d3646c66e2338d8de90165c59fe822f5a6166446800f4",
+      "contentManifestHash": "1bcbd0e4c91a81919e14c43705b1df6b507d12c026e91a2e933818c03e7d6aae",
       "state": {
         "schemaVersion": 2,
         "match": {
@@ -127134,9 +127134,9 @@
           "rulesetId": "beta",
           "rulesetVersion": "targeted-defeat-1",
           "rulesetHash": "398765437d8511cd7d2e82eb63cfdf2b70e169f10be7d9c01faffc4dcf8233ea",
-          "contentManifestHash": "d373bf7d6fad15a44c1d3646c66e2338d8de90165c59fe822f5a6166446800f4",
-          "engineVersion": "0.4.2-lag-order",
-          "engineArtifactHash": "ec49548098063d0a543a8ce1db2fa7452efbee96e15fc92f73c60e15bc9e308c",
+          "contentManifestHash": "1bcbd0e4c91a81919e14c43705b1df6b507d12c026e91a2e933818c03e7d6aae",
+          "engineVersion": "0.4.3-defeat-filter-v7",
+          "engineArtifactHash": "563517fb9b5b53fd9e2988d0c1590b3fae74bb4fc284c8d1df522a12f15653ee",
           "cards": [
             {
               "cardId": "afterparty-at-lizzie-s",
@@ -129258,7 +129258,7 @@
           "counter": 93
         }
       },
-      "stateHash": "888dd694a21661e08e71e0223aa61d495e35d4ade3a224a68c25623a1edc1787",
+      "stateHash": "c943fc2a7c694c78148b95bced5e1835772bdc1d44b10d66df6ee6fabb6feeee",
       "observation": {
         "schemaVersion": 1,
         "viewerSeat": 1,
@@ -129781,7 +129781,7 @@
           }
         }
       ],
-      "positionHash": "1ea0b77698a16bf92542395bf7fbedda0e23e4930f9c7ef6cf775643d53b79e5",
+      "positionHash": "c73242634d30c4e482822e574726ddca39a910c7f704cc030e3675545be69b4d",
       "provenance": {
         "generator": "manual-fixture",
         "revision": "1",
@@ -129791,13 +129791,13 @@
     {
       "schemaVersion": 2,
       "positionId": "MINOTAUR-35",
-      "engineVersion": "0.4.2-lag-order",
-      "engineArtifactHash": "ec49548098063d0a543a8ce1db2fa7452efbee96e15fc92f73c60e15bc9e308c",
+      "engineVersion": "0.4.3-defeat-filter-v7",
+      "engineArtifactHash": "563517fb9b5b53fd9e2988d0c1590b3fae74bb4fc284c8d1df522a12f15653ee",
       "manifest": {
         "schemaVersion": 1,
         "engine": {
-          "version": "0.4.2-lag-order",
-          "artifactHash": "ec49548098063d0a543a8ce1db2fa7452efbee96e15fc92f73c60e15bc9e308c"
+          "version": "0.4.3-defeat-filter-v7",
+          "artifactHash": "563517fb9b5b53fd9e2988d0c1590b3fae74bb4fc284c8d1df522a12f15653ee"
         },
         "ruleset": {
           "id": "beta",
@@ -130062,7 +130062,7 @@
           }
         ]
       },
-      "contentManifestHash": "d373bf7d6fad15a44c1d3646c66e2338d8de90165c59fe822f5a6166446800f4",
+      "contentManifestHash": "1bcbd0e4c91a81919e14c43705b1df6b507d12c026e91a2e933818c03e7d6aae",
       "state": {
         "schemaVersion": 2,
         "match": {
@@ -130072,9 +130072,9 @@
           "rulesetId": "beta",
           "rulesetVersion": "targeted-defeat-1",
           "rulesetHash": "398765437d8511cd7d2e82eb63cfdf2b70e169f10be7d9c01faffc4dcf8233ea",
-          "contentManifestHash": "d373bf7d6fad15a44c1d3646c66e2338d8de90165c59fe822f5a6166446800f4",
-          "engineVersion": "0.4.2-lag-order",
-          "engineArtifactHash": "ec49548098063d0a543a8ce1db2fa7452efbee96e15fc92f73c60e15bc9e308c",
+          "contentManifestHash": "1bcbd0e4c91a81919e14c43705b1df6b507d12c026e91a2e933818c03e7d6aae",
+          "engineVersion": "0.4.3-defeat-filter-v7",
+          "engineArtifactHash": "563517fb9b5b53fd9e2988d0c1590b3fae74bb4fc284c8d1df522a12f15653ee",
           "cards": [
             {
               "cardId": "afterparty-at-lizzie-s",
@@ -132260,7 +132260,7 @@
           "counter": 93
         }
       },
-      "stateHash": "435c71348378c0276c862a42a5267f3ae47f38a246158bd81713c781a2ebc8a9",
+      "stateHash": "8d446940fcb60f2fbb325939af59f672236b3ba580a890217041787dfddd1686",
       "observation": {
         "schemaVersion": 1,
         "viewerSeat": 1,
@@ -132772,7 +132772,7 @@
           }
         }
       ],
-      "positionHash": "4204653466929c042b0658c5686342f839b22e2dd08a4afa50848fc882793201",
+      "positionHash": "4d584be2db095276156bc475714c0cac8af526283f52fb6347eff40ad7201303",
       "provenance": {
         "generator": "manual-fixture",
         "revision": "1",
@@ -132782,13 +132782,13 @@
     {
       "schemaVersion": 2,
       "positionId": "MINOTAUR-36",
-      "engineVersion": "0.4.2-lag-order",
-      "engineArtifactHash": "ec49548098063d0a543a8ce1db2fa7452efbee96e15fc92f73c60e15bc9e308c",
+      "engineVersion": "0.4.3-defeat-filter-v7",
+      "engineArtifactHash": "563517fb9b5b53fd9e2988d0c1590b3fae74bb4fc284c8d1df522a12f15653ee",
       "manifest": {
         "schemaVersion": 1,
         "engine": {
-          "version": "0.4.2-lag-order",
-          "artifactHash": "ec49548098063d0a543a8ce1db2fa7452efbee96e15fc92f73c60e15bc9e308c"
+          "version": "0.4.3-defeat-filter-v7",
+          "artifactHash": "563517fb9b5b53fd9e2988d0c1590b3fae74bb4fc284c8d1df522a12f15653ee"
         },
         "ruleset": {
           "id": "beta",
@@ -133053,7 +133053,7 @@
           }
         ]
       },
-      "contentManifestHash": "d373bf7d6fad15a44c1d3646c66e2338d8de90165c59fe822f5a6166446800f4",
+      "contentManifestHash": "1bcbd0e4c91a81919e14c43705b1df6b507d12c026e91a2e933818c03e7d6aae",
       "state": {
         "schemaVersion": 2,
         "match": {
@@ -133063,9 +133063,9 @@
           "rulesetId": "beta",
           "rulesetVersion": "targeted-defeat-1",
           "rulesetHash": "398765437d8511cd7d2e82eb63cfdf2b70e169f10be7d9c01faffc4dcf8233ea",
-          "contentManifestHash": "d373bf7d6fad15a44c1d3646c66e2338d8de90165c59fe822f5a6166446800f4",
-          "engineVersion": "0.4.2-lag-order",
-          "engineArtifactHash": "ec49548098063d0a543a8ce1db2fa7452efbee96e15fc92f73c60e15bc9e308c",
+          "contentManifestHash": "1bcbd0e4c91a81919e14c43705b1df6b507d12c026e91a2e933818c03e7d6aae",
+          "engineVersion": "0.4.3-defeat-filter-v7",
+          "engineArtifactHash": "563517fb9b5b53fd9e2988d0c1590b3fae74bb4fc284c8d1df522a12f15653ee",
           "cards": [
             {
               "cardId": "afterparty-at-lizzie-s",
@@ -135222,7 +135222,7 @@
           "counter": 93
         }
       },
-      "stateHash": "30f5fecc5c19d636d0f987b42042d566495f8007101b065d788ab1d78ef5cd48",
+      "stateHash": "c7759075f14b0f3e23dee60b857fe21ba39857fec77cdd226585d1bd56099b86",
       "observation": {
         "schemaVersion": 1,
         "viewerSeat": 1,
@@ -135674,7 +135674,7 @@
           }
         }
       ],
-      "positionHash": "2219141d3b327d21e40e0a11afeba139f883da95fe0e6819c0140423dfacb584",
+      "positionHash": "a97ed16052eefd56a05bb34c45ed5061ae351e1fb8a5292e7ca8f9b33aedd76a",
       "provenance": {
         "generator": "manual-fixture",
         "revision": "1",
@@ -135684,13 +135684,13 @@
     {
       "schemaVersion": 2,
       "positionId": "MINOTAUR-37",
-      "engineVersion": "0.4.2-lag-order",
-      "engineArtifactHash": "ec49548098063d0a543a8ce1db2fa7452efbee96e15fc92f73c60e15bc9e308c",
+      "engineVersion": "0.4.3-defeat-filter-v7",
+      "engineArtifactHash": "563517fb9b5b53fd9e2988d0c1590b3fae74bb4fc284c8d1df522a12f15653ee",
       "manifest": {
         "schemaVersion": 1,
         "engine": {
-          "version": "0.4.2-lag-order",
-          "artifactHash": "ec49548098063d0a543a8ce1db2fa7452efbee96e15fc92f73c60e15bc9e308c"
+          "version": "0.4.3-defeat-filter-v7",
+          "artifactHash": "563517fb9b5b53fd9e2988d0c1590b3fae74bb4fc284c8d1df522a12f15653ee"
         },
         "ruleset": {
           "id": "beta",
@@ -135955,7 +135955,7 @@
           }
         ]
       },
-      "contentManifestHash": "d373bf7d6fad15a44c1d3646c66e2338d8de90165c59fe822f5a6166446800f4",
+      "contentManifestHash": "1bcbd0e4c91a81919e14c43705b1df6b507d12c026e91a2e933818c03e7d6aae",
       "state": {
         "schemaVersion": 2,
         "match": {
@@ -135965,9 +135965,9 @@
           "rulesetId": "beta",
           "rulesetVersion": "targeted-defeat-1",
           "rulesetHash": "398765437d8511cd7d2e82eb63cfdf2b70e169f10be7d9c01faffc4dcf8233ea",
-          "contentManifestHash": "d373bf7d6fad15a44c1d3646c66e2338d8de90165c59fe822f5a6166446800f4",
-          "engineVersion": "0.4.2-lag-order",
-          "engineArtifactHash": "ec49548098063d0a543a8ce1db2fa7452efbee96e15fc92f73c60e15bc9e308c",
+          "contentManifestHash": "1bcbd0e4c91a81919e14c43705b1df6b507d12c026e91a2e933818c03e7d6aae",
+          "engineVersion": "0.4.3-defeat-filter-v7",
+          "engineArtifactHash": "563517fb9b5b53fd9e2988d0c1590b3fae74bb4fc284c8d1df522a12f15653ee",
           "cards": [
             {
               "cardId": "afterparty-at-lizzie-s",
@@ -138091,7 +138091,7 @@
           "counter": 93
         }
       },
-      "stateHash": "f9ea0c427d2aab90a14d3ac1cec0e28210e6eae6915eff83053fc0a5cacdd533",
+      "stateHash": "b42b8e082dd5d611147baa134c0ffc0307fa6b92a1577a8ee40188bfa4896e02",
       "observation": {
         "schemaVersion": 1,
         "viewerSeat": 1,
@@ -138610,7 +138610,7 @@
           }
         }
       ],
-      "positionHash": "3ebe1d3d238a3bf7fcc0a54907134db2b830192d93ed3452e523aad2b002c290",
+      "positionHash": "1a30413ed152f7f8a1b13737dca13e48ff9d93cd277814307f9f6ff895227ebe",
       "provenance": {
         "generator": "manual-fixture",
         "revision": "1",
@@ -138620,13 +138620,13 @@
     {
       "schemaVersion": 2,
       "positionId": "MINOTAUR-38",
-      "engineVersion": "0.4.2-lag-order",
-      "engineArtifactHash": "ec49548098063d0a543a8ce1db2fa7452efbee96e15fc92f73c60e15bc9e308c",
+      "engineVersion": "0.4.3-defeat-filter-v7",
+      "engineArtifactHash": "563517fb9b5b53fd9e2988d0c1590b3fae74bb4fc284c8d1df522a12f15653ee",
       "manifest": {
         "schemaVersion": 1,
         "engine": {
-          "version": "0.4.2-lag-order",
-          "artifactHash": "ec49548098063d0a543a8ce1db2fa7452efbee96e15fc92f73c60e15bc9e308c"
+          "version": "0.4.3-defeat-filter-v7",
+          "artifactHash": "563517fb9b5b53fd9e2988d0c1590b3fae74bb4fc284c8d1df522a12f15653ee"
         },
         "ruleset": {
           "id": "beta",
@@ -138891,7 +138891,7 @@
           }
         ]
       },
-      "contentManifestHash": "d373bf7d6fad15a44c1d3646c66e2338d8de90165c59fe822f5a6166446800f4",
+      "contentManifestHash": "1bcbd0e4c91a81919e14c43705b1df6b507d12c026e91a2e933818c03e7d6aae",
       "state": {
         "schemaVersion": 2,
         "match": {
@@ -138901,9 +138901,9 @@
           "rulesetId": "beta",
           "rulesetVersion": "targeted-defeat-1",
           "rulesetHash": "398765437d8511cd7d2e82eb63cfdf2b70e169f10be7d9c01faffc4dcf8233ea",
-          "contentManifestHash": "d373bf7d6fad15a44c1d3646c66e2338d8de90165c59fe822f5a6166446800f4",
-          "engineVersion": "0.4.2-lag-order",
-          "engineArtifactHash": "ec49548098063d0a543a8ce1db2fa7452efbee96e15fc92f73c60e15bc9e308c",
+          "contentManifestHash": "1bcbd0e4c91a81919e14c43705b1df6b507d12c026e91a2e933818c03e7d6aae",
+          "engineVersion": "0.4.3-defeat-filter-v7",
+          "engineArtifactHash": "563517fb9b5b53fd9e2988d0c1590b3fae74bb4fc284c8d1df522a12f15653ee",
           "cards": [
             {
               "cardId": "afterparty-at-lizzie-s",
@@ -141027,7 +141027,7 @@
           "counter": 93
         }
       },
-      "stateHash": "4c89d5d59ec0ee2a2b429fb2b9718bf8e2c28d08ed369f6a35895c5a37392422",
+      "stateHash": "ac0e654efe3dad052ca17cb8396b43e62699f6db9538afeb6bdf4fd9f15ab256",
       "observation": {
         "schemaVersion": 1,
         "viewerSeat": 0,
@@ -141531,7 +141531,7 @@
           }
         }
       ],
-      "positionHash": "d10a09db9a614c0f9290b09fc31b4a28a3436673704d450af585a81de07a6d46",
+      "positionHash": "6d7b81ce9e8b0dcd0c598b975f5f71051f725df9f6e925ab5b3e3c106c783824",
       "provenance": {
         "generator": "manual-fixture",
         "revision": "1",
@@ -141541,13 +141541,13 @@
     {
       "schemaVersion": 2,
       "positionId": "MINOTAUR-39",
-      "engineVersion": "0.4.2-lag-order",
-      "engineArtifactHash": "ec49548098063d0a543a8ce1db2fa7452efbee96e15fc92f73c60e15bc9e308c",
+      "engineVersion": "0.4.3-defeat-filter-v7",
+      "engineArtifactHash": "563517fb9b5b53fd9e2988d0c1590b3fae74bb4fc284c8d1df522a12f15653ee",
       "manifest": {
         "schemaVersion": 1,
         "engine": {
-          "version": "0.4.2-lag-order",
-          "artifactHash": "ec49548098063d0a543a8ce1db2fa7452efbee96e15fc92f73c60e15bc9e308c"
+          "version": "0.4.3-defeat-filter-v7",
+          "artifactHash": "563517fb9b5b53fd9e2988d0c1590b3fae74bb4fc284c8d1df522a12f15653ee"
         },
         "ruleset": {
           "id": "beta",
@@ -141812,7 +141812,7 @@
           }
         ]
       },
-      "contentManifestHash": "d373bf7d6fad15a44c1d3646c66e2338d8de90165c59fe822f5a6166446800f4",
+      "contentManifestHash": "1bcbd0e4c91a81919e14c43705b1df6b507d12c026e91a2e933818c03e7d6aae",
       "state": {
         "schemaVersion": 2,
         "match": {
@@ -141822,9 +141822,9 @@
           "rulesetId": "beta",
           "rulesetVersion": "targeted-defeat-1",
           "rulesetHash": "398765437d8511cd7d2e82eb63cfdf2b70e169f10be7d9c01faffc4dcf8233ea",
-          "contentManifestHash": "d373bf7d6fad15a44c1d3646c66e2338d8de90165c59fe822f5a6166446800f4",
-          "engineVersion": "0.4.2-lag-order",
-          "engineArtifactHash": "ec49548098063d0a543a8ce1db2fa7452efbee96e15fc92f73c60e15bc9e308c",
+          "contentManifestHash": "1bcbd0e4c91a81919e14c43705b1df6b507d12c026e91a2e933818c03e7d6aae",
+          "engineVersion": "0.4.3-defeat-filter-v7",
+          "engineArtifactHash": "563517fb9b5b53fd9e2988d0c1590b3fae74bb4fc284c8d1df522a12f15653ee",
           "cards": [
             {
               "cardId": "afterparty-at-lizzie-s",
@@ -143950,7 +143950,7 @@
           "counter": 94
         }
       },
-      "stateHash": "2a5e9ed5ac1325d39cbbdfbdd61cec44f90bed3aa144d7ac96e8afc07a2dbf64",
+      "stateHash": "35c57e703a20283784ac4a588fb517bf6e92c0dd628d1ff07d5a866155eb4275",
       "observation": {
         "schemaVersion": 1,
         "viewerSeat": 0,
@@ -144563,7 +144563,7 @@
           }
         }
       ],
-      "positionHash": "24f72d465047233d3b38cef29d8d2403f18075df6ffe39ea1973987bd39fc954",
+      "positionHash": "800f6419837c26a6bad91b44b39911237ed86e6274df3dceaf1c41308a44a537",
       "provenance": {
         "generator": "manual-fixture",
         "revision": "1",
@@ -144573,13 +144573,13 @@
     {
       "schemaVersion": 2,
       "positionId": "MINOTAUR-40",
-      "engineVersion": "0.4.2-lag-order",
-      "engineArtifactHash": "ec49548098063d0a543a8ce1db2fa7452efbee96e15fc92f73c60e15bc9e308c",
+      "engineVersion": "0.4.3-defeat-filter-v7",
+      "engineArtifactHash": "563517fb9b5b53fd9e2988d0c1590b3fae74bb4fc284c8d1df522a12f15653ee",
       "manifest": {
         "schemaVersion": 1,
         "engine": {
-          "version": "0.4.2-lag-order",
-          "artifactHash": "ec49548098063d0a543a8ce1db2fa7452efbee96e15fc92f73c60e15bc9e308c"
+          "version": "0.4.3-defeat-filter-v7",
+          "artifactHash": "563517fb9b5b53fd9e2988d0c1590b3fae74bb4fc284c8d1df522a12f15653ee"
         },
         "ruleset": {
           "id": "beta",
@@ -144844,7 +144844,7 @@
           }
         ]
       },
-      "contentManifestHash": "d373bf7d6fad15a44c1d3646c66e2338d8de90165c59fe822f5a6166446800f4",
+      "contentManifestHash": "1bcbd0e4c91a81919e14c43705b1df6b507d12c026e91a2e933818c03e7d6aae",
       "state": {
         "schemaVersion": 2,
         "match": {
@@ -144854,9 +144854,9 @@
           "rulesetId": "beta",
           "rulesetVersion": "targeted-defeat-1",
           "rulesetHash": "398765437d8511cd7d2e82eb63cfdf2b70e169f10be7d9c01faffc4dcf8233ea",
-          "contentManifestHash": "d373bf7d6fad15a44c1d3646c66e2338d8de90165c59fe822f5a6166446800f4",
-          "engineVersion": "0.4.2-lag-order",
-          "engineArtifactHash": "ec49548098063d0a543a8ce1db2fa7452efbee96e15fc92f73c60e15bc9e308c",
+          "contentManifestHash": "1bcbd0e4c91a81919e14c43705b1df6b507d12c026e91a2e933818c03e7d6aae",
+          "engineVersion": "0.4.3-defeat-filter-v7",
+          "engineArtifactHash": "563517fb9b5b53fd9e2988d0c1590b3fae74bb4fc284c8d1df522a12f15653ee",
           "cards": [
             {
               "cardId": "afterparty-at-lizzie-s",
@@ -146982,7 +146982,7 @@
           "counter": 94
         }
       },
-      "stateHash": "dd6537c643a053f0aba402dcb56d0f7416e33662b2e1ede61a7c79888f93e701",
+      "stateHash": "0798c16dfdf2366f9879269eba20f750f23c8f38e2a6fd810bbfc5a02050cde0",
       "observation": {
         "schemaVersion": 1,
         "viewerSeat": 0,
@@ -147567,7 +147567,7 @@
           }
         }
       ],
-      "positionHash": "5780285aa9092e67880b5c86e4f515b3592b8996fd2f1f7fa383558420c36300",
+      "positionHash": "859fe85473aba7f3409df8842cc9b219699c271a72d133100e10f910084ae761",
       "provenance": {
         "generator": "manual-fixture",
         "revision": "1",
@@ -147577,13 +147577,13 @@
     {
       "schemaVersion": 2,
       "positionId": "MINOTAUR-41",
-      "engineVersion": "0.4.2-lag-order",
-      "engineArtifactHash": "ec49548098063d0a543a8ce1db2fa7452efbee96e15fc92f73c60e15bc9e308c",
+      "engineVersion": "0.4.3-defeat-filter-v7",
+      "engineArtifactHash": "563517fb9b5b53fd9e2988d0c1590b3fae74bb4fc284c8d1df522a12f15653ee",
       "manifest": {
         "schemaVersion": 1,
         "engine": {
-          "version": "0.4.2-lag-order",
-          "artifactHash": "ec49548098063d0a543a8ce1db2fa7452efbee96e15fc92f73c60e15bc9e308c"
+          "version": "0.4.3-defeat-filter-v7",
+          "artifactHash": "563517fb9b5b53fd9e2988d0c1590b3fae74bb4fc284c8d1df522a12f15653ee"
         },
         "ruleset": {
           "id": "beta",
@@ -147848,7 +147848,7 @@
           }
         ]
       },
-      "contentManifestHash": "d373bf7d6fad15a44c1d3646c66e2338d8de90165c59fe822f5a6166446800f4",
+      "contentManifestHash": "1bcbd0e4c91a81919e14c43705b1df6b507d12c026e91a2e933818c03e7d6aae",
       "state": {
         "schemaVersion": 2,
         "match": {
@@ -147858,9 +147858,9 @@
           "rulesetId": "beta",
           "rulesetVersion": "targeted-defeat-1",
           "rulesetHash": "398765437d8511cd7d2e82eb63cfdf2b70e169f10be7d9c01faffc4dcf8233ea",
-          "contentManifestHash": "d373bf7d6fad15a44c1d3646c66e2338d8de90165c59fe822f5a6166446800f4",
-          "engineVersion": "0.4.2-lag-order",
-          "engineArtifactHash": "ec49548098063d0a543a8ce1db2fa7452efbee96e15fc92f73c60e15bc9e308c",
+          "contentManifestHash": "1bcbd0e4c91a81919e14c43705b1df6b507d12c026e91a2e933818c03e7d6aae",
+          "engineVersion": "0.4.3-defeat-filter-v7",
+          "engineArtifactHash": "563517fb9b5b53fd9e2988d0c1590b3fae74bb4fc284c8d1df522a12f15653ee",
           "cards": [
             {
               "cardId": "afterparty-at-lizzie-s",
@@ -150065,7 +150065,7 @@
           "counter": 94
         }
       },
-      "stateHash": "3fa908bbf971117a6d68dcfd94b7b3b21469cba7164482d4ccb17eaeb9ccd4b4",
+      "stateHash": "3244adf47efe8a18c4459363ec005c167a6b5a671c2d43b03cf4f0e698240a10",
       "observation": {
         "schemaVersion": 1,
         "viewerSeat": 0,
@@ -150597,7 +150597,7 @@
           }
         }
       ],
-      "positionHash": "da03b3ba3e19a4a1aab487533f9c220e8854de1fbd6bae41311b5ed7aac0fdcf",
+      "positionHash": "b0c0082aa6f7d5aca0569e91300bf2bcacf524c5df77135b92cbddefe9de36bb",
       "provenance": {
         "generator": "manual-fixture",
         "revision": "1",
@@ -150607,13 +150607,13 @@
     {
       "schemaVersion": 2,
       "positionId": "MINOTAUR-42",
-      "engineVersion": "0.4.2-lag-order",
-      "engineArtifactHash": "ec49548098063d0a543a8ce1db2fa7452efbee96e15fc92f73c60e15bc9e308c",
+      "engineVersion": "0.4.3-defeat-filter-v7",
+      "engineArtifactHash": "563517fb9b5b53fd9e2988d0c1590b3fae74bb4fc284c8d1df522a12f15653ee",
       "manifest": {
         "schemaVersion": 1,
         "engine": {
-          "version": "0.4.2-lag-order",
-          "artifactHash": "ec49548098063d0a543a8ce1db2fa7452efbee96e15fc92f73c60e15bc9e308c"
+          "version": "0.4.3-defeat-filter-v7",
+          "artifactHash": "563517fb9b5b53fd9e2988d0c1590b3fae74bb4fc284c8d1df522a12f15653ee"
         },
         "ruleset": {
           "id": "beta",
@@ -150878,7 +150878,7 @@
           }
         ]
       },
-      "contentManifestHash": "d373bf7d6fad15a44c1d3646c66e2338d8de90165c59fe822f5a6166446800f4",
+      "contentManifestHash": "1bcbd0e4c91a81919e14c43705b1df6b507d12c026e91a2e933818c03e7d6aae",
       "state": {
         "schemaVersion": 2,
         "match": {
@@ -150888,9 +150888,9 @@
           "rulesetId": "beta",
           "rulesetVersion": "targeted-defeat-1",
           "rulesetHash": "398765437d8511cd7d2e82eb63cfdf2b70e169f10be7d9c01faffc4dcf8233ea",
-          "contentManifestHash": "d373bf7d6fad15a44c1d3646c66e2338d8de90165c59fe822f5a6166446800f4",
-          "engineVersion": "0.4.2-lag-order",
-          "engineArtifactHash": "ec49548098063d0a543a8ce1db2fa7452efbee96e15fc92f73c60e15bc9e308c",
+          "contentManifestHash": "1bcbd0e4c91a81919e14c43705b1df6b507d12c026e91a2e933818c03e7d6aae",
+          "engineVersion": "0.4.3-defeat-filter-v7",
+          "engineArtifactHash": "563517fb9b5b53fd9e2988d0c1590b3fae74bb4fc284c8d1df522a12f15653ee",
           "cards": [
             {
               "cardId": "afterparty-at-lizzie-s",
@@ -153109,7 +153109,7 @@
           "counter": 94
         }
       },
-      "stateHash": "8a34c3e63c1afb203e6438b031cbf9102df2e4b92c5e78ebc0b9fb9a12d8fc21",
+      "stateHash": "b32f0c0dbc160c43ff2160253bcb69131a061ed5d00d864d91a944696bec5a40",
       "observation": {
         "schemaVersion": 1,
         "viewerSeat": 1,
@@ -153613,7 +153613,7 @@
           }
         }
       ],
-      "positionHash": "4f01b36bbb88459bd241d8aadf0bc01118f4bf5dcde5689672f84b0c1b3be4a1",
+      "positionHash": "3d74fb0fc45f8a79d253dac72e29cf8f8d06c79b6c0636d325ae354fc73af303",
       "provenance": {
         "generator": "manual-fixture",
         "revision": "1",
@@ -153636,9 +153636,9 @@
       "rulesetId": "beta",
       "rulesetVersion": "targeted-defeat-1",
       "rulesetHash": "398765437d8511cd7d2e82eb63cfdf2b70e169f10be7d9c01faffc4dcf8233ea",
-      "contentManifestHash": "d373bf7d6fad15a44c1d3646c66e2338d8de90165c59fe822f5a6166446800f4",
-      "engineVersion": "0.4.2-lag-order",
-      "engineArtifactHash": "ec49548098063d0a543a8ce1db2fa7452efbee96e15fc92f73c60e15bc9e308c",
+      "contentManifestHash": "1bcbd0e4c91a81919e14c43705b1df6b507d12c026e91a2e933818c03e7d6aae",
+      "engineVersion": "0.4.3-defeat-filter-v7",
+      "engineArtifactHash": "563517fb9b5b53fd9e2988d0c1590b3fae74bb4fc284c8d1df522a12f15653ee",
       "cards": [
         {
           "cardId": "afterparty-at-lizzie-s",
@@ -155752,9 +155752,9 @@
       "rulesetId": "beta",
       "rulesetVersion": "targeted-defeat-1",
       "rulesetHash": "398765437d8511cd7d2e82eb63cfdf2b70e169f10be7d9c01faffc4dcf8233ea",
-      "contentManifestHash": "d373bf7d6fad15a44c1d3646c66e2338d8de90165c59fe822f5a6166446800f4",
-      "engineVersion": "0.4.2-lag-order",
-      "engineArtifactHash": "ec49548098063d0a543a8ce1db2fa7452efbee96e15fc92f73c60e15bc9e308c",
+      "contentManifestHash": "1bcbd0e4c91a81919e14c43705b1df6b507d12c026e91a2e933818c03e7d6aae",
+      "engineVersion": "0.4.3-defeat-filter-v7",
+      "engineArtifactHash": "563517fb9b5b53fd9e2988d0c1590b3fae74bb4fc284c8d1df522a12f15653ee",
       "cards": [
         {
           "cardId": "afterparty-at-lizzie-s",
@@ -157889,9 +157889,9 @@
       "rulesetId": "beta",
       "rulesetVersion": "targeted-defeat-1",
       "rulesetHash": "398765437d8511cd7d2e82eb63cfdf2b70e169f10be7d9c01faffc4dcf8233ea",
-      "contentManifestHash": "d373bf7d6fad15a44c1d3646c66e2338d8de90165c59fe822f5a6166446800f4",
-      "engineVersion": "0.4.2-lag-order",
-      "engineArtifactHash": "ec49548098063d0a543a8ce1db2fa7452efbee96e15fc92f73c60e15bc9e308c",
+      "contentManifestHash": "1bcbd0e4c91a81919e14c43705b1df6b507d12c026e91a2e933818c03e7d6aae",
+      "engineVersion": "0.4.3-defeat-filter-v7",
+      "engineArtifactHash": "563517fb9b5b53fd9e2988d0c1590b3fae74bb4fc284c8d1df522a12f15653ee",
       "cards": [
         {
           "cardId": "afterparty-at-lizzie-s",
@@ -160026,9 +160026,9 @@
       "rulesetId": "beta",
       "rulesetVersion": "targeted-defeat-1",
       "rulesetHash": "398765437d8511cd7d2e82eb63cfdf2b70e169f10be7d9c01faffc4dcf8233ea",
-      "contentManifestHash": "d373bf7d6fad15a44c1d3646c66e2338d8de90165c59fe822f5a6166446800f4",
-      "engineVersion": "0.4.2-lag-order",
-      "engineArtifactHash": "ec49548098063d0a543a8ce1db2fa7452efbee96e15fc92f73c60e15bc9e308c",
+      "contentManifestHash": "1bcbd0e4c91a81919e14c43705b1df6b507d12c026e91a2e933818c03e7d6aae",
+      "engineVersion": "0.4.3-defeat-filter-v7",
+      "engineArtifactHash": "563517fb9b5b53fd9e2988d0c1590b3fae74bb4fc284c8d1df522a12f15653ee",
       "cards": [
         {
           "cardId": "afterparty-at-lizzie-s",
@@ -162242,9 +162242,9 @@
       "rulesetId": "beta",
       "rulesetVersion": "targeted-defeat-1",
       "rulesetHash": "398765437d8511cd7d2e82eb63cfdf2b70e169f10be7d9c01faffc4dcf8233ea",
-      "contentManifestHash": "d373bf7d6fad15a44c1d3646c66e2338d8de90165c59fe822f5a6166446800f4",
-      "engineVersion": "0.4.2-lag-order",
-      "engineArtifactHash": "ec49548098063d0a543a8ce1db2fa7452efbee96e15fc92f73c60e15bc9e308c",
+      "contentManifestHash": "1bcbd0e4c91a81919e14c43705b1df6b507d12c026e91a2e933818c03e7d6aae",
+      "engineVersion": "0.4.3-defeat-filter-v7",
+      "engineArtifactHash": "563517fb9b5b53fd9e2988d0c1590b3fae74bb4fc284c8d1df522a12f15653ee",
       "cards": [
         {
           "cardId": "afterparty-at-lizzie-s",
@@ -164458,9 +164458,9 @@
       "rulesetId": "beta",
       "rulesetVersion": "targeted-defeat-1",
       "rulesetHash": "398765437d8511cd7d2e82eb63cfdf2b70e169f10be7d9c01faffc4dcf8233ea",
-      "contentManifestHash": "d373bf7d6fad15a44c1d3646c66e2338d8de90165c59fe822f5a6166446800f4",
-      "engineVersion": "0.4.2-lag-order",
-      "engineArtifactHash": "ec49548098063d0a543a8ce1db2fa7452efbee96e15fc92f73c60e15bc9e308c",
+      "contentManifestHash": "1bcbd0e4c91a81919e14c43705b1df6b507d12c026e91a2e933818c03e7d6aae",
+      "engineVersion": "0.4.3-defeat-filter-v7",
+      "engineArtifactHash": "563517fb9b5b53fd9e2988d0c1590b3fae74bb4fc284c8d1df522a12f15653ee",
       "cards": [
         {
           "cardId": "afterparty-at-lizzie-s",
@@ -166688,9 +166688,9 @@
       "rulesetId": "beta",
       "rulesetVersion": "targeted-defeat-1",
       "rulesetHash": "398765437d8511cd7d2e82eb63cfdf2b70e169f10be7d9c01faffc4dcf8233ea",
-      "contentManifestHash": "d373bf7d6fad15a44c1d3646c66e2338d8de90165c59fe822f5a6166446800f4",
-      "engineVersion": "0.4.2-lag-order",
-      "engineArtifactHash": "ec49548098063d0a543a8ce1db2fa7452efbee96e15fc92f73c60e15bc9e308c",
+      "contentManifestHash": "1bcbd0e4c91a81919e14c43705b1df6b507d12c026e91a2e933818c03e7d6aae",
+      "engineVersion": "0.4.3-defeat-filter-v7",
+      "engineArtifactHash": "563517fb9b5b53fd9e2988d0c1590b3fae74bb4fc284c8d1df522a12f15653ee",
       "cards": [
         {
           "cardId": "afterparty-at-lizzie-s",
@@ -168818,5 +168818,5 @@
       "counter": 94
     }
   },
-  "finalStateHash": "0146681eb9a1c80c75ddef0b2b18fce2d9f93e74d660ae3a0ff75d4d7508f02d"
+  "finalStateHash": "a41f74d65ae0880f237acb70a22ce46def2636fb0ebca7dcce8bab7c4c8d219c"
 }
