@@ -3,13 +3,13 @@ import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { CardRevisionSnapshotSchema } from "@tcg/domain";
-import { demoReferenceContext } from "./demo-format-fixture";
+import { reviewedUnionContext } from "./reviewed-union-fixture";
 import { reviewEngineCandidateCatalogV1 } from "../scripts/lib/engine-candidates";
 import { buildCardCoverageReport, loadVerifiedCandidates } from "../scripts/lib/card-coverage";
 
 const candidateDir = fileURLToPath(new URL("../data/engine-candidates", import.meta.url));
 const verified = loadVerifiedCandidates(candidateDir);
-const reviewed = demoReferenceContext().content.cards
+const reviewed = reviewedUnionContext().content.cards
     .filter(card => card.schemaVersion === 2 && card.provenance.reviewed)
     .map(card => CardRevisionSnapshotSchema.parse(card));
 const reviews = reviewEngineCandidateCatalogV1(verified.candidates, reviewed);
