@@ -5,6 +5,7 @@ import { referencedPower } from "./combat-resolution-policy";
 import { defeatSupport, gearDefeatSupport } from "./defeat";
 import { targetedGearDefeatPolicyComplete } from "./targeted-gear-defeat-support";
 import { targetedDefeatEnabled } from "./targeted-defeat-support";
+import { testCondition } from "./conditions";
 /** Friendly means current control, and Fixer dice have no usable friendly value. */
 export function controlledGigValuesByDieType(state: GameState, actor: PlayerId, dieType: "D20") {
     return Object.values(state.objects.gigs).filter(g => g.controllerId === actor && g.location.zone === "GIGS" && g.dieType === dieType).flatMap(g => g.roll.kind === "ROLLED" ? [g.roll.currentValue] : []);
@@ -27,10 +28,13 @@ export function listDefeatTargets(state: GameState, actor: PlayerId, target: Def
 export function listDefeatableUnits(state: GameState, actor: PlayerId, target: DefeatTarget, context: EngineContext) {
     // Unit-only by construction; Gear targets are dispatched to listDefeatableGear.
     if (target.kind !== "UNITS" || !targetedDefeatEnabled(context)) return [];
-    const values = target.power.kind === "AT_MOST" ? [target.power.value] : controlledGigValuesByDieType(state, actor, target.power.dieType);
+    // "Instead" bounds are queried against the current state at every listing (choice, resolution, revalidation).
+    const atMost = target.power.kind === "AT_MOST" ? (target.instead && testCondition(state, actor, target.instead.condition, context) ? target.instead.power.value : target.power.value) : null;
+    const values = target.power.kind === "ANY" ? [Infinity] : atMost !== null ? [atMost] : target.power.kind === "CONTROLLED_GIG_VALUE" ? controlledGigValuesByDieType(state, actor, target.power.dieType) : [];
     if (!values.length) return []; // Absence is not a zero-valued D20.
     return Object.values(state.objects.cards).filter(c => {
         if (target.relation === "RIVAL" && c.controllerId === actor || target.relation === "CONTROLLED" && c.controllerId !== actor || !defeatSupport(state, c.id, context).ok) return false;
+        if (target.readiness && c.readiness !== target.readiness) return false;
         const power = effectivePower(state, c.id, context);
         return power !== null && values.some(value => referencedPower(power) <= value);
     }).map(c => c.id).sort();

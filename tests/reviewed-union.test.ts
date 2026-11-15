@@ -13,9 +13,9 @@ test("the reviewed union holds every reviewed real-card revision exactly once", 
         assert.equal(card.schemaVersion === 2 && card.provenance.reviewed && card.execution?.status, "SUPPORTED", card.id);
     }
     for (const card of demoReferenceContext().content.cards) assert.ok(keys.includes(`${card.id}@${card.revision}`), `Demo card ${card.id} missing`);
-    for (const id of ["japantown-jonin", "detonate", "trust-no-one", "corporate-surveillance", "goro-takemura-losing-his-way"])
+    for (const id of ["japantown-jonin", "detonate", "trust-no-one", "corporate-surveillance", "goro-takemura-losing-his-way", "royce-don-t-call-me-simon", "wild-in-the-streets", "delamain-rideshare-ai"])
         assert.ok(union.cards.some(c => c.id === id), `${id} missing`);
-    assert.equal(union.cards.length, 39);
+    assert.equal(union.cards.length, 42); // 39 before batch V7 (2026-11-15), plus its 3 cards
 });
 
 test("the union ruleset turns on every reviewed gate and keeps Demo's overtime", () => {
