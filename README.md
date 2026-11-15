@@ -928,6 +928,11 @@ Each example gives the position id, seed, state hash, the card's public facts an
 `actionId`. v8 adds one line to the system prompt: give the verdict and a position id, never call a play
 legal that it did not offer. The quiz has not been re-run under v8.
 
+On the assistant page, an answer whose trace has an answered `engine_check` carries an
+"engine-checked" badge with the verdict, and a `positions` button per check opens the side panel with the
+verdict and counts, each example position's public facts and the engine's offered label, and the
+`facts_that_split` and `not_visible` lists as the tool returned them. A refused call gets no badge.
+
 ```bash
 python scripts/test_engine_check.py   # verdicts recounted from the index independently; refusals
 ```
