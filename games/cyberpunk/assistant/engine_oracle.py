@@ -17,7 +17,9 @@ What it can and cannot say, each one load-bearing:
     Disagreement is ``depends``: the stated facts do not decide it, and examples of both are returned,
     with ``facts_that_split``: fact values seen only where the play was not offered. That list is
     observational (what co-occurred with the engine's answers here), not a rule reason;
-    the model can narrow the question with the ``step``, state, ``lagging`` and ``played_this_turn`` filters.
+    the model can narrow the question with the ``step``, state, ``lagging``, ``played_this_turn``,
+    ``affordable`` and ``sold_this_turn`` filters (the last two added 2026-11-15, after the held-out
+    eval showed affordability and an earlier sale left most hand plays at ``depends``).
   - No position is generalised beyond its facts, and ``not_visible`` lists what an observation cannot
     show (sales and Calls earlier this turn are counted, the rival's hand and decks are hidden).
   - Only the 29 Demo cards can appear in positions. Any other card is refused with ``no_position``, and
@@ -92,21 +94,23 @@ def _instances(row: dict, slug: str, side: str, area: str) -> list[dict]:
     return [c for c in row["facts"]["cards"] if c["slug"] == slug and c["side"] == side and c["area"] == area]
 
 
-def _fits(inst: dict, card_state: str | None, lagging: str | None, played_this_turn: str | None) -> bool:
+def _fits(inst: dict, card_state: str | None, lagging: str | None, played_this_turn: str | None,
+          affordable: str | None = None) -> bool:
     return ((not card_state or inst["state"] == card_state)
             and (not lagging or inst["lagging"] == (lagging == "yes"))
-            and (not played_this_turn or inst["played_this_turn"] == (played_this_turn == "yes")))
+            and (not played_this_turn or inst["played_this_turn"] == (played_this_turn == "yes"))
+            and (not affordable or inst["affordable"] == (affordable == "yes")))
 
 
 def _observations(row: dict, play: str, card: str, target: str | None, card_state: str | None,
                   target_state: str | None, lagging: str | None = None,
-                  played_this_turn: str | None = None) -> list[dict]:
+                  played_this_turn: str | None = None, affordable: str | None = None) -> list[dict]:
     """One observation per (copy of card[, copy of target]) at this position that fits the stated facts."""
     kind, area = PLAY_KINDS[play]
     offered = [o for o in row["offered"] if o["kind"] == kind]
     out = []
     for inst in _instances(row, card, "friendly", area):
-        if not _fits(inst, card_state, lagging, played_this_turn):
+        if not _fits(inst, card_state, lagging, played_this_turn, affordable):
             continue
         actions = [o for o in offered if o["source_public_id"] == inst["public_id"]]
         if play != "attack_target":
@@ -178,6 +182,7 @@ def _unique_positions(pairs: list, limit: int) -> list:
 def engine_check(play: str, card: str, target: str | None = None, step: str | None = None,
                  card_state: str | None = None, target_state: str | None = None,
                  lagging: str | None = None, played_this_turn: str | None = None,
+                 affordable: str | None = None, sold_this_turn: str | None = None,
                  limit: int = MAX_EXAMPLES) -> dict:
     """The engine's verdict on ``play`` with ``card`` across matching recorded positions."""
     if (play == "attack_target") != (target is not None):
@@ -194,8 +199,10 @@ def engine_check(play: str, card: str, target: str | None = None, step: str | No
     for row in index():
         if step and row["step"] != step:
             continue
+        if sold_this_turn and (row["facts"]["sold_this_turn"] > 0) != (sold_this_turn == "yes"):
+            continue
         matched += [(row, obs) for obs in _observations(row, play, card, target, card_state, target_state,
-                                                        lagging, played_this_turn)]
+                                                        lagging, played_this_turn, affordable)]
     yes = [(r, o) for r, o in matched if o["offered"]]
     no = [(r, o) for r, o in matched if not o["offered"]]
     if not matched:
@@ -211,7 +218,8 @@ def engine_check(play: str, card: str, target: str | None = None, step: str | No
     engine = manifest()["engine"]
     return {"verdict": verdict, "play": play, "card": card, "target": target,
             "filters": {"step": step, "card_state": card_state, "target_state": target_state,
-                        "lagging": lagging, "played_this_turn": played_this_turn},
+                        "lagging": lagging, "played_this_turn": played_this_turn,
+                        "affordable": affordable, "sold_this_turn": sold_this_turn},
             "matched": len(matched), "offered_count": len(yes), "not_offered_count": len(no),
             "positions": [_example(r, o, kind) for r, o in picks],
             "facts_that_split": _fact_split(yes, no),

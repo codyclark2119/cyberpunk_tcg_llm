@@ -532,6 +532,50 @@ def test_max_tool_calls_reaches_run_turn_the_prompt_and_the_header():
             assert len(ToolHungry.prompts) == 2 * (effective + 1), "each question asks once more than the cap"
 
 
+def test_no_engine_check_drops_the_tool_and_its_line_and_says_so_in_the_header():
+    from games.cyberpunk.assistant.loop import ENGINE_GUIDANCE, SYSTEM_PROMPT, system_prompt, tool_specs_sha256
+
+    class EngineAsker:
+        """Asks engine_check once, then answers A; records the prompt and tool names it was given."""
+        label = "engine-asker"
+        seen: list = []
+
+        async def generate(self, messages, tools, *, max_tokens, enable_thinking):
+            EngineAsker.seen.append((messages[0]["content"], [t["function"]["name"] for t in tools]))
+            if not any(m["role"] == "tool" for m in messages):
+                call = json.dumps({"name": "engine_check", "arguments": {"play": "attack", "card": "psycho-squad"}})
+                return {"ok": True, "text": f"<tool_call>\n{call}\n</tool_call>", "finishReason": "stop",
+                        "promptTokens": 0, "generationTokens": 0, "elapsedMs": 0}
+            return {"ok": True, "text": "Answer: A", "finishReason": "stop", "promptTokens": 0,
+                    "generationTokens": 0, "elapsedMs": 0}
+
+    with tempfile.TemporaryDirectory() as tmp:
+        base = ["--set", str(GOLD), "--fake", "--runs-dir", tmp, "--limit", "1", "--no-preload"]
+        runs = {}
+        for name, flag in (("on", []), ("off", ["--no-engine-check"])):
+            EngineAsker.seen = []
+            code, _, err = main_in_process(*base, "--name", name, *flag, model_cls=EngineAsker)
+            assert code == 0, err
+            rows = read_jsonl(Path(tmp) / f"{name}.jsonl")
+            tool_steps = [s for s in rows[1]["trace"] if s["kind"] == "tool"]
+            runs[name] = (rows[0], EngineAsker.seen, tool_steps)
+    on_header, on_seen, on_steps = runs["on"]
+    off_header, off_seen, off_steps = runs["off"]
+    assert "engine_check" not in on_header and "system_prompt_sha256" not in on_header, "a default header is unchanged"
+    assert on_header["tool_specs_sha256"] == tool_specs_sha256()
+    assert {p for p, _ in on_seen} == {SYSTEM_PROMPT} and all("engine_check" in names for _, names in on_seen)
+    assert on_steps[0]["tool"] == "engine_check" and on_steps[0]["ok"]
+    assert off_header["engine_check"] is False and off_header["tool_specs_sha256"] == tool_specs_sha256(False)
+    assert off_header["tool_specs_sha256"] != on_header["tool_specs_sha256"]
+    off_prompt = system_prompt(engine_check=False)
+    assert ENGINE_GUIDANCE not in off_prompt and off_prompt == SYSTEM_PROMPT.replace("\n" + ENGINE_GUIDANCE, "")
+    assert off_header["system_prompt_sha256"] == hashlib.sha256(off_prompt.encode()).hexdigest()
+    assert {p for p, _ in off_seen} == {off_prompt} and not any("engine_check" in names for _, names in off_seen)
+    assert len(on_seen[0][1]) == len(off_seen[0][1]) + 1
+    assert off_steps[0]["tool"] == "engine_check" and off_steps[0]["errorKind"] == "unknown_tool", off_steps
+    assert off_steps[0]["result"] is None, "the tool never ran with --no-engine-check"
+
+
 def test_partial_is_written_per_row_and_the_final_file_is_unchanged_by_it():
     module = scorer()
     base_cls = module.FakeModel

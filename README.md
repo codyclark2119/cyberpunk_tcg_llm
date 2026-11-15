@@ -914,7 +914,7 @@ python scripts/test_engine_positions.py
 play be made?" from the catalog above, never from the model's reasoning and never by running the engine at
 question time. Arguments: `play` (`attack`, `attack_target`, `play_from_hand`, `sell`, `block`), `card` (slug),
 `target` (rival Unit slug, `attack_target` only) and optional filters `step`, `card_state`, `target_state`,
-`lagging`, `played_this_turn`. Every friendly copy of the card in every matching position is one match:
+`lagging`, `played_this_turn`, `affordable`, `sold_this_turn`. Every friendly copy of the card in every matching position is one match:
 
 - `offered`: the engine listed that action for that exact copy in every match (for `attack_target`, the
   target was among the targets offered after declaring that attack);
@@ -935,4 +935,10 @@ verdict and counts, each example position's public facts and the engine's offere
 
 ```bash
 python scripts/test_engine_check.py   # verdicts recounted from the index independently; refusals
+python scripts/build_oracle_positions.py --eval --seeds 6   # held-out positions, seed prefix engine-oracle-eval-v1
+python scripts/eval_engine_check.py   # the tool against the engine on them: data/oracle/eval-fidelity-v1.json
 ```
+
+On 309 held-out positions, no settled verdict disagreed with the engine and 91.5% of questions were settled
+([docs/engine-oracle-eval-2026-11-15.md](docs/engine-oracle-eval-2026-11-15.md)). `eval_assistant.py
+--no-engine-check` runs the quiz without the tool for comparison.

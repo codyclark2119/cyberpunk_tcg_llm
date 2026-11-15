@@ -19,6 +19,9 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
 from games.cyberpunk.assistant import engine_oracle  # noqa: E402
 from games.cyberpunk.assistant.tools import TOOLS, call_tool  # noqa: E402
+from harness.core.io import read_jsonl  # noqa: E402
+
+sys.path.insert(0, str(Path(__file__).resolve().parent))
 
 ROWS = {r["position_id"]: r for r in engine_oracle.index()}
 
@@ -34,17 +37,22 @@ def refused(args: dict, kind: str) -> None:
     assert not out["ok"] and out["error_kind"] == kind, (args, out)
 
 
-def independent_counts(kind: str, area: str, card: str, *, state=None, step=None, lagging=None) -> tuple[int, int]:
+def independent_counts(kind: str, area: str, card: str, *, state=None, step=None, lagging=None, affordable=None,
+                       sold=None) -> tuple[int, int]:
     """(offered, not offered) per friendly copy of ``card``, computed directly from the index rows."""
     yes = no = 0
     for row in ROWS.values():
         if step and row["step"] != step:
+            continue
+        if sold is not None and (row["facts"]["sold_this_turn"] > 0) != sold:
             continue
         sources = {o["source_public_id"] for o in row["offered"] if o["kind"] == kind}
         for c in row["facts"]["cards"]:
             if (c["slug"], c["side"], c["area"]) != (card, "friendly", area):
                 continue
             if (state and c["state"] != state) or (lagging is not None and c["lagging"] != lagging):
+                continue
+            if affordable is not None and c["affordable"] != affordable:
                 continue
             if c["public_id"] in sources:
                 yes += 1
@@ -67,6 +75,10 @@ def test_counts_and_verdicts_match_an_independent_recount():
               {"state": "ready", "step": "main", "lagging": False}),
              ("play_from_hand", "PLAY_CARD", "hand", "kiroshi-optics", {}),
              ("sell", "SELL_CARD", "hand", "floor-it", {"step": "react"}),
+             ("play_from_hand", "PLAY_CARD", "hand", "psycho-squad", {"step": "main", "affordable": True}),
+             ("play_from_hand", "PLAY_CARD", "hand", "psycho-squad", {"affordable": False}),
+             ("sell", "SELL_CARD", "hand", "floor-it", {"step": "main", "sold": True}),
+             ("sell", "SELL_CARD", "hand", "floor-it", {"step": "main", "sold": False}),
              ("block", "DECLARE_BLOCKER", "battlefield", "psycho-squad", {})]
     for play, kind, area, card, f in cases:
         args = {"play": play, "card": card}
@@ -76,6 +88,10 @@ def test_counts_and_verdicts_match_an_independent_recount():
             args["step"] = f["step"]
         if "lagging" in f:
             args["lagging"] = "yes" if f["lagging"] else "no"
+        if "affordable" in f:
+            args["affordable"] = "yes" if f["affordable"] else "no"
+        if "sold" in f:
+            args["sold_this_turn"] = "yes" if f["sold"] else "no"
         result = ok(args)
         yes, no = independent_counts(kind, area, card, **f)
         assert (result["offered_count"], result["not_offered_count"]) == (yes, no), (args, result["matched"], yes, no)
@@ -140,6 +156,35 @@ def test_attack_target_filters_on_the_target():
     assert spent["offered_count"] > 0
     ready = ok({**pair, "target_state": "ready"})
     assert ready["offered_count"] == 0, "the engine never offered a ready target in these positions"
+
+
+def test_held_out_fidelity_report_is_current_and_counts_what_it_says():
+    import eval_engine_check as fid
+
+    rows = read_jsonl(fid.EVAL_INDEX, missing_ok=False)
+    manifest = json.loads(fid.EVAL_MANIFEST.read_text())
+    assert manifest["seeds"]["prefix"] == "engine-oracle-eval-v1" and manifest["engine"] == engine_oracle.manifest()["engine"]
+    assert not {r["position_id"] for r in rows} & set(ROWS), "no eval position is a catalog position"
+    assert not {r["seed"] for r in rows} & {r["seed"] for r in ROWS.values()}
+    report = fid.evaluate(rows)
+    assert fid.report_text(report) == fid.REPORT_PATH.read_text(), "run scripts/eval_engine_check.py"
+    a = report["outcomes"]["all"]
+    assert a["questions"] == sum(a[o] for o in fid.OUTCOMES) == sum(len(fid.questions(r)) for r in rows)
+    assert a["wrong"] == len(report["wrong"])
+    # Truth is the engine's own list for that copy: re-derive one question per play by hand.
+    for row in rows:
+        for args, truth in fid.questions(row):
+            kind, area = engine_oracle.PLAY_KINDS[args["play"]]
+            copies = [c["public_id"] for c in row["facts"]["cards"] if c["slug"] == args["card"]
+                      and c["side"] == "friendly" and c["area"] == area]
+            assert copies, args
+            if args["play"] != "attack_target":
+                offered = {o["source_public_id"] for o in row["offered"] if o["kind"] == kind}
+                assert truth in [p in offered for p in copies]
+    # The classification: a settled verdict against the opposite engine answer is wrong, never correct.
+    assert [fid.outcome(v, t) for v, t in (("offered", True), ("offered", False), ("not_offered", False),
+                                           ("not_offered", True), ("depends", True), ("no_position", False))] == [
+        "correct", "wrong", "correct", "wrong", "depends", "no_position"]
 
 
 def test_refusals():

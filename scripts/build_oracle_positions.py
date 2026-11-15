@@ -94,6 +94,9 @@ CACHE_DIR = REPO_ROOT / "local/oracle-cache"
 SEED_PREFIX = "engine-oracle-v1"
 # Prefixes the catalog must never share a seed with: the LoRA's legality items and the tool's held-out eval.
 RESERVED_PREFIXES = ("engine-tf-v1", "engine-oracle-eval-v1")
+# --eval builds the tool's held-out positions the same way on the eval prefix (scripts/eval_engine_check.py).
+EVAL_PREFIX = "engine-oracle-eval-v1"
+EVAL_INDEX_PATH = REPO_ROOT / "data/oracle/eval-positions-v1.jsonl"
 DEFAULT_SEEDS = 12
 DEFAULT_WORKERS = 4
 CAP_PER_CARD_SET_STEP = 4
@@ -336,7 +339,7 @@ class Result:
 
 
 def build(setup: MatchSetup, pairs: list[tuple[dict, dict]], seeds: list[str],
-          cap: int = CAP_PER_CARD_SET_STEP) -> Result:
+          cap: int = CAP_PER_CARD_SET_STEP, *, prefix: str = SEED_PREFIX, index_name: str = INDEX_PATH.name) -> Result:
     cards = card_data(setup.content)
     rows = [r for r, _ in pairs]
     ids = [r["position_id"] for r in rows]
@@ -349,11 +352,12 @@ def build(setup: MatchSetup, pairs: list[tuple[dict, dict]], seeds: list[str],
     cov = coverage(kept, cards)
     counter = lambda key: dict(sorted(collections.Counter(key(r) for r in kept).items()))  # noqa: E731
     manifest = {
-        "generator_version": GENERATOR_VERSION, "index": INDEX_PATH.name, "engine": engine_identity(setup),
+        "generator_version": GENERATOR_VERSION, "index": index_name, "engine": engine_identity(setup),
         "ruleset": (setup.content.get("manifest") or {}).get("ruleset"),
         "content_manifest_hash": setup.content.get("manifestHash"), "format": setup.initialization.get("format"),
-        "seeds": {"prefix": SEED_PREFIX, "count": len(seeds), "first": seeds[0] if seeds else None,
-                  "last": seeds[-1] if seeds else None, "disjoint_from": list(RESERVED_PREFIXES)},
+        "seeds": {"prefix": prefix, "count": len(seeds), "first": seeds[0] if seeds else None,
+                  "last": seeds[-1] if seeds else None,
+                  "disjoint_from": [p for p in (SEED_PREFIX, *RESERVED_PREFIXES) if p != prefix]},
         "policy": "baseline_action_id on both seats", "limits": {"max_decisions": MAX_DECISIONS,
                                                                  "max_turns": MAX_TURNS},
         "selection": {"cap_per_card_set_step": cap, "order": "lowest position_id within a (card set, step)",
@@ -490,7 +494,11 @@ def print_summary(result: Result, rows_text: str) -> None:
 
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
-    parser.add_argument("--out", type=Path, default=INDEX_PATH, help="index jsonl (default: %(default)s)")
+    parser.add_argument("--out", type=Path, default=None,
+                        help=f"index jsonl (default: {INDEX_PATH.relative_to(REPO_ROOT)}, or "
+                             f"{EVAL_INDEX_PATH.relative_to(REPO_ROOT)} with --eval)")
+    parser.add_argument("--eval", action="store_true",
+                        help=f"build the held-out eval positions on seed prefix {EVAL_PREFIX} (never cached)")
     parser.add_argument("--seeds", type=int, default=DEFAULT_SEEDS, help="number of seeds (default %(default)s)")
     parser.add_argument("--workers", type=int, default=DEFAULT_WORKERS, help="engine worker processes")
     parser.add_argument("--check", action="store_true", help="regenerate in memory and compare with --out")
@@ -501,10 +509,16 @@ def main(argv: list[str] | None = None) -> int:
     args = parser.parse_args(argv)
     if args.seeds < 1 or args.workers < 1:
         parser.error("--seeds and --workers must be positive")
+    prefix = EVAL_PREFIX if args.eval else SEED_PREFIX
+    if args.out is None:
+        args.out = EVAL_INDEX_PATH if args.eval else INDEX_PATH
+    if args.eval:
+        args.no_cache = True  # the cache serves load_position for catalog rows only
     setup = load_default_setup(REPO_ROOT, node=args.node)
-    seeds = seeds_for(args.seeds)
+    seeds = seeds_for(args.seeds, prefix)
     try:
-        result = build(setup, collect(setup, seeds, args.workers, args.node), seeds)
+        result = build(setup, collect(setup, seeds, args.workers, args.node), seeds, prefix=prefix,
+                       index_name=args.out.name)
     except PositionError as exc:
         print(f"error: {exc}", file=sys.stderr)
         return 1
