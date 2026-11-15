@@ -53,7 +53,7 @@ GOLDEN_RULES_MAX_CHARS = 1600   # ~400 tokens
 
 
 V8_ADDITION_MAX_CHARS = 280     # ~70 tokens: one guidance line for engine_check
-ENGINE_CHECK_SPEC_MAX_CHARS = 1100  # ~275 tokens: the v8 tool's spec, in every model step
+ENGINE_CHECK_SPEC_MAX_CHARS = 1300  # ~325 tokens: the v8 tool's spec, in every model step (1,240 on 2026-11-15)
 
 
 def v7_addition() -> str:
@@ -150,6 +150,9 @@ def test_lean_specs_keep_every_name_and_schema():
                        "card": slug, "target": slug, "step": {"type": "string", "enum": ["main", "react"]},
                        "card_state": state, "target_state": state, "lagging": yes_no, "played_this_turn": yes_no,
                        "limit": {"type": "integer", "minimum": 1, "maximum": 3}}}
+    # And two filters since (2026-11-15, still v8, before any v8 quiz run): affordable and sold_this_turn, after the
+    # held-out eval (scripts/eval_engine_check.py) left most hand plays at "depends" without them.
+    before["engine_check"]["properties"].update({"affordable": yes_no, "sold_this_turn": yes_no})
     for rule_id in ("9", "9.3.2", "11.24.", "3.18.1.2.2.1"):
         assert re.search(old_pattern, rule_id) and re.search(tools.RULE_NUMBER_PATTERN, rule_id), rule_id
     specs = tools.tool_specs()
@@ -467,7 +470,7 @@ def test_no_code_path_reads_the_question_beyond_the_linker():
     uses = [line.strip() for line in loop_source.splitlines() if re.search(r"\buser_message\b", line)
             and not line.strip().startswith(("async def", "def", "#"))]
     assert uses == ['return [{"role": "system", "content": system}, *history, {"role": "user", "content": user_message}]',
-                    "messages = build_messages(history, user_message, deck, max_tool_calls=max_tool_calls)",
+                    "messages = build_messages(history, user_message, deck, max_tool_calls=max_tool_calls, engine_check=engine_check)",
                     "auto = run_preload(user_message if preload_text is None else preload_text, k=preload_k,"], uses
     preload_source = (REPO_ROOT / "games/cyberpunk/assistant/preload.py").read_text(encoding="utf-8")
     body = preload_source[preload_source.index("def preload("):]

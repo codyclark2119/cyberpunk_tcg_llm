@@ -1,0 +1,545 @@
+{
+ "generator_version": "build-oracle-positions-v1",
+ "index": "eval-positions-v1.jsonl",
+ "engine": {
+  "version": "0.4.2-lag-order",
+  "artifactHash": "ec49548098063d0a543a8ce1db2fa7452efbee96e15fc92f73c60e15bc9e308c"
+ },
+ "ruleset": {
+  "id": "beta",
+  "version": "demo-overtime-1",
+  "hash": "0cf3dcd40766cd4b699e16842a0b6a66d3b1ecdf9b678986bf7686139dc800ab"
+ },
+ "content_manifest_hash": "61d0235216867c86f4a5407eceb1f183f5283be91461b3c03b6538dff18a74f0",
+ "format": "DEMO_STARTER_V1",
+ "seeds": {
+  "prefix": "engine-oracle-eval-v1",
+  "count": 6,
+  "first": "engine-oracle-eval-v1-0",
+  "last": "engine-oracle-eval-v1-5",
+  "disjoint_from": [
+   "engine-oracle-v1",
+   "engine-tf-v1"
+  ]
+ },
+ "policy": "baseline_action_id on both seats",
+ "limits": {
+  "max_decisions": 600,
+  "max_turns": 40
+ },
+ "selection": {
+  "cap_per_card_set_step": 4,
+  "order": "lowest position_id within a (card set, step)",
+  "decisions": 309,
+  "capped": 0
+ },
+ "counts": {
+  "positions": 309,
+  "by_step": {
+   "main": 260,
+   "react": 49
+  },
+  "by_seat": {
+   "0": 153,
+   "1": 156
+  },
+  "offered_by_kind": {
+   "CALL_LEGEND": 230,
+   "DECLARE_ATTACK": 209,
+   "DECLARE_BLOCKER": 16,
+   "END_TURN": 260,
+   "GO_SOLO": 38,
+   "PASS_REACT": 49,
+   "PLAY_CARD": 712,
+   "SELL_CARD": 290
+  },
+  "seeds_used": 6
+ },
+ "coverage": {
+  "demo_cards": 29,
+  "visible": 28,
+  "never_visible": [
+   "goro-takemura-losing-his-way"
+  ],
+  "never_offered": [
+   "goro-takemura-losing-his-way",
+   "jackie-welles-pour-one-out-for-me",
+   "minotaur",
+   "saburo-arasaka-stubborn-patriarch",
+   "viktor-vektor-sit-down-and-relax",
+   "yorinobu-arasaka-embracing-destruction"
+  ],
+  "never_in_play": [
+   "afterparty-at-lizzie-s",
+   "corporate-surveillance",
+   "floor-it",
+   "goro-takemura-losing-his-way",
+   "industrial-assembly",
+   "minotaur",
+   "over-the-edge",
+   "reboot-optics"
+  ],
+  "never_ready_in_play": [],
+  "never_spent_in_play": [
+   "dying-night-v-s-pistol",
+   "kiroshi-optics",
+   "mandibular-upgrade",
+   "mantis-blades",
+   "mt0d12-flathead",
+   "satori-sword-of-saburo"
+  ],
+  "by_card": {
+   "afterparty-at-lizzie-s": {
+    "type": "PROGRAM",
+    "visible_positions": 61,
+    "visible_by_area_state": {
+     "hand:None": 18,
+     "trash:None": 43
+    },
+    "offered_positions": 17,
+    "offered_by_kind_area_state": {
+     "PLAY_CARD:hand:None": 17,
+     "SELL_CARD:hand:None": 10
+    },
+    "seen_ready": false,
+    "seen_spent": false
+   },
+   "corpo-security": {
+    "type": "UNIT",
+    "visible_positions": 181,
+    "visible_by_area_state": {
+     "battlefield:ready": 96,
+     "battlefield:spent": 10,
+     "hand:None": 81,
+     "trash:None": 32
+    },
+    "offered_positions": 49,
+    "offered_by_kind_area_state": {
+     "DECLARE_BLOCKER:battlefield:ready": 7,
+     "PLAY_CARD:hand:None": 42
+    },
+    "seen_ready": true,
+    "seen_spent": true
+   },
+   "corporate-surveillance": {
+    "type": "PROGRAM",
+    "visible_positions": 111,
+    "visible_by_area_state": {
+     "hand:None": 28,
+     "trash:None": 93
+    },
+    "offered_positions": 22,
+    "offered_by_kind_area_state": {
+     "PLAY_CARD:hand:None": 15,
+     "SELL_CARD:hand:None": 17
+    },
+    "seen_ready": false,
+    "seen_spent": false
+   },
+   "delamain-cab": {
+    "type": "UNIT",
+    "visible_positions": 168,
+    "visible_by_area_state": {
+     "battlefield:ready": 92,
+     "battlefield:spent": 25,
+     "hand:None": 76,
+     "trash:None": 23
+    },
+    "offered_positions": 57,
+    "offered_by_kind_area_state": {
+     "DECLARE_ATTACK:battlefield:ready": 36,
+     "PLAY_CARD:hand:None": 29
+    },
+    "seen_ready": true,
+    "seen_spent": true
+   },
+   "dexter-deshawn-one-last-chance": {
+    "type": "UNIT",
+    "visible_positions": 100,
+    "visible_by_area_state": {
+     "battlefield:ready": 30,
+     "battlefield:spent": 10,
+     "hand:None": 51,
+     "trash:None": 9
+    },
+    "offered_positions": 37,
+    "offered_by_kind_area_state": {
+     "DECLARE_ATTACK:battlefield:ready": 8,
+     "PLAY_CARD:hand:None": 29
+    },
+    "seen_ready": true,
+    "seen_spent": true
+   },
+   "dying-night-v-s-pistol": {
+    "type": "GEAR",
+    "visible_positions": 85,
+    "visible_by_area_state": {
+     "battlefield:ready": 4,
+     "hand:None": 31,
+     "legends:ready": 25,
+     "trash:None": 32
+    },
+    "offered_positions": 23,
+    "offered_by_kind_area_state": {
+     "PLAY_CARD:hand:None": 19,
+     "SELL_CARD:hand:None": 17
+    },
+    "seen_ready": true,
+    "seen_spent": false
+   },
+   "emergency-atlus": {
+    "type": "UNIT",
+    "visible_positions": 218,
+    "visible_by_area_state": {
+     "battlefield:ready": 100,
+     "battlefield:spent": 46,
+     "hand:None": 115,
+     "trash:None": 8
+    },
+    "offered_positions": 60,
+    "offered_by_kind_area_state": {
+     "DECLARE_ATTACK:battlefield:ready": 24,
+     "PLAY_CARD:hand:None": 43
+    },
+    "seen_ready": true,
+    "seen_spent": true
+   },
+   "evelyn-parker-scheming-siren": {
+    "type": "UNIT",
+    "visible_positions": 185,
+    "visible_by_area_state": {
+     "battlefield:ready": 92,
+     "battlefield:spent": 18,
+     "hand:None": 93,
+     "trash:None": 56
+    },
+    "offered_positions": 65,
+    "offered_by_kind_area_state": {
+     "DECLARE_ATTACK:battlefield:ready": 21,
+     "PLAY_CARD:hand:None": 58
+    },
+    "seen_ready": true,
+    "seen_spent": true
+   },
+   "field-operator": {
+    "type": "UNIT",
+    "visible_positions": 161,
+    "visible_by_area_state": {
+     "battlefield:ready": 42,
+     "battlefield:spent": 26,
+     "hand:None": 98
+    },
+    "offered_positions": 48,
+    "offered_by_kind_area_state": {
+     "DECLARE_ATTACK:battlefield:ready": 11,
+     "PLAY_CARD:hand:None": 37
+    },
+    "seen_ready": true,
+    "seen_spent": true
+   },
+   "floor-it": {
+    "type": "PROGRAM",
+    "visible_positions": 148,
+    "visible_by_area_state": {
+     "hand:None": 38,
+     "trash:None": 126
+    },
+    "offered_positions": 38,
+    "offered_by_kind_area_state": {
+     "PLAY_CARD:hand:None": 35,
+     "SELL_CARD:hand:None": 29
+    },
+    "seen_ready": false,
+    "seen_spent": false
+   },
+   "goro-takemura-hands-unclean": {
+    "type": "LEGEND",
+    "visible_positions": 217,
+    "visible_by_area_state": {
+     "battlefield:ready": 33,
+     "battlefield:spent": 45,
+     "legends:ready": 75,
+     "legends:spent": 64
+    },
+    "offered_positions": 41,
+    "offered_by_kind_area_state": {
+     "DECLARE_ATTACK:battlefield:ready": 18,
+     "DECLARE_BLOCKER:battlefield:ready": 4,
+     "GO_SOLO:legends:ready": 18,
+     "GO_SOLO:legends:spent": 1,
+     "PLAY_CARD:legends:ready": 18,
+     "PLAY_CARD:legends:spent": 1
+    },
+    "seen_ready": true,
+    "seen_spent": true
+   },
+   "goro-takemura-losing-his-way": {
+    "type": "UNIT",
+    "visible_positions": 0,
+    "visible_by_area_state": {},
+    "offered_positions": 0,
+    "offered_by_kind_area_state": {},
+    "seen_ready": false,
+    "seen_spent": false
+   },
+   "industrial-assembly": {
+    "type": "PROGRAM",
+    "visible_positions": 100,
+    "visible_by_area_state": {
+     "hand:None": 19,
+     "trash:None": 85
+    },
+    "offered_positions": 17,
+    "offered_by_kind_area_state": {
+     "PLAY_CARD:hand:None": 15,
+     "SELL_CARD:hand:None": 14
+    },
+    "seen_ready": false,
+    "seen_spent": false
+   },
+   "jackie-welles-pour-one-out-for-me": {
+    "type": "LEGEND",
+    "visible_positions": 196,
+    "visible_by_area_state": {
+     "legends:ready": 82,
+     "legends:spent": 114
+    },
+    "offered_positions": 0,
+    "offered_by_kind_area_state": {},
+    "seen_ready": true,
+    "seen_spent": true
+   },
+   "kiroshi-optics": {
+    "type": "GEAR",
+    "visible_positions": 183,
+    "visible_by_area_state": {
+     "battlefield:ready": 93,
+     "hand:None": 22,
+     "legends:ready": 21,
+     "trash:None": 47
+    },
+    "offered_positions": 16,
+    "offered_by_kind_area_state": {
+     "PLAY_CARD:hand:None": 6,
+     "SELL_CARD:hand:None": 14
+    },
+    "seen_ready": true,
+    "seen_spent": false
+   },
+   "mandibular-upgrade": {
+    "type": "GEAR",
+    "visible_positions": 71,
+    "visible_by_area_state": {
+     "battlefield:ready": 12,
+     "hand:None": 25,
+     "legends:ready": 39
+    },
+    "offered_positions": 23,
+    "offered_by_kind_area_state": {
+     "PLAY_CARD:hand:None": 20,
+     "SELL_CARD:hand:None": 17
+    },
+    "seen_ready": true,
+    "seen_spent": false
+   },
+   "mantis-blades": {
+    "type": "GEAR",
+    "visible_positions": 111,
+    "visible_by_area_state": {
+     "hand:None": 32,
+     "legends:ready": 99
+    },
+    "offered_positions": 19,
+    "offered_by_kind_area_state": {
+     "PLAY_CARD:hand:None": 14,
+     "SELL_CARD:hand:None": 14
+    },
+    "seen_ready": true,
+    "seen_spent": false
+   },
+   "minotaur": {
+    "type": "UNIT",
+    "visible_positions": 45,
+    "visible_by_area_state": {
+     "hand:None": 45
+    },
+    "offered_positions": 0,
+    "offered_by_kind_area_state": {},
+    "seen_ready": false,
+    "seen_spent": false
+   },
+   "mt0d12-flathead": {
+    "type": "UNIT",
+    "visible_positions": 63,
+    "visible_by_area_state": {
+     "battlefield:ready": 39,
+     "hand:None": 24
+    },
+    "offered_positions": 32,
+    "offered_by_kind_area_state": {
+     "DECLARE_ATTACK:battlefield:ready": 14,
+     "PLAY_CARD:hand:None": 6,
+     "SELL_CARD:hand:None": 17
+    },
+    "seen_ready": true,
+    "seen_spent": false
+   },
+   "over-the-edge": {
+    "type": "PROGRAM",
+    "visible_positions": 106,
+    "visible_by_area_state": {
+     "hand:None": 56,
+     "trash:None": 56
+    },
+    "offered_positions": 37,
+    "offered_by_kind_area_state": {
+     "PLAY_CARD:hand:None": 18,
+     "SELL_CARD:hand:None": 37
+    },
+    "seen_ready": false,
+    "seen_spent": false
+   },
+   "psycho-squad": {
+    "type": "UNIT",
+    "visible_positions": 171,
+    "visible_by_area_state": {
+     "battlefield:ready": 67,
+     "battlefield:spent": 36,
+     "hand:None": 104
+    },
+    "offered_positions": 53,
+    "offered_by_kind_area_state": {
+     "DECLARE_ATTACK:battlefield:ready": 23,
+     "PLAY_CARD:hand:None": 38
+    },
+    "seen_ready": true,
+    "seen_spent": true
+   },
+   "reboot-optics": {
+    "type": "PROGRAM",
+    "visible_positions": 152,
+    "visible_by_area_state": {
+     "hand:None": 39,
+     "trash:None": 127
+    },
+    "offered_positions": 36,
+    "offered_by_kind_area_state": {
+     "PLAY_CARD:hand:None": 32,
+     "SELL_CARD:hand:None": 27
+    },
+    "seen_ready": false,
+    "seen_spent": false
+   },
+   "saburo-arasaka-stubborn-patriarch": {
+    "type": "LEGEND",
+    "visible_positions": 196,
+    "visible_by_area_state": {
+     "legends:ready": 75,
+     "legends:spent": 121
+    },
+    "offered_positions": 0,
+    "offered_by_kind_area_state": {},
+    "seen_ready": true,
+    "seen_spent": true
+   },
+   "satori-sword-of-saburo": {
+    "type": "GEAR",
+    "visible_positions": 162,
+    "visible_by_area_state": {
+     "battlefield:ready": 22,
+     "hand:None": 63,
+     "legends:ready": 80
+    },
+    "offered_positions": 44,
+    "offered_by_kind_area_state": {
+     "PLAY_CARD:hand:None": 30,
+     "SELL_CARD:hand:None": 36
+    },
+    "seen_ready": true,
+    "seen_spent": false
+   },
+   "secondhand-bombus": {
+    "type": "UNIT",
+    "visible_positions": 175,
+    "visible_by_area_state": {
+     "battlefield:ready": 55,
+     "battlefield:spent": 20,
+     "hand:None": 51,
+     "trash:None": 86
+    },
+    "offered_positions": 41,
+    "offered_by_kind_area_state": {
+     "DECLARE_ATTACK:battlefield:ready": 15,
+     "DECLARE_BLOCKER:battlefield:ready": 3,
+     "PLAY_CARD:hand:None": 26
+    },
+    "seen_ready": true,
+    "seen_spent": true
+   },
+   "swordwise-huscle": {
+    "type": "UNIT",
+    "visible_positions": 137,
+    "visible_by_area_state": {
+     "battlefield:ready": 71,
+     "battlefield:spent": 9,
+     "hand:None": 57
+    },
+    "offered_positions": 38,
+    "offered_by_kind_area_state": {
+     "DECLARE_ATTACK:battlefield:ready": 16,
+     "PLAY_CARD:hand:None": 22
+    },
+    "seen_ready": true,
+    "seen_spent": true
+   },
+   "v-corporate-exile": {
+    "type": "LEGEND",
+    "visible_positions": 153,
+    "visible_by_area_state": {
+     "battlefield:ready": 54,
+     "battlefield:spent": 2,
+     "legends:ready": 49,
+     "legends:spent": 48
+    },
+    "offered_positions": 36,
+    "offered_by_kind_area_state": {
+     "DECLARE_ATTACK:battlefield:ready": 17,
+     "GO_SOLO:legends:ready": 19,
+     "PLAY_CARD:legends:ready": 19
+    },
+    "seen_ready": true,
+    "seen_spent": true
+   },
+   "viktor-vektor-sit-down-and-relax": {
+    "type": "LEGEND",
+    "visible_positions": 172,
+    "visible_by_area_state": {
+     "legends:ready": 70,
+     "legends:spent": 102
+    },
+    "offered_positions": 0,
+    "offered_by_kind_area_state": {},
+    "seen_ready": true,
+    "seen_spent": true
+   },
+   "yorinobu-arasaka-embracing-destruction": {
+    "type": "LEGEND",
+    "visible_positions": 216,
+    "visible_by_area_state": {
+     "legends:ready": 104,
+     "legends:spent": 112
+    },
+    "offered_positions": 0,
+    "offered_by_kind_area_state": {},
+    "seen_ready": true,
+    "seen_spent": true
+   }
+  }
+ },
+ "limits_of_the_catalog": [
+  "only the 29 Demo cards can appear (the Demo bundle alone plays whole games)",
+  "facts are what the acting seat's observation shows, nothing hidden",
+  "'not offered' is a fact about these positions, not a rule reason",
+  "affordable is a described count of ready payment pieces, not a verdict"
+ ]
+}

@@ -1,0 +1,89 @@
+{
+  "report_version": "engine-check-fidelity-v1",
+  "catalog": {
+    "index": "data/oracle/positions-v1.jsonl",
+    "sha256": "aba96430c4b271b77ac60c292b2992b2d6121ee5e40299276aa09de855c6867c",
+    "positions": 677,
+    "engine": {
+      "version": "0.4.2-lag-order",
+      "artifactHash": "ec49548098063d0a543a8ce1db2fa7452efbee96e15fc92f73c60e15bc9e308c"
+    }
+  },
+  "eval": {
+    "index": "data/oracle/eval-positions-v1.jsonl",
+    "sha256": "e1233f4144e7fed67f67ddb908d50dd48e5d989fc8ddfaeec76ab4f817db48f2",
+    "positions": 309,
+    "seeds": {
+      "prefix": "engine-oracle-eval-v1",
+      "count": 6,
+      "first": "engine-oracle-eval-v1-0",
+      "last": "engine-oracle-eval-v1-5",
+      "disjoint_from": [
+        "engine-oracle-v1",
+        "engine-tf-v1"
+      ]
+    },
+    "engine": {
+      "version": "0.4.2-lag-order",
+      "artifactHash": "ec49548098063d0a543a8ce1db2fa7452efbee96e15fc92f73c60e15bc9e308c"
+    }
+  },
+  "distinct_questions": 728,
+  "outcomes": {
+    "all": {
+      "correct": 5253,
+      "wrong": 0,
+      "depends": 143,
+      "no_position": 347,
+      "questions": 5743,
+      "accuracy_when_answered": 1.0,
+      "answered_share": 0.9147
+    },
+    "attack": {
+      "correct": 600,
+      "wrong": 0,
+      "depends": 0,
+      "no_position": 16,
+      "questions": 616,
+      "accuracy_when_answered": 1.0,
+      "answered_share": 0.974
+    },
+    "attack_target": {
+      "correct": 1346,
+      "wrong": 0,
+      "depends": 0,
+      "no_position": 311,
+      "questions": 1657,
+      "accuracy_when_answered": 1.0,
+      "answered_share": 0.8123
+    },
+    "play_from_hand": {
+      "correct": 1282,
+      "wrong": 0,
+      "depends": 143,
+      "no_position": 2,
+      "questions": 1427,
+      "accuracy_when_answered": 1.0,
+      "answered_share": 0.8984
+    },
+    "sell": {
+      "correct": 1425,
+      "wrong": 0,
+      "depends": 0,
+      "no_position": 2,
+      "questions": 1427,
+      "accuracy_when_answered": 1.0,
+      "answered_share": 0.9986
+    },
+    "block": {
+      "correct": 600,
+      "wrong": 0,
+      "depends": 0,
+      "no_position": 16,
+      "questions": 616,
+      "accuracy_when_answered": 1.0,
+      "answered_share": 0.974
+    }
+  },
+  "wrong": []
+}

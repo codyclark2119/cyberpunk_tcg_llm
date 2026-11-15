@@ -81,6 +81,12 @@ preload is on. Items without ``cards`` run exactly as before, so runs of the oth
 sets are byte-identical. When the set's rows carry ``official`` and ``--pass-mark``
 is absent, the official pass rule (``pass_percent``) is printed as a note only.
 
+engine_check (2026-11-15). ``--no-engine-check`` runs the same prompt version without the
+engine_check tool: its spec is not offered, its prompt line is left out and a call to it
+is refused as an unknown tool. The header then records ``engine_check: false``, the
+reduced ``tool_specs_sha256`` and ``system_prompt_sha256``; a default run (tool on)
+records nothing new, so its header is unchanged.
+
 The set is eval-only: never train on it.
 
 Usage:
@@ -242,7 +248,7 @@ def header_row(args, set_path: Path, items: list[dict], selected: list[dict]) ->
             "thinking": bool(args.thinking), "max_tokens": args.max_tokens, "max_tool_calls": args.max_tool_calls,
             "preload": bool(args.preload), "preload_k": args.preload_k if args.preload else None,
             "preload_chars": args.preload_chars if args.preload else None,
-            "tool_specs_sha256": tool_specs_sha256()}
+            "tool_specs_sha256": tool_specs_sha256(getattr(args, "engine_check", True))}
     if args.max_prompt_tokens != DEFAULT_MAX_PROMPT_TOKENS:
         header["max_prompt_tokens"] = args.max_prompt_tokens
     timeout = effective_timeout(args)
@@ -259,7 +265,12 @@ def header_row(args, set_path: Path, items: list[dict], selected: list[dict]) ->
         header["pass_mark"] = pass_mark
     if args.preload and any("cards" in i for i in items):
         header["linked_cards"] = True  # absent otherwise, so other sets' headers are unchanged
-    if args.max_tool_calls != MAX_TOOL_CALLS:
+    if not getattr(args, "engine_check", True):
+        # Absent with the tool on (the default), so a default run's header is unchanged.
+        header["engine_check"] = False
+        header["system_prompt_sha256"] = hashlib.sha256(
+            system_prompt(args.max_tool_calls, engine_check=False).encode("utf-8")).hexdigest()
+    elif args.max_tool_calls != MAX_TOOL_CALLS:
         # The prompt states the cap, so it is not the versioned default; say so (absent at the default, so a
         # default run's header is byte-identical to the runs made before the flag existed).
         header["system_prompt_sha256"] = hashlib.sha256(system_prompt(args.max_tool_calls).encode("utf-8")).hexdigest()
@@ -301,7 +312,7 @@ def append_row(handle, row: dict) -> None:
 async def run_items(model, selected: list[dict], *, thinking: bool, max_tokens: int, preload: bool = DEFAULT_PRELOAD,
                     preload_k: int = DEFAULT_PRELOAD_K, preload_chars: int = DEFAULT_PRELOAD_CHARS,
                     max_tool_calls: int = MAX_TOOL_CALLS, on_record=None, done: int = 0,
-                    total: int | None = None) -> list[dict]:
+                    total: int | None = None, engine_check: bool = True) -> list[dict]:
     """Records for ``selected``, in order; ``on_record(record)`` runs as each one finishes.
 
     ``done`` and ``total`` only number the progress lines, so a resumed run counts on from where it stopped.
@@ -312,7 +323,7 @@ async def run_items(model, selected: list[dict], *, thinking: bool, max_tokens: 
         turn = await run_turn([], question_message(item), model, max_tokens=max_tokens, enable_thinking=thinking,
                               preload=preload, preload_text=preload_text(item), preload_k=preload_k,
                               preload_chars=preload_chars, max_tool_calls=max_tool_calls,
-                              preload_cards=item.get("cards"))
+                              preload_cards=item.get("cards"), engine_check=engine_check)
         record = item_record(item, turn)
         records.append(record)
         if on_record is not None:
@@ -383,6 +394,8 @@ def main(argv: list[str] | None = None) -> int:
                              "model's context)")
     parser.add_argument("--worker-timeout", type=float, default=None,
                         help="seconds one model step may take (default: max(600, 120 + 0.15 x --max-tokens))")
+    parser.add_argument("--engine-check", action=argparse.BooleanOptionalAction, default=True,
+                        help="offer the engine_check tool and its prompt line (default on)")
     parser.add_argument("--preload", action=argparse.BooleanOptionalAction, default=DEFAULT_PRELOAD,
                         help="run search_rules and card linking before the model speaks (default on)")
     parser.add_argument("--preload-k", type=int, default=DEFAULT_PRELOAD_K, help="rules passages preloaded (1..20)")
@@ -509,7 +522,7 @@ def main(argv: list[str] | None = None) -> int:
                                        preload=args.preload, preload_k=args.preload_k,
                                        preload_chars=args.preload_chars, max_tool_calls=args.max_tool_calls,
                                        on_record=lambda record: append_row(handle, record), done=len(done),
-                                       total=len(selected))
+                                       total=len(selected), engine_check=args.engine_check)
         finally:
             close = getattr(model, "close", None)
             if close is not None:

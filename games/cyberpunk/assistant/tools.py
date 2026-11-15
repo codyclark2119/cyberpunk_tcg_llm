@@ -775,6 +775,7 @@ def _engine_check(args: dict) -> tuple[dict, dict]:
             args["play"], args["card"], target=args.get("target"), step=args.get("step"),
             card_state=args.get("card_state"), target_state=args.get("target_state"),
             lagging=args.get("lagging"), played_this_turn=args.get("played_this_turn"),
+            affordable=args.get("affordable"), sold_this_turn=args.get("sold_this_turn"),
             limit=args.get("limit", engine_oracle.MAX_EXAMPLES))
     except engine_oracle.OracleError as exc:
         raise ToolError(exc.kind, str(exc), **exc.extra) from exc
@@ -794,6 +795,10 @@ def _engine_check_tool() -> Tool:
                          "target_state": {"type": "string", "enum": list(eo.STATES)},
                          "lagging": {"type": "string", "enum": list(eo.YES_NO)},
                          "played_this_turn": {"type": "string", "enum": list(eo.YES_NO)},
+                         "affordable": {"type": "string", "enum": list(eo.YES_NO),
+                                        "description": "Can its cost be paid now."},
+                         "sold_this_turn": {"type": "string", "enum": list(eo.YES_NO),
+                                            "description": "You already sold a card this turn."},
                          "limit": _int(None, 1, eo.MAX_EXAMPLES)},
                         ["play", "card"]),
                 _engine_check)
