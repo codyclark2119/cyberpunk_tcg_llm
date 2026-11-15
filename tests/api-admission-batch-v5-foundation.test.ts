@@ -47,7 +47,9 @@ test("V5 foundation preserves both original Unit selector payloads exactly", () 
         assert.equal(canonicalSerialize(DefeatTargetSchema.parse(effect.target)), canonicalSerialize(effect.target));
         assert.equal(canonicalSerialize(EffectSchema.parse(effect)), canonicalSerialize(effect));
     }
-    assert.equal(DefeatUnitTargetSchema.safeParse({ kind: "UNITS", relation: "RIVAL", power: { kind: "AT_MOST", value: 2 } }).success, false);
+    // Batch V7 (2026-11-15) widened the Unit AT_MOST bound from the literal 5 to any nonnegative
+    // integer; admission stays with the exact per-card gate table, not the vocabulary.
+    assert.equal(DefeatUnitTargetSchema.safeParse({ kind: "UNITS", relation: "RIVAL", power: { kind: "AT_MOST", value: -1 } }).success, false);
 });
 
 test("V5 foundation Gear vocabulary is a separate literal-two rival-only target", () => {

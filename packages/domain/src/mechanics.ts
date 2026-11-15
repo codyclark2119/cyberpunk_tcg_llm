@@ -80,8 +80,15 @@ export const RegisterEndTurnEffectSchema = z.strictObject({ kind: z.literal("REG
 export const SpendUnitTargetSchema = z.strictObject({ kind: z.literal("UNITS"), relation: TargetRelationshipSchema, costAtMost: z.literal(4) });
 export type SpendUnitTarget = z.infer<typeof SpendUnitTargetSchema>;
 export const SpendUnitEffectSchema = z.strictObject({ kind: z.literal("SPEND_UNIT"), target: SpendUnitTargetSchema });
+// Shared Unit-defeat filter (plan section 6, scope 3b). The grammar admits nothing by itself:
+// every card using it is pinned literally by its execution gate (exact per-card check).
+const DefeatPowerAtMostSchema = z.strictObject({ kind: z.literal("AT_MOST"), value: z.number().int().nonnegative() });
 export const DefeatUnitTargetSchema = z.strictObject({ kind: z.literal("UNITS"), relation: TargetRelationshipSchema,
-    power: z.discriminatedUnion("kind", [z.strictObject({ kind: z.literal("AT_MOST"), value: z.literal(5) }), z.strictObject({ kind: z.literal("CONTROLLED_GIG_VALUE"), dieType: z.literal("D20") })]) });
+    power: z.discriminatedUnion("kind", [DefeatPowerAtMostSchema, z.strictObject({ kind: z.literal("CONTROLLED_GIG_VALUE"), dieType: z.literal("D20") }), z.strictObject({ kind: z.literal("ANY") })]),
+    // Only Units whose current readiness is SPENT are eligible.
+    readiness: z.literal("SPENT").optional(),
+    // "If <condition>, defeat ... with power N or less instead": replaces the AT_MOST bound while the condition holds.
+    instead: z.strictObject({ condition: z.strictObject({ kind: z.literal("STREET_CRED_GREATER_THAN_RIVAL") }), power: DefeatPowerAtMostSchema }).optional() });
 export type DefeatUnitTarget = z.infer<typeof DefeatUnitTargetSchema>;
 // Preserve the Unit selectors and historical effect discriminator. Vocabulary is not execution admission.
 export const DefeatGearTargetSchema = z.strictObject({ kind: z.literal("GEAR"), relation: z.literal("RIVAL"),

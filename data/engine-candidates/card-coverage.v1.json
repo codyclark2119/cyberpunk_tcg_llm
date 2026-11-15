@@ -9,12 +9,12 @@
   },
   "totals": {
     "cards": 151,
-    "admitted": 39,
-    "notAdmitted": 112,
+    "admitted": 42,
+    "notAdmitted": 109,
     "notAdmittedOnlyCoveredFamilies": 0,
     "byAdmission": {
-      "NOT_ADMITTED": 112,
-      "SOURCE_MATCH": 39
+      "NOT_ADMITTED": 109,
+      "SOURCE_MATCH": 42
     }
   },
   "families": [
@@ -33,7 +33,7 @@
       "summary": "Generic target filters and board conditions: classification, cost, power, ready/spent, equipped, face-up, named, lowest power.",
       "notes": "Documented as unsupported: generic condition/filter language. Each admitted filter is a literal.",
       "cardCount": 34,
-      "notAdmittedCount": 30,
+      "notAdmittedCount": 29,
       "soleBlockerCount": 0
     },
     {
@@ -42,7 +42,7 @@
       "summary": "Draw cards, fixed or conditional.",
       "notes": "Routed. Variable counts need SCALED_AMOUNT; 'may draw' needs an optional prompt.",
       "cardCount": 38,
-      "notAdmittedCount": 26,
+      "notAdmittedCount": 25,
       "soleBlockerCount": 0
     },
     {
@@ -51,7 +51,7 @@
       "summary": "[Play] abilities and Program bodies resolving when played.",
       "notes": "Trigger WHEN_PLAYED.",
       "cardCount": 27,
-      "notAdmittedCount": 23,
+      "notAdmittedCount": 21,
       "soleBlockerCount": 0
     },
     {
@@ -91,15 +91,6 @@
       "soleBlockerCount": 0
     },
     {
-      "family": "UNIT_DEFEAT",
-      "status": "PARTIAL",
-      "summary": "Defeat a Unit or Gear chosen with a filter.",
-      "notes": "Filters are fixed literals (power at most 5, power at most a friendly d20, Gear power at most 2).",
-      "cardCount": 18,
-      "notAdmittedCount": 15,
-      "soleBlockerCount": 0
-    },
-    {
       "family": "DECK_SEARCH_REVEAL",
       "status": "PARTIAL",
       "summary": "Top-of-deck manipulation: search/look/reveal top N, trash from the top (Trash N), bottom-deck the rest.",
@@ -123,6 +114,15 @@
       "summary": "Discard: self discard, a Rival discards, discard as a cost, discard a hand.",
       "notes": "DISCARD_CARDS supports only the controller discarding exactly 1.",
       "cardCount": 15,
+      "notAdmittedCount": 13,
+      "soleBlockerCount": 0
+    },
+    {
+      "family": "UNIT_DEFEAT",
+      "status": "PARTIAL",
+      "summary": "Defeat a Unit or Gear chosen with a filter.",
+      "notes": "Filters are fixed literals (power at most 5, power at most a friendly d20, Gear power at most 2).",
+      "cardCount": 18,
       "notAdmittedCount": 13,
       "soleBlockerCount": 0
     },
@@ -235,15 +235,6 @@
       "soleBlockerCount": 0
     },
     {
-      "family": "CONDITION_STREET_CRED",
-      "status": "PARTIAL",
-      "summary": "Conditions on Street Cred.",
-      "notes": "Nearly complete as conditions; gating an effect mode on them is not.",
-      "cardCount": 13,
-      "notAdmittedCount": 7,
-      "soleBlockerCount": 0
-    },
-    {
       "family": "GO_SOLO",
       "status": "PARTIAL",
       "summary": "[Go Solo]: play a Legend as a ready Unit that can attack this turn and is removed when it leaves the field.",
@@ -277,6 +268,15 @@
       "notes": "Triggers WHEN_ATTACKING and WHEN_UNIT_ATTACKS.",
       "cardCount": 14,
       "notAdmittedCount": 7,
+      "soleBlockerCount": 0
+    },
+    {
+      "family": "CONDITION_STREET_CRED",
+      "status": "PARTIAL",
+      "summary": "Conditions on Street Cred.",
+      "notes": "Nearly complete as conditions; gating an effect mode on them is not.",
+      "cardCount": 13,
+      "notAdmittedCount": 6,
       "soleBlockerCount": 0
     },
     {
@@ -961,16 +961,13 @@
       "colors": [
         "BLUE"
       ],
-      "admission": "NOT_ADMITTED",
-      "revision": null,
+      "admission": "SOURCE_MATCH",
+      "revision": 1,
       "families": [
         "DRAW",
         "TRIGGER_PLAY"
       ],
-      "blockingFamilies": [
-        "DRAW",
-        "TRIGGER_PLAY"
-      ],
+      "blockingFamilies": [],
       "note": null
     },
     {
@@ -2755,18 +2752,14 @@
       "colors": [
         "RED"
       ],
-      "admission": "NOT_ADMITTED",
-      "revision": null,
+      "admission": "SOURCE_MATCH",
+      "revision": 1,
       "families": [
         "CONDITION_STREET_CRED",
         "TRIGGER_PLAY",
         "UNIT_DEFEAT"
       ],
-      "blockingFamilies": [
-        "CONDITION_STREET_CRED",
-        "TRIGGER_PLAY",
-        "UNIT_DEFEAT"
-      ],
+      "blockingFamilies": [],
       "note": null
     },
     {
@@ -3548,16 +3541,13 @@
       "colors": [
         "GREEN"
       ],
-      "admission": "NOT_ADMITTED",
-      "revision": null,
+      "admission": "SOURCE_MATCH",
+      "revision": 1,
       "families": [
         "CONDITION_BOARD",
         "UNIT_DEFEAT"
       ],
-      "blockingFamilies": [
-        "CONDITION_BOARD",
-        "UNIT_DEFEAT"
-      ],
+      "blockingFamilies": [],
       "note": null
     },
     {
