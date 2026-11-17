@@ -16,7 +16,10 @@ const TARGETED_DEFEAT_SHAPES = [
         effects: [{ kind: "DEFEAT_UNIT", target: { kind: "UNITS", relation: "RIVAL", power: { kind: "AT_MOST", value: 2 }, instead: { condition: { kind: "STREET_CRED_GREATER_THAN_RIVAL" }, power: { kind: "AT_MOST", value: 3 } } } }] },
     // Batch V7: Wild in the Streets.
     { type: "PROGRAM", colors: ["GREEN"], ram: { GREEN: 4 }, tags: ["Ganger"], cost: 5, sell: true, power: null,
-        effects: [{ kind: "DEFEAT_UNIT", target: { kind: "UNITS", relation: "ANY", power: { kind: "ANY" }, readiness: "SPENT" } }] }
+        effects: [{ kind: "DEFEAT_UNIT", target: { kind: "UNITS", relation: "ANY", power: { kind: "ANY" }, readiness: "SPENT" } }] },
+    // Batch V9: Don't Fear the Reaper, spend all rival Units, then defeat a spent Unit.
+    { type: "PROGRAM", colors: ["GREEN"], ram: { GREEN: 3 }, tags: ["Samurai"], cost: 7, sell: true, power: null,
+        effects: [{ kind: "SPEND_ALL_UNITS", relation: "RIVAL" }, { kind: "DEFEAT_UNIT", target: { kind: "UNITS", relation: "ANY", power: { kind: "ANY" }, readiness: "SPENT" } }] }
 ] as const;
 /** Complete per-card shapes; no source-name dispatch or arbitrary filter/defeat admission. */
 export function supportsTargetedDefeatCard(card: DeepReadonly<CardRevisionSnapshot> | undefined, context: EngineContext) {
@@ -31,7 +34,7 @@ export function supportsTargetedDefeatCard(card: DeepReadonly<CardRevisionSnapsh
 // Owns TARGETED_DEFEAT_V1 and Unit-target defeat effects only. The Gear scope and Gear-target
 // effects are owned by validateTargetedGearDefeatMetadata, which validateState registers alongside
 // this one; a mixed card is claimed by both detectors and must satisfy both complete gates.
-export function hasTargetedDefeatMetadata(card: DeepReadonly<CardRevisionSnapshot>) { return card.execution?.scope === "TARGETED_DEFEAT_V1" || card.mechanics.abilities.some(a => a.effects.some(e => e.kind === "DEFEAT_UNIT" && e.target.kind === "UNITS")); }
+export function hasTargetedDefeatMetadata(card: DeepReadonly<CardRevisionSnapshot>) { return card.execution?.scope === "TARGETED_DEFEAT_V1" || card.mechanics.abilities.some(a => a.effects.some(e => e.kind === "DEFEAT_UNIT" && e.target.kind === "UNITS" || e.kind === "SPEND_ALL_UNITS")); }
 export function validateTargetedDefeatMetadata(state: GameState, context: EngineContext) {
     for (const c of Object.values(state.objects.cards)) { const r = context.content.cards.find(r => r.id === c.cardId && r.revision === c.revision); if (r && hasTargetedDefeatMetadata(r)) { const v = supportsTargetedDefeatCard(r, context); if (!v.ok) return v; } }
     return success(null);

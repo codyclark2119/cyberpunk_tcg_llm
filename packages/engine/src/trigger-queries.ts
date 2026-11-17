@@ -30,7 +30,7 @@ export function effectiveTriggeredAbilities(state: GameState, subjectId: CardIns
     }).sort((a, b) => a.sourceId < b.sourceId ? -1 : a.sourceId > b.sourceId ? 1 : a.abilityId < b.abilityId ? -1 : a.abilityId > b.abilityId ? 1 : 0);
 }
 export function discoverTriggers(state: GameState, origin: TriggerOrigin, context: EngineContext): TriggerBinding[] {
-    if (origin.kind === "END_TURN") return [...(origin.delayedEffects ?? []).map(delayedBinding), ...state.players[origin.playerId].zones.BATTLEFIELD.flatMap(id => effectiveTriggeredAbilities(state, id, context).filter(b => {
+    if (origin.kind === "END_TURN") return [...(origin.delayedEffects ?? []).map(delayedBinding), ...[...state.players[origin.playerId].zones.BATTLEFIELD, ...state.players[origin.playerId].zones.LEGENDS].flatMap(id => effectiveTriggeredAbilities(state, id, context).filter(b => {
         const a = cardRevision(state, b.sourceId, context)!.mechanics.abilities.find(a => a.id === b.abilityId)!;
         return b.kind === "WHEN_OWN_TURN_ENDS" && b.controllerId === origin.playerId && a.conditions.every(c => testCondition(state, b.controllerId, c, context, b.subjectId));
     }))];

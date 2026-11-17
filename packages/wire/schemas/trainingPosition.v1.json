@@ -2757,6 +2757,51 @@
                           "properties": {
                             "kind": {
                               "type": "string",
+                              "const": "SPEND_ALL_UNITS"
+                            },
+                            "relation": {
+                              "type": "string",
+                              "const": "RIVAL"
+                            }
+                          },
+                          "required": [
+                            "kind",
+                            "relation"
+                          ],
+                          "additionalProperties": false
+                        },
+                        {
+                          "type": "object",
+                          "properties": {
+                            "kind": {
+                              "type": "string",
+                              "const": "RETURN_TO_HAND"
+                            },
+                            "target": {
+                              "type": "object",
+                              "properties": {
+                                "kind": {
+                                  "type": "string",
+                                  "const": "SOURCE"
+                                }
+                              },
+                              "required": [
+                                "kind"
+                              ],
+                              "additionalProperties": false
+                            }
+                          },
+                          "required": [
+                            "kind",
+                            "target"
+                          ],
+                          "additionalProperties": false
+                        },
+                        {
+                          "type": "object",
+                          "properties": {
+                            "kind": {
+                              "type": "string",
                               "const": "DEFEAT_UNIT"
                             },
                             "target": {
@@ -4973,6 +5018,51 @@
                         "properties": {
                           "kind": {
                             "type": "string",
+                            "const": "SPEND_ALL_UNITS"
+                          },
+                          "relation": {
+                            "type": "string",
+                            "const": "RIVAL"
+                          }
+                        },
+                        "required": [
+                          "kind",
+                          "relation"
+                        ],
+                        "additionalProperties": false
+                      },
+                      {
+                        "type": "object",
+                        "properties": {
+                          "kind": {
+                            "type": "string",
+                            "const": "RETURN_TO_HAND"
+                          },
+                          "target": {
+                            "type": "object",
+                            "properties": {
+                              "kind": {
+                                "type": "string",
+                                "const": "SOURCE"
+                              }
+                            },
+                            "required": [
+                              "kind"
+                            ],
+                            "additionalProperties": false
+                          }
+                        },
+                        "required": [
+                          "kind",
+                          "target"
+                        ],
+                        "additionalProperties": false
+                      },
+                      {
+                        "type": "object",
+                        "properties": {
+                          "kind": {
+                            "type": "string",
                             "const": "DEFEAT_UNIT"
                           },
                           "target": {
@@ -7172,6 +7262,51 @@
                                 "additionalProperties": false
                               }
                             ]
+                          }
+                        },
+                        "required": [
+                          "kind",
+                          "target"
+                        ],
+                        "additionalProperties": false
+                      },
+                      {
+                        "type": "object",
+                        "properties": {
+                          "kind": {
+                            "type": "string",
+                            "const": "SPEND_ALL_UNITS"
+                          },
+                          "relation": {
+                            "type": "string",
+                            "const": "RIVAL"
+                          }
+                        },
+                        "required": [
+                          "kind",
+                          "relation"
+                        ],
+                        "additionalProperties": false
+                      },
+                      {
+                        "type": "object",
+                        "properties": {
+                          "kind": {
+                            "type": "string",
+                            "const": "RETURN_TO_HAND"
+                          },
+                          "target": {
+                            "type": "object",
+                            "properties": {
+                              "kind": {
+                                "type": "string",
+                                "const": "SOURCE"
+                              }
+                            },
+                            "required": [
+                              "kind"
+                            ],
+                            "additionalProperties": false
                           }
                         },
                         "required": [

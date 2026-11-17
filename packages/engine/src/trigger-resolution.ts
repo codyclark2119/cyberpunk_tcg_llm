@@ -1,3 +1,4 @@
+import { processDeparture } from "./card-movement";
 import { beginTargetedDefeat } from "./targeted-defeat";
 import { resolveSpendTarget } from "./targeted-spend";
 import { listSpendUnitTargets } from "./targeted-spend-queries";
@@ -148,9 +149,17 @@ export function advanceTriggers(m: TurnMutation): Result<null> {
         const met = a.conditions.every(cond => testCondition(m.state, current.controllerId, cond, m.context, current.trigger!.subjectId));
         if (a.conditions.length) m.emit({ kind: "CONDITION_EVALUATED", effectId: current.id, met });
         if (!met) return completed(m);
-        if (e.target.kind === "SOURCE") { const s = m.state.objects.cards[current.trigger!.subjectId]; if (s?.zone.zone === "BATTLEFIELD" && s.face === "UP") readyCardForEffect(m, s.id); return completed(m); }
+        if (e.target.kind === "SOURCE") { const s = m.state.objects.cards[current.trigger!.subjectId]; if ((s?.zone.zone === "BATTLEFIELD" || s?.zone.zone === "LEGENDS") && s.face === "UP") readyCardForEffect(m, s.id); return completed(m); }
         if (!readyLegendTargets(m.state, current.controllerId, m.context).length) return completed(m);
         c.phase = "TARGET"; return offer(m);
+    }
+    // Batch V9: own-turn-end "return this Unit to its owner's hand"; 4.12 equipped Gear moves with it.
+    if (e.kind === "RETURN_TO_HAND") {
+        const subject = m.state.objects.cards[r.current.trigger!.subjectId];
+        if (subject?.zone.zone !== "BATTLEFIELD" || subject.face !== "UP") return completed(m);
+        const stage = m.state.resolution.stage, moved = processDeparture(m, subject.id, "HAND");
+        if (!moved.ok) return moved;
+        m.state.resolution.stage = stage; return completed(m);
     }
     if (e.kind === "REGISTER_END_TURN_EFFECT") { const result = registerEndTurnEffect(m); return result.ok ? completed(m) : result; }
     if (e.kind === "READY_EDDIES") {

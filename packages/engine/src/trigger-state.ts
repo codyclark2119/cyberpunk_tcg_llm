@@ -1,3 +1,4 @@
+import { supportsEndTurnCard } from "./end-turn-support";
 import { attackConditionPowerEnabled } from "./attack-condition-power-support";
 import { validateEffectDefeatFacts } from "./targeted-defeat-state";
 import { effectiveCardTypes } from "./characteristics";
@@ -32,7 +33,7 @@ function validBinding(state: GameState, b: TriggerBinding, context: EngineContex
         const d = origin.kind === "END_TURN" && origin.delayedEffects?.find(d => d.id === b.delayedId);
         return Boolean(d && supportsDelayedAttackGear(r, context).ok && canonicalSerialize(b) === canonicalSerialize(delayedBinding(d)));
     }
-    if (origin.kind === "END_TURN") return b.kind === "WHEN_OWN_TURN_ENDS" && b.sourceId === b.subjectId && b.controllerId === origin.playerId && ability.conditions.every(c => testCondition(state, b.controllerId, c, context, b.subjectId));
+    if (origin.kind === "END_TURN") return b.kind === "WHEN_OWN_TURN_ENDS" && (b.sourceId === b.subjectId || r?.type === "GEAR" && ability.inherited === "EQUIPPED_HOST" && supportsEndTurnCard(r, context).ok) && b.controllerId === origin.playerId && ability.conditions.every(c => testCondition(state, b.controllerId, c, context, b.subjectId));
     if (origin.kind === "FIGHT") return b.kind === "WHEN_FIGHT_WON" && b.subjectId === origin.result.winnerId && validFightFact(state, origin.result);
     if (origin.kind === "DEFEAT") return b.kind === "WHEN_DEFEATED" && origin.defeated.some(d => d.targetId === b.subjectId) && !["BATTLEFIELD", "LEGENDS"].includes(subject.zone.zone);
     if (origin.kind === "ATTACK") {

@@ -107,6 +107,10 @@ export const EffectSchema = z.discriminatedUnion("kind", [
     z.strictObject({ kind: z.literal("SPEND_SOURCE") }),
     // "Ready this Unit" / "ready a friendly face-up Legend" (batch V8).
     z.strictObject({ kind: z.literal("READY_UNIT"), target: z.discriminatedUnion("kind", [z.strictObject({ kind: z.literal("SOURCE") }), z.strictObject({ kind: z.literal("FRIENDLY_FACE_UP_LEGEND") })]) }),
+    // "Spend all rival Units" (batch V9).
+    z.strictObject({ kind: z.literal("SPEND_ALL_UNITS"), relation: z.literal("RIVAL") }),
+    // "Return this Unit to its owner's hand" (batch V9); 4.12: equipped Gear moves with it.
+    z.strictObject({ kind: z.literal("RETURN_TO_HAND"), target: z.strictObject({ kind: z.literal("SOURCE") }) }),
     DefeatUnitEffectSchema,
     ReadyEddiesEffectSchema,
     RegisterEndTurnEffectSchema,
