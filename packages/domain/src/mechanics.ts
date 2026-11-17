@@ -38,6 +38,8 @@ export const CombatRestrictionSchema = z.discriminatedUnion("kind", [
     z.strictObject({ kind: z.literal("CANNOT_ATTACK") }),
     // 9.3.2.2/9.3.2.3: removes only the rival Gig area from this Unit's valid attack targets.
     z.strictObject({ kind: z.literal("CANNOT_ATTACK_GIG_AREA") }),
+    // Batch V10: "This Unit can't attack unless you played a Program this turn."
+    z.strictObject({ kind: z.literal("CANNOT_ATTACK_UNLESS_PROGRAM_PLAYED_THIS_TURN") }),
     z.strictObject({ kind: z.literal("CANNOT_BE_BLOCKED"), condition: z.strictObject({ kind: z.literal("STREET_CRED_LESS_THAN_RIVAL") }) })
 ]);
 export type CombatRestriction = z.infer<typeof CombatRestrictionSchema>;
@@ -91,7 +93,9 @@ export const DefeatUnitTargetSchema = z.strictObject({ kind: z.literal("UNITS"),
     // Only Units whose current readiness is SPENT are eligible.
     readiness: z.literal("SPENT").optional(),
     // "If <condition>, defeat ... with power N or less instead": replaces the AT_MOST bound while the condition holds.
-    instead: z.strictObject({ condition: z.strictObject({ kind: z.literal("STREET_CRED_GREATER_THAN_RIVAL") }), power: DefeatPowerAtMostSchema }).optional() });
+    instead: z.strictObject({ condition: z.strictObject({ kind: z.literal("STREET_CRED_GREATER_THAN_RIVAL") }), power: DefeatPowerAtMostSchema }).optional(),
+    // "Defeat all other Units" (batch V10): every eligible Unit except the effect source, with no target choice.
+    all: z.literal("OTHER_THAN_SOURCE").optional() });
 export type DefeatUnitTarget = z.infer<typeof DefeatUnitTargetSchema>;
 // Preserve the Unit selectors and historical effect discriminator. Vocabulary is not execution admission.
 export const DefeatGearTargetSchema = z.strictObject({ kind: z.literal("GEAR"), relation: z.literal("RIVAL"),

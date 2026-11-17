@@ -1,3 +1,4 @@
+import { programPlayHistoryEnabled } from "./restriction-support";
 import { validateAttackConditionPowerMetadata } from "./attack-condition-power-support";
 import { validateTargetedSpendMetadata } from "./targeted-spend-support";
 import { validateTargetedDefeatMetadata } from "./targeted-defeat-support";
@@ -77,7 +78,7 @@ export function createGameWithEvents(input: z.input<typeof CreateGameInputSchema
     s.timing.step = "MAIN";
     for (const p of Object.values(s.players))
         p.economy = { sellsThisTurn: 0, callsThisTurn: 0, usageTurn: 1 };
-    if (triggersEnabled(context)) s.turnHistory = { ...(firstAttackHistoryEnabled(context) ? { firstArasakaAttacks: initialFirstAttackHistory(s) } : {}), turn: 1, triggeredBatches: 0, blueUnitOrGearPlays: Object.fromEntries(s.match.playerOrder.map(id => [id, 0])) };
+    if (triggersEnabled(context)) s.turnHistory = { ...(firstAttackHistoryEnabled(context) ? { firstArasakaAttacks: initialFirstAttackHistory(s) } : {}), turn: 1, triggeredBatches: 0, blueUnitOrGearPlays: Object.fromEntries(s.match.playerOrder.map(id => [id, 0])), ...(programPlayHistoryEnabled(context) ? { programPlays: Object.fromEntries(s.match.playerOrder.map(id => [id, 0])) } : {}) };
     // Capability admission is deck-wide, never a hidden-Legend-specific label/filter.
     const attackPowerMetadata = validateAttackConditionPowerMetadata(s, context); if (!attackPowerMetadata.ok) return attackPowerMetadata;
     const spendMetadata = validateTargetedSpendMetadata(s, context); if (!spendMetadata.ok) return spendMetadata;

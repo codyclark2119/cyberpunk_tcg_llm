@@ -19,7 +19,10 @@ const TARGETED_DEFEAT_SHAPES = [
         effects: [{ kind: "DEFEAT_UNIT", target: { kind: "UNITS", relation: "ANY", power: { kind: "ANY" }, readiness: "SPENT" } }] },
     // Batch V9: Don't Fear the Reaper, spend all rival Units, then defeat a spent Unit.
     { type: "PROGRAM", colors: ["GREEN"], ram: { GREEN: 3 }, tags: ["Samurai"], cost: 7, sell: true, power: null,
-        effects: [{ kind: "SPEND_ALL_UNITS", relation: "RIVAL" }, { kind: "DEFEAT_UNIT", target: { kind: "UNITS", relation: "ANY", power: { kind: "ANY" }, readiness: "SPENT" } }] }
+        effects: [{ kind: "SPEND_ALL_UNITS", relation: "RIVAL" }, { kind: "DEFEAT_UNIT", target: { kind: "UNITS", relation: "ANY", power: { kind: "ANY" }, readiness: "SPENT" } }] },
+    // Batch V10: Adam Smasher: Metal Over Meat, {Play} defeat all other Units.
+    { type: "UNIT", colors: ["YELLOW"], ram: { YELLOW: 6 }, tags: ["Arasaka", "Merc"], cost: 9, sell: false, power: 15,
+        effects: [{ kind: "DEFEAT_UNIT", target: { kind: "UNITS", relation: "ANY", power: { kind: "ANY" }, all: "OTHER_THAN_SOURCE" } }] }
 ] as const;
 /** Complete per-card shapes; no source-name dispatch or arbitrary filter/defeat admission. */
 export function supportsTargetedDefeatCard(card: DeepReadonly<CardRevisionSnapshot> | undefined, context: EngineContext) {

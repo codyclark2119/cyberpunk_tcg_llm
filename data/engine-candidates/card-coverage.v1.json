@@ -9,12 +9,12 @@
   },
   "totals": {
     "cards": 151,
-    "admitted": 48,
-    "notAdmitted": 103,
+    "admitted": 50,
+    "notAdmitted": 101,
     "notAdmittedOnlyCoveredFamilies": 0,
     "byAdmission": {
-      "NOT_ADMITTED": 103,
-      "SOURCE_MATCH": 48
+      "NOT_ADMITTED": 101,
+      "SOURCE_MATCH": 50
     }
   },
   "families": [
@@ -51,7 +51,7 @@
       "summary": "[Play] abilities and Program bodies resolving when played.",
       "notes": "Trigger WHEN_PLAYED.",
       "cardCount": 27,
-      "notAdmittedCount": 20,
+      "notAdmittedCount": 19,
       "soleBlockerCount": 0
     },
     {
@@ -109,15 +109,6 @@
       "soleBlockerCount": 0
     },
     {
-      "family": "ATTACK_PERMISSION",
-      "status": "PARTIAL",
-      "summary": "Who may attack what and when: can't attack, may attack ready/spent Units, must attack, can't be blocked.",
-      "notes": "Restrictions on the card itself are supported; permissions granted by effects, forced attacks and off-turn timing are not.",
-      "cardCount": 16,
-      "notAdmittedCount": 12,
-      "soleBlockerCount": 0
-    },
-    {
       "family": "DURATION_DELAYED",
       "status": "PARTIAL",
       "summary": "Lasting and delayed effects: 'until your next turn', 'next time ... this turn', 'at the end of this turn'.",
@@ -127,12 +118,21 @@
       "soleBlockerCount": 0
     },
     {
+      "family": "ATTACK_PERMISSION",
+      "status": "PARTIAL",
+      "summary": "Who may attack what and when: can't attack, may attack ready/spent Units, must attack, can't be blocked.",
+      "notes": "Restrictions on the card itself are supported; permissions granted by effects, forced attacks and off-turn timing are not.",
+      "cardCount": 16,
+      "notAdmittedCount": 11,
+      "soleBlockerCount": 0
+    },
+    {
       "family": "UNIT_DEFEAT",
       "status": "PARTIAL",
       "summary": "Defeat a Unit or Gear chosen with a filter.",
       "notes": "Filters are fixed literals (power at most 5, power at most a friendly d20, Gear power at most 2).",
       "cardCount": 18,
-      "notAdmittedCount": 12,
+      "notAdmittedCount": 11,
       "soleBlockerCount": 0
     },
     {
@@ -217,15 +217,6 @@
       "soleBlockerCount": 0
     },
     {
-      "family": "TURN_HISTORY",
-      "status": "PARTIAL",
-      "summary": "'First time each turn', 'this turn you played', 'if it stole or fought this turn'.",
-      "notes": "Guards FIRST_BLUE_UNIT_OR_GEAR_PLAY_PER_TURN and FIRST_FRIENDLY_ARASAKA_UNIT_ATTACK_PER_TURN.",
-      "cardCount": 11,
-      "notAdmittedCount": 8,
-      "soleBlockerCount": 0
-    },
-    {
       "family": "GO_SOLO",
       "status": "PARTIAL",
       "summary": "[Go Solo]: play a Legend as a ready Unit that can attack this turn and is removed when it leaves the field.",
@@ -258,6 +249,15 @@
       "summary": "[Attack] abilities and 'when a Unit attacks' triggers.",
       "notes": "Triggers WHEN_ATTACKING and WHEN_UNIT_ATTACKS.",
       "cardCount": 14,
+      "notAdmittedCount": 7,
+      "soleBlockerCount": 0
+    },
+    {
+      "family": "TURN_HISTORY",
+      "status": "PARTIAL",
+      "summary": "'First time each turn', 'this turn you played', 'if it stole or fought this turn'.",
+      "notes": "Guards FIRST_BLUE_UNIT_OR_GEAR_PLAY_PER_TURN and FIRST_FRIENDLY_ARASAKA_UNIT_ATTACK_PER_TURN.",
+      "cardCount": 11,
       "notAdmittedCount": 7,
       "soleBlockerCount": 0
     },
@@ -325,15 +325,6 @@
       "soleBlockerCount": 0
     },
     {
-      "family": "MASS_EFFECT",
-      "status": "MISSING",
-      "summary": "Effects on all Units or each player.",
-      "notes": "",
-      "cardCount": 5,
-      "notAdmittedCount": 4,
-      "soleBlockerCount": 0
-    },
-    {
       "family": "TRIGGER_END_OF_TURN",
       "status": "PARTIAL",
       "summary": "'At the end of your turn' abilities.",
@@ -357,6 +348,15 @@
       "summary": "Move Gear between hosts, or defeat a friendly Gear as a cost or choice.",
       "notes": "",
       "cardCount": 3,
+      "notAdmittedCount": 3,
+      "soleBlockerCount": 0
+    },
+    {
+      "family": "MASS_EFFECT",
+      "status": "MISSING",
+      "summary": "Effects on all Units or each player.",
+      "notes": "",
+      "cardCount": 5,
       "notAdmittedCount": 3,
       "soleBlockerCount": 0
     },
@@ -519,18 +519,14 @@
       "colors": [
         "YELLOW"
       ],
-      "admission": "NOT_ADMITTED",
-      "revision": null,
+      "admission": "SOURCE_MATCH",
+      "revision": 1,
       "families": [
         "MASS_EFFECT",
         "TRIGGER_PLAY",
         "UNIT_DEFEAT"
       ],
-      "blockingFamilies": [
-        "MASS_EFFECT",
-        "TRIGGER_PLAY",
-        "UNIT_DEFEAT"
-      ],
+      "blockingFamilies": [],
       "note": null
     },
     {
@@ -1493,16 +1489,13 @@
       "colors": [
         "BLUE"
       ],
-      "admission": "NOT_ADMITTED",
-      "revision": null,
+      "admission": "SOURCE_MATCH",
+      "revision": 1,
       "families": [
         "ATTACK_PERMISSION",
         "TURN_HISTORY"
       ],
-      "blockingFamilies": [
-        "ATTACK_PERMISSION",
-        "TURN_HISTORY"
-      ],
+      "blockingFamilies": [],
       "note": null
     },
     {

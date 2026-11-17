@@ -39,6 +39,11 @@ export function listDefeatableUnits(state: GameState, actor: PlayerId, target: D
         return power !== null && values.some(value => referencedPower(power) <= value);
     }).map(c => c.id).sort();
 }
+/** "Defeat all other Units": the whole current eligible set minus the effect source, sorted; no target choice. */
+export function allOtherDefeatTargets(state: GameState, e: NonNullable<GameState["resolution"]["current"]>, context: EngineContext) {
+    if (e.effect.kind !== "DEFEAT_UNIT" || e.effect.target.kind !== "UNITS" || e.effect.target.all !== "OTHER_THAN_SOURCE") return null;
+    return listDefeatTargets(state, e.controllerId, e.effect.target, context).filter(id => id !== e.sourceId);
+}
 export function targetedDefeatChoice(state: GameState, context: EngineContext): PendingChoice {
     const e = state.resolution.current!;
     if (e.effect.kind !== "DEFEAT_UNIT") throw new Error("Expected a targeted defeat effect");

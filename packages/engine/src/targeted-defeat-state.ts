@@ -5,7 +5,7 @@ import { targetedDefeatEnabled, supportsTargetedDefeatCard } from "./targeted-de
 import { testCondition } from "./conditions";
 import { defeatBatch } from "./defeat";
 import { defeatOrderChoice } from "./combat-outcome-queries";
-import { listDefeatTargets, targetedDefeatChoice } from "./targeted-defeat-queries";
+import { allOtherDefeatTargets, listDefeatTargets, targetedDefeatChoice } from "./targeted-defeat-queries";
 import { supportsTargetedGearDefeatCard } from "./targeted-gear-defeat-support";
 import { reactEnabled } from "./react-support";
 import { attackSourceValid, listAttackTargets } from "./combat-queries";
@@ -61,10 +61,12 @@ export function validateTargetedDefeatState(state: GameState, context: EngineCon
         const expected = targetedDefeatChoice(state, context);
         if (r.defeatContinuation || state.timing.step !== "TARGET_SELECTION" || expected.options.length < 2 || canonicalSerialize(expected) !== canonicalSerialize(r.choice)) return failure("INVALID_DEFEAT_TARGET", "Only exact current strategic targets may pause");
     } else {
-        const d = r.defeatContinuation;
-        if (!d || d.fightResult || d.appliedPrevention || d.appliedPreventions || d.defeats.length !== 1 || d.orders.length !== 1 || d.defeats[0].defeatedBy !== source.id || d.orders[0].targetId !== d.defeats[0].targetId || !listDefeatTargets(state, e.controllerId, e.effect.target, context).includes(d.defeats[0].targetId)) return failure("INVALID_EFFECT_DEFEAT", "Exact still-eligible selected Unit and effect source required; no fight/prevention metadata");
-        const order = d.orders[0], batch = defeatBatch(state, order.targetId);
-        if (new Set(order.cardIds).size !== order.cardIds.length || order.cardIds.some(id => !batch.includes(id)) || batch.length - order.cardIds.length < 2 || state.timing.step !== "DEFEAT_ORDER_SELECTION" || canonicalSerialize(defeatOrderChoice(state)) !== canonicalSerialize(r.choice)) return failure("INVALID_DEFEAT_ORDER", "Exact owner prefix and strategic shared Trash-order choice required");
+        const d = r.defeatContinuation, all = allOtherDefeatTargets(state, e, context);
+        // "All other Units" must hold exactly the current eligible set; a single target must remain eligible.
+        if (!d || d.fightResult || d.appliedPrevention || d.appliedPreventions || (all ? !all.length || canonicalSerialize(d.defeats.map(x => x.targetId)) !== canonicalSerialize(all) : d.defeats.length !== 1 || !listDefeatTargets(state, e.controllerId, e.effect.target, context).includes(d.defeats[0].targetId)) || d.orders.length !== d.defeats.length || d.defeats.some((x, i) => x.defeatedBy !== source.id || d.orders[i].targetId !== x.targetId)) return failure("INVALID_EFFECT_DEFEAT", "Exact still-eligible selected Unit(s) and effect source required; no fight/prevention metadata");
+        // Orders finish in sequence: complete orders, then the one paused order, then untouched orders.
+        const current = d.orders.findIndex(o => o.cardIds.length < defeatBatch(state, o.targetId).length);
+        if (current < 0 || d.orders.some((o, i) => { const batch = defeatBatch(state, o.targetId); return new Set(o.cardIds).size !== o.cardIds.length || o.cardIds.some(id => !batch.includes(id)) || (i < current ? o.cardIds.length !== batch.length : i > current ? o.cardIds.length !== 0 : batch.length - o.cardIds.length < 2); }) || state.timing.step !== "DEFEAT_ORDER_SELECTION" || canonicalSerialize(defeatOrderChoice(state)) !== canonicalSerialize(r.choice)) return failure("INVALID_DEFEAT_ORDER", "Exact owner prefix and strategic shared Trash-order choice required");
     }
     return success(null);
 }
@@ -75,7 +77,7 @@ export function validateEffectDefeatFacts(state: GameState, context: EngineConte
     const origin = c.origin, program = origin.kind === "DEFEAT" ? origin.effectSource : undefined, defeats: readonly DefeatInstruction[] | undefined = program && origin.kind === "DEFEAT" ? origin.defeated : c.effectDefeats;
     if (!defeats) return success(null);
     const sourceId = program ?? (origin.kind === "PLAY" ? origin.subjectId : null), source = sourceId && state.objects.cards[sourceId], revision = source && cardRevision(state, source.id, context);
-    if (!targetedDefeatEnabled(context) || !source || !(supportsTargetedDefeatCard(revision || undefined, context).ok || supportsTargetedGearDefeatCard(revision || undefined, context).ok) || defeats.length !== 1 || !validAftermathOrigin(state, source.controllerId, revision, context) || (program ? revision!.type !== "PROGRAM" || source.zone.zone !== "TRASH" || c.effectDefeats : revision!.type !== "UNIT" || source.zone.zone !== "BATTLEFIELD") || defeats.some(d => d.defeatedBy !== source.id || !state.objects.cards[d.targetId] || !["TRASH", "REMOVED"].includes(state.objects.cards[d.targetId].zone.zone)))
+    if (!targetedDefeatEnabled(context) || !source || !(supportsTargetedDefeatCard(revision || undefined, context).ok || supportsTargetedGearDefeatCard(revision || undefined, context).ok) || (defeats.length !== 1 && !(revision?.type === "UNIT" && revision.mechanics.abilities[0].effects.some(e => e.kind === "DEFEAT_UNIT" && e.target.kind === "UNITS" && e.target.all === "OTHER_THAN_SOURCE"))) || !validAftermathOrigin(state, source.controllerId, revision, context) || (program ? revision!.type !== "PROGRAM" || source.zone.zone !== "TRASH" || c.effectDefeats : revision!.type !== "UNIT" || source.zone.zone !== "BATTLEFIELD") || defeats.some(d => d.defeatedBy !== source.id || !state.objects.cards[d.targetId] || !["TRASH", "REMOVED"].includes(state.objects.cards[d.targetId].zone.zone)))
         return failure("INVALID_EFFECT_DEFEAT_FACT", "Bounded source and declared post-movement target identities required");
     const expected = defeats.flatMap(d => { const r = cardRevision(state, d.targetId, context)!; return r.mechanics.abilities.filter(a => a.trigger === "WHEN_DEFEATED").map(a => ({ sourceId: d.targetId, subjectId: d.targetId, controllerId: state.objects.cards[d.targetId].controllerId, source: { cardId: r.id, revision: r.revision }, abilityId: a.id, kind: "WHEN_DEFEATED" })); });
     const actual = c.bindings.filter(b => b.kind === "WHEN_DEFEATED");

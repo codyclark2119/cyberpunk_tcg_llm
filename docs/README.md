@@ -51,6 +51,7 @@ were recorded in their pull requests (#4, #7, #8); later batches have documents 
 | V5 (2026-09-18) | Detonate | [contract](api-admission-batch-v5.md), [implementation status](api-admission-batch-v5-implementation-status.md), [baseline completion runbook](api-admission-batch-v5-baseline-completion.md) |
 | V8 (2026-11-17) | Offduty Malfini, Modded Muramasa, MaxTac Squadron | [shared spend and ready effects](api-admission-batch-v8.md); coverage 45/151 |
 | V9 (2026-11-17) | Sandevistan, Modded Kusanagi, Don't Fear the Reaper | [end-turn Gear ready, return to hand, mass spend](api-admission-batch-v9.md); coverage 48/151 |
+| V10 (2026-11-17) | Adam Smasher: Metal Over Meat, Jacked-in Voodoo Boy | [defeat all other Units, Program-play attack ban](api-admission-batch-v10.md); coverage 50/151 |
 | V7 (2026-11-15) | Royce: Don't Call Me Simon, Wild in the Streets, Delamain: Rideshare AI | [shared defeat filter and exact pin table](api-admission-batch-v7.md); coverage 42/151 |
 | V6 (2026-09-22) | Trust No One | [contract and executable slice](api-admission-batch-v6.md), [baseline verification](api-admission-batch-v6-verification.md) |
 

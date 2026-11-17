@@ -1296,6 +1296,19 @@
                 "minimum": 0,
                 "maximum": 9007199254740991
               }
+            },
+            "programPlays": {
+              "type": "object",
+              "propertyNames": {
+                "type": "string",
+                "format": "uuid",
+                "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+              },
+              "additionalProperties": {
+                "type": "integer",
+                "minimum": 0,
+                "maximum": 9007199254740991
+              }
             }
           },
           "required": [
@@ -2920,6 +2933,10 @@
                                         "power"
                                       ],
                                       "additionalProperties": false
+                                    },
+                                    "all": {
+                                      "type": "string",
+                                      "const": "OTHER_THAN_SOURCE"
                                     }
                                   },
                                   "required": [
@@ -5181,6 +5198,10 @@
                                       "power"
                                     ],
                                     "additionalProperties": false
+                                  },
+                                  "all": {
+                                    "type": "string",
+                                    "const": "OTHER_THAN_SOURCE"
                                   }
                                 },
                                 "required": [
@@ -7438,6 +7459,10 @@
                                       "power"
                                     ],
                                     "additionalProperties": false
+                                  },
+                                  "all": {
+                                    "type": "string",
+                                    "const": "OTHER_THAN_SOURCE"
                                   }
                                 },
                                 "required": [
@@ -10365,6 +10390,11 @@
                 "maximum": 9007199254740991
               },
               "blueUnitOrGearPlays": {
+                "type": "integer",
+                "minimum": 0,
+                "maximum": 9007199254740991
+              },
+              "programPlays": {
                 "type": "integer",
                 "minimum": 0,
                 "maximum": 9007199254740991
