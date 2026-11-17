@@ -608,9 +608,21 @@ def test_v1_is_byte_identical():
 def test_v2_committed_set_is_exactly_what_the_code_builds():
     manifest = v2_manifest()
     args = ["--dataset-name", tf.V2_DATASET, "--check"]
+    rows = [r for split in ("train", "valid") for r in read_jsonl(V2_DIR / f"{split}.jsonl")]
     for source in manifest["item_sources"]:
-        assert tf.file_sha256(REPO_ROOT / source["path"]) == source["sha256"], source
-        args += ["--scenarios", str(REPO_ROOT / source["path"])]
+        path = REPO_ROOT / source["path"]
+        if tf.file_sha256(path) != source["sha256"]:
+            # A frozen set (built under an earlier prompt) whose item source was regenerated for a later engine
+            # identity (#74 moved engine-positions-v1 to 0.4.3 on 2026-11-15): only its provenance pins may differ,
+            # so every item the set embeds must still have the same statement and label under the same id.
+            assert manifest["assistant_prompt_version"] != tf.ASSISTANT_PROMPT_VERSION, source
+            items = {i["id"]: i for i in read_jsonl(path)}
+            embedded = [r for r in rows if r["id"] in items]
+            assert embedded, source
+            for row in embedded:
+                assert (row["statement"], row["label"]) == (items[row["id"]]["statement"],
+                                                            "A" if items[row["id"]]["label"] else "B"), row["id"]
+        args += ["--scenarios", str(path)]
     assert {Path(s["path"]).name for s in manifest["item_sources"]} == {
         "engine-positions-v1.jsonl", "scenarios-drafted-v1.jsonl"}
     with contextlib.redirect_stdout(io.StringIO()):

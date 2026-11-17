@@ -85,3 +85,22 @@ The header then records `engine_check: false`, the reduced `tool_specs_sha256` a
 The planned comparison runs mixed seeds 1-3 and the official set with and without the tool, with per-item diffs. It is not run yet, because it needs the Mac. Expected lift, from the plan: 0-2 questions, since only the 29 Demo cards can appear in positions.
 
 `data/gold/` and `eval/runs/` are unchanged by this work.
+
+## Quiz results (Mac, 2026-11-15)
+
+These are Qwen3-8B 4-bit runs with thinking on, the preload on and max tokens 4096, on master `7fcbdb3`. Every arm uses the same items. The quiz seeds draw 40 of the 64 keyed items, with a pass mark of 35; the official set has 37 keyed items. The runs read the catalog under engine `0.4.2`. #74 then regenerated the catalog for `0.4.3` with identical verdicts.
+
+| Run | v7 (earlier, no tool) | v8 with engine_check | v8 `--no-engine-check` |
+| --- | --- | --- | --- |
+| Quiz seed 1 | 32/40 | 27/40 | 28/40 |
+| Quiz seed 2 | 33/40 | 30/40 | 31/40 |
+| Quiz seed 3 | 34/40 | 31/40 | 31/40 |
+| Official set | 30/37 | 29/37 | 29/37 |
+
+**The model never called `engine_check`.** Across all 157 v8 items with the tool offered, it made 0 calls, so the tool cannot have moved any answer. Every item that differs between the two v8 arms differs without a call. These were mostly rules questions, and the position-shaped ones need the model to pick an exemplar Demo card itself, which it did not do.
+
+**The score moves with trivial prompt changes.** `--no-engine-check` sends the v7 prompt and tool specs, with one difference: the version stamp at the end reads `assistant-chat-v8` instead of `assistant-chat-v7`. Against the v7 runs, that one-character change flipped 10, 4 and 7 items on seeds 1-3, in both directions, and cost 4, 2 and 3 points.
+
+Decoding is deterministic, so each prompt gives one fixed draw, and differences of about 3 points between prompt versions are within this noise. v7's 33 average, and every earlier single-prompt comparison measured the same way, should be read with that in mind.
+
+The tool's own accuracy is unaffected: no settled verdict was wrong on the 309 held-out positions. It stays available in chat, where people ask position questions directly. It does not raise the quiz score.
