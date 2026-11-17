@@ -82,7 +82,11 @@ export function validateTriggerState(state: GameState, context: EngineContext) {
     const rivalHasResolved = c.resolvedIds.some(id => !activeIds.includes(id));
     if ((r.current && r.current.controllerId !== state.timing.activePlayer || rivalHasResolved) && activeIds.some(id => !c.resolvedIds.includes(id))) return failure("INVALID_TRIGGER_PRIORITY", "Turn player's pending effects precede the rival's");
     if (c.phase === "SELECT" ? Boolean(r.current) || nextTriggerGroup(state).length < 2 : !r.current) return failure("INVALID_TRIGGER_PHASE", "Ordering is strategic only with multiple eligible effects; effect choices require a current effect");
-    if (c.phase !== "SELECT" && (!r.current || !["DEFEAT_UNIT", "READY_EDDIES", "DISCARD_CARDS", "DECREASE_GIG_UP_TO", "ADJUST_GIG_UP_TO", "OPTIONAL_DECREASE_FRIENDLY_GIG_THEN_DRAW_IF_MIN", "LOOK_AT_FRIENDLY_FACE_DOWN_LEGEND", "POWER_UNTIL_END_OF_TURN"].includes(r.current.effect.kind))) return failure("INVALID_TRIGGER_PHASE", "Only reviewed adjustment/look/discard/ready/power primitives pause for choices");
+    if (c.phase !== "SELECT" && (!r.current || !["DEFEAT_UNIT", "READY_EDDIES", "DISCARD_CARDS", "DECREASE_GIG_UP_TO", "ADJUST_GIG_UP_TO", "OPTIONAL_DECREASE_FRIENDLY_GIG_THEN_DRAW_IF_MIN", "LOOK_AT_FRIENDLY_FACE_DOWN_LEGEND", "POWER_UNTIL_END_OF_TURN", "SPEND_UNIT", "READY_UNIT"].includes(r.current.effect.kind))) return failure("INVALID_TRIGGER_PHASE", "Only reviewed adjustment/look/discard/ready/power/spend primitives pause for choices");
+    // Batch V8: the Unit PLAY rival spend pauses only as its ordered second primitive; the
+    // Legend ready pauses only in its own-turn end batch.
+    if (r.current?.effect.kind === "SPEND_UNIT" && (c.phase !== "TARGET" || c.origin.kind !== "PLAY" || r.current.trigger?.kind !== "WHEN_PLAYED" || r.current.primitiveIndex !== 1)) return failure("INVALID_SPEND_CONTINUATION", "Only the reviewed ordered PLAY spend may pause for a rival Unit");
+    if (r.current?.effect.kind === "READY_UNIT" && (c.phase !== "TARGET" || c.origin.kind !== "END_TURN" || r.current.effect.target.kind !== "FRIENDLY_FACE_UP_LEGEND")) return failure("INVALID_READY_UNIT_CONTINUATION", "Only the reviewed own-turn end Legend ready may pause for a target");
     if (r.current?.effect.kind === "POWER_UNTIL_END_OF_TURN") {
         const source = r.current.sourceId && state.objects.cards[r.current.sourceId];
         if (c.phase !== "TARGET" || r.current.effect.target.kind !== "FRIENDLY_UNIT" || r.current.effect.amount !== 2

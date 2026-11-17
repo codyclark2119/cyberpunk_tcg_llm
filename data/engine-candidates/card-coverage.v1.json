@@ -9,12 +9,12 @@
   },
   "totals": {
     "cards": 151,
-    "admitted": 42,
-    "notAdmitted": 109,
+    "admitted": 45,
+    "notAdmitted": 106,
     "notAdmittedOnlyCoveredFamilies": 0,
     "byAdmission": {
-      "NOT_ADMITTED": 109,
-      "SOURCE_MATCH": 42
+      "NOT_ADMITTED": 106,
+      "SOURCE_MATCH": 45
     }
   },
   "families": [
@@ -33,7 +33,7 @@
       "summary": "Generic target filters and board conditions: classification, cost, power, ready/spent, equipped, face-up, named, lowest power.",
       "notes": "Documented as unsupported: generic condition/filter language. Each admitted filter is a literal.",
       "cardCount": 34,
-      "notAdmittedCount": 29,
+      "notAdmittedCount": 28,
       "soleBlockerCount": 0
     },
     {
@@ -51,7 +51,7 @@
       "summary": "[Play] abilities and Program bodies resolving when played.",
       "notes": "Trigger WHEN_PLAYED.",
       "cardCount": 27,
-      "notAdmittedCount": 21,
+      "notAdmittedCount": 20,
       "soleBlockerCount": 0
     },
     {
@@ -100,15 +100,6 @@
       "soleBlockerCount": 0
     },
     {
-      "family": "SPEND_OR_READY",
-      "status": "PARTIAL",
-      "summary": "Spend or ready Units and Legends by an effect, and 'can't ready' locks.",
-      "notes": "SPEND_UNIT (rival, cost at most 4) only; readying Units or Legends is missing.",
-      "cardCount": 15,
-      "notAdmittedCount": 14,
-      "soleBlockerCount": 0
-    },
-    {
       "family": "DISCARD",
       "status": "PARTIAL",
       "summary": "Discard: self discard, a Rival discards, discard as a cost, discard a hand.",
@@ -142,6 +133,15 @@
       "notes": "",
       "cardCount": 14,
       "notAdmittedCount": 12,
+      "soleBlockerCount": 0
+    },
+    {
+      "family": "SPEND_OR_READY",
+      "status": "PARTIAL",
+      "summary": "Spend or ready Units and Legends by an effect, and 'can't ready' locks.",
+      "notes": "SPEND_UNIT (rival, cost at most 4) only; readying Units or Legends is missing.",
+      "cardCount": 15,
+      "notAdmittedCount": 11,
       "soleBlockerCount": 0
     },
     {
@@ -208,15 +208,6 @@
       "soleBlockerCount": 0
     },
     {
-      "family": "TRIGGER_END_OF_TURN",
-      "status": "PARTIAL",
-      "summary": "'At the end of your turn' abilities.",
-      "notes": "Trigger WHEN_OWN_TURN_ENDS; only Eddie readying is routed.",
-      "cardCount": 9,
-      "notAdmittedCount": 8,
-      "soleBlockerCount": 0
-    },
-    {
       "family": "TRIGGER_STEAL",
       "status": "MISSING",
       "summary": "Triggers when a Unit or Legend steals a Gig.",
@@ -271,15 +262,6 @@
       "soleBlockerCount": 0
     },
     {
-      "family": "CONDITION_STREET_CRED",
-      "status": "PARTIAL",
-      "summary": "Conditions on Street Cred.",
-      "notes": "Nearly complete as conditions; gating an effect mode on them is not.",
-      "cardCount": 13,
-      "notAdmittedCount": 6,
-      "soleBlockerCount": 0
-    },
-    {
       "family": "EDDIE_ECONOMY",
       "status": "PARTIAL",
       "summary": "Ready Eddies, sell cards from unusual zones, pay Eddies during resolution.",
@@ -307,12 +289,30 @@
       "soleBlockerCount": 0
     },
     {
+      "family": "TRIGGER_END_OF_TURN",
+      "status": "PARTIAL",
+      "summary": "'At the end of your turn' abilities.",
+      "notes": "Trigger WHEN_OWN_TURN_ENDS; only Eddie readying is routed.",
+      "cardCount": 9,
+      "notAdmittedCount": 6,
+      "soleBlockerCount": 0
+    },
+    {
       "family": "TRIGGER_WHEN_SPENT",
       "status": "MISSING",
       "summary": "WHEN_SPENT: 'when this Unit or Legend is spent' (includes Zetatech Faceplate).",
       "notes": "Documented as unsupported; needs every spending path (attack, Blocker, [Spend] costs, effects) to emit one event.",
       "cardCount": 6,
       "notAdmittedCount": 6,
+      "soleBlockerCount": 0
+    },
+    {
+      "family": "CONDITION_STREET_CRED",
+      "status": "PARTIAL",
+      "summary": "Conditions on Street Cred.",
+      "notes": "Nearly complete as conditions; gating an effect mode on them is not.",
+      "cardCount": 13,
+      "notAdmittedCount": 5,
       "soleBlockerCount": 0
     },
     {
@@ -1969,18 +1969,14 @@
       "colors": [
         "GREEN"
       ],
-      "admission": "NOT_ADMITTED",
-      "revision": null,
+      "admission": "SOURCE_MATCH",
+      "revision": 1,
       "families": [
         "CONDITION_BOARD",
         "SPEND_OR_READY",
         "TRIGGER_END_OF_TURN"
       ],
-      "blockingFamilies": [
-        "CONDITION_BOARD",
-        "SPEND_OR_READY",
-        "TRIGGER_END_OF_TURN"
-      ],
+      "blockingFamilies": [],
       "note": null
     },
     {
@@ -2110,18 +2106,14 @@
       "colors": [
         "BLUE"
       ],
-      "admission": "NOT_ADMITTED",
-      "revision": null,
+      "admission": "SOURCE_MATCH",
+      "revision": 1,
       "families": [
         "CONDITION_STREET_CRED",
         "SPEND_OR_READY",
         "TRIGGER_END_OF_TURN"
       ],
-      "blockingFamilies": [
-        "CONDITION_STREET_CRED",
-        "SPEND_OR_READY",
-        "TRIGGER_END_OF_TURN"
-      ],
+      "blockingFamilies": [],
       "note": null
     },
     {
@@ -2286,16 +2278,13 @@
       "colors": [
         "YELLOW"
       ],
-      "admission": "NOT_ADMITTED",
-      "revision": null,
+      "admission": "SOURCE_MATCH",
+      "revision": 1,
       "families": [
         "SPEND_OR_READY",
         "TRIGGER_PLAY"
       ],
-      "blockingFamilies": [
-        "SPEND_OR_READY",
-        "TRIGGER_PLAY"
-      ],
+      "blockingFamilies": [],
       "note": null
     },
     {

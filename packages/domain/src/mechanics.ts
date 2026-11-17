@@ -30,7 +30,9 @@ export const ConditionSchema = z.discriminatedUnion("kind", [
     z.strictObject({ kind: z.literal("DISTINCT_GIG_DIE_TYPES"), minimum: z.number().int().nonnegative() }),
     z.strictObject({ kind: z.literal("DISTINCT_GIG_VALUES"), minimum: z.number().int().nonnegative() }),
     z.strictObject({ kind: z.literal("STREET_CRED"), minimum: z.number().int().nonnegative() }),
-    z.strictObject({ kind: z.literal("GIG_VALUE"), value: z.number().int() })
+    z.strictObject({ kind: z.literal("GIG_VALUE"), value: z.number().int() }),
+    // The trigger subject is on the field and currently spent (batch V8).
+    z.strictObject({ kind: z.literal("SUBJECT_IS_SPENT") })
 ]);
 export const CombatRestrictionSchema = z.discriminatedUnion("kind", [
     z.strictObject({ kind: z.literal("CANNOT_ATTACK") }),
@@ -77,7 +79,8 @@ export const ReadyEddiesEffectSchema = z.strictObject({ kind: z.literal("READY_E
     when: z.strictObject({ timing: z.literal("RESOLUTION"), condition: NamedUnitConditionSchema }).optional() });
 export const RegisterEndTurnEffectSchema = z.strictObject({ kind: z.literal("REGISTER_END_TURN_EFFECT"),
     effect: ReadyEddiesEffectSchema.extend({ count: z.literal(2), when: z.strictObject({ timing: z.literal("RESOLUTION"), condition: NamedUnitConditionSchema }) }) });
-export const SpendUnitTargetSchema = z.strictObject({ kind: z.literal("UNITS"), relation: TargetRelationshipSchema, costAtMost: z.literal(4) });
+// costAtMost absent means any cost (batch V8); admission stays with the exact per-card gate.
+export const SpendUnitTargetSchema = z.strictObject({ kind: z.literal("UNITS"), relation: TargetRelationshipSchema, costAtMost: z.literal(4).optional() });
 export type SpendUnitTarget = z.infer<typeof SpendUnitTargetSchema>;
 export const SpendUnitEffectSchema = z.strictObject({ kind: z.literal("SPEND_UNIT"), target: SpendUnitTargetSchema });
 // Shared Unit-defeat filter (plan section 6, scope 3b). The grammar admits nothing by itself:
@@ -100,6 +103,10 @@ export const DefeatUnitEffectSchema = z.strictObject({ kind: z.literal("DEFEAT_U
     when: z.strictObject({ timing: z.literal("RESOLUTION"), condition: z.strictObject({ kind: z.literal("STREET_CRED_GREATER_THAN_RIVAL") }) }).optional() });
 export const EffectSchema = z.discriminatedUnion("kind", [
     SpendUnitEffectSchema,
+    // "Spend this Unit" (batch V8).
+    z.strictObject({ kind: z.literal("SPEND_SOURCE") }),
+    // "Ready this Unit" / "ready a friendly face-up Legend" (batch V8).
+    z.strictObject({ kind: z.literal("READY_UNIT"), target: z.discriminatedUnion("kind", [z.strictObject({ kind: z.literal("SOURCE") }), z.strictObject({ kind: z.literal("FRIENDLY_FACE_UP_LEGEND") })]) }),
     DefeatUnitEffectSchema,
     ReadyEddiesEffectSchema,
     RegisterEndTurnEffectSchema,
