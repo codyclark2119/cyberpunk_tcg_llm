@@ -10,6 +10,7 @@ import { failure, success, type Effect, type Result } from "@tcg/domain";
 import type { TurnMutation } from "./turn";
 import { searchChoice, searchTargets } from "./search-state";
 import { drawDeterministicInteger } from "./rng";
+import { isUnitSpendSubject, spendUnitForEffect } from "./unit-spend";
 
 type Primitive<K extends Effect["kind"]> = Extract<Effect, { kind: K }>;
 /** Handwritten, typed primitive registry; metadata cannot install arbitrary handlers. */
@@ -46,6 +47,7 @@ export class HandlerRegistry {
     resolve(m: TurnMutation, effect: Effect): Result<null> {
         if (effect.kind === "SPEND_UNIT") return beginTargetedSpend(m);
         if (effect.kind === "DEFEAT_UNIT") return beginTargetedDefeat(m);
+        if (effect.kind === "SPEND_ALL_UNITS") return spendAllRivalUnits(m);
         if (effect.kind === "CREATE_NEXT_RIVAL_FIGHT_PREVENTION") return createFightPrevention(m);
         if (effect.kind === "POWER_UNTIL_END_OF_TURN") return this.primitives.POWER_UNTIL_END_OF_TURN(m);
         if (effect.kind === "ADJUST_GIG_UP_TO") return this.primitives.ADJUST_GIG_UP_TO(m);
@@ -54,6 +56,13 @@ export class HandlerRegistry {
         if (effect.kind === "SEARCH_GEAR") return this.primitives.SEARCH_GEAR(m, effect);
         return failure("UNSUPPORTED_CALL_EFFECT", "No registered typed CALL primitive");
     }
+}
+/** Batch V9 "Spend all rival Units": one simultaneous mass spend in instance-id order; already spent Units change nothing. */
+function spendAllRivalUnits(m: TurnMutation): Result<null> {
+    const current = m.state.resolution.current!, actor = current.controllerId;
+    const targets = Object.values(m.state.players).filter(p => p.id !== actor).flatMap(p => p.zones.BATTLEFIELD).filter(id => isUnitSpendSubject(m.state, id, m.context)).sort();
+    for (const id of targets) { const spent = spendUnitForEffect(m, id, current.sourceId!, current.id); if (!spent.ok) return spent; }
+    return success(null);
 }
 const callHandlers = new HandlerRegistry();
 export function resolveCallPrimitive(m: TurnMutation, effect: Effect): Result<null> {

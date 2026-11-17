@@ -1,3 +1,4 @@
+import { supportsEndTurnCard } from "./end-turn-support";
 import { supportsFieldLegend } from "./field-legend-support";
 import { supportsDelayedAttackGear } from "./delayed-effect-support";
 import { supportsPrivateLookGear } from "./private-look-support";
@@ -15,6 +16,7 @@ export function supportsGear(card: DeepReadonly<CardRevisionSnapshot> | undefine
     if (card?.execution?.scope === "GEAR_PRIVATE_LOOK_V1") return supportsPrivateLookGear(card, context);
     if (card?.execution?.scope === "GEAR_CAPABILITIES_V1") return supportsCapabilityGear(card, context);
     if (gearEnabled(context) && card?.type === "GEAR" && card.execution?.scope === "COMBAT_TRIGGERS_V1") return supportsTriggerCard(card, context);
+    if (gearEnabled(context) && card?.type === "GEAR" && card.execution?.scope === "END_TURN_HISTORY_V1") return supportsEndTurnCard(card, context);
     if (!gearEnabled(context) || !card || card.type !== "GEAR" || card.execution?.scope !== "NONCOMBAT_PLAY_V1" || card.execution.status !== "SUPPORTED" || card.printedCost.kind !== "EDDIES" || card.printedCost.amount > 1000 || card.power === undefined || card.mechanics.restrictions?.length || card.mechanics.equip?.kind !== "FRIENDLY_UNIT_OR_FACE_UP_LEGEND" || card.mechanics.abilities.length || card.mechanics.keywords.length || card.mechanics.modifiers.length !== 1 || card.mechanics.modifiers[0].kind !== "GRANT_PRINTED_POWER_TO_HOST")
         return failure("UNSUPPORTED_GEAR", "Reviewed simple Gear shape, equip rule and printed-power inheritance required; extra abilities are not certified");
     return success(null);
