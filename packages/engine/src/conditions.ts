@@ -17,6 +17,7 @@ export function testCondition(state: GameState, actor: PlayerId, condition: Cond
             const c = sourceId && state.objects.cards[sourceId], r = c && context?.content.cards.find(r => r.id === c.cardId && r.revision === c.revision);
             return Boolean(r && context && c && (effectiveCardTypes(state, c.id, context).includes("UNIT") || c.zone.zone === "REMOVED" && lastValidTypes?.includes("UNIT")) && r.deckbuildingIdentity === condition.identity);
         }
+        case "SUBJECT_IS_SPENT": { const c = sourceId && state.objects.cards[sourceId]; return Boolean(c && c.zone.zone === "BATTLEFIELD" && c.face === "UP" && c.readiness === "SPENT"); }
         case "SUBJECT_STOLE_GIG_THIS_TURN": return Boolean(sourceId && state.turnHistory?.turn === state.timing.turn && (state.turnHistory.gigsStolenByUnit?.[sourceId] ?? 0) > 0);
         case "STREET_CRED_DIFFERENCE_AT_LEAST": {
             if (!values.length) return false; // Null cannot participate in numeric subtraction (2.10.2).

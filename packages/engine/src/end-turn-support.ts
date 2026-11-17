@@ -4,17 +4,29 @@ import type { EngineContext } from "./state";
 export function endTurnEnabled(context: EngineContext) {
     return turnSliceAllows(context.content.ruleset.gameplay?.turnSlice, "combatTriggers") && context.content.cards.some(c => c.execution?.scope === "END_TURN_HISTORY_V1");
 }
-/** Full captured ordinary Unit plus its one conditional own-turn end effect. */
+/** Exact per-card pin table (Cody, 2026-11-15): complete printed shape, condition and effect list per card. */
+const END_TURN_SHAPES = [
+    // Delamain Cab: if this Unit stole a Gig this turn, ready 1 Eddie.
+    { colors: ["BLUE"], ram: { BLUE: 2 }, tags: ["Vehicle"], cost: 4, power: 4, conditions: [{ kind: "SUBJECT_STOLE_GIG_THIS_TURN" }], effects: [{ kind: "READY_EDDIES", player: "CONTROLLER", count: 1 }] },
+    // Batch V8: Modded Muramasa, if you have less Street Cred than a Rival, ready this Unit.
+    { colors: ["BLUE"], ram: { BLUE: 2 }, tags: ["Vehicle"], cost: 5, power: 4, conditions: [{ kind: "STREET_CRED_LESS_THAN_RIVAL" }], effects: [{ kind: "READY_UNIT", target: { kind: "SOURCE" } }] },
+    // Batch V8: MaxTac Squadron, if this Unit is spent, ready a friendly face-up Legend.
+    { colors: ["GREEN"], ram: { GREEN: 3 }, tags: ["NCPD"], cost: 3, power: 4, conditions: [{ kind: "SUBJECT_IS_SPENT" }], effects: [{ kind: "READY_UNIT", target: { kind: "FRIENDLY_FACE_UP_LEGEND" } }] }
+] as const;
+/** Full captured ordinary unsellable Unit plus its one conditional own-turn end effect. */
 export function supportsEndTurnCard(card: DeepReadonly<CardRevisionSnapshot> | undefined, context: EngineContext) {
     const m = card?.mechanics, a = m?.abilities[0];
-    if (!endTurnEnabled(context) || !card?.provenance.reviewed || card.execution?.scope !== "END_TURN_HISTORY_V1" || card.execution.status !== "SUPPORTED" || card.type !== "UNIT" || card.printedCost.kind !== "EDDIES" || card.printedCost.amount !== 4 || card.power !== 4 || card.sellProfile.allowed || canonicalSerialize(card.colors) !== canonicalSerialize(["BLUE"]) || canonicalSerialize(card.ram) !== canonicalSerialize({ BLUE: 2 }) || canonicalSerialize(card.tags) !== canonicalSerialize(["Vehicle"]) || card.keywords.length || !m || m.equip || m.modifiers.length || m.keywords.length || m.restrictions?.length || m.abilities.length !== 1 || !a || a.trigger !== "WHEN_OWN_TURN_ENDS" || a.inherited || a.activation || a.guard || a.cost.kind !== "NONE" || canonicalSerialize(a.conditions) !== canonicalSerialize([{ kind: "SUBJECT_STOLE_GIG_THIS_TURN" }]) || canonicalSerialize(a.effects) !== canonicalSerialize([{ kind: "READY_EDDIES", player: "CONTROLLER", count: 1 }]))
-        return failure("UNSUPPORTED_END_TURN_CARD", "Complete reviewed unsellable Blue RAM2 Vehicle, cost4 power4 and own-turn end / this-Unit steal / ready1 shape required");
+    if (!endTurnEnabled(context) || !card?.provenance.reviewed || card.execution?.scope !== "END_TURN_HISTORY_V1" || card.execution.status !== "SUPPORTED" || card.type !== "UNIT" || card.printedCost.kind !== "EDDIES" || card.sellProfile.allowed || card.keywords.length || !m || m.equip || m.modifiers.length || m.keywords.length || m.restrictions?.length || m.abilities.length !== 1 || !a || a.trigger !== "WHEN_OWN_TURN_ENDS" || a.inherited || a.activation || a.guard || a.cost.kind !== "NONE")
+        return failure("UNSUPPORTED_END_TURN_CARD", "Complete reviewed unsellable Unit with one own-turn end ability required");
+    const actual = canonicalSerialize({ colors: card.colors, ram: card.ram, tags: card.tags, cost: card.printedCost.amount, power: card.power ?? null, conditions: a.conditions, effects: a.effects });
+    if (!END_TURN_SHAPES.some(shape => canonicalSerialize(shape) === actual))
+        return failure("UNSUPPORTED_END_TURN_CARD", "Entire reviewed metadata, condition and effect shape required");
     return success(null);
 }
 export function validateEndTurnMetadata(state: GameState, context: EngineContext) {
     for (const c of Object.values(state.objects.cards)) {
         const r = context.content.cards.find(r => r.id === c.cardId && r.revision === c.revision);
-        if (r && (r.execution?.scope === "END_TURN_HISTORY_V1" || r.mechanics.abilities.some(a => a.trigger === "WHEN_OWN_TURN_ENDS" || a.conditions.some(c => c.kind === "SUBJECT_STOLE_GIG_THIS_TURN") || a.effects.some(e => e.kind === "READY_EDDIES" || e.kind === "CONDITIONAL_DRAW" && e.condition.kind === "SUBJECT_STOLE_GIG_THIS_TURN" || e.kind === "DISCARD_CARDS" && e.when?.condition.kind === "SUBJECT_STOLE_GIG_THIS_TURN")))) {
+        if (r && (r.execution?.scope === "END_TURN_HISTORY_V1" || r.mechanics.abilities.some(a => a.trigger === "WHEN_OWN_TURN_ENDS" || a.conditions.some(c => c.kind === "SUBJECT_STOLE_GIG_THIS_TURN" || c.kind === "SUBJECT_IS_SPENT") || a.effects.some(e => e.kind === "READY_EDDIES" || e.kind === "READY_UNIT" || e.kind === "CONDITIONAL_DRAW" && e.condition.kind === "SUBJECT_STOLE_GIG_THIS_TURN" || e.kind === "DISCARD_CARDS" && e.when?.condition.kind === "SUBJECT_STOLE_GIG_THIS_TURN")))) {
             const supported = supportsEndTurnCard(r, context); if (!supported.ok) return supported;
         }
     }

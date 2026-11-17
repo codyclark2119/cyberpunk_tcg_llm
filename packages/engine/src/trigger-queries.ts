@@ -7,6 +7,8 @@ import { testCondition } from "./conditions";
 import { getDiscardableCards } from "./discard";
 import { privateLookTargets } from "./private-knowledge";
 import { friendlyPowerTargets } from "./friendly-play-power-queries";
+import { listSpendUnitTargets } from "./targeted-spend-queries";
+import { readyLegendTargets } from "./ready-unit";
 import { hashCanonical, type GameState, type CardInstanceId, type TriggerBinding, type TriggerOrigin, type PendingChoice, type PendingEffect } from "@tcg/domain";
 import type { EngineContext } from "./state";
 import { cardRevision } from "./characteristics";
@@ -79,7 +81,11 @@ export function triggerChoice(state: GameState, context: EngineContext): Pending
     else if (c.phase === "OPTIONAL") { kind = "OPTIONAL"; options = [{ kind: "CONFIRM", confirmed: true }, { kind: "CONFIRM", confirmed: false }]; }
     else if (c.phase === "TARGET") {
         kind = "TARGET";
-        options = current?.effect.kind === "LOOK_AT_FRIENDLY_FACE_DOWN_LEGEND"
+        options = current?.effect.kind === "SPEND_UNIT"
+            ? listSpendUnitTargets(state, actorId, current.effect.target, context).map(cardInstanceId => ({ kind: "CARD", cardInstanceId }))
+            : current?.effect.kind === "READY_UNIT"
+            ? readyLegendTargets(state, actorId, context).map(cardInstanceId => ({ kind: "CARD", cardInstanceId }))
+            : current?.effect.kind === "LOOK_AT_FRIENDLY_FACE_DOWN_LEGEND"
             ? privateLookTargets(state, actorId, context).map(slot => ({ kind: "LEGEND_SLOT", slot }))
             : current?.effect.kind === "POWER_UNTIL_END_OF_TURN" && current.effect.target.kind === "FRIENDLY_UNIT"
                 ? friendlyPowerTargets(state, actorId, context).map(cardInstanceId => ({ kind: "CARD", cardInstanceId }))

@@ -49,6 +49,7 @@ were recorded in their pull requests (#4, #7, #8); later batches have documents 
 | Reviewed union (2026-11-15) | 39 | [reviewed-union-2026-11-15.md](reviewed-union-2026-11-15.md): every reviewed card in one content bundle; coverage now 39/151; constructed games can use all 39 |
 | V4 (2026-09-17) | Japantown Jonin | [contract](api-admission-batch-v4.md), [implementation status](api-admission-batch-v4-implementation-status.md), [validation](api-admission-batch-v4-validation.md) |
 | V5 (2026-09-18) | Detonate | [contract](api-admission-batch-v5.md), [implementation status](api-admission-batch-v5-implementation-status.md), [baseline completion runbook](api-admission-batch-v5-baseline-completion.md) |
+| V8 (2026-11-17) | Offduty Malfini, Modded Muramasa, MaxTac Squadron | [shared spend and ready effects](api-admission-batch-v8.md); coverage 45/151 |
 | V7 (2026-11-15) | Royce: Don't Call Me Simon, Wild in the Streets, Delamain: Rideshare AI | [shared defeat filter and exact pin table](api-admission-batch-v7.md); coverage 42/151 |
 | V6 (2026-09-22) | Trust No One | [contract and executable slice](api-admission-batch-v6.md), [baseline verification](api-admission-batch-v6-verification.md) |
 

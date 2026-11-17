@@ -1,4 +1,8 @@
 import { beginTargetedDefeat } from "./targeted-defeat";
+import { resolveSpendTarget } from "./targeted-spend";
+import { listSpendUnitTargets } from "./targeted-spend-queries";
+import { isUnitSpendSubject, spendUnitForEffect } from "./unit-spend";
+import { readyCardForEffect, readyLegendTargets } from "./ready-unit";
 import type { PendingEffect, DefeatInstruction } from "@tcg/domain";
 import { effectiveCardTypes } from "./characteristics";
 import { registerEndTurnEffect } from "./delayed-effects";
@@ -128,6 +132,26 @@ export function advanceTriggers(m: TurnMutation): Result<null> {
         c.phase = "TARGET"; return offer(m);
     }
     if (e.kind === "DEFEAT_UNIT") { c.phase = "TARGET"; return beginTargetedDefeat(m); }
+    // Batch V8: "Spend this Unit", then the ordered rival-Unit spend.
+    if (e.kind === "SPEND_SOURCE") {
+        const current = r.current;
+        if (isUnitSpendSubject(m.state, current.sourceId!, m.context)) { const spent = spendUnitForEffect(m, current.sourceId!, current.sourceId!, current.id); if (!spent.ok) return spent; }
+        return nextPrimitiveOrCompleted(m);
+    }
+    if (e.kind === "SPEND_UNIT") {
+        if (!listSpendUnitTargets(m.state, r.current.controllerId, e.target, m.context).length) return completed(m);
+        c.phase = "TARGET"; return offer(m);
+    }
+    // Batch V8: own-turn-end ready; the printed "if" is rechecked at resolution.
+    if (e.kind === "READY_UNIT") {
+        const current = r.current, a = cardRevision(m.state, current.sourceId!, m.context)!.mechanics.abilities.find(a => a.id === current.trigger!.abilityId)!;
+        const met = a.conditions.every(cond => testCondition(m.state, current.controllerId, cond, m.context, current.trigger!.subjectId));
+        if (a.conditions.length) m.emit({ kind: "CONDITION_EVALUATED", effectId: current.id, met });
+        if (!met) return completed(m);
+        if (e.target.kind === "SOURCE") { const s = m.state.objects.cards[current.trigger!.subjectId]; if (s?.zone.zone === "BATTLEFIELD" && s.face === "UP") readyCardForEffect(m, s.id); return completed(m); }
+        if (!readyLegendTargets(m.state, current.controllerId, m.context).length) return completed(m);
+        c.phase = "TARGET"; return offer(m);
+    }
     if (e.kind === "REGISTER_END_TURN_EFFECT") { const result = registerEndTurnEffect(m); return result.ok ? completed(m) : result; }
     if (e.kind === "READY_EDDIES") {
         const current = r.current, a = cardRevision(m.state, current.sourceId!, m.context)!.mechanics.abilities.find(a => a.id === current.trigger!.abilityId)!;
@@ -156,6 +180,16 @@ export function advanceTriggers(m: TurnMutation): Result<null> {
     if (!result.ok) return result;
     // Empty draw ends the game and clears the continuation; still preserve the resolved fact.
     if (m.state.match.outcome) { m.emit({ kind: "EFFECT_RESOLVED", effectId: current.id }); return success(null); }
+    if (!current.primitiveIndex && supportsOrderedTriggerSource(cardRevision(m.state, current.sourceId!, m.context), m.context)) {
+        const binding = c.bindings.find(b => b.sourceId === current.sourceId && b.abilityId === current.trigger?.abilityId)!;
+        r.current = PendingEffectSchema.parse(pendingTrigger(m.state, binding, c.ordinal, current.causedBySequence, m.context, 1));
+        return advanceTriggers(m);
+    }
+    return completed(m);
+}
+/** Advance an admitted two-primitive ability to its second primitive, or finish it. */
+function nextPrimitiveOrCompleted(m: TurnMutation): Result<null> {
+    const r = m.state.resolution, c = r.triggerContinuation!, current = r.current!;
     if (!current.primitiveIndex && supportsOrderedTriggerSource(cardRevision(m.state, current.sourceId!, m.context), m.context)) {
         const binding = c.bindings.find(b => b.sourceId === current.sourceId && b.abilityId === current.trigger?.abilityId)!;
         r.current = PendingEffectSchema.parse(pendingTrigger(m.state, binding, c.ordinal, current.causedBySequence, m.context, 1));
@@ -198,6 +232,17 @@ export function continueTrigger(m: TurnMutation, index: number, forced = false):
                 return failure("INVALID_POWER_TARGET", "Choose a friendly Unit for the reviewed PLAY power effect");
             const applied = applyTemporaryPower(m, option.cardInstanceId, forced);
             return applied.ok ? completed(m) : applied;
+        }
+        if (current.effect.kind === "SPEND_UNIT") {
+            if (option.kind !== "CARD") return failure("INVALID_SPEND_TARGET", "Choose a current rival Unit");
+            const spent = resolveSpendTarget(m, option.cardInstanceId, forced);
+            return spent.ok ? completed(m) : spent;
+        }
+        if (current.effect.kind === "READY_UNIT") {
+            if (option.kind !== "CARD" || !readyLegendTargets(m.state, current.controllerId, m.context).includes(option.cardInstanceId)) return failure("INVALID_READY_TARGET", "Choose a current friendly face-up Legend");
+            m.emit({ kind: "CARD_TARGET_SELECTED", effectId: current.id, sourceId: current.sourceId!, targetId: option.cardInstanceId, controllerId: current.controllerId, forced });
+            readyCardForEffect(m, option.cardInstanceId);
+            return completed(m);
         }
         if (current.effect.kind === "LOOK_AT_FRIENDLY_FACE_DOWN_LEGEND") {
             if (option.kind !== "LEGEND_SLOT") return failure("INVALID_LOOK_TARGET", "Choose a public Legend slot");

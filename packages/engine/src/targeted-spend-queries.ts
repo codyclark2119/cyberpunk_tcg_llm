@@ -9,6 +9,6 @@ export function listSpendUnitTargets(state: GameState, actor: PlayerId, target: 
     return Object.values(state.objects.cards).filter(c => {
         if (!isUnitSpendSubject(state, c.id, context) || target.relation === "RIVAL" && c.controllerId === actor || target.relation === "CONTROLLED" && c.controllerId !== actor) return false;
         const cost = referencedCost(state, c.id, context);
-        return cost !== null && cost <= target.costAtMost;
+        return target.costAtMost === undefined || cost !== null && cost <= target.costAtMost;
     }).map(c => c.id).sort();
 }

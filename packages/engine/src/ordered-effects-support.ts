@@ -1,4 +1,5 @@
 import { supportsFirstAttackLegend } from "./first-attack-support";
+import { supportsTargetedSpendCard } from "./targeted-spend-support";
 import { turnSliceAllows, canonicalSerialize, failure, success, type CardRevisionSnapshot, type DeepReadonly, type GameState } from "@tcg/domain";
 import type { EngineContext } from "./state";
 export function orderedEffectsEnabled(context: EngineContext) {
@@ -13,7 +14,10 @@ export function supportsOrderedAttackCard(card: DeepReadonly<CardRevisionSnapsho
     return success(null);
 }
 /** Both reviewed draw-then-discard abilities use the same two-primitive continuation. */
-export function supportsOrderedTriggerSource(card: DeepReadonly<CardRevisionSnapshot> | undefined, context: EngineContext) { return supportsOrderedAttackCard(card, context).ok || supportsFirstAttackLegend(card, context).ok; }
+export function supportsOrderedTriggerSource(card: DeepReadonly<CardRevisionSnapshot> | undefined, context: EngineContext) {
+    // Batch V8: the Unit PLAY spend (source, then a rival Unit) is the only other two-primitive trigger.
+    return supportsOrderedAttackCard(card, context).ok || supportsFirstAttackLegend(card, context).ok || (card?.type === "UNIT" && supportsTargetedSpendCard(card, context).ok);
+}
 /** Inspect hidden content too: old execution scopes cannot silently ignore the new metadata. */
 export function validateOrderedMetadata(state: GameState, context: EngineContext) {
     for (const c of Object.values(state.objects.cards)) {
