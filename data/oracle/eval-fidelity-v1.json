@@ -2,16 +2,16 @@
   "report_version": "engine-check-fidelity-v1",
   "catalog": {
     "index": "data/oracle/positions-v1.jsonl",
-    "sha256": "e1806df2bd9f3e880f5fd5a2b47e72543c21140d01501e2ec12bf930f3ccd443",
+    "sha256": "d2c002f54c5fc71525613fa7fbd2c071195a52188310908c71680a9adc1da17d",
     "positions": 677,
     "engine": {
-      "version": "0.4.3-defeat-filter-v7",
-      "artifactHash": "563517fb9b5b53fd9e2988d0c1590b3fae74bb4fc284c8d1df522a12f15653ee"
+      "version": "0.4.4-ready-spend-v8",
+      "artifactHash": "ab04c3870c33565eef4b29abc2b01661dcf351452c8f3204d70bb2e352df0db4"
     }
   },
   "eval": {
     "index": "data/oracle/eval-positions-v1.jsonl",
-    "sha256": "73bd94a8917aad2cd58510f6a62773a6242b0cada508cc1ebdd3d11d52d145cb",
+    "sha256": "ede8f951ac11136d932a6e8f1705f39b0080d9c6f3261d8a7245b5053b1475a0",
     "positions": 309,
     "seeds": {
       "prefix": "engine-oracle-eval-v1",
@@ -24,8 +24,8 @@
       ]
     },
     "engine": {
-      "version": "0.4.3-defeat-filter-v7",
-      "artifactHash": "563517fb9b5b53fd9e2988d0c1590b3fae74bb4fc284c8d1df522a12f15653ee"
+      "version": "0.4.4-ready-spend-v8",
+      "artifactHash": "ab04c3870c33565eef4b29abc2b01661dcf351452c8f3204d70bb2e352df0db4"
     }
   },
   "distinct_questions": 728,
