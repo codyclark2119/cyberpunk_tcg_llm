@@ -6,8 +6,8 @@
     "manifest": {
       "schemaVersion": 1,
       "engine": {
-        "version": "0.4.4-ready-spend-v8",
-        "artifactHash": "ab04c3870c33565eef4b29abc2b01661dcf351452c8f3204d70bb2e352df0db4"
+        "version": "0.4.5-end-turn-reaper-v9",
+        "artifactHash": "b06c5695a532f59699e360dd3d5c4d5ef48b1a6725cca54b9d06c6eab4ff697d"
       },
       "ruleset": {
         "id": "beta",
@@ -102,7 +102,7 @@
         }
       ]
     },
-    "manifestHash": "55c8986c790f6b8682b7d738edd9656820db94dec14c06d04e86740f7793777a",
+    "manifestHash": "699271503bede2beff672523b5d5242a0b11d1885aa401811bb70d499bfd551b",
     "ruleset": {
       "id": "beta",
       "version": "engine-setup-1",
@@ -1288,9 +1288,9 @@
         "rulesetId": "beta",
         "rulesetVersion": "engine-setup-1",
         "rulesetHash": "ba02a09bd48a3abfa705e78b80e6fbdaf10eb86b84a7eaec7794d841f88caa22",
-        "contentManifestHash": "55c8986c790f6b8682b7d738edd9656820db94dec14c06d04e86740f7793777a",
-        "engineVersion": "0.4.4-ready-spend-v8",
-        "engineArtifactHash": "ab04c3870c33565eef4b29abc2b01661dcf351452c8f3204d70bb2e352df0db4",
+        "contentManifestHash": "699271503bede2beff672523b5d5242a0b11d1885aa401811bb70d499bfd551b",
+        "engineVersion": "0.4.5-end-turn-reaper-v9",
+        "engineArtifactHash": "b06c5695a532f59699e360dd3d5c4d5ef48b1a6725cca54b9d06c6eab4ff697d",
         "cards": [
           {
             "cardId": "dev-legend-blue",
@@ -3270,13 +3270,13 @@
     {
       "schemaVersion": 2,
       "positionId": "setup-0",
-      "engineVersion": "0.4.4-ready-spend-v8",
-      "engineArtifactHash": "ab04c3870c33565eef4b29abc2b01661dcf351452c8f3204d70bb2e352df0db4",
+      "engineVersion": "0.4.5-end-turn-reaper-v9",
+      "engineArtifactHash": "b06c5695a532f59699e360dd3d5c4d5ef48b1a6725cca54b9d06c6eab4ff697d",
       "manifest": {
         "schemaVersion": 1,
         "engine": {
-          "version": "0.4.4-ready-spend-v8",
-          "artifactHash": "ab04c3870c33565eef4b29abc2b01661dcf351452c8f3204d70bb2e352df0db4"
+          "version": "0.4.5-end-turn-reaper-v9",
+          "artifactHash": "b06c5695a532f59699e360dd3d5c4d5ef48b1a6725cca54b9d06c6eab4ff697d"
         },
         "ruleset": {
           "id": "beta",
@@ -3371,7 +3371,7 @@
           }
         ]
       },
-      "contentManifestHash": "55c8986c790f6b8682b7d738edd9656820db94dec14c06d04e86740f7793777a",
+      "contentManifestHash": "699271503bede2beff672523b5d5242a0b11d1885aa401811bb70d499bfd551b",
       "state": {
         "setup": {
           "stage": "FIRST_PLAYER",
@@ -3386,9 +3386,9 @@
           "rulesetId": "beta",
           "rulesetVersion": "engine-setup-1",
           "rulesetHash": "ba02a09bd48a3abfa705e78b80e6fbdaf10eb86b84a7eaec7794d841f88caa22",
-          "contentManifestHash": "55c8986c790f6b8682b7d738edd9656820db94dec14c06d04e86740f7793777a",
-          "engineVersion": "0.4.4-ready-spend-v8",
-          "engineArtifactHash": "ab04c3870c33565eef4b29abc2b01661dcf351452c8f3204d70bb2e352df0db4",
+          "contentManifestHash": "699271503bede2beff672523b5d5242a0b11d1885aa401811bb70d499bfd551b",
+          "engineVersion": "0.4.5-end-turn-reaper-v9",
+          "engineArtifactHash": "b06c5695a532f59699e360dd3d5c4d5ef48b1a6725cca54b9d06c6eab4ff697d",
           "cards": [
             {
               "cardId": "dev-legend-blue",
@@ -5353,7 +5353,7 @@
           "counter": 1
         }
       },
-      "stateHash": "5d01496b877a1b08a6ceea726db2d216365368f25b7ffc2c2947e4615a2ad333",
+      "stateHash": "1ba1525678dd4215fa3dfcae1f1d8ee9b3597e5bcbd5722c188ba033bb6e80bf",
       "observation": {
         "schemaVersion": 1,
         "viewerSeat": 0,
@@ -5474,13 +5474,13 @@
             "kind": "CHOOSE",
             "choiceId": "7596eed2897f6c0717bb5b35ee910a8a57015132a0ddace8649780c15f4a747a",
             "optionIndices": [
-              0
+              1
             ]
           },
-          "actionId": "340247012f66a7212f19e9a1bf401905318e233a07a8087564ef82d600bd53d6",
+          "actionId": "36b9b8c52021b88204126ff4f72928c490a2a1113594d4bc4b6311a07e6dd6eb",
           "descriptor": {
             "kind": "CHOOSE",
-            "label": "Go first"
+            "label": "Go second"
           }
         },
         {
@@ -5489,17 +5489,17 @@
             "kind": "CHOOSE",
             "choiceId": "7596eed2897f6c0717bb5b35ee910a8a57015132a0ddace8649780c15f4a747a",
             "optionIndices": [
-              1
+              0
             ]
           },
-          "actionId": "f09223ec65ae59ea0877ec39a7f4cff88a2c12c55cc462cecc8046d2b8fa5c24",
+          "actionId": "8c9c8cbe87f7a80b35d6c0404de3f315272ca7b79fa473da0b3a698f043aa7c5",
           "descriptor": {
             "kind": "CHOOSE",
-            "label": "Go second"
+            "label": "Go first"
           }
         }
       ],
-      "positionHash": "e9ebbaad3f39e95e2f1659e70907cf03ff97d2cc40d1c4db52eb9167ae3b1247",
+      "positionHash": "3eaaaf3e9e4a8e58ed7b2b92b432f2113187ef5b8c2eb571e2814775a55de209",
       "provenance": {
         "generator": "manual-fixture",
         "revision": "1",
@@ -5509,13 +5509,13 @@
     {
       "schemaVersion": 2,
       "positionId": "setup-1",
-      "engineVersion": "0.4.4-ready-spend-v8",
-      "engineArtifactHash": "ab04c3870c33565eef4b29abc2b01661dcf351452c8f3204d70bb2e352df0db4",
+      "engineVersion": "0.4.5-end-turn-reaper-v9",
+      "engineArtifactHash": "b06c5695a532f59699e360dd3d5c4d5ef48b1a6725cca54b9d06c6eab4ff697d",
       "manifest": {
         "schemaVersion": 1,
         "engine": {
-          "version": "0.4.4-ready-spend-v8",
-          "artifactHash": "ab04c3870c33565eef4b29abc2b01661dcf351452c8f3204d70bb2e352df0db4"
+          "version": "0.4.5-end-turn-reaper-v9",
+          "artifactHash": "b06c5695a532f59699e360dd3d5c4d5ef48b1a6725cca54b9d06c6eab4ff697d"
         },
         "ruleset": {
           "id": "beta",
@@ -5610,7 +5610,7 @@
           }
         ]
       },
-      "contentManifestHash": "55c8986c790f6b8682b7d738edd9656820db94dec14c06d04e86740f7793777a",
+      "contentManifestHash": "699271503bede2beff672523b5d5242a0b11d1885aa401811bb70d499bfd551b",
       "state": {
         "setup": {
           "stage": "MAIN_CUT",
@@ -5625,9 +5625,9 @@
           "rulesetId": "beta",
           "rulesetVersion": "engine-setup-1",
           "rulesetHash": "ba02a09bd48a3abfa705e78b80e6fbdaf10eb86b84a7eaec7794d841f88caa22",
-          "contentManifestHash": "55c8986c790f6b8682b7d738edd9656820db94dec14c06d04e86740f7793777a",
-          "engineVersion": "0.4.4-ready-spend-v8",
-          "engineArtifactHash": "ab04c3870c33565eef4b29abc2b01661dcf351452c8f3204d70bb2e352df0db4",
+          "contentManifestHash": "699271503bede2beff672523b5d5242a0b11d1885aa401811bb70d499bfd551b",
+          "engineVersion": "0.4.5-end-turn-reaper-v9",
+          "engineArtifactHash": "b06c5695a532f59699e360dd3d5c4d5ef48b1a6725cca54b9d06c6eab4ff697d",
           "cards": [
             {
               "cardId": "dev-legend-blue",
@@ -7753,7 +7753,7 @@
           "counter": 83
         }
       },
-      "stateHash": "da0104cd7edb1f27d0b24b06e0db7ac15fd89b259f7f5627b5b768d60c907dcb",
+      "stateHash": "602505ab24776a74c5f1f89382bf444543338573c09ee336b64f3247d5670be0",
       "observation": {
         "schemaVersion": 1,
         "viewerSeat": 1,
@@ -7874,265 +7874,10 @@
             "kind": "CHOOSE",
             "choiceId": "45162152d85fb783b2a02800f4222b1dd7a9988756c6bf4874636d16d29e10d3",
             "optionIndices": [
-              4
-            ]
-          },
-          "actionId": "008f8d344593703027a72fd0f756dbea745bf426b96644c0e4a9748a30e9d861",
-          "descriptor": {
-            "kind": "CHOOSE",
-            "label": "Cut rival main deck after slot 4"
-          }
-        },
-        {
-          "actorId": "00000000-0000-4000-8000-000000000004",
-          "action": {
-            "kind": "CHOOSE",
-            "choiceId": "45162152d85fb783b2a02800f4222b1dd7a9988756c6bf4874636d16d29e10d3",
-            "optionIndices": [
-              27
-            ]
-          },
-          "actionId": "0207755e24e140d8f2e2163dc1bc180b04240bf3d9ba0cfe390952e963896efb",
-          "descriptor": {
-            "kind": "CHOOSE",
-            "label": "Cut rival main deck after slot 27"
-          }
-        },
-        {
-          "actorId": "00000000-0000-4000-8000-000000000004",
-          "action": {
-            "kind": "CHOOSE",
-            "choiceId": "45162152d85fb783b2a02800f4222b1dd7a9988756c6bf4874636d16d29e10d3",
-            "optionIndices": [
-              32
-            ]
-          },
-          "actionId": "0845db620d62f9a4aacfdd173cc7186142a7decc73b6cd72a1330459e5aa2df3",
-          "descriptor": {
-            "kind": "CHOOSE",
-            "label": "Cut rival main deck after slot 32"
-          }
-        },
-        {
-          "actorId": "00000000-0000-4000-8000-000000000004",
-          "action": {
-            "kind": "CHOOSE",
-            "choiceId": "45162152d85fb783b2a02800f4222b1dd7a9988756c6bf4874636d16d29e10d3",
-            "optionIndices": [
-              12
-            ]
-          },
-          "actionId": "0f45e4478917234fa748d1559563fb5e4d3cd1b2aed65da211d139aea833fc80",
-          "descriptor": {
-            "kind": "CHOOSE",
-            "label": "Cut rival main deck after slot 12"
-          }
-        },
-        {
-          "actorId": "00000000-0000-4000-8000-000000000004",
-          "action": {
-            "kind": "CHOOSE",
-            "choiceId": "45162152d85fb783b2a02800f4222b1dd7a9988756c6bf4874636d16d29e10d3",
-            "optionIndices": [
-              22
-            ]
-          },
-          "actionId": "10c685e6d66a8afb20cb865bce8261443ab53306080394dcbba5640c7cd9c50c",
-          "descriptor": {
-            "kind": "CHOOSE",
-            "label": "Cut rival main deck after slot 22"
-          }
-        },
-        {
-          "actorId": "00000000-0000-4000-8000-000000000004",
-          "action": {
-            "kind": "CHOOSE",
-            "choiceId": "45162152d85fb783b2a02800f4222b1dd7a9988756c6bf4874636d16d29e10d3",
-            "optionIndices": [
-              19
-            ]
-          },
-          "actionId": "15554ea1f50a80f392f3385339b3982ee007fab1701c760e7bf7c4d6aea9177a",
-          "descriptor": {
-            "kind": "CHOOSE",
-            "label": "Cut rival main deck after slot 19"
-          }
-        },
-        {
-          "actorId": "00000000-0000-4000-8000-000000000004",
-          "action": {
-            "kind": "CHOOSE",
-            "choiceId": "45162152d85fb783b2a02800f4222b1dd7a9988756c6bf4874636d16d29e10d3",
-            "optionIndices": [
-              10
-            ]
-          },
-          "actionId": "1e867b534b413286905e83942507874fe4bf2d29fcebbb37abb0c480919b077e",
-          "descriptor": {
-            "kind": "CHOOSE",
-            "label": "Cut rival main deck after slot 10"
-          }
-        },
-        {
-          "actorId": "00000000-0000-4000-8000-000000000004",
-          "action": {
-            "kind": "CHOOSE",
-            "choiceId": "45162152d85fb783b2a02800f4222b1dd7a9988756c6bf4874636d16d29e10d3",
-            "optionIndices": [
-              34
-            ]
-          },
-          "actionId": "32ff7279d4ee8aa56f3118942f5d13e4c936d319914d8a36ac1e9ce5de7ac473",
-          "descriptor": {
-            "kind": "CHOOSE",
-            "label": "Cut rival main deck after slot 34"
-          }
-        },
-        {
-          "actorId": "00000000-0000-4000-8000-000000000004",
-          "action": {
-            "kind": "CHOOSE",
-            "choiceId": "45162152d85fb783b2a02800f4222b1dd7a9988756c6bf4874636d16d29e10d3",
-            "optionIndices": [
-              0
-            ]
-          },
-          "actionId": "34ff2542e48df5c4df946f8150bab100d67cab7b85d531edd3e69362b71a0de0",
-          "descriptor": {
-            "kind": "CHOOSE",
-            "label": "Decline main deck cut"
-          }
-        },
-        {
-          "actorId": "00000000-0000-4000-8000-000000000004",
-          "action": {
-            "kind": "CHOOSE",
-            "choiceId": "45162152d85fb783b2a02800f4222b1dd7a9988756c6bf4874636d16d29e10d3",
-            "optionIndices": [
-              35
-            ]
-          },
-          "actionId": "350140536d954d20a118445579ebdccce7e303ce62a3aed24960f0c6f49b6ce8",
-          "descriptor": {
-            "kind": "CHOOSE",
-            "label": "Cut rival main deck after slot 35"
-          }
-        },
-        {
-          "actorId": "00000000-0000-4000-8000-000000000004",
-          "action": {
-            "kind": "CHOOSE",
-            "choiceId": "45162152d85fb783b2a02800f4222b1dd7a9988756c6bf4874636d16d29e10d3",
-            "optionIndices": [
-              16
-            ]
-          },
-          "actionId": "40afd2e0d1cfcf3522eeafa9453f9c515992479bdc4eb3577e34d2a6871a53dd",
-          "descriptor": {
-            "kind": "CHOOSE",
-            "label": "Cut rival main deck after slot 16"
-          }
-        },
-        {
-          "actorId": "00000000-0000-4000-8000-000000000004",
-          "action": {
-            "kind": "CHOOSE",
-            "choiceId": "45162152d85fb783b2a02800f4222b1dd7a9988756c6bf4874636d16d29e10d3",
-            "optionIndices": [
-              13
-            ]
-          },
-          "actionId": "531d4cab192445bd20f5ba0b4636920f7ff8400190000a5ea32d8b0e29e422bd",
-          "descriptor": {
-            "kind": "CHOOSE",
-            "label": "Cut rival main deck after slot 13"
-          }
-        },
-        {
-          "actorId": "00000000-0000-4000-8000-000000000004",
-          "action": {
-            "kind": "CHOOSE",
-            "choiceId": "45162152d85fb783b2a02800f4222b1dd7a9988756c6bf4874636d16d29e10d3",
-            "optionIndices": [
-              20
-            ]
-          },
-          "actionId": "5c0546d6823b7dd97fa3ed633d6aa6a7b5f271eba0b8ae5126468384ca074db5",
-          "descriptor": {
-            "kind": "CHOOSE",
-            "label": "Cut rival main deck after slot 20"
-          }
-        },
-        {
-          "actorId": "00000000-0000-4000-8000-000000000004",
-          "action": {
-            "kind": "CHOOSE",
-            "choiceId": "45162152d85fb783b2a02800f4222b1dd7a9988756c6bf4874636d16d29e10d3",
-            "optionIndices": [
-              8
-            ]
-          },
-          "actionId": "61fb4e85488293e07352fcdce155b730f7ed62bdd5aa16f2a74bf0628db367e2",
-          "descriptor": {
-            "kind": "CHOOSE",
-            "label": "Cut rival main deck after slot 8"
-          }
-        },
-        {
-          "actorId": "00000000-0000-4000-8000-000000000004",
-          "action": {
-            "kind": "CHOOSE",
-            "choiceId": "45162152d85fb783b2a02800f4222b1dd7a9988756c6bf4874636d16d29e10d3",
-            "optionIndices": [
-              6
-            ]
-          },
-          "actionId": "6940ea452b88b07972d5c2cefb6cfa5d57446e1b92e8977e28c8fc122f28caac",
-          "descriptor": {
-            "kind": "CHOOSE",
-            "label": "Cut rival main deck after slot 6"
-          }
-        },
-        {
-          "actorId": "00000000-0000-4000-8000-000000000004",
-          "action": {
-            "kind": "CHOOSE",
-            "choiceId": "45162152d85fb783b2a02800f4222b1dd7a9988756c6bf4874636d16d29e10d3",
-            "optionIndices": [
-              17
-            ]
-          },
-          "actionId": "6d0a4327477929b0f8750a7a357da00c1569a71664d5cbe76c1291072cff273c",
-          "descriptor": {
-            "kind": "CHOOSE",
-            "label": "Cut rival main deck after slot 17"
-          }
-        },
-        {
-          "actorId": "00000000-0000-4000-8000-000000000004",
-          "action": {
-            "kind": "CHOOSE",
-            "choiceId": "45162152d85fb783b2a02800f4222b1dd7a9988756c6bf4874636d16d29e10d3",
-            "optionIndices": [
-              26
-            ]
-          },
-          "actionId": "70ad0196b7bbf4140a8524474492fdbd899870070dd43fb31dc4dc2aac59dae2",
-          "descriptor": {
-            "kind": "CHOOSE",
-            "label": "Cut rival main deck after slot 26"
-          }
-        },
-        {
-          "actorId": "00000000-0000-4000-8000-000000000004",
-          "action": {
-            "kind": "CHOOSE",
-            "choiceId": "45162152d85fb783b2a02800f4222b1dd7a9988756c6bf4874636d16d29e10d3",
-            "optionIndices": [
               39
             ]
           },
-          "actionId": "716cb49b9e31d292f497b5f9a830e34c9f61257e66e4f9208b744d968c9c80db",
+          "actionId": "01d33a4223e5308fa3b7d13802371591cb1a0e79b26707eae179620ee18ec3d9",
           "descriptor": {
             "kind": "CHOOSE",
             "label": "Cut rival main deck after slot 39"
@@ -8144,10 +7889,115 @@
             "kind": "CHOOSE",
             "choiceId": "45162152d85fb783b2a02800f4222b1dd7a9988756c6bf4874636d16d29e10d3",
             "optionIndices": [
+              13
+            ]
+          },
+          "actionId": "097a2b43ba7f1408711d538ef4da097c649cada181621d84ff8812391f7e1ded",
+          "descriptor": {
+            "kind": "CHOOSE",
+            "label": "Cut rival main deck after slot 13"
+          }
+        },
+        {
+          "actorId": "00000000-0000-4000-8000-000000000004",
+          "action": {
+            "kind": "CHOOSE",
+            "choiceId": "45162152d85fb783b2a02800f4222b1dd7a9988756c6bf4874636d16d29e10d3",
+            "optionIndices": [
+              14
+            ]
+          },
+          "actionId": "0b8a89542820d1bcb2819670dd4b537a50034465682f32914bbd2d024c68b4da",
+          "descriptor": {
+            "kind": "CHOOSE",
+            "label": "Cut rival main deck after slot 14"
+          }
+        },
+        {
+          "actorId": "00000000-0000-4000-8000-000000000004",
+          "action": {
+            "kind": "CHOOSE",
+            "choiceId": "45162152d85fb783b2a02800f4222b1dd7a9988756c6bf4874636d16d29e10d3",
+            "optionIndices": [
+              22
+            ]
+          },
+          "actionId": "0c9f84a309c51a1e91c20bf1edefa3f7de3a25b8040f728bb35d56867bd5a433",
+          "descriptor": {
+            "kind": "CHOOSE",
+            "label": "Cut rival main deck after slot 22"
+          }
+        },
+        {
+          "actorId": "00000000-0000-4000-8000-000000000004",
+          "action": {
+            "kind": "CHOOSE",
+            "choiceId": "45162152d85fb783b2a02800f4222b1dd7a9988756c6bf4874636d16d29e10d3",
+            "optionIndices": [
+              4
+            ]
+          },
+          "actionId": "107fa3fca67d9588601edd1f8ed3ac8cf586f1140ab6ebacffb8185296286977",
+          "descriptor": {
+            "kind": "CHOOSE",
+            "label": "Cut rival main deck after slot 4"
+          }
+        },
+        {
+          "actorId": "00000000-0000-4000-8000-000000000004",
+          "action": {
+            "kind": "CHOOSE",
+            "choiceId": "45162152d85fb783b2a02800f4222b1dd7a9988756c6bf4874636d16d29e10d3",
+            "optionIndices": [
+              21
+            ]
+          },
+          "actionId": "12a9c230e93c0c61db0b5598ee681b971c7b629a99ac6575766d244ff7cf41a0",
+          "descriptor": {
+            "kind": "CHOOSE",
+            "label": "Cut rival main deck after slot 21"
+          }
+        },
+        {
+          "actorId": "00000000-0000-4000-8000-000000000004",
+          "action": {
+            "kind": "CHOOSE",
+            "choiceId": "45162152d85fb783b2a02800f4222b1dd7a9988756c6bf4874636d16d29e10d3",
+            "optionIndices": [
+              27
+            ]
+          },
+          "actionId": "140e510459ef201402d49b875c697abeb28f4a3bf8ec44c32861c502206aec81",
+          "descriptor": {
+            "kind": "CHOOSE",
+            "label": "Cut rival main deck after slot 27"
+          }
+        },
+        {
+          "actorId": "00000000-0000-4000-8000-000000000004",
+          "action": {
+            "kind": "CHOOSE",
+            "choiceId": "45162152d85fb783b2a02800f4222b1dd7a9988756c6bf4874636d16d29e10d3",
+            "optionIndices": [
+              20
+            ]
+          },
+          "actionId": "1ed08cdea1b6e767af255347c4d34a581e674bde6ad2c09acde8b347a16cbca3",
+          "descriptor": {
+            "kind": "CHOOSE",
+            "label": "Cut rival main deck after slot 20"
+          }
+        },
+        {
+          "actorId": "00000000-0000-4000-8000-000000000004",
+          "action": {
+            "kind": "CHOOSE",
+            "choiceId": "45162152d85fb783b2a02800f4222b1dd7a9988756c6bf4874636d16d29e10d3",
+            "optionIndices": [
               41
             ]
           },
-          "actionId": "7351d795f7fd99f999579c652da85315e822e486d1cf7cd298083056189c594d",
+          "actionId": "1ee0710353a670626473237e65aafbc644cb33b442aed3f50e1adfb7f1531a18",
           "descriptor": {
             "kind": "CHOOSE",
             "label": "Cut rival main deck after slot 41"
@@ -8159,10 +8009,25 @@
             "kind": "CHOOSE",
             "choiceId": "45162152d85fb783b2a02800f4222b1dd7a9988756c6bf4874636d16d29e10d3",
             "optionIndices": [
+              18
+            ]
+          },
+          "actionId": "24013a0b9155a9d5860a3c03e0bf7cb8260a9acad3fdfb6f1a97c44fbd7c0bc2",
+          "descriptor": {
+            "kind": "CHOOSE",
+            "label": "Cut rival main deck after slot 18"
+          }
+        },
+        {
+          "actorId": "00000000-0000-4000-8000-000000000004",
+          "action": {
+            "kind": "CHOOSE",
+            "choiceId": "45162152d85fb783b2a02800f4222b1dd7a9988756c6bf4874636d16d29e10d3",
+            "optionIndices": [
               2
             ]
           },
-          "actionId": "8b57a71f5703007aac16d94511bdae723ff6561c2d78138208956785e1b1e716",
+          "actionId": "2e4ce9e5a15a2ed9e1dbba6abda1c002f972715d3575ee3d135d9cfad36edc27",
           "descriptor": {
             "kind": "CHOOSE",
             "label": "Cut rival main deck after slot 2"
@@ -8174,70 +8039,10 @@
             "kind": "CHOOSE",
             "choiceId": "45162152d85fb783b2a02800f4222b1dd7a9988756c6bf4874636d16d29e10d3",
             "optionIndices": [
-              29
-            ]
-          },
-          "actionId": "8cc36f0afdb06d8dd041a86a245db726619a692ded7f1d535fc6cc86c605e79b",
-          "descriptor": {
-            "kind": "CHOOSE",
-            "label": "Cut rival main deck after slot 29"
-          }
-        },
-        {
-          "actorId": "00000000-0000-4000-8000-000000000004",
-          "action": {
-            "kind": "CHOOSE",
-            "choiceId": "45162152d85fb783b2a02800f4222b1dd7a9988756c6bf4874636d16d29e10d3",
-            "optionIndices": [
-              31
-            ]
-          },
-          "actionId": "906307c177298bee0d1659ee4154fc0bc1e55db87b8279870aa53ee1d94dd8d6",
-          "descriptor": {
-            "kind": "CHOOSE",
-            "label": "Cut rival main deck after slot 31"
-          }
-        },
-        {
-          "actorId": "00000000-0000-4000-8000-000000000004",
-          "action": {
-            "kind": "CHOOSE",
-            "choiceId": "45162152d85fb783b2a02800f4222b1dd7a9988756c6bf4874636d16d29e10d3",
-            "optionIndices": [
-              28
-            ]
-          },
-          "actionId": "97f89925485f9b448e489ab3f88c734458f1483e0af1967b9157f033c4e7c900",
-          "descriptor": {
-            "kind": "CHOOSE",
-            "label": "Cut rival main deck after slot 28"
-          }
-        },
-        {
-          "actorId": "00000000-0000-4000-8000-000000000004",
-          "action": {
-            "kind": "CHOOSE",
-            "choiceId": "45162152d85fb783b2a02800f4222b1dd7a9988756c6bf4874636d16d29e10d3",
-            "optionIndices": [
-              1
-            ]
-          },
-          "actionId": "9fb140f9bd32bc2b034b83edc0b0cc45a9dc561c6b66c17c0d8d18aeb5c4ced7",
-          "descriptor": {
-            "kind": "CHOOSE",
-            "label": "Cut rival main deck after slot 1"
-          }
-        },
-        {
-          "actorId": "00000000-0000-4000-8000-000000000004",
-          "action": {
-            "kind": "CHOOSE",
-            "choiceId": "45162152d85fb783b2a02800f4222b1dd7a9988756c6bf4874636d16d29e10d3",
-            "optionIndices": [
               7
             ]
           },
-          "actionId": "a3bc6ceced45d0cbf359a5c563ce82da32a7b8913c435273342db45c23ea6439",
+          "actionId": "31436f30a6081f33a49802cab2a8fbf32be2e19243485588cbf3e01156199efb",
           "descriptor": {
             "kind": "CHOOSE",
             "label": "Cut rival main deck after slot 7"
@@ -8249,10 +8054,175 @@
             "kind": "CHOOSE",
             "choiceId": "45162152d85fb783b2a02800f4222b1dd7a9988756c6bf4874636d16d29e10d3",
             "optionIndices": [
+              34
+            ]
+          },
+          "actionId": "3c85ee853acb15ac28d5205c04c65ba8dd2fe6628634124dcdebda06ff8fe8d7",
+          "descriptor": {
+            "kind": "CHOOSE",
+            "label": "Cut rival main deck after slot 34"
+          }
+        },
+        {
+          "actorId": "00000000-0000-4000-8000-000000000004",
+          "action": {
+            "kind": "CHOOSE",
+            "choiceId": "45162152d85fb783b2a02800f4222b1dd7a9988756c6bf4874636d16d29e10d3",
+            "optionIndices": [
+              25
+            ]
+          },
+          "actionId": "44b0fd4ad56a9b3ca4815684bd9ce0f4dcee1948d7d8b52881e8f4b7752da5eb",
+          "descriptor": {
+            "kind": "CHOOSE",
+            "label": "Cut rival main deck after slot 25"
+          }
+        },
+        {
+          "actorId": "00000000-0000-4000-8000-000000000004",
+          "action": {
+            "kind": "CHOOSE",
+            "choiceId": "45162152d85fb783b2a02800f4222b1dd7a9988756c6bf4874636d16d29e10d3",
+            "optionIndices": [
+              15
+            ]
+          },
+          "actionId": "482be6629192ae1558c2bb4cbe9b20a25aace3f4d9673f93fb72daed0005a8aa",
+          "descriptor": {
+            "kind": "CHOOSE",
+            "label": "Cut rival main deck after slot 15"
+          }
+        },
+        {
+          "actorId": "00000000-0000-4000-8000-000000000004",
+          "action": {
+            "kind": "CHOOSE",
+            "choiceId": "45162152d85fb783b2a02800f4222b1dd7a9988756c6bf4874636d16d29e10d3",
+            "optionIndices": [
+              17
+            ]
+          },
+          "actionId": "49d384423ac8609747353c2cae71dda8f154344648e199e6836f1a3cfd39f5e6",
+          "descriptor": {
+            "kind": "CHOOSE",
+            "label": "Cut rival main deck after slot 17"
+          }
+        },
+        {
+          "actorId": "00000000-0000-4000-8000-000000000004",
+          "action": {
+            "kind": "CHOOSE",
+            "choiceId": "45162152d85fb783b2a02800f4222b1dd7a9988756c6bf4874636d16d29e10d3",
+            "optionIndices": [
+              23
+            ]
+          },
+          "actionId": "4a23f4debd51ae04e15893e2ec86d8e13ade34ce95e0de2336165edcc21e6abf",
+          "descriptor": {
+            "kind": "CHOOSE",
+            "label": "Cut rival main deck after slot 23"
+          }
+        },
+        {
+          "actorId": "00000000-0000-4000-8000-000000000004",
+          "action": {
+            "kind": "CHOOSE",
+            "choiceId": "45162152d85fb783b2a02800f4222b1dd7a9988756c6bf4874636d16d29e10d3",
+            "optionIndices": [
+              10
+            ]
+          },
+          "actionId": "54b5f4af15931727953e1cea306c29e9b801c1b9d0a8663f9fab2cf259c04bb6",
+          "descriptor": {
+            "kind": "CHOOSE",
+            "label": "Cut rival main deck after slot 10"
+          }
+        },
+        {
+          "actorId": "00000000-0000-4000-8000-000000000004",
+          "action": {
+            "kind": "CHOOSE",
+            "choiceId": "45162152d85fb783b2a02800f4222b1dd7a9988756c6bf4874636d16d29e10d3",
+            "optionIndices": [
+              30
+            ]
+          },
+          "actionId": "5a481f201c07e15b776426b344890684bfb65abd80163639592fe2214f0c47e7",
+          "descriptor": {
+            "kind": "CHOOSE",
+            "label": "Cut rival main deck after slot 30"
+          }
+        },
+        {
+          "actorId": "00000000-0000-4000-8000-000000000004",
+          "action": {
+            "kind": "CHOOSE",
+            "choiceId": "45162152d85fb783b2a02800f4222b1dd7a9988756c6bf4874636d16d29e10d3",
+            "optionIndices": [
+              3
+            ]
+          },
+          "actionId": "60a63df9b7fdf08102acb9e1c6da0151347ec2df21d7015e85c283a6fc8c2c04",
+          "descriptor": {
+            "kind": "CHOOSE",
+            "label": "Cut rival main deck after slot 3"
+          }
+        },
+        {
+          "actorId": "00000000-0000-4000-8000-000000000004",
+          "action": {
+            "kind": "CHOOSE",
+            "choiceId": "45162152d85fb783b2a02800f4222b1dd7a9988756c6bf4874636d16d29e10d3",
+            "optionIndices": [
+              31
+            ]
+          },
+          "actionId": "6c4fa4df17a11ca1fa16630968781c4a961f8ee031b41355c9055e8fd039aa33",
+          "descriptor": {
+            "kind": "CHOOSE",
+            "label": "Cut rival main deck after slot 31"
+          }
+        },
+        {
+          "actorId": "00000000-0000-4000-8000-000000000004",
+          "action": {
+            "kind": "CHOOSE",
+            "choiceId": "45162152d85fb783b2a02800f4222b1dd7a9988756c6bf4874636d16d29e10d3",
+            "optionIndices": [
+              8
+            ]
+          },
+          "actionId": "9b648f4bc2600aa5ee0f548872745d696641e06aabe72a81080448b6a4383a85",
+          "descriptor": {
+            "kind": "CHOOSE",
+            "label": "Cut rival main deck after slot 8"
+          }
+        },
+        {
+          "actorId": "00000000-0000-4000-8000-000000000004",
+          "action": {
+            "kind": "CHOOSE",
+            "choiceId": "45162152d85fb783b2a02800f4222b1dd7a9988756c6bf4874636d16d29e10d3",
+            "optionIndices": [
+              26
+            ]
+          },
+          "actionId": "9bd845fc68514ad89232572c73bbe469b5c4cdfd8e7a1da7ff60679b9c4cdd25",
+          "descriptor": {
+            "kind": "CHOOSE",
+            "label": "Cut rival main deck after slot 26"
+          }
+        },
+        {
+          "actorId": "00000000-0000-4000-8000-000000000004",
+          "action": {
+            "kind": "CHOOSE",
+            "choiceId": "45162152d85fb783b2a02800f4222b1dd7a9988756c6bf4874636d16d29e10d3",
+            "optionIndices": [
               5
             ]
           },
-          "actionId": "a694347be1b11efcb1d1ddeeafad035841296c2406fdf42bc2b1d814550c8536",
+          "actionId": "a2783458e0c240decf2057697d81750151551bd97985fd92af41b291f3637c24",
           "descriptor": {
             "kind": "CHOOSE",
             "label": "Cut rival main deck after slot 5"
@@ -8267,7 +8237,7 @@
               37
             ]
           },
-          "actionId": "a827a607c70e7b270093741576e149b35d6ff5ee753609a6d6b8bf8967b5b9b6",
+          "actionId": "a691bbfdc92a5c5a8c5aaf4b360301c5dcb410579a03f4486a0ecd6d580eede3",
           "descriptor": {
             "kind": "CHOOSE",
             "label": "Cut rival main deck after slot 37"
@@ -8282,7 +8252,7 @@
               38
             ]
           },
-          "actionId": "a85d78e58c90d0e9d5f9b56fa142a9888431f6866f095a2cdb43778998f800ad",
+          "actionId": "b49037b3e4aca66e3451118ffc663f3e37fe092122ced965e58f921845540038",
           "descriptor": {
             "kind": "CHOOSE",
             "label": "Cut rival main deck after slot 38"
@@ -8294,13 +8264,13 @@
             "kind": "CHOOSE",
             "choiceId": "45162152d85fb783b2a02800f4222b1dd7a9988756c6bf4874636d16d29e10d3",
             "optionIndices": [
-              3
+              19
             ]
           },
-          "actionId": "b14a1f05527dd5032588ba5873e12acbc5b40796c8167ea82b0a4664eb7a0ea7",
+          "actionId": "be041d2789c45304e413abd47cdc3c073171e559e9281a13bbb60250ddadcaa1",
           "descriptor": {
             "kind": "CHOOSE",
-            "label": "Cut rival main deck after slot 3"
+            "label": "Cut rival main deck after slot 19"
           }
         },
         {
@@ -8309,133 +8279,13 @@
             "kind": "CHOOSE",
             "choiceId": "45162152d85fb783b2a02800f4222b1dd7a9988756c6bf4874636d16d29e10d3",
             "optionIndices": [
-              11
+              28
             ]
           },
-          "actionId": "b1e3846a338c84b64d287460cfb98d910696d9426875046ca40fa572eb42d31a",
+          "actionId": "c0adc98dd123fac0bf0f563a1f05b0c9d33c5e3621b24866a7b1e651ddaa9a49",
           "descriptor": {
             "kind": "CHOOSE",
-            "label": "Cut rival main deck after slot 11"
-          }
-        },
-        {
-          "actorId": "00000000-0000-4000-8000-000000000004",
-          "action": {
-            "kind": "CHOOSE",
-            "choiceId": "45162152d85fb783b2a02800f4222b1dd7a9988756c6bf4874636d16d29e10d3",
-            "optionIndices": [
-              21
-            ]
-          },
-          "actionId": "b3e854e7920fb09c85ac5e6d22288e3ace195af804fa0a759b16766ff02225eb",
-          "descriptor": {
-            "kind": "CHOOSE",
-            "label": "Cut rival main deck after slot 21"
-          }
-        },
-        {
-          "actorId": "00000000-0000-4000-8000-000000000004",
-          "action": {
-            "kind": "CHOOSE",
-            "choiceId": "45162152d85fb783b2a02800f4222b1dd7a9988756c6bf4874636d16d29e10d3",
-            "optionIndices": [
-              15
-            ]
-          },
-          "actionId": "b76acee64e337955381f239d2acb708472e111dac79be1dc9f2138349f7a2968",
-          "descriptor": {
-            "kind": "CHOOSE",
-            "label": "Cut rival main deck after slot 15"
-          }
-        },
-        {
-          "actorId": "00000000-0000-4000-8000-000000000004",
-          "action": {
-            "kind": "CHOOSE",
-            "choiceId": "45162152d85fb783b2a02800f4222b1dd7a9988756c6bf4874636d16d29e10d3",
-            "optionIndices": [
-              23
-            ]
-          },
-          "actionId": "bdd4f298150af66c121d40c9b3918136ef6fddb52992c35520422c1e6f8c2a26",
-          "descriptor": {
-            "kind": "CHOOSE",
-            "label": "Cut rival main deck after slot 23"
-          }
-        },
-        {
-          "actorId": "00000000-0000-4000-8000-000000000004",
-          "action": {
-            "kind": "CHOOSE",
-            "choiceId": "45162152d85fb783b2a02800f4222b1dd7a9988756c6bf4874636d16d29e10d3",
-            "optionIndices": [
-              18
-            ]
-          },
-          "actionId": "c2da124c2377005908cc6d6333ba5b7aaaad9dea99e9edfdab19628931bcbfbc",
-          "descriptor": {
-            "kind": "CHOOSE",
-            "label": "Cut rival main deck after slot 18"
-          }
-        },
-        {
-          "actorId": "00000000-0000-4000-8000-000000000004",
-          "action": {
-            "kind": "CHOOSE",
-            "choiceId": "45162152d85fb783b2a02800f4222b1dd7a9988756c6bf4874636d16d29e10d3",
-            "optionIndices": [
-              9
-            ]
-          },
-          "actionId": "c5d03567e0beec8a88fb4814f164c1d1d8995b05b0dbc08565e31505a0aac599",
-          "descriptor": {
-            "kind": "CHOOSE",
-            "label": "Cut rival main deck after slot 9"
-          }
-        },
-        {
-          "actorId": "00000000-0000-4000-8000-000000000004",
-          "action": {
-            "kind": "CHOOSE",
-            "choiceId": "45162152d85fb783b2a02800f4222b1dd7a9988756c6bf4874636d16d29e10d3",
-            "optionIndices": [
-              14
-            ]
-          },
-          "actionId": "cad610526140d47e4f01d35e79c530419c331ce5c9803c1c20a7d6d88f6dbf88",
-          "descriptor": {
-            "kind": "CHOOSE",
-            "label": "Cut rival main deck after slot 14"
-          }
-        },
-        {
-          "actorId": "00000000-0000-4000-8000-000000000004",
-          "action": {
-            "kind": "CHOOSE",
-            "choiceId": "45162152d85fb783b2a02800f4222b1dd7a9988756c6bf4874636d16d29e10d3",
-            "optionIndices": [
-              30
-            ]
-          },
-          "actionId": "cc44f7c49f1962e50fa185684868c66fea7f02f459e7a43547a533d07360ce10",
-          "descriptor": {
-            "kind": "CHOOSE",
-            "label": "Cut rival main deck after slot 30"
-          }
-        },
-        {
-          "actorId": "00000000-0000-4000-8000-000000000004",
-          "action": {
-            "kind": "CHOOSE",
-            "choiceId": "45162152d85fb783b2a02800f4222b1dd7a9988756c6bf4874636d16d29e10d3",
-            "optionIndices": [
-              33
-            ]
-          },
-          "actionId": "cf688c778cdc42ca0adf060714c193b0ae1f5acfc52ee6fbcafc90fb0e5f16c0",
-          "descriptor": {
-            "kind": "CHOOSE",
-            "label": "Cut rival main deck after slot 33"
+            "label": "Cut rival main deck after slot 28"
           }
         },
         {
@@ -8447,7 +8297,7 @@
               40
             ]
           },
-          "actionId": "dd730b6812f412879a056f1b353ea692342041f01a8458be0115764b65c67331",
+          "actionId": "c1cd25fb2bf7661c25e13c0bc91df8e1e819237de2110fbdf57420ad1516beac",
           "descriptor": {
             "kind": "CHOOSE",
             "label": "Cut rival main deck after slot 40"
@@ -8459,28 +8309,13 @@
             "kind": "CHOOSE",
             "choiceId": "45162152d85fb783b2a02800f4222b1dd7a9988756c6bf4874636d16d29e10d3",
             "optionIndices": [
-              36
+              16
             ]
           },
-          "actionId": "de607f86688c28c681434d998cfbf6156dd70ffcddbd9b8d12ef6749a6c395d6",
+          "actionId": "c6985ae9b97d3c00201f7ee91a0cc7423b4a53599d437d2fbc0fb7f36b1c1100",
           "descriptor": {
             "kind": "CHOOSE",
-            "label": "Cut rival main deck after slot 36"
-          }
-        },
-        {
-          "actorId": "00000000-0000-4000-8000-000000000004",
-          "action": {
-            "kind": "CHOOSE",
-            "choiceId": "45162152d85fb783b2a02800f4222b1dd7a9988756c6bf4874636d16d29e10d3",
-            "optionIndices": [
-              25
-            ]
-          },
-          "actionId": "ee6e97ccd57f8090fd8cc47bc1fc42d84963d079b65df3d4430507df6a58f74d",
-          "descriptor": {
-            "kind": "CHOOSE",
-            "label": "Cut rival main deck after slot 25"
+            "label": "Cut rival main deck after slot 16"
           }
         },
         {
@@ -8492,14 +8327,179 @@
               24
             ]
           },
-          "actionId": "f1a9a2e91c7324ba449141d9105c2dec880751f97240adea7e8bfe4b0cb5cbc8",
+          "actionId": "c8179ad9575a238f84f21c06ae307156e9dc6748ad380fbef4e84d344093f2fe",
           "descriptor": {
             "kind": "CHOOSE",
             "label": "Cut rival main deck after slot 24"
           }
+        },
+        {
+          "actorId": "00000000-0000-4000-8000-000000000004",
+          "action": {
+            "kind": "CHOOSE",
+            "choiceId": "45162152d85fb783b2a02800f4222b1dd7a9988756c6bf4874636d16d29e10d3",
+            "optionIndices": [
+              11
+            ]
+          },
+          "actionId": "c898916aacee9025c06d5bd0fcc6f7713259b20d97e97b9225bec9fc5d2ff458",
+          "descriptor": {
+            "kind": "CHOOSE",
+            "label": "Cut rival main deck after slot 11"
+          }
+        },
+        {
+          "actorId": "00000000-0000-4000-8000-000000000004",
+          "action": {
+            "kind": "CHOOSE",
+            "choiceId": "45162152d85fb783b2a02800f4222b1dd7a9988756c6bf4874636d16d29e10d3",
+            "optionIndices": [
+              6
+            ]
+          },
+          "actionId": "d464653730d9a33aa83c72ad7132119d4f0113c00928276e6c1d61129791b977",
+          "descriptor": {
+            "kind": "CHOOSE",
+            "label": "Cut rival main deck after slot 6"
+          }
+        },
+        {
+          "actorId": "00000000-0000-4000-8000-000000000004",
+          "action": {
+            "kind": "CHOOSE",
+            "choiceId": "45162152d85fb783b2a02800f4222b1dd7a9988756c6bf4874636d16d29e10d3",
+            "optionIndices": [
+              35
+            ]
+          },
+          "actionId": "d4d833634b47d39c731d7711d6de45626a871d77a3981a55427903d21817f469",
+          "descriptor": {
+            "kind": "CHOOSE",
+            "label": "Cut rival main deck after slot 35"
+          }
+        },
+        {
+          "actorId": "00000000-0000-4000-8000-000000000004",
+          "action": {
+            "kind": "CHOOSE",
+            "choiceId": "45162152d85fb783b2a02800f4222b1dd7a9988756c6bf4874636d16d29e10d3",
+            "optionIndices": [
+              29
+            ]
+          },
+          "actionId": "d893019f3773bebcd9e5557ac0c0b74318c5da8ef372940d55627357b9ce3aa5",
+          "descriptor": {
+            "kind": "CHOOSE",
+            "label": "Cut rival main deck after slot 29"
+          }
+        },
+        {
+          "actorId": "00000000-0000-4000-8000-000000000004",
+          "action": {
+            "kind": "CHOOSE",
+            "choiceId": "45162152d85fb783b2a02800f4222b1dd7a9988756c6bf4874636d16d29e10d3",
+            "optionIndices": [
+              0
+            ]
+          },
+          "actionId": "d8977bf2042a973b2daf9e7d1b24edbcf507c8969b8dcf9dad2ca698af408474",
+          "descriptor": {
+            "kind": "CHOOSE",
+            "label": "Decline main deck cut"
+          }
+        },
+        {
+          "actorId": "00000000-0000-4000-8000-000000000004",
+          "action": {
+            "kind": "CHOOSE",
+            "choiceId": "45162152d85fb783b2a02800f4222b1dd7a9988756c6bf4874636d16d29e10d3",
+            "optionIndices": [
+              36
+            ]
+          },
+          "actionId": "dba63a0da222578a3210db1eeeb10ad20a28c077d305d5b628c5260230b01402",
+          "descriptor": {
+            "kind": "CHOOSE",
+            "label": "Cut rival main deck after slot 36"
+          }
+        },
+        {
+          "actorId": "00000000-0000-4000-8000-000000000004",
+          "action": {
+            "kind": "CHOOSE",
+            "choiceId": "45162152d85fb783b2a02800f4222b1dd7a9988756c6bf4874636d16d29e10d3",
+            "optionIndices": [
+              33
+            ]
+          },
+          "actionId": "df9e0656ed51bbbec54446ea771837498d2867ce181c3290ad4ccc2507168258",
+          "descriptor": {
+            "kind": "CHOOSE",
+            "label": "Cut rival main deck after slot 33"
+          }
+        },
+        {
+          "actorId": "00000000-0000-4000-8000-000000000004",
+          "action": {
+            "kind": "CHOOSE",
+            "choiceId": "45162152d85fb783b2a02800f4222b1dd7a9988756c6bf4874636d16d29e10d3",
+            "optionIndices": [
+              32
+            ]
+          },
+          "actionId": "e2088dc7c1bd4cff6283bc3b0985347c978a7a7f12921477840ae5b7b6e5a4c3",
+          "descriptor": {
+            "kind": "CHOOSE",
+            "label": "Cut rival main deck after slot 32"
+          }
+        },
+        {
+          "actorId": "00000000-0000-4000-8000-000000000004",
+          "action": {
+            "kind": "CHOOSE",
+            "choiceId": "45162152d85fb783b2a02800f4222b1dd7a9988756c6bf4874636d16d29e10d3",
+            "optionIndices": [
+              9
+            ]
+          },
+          "actionId": "ed0074cbc83808597e670dcdb3a736ac05f4fc5768e1ad169961d77bc0548b3b",
+          "descriptor": {
+            "kind": "CHOOSE",
+            "label": "Cut rival main deck after slot 9"
+          }
+        },
+        {
+          "actorId": "00000000-0000-4000-8000-000000000004",
+          "action": {
+            "kind": "CHOOSE",
+            "choiceId": "45162152d85fb783b2a02800f4222b1dd7a9988756c6bf4874636d16d29e10d3",
+            "optionIndices": [
+              12
+            ]
+          },
+          "actionId": "f1071d1f72771d58cdfe34573fa288405294307a7429c9d7fe94c0d2797881ba",
+          "descriptor": {
+            "kind": "CHOOSE",
+            "label": "Cut rival main deck after slot 12"
+          }
+        },
+        {
+          "actorId": "00000000-0000-4000-8000-000000000004",
+          "action": {
+            "kind": "CHOOSE",
+            "choiceId": "45162152d85fb783b2a02800f4222b1dd7a9988756c6bf4874636d16d29e10d3",
+            "optionIndices": [
+              1
+            ]
+          },
+          "actionId": "f38833a97e1a247398d17f586f215d5e1855ca57194ecfe16591e946e26c480f",
+          "descriptor": {
+            "kind": "CHOOSE",
+            "label": "Cut rival main deck after slot 1"
+          }
         }
       ],
-      "positionHash": "e3612bfa61ae07378001eac9f14d2feb9348b9984f831c9dfe9e1ca33d92b85e",
+      "positionHash": "2f196cde425f070fdbb7b672a8af1bee45de57f52202aec666fb10d1d598e587",
       "provenance": {
         "generator": "manual-fixture",
         "revision": "1",
@@ -8509,13 +8509,13 @@
     {
       "schemaVersion": 2,
       "positionId": "setup-2",
-      "engineVersion": "0.4.4-ready-spend-v8",
-      "engineArtifactHash": "ab04c3870c33565eef4b29abc2b01661dcf351452c8f3204d70bb2e352df0db4",
+      "engineVersion": "0.4.5-end-turn-reaper-v9",
+      "engineArtifactHash": "b06c5695a532f59699e360dd3d5c4d5ef48b1a6725cca54b9d06c6eab4ff697d",
       "manifest": {
         "schemaVersion": 1,
         "engine": {
-          "version": "0.4.4-ready-spend-v8",
-          "artifactHash": "ab04c3870c33565eef4b29abc2b01661dcf351452c8f3204d70bb2e352df0db4"
+          "version": "0.4.5-end-turn-reaper-v9",
+          "artifactHash": "b06c5695a532f59699e360dd3d5c4d5ef48b1a6725cca54b9d06c6eab4ff697d"
         },
         "ruleset": {
           "id": "beta",
@@ -8610,7 +8610,7 @@
           }
         ]
       },
-      "contentManifestHash": "55c8986c790f6b8682b7d738edd9656820db94dec14c06d04e86740f7793777a",
+      "contentManifestHash": "699271503bede2beff672523b5d5242a0b11d1885aa401811bb70d499bfd551b",
       "state": {
         "setup": {
           "stage": "MAIN_CUT",
@@ -8625,9 +8625,9 @@
           "rulesetId": "beta",
           "rulesetVersion": "engine-setup-1",
           "rulesetHash": "ba02a09bd48a3abfa705e78b80e6fbdaf10eb86b84a7eaec7794d841f88caa22",
-          "contentManifestHash": "55c8986c790f6b8682b7d738edd9656820db94dec14c06d04e86740f7793777a",
-          "engineVersion": "0.4.4-ready-spend-v8",
-          "engineArtifactHash": "ab04c3870c33565eef4b29abc2b01661dcf351452c8f3204d70bb2e352df0db4",
+          "contentManifestHash": "699271503bede2beff672523b5d5242a0b11d1885aa401811bb70d499bfd551b",
+          "engineVersion": "0.4.5-end-turn-reaper-v9",
+          "engineArtifactHash": "b06c5695a532f59699e360dd3d5c4d5ef48b1a6725cca54b9d06c6eab4ff697d",
           "cards": [
             {
               "cardId": "dev-legend-blue",
@@ -10753,7 +10753,7 @@
           "counter": 83
         }
       },
-      "stateHash": "8bc193a7e65ddb5ff4712170c805d0aad3eaf0b97b7d8a10d81aff69d9a701d7",
+      "stateHash": "ebfee45e78f5713c9429ba133b75d66f384acff3162861b8c116655c7812a183",
       "observation": {
         "schemaVersion": 1,
         "viewerSeat": 0,
@@ -10874,193 +10874,13 @@
             "kind": "CHOOSE",
             "choiceId": "8dcd6ffbb7c60b1b821c49c4a8f51b5b5cebb5ead2990f95fcfc9757b0aa69d0",
             "optionIndices": [
-              38
+              2
             ]
           },
-          "actionId": "03db1e14b7e6aba434b49358562417fa984b68f5eca6ae2bfc24651ff3576e6e",
+          "actionId": "0c84a892dce62943cbdcc7d6904e8038f70033b7b509ee4eaa5246e3c31ce0ec",
           "descriptor": {
             "kind": "CHOOSE",
-            "label": "Cut rival main deck after slot 38"
-          }
-        },
-        {
-          "actorId": "00000000-0000-4000-8000-000000000001",
-          "action": {
-            "kind": "CHOOSE",
-            "choiceId": "8dcd6ffbb7c60b1b821c49c4a8f51b5b5cebb5ead2990f95fcfc9757b0aa69d0",
-            "optionIndices": [
-              3
-            ]
-          },
-          "actionId": "046d5a7a862073df335641bc87ec873e8c137801e497033f5a9cc8a4b0a681e5",
-          "descriptor": {
-            "kind": "CHOOSE",
-            "label": "Cut rival main deck after slot 3"
-          }
-        },
-        {
-          "actorId": "00000000-0000-4000-8000-000000000001",
-          "action": {
-            "kind": "CHOOSE",
-            "choiceId": "8dcd6ffbb7c60b1b821c49c4a8f51b5b5cebb5ead2990f95fcfc9757b0aa69d0",
-            "optionIndices": [
-              12
-            ]
-          },
-          "actionId": "05ee2398104cd606bcf6c5c04ed6de21aec66c9c29ca8d12b92e0cff23a84fd6",
-          "descriptor": {
-            "kind": "CHOOSE",
-            "label": "Cut rival main deck after slot 12"
-          }
-        },
-        {
-          "actorId": "00000000-0000-4000-8000-000000000001",
-          "action": {
-            "kind": "CHOOSE",
-            "choiceId": "8dcd6ffbb7c60b1b821c49c4a8f51b5b5cebb5ead2990f95fcfc9757b0aa69d0",
-            "optionIndices": [
-              30
-            ]
-          },
-          "actionId": "0bb4ad583e29fc1d9c1afed9517e91cfd5d7be5ef2e5aebd9d7581416e24a847",
-          "descriptor": {
-            "kind": "CHOOSE",
-            "label": "Cut rival main deck after slot 30"
-          }
-        },
-        {
-          "actorId": "00000000-0000-4000-8000-000000000001",
-          "action": {
-            "kind": "CHOOSE",
-            "choiceId": "8dcd6ffbb7c60b1b821c49c4a8f51b5b5cebb5ead2990f95fcfc9757b0aa69d0",
-            "optionIndices": [
-              1
-            ]
-          },
-          "actionId": "16cd51b158236a4d607431f31fbbe6fe1907148f6434c4bf0170261cb2588a56",
-          "descriptor": {
-            "kind": "CHOOSE",
-            "label": "Cut rival main deck after slot 1"
-          }
-        },
-        {
-          "actorId": "00000000-0000-4000-8000-000000000001",
-          "action": {
-            "kind": "CHOOSE",
-            "choiceId": "8dcd6ffbb7c60b1b821c49c4a8f51b5b5cebb5ead2990f95fcfc9757b0aa69d0",
-            "optionIndices": [
-              14
-            ]
-          },
-          "actionId": "2468564008c6233cf2d2ecf52f786f4709633c78771403f5145ada344a35d96e",
-          "descriptor": {
-            "kind": "CHOOSE",
-            "label": "Cut rival main deck after slot 14"
-          }
-        },
-        {
-          "actorId": "00000000-0000-4000-8000-000000000001",
-          "action": {
-            "kind": "CHOOSE",
-            "choiceId": "8dcd6ffbb7c60b1b821c49c4a8f51b5b5cebb5ead2990f95fcfc9757b0aa69d0",
-            "optionIndices": [
-              15
-            ]
-          },
-          "actionId": "32882f7bfe9ab4e1c869132ed5f7b1d4ffe107e264a720be311e48965b4b62b0",
-          "descriptor": {
-            "kind": "CHOOSE",
-            "label": "Cut rival main deck after slot 15"
-          }
-        },
-        {
-          "actorId": "00000000-0000-4000-8000-000000000001",
-          "action": {
-            "kind": "CHOOSE",
-            "choiceId": "8dcd6ffbb7c60b1b821c49c4a8f51b5b5cebb5ead2990f95fcfc9757b0aa69d0",
-            "optionIndices": [
-              20
-            ]
-          },
-          "actionId": "32ca5e50f1803d81ef5a4e3156ffe86c4603585889a3e19809780ed584c36966",
-          "descriptor": {
-            "kind": "CHOOSE",
-            "label": "Cut rival main deck after slot 20"
-          }
-        },
-        {
-          "actorId": "00000000-0000-4000-8000-000000000001",
-          "action": {
-            "kind": "CHOOSE",
-            "choiceId": "8dcd6ffbb7c60b1b821c49c4a8f51b5b5cebb5ead2990f95fcfc9757b0aa69d0",
-            "optionIndices": [
-              8
-            ]
-          },
-          "actionId": "3660878f86fc0ffce8ab4a5d5934652d04167f9c82013c05987b6644fee70e70",
-          "descriptor": {
-            "kind": "CHOOSE",
-            "label": "Cut rival main deck after slot 8"
-          }
-        },
-        {
-          "actorId": "00000000-0000-4000-8000-000000000001",
-          "action": {
-            "kind": "CHOOSE",
-            "choiceId": "8dcd6ffbb7c60b1b821c49c4a8f51b5b5cebb5ead2990f95fcfc9757b0aa69d0",
-            "optionIndices": [
-              5
-            ]
-          },
-          "actionId": "414a64f36d93e50d7e741d83459a73807b314af689faf7cf038f84dc96516ae0",
-          "descriptor": {
-            "kind": "CHOOSE",
-            "label": "Cut rival main deck after slot 5"
-          }
-        },
-        {
-          "actorId": "00000000-0000-4000-8000-000000000001",
-          "action": {
-            "kind": "CHOOSE",
-            "choiceId": "8dcd6ffbb7c60b1b821c49c4a8f51b5b5cebb5ead2990f95fcfc9757b0aa69d0",
-            "optionIndices": [
-              27
-            ]
-          },
-          "actionId": "43558d33580e8d6c775eb19c327ec1841e1c2f3448687488535cc6039ea9c996",
-          "descriptor": {
-            "kind": "CHOOSE",
-            "label": "Cut rival main deck after slot 27"
-          }
-        },
-        {
-          "actorId": "00000000-0000-4000-8000-000000000001",
-          "action": {
-            "kind": "CHOOSE",
-            "choiceId": "8dcd6ffbb7c60b1b821c49c4a8f51b5b5cebb5ead2990f95fcfc9757b0aa69d0",
-            "optionIndices": [
-              34
-            ]
-          },
-          "actionId": "4d415f04a8d75e2363c8c2711e54b8d62104b1505d58dc61ada6b0bfd1495ffc",
-          "descriptor": {
-            "kind": "CHOOSE",
-            "label": "Cut rival main deck after slot 34"
-          }
-        },
-        {
-          "actorId": "00000000-0000-4000-8000-000000000001",
-          "action": {
-            "kind": "CHOOSE",
-            "choiceId": "8dcd6ffbb7c60b1b821c49c4a8f51b5b5cebb5ead2990f95fcfc9757b0aa69d0",
-            "optionIndices": [
-              17
-            ]
-          },
-          "actionId": "5414547aae682d580176c197362be708ab506d97509a0681826603572a12f1a7",
-          "descriptor": {
-            "kind": "CHOOSE",
-            "label": "Cut rival main deck after slot 17"
+            "label": "Cut rival main deck after slot 2"
           }
         },
         {
@@ -11072,7 +10892,7 @@
               7
             ]
           },
-          "actionId": "559924a555b1dd7202e11621787f924c17cccd95fbf100147d5f460e48e64ced",
+          "actionId": "11c61a6b0177b19abe6cacda401de2168817cb6b084659df153d800581cace0e",
           "descriptor": {
             "kind": "CHOOSE",
             "label": "Cut rival main deck after slot 7"
@@ -11084,133 +10904,13 @@
             "kind": "CHOOSE",
             "choiceId": "8dcd6ffbb7c60b1b821c49c4a8f51b5b5cebb5ead2990f95fcfc9757b0aa69d0",
             "optionIndices": [
-              29
+              31
             ]
           },
-          "actionId": "560dcaee838c211843a9153d1a1797aede0f7cf4ba0d9ab3497f2b278700b1ea",
+          "actionId": "1f5043de458e50f777126d62ae557b4284faf98dd6a1bee462d360b25ddca524",
           "descriptor": {
             "kind": "CHOOSE",
-            "label": "Cut rival main deck after slot 29"
-          }
-        },
-        {
-          "actorId": "00000000-0000-4000-8000-000000000001",
-          "action": {
-            "kind": "CHOOSE",
-            "choiceId": "8dcd6ffbb7c60b1b821c49c4a8f51b5b5cebb5ead2990f95fcfc9757b0aa69d0",
-            "optionIndices": [
-              25
-            ]
-          },
-          "actionId": "5c2db2585486757f629f9908c52576feb054feb2f927c5aecbaa2d8e98a7a383",
-          "descriptor": {
-            "kind": "CHOOSE",
-            "label": "Cut rival main deck after slot 25"
-          }
-        },
-        {
-          "actorId": "00000000-0000-4000-8000-000000000001",
-          "action": {
-            "kind": "CHOOSE",
-            "choiceId": "8dcd6ffbb7c60b1b821c49c4a8f51b5b5cebb5ead2990f95fcfc9757b0aa69d0",
-            "optionIndices": [
-              19
-            ]
-          },
-          "actionId": "62af7e59e3c835b0079cb84c98147ec01da09acde3d4ca1cd0038aac61c11c38",
-          "descriptor": {
-            "kind": "CHOOSE",
-            "label": "Cut rival main deck after slot 19"
-          }
-        },
-        {
-          "actorId": "00000000-0000-4000-8000-000000000001",
-          "action": {
-            "kind": "CHOOSE",
-            "choiceId": "8dcd6ffbb7c60b1b821c49c4a8f51b5b5cebb5ead2990f95fcfc9757b0aa69d0",
-            "optionIndices": [
-              9
-            ]
-          },
-          "actionId": "6353a3cafe406326db746fcc35e2669faeabf2df5c08b2fcceddf959d6cf4a73",
-          "descriptor": {
-            "kind": "CHOOSE",
-            "label": "Cut rival main deck after slot 9"
-          }
-        },
-        {
-          "actorId": "00000000-0000-4000-8000-000000000001",
-          "action": {
-            "kind": "CHOOSE",
-            "choiceId": "8dcd6ffbb7c60b1b821c49c4a8f51b5b5cebb5ead2990f95fcfc9757b0aa69d0",
-            "optionIndices": [
-              10
-            ]
-          },
-          "actionId": "646653c40f1cade296deca4d37d0cabc722742183e2e7f8ceb1d034ac451641a",
-          "descriptor": {
-            "kind": "CHOOSE",
-            "label": "Cut rival main deck after slot 10"
-          }
-        },
-        {
-          "actorId": "00000000-0000-4000-8000-000000000001",
-          "action": {
-            "kind": "CHOOSE",
-            "choiceId": "8dcd6ffbb7c60b1b821c49c4a8f51b5b5cebb5ead2990f95fcfc9757b0aa69d0",
-            "optionIndices": [
-              32
-            ]
-          },
-          "actionId": "6722a5a6b7930e7c31711bf51b52c832ff2e36fd78949b17549f3b964ba5f0c8",
-          "descriptor": {
-            "kind": "CHOOSE",
-            "label": "Cut rival main deck after slot 32"
-          }
-        },
-        {
-          "actorId": "00000000-0000-4000-8000-000000000001",
-          "action": {
-            "kind": "CHOOSE",
-            "choiceId": "8dcd6ffbb7c60b1b821c49c4a8f51b5b5cebb5ead2990f95fcfc9757b0aa69d0",
-            "optionIndices": [
-              6
-            ]
-          },
-          "actionId": "67868d5e6974a84380d49a382eb29f9956401e378d0b0d1a863f3b0b60bbd31b",
-          "descriptor": {
-            "kind": "CHOOSE",
-            "label": "Cut rival main deck after slot 6"
-          }
-        },
-        {
-          "actorId": "00000000-0000-4000-8000-000000000001",
-          "action": {
-            "kind": "CHOOSE",
-            "choiceId": "8dcd6ffbb7c60b1b821c49c4a8f51b5b5cebb5ead2990f95fcfc9757b0aa69d0",
-            "optionIndices": [
-              36
-            ]
-          },
-          "actionId": "6b928c70ac3404d86dfe90847f3898a8544174cb3670d512d550965cf8ae43c7",
-          "descriptor": {
-            "kind": "CHOOSE",
-            "label": "Cut rival main deck after slot 36"
-          }
-        },
-        {
-          "actorId": "00000000-0000-4000-8000-000000000001",
-          "action": {
-            "kind": "CHOOSE",
-            "choiceId": "8dcd6ffbb7c60b1b821c49c4a8f51b5b5cebb5ead2990f95fcfc9757b0aa69d0",
-            "optionIndices": [
-              22
-            ]
-          },
-          "actionId": "6f479fc321f7a33ef99446fc62b2a401a60e1c7ab5620d07f152761589064af2",
-          "descriptor": {
-            "kind": "CHOOSE",
-            "label": "Cut rival main deck after slot 22"
+            "label": "Cut rival main deck after slot 31"
           }
         },
         {
@@ -11222,7 +10922,7 @@
               24
             ]
           },
-          "actionId": "7111e7784b96eb0bd842e1af088f69b2b3c0d53711cdf3e19c925351466e00d0",
+          "actionId": "1f917dd05586013f9d0e9567ae2520c841f0d63ca1719ecf84a3cea9aa050a1f",
           "descriptor": {
             "kind": "CHOOSE",
             "label": "Cut rival main deck after slot 24"
@@ -11234,13 +10934,13 @@
             "kind": "CHOOSE",
             "choiceId": "8dcd6ffbb7c60b1b821c49c4a8f51b5b5cebb5ead2990f95fcfc9757b0aa69d0",
             "optionIndices": [
-              4
+              16
             ]
           },
-          "actionId": "727bb5b6f04ff2a8b1537f76468770849d3b9da0aaa9cf500acda06d8f0db615",
+          "actionId": "30f4180101b643df79605118457a3626f861c9cb756526fc8f48cb37c6828143",
           "descriptor": {
             "kind": "CHOOSE",
-            "label": "Cut rival main deck after slot 4"
+            "label": "Cut rival main deck after slot 16"
           }
         },
         {
@@ -11249,13 +10949,163 @@
             "kind": "CHOOSE",
             "choiceId": "8dcd6ffbb7c60b1b821c49c4a8f51b5b5cebb5ead2990f95fcfc9757b0aa69d0",
             "optionIndices": [
-              21
+              38
             ]
           },
-          "actionId": "763465e9cadb8b52747891640987f1333f6504fb22c37fb408df1b7638fde6c1",
+          "actionId": "3a3895d601e8104dc51f40856ffaa2965abdfe3d2255a1bfb310724aef52c093",
           "descriptor": {
             "kind": "CHOOSE",
-            "label": "Cut rival main deck after slot 21"
+            "label": "Cut rival main deck after slot 38"
+          }
+        },
+        {
+          "actorId": "00000000-0000-4000-8000-000000000001",
+          "action": {
+            "kind": "CHOOSE",
+            "choiceId": "8dcd6ffbb7c60b1b821c49c4a8f51b5b5cebb5ead2990f95fcfc9757b0aa69d0",
+            "optionIndices": [
+              6
+            ]
+          },
+          "actionId": "3ba5154c648f2ff5f2de530af1edc6dc757e8dcd8ccc689ed67ab224c2b0e026",
+          "descriptor": {
+            "kind": "CHOOSE",
+            "label": "Cut rival main deck after slot 6"
+          }
+        },
+        {
+          "actorId": "00000000-0000-4000-8000-000000000001",
+          "action": {
+            "kind": "CHOOSE",
+            "choiceId": "8dcd6ffbb7c60b1b821c49c4a8f51b5b5cebb5ead2990f95fcfc9757b0aa69d0",
+            "optionIndices": [
+              14
+            ]
+          },
+          "actionId": "3ba8f2ff5621c07f1b81b4a4c5996570bacb3c1a8f48d8811f8094e65acd31a3",
+          "descriptor": {
+            "kind": "CHOOSE",
+            "label": "Cut rival main deck after slot 14"
+          }
+        },
+        {
+          "actorId": "00000000-0000-4000-8000-000000000001",
+          "action": {
+            "kind": "CHOOSE",
+            "choiceId": "8dcd6ffbb7c60b1b821c49c4a8f51b5b5cebb5ead2990f95fcfc9757b0aa69d0",
+            "optionIndices": [
+              5
+            ]
+          },
+          "actionId": "3fae28b87d9f3ac8751d97843b2fb7725e1f571682b1612c63727b9c2e9eb2fb",
+          "descriptor": {
+            "kind": "CHOOSE",
+            "label": "Cut rival main deck after slot 5"
+          }
+        },
+        {
+          "actorId": "00000000-0000-4000-8000-000000000001",
+          "action": {
+            "kind": "CHOOSE",
+            "choiceId": "8dcd6ffbb7c60b1b821c49c4a8f51b5b5cebb5ead2990f95fcfc9757b0aa69d0",
+            "optionIndices": [
+              34
+            ]
+          },
+          "actionId": "435b93b3bcbc587a27da63342c5fc5177bbcbce5971e5db0613f2f03dbdac05f",
+          "descriptor": {
+            "kind": "CHOOSE",
+            "label": "Cut rival main deck after slot 34"
+          }
+        },
+        {
+          "actorId": "00000000-0000-4000-8000-000000000001",
+          "action": {
+            "kind": "CHOOSE",
+            "choiceId": "8dcd6ffbb7c60b1b821c49c4a8f51b5b5cebb5ead2990f95fcfc9757b0aa69d0",
+            "optionIndices": [
+              19
+            ]
+          },
+          "actionId": "46c6aa7a6d8b536c01d651e889fdc13c269c5293f799f7935a7d97737681e6c3",
+          "descriptor": {
+            "kind": "CHOOSE",
+            "label": "Cut rival main deck after slot 19"
+          }
+        },
+        {
+          "actorId": "00000000-0000-4000-8000-000000000001",
+          "action": {
+            "kind": "CHOOSE",
+            "choiceId": "8dcd6ffbb7c60b1b821c49c4a8f51b5b5cebb5ead2990f95fcfc9757b0aa69d0",
+            "optionIndices": [
+              28
+            ]
+          },
+          "actionId": "473d3f35b7cd6a9c0e8fe4a3e5ea74f82aa46287e842e742de6b757c440e1a68",
+          "descriptor": {
+            "kind": "CHOOSE",
+            "label": "Cut rival main deck after slot 28"
+          }
+        },
+        {
+          "actorId": "00000000-0000-4000-8000-000000000001",
+          "action": {
+            "kind": "CHOOSE",
+            "choiceId": "8dcd6ffbb7c60b1b821c49c4a8f51b5b5cebb5ead2990f95fcfc9757b0aa69d0",
+            "optionIndices": [
+              32
+            ]
+          },
+          "actionId": "4b7f8981a9af08d391f898c543edc7a788e73107b3c5e1ad891fecbf8af8dbe2",
+          "descriptor": {
+            "kind": "CHOOSE",
+            "label": "Cut rival main deck after slot 32"
+          }
+        },
+        {
+          "actorId": "00000000-0000-4000-8000-000000000001",
+          "action": {
+            "kind": "CHOOSE",
+            "choiceId": "8dcd6ffbb7c60b1b821c49c4a8f51b5b5cebb5ead2990f95fcfc9757b0aa69d0",
+            "optionIndices": [
+              23
+            ]
+          },
+          "actionId": "4f609bc389a243542910781f4f12ae71f9d2fcf058210c4b85a423476e199867",
+          "descriptor": {
+            "kind": "CHOOSE",
+            "label": "Cut rival main deck after slot 23"
+          }
+        },
+        {
+          "actorId": "00000000-0000-4000-8000-000000000001",
+          "action": {
+            "kind": "CHOOSE",
+            "choiceId": "8dcd6ffbb7c60b1b821c49c4a8f51b5b5cebb5ead2990f95fcfc9757b0aa69d0",
+            "optionIndices": [
+              36
+            ]
+          },
+          "actionId": "52ff635aeabaab5576d5ba68244e05df0b1925d632e9a5f15863fc96031d3b86",
+          "descriptor": {
+            "kind": "CHOOSE",
+            "label": "Cut rival main deck after slot 36"
+          }
+        },
+        {
+          "actorId": "00000000-0000-4000-8000-000000000001",
+          "action": {
+            "kind": "CHOOSE",
+            "choiceId": "8dcd6ffbb7c60b1b821c49c4a8f51b5b5cebb5ead2990f95fcfc9757b0aa69d0",
+            "optionIndices": [
+              39
+            ]
+          },
+          "actionId": "55d33d43ab427698b2f40f7fa78201629742cb8b3d485fc32fd1ca383a36bb90",
+          "descriptor": {
+            "kind": "CHOOSE",
+            "label": "Cut rival main deck after slot 39"
           }
         },
         {
@@ -11267,7 +11117,7 @@
               13
             ]
           },
-          "actionId": "7cd7bfdf9a5dce8ae6b5f2cffc390bc1df347a8d65adbac0f0ffbb833c3cfa96",
+          "actionId": "5c317ddf8efe2308f287cc481d3e2b7216590834879fff46452f6aa8598cdcdb",
           "descriptor": {
             "kind": "CHOOSE",
             "label": "Cut rival main deck after slot 13"
@@ -11279,25 +11129,10 @@
             "kind": "CHOOSE",
             "choiceId": "8dcd6ffbb7c60b1b821c49c4a8f51b5b5cebb5ead2990f95fcfc9757b0aa69d0",
             "optionIndices": [
-              40
-            ]
-          },
-          "actionId": "7f28f9f3f6f32199112c9a8230ad58f340e13fc41dd8b695ad9ff0175cdcebe6",
-          "descriptor": {
-            "kind": "CHOOSE",
-            "label": "Cut rival main deck after slot 40"
-          }
-        },
-        {
-          "actorId": "00000000-0000-4000-8000-000000000001",
-          "action": {
-            "kind": "CHOOSE",
-            "choiceId": "8dcd6ffbb7c60b1b821c49c4a8f51b5b5cebb5ead2990f95fcfc9757b0aa69d0",
-            "optionIndices": [
               35
             ]
           },
-          "actionId": "7fb418d632a9d92ccd47073386f8cb285fb8b894798b1de628df6e6134ea0406",
+          "actionId": "5e20d34cea07b79620dfe56c463d8fdf90e4e2f09daa6ab8845aad73fe516e62",
           "descriptor": {
             "kind": "CHOOSE",
             "label": "Cut rival main deck after slot 35"
@@ -11312,7 +11147,7 @@
               33
             ]
           },
-          "actionId": "81aea4890d6913ae2cd7eaefccbd15db0bd8871d7c573220f823a66e1a44975d",
+          "actionId": "60fcc1ee2241c3019e659ea1ed9c3c5679f5f7236725475adbd262c6bec38cac",
           "descriptor": {
             "kind": "CHOOSE",
             "label": "Cut rival main deck after slot 33"
@@ -11324,13 +11159,13 @@
             "kind": "CHOOSE",
             "choiceId": "8dcd6ffbb7c60b1b821c49c4a8f51b5b5cebb5ead2990f95fcfc9757b0aa69d0",
             "optionIndices": [
-              2
+              17
             ]
           },
-          "actionId": "832148fb4509b2bfc9261dcabcc89203d4a5deaddb26fec376c351e8f49b6a6f",
+          "actionId": "76927db6f8892708fbbf830d1034b9f50f7616f2544cf5a8778156bb9f4c3ad2",
           "descriptor": {
             "kind": "CHOOSE",
-            "label": "Cut rival main deck after slot 2"
+            "label": "Cut rival main deck after slot 17"
           }
         },
         {
@@ -11339,13 +11174,13 @@
             "kind": "CHOOSE",
             "choiceId": "8dcd6ffbb7c60b1b821c49c4a8f51b5b5cebb5ead2990f95fcfc9757b0aa69d0",
             "optionIndices": [
-              39
+              20
             ]
           },
-          "actionId": "889b2d7a47831495a1951e386e58676556a3619effa285479f352106abe42362",
+          "actionId": "7a92fba713fccb739d46bed8884b5f0ad5033a8520947ca76e58b34e7d5dc7c8",
           "descriptor": {
             "kind": "CHOOSE",
-            "label": "Cut rival main deck after slot 39"
+            "label": "Cut rival main deck after slot 20"
           }
         },
         {
@@ -11354,13 +11189,13 @@
             "kind": "CHOOSE",
             "choiceId": "8dcd6ffbb7c60b1b821c49c4a8f51b5b5cebb5ead2990f95fcfc9757b0aa69d0",
             "optionIndices": [
-              28
+              12
             ]
           },
-          "actionId": "8ca60d4bacc2e948c3b8c99644925558780f4848c52acb2c84a208f5a9edb5da",
+          "actionId": "7abb9613a0fbeaa52ac547342285ca1e61b736d6da1831f4e3a01f816406127a",
           "descriptor": {
             "kind": "CHOOSE",
-            "label": "Cut rival main deck after slot 28"
+            "label": "Cut rival main deck after slot 12"
           }
         },
         {
@@ -11369,13 +11204,13 @@
             "kind": "CHOOSE",
             "choiceId": "8dcd6ffbb7c60b1b821c49c4a8f51b5b5cebb5ead2990f95fcfc9757b0aa69d0",
             "optionIndices": [
-              26
+              4
             ]
           },
-          "actionId": "8dfb33eabfa2e828cbbd0be29ea1338cd594fbfa376ea340d7fe6f23826a42cf",
+          "actionId": "80e093f876f8f764254db6573a88c093d82c35e17a55f484b0bc3efe2c0d6e49",
           "descriptor": {
             "kind": "CHOOSE",
-            "label": "Cut rival main deck after slot 26"
+            "label": "Cut rival main deck after slot 4"
           }
         },
         {
@@ -11384,13 +11219,28 @@
             "kind": "CHOOSE",
             "choiceId": "8dcd6ffbb7c60b1b821c49c4a8f51b5b5cebb5ead2990f95fcfc9757b0aa69d0",
             "optionIndices": [
-              41
+              27
             ]
           },
-          "actionId": "a1fa6d904ff7667d17aeaafe255ad49f3cc16e4052a1c02bc17fdb2b88923afc",
+          "actionId": "8e72b46d82f631839e234412bef7b88d3f6fdbe9c0fe6b3bed1a60ac32317207",
           "descriptor": {
             "kind": "CHOOSE",
-            "label": "Cut rival main deck after slot 41"
+            "label": "Cut rival main deck after slot 27"
+          }
+        },
+        {
+          "actorId": "00000000-0000-4000-8000-000000000001",
+          "action": {
+            "kind": "CHOOSE",
+            "choiceId": "8dcd6ffbb7c60b1b821c49c4a8f51b5b5cebb5ead2990f95fcfc9757b0aa69d0",
+            "optionIndices": [
+              29
+            ]
+          },
+          "actionId": "98f46cf2d7e5487b7b8b124111fab5a83b4a7aff35a86fe3e50f3994dd3924d1",
+          "descriptor": {
+            "kind": "CHOOSE",
+            "label": "Cut rival main deck after slot 29"
           }
         },
         {
@@ -11402,7 +11252,7 @@
               37
             ]
           },
-          "actionId": "afedb28066d488061fd7310cf5fb61e97fdc844f4aa8d3b4577b64a059ea3568",
+          "actionId": "9d72337747565970340d9eebfe38088bb498a5959be1735f5736fe2c03bd754b",
           "descriptor": {
             "kind": "CHOOSE",
             "label": "Cut rival main deck after slot 37"
@@ -11414,13 +11264,13 @@
             "kind": "CHOOSE",
             "choiceId": "8dcd6ffbb7c60b1b821c49c4a8f51b5b5cebb5ead2990f95fcfc9757b0aa69d0",
             "optionIndices": [
-              23
+              8
             ]
           },
-          "actionId": "b96e64f7804a96e02c2677e56b6f1a5658ee53d6bd13c13e420b0a987ff7b881",
+          "actionId": "a059be387e8bce5295b8f5aaebf0ddb3e302bd358d0a80287c6f977415c9ccf7",
           "descriptor": {
             "kind": "CHOOSE",
-            "label": "Cut rival main deck after slot 23"
+            "label": "Cut rival main deck after slot 8"
           }
         },
         {
@@ -11429,13 +11279,13 @@
             "kind": "CHOOSE",
             "choiceId": "8dcd6ffbb7c60b1b821c49c4a8f51b5b5cebb5ead2990f95fcfc9757b0aa69d0",
             "optionIndices": [
-              31
+              15
             ]
           },
-          "actionId": "c58588804af6bbdb1c9df56315876a7b8fcea1fbad651ac09b4d95c92b70207f",
+          "actionId": "a42adf4fc398cd7a4862504053ab826f3c5077b5f39baf11a0d0e5a8b3d06b09",
           "descriptor": {
             "kind": "CHOOSE",
-            "label": "Cut rival main deck after slot 31"
+            "label": "Cut rival main deck after slot 15"
           }
         },
         {
@@ -11444,13 +11294,13 @@
             "kind": "CHOOSE",
             "choiceId": "8dcd6ffbb7c60b1b821c49c4a8f51b5b5cebb5ead2990f95fcfc9757b0aa69d0",
             "optionIndices": [
-              11
+              40
             ]
           },
-          "actionId": "dbf0a90eda7b2bf18eb5a89b418b448fefedcab74070a051fa3b137289ed7ab8",
+          "actionId": "aaf60133d7b32fd3a6d47c73cfcb6e68c340663bbc6eb8f6b94d38ed00ad9c6a",
           "descriptor": {
             "kind": "CHOOSE",
-            "label": "Cut rival main deck after slot 11"
+            "label": "Cut rival main deck after slot 40"
           }
         },
         {
@@ -11459,13 +11309,13 @@
             "kind": "CHOOSE",
             "choiceId": "8dcd6ffbb7c60b1b821c49c4a8f51b5b5cebb5ead2990f95fcfc9757b0aa69d0",
             "optionIndices": [
-              16
+              10
             ]
           },
-          "actionId": "ed909e21a41d1669e7baec2912a01d2214484ba8a1601b69a750eb43f0f35c74",
+          "actionId": "ab3037adc93260a4e6b3dcfd135248910abf881f2a7046e27aacf235cec4a205",
           "descriptor": {
             "kind": "CHOOSE",
-            "label": "Cut rival main deck after slot 16"
+            "label": "Cut rival main deck after slot 10"
           }
         },
         {
@@ -11474,13 +11324,43 @@
             "kind": "CHOOSE",
             "choiceId": "8dcd6ffbb7c60b1b821c49c4a8f51b5b5cebb5ead2990f95fcfc9757b0aa69d0",
             "optionIndices": [
-              18
+              1
             ]
           },
-          "actionId": "f500a383fec0700e393447cc6fb3b1347e701ec1d0ed1a610d64e04dfb4897f6",
+          "actionId": "abcd87ede77e5b3f071b6db5d4556357069169360f4696f7ed43f3e93385ecd3",
           "descriptor": {
             "kind": "CHOOSE",
-            "label": "Cut rival main deck after slot 18"
+            "label": "Cut rival main deck after slot 1"
+          }
+        },
+        {
+          "actorId": "00000000-0000-4000-8000-000000000001",
+          "action": {
+            "kind": "CHOOSE",
+            "choiceId": "8dcd6ffbb7c60b1b821c49c4a8f51b5b5cebb5ead2990f95fcfc9757b0aa69d0",
+            "optionIndices": [
+              41
+            ]
+          },
+          "actionId": "ada1d271b85ebcd2e0ff52905bc104bd7a086a9eaf24022911a192d314e492e3",
+          "descriptor": {
+            "kind": "CHOOSE",
+            "label": "Cut rival main deck after slot 41"
+          }
+        },
+        {
+          "actorId": "00000000-0000-4000-8000-000000000001",
+          "action": {
+            "kind": "CHOOSE",
+            "choiceId": "8dcd6ffbb7c60b1b821c49c4a8f51b5b5cebb5ead2990f95fcfc9757b0aa69d0",
+            "optionIndices": [
+              25
+            ]
+          },
+          "actionId": "bcb5a0a02a1e9a0c65da7b96b610da4d6cb00bd000205cd743842ab3fc589909",
+          "descriptor": {
+            "kind": "CHOOSE",
+            "label": "Cut rival main deck after slot 25"
           }
         },
         {
@@ -11492,14 +11372,134 @@
               0
             ]
           },
-          "actionId": "fc78aa979232aef30a5c67da3349e5d2214adc3c72d14be522d693c4f725bf0d",
+          "actionId": "bd225f55d215cbc7793d84db38cbb295640a211d60f8efcd2f622a1435d74dcc",
           "descriptor": {
             "kind": "CHOOSE",
             "label": "Decline main deck cut"
           }
+        },
+        {
+          "actorId": "00000000-0000-4000-8000-000000000001",
+          "action": {
+            "kind": "CHOOSE",
+            "choiceId": "8dcd6ffbb7c60b1b821c49c4a8f51b5b5cebb5ead2990f95fcfc9757b0aa69d0",
+            "optionIndices": [
+              30
+            ]
+          },
+          "actionId": "ca89e3bdec6d7022dece790d0a013237a3a38d7fb76ca04d8e926f9a00e2a09a",
+          "descriptor": {
+            "kind": "CHOOSE",
+            "label": "Cut rival main deck after slot 30"
+          }
+        },
+        {
+          "actorId": "00000000-0000-4000-8000-000000000001",
+          "action": {
+            "kind": "CHOOSE",
+            "choiceId": "8dcd6ffbb7c60b1b821c49c4a8f51b5b5cebb5ead2990f95fcfc9757b0aa69d0",
+            "optionIndices": [
+              26
+            ]
+          },
+          "actionId": "cbd346a843bf4ccb1ced25afad60277424b52e4919dcf039aefa6f0d8b526027",
+          "descriptor": {
+            "kind": "CHOOSE",
+            "label": "Cut rival main deck after slot 26"
+          }
+        },
+        {
+          "actorId": "00000000-0000-4000-8000-000000000001",
+          "action": {
+            "kind": "CHOOSE",
+            "choiceId": "8dcd6ffbb7c60b1b821c49c4a8f51b5b5cebb5ead2990f95fcfc9757b0aa69d0",
+            "optionIndices": [
+              18
+            ]
+          },
+          "actionId": "cc7f7fdb1c42de7c801d747ff2811a8ea7981f63cad1e88ee154c9a52d108a4d",
+          "descriptor": {
+            "kind": "CHOOSE",
+            "label": "Cut rival main deck after slot 18"
+          }
+        },
+        {
+          "actorId": "00000000-0000-4000-8000-000000000001",
+          "action": {
+            "kind": "CHOOSE",
+            "choiceId": "8dcd6ffbb7c60b1b821c49c4a8f51b5b5cebb5ead2990f95fcfc9757b0aa69d0",
+            "optionIndices": [
+              21
+            ]
+          },
+          "actionId": "d81a6414521e8939634c34b59442d20fb9e7b81b11022364c4cdacdeb6676276",
+          "descriptor": {
+            "kind": "CHOOSE",
+            "label": "Cut rival main deck after slot 21"
+          }
+        },
+        {
+          "actorId": "00000000-0000-4000-8000-000000000001",
+          "action": {
+            "kind": "CHOOSE",
+            "choiceId": "8dcd6ffbb7c60b1b821c49c4a8f51b5b5cebb5ead2990f95fcfc9757b0aa69d0",
+            "optionIndices": [
+              22
+            ]
+          },
+          "actionId": "dec300e28719f59bd29604cc1018fbad1ea9e33af60c50e3e19e545d28b61363",
+          "descriptor": {
+            "kind": "CHOOSE",
+            "label": "Cut rival main deck after slot 22"
+          }
+        },
+        {
+          "actorId": "00000000-0000-4000-8000-000000000001",
+          "action": {
+            "kind": "CHOOSE",
+            "choiceId": "8dcd6ffbb7c60b1b821c49c4a8f51b5b5cebb5ead2990f95fcfc9757b0aa69d0",
+            "optionIndices": [
+              11
+            ]
+          },
+          "actionId": "eb3f0445584bdb84bf68173db35c9405716919532d65c70f604ce8feddb348d9",
+          "descriptor": {
+            "kind": "CHOOSE",
+            "label": "Cut rival main deck after slot 11"
+          }
+        },
+        {
+          "actorId": "00000000-0000-4000-8000-000000000001",
+          "action": {
+            "kind": "CHOOSE",
+            "choiceId": "8dcd6ffbb7c60b1b821c49c4a8f51b5b5cebb5ead2990f95fcfc9757b0aa69d0",
+            "optionIndices": [
+              3
+            ]
+          },
+          "actionId": "f952d65279316454b5c18287ce0911071416aa4adcaa7346cb767dce879233c4",
+          "descriptor": {
+            "kind": "CHOOSE",
+            "label": "Cut rival main deck after slot 3"
+          }
+        },
+        {
+          "actorId": "00000000-0000-4000-8000-000000000001",
+          "action": {
+            "kind": "CHOOSE",
+            "choiceId": "8dcd6ffbb7c60b1b821c49c4a8f51b5b5cebb5ead2990f95fcfc9757b0aa69d0",
+            "optionIndices": [
+              9
+            ]
+          },
+          "actionId": "f9e690609300df83074038985a8a079b964dd3ad68802006ec1c9bca0f8995bc",
+          "descriptor": {
+            "kind": "CHOOSE",
+            "label": "Cut rival main deck after slot 9"
+          }
         }
       ],
-      "positionHash": "7bca123d3a8a66d8f1dc66172be71780467afc2dd32527d66e996ea5c0e4d471",
+      "positionHash": "093ee6408a5692309c8140624040655c568b263cdd8cd9de7849909f43af6e32",
       "provenance": {
         "generator": "manual-fixture",
         "revision": "1",
@@ -11509,13 +11509,13 @@
     {
       "schemaVersion": 2,
       "positionId": "setup-3",
-      "engineVersion": "0.4.4-ready-spend-v8",
-      "engineArtifactHash": "ab04c3870c33565eef4b29abc2b01661dcf351452c8f3204d70bb2e352df0db4",
+      "engineVersion": "0.4.5-end-turn-reaper-v9",
+      "engineArtifactHash": "b06c5695a532f59699e360dd3d5c4d5ef48b1a6725cca54b9d06c6eab4ff697d",
       "manifest": {
         "schemaVersion": 1,
         "engine": {
-          "version": "0.4.4-ready-spend-v8",
-          "artifactHash": "ab04c3870c33565eef4b29abc2b01661dcf351452c8f3204d70bb2e352df0db4"
+          "version": "0.4.5-end-turn-reaper-v9",
+          "artifactHash": "b06c5695a532f59699e360dd3d5c4d5ef48b1a6725cca54b9d06c6eab4ff697d"
         },
         "ruleset": {
           "id": "beta",
@@ -11610,7 +11610,7 @@
           }
         ]
       },
-      "contentManifestHash": "55c8986c790f6b8682b7d738edd9656820db94dec14c06d04e86740f7793777a",
+      "contentManifestHash": "699271503bede2beff672523b5d5242a0b11d1885aa401811bb70d499bfd551b",
       "state": {
         "setup": {
           "stage": "LEGEND_CUT",
@@ -11625,9 +11625,9 @@
           "rulesetId": "beta",
           "rulesetVersion": "engine-setup-1",
           "rulesetHash": "ba02a09bd48a3abfa705e78b80e6fbdaf10eb86b84a7eaec7794d841f88caa22",
-          "contentManifestHash": "55c8986c790f6b8682b7d738edd9656820db94dec14c06d04e86740f7793777a",
-          "engineVersion": "0.4.4-ready-spend-v8",
-          "engineArtifactHash": "ab04c3870c33565eef4b29abc2b01661dcf351452c8f3204d70bb2e352df0db4",
+          "contentManifestHash": "699271503bede2beff672523b5d5242a0b11d1885aa401811bb70d499bfd551b",
+          "engineVersion": "0.4.5-end-turn-reaper-v9",
+          "engineArtifactHash": "b06c5695a532f59699e360dd3d5c4d5ef48b1a6725cca54b9d06c6eab4ff697d",
           "cards": [
             {
               "cardId": "dev-legend-blue",
@@ -13597,7 +13597,7 @@
           "counter": 87
         }
       },
-      "stateHash": "d1cfb1a7b4d31812652a95cdffe6fc8240b591eccc95156654a20d9a8ea1b7fe",
+      "stateHash": "209fe0eb7005cba0903801505ebc410bdbc2672a771c13fdf0614d95c88f613f",
       "observation": {
         "schemaVersion": 1,
         "viewerSeat": 1,
@@ -13718,25 +13718,10 @@
             "kind": "CHOOSE",
             "choiceId": "a53ae347532ee77331750974943ee493d9bf95fac1c577460d79b64830375987",
             "optionIndices": [
-              1
-            ]
-          },
-          "actionId": "6f861317c7b47a354e5d7080470c72a485c1108eb6b08a2d4609c210027976c7",
-          "descriptor": {
-            "kind": "CHOOSE",
-            "label": "Cut rival Legends after slot 1"
-          }
-        },
-        {
-          "actorId": "00000000-0000-4000-8000-000000000004",
-          "action": {
-            "kind": "CHOOSE",
-            "choiceId": "a53ae347532ee77331750974943ee493d9bf95fac1c577460d79b64830375987",
-            "optionIndices": [
               2
             ]
           },
-          "actionId": "a3f71f0b9865d20865e03f9309b4e7bea8f6b15bad77e2a991ea8c08901f598e",
+          "actionId": "015501b3cf83e90f2de24e9b1edab7e8f215ebcce76bf94f773d72fb7af0f856",
           "descriptor": {
             "kind": "CHOOSE",
             "label": "Cut rival Legends after slot 2"
@@ -13748,17 +13733,32 @@
             "kind": "CHOOSE",
             "choiceId": "a53ae347532ee77331750974943ee493d9bf95fac1c577460d79b64830375987",
             "optionIndices": [
+              1
+            ]
+          },
+          "actionId": "898ccd23eb94ebc3b9cc524a4307041537ad119e44d1b243da13dc884b8fdab5",
+          "descriptor": {
+            "kind": "CHOOSE",
+            "label": "Cut rival Legends after slot 1"
+          }
+        },
+        {
+          "actorId": "00000000-0000-4000-8000-000000000004",
+          "action": {
+            "kind": "CHOOSE",
+            "choiceId": "a53ae347532ee77331750974943ee493d9bf95fac1c577460d79b64830375987",
+            "optionIndices": [
               0
             ]
           },
-          "actionId": "f9fe8b63fd65dedd0b2f6d383d45a10f796429c423843d10e95d446e22a931b8",
+          "actionId": "cbf070792bdf5e6d0b3ef84fa87b4633b62cb7881488143f5f718e056cba6768",
           "descriptor": {
             "kind": "CHOOSE",
             "label": "Decline Legend cut"
           }
         }
       ],
-      "positionHash": "4776ce3be1956a9b2ba3c8f8ba96a4f027d9100878dd44b7542f53444921a601",
+      "positionHash": "2387ce77b5c5ee727eef02d9ae6a58947c9ead2567f57cace50c0c4c04acefc7",
       "provenance": {
         "generator": "manual-fixture",
         "revision": "1",
@@ -13768,13 +13768,13 @@
     {
       "schemaVersion": 2,
       "positionId": "setup-4",
-      "engineVersion": "0.4.4-ready-spend-v8",
-      "engineArtifactHash": "ab04c3870c33565eef4b29abc2b01661dcf351452c8f3204d70bb2e352df0db4",
+      "engineVersion": "0.4.5-end-turn-reaper-v9",
+      "engineArtifactHash": "b06c5695a532f59699e360dd3d5c4d5ef48b1a6725cca54b9d06c6eab4ff697d",
       "manifest": {
         "schemaVersion": 1,
         "engine": {
-          "version": "0.4.4-ready-spend-v8",
-          "artifactHash": "ab04c3870c33565eef4b29abc2b01661dcf351452c8f3204d70bb2e352df0db4"
+          "version": "0.4.5-end-turn-reaper-v9",
+          "artifactHash": "b06c5695a532f59699e360dd3d5c4d5ef48b1a6725cca54b9d06c6eab4ff697d"
         },
         "ruleset": {
           "id": "beta",
@@ -13869,7 +13869,7 @@
           }
         ]
       },
-      "contentManifestHash": "55c8986c790f6b8682b7d738edd9656820db94dec14c06d04e86740f7793777a",
+      "contentManifestHash": "699271503bede2beff672523b5d5242a0b11d1885aa401811bb70d499bfd551b",
       "state": {
         "setup": {
           "stage": "LEGEND_CUT",
@@ -13884,9 +13884,9 @@
           "rulesetId": "beta",
           "rulesetVersion": "engine-setup-1",
           "rulesetHash": "ba02a09bd48a3abfa705e78b80e6fbdaf10eb86b84a7eaec7794d841f88caa22",
-          "contentManifestHash": "55c8986c790f6b8682b7d738edd9656820db94dec14c06d04e86740f7793777a",
-          "engineVersion": "0.4.4-ready-spend-v8",
-          "engineArtifactHash": "ab04c3870c33565eef4b29abc2b01661dcf351452c8f3204d70bb2e352df0db4",
+          "contentManifestHash": "699271503bede2beff672523b5d5242a0b11d1885aa401811bb70d499bfd551b",
+          "engineVersion": "0.4.5-end-turn-reaper-v9",
+          "engineArtifactHash": "b06c5695a532f59699e360dd3d5c4d5ef48b1a6725cca54b9d06c6eab4ff697d",
           "cards": [
             {
               "cardId": "dev-legend-blue",
@@ -15856,7 +15856,7 @@
           "counter": 87
         }
       },
-      "stateHash": "eccf99964d2504d12bc119b680e72503275d724a885853a8d254ef481dbe7fb9",
+      "stateHash": "40d59d5d988732ee58bb5de993366e0116697cc46cfe913c2e74f7975e8839d3",
       "observation": {
         "schemaVersion": 1,
         "viewerSeat": 0,
@@ -15980,7 +15980,7 @@
               0
             ]
           },
-          "actionId": "7ef6aa49165abef4461521c84f6440291232add5838de44d9b7f83cac3b8312f",
+          "actionId": "5f14c317a328926e9b004cd54cae58ad1213e7e0ba0e44d38b0a95695bc2f7eb",
           "descriptor": {
             "kind": "CHOOSE",
             "label": "Decline Legend cut"
@@ -15995,7 +15995,7 @@
               1
             ]
           },
-          "actionId": "b6e38bd3d4b030c1442ed6623c736e207cc84133dc368b3db83c452020125e5f",
+          "actionId": "a1ea706d8f8fdcdacc6b32086718c174138540e8c1dfa1fd6af057d37b81fe35",
           "descriptor": {
             "kind": "CHOOSE",
             "label": "Cut rival Legends after slot 1"
@@ -16010,14 +16010,14 @@
               2
             ]
           },
-          "actionId": "ddfd960a58c6d193785daded76c4730a5d7935313f18a394ae669a47c2385acf",
+          "actionId": "d04a8feb5c19bcc59e78fb90e7c7e005e7a7fbbefa2e399b96b61664c2b1fdf3",
           "descriptor": {
             "kind": "CHOOSE",
             "label": "Cut rival Legends after slot 2"
           }
         }
       ],
-      "positionHash": "aca40891f32d0e96f8ea8a396bb22c9db5fb6866933bbc9a3fb81cabd7b8746e",
+      "positionHash": "32fd3325c235d644f68619ae76f9d0114c1897059e5b52681a518a1eb69ac468",
       "provenance": {
         "generator": "manual-fixture",
         "revision": "1",
@@ -16027,13 +16027,13 @@
     {
       "schemaVersion": 2,
       "positionId": "setup-5",
-      "engineVersion": "0.4.4-ready-spend-v8",
-      "engineArtifactHash": "ab04c3870c33565eef4b29abc2b01661dcf351452c8f3204d70bb2e352df0db4",
+      "engineVersion": "0.4.5-end-turn-reaper-v9",
+      "engineArtifactHash": "b06c5695a532f59699e360dd3d5c4d5ef48b1a6725cca54b9d06c6eab4ff697d",
       "manifest": {
         "schemaVersion": 1,
         "engine": {
-          "version": "0.4.4-ready-spend-v8",
-          "artifactHash": "ab04c3870c33565eef4b29abc2b01661dcf351452c8f3204d70bb2e352df0db4"
+          "version": "0.4.5-end-turn-reaper-v9",
+          "artifactHash": "b06c5695a532f59699e360dd3d5c4d5ef48b1a6725cca54b9d06c6eab4ff697d"
         },
         "ruleset": {
           "id": "beta",
@@ -16128,7 +16128,7 @@
           }
         ]
       },
-      "contentManifestHash": "55c8986c790f6b8682b7d738edd9656820db94dec14c06d04e86740f7793777a",
+      "contentManifestHash": "699271503bede2beff672523b5d5242a0b11d1885aa401811bb70d499bfd551b",
       "state": {
         "setup": {
           "stage": "MULLIGAN",
@@ -16143,9 +16143,9 @@
           "rulesetId": "beta",
           "rulesetVersion": "engine-setup-1",
           "rulesetHash": "ba02a09bd48a3abfa705e78b80e6fbdaf10eb86b84a7eaec7794d841f88caa22",
-          "contentManifestHash": "55c8986c790f6b8682b7d738edd9656820db94dec14c06d04e86740f7793777a",
-          "engineVersion": "0.4.4-ready-spend-v8",
-          "engineArtifactHash": "ab04c3870c33565eef4b29abc2b01661dcf351452c8f3204d70bb2e352df0db4",
+          "contentManifestHash": "699271503bede2beff672523b5d5242a0b11d1885aa401811bb70d499bfd551b",
+          "engineVersion": "0.4.5-end-turn-reaper-v9",
+          "engineArtifactHash": "b06c5695a532f59699e360dd3d5c4d5ef48b1a6725cca54b9d06c6eab4ff697d",
           "cards": [
             {
               "cardId": "dev-legend-blue",
@@ -18113,7 +18113,7 @@
           "counter": 87
         }
       },
-      "stateHash": "3d62d6bc8f1ff9f696d50c17e3620ab0ea8de37e3d9f88694b45360583d9338b",
+      "stateHash": "16f143f3c811478627bfbc01882da55b80f337874f5015159649381ec97e779c",
       "observation": {
         "schemaVersion": 1,
         "viewerSeat": 1,
@@ -18443,7 +18443,7 @@
               0
             ]
           },
-          "actionId": "9230b7a4d4015cf8a196770abae619afad2c898b781df392557bf89658ae8f2c",
+          "actionId": "2adf53182e59e5e378baeb8987fc7ccd970cf460ea70abbb0d7fe8b57a96c314",
           "descriptor": {
             "kind": "CHOOSE",
             "label": "Keep the opening hand"
@@ -18458,14 +18458,14 @@
               1
             ]
           },
-          "actionId": "e25d10e8608fc7f7d97bef87d91f3928a8f747abd438d67ccbc5b27c7cac62e8",
+          "actionId": "eafc183a8c9be01ac7cd93267327a10326aa1c7c649b29efc9d1e2d4819cd9c6",
           "descriptor": {
             "kind": "CHOOSE",
             "label": "Mulligan the entire opening hand"
           }
         }
       ],
-      "positionHash": "c41ad3908a3a3ae3957c478c0a2548295026e744f0ad41979ef1f9d0b63fc8e7",
+      "positionHash": "a759a9f265a44790d1e0f845eff0c66327175d106fdbbe22fc2657e99a8d7c3f",
       "provenance": {
         "generator": "manual-fixture",
         "revision": "1",
@@ -18475,13 +18475,13 @@
     {
       "schemaVersion": 2,
       "positionId": "setup-6",
-      "engineVersion": "0.4.4-ready-spend-v8",
-      "engineArtifactHash": "ab04c3870c33565eef4b29abc2b01661dcf351452c8f3204d70bb2e352df0db4",
+      "engineVersion": "0.4.5-end-turn-reaper-v9",
+      "engineArtifactHash": "b06c5695a532f59699e360dd3d5c4d5ef48b1a6725cca54b9d06c6eab4ff697d",
       "manifest": {
         "schemaVersion": 1,
         "engine": {
-          "version": "0.4.4-ready-spend-v8",
-          "artifactHash": "ab04c3870c33565eef4b29abc2b01661dcf351452c8f3204d70bb2e352df0db4"
+          "version": "0.4.5-end-turn-reaper-v9",
+          "artifactHash": "b06c5695a532f59699e360dd3d5c4d5ef48b1a6725cca54b9d06c6eab4ff697d"
         },
         "ruleset": {
           "id": "beta",
@@ -18576,7 +18576,7 @@
           }
         ]
       },
-      "contentManifestHash": "55c8986c790f6b8682b7d738edd9656820db94dec14c06d04e86740f7793777a",
+      "contentManifestHash": "699271503bede2beff672523b5d5242a0b11d1885aa401811bb70d499bfd551b",
       "state": {
         "setup": {
           "stage": "MULLIGAN",
@@ -18591,9 +18591,9 @@
           "rulesetId": "beta",
           "rulesetVersion": "engine-setup-1",
           "rulesetHash": "ba02a09bd48a3abfa705e78b80e6fbdaf10eb86b84a7eaec7794d841f88caa22",
-          "contentManifestHash": "55c8986c790f6b8682b7d738edd9656820db94dec14c06d04e86740f7793777a",
-          "engineVersion": "0.4.4-ready-spend-v8",
-          "engineArtifactHash": "ab04c3870c33565eef4b29abc2b01661dcf351452c8f3204d70bb2e352df0db4",
+          "contentManifestHash": "699271503bede2beff672523b5d5242a0b11d1885aa401811bb70d499bfd551b",
+          "engineVersion": "0.4.5-end-turn-reaper-v9",
+          "engineArtifactHash": "b06c5695a532f59699e360dd3d5c4d5ef48b1a6725cca54b9d06c6eab4ff697d",
           "cards": [
             {
               "cardId": "dev-legend-blue",
@@ -20561,7 +20561,7 @@
           "counter": 128
         }
       },
-      "stateHash": "962c7855d6042d2c75599c953591e559f56cd9ebaf2974e145d94dfafe625dce",
+      "stateHash": "bae3dcfa9a430c35affa2ca8a149353edae4c1bd488ac9d35e45637b8c7f9197",
       "observation": {
         "schemaVersion": 1,
         "viewerSeat": 0,
@@ -20888,13 +20888,13 @@
             "kind": "CHOOSE",
             "choiceId": "1ef4187d601b9377d48e47ae2befe01cdcce593242a5b8194114df545d20cac6",
             "optionIndices": [
-              0
+              1
             ]
           },
-          "actionId": "6a2ff49e0aaca5d2d764cfb7a435a93eca447ac04f41ca095217fdb0ef9758c6",
+          "actionId": "4b8ec9e44d68fabe0e3b04713336fdb0fc4734e3376b2ab15a8aef846e638d3a",
           "descriptor": {
             "kind": "CHOOSE",
-            "label": "Keep the opening hand"
+            "label": "Mulligan the entire opening hand"
           }
         },
         {
@@ -20903,17 +20903,17 @@
             "kind": "CHOOSE",
             "choiceId": "1ef4187d601b9377d48e47ae2befe01cdcce593242a5b8194114df545d20cac6",
             "optionIndices": [
-              1
+              0
             ]
           },
-          "actionId": "d7038b322f21741dead23bb1a4a1f236130c234bfb86c468ce187dacedcafd5f",
+          "actionId": "a40e1b3777eb9f1c9f42216ceefb70ce280e336d0d091ee333a8e4a36c17b355",
           "descriptor": {
             "kind": "CHOOSE",
-            "label": "Mulligan the entire opening hand"
+            "label": "Keep the opening hand"
           }
         }
       ],
-      "positionHash": "36e2e50be76664948a51007547cf99517cc4a011aa7c40736a5f47ca6d4c3ace",
+      "positionHash": "ddf9a61266d282a9fc972100e10a1fbfc55878ea581ccafbe5d7f1c102e4f75b",
       "provenance": {
         "generator": "manual-fixture",
         "revision": "1",
@@ -20934,23 +20934,8 @@
           ]
         }
       },
-      "actionId": "f09223ec65ae59ea0877ec39a7f4cff88a2c12c55cc462cecc8046d2b8fa5c24",
+      "actionId": "36b9b8c52021b88204126ff4f72928c490a2a1113594d4bc4b6311a07e6dd6eb",
       "legalActions": [
-        {
-          "actorId": "00000000-0000-4000-8000-000000000001",
-          "action": {
-            "kind": "CHOOSE",
-            "choiceId": "7596eed2897f6c0717bb5b35ee910a8a57015132a0ddace8649780c15f4a747a",
-            "optionIndices": [
-              0
-            ]
-          },
-          "actionId": "340247012f66a7212f19e9a1bf401905318e233a07a8087564ef82d600bd53d6",
-          "descriptor": {
-            "kind": "CHOOSE",
-            "label": "Go first"
-          }
-        },
         {
           "actorId": "00000000-0000-4000-8000-000000000001",
           "action": {
@@ -20960,10 +20945,25 @@
               1
             ]
           },
-          "actionId": "f09223ec65ae59ea0877ec39a7f4cff88a2c12c55cc462cecc8046d2b8fa5c24",
+          "actionId": "36b9b8c52021b88204126ff4f72928c490a2a1113594d4bc4b6311a07e6dd6eb",
           "descriptor": {
             "kind": "CHOOSE",
             "label": "Go second"
+          }
+        },
+        {
+          "actorId": "00000000-0000-4000-8000-000000000001",
+          "action": {
+            "kind": "CHOOSE",
+            "choiceId": "7596eed2897f6c0717bb5b35ee910a8a57015132a0ddace8649780c15f4a747a",
+            "optionIndices": [
+              0
+            ]
+          },
+          "actionId": "8c9c8cbe87f7a80b35d6c0404de3f315272ca7b79fa473da0b3a698f043aa7c5",
+          "descriptor": {
+            "kind": "CHOOSE",
+            "label": "Go first"
           }
         }
       ],
@@ -21194,8 +21194,8 @@
           }
         }
       ],
-      "stateHash": "da0104cd7edb1f27d0b24b06e0db7ac15fd89b259f7f5627b5b768d60c907dcb",
-      "positionHash": "e3612bfa61ae07378001eac9f14d2feb9348b9984f831c9dfe9e1ca33d92b85e",
+      "stateHash": "602505ab24776a74c5f1f89382bf444543338573c09ee336b64f3247d5670be0",
+      "positionHash": "2f196cde425f070fdbb7b672a8af1bee45de57f52202aec666fb10d1d598e587",
       "observationHash": "19b2f1be9449a6e90dedf33206453cf34144962d94633ad6cf5bedf340311760",
       "step": "CUT_DECISION"
     },
@@ -21211,263 +21211,8 @@
           ]
         }
       },
-      "actionId": "a694347be1b11efcb1d1ddeeafad035841296c2406fdf42bc2b1d814550c8536",
+      "actionId": "a2783458e0c240decf2057697d81750151551bd97985fd92af41b291f3637c24",
       "legalActions": [
-        {
-          "actorId": "00000000-0000-4000-8000-000000000004",
-          "action": {
-            "kind": "CHOOSE",
-            "choiceId": "45162152d85fb783b2a02800f4222b1dd7a9988756c6bf4874636d16d29e10d3",
-            "optionIndices": [
-              4
-            ]
-          },
-          "actionId": "008f8d344593703027a72fd0f756dbea745bf426b96644c0e4a9748a30e9d861",
-          "descriptor": {
-            "kind": "CHOOSE",
-            "label": "Cut rival main deck after slot 4"
-          }
-        },
-        {
-          "actorId": "00000000-0000-4000-8000-000000000004",
-          "action": {
-            "kind": "CHOOSE",
-            "choiceId": "45162152d85fb783b2a02800f4222b1dd7a9988756c6bf4874636d16d29e10d3",
-            "optionIndices": [
-              27
-            ]
-          },
-          "actionId": "0207755e24e140d8f2e2163dc1bc180b04240bf3d9ba0cfe390952e963896efb",
-          "descriptor": {
-            "kind": "CHOOSE",
-            "label": "Cut rival main deck after slot 27"
-          }
-        },
-        {
-          "actorId": "00000000-0000-4000-8000-000000000004",
-          "action": {
-            "kind": "CHOOSE",
-            "choiceId": "45162152d85fb783b2a02800f4222b1dd7a9988756c6bf4874636d16d29e10d3",
-            "optionIndices": [
-              32
-            ]
-          },
-          "actionId": "0845db620d62f9a4aacfdd173cc7186142a7decc73b6cd72a1330459e5aa2df3",
-          "descriptor": {
-            "kind": "CHOOSE",
-            "label": "Cut rival main deck after slot 32"
-          }
-        },
-        {
-          "actorId": "00000000-0000-4000-8000-000000000004",
-          "action": {
-            "kind": "CHOOSE",
-            "choiceId": "45162152d85fb783b2a02800f4222b1dd7a9988756c6bf4874636d16d29e10d3",
-            "optionIndices": [
-              12
-            ]
-          },
-          "actionId": "0f45e4478917234fa748d1559563fb5e4d3cd1b2aed65da211d139aea833fc80",
-          "descriptor": {
-            "kind": "CHOOSE",
-            "label": "Cut rival main deck after slot 12"
-          }
-        },
-        {
-          "actorId": "00000000-0000-4000-8000-000000000004",
-          "action": {
-            "kind": "CHOOSE",
-            "choiceId": "45162152d85fb783b2a02800f4222b1dd7a9988756c6bf4874636d16d29e10d3",
-            "optionIndices": [
-              22
-            ]
-          },
-          "actionId": "10c685e6d66a8afb20cb865bce8261443ab53306080394dcbba5640c7cd9c50c",
-          "descriptor": {
-            "kind": "CHOOSE",
-            "label": "Cut rival main deck after slot 22"
-          }
-        },
-        {
-          "actorId": "00000000-0000-4000-8000-000000000004",
-          "action": {
-            "kind": "CHOOSE",
-            "choiceId": "45162152d85fb783b2a02800f4222b1dd7a9988756c6bf4874636d16d29e10d3",
-            "optionIndices": [
-              19
-            ]
-          },
-          "actionId": "15554ea1f50a80f392f3385339b3982ee007fab1701c760e7bf7c4d6aea9177a",
-          "descriptor": {
-            "kind": "CHOOSE",
-            "label": "Cut rival main deck after slot 19"
-          }
-        },
-        {
-          "actorId": "00000000-0000-4000-8000-000000000004",
-          "action": {
-            "kind": "CHOOSE",
-            "choiceId": "45162152d85fb783b2a02800f4222b1dd7a9988756c6bf4874636d16d29e10d3",
-            "optionIndices": [
-              10
-            ]
-          },
-          "actionId": "1e867b534b413286905e83942507874fe4bf2d29fcebbb37abb0c480919b077e",
-          "descriptor": {
-            "kind": "CHOOSE",
-            "label": "Cut rival main deck after slot 10"
-          }
-        },
-        {
-          "actorId": "00000000-0000-4000-8000-000000000004",
-          "action": {
-            "kind": "CHOOSE",
-            "choiceId": "45162152d85fb783b2a02800f4222b1dd7a9988756c6bf4874636d16d29e10d3",
-            "optionIndices": [
-              34
-            ]
-          },
-          "actionId": "32ff7279d4ee8aa56f3118942f5d13e4c936d319914d8a36ac1e9ce5de7ac473",
-          "descriptor": {
-            "kind": "CHOOSE",
-            "label": "Cut rival main deck after slot 34"
-          }
-        },
-        {
-          "actorId": "00000000-0000-4000-8000-000000000004",
-          "action": {
-            "kind": "CHOOSE",
-            "choiceId": "45162152d85fb783b2a02800f4222b1dd7a9988756c6bf4874636d16d29e10d3",
-            "optionIndices": [
-              0
-            ]
-          },
-          "actionId": "34ff2542e48df5c4df946f8150bab100d67cab7b85d531edd3e69362b71a0de0",
-          "descriptor": {
-            "kind": "CHOOSE",
-            "label": "Decline main deck cut"
-          }
-        },
-        {
-          "actorId": "00000000-0000-4000-8000-000000000004",
-          "action": {
-            "kind": "CHOOSE",
-            "choiceId": "45162152d85fb783b2a02800f4222b1dd7a9988756c6bf4874636d16d29e10d3",
-            "optionIndices": [
-              35
-            ]
-          },
-          "actionId": "350140536d954d20a118445579ebdccce7e303ce62a3aed24960f0c6f49b6ce8",
-          "descriptor": {
-            "kind": "CHOOSE",
-            "label": "Cut rival main deck after slot 35"
-          }
-        },
-        {
-          "actorId": "00000000-0000-4000-8000-000000000004",
-          "action": {
-            "kind": "CHOOSE",
-            "choiceId": "45162152d85fb783b2a02800f4222b1dd7a9988756c6bf4874636d16d29e10d3",
-            "optionIndices": [
-              16
-            ]
-          },
-          "actionId": "40afd2e0d1cfcf3522eeafa9453f9c515992479bdc4eb3577e34d2a6871a53dd",
-          "descriptor": {
-            "kind": "CHOOSE",
-            "label": "Cut rival main deck after slot 16"
-          }
-        },
-        {
-          "actorId": "00000000-0000-4000-8000-000000000004",
-          "action": {
-            "kind": "CHOOSE",
-            "choiceId": "45162152d85fb783b2a02800f4222b1dd7a9988756c6bf4874636d16d29e10d3",
-            "optionIndices": [
-              13
-            ]
-          },
-          "actionId": "531d4cab192445bd20f5ba0b4636920f7ff8400190000a5ea32d8b0e29e422bd",
-          "descriptor": {
-            "kind": "CHOOSE",
-            "label": "Cut rival main deck after slot 13"
-          }
-        },
-        {
-          "actorId": "00000000-0000-4000-8000-000000000004",
-          "action": {
-            "kind": "CHOOSE",
-            "choiceId": "45162152d85fb783b2a02800f4222b1dd7a9988756c6bf4874636d16d29e10d3",
-            "optionIndices": [
-              20
-            ]
-          },
-          "actionId": "5c0546d6823b7dd97fa3ed633d6aa6a7b5f271eba0b8ae5126468384ca074db5",
-          "descriptor": {
-            "kind": "CHOOSE",
-            "label": "Cut rival main deck after slot 20"
-          }
-        },
-        {
-          "actorId": "00000000-0000-4000-8000-000000000004",
-          "action": {
-            "kind": "CHOOSE",
-            "choiceId": "45162152d85fb783b2a02800f4222b1dd7a9988756c6bf4874636d16d29e10d3",
-            "optionIndices": [
-              8
-            ]
-          },
-          "actionId": "61fb4e85488293e07352fcdce155b730f7ed62bdd5aa16f2a74bf0628db367e2",
-          "descriptor": {
-            "kind": "CHOOSE",
-            "label": "Cut rival main deck after slot 8"
-          }
-        },
-        {
-          "actorId": "00000000-0000-4000-8000-000000000004",
-          "action": {
-            "kind": "CHOOSE",
-            "choiceId": "45162152d85fb783b2a02800f4222b1dd7a9988756c6bf4874636d16d29e10d3",
-            "optionIndices": [
-              6
-            ]
-          },
-          "actionId": "6940ea452b88b07972d5c2cefb6cfa5d57446e1b92e8977e28c8fc122f28caac",
-          "descriptor": {
-            "kind": "CHOOSE",
-            "label": "Cut rival main deck after slot 6"
-          }
-        },
-        {
-          "actorId": "00000000-0000-4000-8000-000000000004",
-          "action": {
-            "kind": "CHOOSE",
-            "choiceId": "45162152d85fb783b2a02800f4222b1dd7a9988756c6bf4874636d16d29e10d3",
-            "optionIndices": [
-              17
-            ]
-          },
-          "actionId": "6d0a4327477929b0f8750a7a357da00c1569a71664d5cbe76c1291072cff273c",
-          "descriptor": {
-            "kind": "CHOOSE",
-            "label": "Cut rival main deck after slot 17"
-          }
-        },
-        {
-          "actorId": "00000000-0000-4000-8000-000000000004",
-          "action": {
-            "kind": "CHOOSE",
-            "choiceId": "45162152d85fb783b2a02800f4222b1dd7a9988756c6bf4874636d16d29e10d3",
-            "optionIndices": [
-              26
-            ]
-          },
-          "actionId": "70ad0196b7bbf4140a8524474492fdbd899870070dd43fb31dc4dc2aac59dae2",
-          "descriptor": {
-            "kind": "CHOOSE",
-            "label": "Cut rival main deck after slot 26"
-          }
-        },
         {
           "actorId": "00000000-0000-4000-8000-000000000004",
           "action": {
@@ -21477,7 +21222,7 @@
               39
             ]
           },
-          "actionId": "716cb49b9e31d292f497b5f9a830e34c9f61257e66e4f9208b744d968c9c80db",
+          "actionId": "01d33a4223e5308fa3b7d13802371591cb1a0e79b26707eae179620ee18ec3d9",
           "descriptor": {
             "kind": "CHOOSE",
             "label": "Cut rival main deck after slot 39"
@@ -21489,10 +21234,115 @@
             "kind": "CHOOSE",
             "choiceId": "45162152d85fb783b2a02800f4222b1dd7a9988756c6bf4874636d16d29e10d3",
             "optionIndices": [
+              13
+            ]
+          },
+          "actionId": "097a2b43ba7f1408711d538ef4da097c649cada181621d84ff8812391f7e1ded",
+          "descriptor": {
+            "kind": "CHOOSE",
+            "label": "Cut rival main deck after slot 13"
+          }
+        },
+        {
+          "actorId": "00000000-0000-4000-8000-000000000004",
+          "action": {
+            "kind": "CHOOSE",
+            "choiceId": "45162152d85fb783b2a02800f4222b1dd7a9988756c6bf4874636d16d29e10d3",
+            "optionIndices": [
+              14
+            ]
+          },
+          "actionId": "0b8a89542820d1bcb2819670dd4b537a50034465682f32914bbd2d024c68b4da",
+          "descriptor": {
+            "kind": "CHOOSE",
+            "label": "Cut rival main deck after slot 14"
+          }
+        },
+        {
+          "actorId": "00000000-0000-4000-8000-000000000004",
+          "action": {
+            "kind": "CHOOSE",
+            "choiceId": "45162152d85fb783b2a02800f4222b1dd7a9988756c6bf4874636d16d29e10d3",
+            "optionIndices": [
+              22
+            ]
+          },
+          "actionId": "0c9f84a309c51a1e91c20bf1edefa3f7de3a25b8040f728bb35d56867bd5a433",
+          "descriptor": {
+            "kind": "CHOOSE",
+            "label": "Cut rival main deck after slot 22"
+          }
+        },
+        {
+          "actorId": "00000000-0000-4000-8000-000000000004",
+          "action": {
+            "kind": "CHOOSE",
+            "choiceId": "45162152d85fb783b2a02800f4222b1dd7a9988756c6bf4874636d16d29e10d3",
+            "optionIndices": [
+              4
+            ]
+          },
+          "actionId": "107fa3fca67d9588601edd1f8ed3ac8cf586f1140ab6ebacffb8185296286977",
+          "descriptor": {
+            "kind": "CHOOSE",
+            "label": "Cut rival main deck after slot 4"
+          }
+        },
+        {
+          "actorId": "00000000-0000-4000-8000-000000000004",
+          "action": {
+            "kind": "CHOOSE",
+            "choiceId": "45162152d85fb783b2a02800f4222b1dd7a9988756c6bf4874636d16d29e10d3",
+            "optionIndices": [
+              21
+            ]
+          },
+          "actionId": "12a9c230e93c0c61db0b5598ee681b971c7b629a99ac6575766d244ff7cf41a0",
+          "descriptor": {
+            "kind": "CHOOSE",
+            "label": "Cut rival main deck after slot 21"
+          }
+        },
+        {
+          "actorId": "00000000-0000-4000-8000-000000000004",
+          "action": {
+            "kind": "CHOOSE",
+            "choiceId": "45162152d85fb783b2a02800f4222b1dd7a9988756c6bf4874636d16d29e10d3",
+            "optionIndices": [
+              27
+            ]
+          },
+          "actionId": "140e510459ef201402d49b875c697abeb28f4a3bf8ec44c32861c502206aec81",
+          "descriptor": {
+            "kind": "CHOOSE",
+            "label": "Cut rival main deck after slot 27"
+          }
+        },
+        {
+          "actorId": "00000000-0000-4000-8000-000000000004",
+          "action": {
+            "kind": "CHOOSE",
+            "choiceId": "45162152d85fb783b2a02800f4222b1dd7a9988756c6bf4874636d16d29e10d3",
+            "optionIndices": [
+              20
+            ]
+          },
+          "actionId": "1ed08cdea1b6e767af255347c4d34a581e674bde6ad2c09acde8b347a16cbca3",
+          "descriptor": {
+            "kind": "CHOOSE",
+            "label": "Cut rival main deck after slot 20"
+          }
+        },
+        {
+          "actorId": "00000000-0000-4000-8000-000000000004",
+          "action": {
+            "kind": "CHOOSE",
+            "choiceId": "45162152d85fb783b2a02800f4222b1dd7a9988756c6bf4874636d16d29e10d3",
+            "optionIndices": [
               41
             ]
           },
-          "actionId": "7351d795f7fd99f999579c652da85315e822e486d1cf7cd298083056189c594d",
+          "actionId": "1ee0710353a670626473237e65aafbc644cb33b442aed3f50e1adfb7f1531a18",
           "descriptor": {
             "kind": "CHOOSE",
             "label": "Cut rival main deck after slot 41"
@@ -21504,10 +21354,25 @@
             "kind": "CHOOSE",
             "choiceId": "45162152d85fb783b2a02800f4222b1dd7a9988756c6bf4874636d16d29e10d3",
             "optionIndices": [
+              18
+            ]
+          },
+          "actionId": "24013a0b9155a9d5860a3c03e0bf7cb8260a9acad3fdfb6f1a97c44fbd7c0bc2",
+          "descriptor": {
+            "kind": "CHOOSE",
+            "label": "Cut rival main deck after slot 18"
+          }
+        },
+        {
+          "actorId": "00000000-0000-4000-8000-000000000004",
+          "action": {
+            "kind": "CHOOSE",
+            "choiceId": "45162152d85fb783b2a02800f4222b1dd7a9988756c6bf4874636d16d29e10d3",
+            "optionIndices": [
               2
             ]
           },
-          "actionId": "8b57a71f5703007aac16d94511bdae723ff6561c2d78138208956785e1b1e716",
+          "actionId": "2e4ce9e5a15a2ed9e1dbba6abda1c002f972715d3575ee3d135d9cfad36edc27",
           "descriptor": {
             "kind": "CHOOSE",
             "label": "Cut rival main deck after slot 2"
@@ -21519,70 +21384,10 @@
             "kind": "CHOOSE",
             "choiceId": "45162152d85fb783b2a02800f4222b1dd7a9988756c6bf4874636d16d29e10d3",
             "optionIndices": [
-              29
-            ]
-          },
-          "actionId": "8cc36f0afdb06d8dd041a86a245db726619a692ded7f1d535fc6cc86c605e79b",
-          "descriptor": {
-            "kind": "CHOOSE",
-            "label": "Cut rival main deck after slot 29"
-          }
-        },
-        {
-          "actorId": "00000000-0000-4000-8000-000000000004",
-          "action": {
-            "kind": "CHOOSE",
-            "choiceId": "45162152d85fb783b2a02800f4222b1dd7a9988756c6bf4874636d16d29e10d3",
-            "optionIndices": [
-              31
-            ]
-          },
-          "actionId": "906307c177298bee0d1659ee4154fc0bc1e55db87b8279870aa53ee1d94dd8d6",
-          "descriptor": {
-            "kind": "CHOOSE",
-            "label": "Cut rival main deck after slot 31"
-          }
-        },
-        {
-          "actorId": "00000000-0000-4000-8000-000000000004",
-          "action": {
-            "kind": "CHOOSE",
-            "choiceId": "45162152d85fb783b2a02800f4222b1dd7a9988756c6bf4874636d16d29e10d3",
-            "optionIndices": [
-              28
-            ]
-          },
-          "actionId": "97f89925485f9b448e489ab3f88c734458f1483e0af1967b9157f033c4e7c900",
-          "descriptor": {
-            "kind": "CHOOSE",
-            "label": "Cut rival main deck after slot 28"
-          }
-        },
-        {
-          "actorId": "00000000-0000-4000-8000-000000000004",
-          "action": {
-            "kind": "CHOOSE",
-            "choiceId": "45162152d85fb783b2a02800f4222b1dd7a9988756c6bf4874636d16d29e10d3",
-            "optionIndices": [
-              1
-            ]
-          },
-          "actionId": "9fb140f9bd32bc2b034b83edc0b0cc45a9dc561c6b66c17c0d8d18aeb5c4ced7",
-          "descriptor": {
-            "kind": "CHOOSE",
-            "label": "Cut rival main deck after slot 1"
-          }
-        },
-        {
-          "actorId": "00000000-0000-4000-8000-000000000004",
-          "action": {
-            "kind": "CHOOSE",
-            "choiceId": "45162152d85fb783b2a02800f4222b1dd7a9988756c6bf4874636d16d29e10d3",
-            "optionIndices": [
               7
             ]
           },
-          "actionId": "a3bc6ceced45d0cbf359a5c563ce82da32a7b8913c435273342db45c23ea6439",
+          "actionId": "31436f30a6081f33a49802cab2a8fbf32be2e19243485588cbf3e01156199efb",
           "descriptor": {
             "kind": "CHOOSE",
             "label": "Cut rival main deck after slot 7"
@@ -21594,10 +21399,175 @@
             "kind": "CHOOSE",
             "choiceId": "45162152d85fb783b2a02800f4222b1dd7a9988756c6bf4874636d16d29e10d3",
             "optionIndices": [
+              34
+            ]
+          },
+          "actionId": "3c85ee853acb15ac28d5205c04c65ba8dd2fe6628634124dcdebda06ff8fe8d7",
+          "descriptor": {
+            "kind": "CHOOSE",
+            "label": "Cut rival main deck after slot 34"
+          }
+        },
+        {
+          "actorId": "00000000-0000-4000-8000-000000000004",
+          "action": {
+            "kind": "CHOOSE",
+            "choiceId": "45162152d85fb783b2a02800f4222b1dd7a9988756c6bf4874636d16d29e10d3",
+            "optionIndices": [
+              25
+            ]
+          },
+          "actionId": "44b0fd4ad56a9b3ca4815684bd9ce0f4dcee1948d7d8b52881e8f4b7752da5eb",
+          "descriptor": {
+            "kind": "CHOOSE",
+            "label": "Cut rival main deck after slot 25"
+          }
+        },
+        {
+          "actorId": "00000000-0000-4000-8000-000000000004",
+          "action": {
+            "kind": "CHOOSE",
+            "choiceId": "45162152d85fb783b2a02800f4222b1dd7a9988756c6bf4874636d16d29e10d3",
+            "optionIndices": [
+              15
+            ]
+          },
+          "actionId": "482be6629192ae1558c2bb4cbe9b20a25aace3f4d9673f93fb72daed0005a8aa",
+          "descriptor": {
+            "kind": "CHOOSE",
+            "label": "Cut rival main deck after slot 15"
+          }
+        },
+        {
+          "actorId": "00000000-0000-4000-8000-000000000004",
+          "action": {
+            "kind": "CHOOSE",
+            "choiceId": "45162152d85fb783b2a02800f4222b1dd7a9988756c6bf4874636d16d29e10d3",
+            "optionIndices": [
+              17
+            ]
+          },
+          "actionId": "49d384423ac8609747353c2cae71dda8f154344648e199e6836f1a3cfd39f5e6",
+          "descriptor": {
+            "kind": "CHOOSE",
+            "label": "Cut rival main deck after slot 17"
+          }
+        },
+        {
+          "actorId": "00000000-0000-4000-8000-000000000004",
+          "action": {
+            "kind": "CHOOSE",
+            "choiceId": "45162152d85fb783b2a02800f4222b1dd7a9988756c6bf4874636d16d29e10d3",
+            "optionIndices": [
+              23
+            ]
+          },
+          "actionId": "4a23f4debd51ae04e15893e2ec86d8e13ade34ce95e0de2336165edcc21e6abf",
+          "descriptor": {
+            "kind": "CHOOSE",
+            "label": "Cut rival main deck after slot 23"
+          }
+        },
+        {
+          "actorId": "00000000-0000-4000-8000-000000000004",
+          "action": {
+            "kind": "CHOOSE",
+            "choiceId": "45162152d85fb783b2a02800f4222b1dd7a9988756c6bf4874636d16d29e10d3",
+            "optionIndices": [
+              10
+            ]
+          },
+          "actionId": "54b5f4af15931727953e1cea306c29e9b801c1b9d0a8663f9fab2cf259c04bb6",
+          "descriptor": {
+            "kind": "CHOOSE",
+            "label": "Cut rival main deck after slot 10"
+          }
+        },
+        {
+          "actorId": "00000000-0000-4000-8000-000000000004",
+          "action": {
+            "kind": "CHOOSE",
+            "choiceId": "45162152d85fb783b2a02800f4222b1dd7a9988756c6bf4874636d16d29e10d3",
+            "optionIndices": [
+              30
+            ]
+          },
+          "actionId": "5a481f201c07e15b776426b344890684bfb65abd80163639592fe2214f0c47e7",
+          "descriptor": {
+            "kind": "CHOOSE",
+            "label": "Cut rival main deck after slot 30"
+          }
+        },
+        {
+          "actorId": "00000000-0000-4000-8000-000000000004",
+          "action": {
+            "kind": "CHOOSE",
+            "choiceId": "45162152d85fb783b2a02800f4222b1dd7a9988756c6bf4874636d16d29e10d3",
+            "optionIndices": [
+              3
+            ]
+          },
+          "actionId": "60a63df9b7fdf08102acb9e1c6da0151347ec2df21d7015e85c283a6fc8c2c04",
+          "descriptor": {
+            "kind": "CHOOSE",
+            "label": "Cut rival main deck after slot 3"
+          }
+        },
+        {
+          "actorId": "00000000-0000-4000-8000-000000000004",
+          "action": {
+            "kind": "CHOOSE",
+            "choiceId": "45162152d85fb783b2a02800f4222b1dd7a9988756c6bf4874636d16d29e10d3",
+            "optionIndices": [
+              31
+            ]
+          },
+          "actionId": "6c4fa4df17a11ca1fa16630968781c4a961f8ee031b41355c9055e8fd039aa33",
+          "descriptor": {
+            "kind": "CHOOSE",
+            "label": "Cut rival main deck after slot 31"
+          }
+        },
+        {
+          "actorId": "00000000-0000-4000-8000-000000000004",
+          "action": {
+            "kind": "CHOOSE",
+            "choiceId": "45162152d85fb783b2a02800f4222b1dd7a9988756c6bf4874636d16d29e10d3",
+            "optionIndices": [
+              8
+            ]
+          },
+          "actionId": "9b648f4bc2600aa5ee0f548872745d696641e06aabe72a81080448b6a4383a85",
+          "descriptor": {
+            "kind": "CHOOSE",
+            "label": "Cut rival main deck after slot 8"
+          }
+        },
+        {
+          "actorId": "00000000-0000-4000-8000-000000000004",
+          "action": {
+            "kind": "CHOOSE",
+            "choiceId": "45162152d85fb783b2a02800f4222b1dd7a9988756c6bf4874636d16d29e10d3",
+            "optionIndices": [
+              26
+            ]
+          },
+          "actionId": "9bd845fc68514ad89232572c73bbe469b5c4cdfd8e7a1da7ff60679b9c4cdd25",
+          "descriptor": {
+            "kind": "CHOOSE",
+            "label": "Cut rival main deck after slot 26"
+          }
+        },
+        {
+          "actorId": "00000000-0000-4000-8000-000000000004",
+          "action": {
+            "kind": "CHOOSE",
+            "choiceId": "45162152d85fb783b2a02800f4222b1dd7a9988756c6bf4874636d16d29e10d3",
+            "optionIndices": [
               5
             ]
           },
-          "actionId": "a694347be1b11efcb1d1ddeeafad035841296c2406fdf42bc2b1d814550c8536",
+          "actionId": "a2783458e0c240decf2057697d81750151551bd97985fd92af41b291f3637c24",
           "descriptor": {
             "kind": "CHOOSE",
             "label": "Cut rival main deck after slot 5"
@@ -21612,7 +21582,7 @@
               37
             ]
           },
-          "actionId": "a827a607c70e7b270093741576e149b35d6ff5ee753609a6d6b8bf8967b5b9b6",
+          "actionId": "a691bbfdc92a5c5a8c5aaf4b360301c5dcb410579a03f4486a0ecd6d580eede3",
           "descriptor": {
             "kind": "CHOOSE",
             "label": "Cut rival main deck after slot 37"
@@ -21627,7 +21597,7 @@
               38
             ]
           },
-          "actionId": "a85d78e58c90d0e9d5f9b56fa142a9888431f6866f095a2cdb43778998f800ad",
+          "actionId": "b49037b3e4aca66e3451118ffc663f3e37fe092122ced965e58f921845540038",
           "descriptor": {
             "kind": "CHOOSE",
             "label": "Cut rival main deck after slot 38"
@@ -21639,13 +21609,13 @@
             "kind": "CHOOSE",
             "choiceId": "45162152d85fb783b2a02800f4222b1dd7a9988756c6bf4874636d16d29e10d3",
             "optionIndices": [
-              3
+              19
             ]
           },
-          "actionId": "b14a1f05527dd5032588ba5873e12acbc5b40796c8167ea82b0a4664eb7a0ea7",
+          "actionId": "be041d2789c45304e413abd47cdc3c073171e559e9281a13bbb60250ddadcaa1",
           "descriptor": {
             "kind": "CHOOSE",
-            "label": "Cut rival main deck after slot 3"
+            "label": "Cut rival main deck after slot 19"
           }
         },
         {
@@ -21654,133 +21624,13 @@
             "kind": "CHOOSE",
             "choiceId": "45162152d85fb783b2a02800f4222b1dd7a9988756c6bf4874636d16d29e10d3",
             "optionIndices": [
-              11
+              28
             ]
           },
-          "actionId": "b1e3846a338c84b64d287460cfb98d910696d9426875046ca40fa572eb42d31a",
+          "actionId": "c0adc98dd123fac0bf0f563a1f05b0c9d33c5e3621b24866a7b1e651ddaa9a49",
           "descriptor": {
             "kind": "CHOOSE",
-            "label": "Cut rival main deck after slot 11"
-          }
-        },
-        {
-          "actorId": "00000000-0000-4000-8000-000000000004",
-          "action": {
-            "kind": "CHOOSE",
-            "choiceId": "45162152d85fb783b2a02800f4222b1dd7a9988756c6bf4874636d16d29e10d3",
-            "optionIndices": [
-              21
-            ]
-          },
-          "actionId": "b3e854e7920fb09c85ac5e6d22288e3ace195af804fa0a759b16766ff02225eb",
-          "descriptor": {
-            "kind": "CHOOSE",
-            "label": "Cut rival main deck after slot 21"
-          }
-        },
-        {
-          "actorId": "00000000-0000-4000-8000-000000000004",
-          "action": {
-            "kind": "CHOOSE",
-            "choiceId": "45162152d85fb783b2a02800f4222b1dd7a9988756c6bf4874636d16d29e10d3",
-            "optionIndices": [
-              15
-            ]
-          },
-          "actionId": "b76acee64e337955381f239d2acb708472e111dac79be1dc9f2138349f7a2968",
-          "descriptor": {
-            "kind": "CHOOSE",
-            "label": "Cut rival main deck after slot 15"
-          }
-        },
-        {
-          "actorId": "00000000-0000-4000-8000-000000000004",
-          "action": {
-            "kind": "CHOOSE",
-            "choiceId": "45162152d85fb783b2a02800f4222b1dd7a9988756c6bf4874636d16d29e10d3",
-            "optionIndices": [
-              23
-            ]
-          },
-          "actionId": "bdd4f298150af66c121d40c9b3918136ef6fddb52992c35520422c1e6f8c2a26",
-          "descriptor": {
-            "kind": "CHOOSE",
-            "label": "Cut rival main deck after slot 23"
-          }
-        },
-        {
-          "actorId": "00000000-0000-4000-8000-000000000004",
-          "action": {
-            "kind": "CHOOSE",
-            "choiceId": "45162152d85fb783b2a02800f4222b1dd7a9988756c6bf4874636d16d29e10d3",
-            "optionIndices": [
-              18
-            ]
-          },
-          "actionId": "c2da124c2377005908cc6d6333ba5b7aaaad9dea99e9edfdab19628931bcbfbc",
-          "descriptor": {
-            "kind": "CHOOSE",
-            "label": "Cut rival main deck after slot 18"
-          }
-        },
-        {
-          "actorId": "00000000-0000-4000-8000-000000000004",
-          "action": {
-            "kind": "CHOOSE",
-            "choiceId": "45162152d85fb783b2a02800f4222b1dd7a9988756c6bf4874636d16d29e10d3",
-            "optionIndices": [
-              9
-            ]
-          },
-          "actionId": "c5d03567e0beec8a88fb4814f164c1d1d8995b05b0dbc08565e31505a0aac599",
-          "descriptor": {
-            "kind": "CHOOSE",
-            "label": "Cut rival main deck after slot 9"
-          }
-        },
-        {
-          "actorId": "00000000-0000-4000-8000-000000000004",
-          "action": {
-            "kind": "CHOOSE",
-            "choiceId": "45162152d85fb783b2a02800f4222b1dd7a9988756c6bf4874636d16d29e10d3",
-            "optionIndices": [
-              14
-            ]
-          },
-          "actionId": "cad610526140d47e4f01d35e79c530419c331ce5c9803c1c20a7d6d88f6dbf88",
-          "descriptor": {
-            "kind": "CHOOSE",
-            "label": "Cut rival main deck after slot 14"
-          }
-        },
-        {
-          "actorId": "00000000-0000-4000-8000-000000000004",
-          "action": {
-            "kind": "CHOOSE",
-            "choiceId": "45162152d85fb783b2a02800f4222b1dd7a9988756c6bf4874636d16d29e10d3",
-            "optionIndices": [
-              30
-            ]
-          },
-          "actionId": "cc44f7c49f1962e50fa185684868c66fea7f02f459e7a43547a533d07360ce10",
-          "descriptor": {
-            "kind": "CHOOSE",
-            "label": "Cut rival main deck after slot 30"
-          }
-        },
-        {
-          "actorId": "00000000-0000-4000-8000-000000000004",
-          "action": {
-            "kind": "CHOOSE",
-            "choiceId": "45162152d85fb783b2a02800f4222b1dd7a9988756c6bf4874636d16d29e10d3",
-            "optionIndices": [
-              33
-            ]
-          },
-          "actionId": "cf688c778cdc42ca0adf060714c193b0ae1f5acfc52ee6fbcafc90fb0e5f16c0",
-          "descriptor": {
-            "kind": "CHOOSE",
-            "label": "Cut rival main deck after slot 33"
+            "label": "Cut rival main deck after slot 28"
           }
         },
         {
@@ -21792,7 +21642,7 @@
               40
             ]
           },
-          "actionId": "dd730b6812f412879a056f1b353ea692342041f01a8458be0115764b65c67331",
+          "actionId": "c1cd25fb2bf7661c25e13c0bc91df8e1e819237de2110fbdf57420ad1516beac",
           "descriptor": {
             "kind": "CHOOSE",
             "label": "Cut rival main deck after slot 40"
@@ -21804,28 +21654,13 @@
             "kind": "CHOOSE",
             "choiceId": "45162152d85fb783b2a02800f4222b1dd7a9988756c6bf4874636d16d29e10d3",
             "optionIndices": [
-              36
+              16
             ]
           },
-          "actionId": "de607f86688c28c681434d998cfbf6156dd70ffcddbd9b8d12ef6749a6c395d6",
+          "actionId": "c6985ae9b97d3c00201f7ee91a0cc7423b4a53599d437d2fbc0fb7f36b1c1100",
           "descriptor": {
             "kind": "CHOOSE",
-            "label": "Cut rival main deck after slot 36"
-          }
-        },
-        {
-          "actorId": "00000000-0000-4000-8000-000000000004",
-          "action": {
-            "kind": "CHOOSE",
-            "choiceId": "45162152d85fb783b2a02800f4222b1dd7a9988756c6bf4874636d16d29e10d3",
-            "optionIndices": [
-              25
-            ]
-          },
-          "actionId": "ee6e97ccd57f8090fd8cc47bc1fc42d84963d079b65df3d4430507df6a58f74d",
-          "descriptor": {
-            "kind": "CHOOSE",
-            "label": "Cut rival main deck after slot 25"
+            "label": "Cut rival main deck after slot 16"
           }
         },
         {
@@ -21837,10 +21672,175 @@
               24
             ]
           },
-          "actionId": "f1a9a2e91c7324ba449141d9105c2dec880751f97240adea7e8bfe4b0cb5cbc8",
+          "actionId": "c8179ad9575a238f84f21c06ae307156e9dc6748ad380fbef4e84d344093f2fe",
           "descriptor": {
             "kind": "CHOOSE",
             "label": "Cut rival main deck after slot 24"
+          }
+        },
+        {
+          "actorId": "00000000-0000-4000-8000-000000000004",
+          "action": {
+            "kind": "CHOOSE",
+            "choiceId": "45162152d85fb783b2a02800f4222b1dd7a9988756c6bf4874636d16d29e10d3",
+            "optionIndices": [
+              11
+            ]
+          },
+          "actionId": "c898916aacee9025c06d5bd0fcc6f7713259b20d97e97b9225bec9fc5d2ff458",
+          "descriptor": {
+            "kind": "CHOOSE",
+            "label": "Cut rival main deck after slot 11"
+          }
+        },
+        {
+          "actorId": "00000000-0000-4000-8000-000000000004",
+          "action": {
+            "kind": "CHOOSE",
+            "choiceId": "45162152d85fb783b2a02800f4222b1dd7a9988756c6bf4874636d16d29e10d3",
+            "optionIndices": [
+              6
+            ]
+          },
+          "actionId": "d464653730d9a33aa83c72ad7132119d4f0113c00928276e6c1d61129791b977",
+          "descriptor": {
+            "kind": "CHOOSE",
+            "label": "Cut rival main deck after slot 6"
+          }
+        },
+        {
+          "actorId": "00000000-0000-4000-8000-000000000004",
+          "action": {
+            "kind": "CHOOSE",
+            "choiceId": "45162152d85fb783b2a02800f4222b1dd7a9988756c6bf4874636d16d29e10d3",
+            "optionIndices": [
+              35
+            ]
+          },
+          "actionId": "d4d833634b47d39c731d7711d6de45626a871d77a3981a55427903d21817f469",
+          "descriptor": {
+            "kind": "CHOOSE",
+            "label": "Cut rival main deck after slot 35"
+          }
+        },
+        {
+          "actorId": "00000000-0000-4000-8000-000000000004",
+          "action": {
+            "kind": "CHOOSE",
+            "choiceId": "45162152d85fb783b2a02800f4222b1dd7a9988756c6bf4874636d16d29e10d3",
+            "optionIndices": [
+              29
+            ]
+          },
+          "actionId": "d893019f3773bebcd9e5557ac0c0b74318c5da8ef372940d55627357b9ce3aa5",
+          "descriptor": {
+            "kind": "CHOOSE",
+            "label": "Cut rival main deck after slot 29"
+          }
+        },
+        {
+          "actorId": "00000000-0000-4000-8000-000000000004",
+          "action": {
+            "kind": "CHOOSE",
+            "choiceId": "45162152d85fb783b2a02800f4222b1dd7a9988756c6bf4874636d16d29e10d3",
+            "optionIndices": [
+              0
+            ]
+          },
+          "actionId": "d8977bf2042a973b2daf9e7d1b24edbcf507c8969b8dcf9dad2ca698af408474",
+          "descriptor": {
+            "kind": "CHOOSE",
+            "label": "Decline main deck cut"
+          }
+        },
+        {
+          "actorId": "00000000-0000-4000-8000-000000000004",
+          "action": {
+            "kind": "CHOOSE",
+            "choiceId": "45162152d85fb783b2a02800f4222b1dd7a9988756c6bf4874636d16d29e10d3",
+            "optionIndices": [
+              36
+            ]
+          },
+          "actionId": "dba63a0da222578a3210db1eeeb10ad20a28c077d305d5b628c5260230b01402",
+          "descriptor": {
+            "kind": "CHOOSE",
+            "label": "Cut rival main deck after slot 36"
+          }
+        },
+        {
+          "actorId": "00000000-0000-4000-8000-000000000004",
+          "action": {
+            "kind": "CHOOSE",
+            "choiceId": "45162152d85fb783b2a02800f4222b1dd7a9988756c6bf4874636d16d29e10d3",
+            "optionIndices": [
+              33
+            ]
+          },
+          "actionId": "df9e0656ed51bbbec54446ea771837498d2867ce181c3290ad4ccc2507168258",
+          "descriptor": {
+            "kind": "CHOOSE",
+            "label": "Cut rival main deck after slot 33"
+          }
+        },
+        {
+          "actorId": "00000000-0000-4000-8000-000000000004",
+          "action": {
+            "kind": "CHOOSE",
+            "choiceId": "45162152d85fb783b2a02800f4222b1dd7a9988756c6bf4874636d16d29e10d3",
+            "optionIndices": [
+              32
+            ]
+          },
+          "actionId": "e2088dc7c1bd4cff6283bc3b0985347c978a7a7f12921477840ae5b7b6e5a4c3",
+          "descriptor": {
+            "kind": "CHOOSE",
+            "label": "Cut rival main deck after slot 32"
+          }
+        },
+        {
+          "actorId": "00000000-0000-4000-8000-000000000004",
+          "action": {
+            "kind": "CHOOSE",
+            "choiceId": "45162152d85fb783b2a02800f4222b1dd7a9988756c6bf4874636d16d29e10d3",
+            "optionIndices": [
+              9
+            ]
+          },
+          "actionId": "ed0074cbc83808597e670dcdb3a736ac05f4fc5768e1ad169961d77bc0548b3b",
+          "descriptor": {
+            "kind": "CHOOSE",
+            "label": "Cut rival main deck after slot 9"
+          }
+        },
+        {
+          "actorId": "00000000-0000-4000-8000-000000000004",
+          "action": {
+            "kind": "CHOOSE",
+            "choiceId": "45162152d85fb783b2a02800f4222b1dd7a9988756c6bf4874636d16d29e10d3",
+            "optionIndices": [
+              12
+            ]
+          },
+          "actionId": "f1071d1f72771d58cdfe34573fa288405294307a7429c9d7fe94c0d2797881ba",
+          "descriptor": {
+            "kind": "CHOOSE",
+            "label": "Cut rival main deck after slot 12"
+          }
+        },
+        {
+          "actorId": "00000000-0000-4000-8000-000000000004",
+          "action": {
+            "kind": "CHOOSE",
+            "choiceId": "45162152d85fb783b2a02800f4222b1dd7a9988756c6bf4874636d16d29e10d3",
+            "optionIndices": [
+              1
+            ]
+          },
+          "actionId": "f38833a97e1a247398d17f586f215d5e1855ca57194ecfe16591e946e26c480f",
+          "descriptor": {
+            "kind": "CHOOSE",
+            "label": "Cut rival main deck after slot 1"
           }
         }
       ],
@@ -21967,8 +21967,8 @@
           }
         }
       ],
-      "stateHash": "8bc193a7e65ddb5ff4712170c805d0aad3eaf0b97b7d8a10d81aff69d9a701d7",
-      "positionHash": "7bca123d3a8a66d8f1dc66172be71780467afc2dd32527d66e996ea5c0e4d471",
+      "stateHash": "ebfee45e78f5713c9429ba133b75d66f384acff3162861b8c116655c7812a183",
+      "positionHash": "093ee6408a5692309c8140624040655c568b263cdd8cd9de7849909f43af6e32",
       "observationHash": "f96b862c27effe1003ebe58ecbf5771ce475c3edc311f6512a3122c1daec5f05",
       "step": "CUT_DECISION"
     },
@@ -21984,7 +21984,7 @@
           ]
         }
       },
-      "actionId": "fc78aa979232aef30a5c67da3349e5d2214adc3c72d14be522d693c4f725bf0d",
+      "actionId": "bd225f55d215cbc7793d84db38cbb295640a211d60f8efcd2f622a1435d74dcc",
       "legalActions": [
         {
           "actorId": "00000000-0000-4000-8000-000000000001",
@@ -21992,193 +21992,13 @@
             "kind": "CHOOSE",
             "choiceId": "8dcd6ffbb7c60b1b821c49c4a8f51b5b5cebb5ead2990f95fcfc9757b0aa69d0",
             "optionIndices": [
-              38
+              2
             ]
           },
-          "actionId": "03db1e14b7e6aba434b49358562417fa984b68f5eca6ae2bfc24651ff3576e6e",
+          "actionId": "0c84a892dce62943cbdcc7d6904e8038f70033b7b509ee4eaa5246e3c31ce0ec",
           "descriptor": {
             "kind": "CHOOSE",
-            "label": "Cut rival main deck after slot 38"
-          }
-        },
-        {
-          "actorId": "00000000-0000-4000-8000-000000000001",
-          "action": {
-            "kind": "CHOOSE",
-            "choiceId": "8dcd6ffbb7c60b1b821c49c4a8f51b5b5cebb5ead2990f95fcfc9757b0aa69d0",
-            "optionIndices": [
-              3
-            ]
-          },
-          "actionId": "046d5a7a862073df335641bc87ec873e8c137801e497033f5a9cc8a4b0a681e5",
-          "descriptor": {
-            "kind": "CHOOSE",
-            "label": "Cut rival main deck after slot 3"
-          }
-        },
-        {
-          "actorId": "00000000-0000-4000-8000-000000000001",
-          "action": {
-            "kind": "CHOOSE",
-            "choiceId": "8dcd6ffbb7c60b1b821c49c4a8f51b5b5cebb5ead2990f95fcfc9757b0aa69d0",
-            "optionIndices": [
-              12
-            ]
-          },
-          "actionId": "05ee2398104cd606bcf6c5c04ed6de21aec66c9c29ca8d12b92e0cff23a84fd6",
-          "descriptor": {
-            "kind": "CHOOSE",
-            "label": "Cut rival main deck after slot 12"
-          }
-        },
-        {
-          "actorId": "00000000-0000-4000-8000-000000000001",
-          "action": {
-            "kind": "CHOOSE",
-            "choiceId": "8dcd6ffbb7c60b1b821c49c4a8f51b5b5cebb5ead2990f95fcfc9757b0aa69d0",
-            "optionIndices": [
-              30
-            ]
-          },
-          "actionId": "0bb4ad583e29fc1d9c1afed9517e91cfd5d7be5ef2e5aebd9d7581416e24a847",
-          "descriptor": {
-            "kind": "CHOOSE",
-            "label": "Cut rival main deck after slot 30"
-          }
-        },
-        {
-          "actorId": "00000000-0000-4000-8000-000000000001",
-          "action": {
-            "kind": "CHOOSE",
-            "choiceId": "8dcd6ffbb7c60b1b821c49c4a8f51b5b5cebb5ead2990f95fcfc9757b0aa69d0",
-            "optionIndices": [
-              1
-            ]
-          },
-          "actionId": "16cd51b158236a4d607431f31fbbe6fe1907148f6434c4bf0170261cb2588a56",
-          "descriptor": {
-            "kind": "CHOOSE",
-            "label": "Cut rival main deck after slot 1"
-          }
-        },
-        {
-          "actorId": "00000000-0000-4000-8000-000000000001",
-          "action": {
-            "kind": "CHOOSE",
-            "choiceId": "8dcd6ffbb7c60b1b821c49c4a8f51b5b5cebb5ead2990f95fcfc9757b0aa69d0",
-            "optionIndices": [
-              14
-            ]
-          },
-          "actionId": "2468564008c6233cf2d2ecf52f786f4709633c78771403f5145ada344a35d96e",
-          "descriptor": {
-            "kind": "CHOOSE",
-            "label": "Cut rival main deck after slot 14"
-          }
-        },
-        {
-          "actorId": "00000000-0000-4000-8000-000000000001",
-          "action": {
-            "kind": "CHOOSE",
-            "choiceId": "8dcd6ffbb7c60b1b821c49c4a8f51b5b5cebb5ead2990f95fcfc9757b0aa69d0",
-            "optionIndices": [
-              15
-            ]
-          },
-          "actionId": "32882f7bfe9ab4e1c869132ed5f7b1d4ffe107e264a720be311e48965b4b62b0",
-          "descriptor": {
-            "kind": "CHOOSE",
-            "label": "Cut rival main deck after slot 15"
-          }
-        },
-        {
-          "actorId": "00000000-0000-4000-8000-000000000001",
-          "action": {
-            "kind": "CHOOSE",
-            "choiceId": "8dcd6ffbb7c60b1b821c49c4a8f51b5b5cebb5ead2990f95fcfc9757b0aa69d0",
-            "optionIndices": [
-              20
-            ]
-          },
-          "actionId": "32ca5e50f1803d81ef5a4e3156ffe86c4603585889a3e19809780ed584c36966",
-          "descriptor": {
-            "kind": "CHOOSE",
-            "label": "Cut rival main deck after slot 20"
-          }
-        },
-        {
-          "actorId": "00000000-0000-4000-8000-000000000001",
-          "action": {
-            "kind": "CHOOSE",
-            "choiceId": "8dcd6ffbb7c60b1b821c49c4a8f51b5b5cebb5ead2990f95fcfc9757b0aa69d0",
-            "optionIndices": [
-              8
-            ]
-          },
-          "actionId": "3660878f86fc0ffce8ab4a5d5934652d04167f9c82013c05987b6644fee70e70",
-          "descriptor": {
-            "kind": "CHOOSE",
-            "label": "Cut rival main deck after slot 8"
-          }
-        },
-        {
-          "actorId": "00000000-0000-4000-8000-000000000001",
-          "action": {
-            "kind": "CHOOSE",
-            "choiceId": "8dcd6ffbb7c60b1b821c49c4a8f51b5b5cebb5ead2990f95fcfc9757b0aa69d0",
-            "optionIndices": [
-              5
-            ]
-          },
-          "actionId": "414a64f36d93e50d7e741d83459a73807b314af689faf7cf038f84dc96516ae0",
-          "descriptor": {
-            "kind": "CHOOSE",
-            "label": "Cut rival main deck after slot 5"
-          }
-        },
-        {
-          "actorId": "00000000-0000-4000-8000-000000000001",
-          "action": {
-            "kind": "CHOOSE",
-            "choiceId": "8dcd6ffbb7c60b1b821c49c4a8f51b5b5cebb5ead2990f95fcfc9757b0aa69d0",
-            "optionIndices": [
-              27
-            ]
-          },
-          "actionId": "43558d33580e8d6c775eb19c327ec1841e1c2f3448687488535cc6039ea9c996",
-          "descriptor": {
-            "kind": "CHOOSE",
-            "label": "Cut rival main deck after slot 27"
-          }
-        },
-        {
-          "actorId": "00000000-0000-4000-8000-000000000001",
-          "action": {
-            "kind": "CHOOSE",
-            "choiceId": "8dcd6ffbb7c60b1b821c49c4a8f51b5b5cebb5ead2990f95fcfc9757b0aa69d0",
-            "optionIndices": [
-              34
-            ]
-          },
-          "actionId": "4d415f04a8d75e2363c8c2711e54b8d62104b1505d58dc61ada6b0bfd1495ffc",
-          "descriptor": {
-            "kind": "CHOOSE",
-            "label": "Cut rival main deck after slot 34"
-          }
-        },
-        {
-          "actorId": "00000000-0000-4000-8000-000000000001",
-          "action": {
-            "kind": "CHOOSE",
-            "choiceId": "8dcd6ffbb7c60b1b821c49c4a8f51b5b5cebb5ead2990f95fcfc9757b0aa69d0",
-            "optionIndices": [
-              17
-            ]
-          },
-          "actionId": "5414547aae682d580176c197362be708ab506d97509a0681826603572a12f1a7",
-          "descriptor": {
-            "kind": "CHOOSE",
-            "label": "Cut rival main deck after slot 17"
+            "label": "Cut rival main deck after slot 2"
           }
         },
         {
@@ -22190,7 +22010,7 @@
               7
             ]
           },
-          "actionId": "559924a555b1dd7202e11621787f924c17cccd95fbf100147d5f460e48e64ced",
+          "actionId": "11c61a6b0177b19abe6cacda401de2168817cb6b084659df153d800581cace0e",
           "descriptor": {
             "kind": "CHOOSE",
             "label": "Cut rival main deck after slot 7"
@@ -22202,133 +22022,13 @@
             "kind": "CHOOSE",
             "choiceId": "8dcd6ffbb7c60b1b821c49c4a8f51b5b5cebb5ead2990f95fcfc9757b0aa69d0",
             "optionIndices": [
-              29
+              31
             ]
           },
-          "actionId": "560dcaee838c211843a9153d1a1797aede0f7cf4ba0d9ab3497f2b278700b1ea",
+          "actionId": "1f5043de458e50f777126d62ae557b4284faf98dd6a1bee462d360b25ddca524",
           "descriptor": {
             "kind": "CHOOSE",
-            "label": "Cut rival main deck after slot 29"
-          }
-        },
-        {
-          "actorId": "00000000-0000-4000-8000-000000000001",
-          "action": {
-            "kind": "CHOOSE",
-            "choiceId": "8dcd6ffbb7c60b1b821c49c4a8f51b5b5cebb5ead2990f95fcfc9757b0aa69d0",
-            "optionIndices": [
-              25
-            ]
-          },
-          "actionId": "5c2db2585486757f629f9908c52576feb054feb2f927c5aecbaa2d8e98a7a383",
-          "descriptor": {
-            "kind": "CHOOSE",
-            "label": "Cut rival main deck after slot 25"
-          }
-        },
-        {
-          "actorId": "00000000-0000-4000-8000-000000000001",
-          "action": {
-            "kind": "CHOOSE",
-            "choiceId": "8dcd6ffbb7c60b1b821c49c4a8f51b5b5cebb5ead2990f95fcfc9757b0aa69d0",
-            "optionIndices": [
-              19
-            ]
-          },
-          "actionId": "62af7e59e3c835b0079cb84c98147ec01da09acde3d4ca1cd0038aac61c11c38",
-          "descriptor": {
-            "kind": "CHOOSE",
-            "label": "Cut rival main deck after slot 19"
-          }
-        },
-        {
-          "actorId": "00000000-0000-4000-8000-000000000001",
-          "action": {
-            "kind": "CHOOSE",
-            "choiceId": "8dcd6ffbb7c60b1b821c49c4a8f51b5b5cebb5ead2990f95fcfc9757b0aa69d0",
-            "optionIndices": [
-              9
-            ]
-          },
-          "actionId": "6353a3cafe406326db746fcc35e2669faeabf2df5c08b2fcceddf959d6cf4a73",
-          "descriptor": {
-            "kind": "CHOOSE",
-            "label": "Cut rival main deck after slot 9"
-          }
-        },
-        {
-          "actorId": "00000000-0000-4000-8000-000000000001",
-          "action": {
-            "kind": "CHOOSE",
-            "choiceId": "8dcd6ffbb7c60b1b821c49c4a8f51b5b5cebb5ead2990f95fcfc9757b0aa69d0",
-            "optionIndices": [
-              10
-            ]
-          },
-          "actionId": "646653c40f1cade296deca4d37d0cabc722742183e2e7f8ceb1d034ac451641a",
-          "descriptor": {
-            "kind": "CHOOSE",
-            "label": "Cut rival main deck after slot 10"
-          }
-        },
-        {
-          "actorId": "00000000-0000-4000-8000-000000000001",
-          "action": {
-            "kind": "CHOOSE",
-            "choiceId": "8dcd6ffbb7c60b1b821c49c4a8f51b5b5cebb5ead2990f95fcfc9757b0aa69d0",
-            "optionIndices": [
-              32
-            ]
-          },
-          "actionId": "6722a5a6b7930e7c31711bf51b52c832ff2e36fd78949b17549f3b964ba5f0c8",
-          "descriptor": {
-            "kind": "CHOOSE",
-            "label": "Cut rival main deck after slot 32"
-          }
-        },
-        {
-          "actorId": "00000000-0000-4000-8000-000000000001",
-          "action": {
-            "kind": "CHOOSE",
-            "choiceId": "8dcd6ffbb7c60b1b821c49c4a8f51b5b5cebb5ead2990f95fcfc9757b0aa69d0",
-            "optionIndices": [
-              6
-            ]
-          },
-          "actionId": "67868d5e6974a84380d49a382eb29f9956401e378d0b0d1a863f3b0b60bbd31b",
-          "descriptor": {
-            "kind": "CHOOSE",
-            "label": "Cut rival main deck after slot 6"
-          }
-        },
-        {
-          "actorId": "00000000-0000-4000-8000-000000000001",
-          "action": {
-            "kind": "CHOOSE",
-            "choiceId": "8dcd6ffbb7c60b1b821c49c4a8f51b5b5cebb5ead2990f95fcfc9757b0aa69d0",
-            "optionIndices": [
-              36
-            ]
-          },
-          "actionId": "6b928c70ac3404d86dfe90847f3898a8544174cb3670d512d550965cf8ae43c7",
-          "descriptor": {
-            "kind": "CHOOSE",
-            "label": "Cut rival main deck after slot 36"
-          }
-        },
-        {
-          "actorId": "00000000-0000-4000-8000-000000000001",
-          "action": {
-            "kind": "CHOOSE",
-            "choiceId": "8dcd6ffbb7c60b1b821c49c4a8f51b5b5cebb5ead2990f95fcfc9757b0aa69d0",
-            "optionIndices": [
-              22
-            ]
-          },
-          "actionId": "6f479fc321f7a33ef99446fc62b2a401a60e1c7ab5620d07f152761589064af2",
-          "descriptor": {
-            "kind": "CHOOSE",
-            "label": "Cut rival main deck after slot 22"
+            "label": "Cut rival main deck after slot 31"
           }
         },
         {
@@ -22340,7 +22040,7 @@
               24
             ]
           },
-          "actionId": "7111e7784b96eb0bd842e1af088f69b2b3c0d53711cdf3e19c925351466e00d0",
+          "actionId": "1f917dd05586013f9d0e9567ae2520c841f0d63ca1719ecf84a3cea9aa050a1f",
           "descriptor": {
             "kind": "CHOOSE",
             "label": "Cut rival main deck after slot 24"
@@ -22352,13 +22052,13 @@
             "kind": "CHOOSE",
             "choiceId": "8dcd6ffbb7c60b1b821c49c4a8f51b5b5cebb5ead2990f95fcfc9757b0aa69d0",
             "optionIndices": [
-              4
+              16
             ]
           },
-          "actionId": "727bb5b6f04ff2a8b1537f76468770849d3b9da0aaa9cf500acda06d8f0db615",
+          "actionId": "30f4180101b643df79605118457a3626f861c9cb756526fc8f48cb37c6828143",
           "descriptor": {
             "kind": "CHOOSE",
-            "label": "Cut rival main deck after slot 4"
+            "label": "Cut rival main deck after slot 16"
           }
         },
         {
@@ -22367,13 +22067,163 @@
             "kind": "CHOOSE",
             "choiceId": "8dcd6ffbb7c60b1b821c49c4a8f51b5b5cebb5ead2990f95fcfc9757b0aa69d0",
             "optionIndices": [
-              21
+              38
             ]
           },
-          "actionId": "763465e9cadb8b52747891640987f1333f6504fb22c37fb408df1b7638fde6c1",
+          "actionId": "3a3895d601e8104dc51f40856ffaa2965abdfe3d2255a1bfb310724aef52c093",
           "descriptor": {
             "kind": "CHOOSE",
-            "label": "Cut rival main deck after slot 21"
+            "label": "Cut rival main deck after slot 38"
+          }
+        },
+        {
+          "actorId": "00000000-0000-4000-8000-000000000001",
+          "action": {
+            "kind": "CHOOSE",
+            "choiceId": "8dcd6ffbb7c60b1b821c49c4a8f51b5b5cebb5ead2990f95fcfc9757b0aa69d0",
+            "optionIndices": [
+              6
+            ]
+          },
+          "actionId": "3ba5154c648f2ff5f2de530af1edc6dc757e8dcd8ccc689ed67ab224c2b0e026",
+          "descriptor": {
+            "kind": "CHOOSE",
+            "label": "Cut rival main deck after slot 6"
+          }
+        },
+        {
+          "actorId": "00000000-0000-4000-8000-000000000001",
+          "action": {
+            "kind": "CHOOSE",
+            "choiceId": "8dcd6ffbb7c60b1b821c49c4a8f51b5b5cebb5ead2990f95fcfc9757b0aa69d0",
+            "optionIndices": [
+              14
+            ]
+          },
+          "actionId": "3ba8f2ff5621c07f1b81b4a4c5996570bacb3c1a8f48d8811f8094e65acd31a3",
+          "descriptor": {
+            "kind": "CHOOSE",
+            "label": "Cut rival main deck after slot 14"
+          }
+        },
+        {
+          "actorId": "00000000-0000-4000-8000-000000000001",
+          "action": {
+            "kind": "CHOOSE",
+            "choiceId": "8dcd6ffbb7c60b1b821c49c4a8f51b5b5cebb5ead2990f95fcfc9757b0aa69d0",
+            "optionIndices": [
+              5
+            ]
+          },
+          "actionId": "3fae28b87d9f3ac8751d97843b2fb7725e1f571682b1612c63727b9c2e9eb2fb",
+          "descriptor": {
+            "kind": "CHOOSE",
+            "label": "Cut rival main deck after slot 5"
+          }
+        },
+        {
+          "actorId": "00000000-0000-4000-8000-000000000001",
+          "action": {
+            "kind": "CHOOSE",
+            "choiceId": "8dcd6ffbb7c60b1b821c49c4a8f51b5b5cebb5ead2990f95fcfc9757b0aa69d0",
+            "optionIndices": [
+              34
+            ]
+          },
+          "actionId": "435b93b3bcbc587a27da63342c5fc5177bbcbce5971e5db0613f2f03dbdac05f",
+          "descriptor": {
+            "kind": "CHOOSE",
+            "label": "Cut rival main deck after slot 34"
+          }
+        },
+        {
+          "actorId": "00000000-0000-4000-8000-000000000001",
+          "action": {
+            "kind": "CHOOSE",
+            "choiceId": "8dcd6ffbb7c60b1b821c49c4a8f51b5b5cebb5ead2990f95fcfc9757b0aa69d0",
+            "optionIndices": [
+              19
+            ]
+          },
+          "actionId": "46c6aa7a6d8b536c01d651e889fdc13c269c5293f799f7935a7d97737681e6c3",
+          "descriptor": {
+            "kind": "CHOOSE",
+            "label": "Cut rival main deck after slot 19"
+          }
+        },
+        {
+          "actorId": "00000000-0000-4000-8000-000000000001",
+          "action": {
+            "kind": "CHOOSE",
+            "choiceId": "8dcd6ffbb7c60b1b821c49c4a8f51b5b5cebb5ead2990f95fcfc9757b0aa69d0",
+            "optionIndices": [
+              28
+            ]
+          },
+          "actionId": "473d3f35b7cd6a9c0e8fe4a3e5ea74f82aa46287e842e742de6b757c440e1a68",
+          "descriptor": {
+            "kind": "CHOOSE",
+            "label": "Cut rival main deck after slot 28"
+          }
+        },
+        {
+          "actorId": "00000000-0000-4000-8000-000000000001",
+          "action": {
+            "kind": "CHOOSE",
+            "choiceId": "8dcd6ffbb7c60b1b821c49c4a8f51b5b5cebb5ead2990f95fcfc9757b0aa69d0",
+            "optionIndices": [
+              32
+            ]
+          },
+          "actionId": "4b7f8981a9af08d391f898c543edc7a788e73107b3c5e1ad891fecbf8af8dbe2",
+          "descriptor": {
+            "kind": "CHOOSE",
+            "label": "Cut rival main deck after slot 32"
+          }
+        },
+        {
+          "actorId": "00000000-0000-4000-8000-000000000001",
+          "action": {
+            "kind": "CHOOSE",
+            "choiceId": "8dcd6ffbb7c60b1b821c49c4a8f51b5b5cebb5ead2990f95fcfc9757b0aa69d0",
+            "optionIndices": [
+              23
+            ]
+          },
+          "actionId": "4f609bc389a243542910781f4f12ae71f9d2fcf058210c4b85a423476e199867",
+          "descriptor": {
+            "kind": "CHOOSE",
+            "label": "Cut rival main deck after slot 23"
+          }
+        },
+        {
+          "actorId": "00000000-0000-4000-8000-000000000001",
+          "action": {
+            "kind": "CHOOSE",
+            "choiceId": "8dcd6ffbb7c60b1b821c49c4a8f51b5b5cebb5ead2990f95fcfc9757b0aa69d0",
+            "optionIndices": [
+              36
+            ]
+          },
+          "actionId": "52ff635aeabaab5576d5ba68244e05df0b1925d632e9a5f15863fc96031d3b86",
+          "descriptor": {
+            "kind": "CHOOSE",
+            "label": "Cut rival main deck after slot 36"
+          }
+        },
+        {
+          "actorId": "00000000-0000-4000-8000-000000000001",
+          "action": {
+            "kind": "CHOOSE",
+            "choiceId": "8dcd6ffbb7c60b1b821c49c4a8f51b5b5cebb5ead2990f95fcfc9757b0aa69d0",
+            "optionIndices": [
+              39
+            ]
+          },
+          "actionId": "55d33d43ab427698b2f40f7fa78201629742cb8b3d485fc32fd1ca383a36bb90",
+          "descriptor": {
+            "kind": "CHOOSE",
+            "label": "Cut rival main deck after slot 39"
           }
         },
         {
@@ -22385,7 +22235,7 @@
               13
             ]
           },
-          "actionId": "7cd7bfdf9a5dce8ae6b5f2cffc390bc1df347a8d65adbac0f0ffbb833c3cfa96",
+          "actionId": "5c317ddf8efe2308f287cc481d3e2b7216590834879fff46452f6aa8598cdcdb",
           "descriptor": {
             "kind": "CHOOSE",
             "label": "Cut rival main deck after slot 13"
@@ -22397,25 +22247,10 @@
             "kind": "CHOOSE",
             "choiceId": "8dcd6ffbb7c60b1b821c49c4a8f51b5b5cebb5ead2990f95fcfc9757b0aa69d0",
             "optionIndices": [
-              40
-            ]
-          },
-          "actionId": "7f28f9f3f6f32199112c9a8230ad58f340e13fc41dd8b695ad9ff0175cdcebe6",
-          "descriptor": {
-            "kind": "CHOOSE",
-            "label": "Cut rival main deck after slot 40"
-          }
-        },
-        {
-          "actorId": "00000000-0000-4000-8000-000000000001",
-          "action": {
-            "kind": "CHOOSE",
-            "choiceId": "8dcd6ffbb7c60b1b821c49c4a8f51b5b5cebb5ead2990f95fcfc9757b0aa69d0",
-            "optionIndices": [
               35
             ]
           },
-          "actionId": "7fb418d632a9d92ccd47073386f8cb285fb8b894798b1de628df6e6134ea0406",
+          "actionId": "5e20d34cea07b79620dfe56c463d8fdf90e4e2f09daa6ab8845aad73fe516e62",
           "descriptor": {
             "kind": "CHOOSE",
             "label": "Cut rival main deck after slot 35"
@@ -22430,7 +22265,7 @@
               33
             ]
           },
-          "actionId": "81aea4890d6913ae2cd7eaefccbd15db0bd8871d7c573220f823a66e1a44975d",
+          "actionId": "60fcc1ee2241c3019e659ea1ed9c3c5679f5f7236725475adbd262c6bec38cac",
           "descriptor": {
             "kind": "CHOOSE",
             "label": "Cut rival main deck after slot 33"
@@ -22442,13 +22277,13 @@
             "kind": "CHOOSE",
             "choiceId": "8dcd6ffbb7c60b1b821c49c4a8f51b5b5cebb5ead2990f95fcfc9757b0aa69d0",
             "optionIndices": [
-              2
+              17
             ]
           },
-          "actionId": "832148fb4509b2bfc9261dcabcc89203d4a5deaddb26fec376c351e8f49b6a6f",
+          "actionId": "76927db6f8892708fbbf830d1034b9f50f7616f2544cf5a8778156bb9f4c3ad2",
           "descriptor": {
             "kind": "CHOOSE",
-            "label": "Cut rival main deck after slot 2"
+            "label": "Cut rival main deck after slot 17"
           }
         },
         {
@@ -22457,13 +22292,13 @@
             "kind": "CHOOSE",
             "choiceId": "8dcd6ffbb7c60b1b821c49c4a8f51b5b5cebb5ead2990f95fcfc9757b0aa69d0",
             "optionIndices": [
-              39
+              20
             ]
           },
-          "actionId": "889b2d7a47831495a1951e386e58676556a3619effa285479f352106abe42362",
+          "actionId": "7a92fba713fccb739d46bed8884b5f0ad5033a8520947ca76e58b34e7d5dc7c8",
           "descriptor": {
             "kind": "CHOOSE",
-            "label": "Cut rival main deck after slot 39"
+            "label": "Cut rival main deck after slot 20"
           }
         },
         {
@@ -22472,13 +22307,13 @@
             "kind": "CHOOSE",
             "choiceId": "8dcd6ffbb7c60b1b821c49c4a8f51b5b5cebb5ead2990f95fcfc9757b0aa69d0",
             "optionIndices": [
-              28
+              12
             ]
           },
-          "actionId": "8ca60d4bacc2e948c3b8c99644925558780f4848c52acb2c84a208f5a9edb5da",
+          "actionId": "7abb9613a0fbeaa52ac547342285ca1e61b736d6da1831f4e3a01f816406127a",
           "descriptor": {
             "kind": "CHOOSE",
-            "label": "Cut rival main deck after slot 28"
+            "label": "Cut rival main deck after slot 12"
           }
         },
         {
@@ -22487,13 +22322,13 @@
             "kind": "CHOOSE",
             "choiceId": "8dcd6ffbb7c60b1b821c49c4a8f51b5b5cebb5ead2990f95fcfc9757b0aa69d0",
             "optionIndices": [
-              26
+              4
             ]
           },
-          "actionId": "8dfb33eabfa2e828cbbd0be29ea1338cd594fbfa376ea340d7fe6f23826a42cf",
+          "actionId": "80e093f876f8f764254db6573a88c093d82c35e17a55f484b0bc3efe2c0d6e49",
           "descriptor": {
             "kind": "CHOOSE",
-            "label": "Cut rival main deck after slot 26"
+            "label": "Cut rival main deck after slot 4"
           }
         },
         {
@@ -22502,13 +22337,28 @@
             "kind": "CHOOSE",
             "choiceId": "8dcd6ffbb7c60b1b821c49c4a8f51b5b5cebb5ead2990f95fcfc9757b0aa69d0",
             "optionIndices": [
-              41
+              27
             ]
           },
-          "actionId": "a1fa6d904ff7667d17aeaafe255ad49f3cc16e4052a1c02bc17fdb2b88923afc",
+          "actionId": "8e72b46d82f631839e234412bef7b88d3f6fdbe9c0fe6b3bed1a60ac32317207",
           "descriptor": {
             "kind": "CHOOSE",
-            "label": "Cut rival main deck after slot 41"
+            "label": "Cut rival main deck after slot 27"
+          }
+        },
+        {
+          "actorId": "00000000-0000-4000-8000-000000000001",
+          "action": {
+            "kind": "CHOOSE",
+            "choiceId": "8dcd6ffbb7c60b1b821c49c4a8f51b5b5cebb5ead2990f95fcfc9757b0aa69d0",
+            "optionIndices": [
+              29
+            ]
+          },
+          "actionId": "98f46cf2d7e5487b7b8b124111fab5a83b4a7aff35a86fe3e50f3994dd3924d1",
+          "descriptor": {
+            "kind": "CHOOSE",
+            "label": "Cut rival main deck after slot 29"
           }
         },
         {
@@ -22520,7 +22370,7 @@
               37
             ]
           },
-          "actionId": "afedb28066d488061fd7310cf5fb61e97fdc844f4aa8d3b4577b64a059ea3568",
+          "actionId": "9d72337747565970340d9eebfe38088bb498a5959be1735f5736fe2c03bd754b",
           "descriptor": {
             "kind": "CHOOSE",
             "label": "Cut rival main deck after slot 37"
@@ -22532,13 +22382,13 @@
             "kind": "CHOOSE",
             "choiceId": "8dcd6ffbb7c60b1b821c49c4a8f51b5b5cebb5ead2990f95fcfc9757b0aa69d0",
             "optionIndices": [
-              23
+              8
             ]
           },
-          "actionId": "b96e64f7804a96e02c2677e56b6f1a5658ee53d6bd13c13e420b0a987ff7b881",
+          "actionId": "a059be387e8bce5295b8f5aaebf0ddb3e302bd358d0a80287c6f977415c9ccf7",
           "descriptor": {
             "kind": "CHOOSE",
-            "label": "Cut rival main deck after slot 23"
+            "label": "Cut rival main deck after slot 8"
           }
         },
         {
@@ -22547,13 +22397,13 @@
             "kind": "CHOOSE",
             "choiceId": "8dcd6ffbb7c60b1b821c49c4a8f51b5b5cebb5ead2990f95fcfc9757b0aa69d0",
             "optionIndices": [
-              31
+              15
             ]
           },
-          "actionId": "c58588804af6bbdb1c9df56315876a7b8fcea1fbad651ac09b4d95c92b70207f",
+          "actionId": "a42adf4fc398cd7a4862504053ab826f3c5077b5f39baf11a0d0e5a8b3d06b09",
           "descriptor": {
             "kind": "CHOOSE",
-            "label": "Cut rival main deck after slot 31"
+            "label": "Cut rival main deck after slot 15"
           }
         },
         {
@@ -22562,13 +22412,13 @@
             "kind": "CHOOSE",
             "choiceId": "8dcd6ffbb7c60b1b821c49c4a8f51b5b5cebb5ead2990f95fcfc9757b0aa69d0",
             "optionIndices": [
-              11
+              40
             ]
           },
-          "actionId": "dbf0a90eda7b2bf18eb5a89b418b448fefedcab74070a051fa3b137289ed7ab8",
+          "actionId": "aaf60133d7b32fd3a6d47c73cfcb6e68c340663bbc6eb8f6b94d38ed00ad9c6a",
           "descriptor": {
             "kind": "CHOOSE",
-            "label": "Cut rival main deck after slot 11"
+            "label": "Cut rival main deck after slot 40"
           }
         },
         {
@@ -22577,13 +22427,13 @@
             "kind": "CHOOSE",
             "choiceId": "8dcd6ffbb7c60b1b821c49c4a8f51b5b5cebb5ead2990f95fcfc9757b0aa69d0",
             "optionIndices": [
-              16
+              10
             ]
           },
-          "actionId": "ed909e21a41d1669e7baec2912a01d2214484ba8a1601b69a750eb43f0f35c74",
+          "actionId": "ab3037adc93260a4e6b3dcfd135248910abf881f2a7046e27aacf235cec4a205",
           "descriptor": {
             "kind": "CHOOSE",
-            "label": "Cut rival main deck after slot 16"
+            "label": "Cut rival main deck after slot 10"
           }
         },
         {
@@ -22592,13 +22442,43 @@
             "kind": "CHOOSE",
             "choiceId": "8dcd6ffbb7c60b1b821c49c4a8f51b5b5cebb5ead2990f95fcfc9757b0aa69d0",
             "optionIndices": [
-              18
+              1
             ]
           },
-          "actionId": "f500a383fec0700e393447cc6fb3b1347e701ec1d0ed1a610d64e04dfb4897f6",
+          "actionId": "abcd87ede77e5b3f071b6db5d4556357069169360f4696f7ed43f3e93385ecd3",
           "descriptor": {
             "kind": "CHOOSE",
-            "label": "Cut rival main deck after slot 18"
+            "label": "Cut rival main deck after slot 1"
+          }
+        },
+        {
+          "actorId": "00000000-0000-4000-8000-000000000001",
+          "action": {
+            "kind": "CHOOSE",
+            "choiceId": "8dcd6ffbb7c60b1b821c49c4a8f51b5b5cebb5ead2990f95fcfc9757b0aa69d0",
+            "optionIndices": [
+              41
+            ]
+          },
+          "actionId": "ada1d271b85ebcd2e0ff52905bc104bd7a086a9eaf24022911a192d314e492e3",
+          "descriptor": {
+            "kind": "CHOOSE",
+            "label": "Cut rival main deck after slot 41"
+          }
+        },
+        {
+          "actorId": "00000000-0000-4000-8000-000000000001",
+          "action": {
+            "kind": "CHOOSE",
+            "choiceId": "8dcd6ffbb7c60b1b821c49c4a8f51b5b5cebb5ead2990f95fcfc9757b0aa69d0",
+            "optionIndices": [
+              25
+            ]
+          },
+          "actionId": "bcb5a0a02a1e9a0c65da7b96b610da4d6cb00bd000205cd743842ab3fc589909",
+          "descriptor": {
+            "kind": "CHOOSE",
+            "label": "Cut rival main deck after slot 25"
           }
         },
         {
@@ -22610,10 +22490,130 @@
               0
             ]
           },
-          "actionId": "fc78aa979232aef30a5c67da3349e5d2214adc3c72d14be522d693c4f725bf0d",
+          "actionId": "bd225f55d215cbc7793d84db38cbb295640a211d60f8efcd2f622a1435d74dcc",
           "descriptor": {
             "kind": "CHOOSE",
             "label": "Decline main deck cut"
+          }
+        },
+        {
+          "actorId": "00000000-0000-4000-8000-000000000001",
+          "action": {
+            "kind": "CHOOSE",
+            "choiceId": "8dcd6ffbb7c60b1b821c49c4a8f51b5b5cebb5ead2990f95fcfc9757b0aa69d0",
+            "optionIndices": [
+              30
+            ]
+          },
+          "actionId": "ca89e3bdec6d7022dece790d0a013237a3a38d7fb76ca04d8e926f9a00e2a09a",
+          "descriptor": {
+            "kind": "CHOOSE",
+            "label": "Cut rival main deck after slot 30"
+          }
+        },
+        {
+          "actorId": "00000000-0000-4000-8000-000000000001",
+          "action": {
+            "kind": "CHOOSE",
+            "choiceId": "8dcd6ffbb7c60b1b821c49c4a8f51b5b5cebb5ead2990f95fcfc9757b0aa69d0",
+            "optionIndices": [
+              26
+            ]
+          },
+          "actionId": "cbd346a843bf4ccb1ced25afad60277424b52e4919dcf039aefa6f0d8b526027",
+          "descriptor": {
+            "kind": "CHOOSE",
+            "label": "Cut rival main deck after slot 26"
+          }
+        },
+        {
+          "actorId": "00000000-0000-4000-8000-000000000001",
+          "action": {
+            "kind": "CHOOSE",
+            "choiceId": "8dcd6ffbb7c60b1b821c49c4a8f51b5b5cebb5ead2990f95fcfc9757b0aa69d0",
+            "optionIndices": [
+              18
+            ]
+          },
+          "actionId": "cc7f7fdb1c42de7c801d747ff2811a8ea7981f63cad1e88ee154c9a52d108a4d",
+          "descriptor": {
+            "kind": "CHOOSE",
+            "label": "Cut rival main deck after slot 18"
+          }
+        },
+        {
+          "actorId": "00000000-0000-4000-8000-000000000001",
+          "action": {
+            "kind": "CHOOSE",
+            "choiceId": "8dcd6ffbb7c60b1b821c49c4a8f51b5b5cebb5ead2990f95fcfc9757b0aa69d0",
+            "optionIndices": [
+              21
+            ]
+          },
+          "actionId": "d81a6414521e8939634c34b59442d20fb9e7b81b11022364c4cdacdeb6676276",
+          "descriptor": {
+            "kind": "CHOOSE",
+            "label": "Cut rival main deck after slot 21"
+          }
+        },
+        {
+          "actorId": "00000000-0000-4000-8000-000000000001",
+          "action": {
+            "kind": "CHOOSE",
+            "choiceId": "8dcd6ffbb7c60b1b821c49c4a8f51b5b5cebb5ead2990f95fcfc9757b0aa69d0",
+            "optionIndices": [
+              22
+            ]
+          },
+          "actionId": "dec300e28719f59bd29604cc1018fbad1ea9e33af60c50e3e19e545d28b61363",
+          "descriptor": {
+            "kind": "CHOOSE",
+            "label": "Cut rival main deck after slot 22"
+          }
+        },
+        {
+          "actorId": "00000000-0000-4000-8000-000000000001",
+          "action": {
+            "kind": "CHOOSE",
+            "choiceId": "8dcd6ffbb7c60b1b821c49c4a8f51b5b5cebb5ead2990f95fcfc9757b0aa69d0",
+            "optionIndices": [
+              11
+            ]
+          },
+          "actionId": "eb3f0445584bdb84bf68173db35c9405716919532d65c70f604ce8feddb348d9",
+          "descriptor": {
+            "kind": "CHOOSE",
+            "label": "Cut rival main deck after slot 11"
+          }
+        },
+        {
+          "actorId": "00000000-0000-4000-8000-000000000001",
+          "action": {
+            "kind": "CHOOSE",
+            "choiceId": "8dcd6ffbb7c60b1b821c49c4a8f51b5b5cebb5ead2990f95fcfc9757b0aa69d0",
+            "optionIndices": [
+              3
+            ]
+          },
+          "actionId": "f952d65279316454b5c18287ce0911071416aa4adcaa7346cb767dce879233c4",
+          "descriptor": {
+            "kind": "CHOOSE",
+            "label": "Cut rival main deck after slot 3"
+          }
+        },
+        {
+          "actorId": "00000000-0000-4000-8000-000000000001",
+          "action": {
+            "kind": "CHOOSE",
+            "choiceId": "8dcd6ffbb7c60b1b821c49c4a8f51b5b5cebb5ead2990f95fcfc9757b0aa69d0",
+            "optionIndices": [
+              9
+            ]
+          },
+          "actionId": "f9e690609300df83074038985a8a079b964dd3ad68802006ec1c9bca0f8995bc",
+          "descriptor": {
+            "kind": "CHOOSE",
+            "label": "Cut rival main deck after slot 9"
           }
         }
       ],
@@ -22768,8 +22768,8 @@
           }
         }
       ],
-      "stateHash": "d1cfb1a7b4d31812652a95cdffe6fc8240b591eccc95156654a20d9a8ea1b7fe",
-      "positionHash": "4776ce3be1956a9b2ba3c8f8ba96a4f027d9100878dd44b7542f53444921a601",
+      "stateHash": "209fe0eb7005cba0903801505ebc410bdbc2672a771c13fdf0614d95c88f613f",
+      "positionHash": "2387ce77b5c5ee727eef02d9ae6a58947c9ead2567f57cace50c0c4c04acefc7",
       "observationHash": "151398204db5851a77f670dc4eb21f74a257b3acfa7280133032323404b66a32",
       "step": "CUT_DECISION"
     },
@@ -22785,23 +22785,8 @@
           ]
         }
       },
-      "actionId": "6f861317c7b47a354e5d7080470c72a485c1108eb6b08a2d4609c210027976c7",
+      "actionId": "898ccd23eb94ebc3b9cc524a4307041537ad119e44d1b243da13dc884b8fdab5",
       "legalActions": [
-        {
-          "actorId": "00000000-0000-4000-8000-000000000004",
-          "action": {
-            "kind": "CHOOSE",
-            "choiceId": "a53ae347532ee77331750974943ee493d9bf95fac1c577460d79b64830375987",
-            "optionIndices": [
-              1
-            ]
-          },
-          "actionId": "6f861317c7b47a354e5d7080470c72a485c1108eb6b08a2d4609c210027976c7",
-          "descriptor": {
-            "kind": "CHOOSE",
-            "label": "Cut rival Legends after slot 1"
-          }
-        },
         {
           "actorId": "00000000-0000-4000-8000-000000000004",
           "action": {
@@ -22811,7 +22796,7 @@
               2
             ]
           },
-          "actionId": "a3f71f0b9865d20865e03f9309b4e7bea8f6b15bad77e2a991ea8c08901f598e",
+          "actionId": "015501b3cf83e90f2de24e9b1edab7e8f215ebcce76bf94f773d72fb7af0f856",
           "descriptor": {
             "kind": "CHOOSE",
             "label": "Cut rival Legends after slot 2"
@@ -22823,10 +22808,25 @@
             "kind": "CHOOSE",
             "choiceId": "a53ae347532ee77331750974943ee493d9bf95fac1c577460d79b64830375987",
             "optionIndices": [
+              1
+            ]
+          },
+          "actionId": "898ccd23eb94ebc3b9cc524a4307041537ad119e44d1b243da13dc884b8fdab5",
+          "descriptor": {
+            "kind": "CHOOSE",
+            "label": "Cut rival Legends after slot 1"
+          }
+        },
+        {
+          "actorId": "00000000-0000-4000-8000-000000000004",
+          "action": {
+            "kind": "CHOOSE",
+            "choiceId": "a53ae347532ee77331750974943ee493d9bf95fac1c577460d79b64830375987",
+            "optionIndices": [
               0
             ]
           },
-          "actionId": "f9fe8b63fd65dedd0b2f6d383d45a10f796429c423843d10e95d446e22a931b8",
+          "actionId": "cbf070792bdf5e6d0b3ef84fa87b4633b62cb7881488143f5f718e056cba6768",
           "descriptor": {
             "kind": "CHOOSE",
             "label": "Decline Legend cut"
@@ -22956,8 +22956,8 @@
           }
         }
       ],
-      "stateHash": "eccf99964d2504d12bc119b680e72503275d724a885853a8d254ef481dbe7fb9",
-      "positionHash": "aca40891f32d0e96f8ea8a396bb22c9db5fb6866933bbc9a3fb81cabd7b8746e",
+      "stateHash": "40d59d5d988732ee58bb5de993366e0116697cc46cfe913c2e74f7975e8839d3",
+      "positionHash": "32fd3325c235d644f68619ae76f9d0114c1897059e5b52681a518a1eb69ac468",
       "observationHash": "2edb657364549e678b9c8de68ef88fd9127f963f26a9bbb7a161babd7dbd2596",
       "step": "CUT_DECISION"
     },
@@ -22973,7 +22973,7 @@
           ]
         }
       },
-      "actionId": "7ef6aa49165abef4461521c84f6440291232add5838de44d9b7f83cac3b8312f",
+      "actionId": "5f14c317a328926e9b004cd54cae58ad1213e7e0ba0e44d38b0a95695bc2f7eb",
       "legalActions": [
         {
           "actorId": "00000000-0000-4000-8000-000000000001",
@@ -22984,7 +22984,7 @@
               0
             ]
           },
-          "actionId": "7ef6aa49165abef4461521c84f6440291232add5838de44d9b7f83cac3b8312f",
+          "actionId": "5f14c317a328926e9b004cd54cae58ad1213e7e0ba0e44d38b0a95695bc2f7eb",
           "descriptor": {
             "kind": "CHOOSE",
             "label": "Decline Legend cut"
@@ -22999,7 +22999,7 @@
               1
             ]
           },
-          "actionId": "b6e38bd3d4b030c1442ed6623c736e207cc84133dc368b3db83c452020125e5f",
+          "actionId": "a1ea706d8f8fdcdacc6b32086718c174138540e8c1dfa1fd6af057d37b81fe35",
           "descriptor": {
             "kind": "CHOOSE",
             "label": "Cut rival Legends after slot 1"
@@ -23014,7 +23014,7 @@
               2
             ]
           },
-          "actionId": "ddfd960a58c6d193785daded76c4730a5d7935313f18a394ae669a47c2385acf",
+          "actionId": "d04a8feb5c19bcc59e78fb90e7c7e005e7a7fbbefa2e399b96b61664c2b1fdf3",
           "descriptor": {
             "kind": "CHOOSE",
             "label": "Cut rival Legends after slot 2"
@@ -23352,8 +23352,8 @@
           }
         }
       ],
-      "stateHash": "3d62d6bc8f1ff9f696d50c17e3620ab0ea8de37e3d9f88694b45360583d9338b",
-      "positionHash": "c41ad3908a3a3ae3957c478c0a2548295026e744f0ad41979ef1f9d0b63fc8e7",
+      "stateHash": "16f143f3c811478627bfbc01882da55b80f337874f5015159649381ec97e779c",
+      "positionHash": "a759a9f265a44790d1e0f845eff0c66327175d106fdbbe22fc2657e99a8d7c3f",
       "observationHash": "a6895a2a2a4a4ab17bf6b36a46a9ab5ced3ee3baada74ac7d14a3730a401fc4d",
       "step": "MULLIGAN_DECISION"
     },
@@ -23369,7 +23369,7 @@
           ]
         }
       },
-      "actionId": "e25d10e8608fc7f7d97bef87d91f3928a8f747abd438d67ccbc5b27c7cac62e8",
+      "actionId": "eafc183a8c9be01ac7cd93267327a10326aa1c7c649b29efc9d1e2d4819cd9c6",
       "legalActions": [
         {
           "actorId": "00000000-0000-4000-8000-000000000004",
@@ -23380,7 +23380,7 @@
               0
             ]
           },
-          "actionId": "9230b7a4d4015cf8a196770abae619afad2c898b781df392557bf89658ae8f2c",
+          "actionId": "2adf53182e59e5e378baeb8987fc7ccd970cf460ea70abbb0d7fe8b57a96c314",
           "descriptor": {
             "kind": "CHOOSE",
             "label": "Keep the opening hand"
@@ -23395,7 +23395,7 @@
               1
             ]
           },
-          "actionId": "e25d10e8608fc7f7d97bef87d91f3928a8f747abd438d67ccbc5b27c7cac62e8",
+          "actionId": "eafc183a8c9be01ac7cd93267327a10326aa1c7c649b29efc9d1e2d4819cd9c6",
           "descriptor": {
             "kind": "CHOOSE",
             "label": "Mulligan the entire opening hand"
@@ -23969,8 +23969,8 @@
           }
         }
       ],
-      "stateHash": "962c7855d6042d2c75599c953591e559f56cd9ebaf2974e145d94dfafe625dce",
-      "positionHash": "36e2e50be76664948a51007547cf99517cc4a011aa7c40736a5f47ca6d4c3ace",
+      "stateHash": "bae3dcfa9a430c35affa2ca8a149353edae4c1bd488ac9d35e45637b8c7f9197",
+      "positionHash": "ddf9a61266d282a9fc972100e10a1fbfc55878ea581ccafbe5d7f1c102e4f75b",
       "observationHash": "1282768921b5b8321f64b4d4670b147e31cb5cd9985fc971e92960d540d0f2ad",
       "step": "MULLIGAN_DECISION"
     },
@@ -23986,23 +23986,8 @@
           ]
         }
       },
-      "actionId": "6a2ff49e0aaca5d2d764cfb7a435a93eca447ac04f41ca095217fdb0ef9758c6",
+      "actionId": "a40e1b3777eb9f1c9f42216ceefb70ce280e336d0d091ee333a8e4a36c17b355",
       "legalActions": [
-        {
-          "actorId": "00000000-0000-4000-8000-000000000001",
-          "action": {
-            "kind": "CHOOSE",
-            "choiceId": "1ef4187d601b9377d48e47ae2befe01cdcce593242a5b8194114df545d20cac6",
-            "optionIndices": [
-              0
-            ]
-          },
-          "actionId": "6a2ff49e0aaca5d2d764cfb7a435a93eca447ac04f41ca095217fdb0ef9758c6",
-          "descriptor": {
-            "kind": "CHOOSE",
-            "label": "Keep the opening hand"
-          }
-        },
         {
           "actorId": "00000000-0000-4000-8000-000000000001",
           "action": {
@@ -24012,10 +23997,25 @@
               1
             ]
           },
-          "actionId": "d7038b322f21741dead23bb1a4a1f236130c234bfb86c468ce187dacedcafd5f",
+          "actionId": "4b8ec9e44d68fabe0e3b04713336fdb0fc4734e3376b2ab15a8aef846e638d3a",
           "descriptor": {
             "kind": "CHOOSE",
             "label": "Mulligan the entire opening hand"
+          }
+        },
+        {
+          "actorId": "00000000-0000-4000-8000-000000000001",
+          "action": {
+            "kind": "CHOOSE",
+            "choiceId": "1ef4187d601b9377d48e47ae2befe01cdcce593242a5b8194114df545d20cac6",
+            "optionIndices": [
+              0
+            ]
+          },
+          "actionId": "a40e1b3777eb9f1c9f42216ceefb70ce280e336d0d091ee333a8e4a36c17b355",
+          "descriptor": {
+            "kind": "CHOOSE",
+            "label": "Keep the opening hand"
           }
         }
       ],
@@ -24403,8 +24403,8 @@
           }
         }
       ],
-      "stateHash": "6ff4467ae618117bff5d211825e1669db1bc5bb424277fca6906f417bb8909f2",
-      "positionHash": "aa38303914deae5568d53ae420849494868765561c016bff788b66b47e956da2",
+      "stateHash": "ff8e8a3f365263884ccc153af32cc1b35d7f406eccac550c9e0831252d36e669",
+      "positionHash": "f81f6875f46131a7b754041c904ac48f58e0827365f141664a005f56985ea0f5",
       "observationHash": "1c7d43abd2a2a699d7e765efc760c3293c70500d3b5114a1ea14eada81cdf25f",
       "step": "CHOOSE_GIG"
     },
@@ -24417,15 +24417,39 @@
           "gigInstanceId": "p1-D10"
         }
       },
-      "actionId": "bf8edc277a1380acb1d7626e3f51beb5b3c78a6a8da20a6bc505d7d8465f1859",
+      "actionId": "2b3936054e898d8df5060aca956c1b8f64650940ce0079b42dbd5deaef9d8a67",
       "legalActions": [
+        {
+          "actorId": "00000000-0000-4000-8000-000000000004",
+          "action": {
+            "kind": "ROLL_GIG",
+            "gigInstanceId": "p1-D10"
+          },
+          "actionId": "2b3936054e898d8df5060aca956c1b8f64650940ce0079b42dbd5deaef9d8a67",
+          "descriptor": {
+            "kind": "ROLL_GIG",
+            "label": "Roll D10"
+          }
+        },
+        {
+          "actorId": "00000000-0000-4000-8000-000000000004",
+          "action": {
+            "kind": "ROLL_GIG",
+            "gigInstanceId": "p1-D6"
+          },
+          "actionId": "7ad3c2461297c47bf9b4f22922915ac99b99026aa61da2e0b2799b388b3aa6cb",
+          "descriptor": {
+            "kind": "ROLL_GIG",
+            "label": "Roll D6"
+          }
+        },
         {
           "actorId": "00000000-0000-4000-8000-000000000004",
           "action": {
             "kind": "ROLL_GIG",
             "gigInstanceId": "p1-D4"
           },
-          "actionId": "4d7159a65c8bf4f63c98d638d842fa40eeff2fe03232acd8ea41c8c1a3e8d20b",
+          "actionId": "8ad2b4137dbdb3ea50c8c52f38595938679d1377308b867bd033a4b7fd4028b9",
           "descriptor": {
             "kind": "ROLL_GIG",
             "label": "Roll D4"
@@ -24437,7 +24461,7 @@
             "kind": "ROLL_GIG",
             "gigInstanceId": "p1-D12"
           },
-          "actionId": "5770ceac3f8dca9a86676b2d55e6d627c7927331c2023ecdb2156023aa624493",
+          "actionId": "8d19f93d6bee4ee816d915d738cc242f76385ad99b8b7bcf29370b229e762bc2",
           "descriptor": {
             "kind": "ROLL_GIG",
             "label": "Roll D12"
@@ -24447,36 +24471,12 @@
           "actorId": "00000000-0000-4000-8000-000000000004",
           "action": {
             "kind": "ROLL_GIG",
-            "gigInstanceId": "p1-D10"
-          },
-          "actionId": "bf8edc277a1380acb1d7626e3f51beb5b3c78a6a8da20a6bc505d7d8465f1859",
-          "descriptor": {
-            "kind": "ROLL_GIG",
-            "label": "Roll D10"
-          }
-        },
-        {
-          "actorId": "00000000-0000-4000-8000-000000000004",
-          "action": {
-            "kind": "ROLL_GIG",
             "gigInstanceId": "p1-D8"
           },
-          "actionId": "ee0eef682f5a87cf63c112c76780a68b562c189c2fcbc9491a83c1ad22ee3531",
+          "actionId": "9e6ed64746e420dbad746bd4691cdce598274b5e78d3fd490e6edb505a6b796b",
           "descriptor": {
             "kind": "ROLL_GIG",
             "label": "Roll D8"
-          }
-        },
-        {
-          "actorId": "00000000-0000-4000-8000-000000000004",
-          "action": {
-            "kind": "ROLL_GIG",
-            "gigInstanceId": "p1-D6"
-          },
-          "actionId": "fc3e75584b22833601b90791ad1050ca10f68e387f4c42276292f3d165a56a71",
-          "descriptor": {
-            "kind": "ROLL_GIG",
-            "label": "Roll D6"
           }
         }
       ],
@@ -24831,8 +24831,8 @@
           }
         }
       ],
-      "stateHash": "504f41b8d8c570eedf62cd5a281fa247c147c41db0b4339212cc2ba4ed4e1be0",
-      "positionHash": "351e7b66317b0f32bab529618595322e5108236822efa7d39a2a9a1674b92df4",
+      "stateHash": "9a2fbece104eb042b3769f5ebae83c55d1728aa2b5fa6b37207fdcde57651c2d",
+      "positionHash": "316024af40ab54f25c44f914c6ec100fc1a1cbe9fccf06295ef036697e15b731",
       "observationHash": "60c369ee9bb5108d0e69ed8cbda85c8af31520472d2b67e937e1dd001628c7b7",
       "step": "MAIN"
     },
@@ -24845,86 +24845,15 @@
           "cardInstanceId": "p1-c0"
         }
       },
-      "actionId": "b1773f2c77cc28be106e701cb80cce9f3540829b7a50b563d004502ec839dacc",
+      "actionId": "3d529377e582c012c929c350195ca8df8c544f2b5f7c69305e3c1cc361ba8d3b",
       "legalActions": [
-        {
-          "actorId": "00000000-0000-4000-8000-000000000004",
-          "action": {
-            "kind": "SELL_CARD",
-            "cardInstanceId": "p1-c28"
-          },
-          "actionId": "0bf1cc163d4df1ed10cc98574c4cf33a50345bae01ef5fd853f0773779a3f796",
-          "descriptor": {
-            "kind": "SELL_CARD",
-            "label": "Sell Slice Card 8"
-          }
-        },
-        {
-          "actorId": "00000000-0000-4000-8000-000000000004",
-          "action": {
-            "kind": "END_TURN"
-          },
-          "actionId": "17b2d820570e4e28079ac1cdda925a761c4c94473daae469b267a91084cf8e8a",
-          "descriptor": {
-            "kind": "END_TURN",
-            "label": "END_TURN"
-          }
-        },
-        {
-          "actorId": "00000000-0000-4000-8000-000000000004",
-          "action": {
-            "kind": "SELL_CARD",
-            "cardInstanceId": "p1-c15"
-          },
-          "actionId": "236872a52e180879ce4ce572e41ab294f40232073ed79b3f501fb2c1f3a984ed",
-          "descriptor": {
-            "kind": "SELL_CARD",
-            "label": "Sell Slice Card 4"
-          }
-        },
-        {
-          "actorId": "00000000-0000-4000-8000-000000000004",
-          "action": {
-            "kind": "SELL_CARD",
-            "cardInstanceId": "p1-c3"
-          },
-          "actionId": "70907a553f4ccb18d03d3bb10265215ac779fb5ddc42a52c9a6e89702abe9e87",
-          "descriptor": {
-            "kind": "SELL_CARD",
-            "label": "Sell Slice Card 0"
-          }
-        },
-        {
-          "actorId": "00000000-0000-4000-8000-000000000004",
-          "action": {
-            "kind": "SELL_CARD",
-            "cardInstanceId": "p1-c26"
-          },
-          "actionId": "7b09f27429d220bc4da7d6b6e8beb4a251ec0aef21be5ba3adbdd639a75a8814",
-          "descriptor": {
-            "kind": "SELL_CARD",
-            "label": "Sell Slice Card 7"
-          }
-        },
-        {
-          "actorId": "00000000-0000-4000-8000-000000000004",
-          "action": {
-            "kind": "SELL_CARD",
-            "cardInstanceId": "p1-c31"
-          },
-          "actionId": "88ed64cfa1af57875b3951522b29c16313df5577c43dd5c96b30acc19862de24",
-          "descriptor": {
-            "kind": "SELL_CARD",
-            "label": "Sell Slice Card 9"
-          }
-        },
         {
           "actorId": "00000000-0000-4000-8000-000000000004",
           "action": {
             "kind": "CALL_LEGEND",
             "cardInstanceId": "p1-c2"
           },
-          "actionId": "9f162d1bc01af4b891c681dc67129759c07d2b3d074867de98005103992ea4f6",
+          "actionId": "3b8e354a0d6be1a265cbfe5a7b40cb5895e1bcaec27b64c1af96463c1779a52f",
           "descriptor": {
             "kind": "CALL_LEGEND",
             "label": "Call face-down Legend 3"
@@ -24936,7 +24865,7 @@
             "kind": "CALL_LEGEND",
             "cardInstanceId": "p1-c0"
           },
-          "actionId": "b1773f2c77cc28be106e701cb80cce9f3540829b7a50b563d004502ec839dacc",
+          "actionId": "3d529377e582c012c929c350195ca8df8c544f2b5f7c69305e3c1cc361ba8d3b",
           "descriptor": {
             "kind": "CALL_LEGEND",
             "label": "Call face-down Legend 2"
@@ -24948,7 +24877,7 @@
             "kind": "CALL_LEGEND",
             "cardInstanceId": "p1-c1"
           },
-          "actionId": "c9f66348752c74b5e62af00d7ea5393f43a45c0151c82da3a6f186dfec8b7e9f",
+          "actionId": "3f260cdd3624d37b2d43e48379dbc782bc4fc57c509a4e082dc6ae438bc69c3d",
           "descriptor": {
             "kind": "CALL_LEGEND",
             "label": "Call face-down Legend 1"
@@ -24958,12 +24887,83 @@
           "actorId": "00000000-0000-4000-8000-000000000004",
           "action": {
             "kind": "SELL_CARD",
+            "cardInstanceId": "p1-c28"
+          },
+          "actionId": "4970f31464944bbeb1b4a1177c7ee9510568c671fab7fb8cfed2160a3c6e0718",
+          "descriptor": {
+            "kind": "SELL_CARD",
+            "label": "Sell Slice Card 8"
+          }
+        },
+        {
+          "actorId": "00000000-0000-4000-8000-000000000004",
+          "action": {
+            "kind": "SELL_CARD",
             "cardInstanceId": "p1-c12"
           },
-          "actionId": "d1efe223011e7766e0c7eb6e08573ab269f6bfda86c037ac2ff8a1c60080f08e",
+          "actionId": "5d9228e7f02947c5787d5c551d55f95623f55818a7d1a4d0248781fe7ee420f9",
           "descriptor": {
             "kind": "SELL_CARD",
             "label": "Sell Slice Card 3"
+          }
+        },
+        {
+          "actorId": "00000000-0000-4000-8000-000000000004",
+          "action": {
+            "kind": "SELL_CARD",
+            "cardInstanceId": "p1-c26"
+          },
+          "actionId": "829e2a14edb0955b579e9ac3dc14987e2e429c9031bd0496597822e79b494f10",
+          "descriptor": {
+            "kind": "SELL_CARD",
+            "label": "Sell Slice Card 7"
+          }
+        },
+        {
+          "actorId": "00000000-0000-4000-8000-000000000004",
+          "action": {
+            "kind": "SELL_CARD",
+            "cardInstanceId": "p1-c31"
+          },
+          "actionId": "8ca425ff8579e4f5d005b558415e93e5a4f0d25d85f9864383e7b97c277891fd",
+          "descriptor": {
+            "kind": "SELL_CARD",
+            "label": "Sell Slice Card 9"
+          }
+        },
+        {
+          "actorId": "00000000-0000-4000-8000-000000000004",
+          "action": {
+            "kind": "SELL_CARD",
+            "cardInstanceId": "p1-c3"
+          },
+          "actionId": "bab5a0b0e3e244449c46377b3d42e7e3a01ba2e3ccd9b868a51cf8e994cf8781",
+          "descriptor": {
+            "kind": "SELL_CARD",
+            "label": "Sell Slice Card 0"
+          }
+        },
+        {
+          "actorId": "00000000-0000-4000-8000-000000000004",
+          "action": {
+            "kind": "END_TURN"
+          },
+          "actionId": "cb4aac24643a95afadeccc5f94d85d482d3831727e451da4417eb5c0a80f92b6",
+          "descriptor": {
+            "kind": "END_TURN",
+            "label": "END_TURN"
+          }
+        },
+        {
+          "actorId": "00000000-0000-4000-8000-000000000004",
+          "action": {
+            "kind": "SELL_CARD",
+            "cardInstanceId": "p1-c15"
+          },
+          "actionId": "fcf840b8498f286714b8e5623cc7274a6cb32dba7649f8cbea6ee81821a659d2",
+          "descriptor": {
+            "kind": "SELL_CARD",
+            "label": "Sell Slice Card 4"
           }
         }
       ],
@@ -25359,8 +25359,8 @@
           }
         }
       ],
-      "stateHash": "b0d17c371fe06fb0af1ac83f65a5e2ba656527031c16d04359f25c94a1c504d7",
-      "positionHash": "8bc13eb79e7f614328084d569abf4a2ce804ad7bc5c2bb2a5f3cc36e3837ee8d",
+      "stateHash": "70f79aa4481e98bfaac1440dfbbdfe32d8b0ec2653c367faa0af4a8ced4d83a2",
+      "positionHash": "5db247c74071c4cf9bcc64c0d64de7c185d790f5fbf9c75efafcc2113f146d26",
       "observationHash": "4775b37e797c286f8d263f2347578aba036ff2dc7d1816f605c649ceb24f7c3e",
       "step": "MAIN"
     },
@@ -25372,39 +25372,15 @@
           "kind": "END_TURN"
         }
       },
-      "actionId": "b8c13e25d18d24cae8318c3b0d51606ac46362261f578664b4bceb847f71c4cc",
+      "actionId": "edd902cf435466686f8b8f52a6e9f0c65980b1a921ca37ab063952225b338ae6",
       "legalActions": [
-        {
-          "actorId": "00000000-0000-4000-8000-000000000004",
-          "action": {
-            "kind": "SELL_CARD",
-            "cardInstanceId": "p1-c29"
-          },
-          "actionId": "26d93a24426847965ab4eeade3ec89f908ccf02ba764df19163729e2dd117ed9",
-          "descriptor": {
-            "kind": "SELL_CARD",
-            "label": "Sell Slice Card 8"
-          }
-        },
-        {
-          "actorId": "00000000-0000-4000-8000-000000000004",
-          "action": {
-            "kind": "SELL_CARD",
-            "cardInstanceId": "p1-c3"
-          },
-          "actionId": "362a6ea3af82115bf38348dd5503a4d21f68742278ba2da9505ad6a0620154b3",
-          "descriptor": {
-            "kind": "SELL_CARD",
-            "label": "Sell Slice Card 0"
-          }
-        },
         {
           "actorId": "00000000-0000-4000-8000-000000000004",
           "action": {
             "kind": "SELL_CARD",
             "cardInstanceId": "p1-c15"
           },
-          "actionId": "53e4ffab608deaad13a596aa3860544781ff3996a18e80fe437bdd69f2552349",
+          "actionId": "0de46e26440d724532c926a8285749c20a9ba4bf0f713b43604918f7bcfda0e8",
           "descriptor": {
             "kind": "SELL_CARD",
             "label": "Sell Slice Card 4"
@@ -25414,21 +25390,9 @@
           "actorId": "00000000-0000-4000-8000-000000000004",
           "action": {
             "kind": "SELL_CARD",
-            "cardInstanceId": "p1-c31"
-          },
-          "actionId": "ae066d536b8d11dfd0fa8f5fe74e0491b719c39056a6d189cae6a23492a5c726",
-          "descriptor": {
-            "kind": "SELL_CARD",
-            "label": "Sell Slice Card 9"
-          }
-        },
-        {
-          "actorId": "00000000-0000-4000-8000-000000000004",
-          "action": {
-            "kind": "SELL_CARD",
             "cardInstanceId": "p1-c26"
           },
-          "actionId": "b581980a90ff50077d6d0b4c8fbf46600ef57326b825a6e31fe31e8341a289a0",
+          "actionId": "21459376de6563a3575b88c213c76fa40c9f295beab9df733c50e935d1be2b97",
           "descriptor": {
             "kind": "SELL_CARD",
             "label": "Sell Slice Card 7"
@@ -25437,21 +25401,10 @@
         {
           "actorId": "00000000-0000-4000-8000-000000000004",
           "action": {
-            "kind": "END_TURN"
-          },
-          "actionId": "b8c13e25d18d24cae8318c3b0d51606ac46362261f578664b4bceb847f71c4cc",
-          "descriptor": {
-            "kind": "END_TURN",
-            "label": "END_TURN"
-          }
-        },
-        {
-          "actorId": "00000000-0000-4000-8000-000000000004",
-          "action": {
             "kind": "SELL_CARD",
-            "cardInstanceId": "p1-c28"
+            "cardInstanceId": "p1-c29"
           },
-          "actionId": "db5f20cc92b752aa6b22d7b7baf57a6fc920f8c98a47eb33afa097ac4428d32d",
+          "actionId": "2632666deadca3f8b190c20d0bff3b30a0dbbbfa4c69d790d0154d4dc501d2c5",
           "descriptor": {
             "kind": "SELL_CARD",
             "label": "Sell Slice Card 8"
@@ -25463,10 +25416,57 @@
             "kind": "SELL_CARD",
             "cardInstanceId": "p1-c12"
           },
-          "actionId": "e85654e532f3232b155e818b2392cd35a5977e17030a74bf268ab7fb3c7ed65c",
+          "actionId": "6d7208ef5088debf10203a30f570d5dd142413718b371334295e9c9c17d6289b",
           "descriptor": {
             "kind": "SELL_CARD",
             "label": "Sell Slice Card 3"
+          }
+        },
+        {
+          "actorId": "00000000-0000-4000-8000-000000000004",
+          "action": {
+            "kind": "SELL_CARD",
+            "cardInstanceId": "p1-c28"
+          },
+          "actionId": "aea031de222c38bb1a8f2f40c41026e6251ba30153fc7395c030faa18c0a6f11",
+          "descriptor": {
+            "kind": "SELL_CARD",
+            "label": "Sell Slice Card 8"
+          }
+        },
+        {
+          "actorId": "00000000-0000-4000-8000-000000000004",
+          "action": {
+            "kind": "SELL_CARD",
+            "cardInstanceId": "p1-c3"
+          },
+          "actionId": "ccac009c6184c63233f93ad093183b4fda9fca314016da2563fa832d394e570e",
+          "descriptor": {
+            "kind": "SELL_CARD",
+            "label": "Sell Slice Card 0"
+          }
+        },
+        {
+          "actorId": "00000000-0000-4000-8000-000000000004",
+          "action": {
+            "kind": "SELL_CARD",
+            "cardInstanceId": "p1-c31"
+          },
+          "actionId": "cd0ac117b0b28e03181aeabfcf24d40f6c87f649fa30225943aecd60d1470078",
+          "descriptor": {
+            "kind": "SELL_CARD",
+            "label": "Sell Slice Card 9"
+          }
+        },
+        {
+          "actorId": "00000000-0000-4000-8000-000000000004",
+          "action": {
+            "kind": "END_TURN"
+          },
+          "actionId": "edd902cf435466686f8b8f52a6e9f0c65980b1a921ca37ab063952225b338ae6",
+          "descriptor": {
+            "kind": "END_TURN",
+            "label": "END_TURN"
           }
         }
       ],
@@ -25883,8 +25883,8 @@
           }
         }
       ],
-      "stateHash": "b29acced7c97cc2d81fd43ca4e77bbdf072f37200b4f0985ad72928f63380503",
-      "positionHash": "a4769f246800791a116c18ea00e728a2e3f3976b7280308d5dbd83226ff29038",
+      "stateHash": "f6977a15cd46329414f13a7e98d5977cf43ce9da6ec8f25c3f802367d6617916",
+      "positionHash": "47c449ffbc643492e7c6cb7b7e9f56a4d2247b9a74d7cb0da223cf0c16ae5eee",
       "observationHash": "d8845eb88101cebfc0626068bf61ab591bba42216daafaebf322ea0aab133f52",
       "step": "CHOOSE_GIG"
     }
@@ -25898,9 +25898,9 @@
       "rulesetId": "beta",
       "rulesetVersion": "engine-setup-1",
       "rulesetHash": "ba02a09bd48a3abfa705e78b80e6fbdaf10eb86b84a7eaec7794d841f88caa22",
-      "contentManifestHash": "55c8986c790f6b8682b7d738edd9656820db94dec14c06d04e86740f7793777a",
-      "engineVersion": "0.4.4-ready-spend-v8",
-      "engineArtifactHash": "ab04c3870c33565eef4b29abc2b01661dcf351452c8f3204d70bb2e352df0db4",
+      "contentManifestHash": "699271503bede2beff672523b5d5242a0b11d1885aa401811bb70d499bfd551b",
+      "engineVersion": "0.4.5-end-turn-reaper-v9",
+      "engineArtifactHash": "b06c5695a532f59699e360dd3d5c4d5ef48b1a6725cca54b9d06c6eab4ff697d",
       "cards": [
         {
           "cardId": "dev-legend-blue",
@@ -27854,5 +27854,5 @@
       "counter": 129
     }
   },
-  "finalStateHash": "b29acced7c97cc2d81fd43ca4e77bbdf072f37200b4f0985ad72928f63380503"
+  "finalStateHash": "f6977a15cd46329414f13a7e98d5977cf43ce9da6ec8f25c3f802367d6617916"
 }
