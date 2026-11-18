@@ -336,6 +336,10 @@
                           "type": "string",
                           "const": "ATTACK_PREVENTION_V1"
                         },
+                        "programPlayHistory": {
+                          "type": "string",
+                          "const": "PROGRAM_PLAY_HISTORY_V1"
+                        },
                         "friendlyPlayPower": {
                           "type": "string",
                           "const": "FRIENDLY_PLAY_POWER_V1"
@@ -927,6 +931,19 @@
                                 "kind": {
                                   "type": "string",
                                   "const": "CANNOT_ATTACK_GIG_AREA"
+                                }
+                              },
+                              "required": [
+                                "kind"
+                              ],
+                              "additionalProperties": false
+                            },
+                            {
+                              "type": "object",
+                              "properties": {
+                                "kind": {
+                                  "type": "string",
+                                  "const": "CANNOT_ATTACK_UNLESS_PROGRAM_PLAYED_THIS_TURN"
                                 }
                               },
                               "required": [
@@ -1716,6 +1733,10 @@
                                                   "power"
                                                 ],
                                                 "additionalProperties": false
+                                              },
+                                              "all": {
+                                                "type": "string",
+                                                "const": "OTHER_THAN_SOURCE"
                                               }
                                             },
                                             "required": [
@@ -5234,6 +5255,19 @@
                     "minimum": 0,
                     "maximum": 9007199254740991
                   }
+                },
+                "programPlays": {
+                  "type": "object",
+                  "propertyNames": {
+                    "type": "string",
+                    "format": "uuid",
+                    "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+                  },
+                  "additionalProperties": {
+                    "type": "integer",
+                    "minimum": 0,
+                    "maximum": 9007199254740991
+                  }
                 }
               },
               "required": [
@@ -6858,6 +6892,10 @@
                                             "power"
                                           ],
                                           "additionalProperties": false
+                                        },
+                                        "all": {
+                                          "type": "string",
+                                          "const": "OTHER_THAN_SOURCE"
                                         }
                                       },
                                       "required": [
@@ -9119,6 +9157,10 @@
                                           "power"
                                         ],
                                         "additionalProperties": false
+                                      },
+                                      "all": {
+                                        "type": "string",
+                                        "const": "OTHER_THAN_SOURCE"
                                       }
                                     },
                                     "required": [
@@ -11376,6 +11418,10 @@
                                           "power"
                                         ],
                                         "additionalProperties": false
+                                      },
+                                      "all": {
+                                        "type": "string",
+                                        "const": "OTHER_THAN_SOURCE"
                                       }
                                     },
                                     "required": [
@@ -14045,6 +14091,10 @@
                           "type": "string",
                           "const": "ATTACK_PREVENTION_V1"
                         },
+                        "programPlayHistory": {
+                          "type": "string",
+                          "const": "PROGRAM_PLAY_HISTORY_V1"
+                        },
                         "friendlyPlayPower": {
                           "type": "string",
                           "const": "FRIENDLY_PLAY_POWER_V1"
@@ -14636,6 +14686,19 @@
                                 "kind": {
                                   "type": "string",
                                   "const": "CANNOT_ATTACK_GIG_AREA"
+                                }
+                              },
+                              "required": [
+                                "kind"
+                              ],
+                              "additionalProperties": false
+                            },
+                            {
+                              "type": "object",
+                              "properties": {
+                                "kind": {
+                                  "type": "string",
+                                  "const": "CANNOT_ATTACK_UNLESS_PROGRAM_PLAYED_THIS_TURN"
                                 }
                               },
                               "required": [
@@ -15425,6 +15488,10 @@
                                                   "power"
                                                 ],
                                                 "additionalProperties": false
+                                              },
+                                              "all": {
+                                                "type": "string",
+                                                "const": "OTHER_THAN_SOURCE"
                                               }
                                             },
                                             "required": [

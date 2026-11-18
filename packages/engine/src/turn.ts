@@ -1,3 +1,4 @@
+import { programPlayHistoryEnabled } from "./restriction-support";
 import { checkOvertimeVictory, recordOvertimeTurnStart } from "./overtime";
 import { forgetLegendKnowledge } from "./private-knowledge";
 import { firstAttackHistoryEnabled } from "./first-attack-support";
@@ -56,7 +57,7 @@ export class TurnMutation {
         if (this.state.match.outcome) return failure("GAME_ALREADY_ENDED", "No turn starts after terminal victory or loss");
         const s = this.state, actor = s.timing.activePlayer, rules = this.context.content.ruleset.gameplay!, policy = rules.turnSlice!;
         s.timing.actingPlayer = actor;
-        if (triggersEnabled(this.context)) s.turnHistory = { ...(firstAttackHistoryEnabled(this.context) ? { firstArasakaAttacks: initialFirstAttackHistory(s) } : {}), turn: s.timing.turn, triggeredBatches: 0, blueUnitOrGearPlays: Object.fromEntries(s.match.playerOrder.map(id => [id, 0])) };
+        if (triggersEnabled(this.context)) s.turnHistory = { ...(firstAttackHistoryEnabled(this.context) ? { firstArasakaAttacks: initialFirstAttackHistory(s) } : {}), turn: s.timing.turn, triggeredBatches: 0, blueUnitOrGearPlays: Object.fromEntries(s.match.playerOrder.map(id => [id, 0])), ...(programPlayHistoryEnabled(this.context) ? { programPlays: Object.fromEntries(s.match.playerOrder.map(id => [id, 0])) } : {}) };
         s.resolution = { stage: "DECISION", current: null, pending: [], discovered: [], choice: null };
         // Usage belongs to the global turn, including future rival reaction calls.
         for (const p of Object.values(s.players))

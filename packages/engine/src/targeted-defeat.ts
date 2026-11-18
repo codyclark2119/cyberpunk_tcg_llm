@@ -5,7 +5,7 @@ import { defeatCards } from "./defeat";
 import { defeatOrderChoice, unfinishedDefeatOrder } from "./combat-outcome-queries";
 import { completePlayEffect } from "./play";
 import { appendDefeatedTriggers, completed, prepareTriggerBatch } from "./trigger-resolution";
-import { targetedDefeatChoice } from "./targeted-defeat-queries";
+import { allOtherDefeatTargets, targetedDefeatChoice } from "./targeted-defeat-queries";
 function finishWithoutDefeat(m: TurnMutation) { return m.state.resolution.triggerContinuation ? completed(m) : completePlayEffect(m); }
 export function beginTargetedDefeat(m: TurnMutation): Result<null> {
     const r = m.state.resolution, current = r.current!;
@@ -14,6 +14,15 @@ export function beginTargetedDefeat(m: TurnMutation): Result<null> {
         const met = testCondition(m.state, current.controllerId, current.effect.when.condition, m.context, current.sourceId);
         m.emit({ kind: "CONDITION_EVALUATED", effectId: current.id, met });
         if (!met) return finishWithoutDefeat(m);
+    }
+    const all = allOtherDefeatTargets(m.state, current, m.context);
+    if (all) {
+        // No target choice: each defeated Unit's owner orders only its own Gear batch (11.19.2 shared movement).
+        if (!all.length) return finishWithoutDefeat(m);
+        for (const targetId of all) m.emit({ kind: "DEFEAT_TARGET_SELECTED", effectId: current.id, sourceId: current.sourceId!, targetId, controllerId: current.controllerId, forced: true });
+        r.defeatContinuation = { defeats: all.map(targetId => ({ targetId, defeatedBy: current.sourceId! })), orders: all.map(targetId => ({ targetId, cardIds: [] })) };
+        r.targetedDefeatContinuation = { phase: "ORDER" };
+        return advanceOwnerOrder(m);
     }
     const choice = targetedDefeatChoice(m.state, m.context);
     if (!choice.options.length) return finishWithoutDefeat(m);

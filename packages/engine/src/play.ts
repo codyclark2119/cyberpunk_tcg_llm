@@ -102,6 +102,7 @@ function payValidated(m: TurnMutation, sources: PaymentSource[]): Result<null> {
         return offerPlayChoice(m);
     }
     m.emit({ kind: "CARD_PLAYED", cardInstanceId: c.sourceId });
+    if (r.type === "PROGRAM" && s.turnHistory?.programPlays) s.turnHistory.programPlays[c.actorId]++;
     moveCardLocation(m, c.sourceId, r.type === "PROGRAM" ? "RESOLVING_PROGRAM" : "BATTLEFIELD");
     if (r.type === "UNIT") { s.objects.cards[c.sourceId].readiness = "READY"; s.objects.cards[c.sourceId].statuses.push("LAG"); }
     return beginEffects(m);

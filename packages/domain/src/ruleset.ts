@@ -26,6 +26,8 @@ export const TurnSlicePolicySchema = z.strictObject({
     adrenaline: z.literal("ADRENALINE_V1").optional(),
     attackTargetRestrictions: z.literal("ATTACK_TARGET_RESTRICTIONS_V1").optional(),
     attackPrevention: z.literal("ATTACK_PREVENTION_V1").optional(),
+    // Batch V10: per-player count of Programs played this turn, for "can't attack unless you played a Program this turn".
+    programPlayHistory: z.literal("PROGRAM_PLAY_HISTORY_V1").optional(),
     // Requires cardPlay, combatTriggers, combatRestrictions, react and combatResolution; admission checks the full dependency set.
     friendlyPlayPower: z.literal("FRIENDLY_PLAY_POWER_V1").optional(),
     gearCapabilities: z.literal("GEAR_CAPABILITIES_V1").optional(),
@@ -57,7 +59,7 @@ export const TURN_SLICE_GATES = {
     valueConditions: "VALUE_CONDITIONS_V1", minGigProgram: "MIN_GIG_PROGRAM_V1", attackingAura: "ATTACKING_AURA_V1",
     firstAttackHistory: "FIRST_ATTACK_HISTORY_V1", fieldLegends: "FIELD_LEGENDS_V1", cardPlay: "NONCOMBAT_PLAY_V1",
     combat: "COMBAT_ATTACK_V1", react: "COMBAT_REACT_V1", combatRestrictions: "COMBAT_RESTRICTIONS_V1", adrenaline: "ADRENALINE_V1",
-    attackTargetRestrictions: "ATTACK_TARGET_RESTRICTIONS_V1", attackPrevention: "ATTACK_PREVENTION_V1",
+    attackTargetRestrictions: "ATTACK_TARGET_RESTRICTIONS_V1", attackPrevention: "ATTACK_PREVENTION_V1", programPlayHistory: "PROGRAM_PLAY_HISTORY_V1",
     friendlyPlayPower: "FRIENDLY_PLAY_POWER_V1", gearCapabilities: "GEAR_CAPABILITIES_V1", combatTriggers: "COMBAT_TRIGGERS_V1",
     combatResolution: "COMBAT_RESOLUTION_V1", gear: "REVIEWED_GEAR_V1", setup: "ENGINE_SETUP_V1", callEffects: "REVIEWED_CALL_V1",
     overtime: "STANDARD_OVERTIME_V1", emptyDraw: "LOSE"
