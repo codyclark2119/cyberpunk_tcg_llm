@@ -11,6 +11,7 @@ import type { TurnMutation } from "./turn";
 import { searchChoice, searchTargets } from "./search-state";
 import { drawDeterministicInteger } from "./rng";
 import { isUnitSpendSubject, spendUnitForEffect } from "./unit-spend";
+import { resolveTrashThenReturn } from "./trash-return";
 
 type Primitive<K extends Effect["kind"]> = Extract<Effect, { kind: K }>;
 /** Handwritten, typed primitive registry; metadata cannot install arbitrary handlers. */
@@ -54,6 +55,7 @@ export class HandlerRegistry {
         if (effect.kind === "CONDITIONAL_DRAW") return this.primitives.CONDITIONAL_DRAW(m, effect);
         if (effect.kind === "DRAW") return this.primitives.DRAW(m, effect);
         if (effect.kind === "SEARCH_GEAR") return this.primitives.SEARCH_GEAR(m, effect);
+        if (effect.kind === "TRASH_THEN_RETURN_UNIT") return resolveTrashThenReturn(m, effect, offerPlayChoice);
         return failure("UNSUPPORTED_CALL_EFFECT", "No registered typed CALL primitive");
     }
 }

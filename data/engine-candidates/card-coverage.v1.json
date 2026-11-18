@@ -9,12 +9,12 @@
   },
   "totals": {
     "cards": 151,
-    "admitted": 56,
-    "notAdmitted": 95,
+    "admitted": 57,
+    "notAdmitted": 94,
     "notAdmittedOnlyCoveredFamilies": 0,
     "byAdmission": {
-      "NOT_ADMITTED": 95,
-      "SOURCE_MATCH": 56
+      "NOT_ADMITTED": 94,
+      "SOURCE_MATCH": 57
     }
   },
   "families": [
@@ -82,21 +82,21 @@
       "soleBlockerCount": 0
     },
     {
-      "family": "DECK_SEARCH_REVEAL",
-      "status": "PARTIAL",
-      "summary": "Top-of-deck manipulation: search/look/reveal top N, trash from the top (Trash N), bottom-deck the rest.",
-      "notes": "SEARCH_GEAR (count<=5, Gear with max cost, take<=2) only.",
-      "cardCount": 15,
-      "notAdmittedCount": 14,
-      "soleBlockerCount": 0
-    },
-    {
       "family": "SCALED_AMOUNT",
       "status": "PARTIAL",
       "summary": "Amounts computed from the board: 'for each', 'equal to'.",
       "notes": "Only Royce's per-equipped-Gear modifier counts anything.",
       "cardCount": 18,
       "notAdmittedCount": 14,
+      "soleBlockerCount": 0
+    },
+    {
+      "family": "DECK_SEARCH_REVEAL",
+      "status": "PARTIAL",
+      "summary": "Top-of-deck manipulation: search/look/reveal top N, trash from the top (Trash N), bottom-deck the rest.",
+      "notes": "SEARCH_GEAR (count<=5, Gear with max cost, take<=2) only.",
+      "cardCount": 15,
+      "notAdmittedCount": 13,
       "soleBlockerCount": 0
     },
     {
@@ -262,15 +262,6 @@
       "soleBlockerCount": 0
     },
     {
-      "family": "TRASH_RECURSION",
-      "status": "MISSING",
-      "summary": "Return a card from the trash (or from cards just trashed) to hand.",
-      "notes": "",
-      "cardCount": 7,
-      "notAdmittedCount": 6,
-      "soleBlockerCount": 0
-    },
-    {
       "family": "TRIGGER_CALL",
       "status": "PARTIAL",
       "summary": "[Call] abilities of a Legend.",
@@ -303,6 +294,15 @@
       "summary": "Call a Legend by an effect or for free outside the normal Call.",
       "notes": "",
       "cardCount": 5,
+      "notAdmittedCount": 5,
+      "soleBlockerCount": 0
+    },
+    {
+      "family": "TRASH_RECURSION",
+      "status": "MISSING",
+      "summary": "Return a card from the trash (or from cards just trashed) to hand.",
+      "notes": "",
+      "cardCount": 7,
       "notAdmittedCount": 5,
       "soleBlockerCount": 0
     },
@@ -575,16 +575,13 @@
       "colors": [
         "RED"
       ],
-      "admission": "NOT_ADMITTED",
-      "revision": null,
+      "admission": "SOURCE_MATCH",
+      "revision": 1,
       "families": [
         "DECK_SEARCH_REVEAL",
         "TRASH_RECURSION"
       ],
-      "blockingFamilies": [
-        "DECK_SEARCH_REVEAL",
-        "TRASH_RECURSION"
-      ],
+      "blockingFamilies": [],
       "note": null
     },
     {

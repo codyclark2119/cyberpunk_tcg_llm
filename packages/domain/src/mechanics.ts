@@ -124,6 +124,9 @@ export const EffectSchema = z.discriminatedUnion("kind", [
     // "Add another Unit from your trash to your hand" (batch V13): one public trash Unit other than the
     // trigger subject, chosen by the ability's controller.
     z.strictObject({ kind: z.literal("RETURN_TRASH_UNIT_TO_HAND"), exclude: z.literal("SUBJECT") }),
+    // "Trash 3. Add a Unit from among them to your hand." (batch V14): 11.10.2.1 trash the top card of
+    // your deck 3 times, one at a time, then return one Unit among exactly those cards.
+    z.strictObject({ kind: z.literal("TRASH_THEN_RETURN_UNIT"), count: z.literal(3) }),
     DefeatUnitEffectSchema,
     ReadyEddiesEffectSchema,
     RegisterEndTurnEffectSchema,
