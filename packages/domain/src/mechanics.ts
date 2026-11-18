@@ -121,6 +121,9 @@ export const EffectSchema = z.discriminatedUnion("kind", [
     z.strictObject({ kind: z.literal("SPEND_ALL_UNITS"), relation: z.literal("RIVAL") }),
     // "Return this Unit to its owner's hand" (batch V9); 4.12: equipped Gear moves with it.
     z.strictObject({ kind: z.literal("RETURN_TO_HAND"), target: z.strictObject({ kind: z.literal("SOURCE") }) }),
+    // "Add another Unit from your trash to your hand" (batch V13): one public trash Unit other than the
+    // trigger subject, chosen by the ability's controller.
+    z.strictObject({ kind: z.literal("RETURN_TRASH_UNIT_TO_HAND"), exclude: z.literal("SUBJECT") }),
     DefeatUnitEffectSchema,
     ReadyEddiesEffectSchema,
     RegisterEndTurnEffectSchema,

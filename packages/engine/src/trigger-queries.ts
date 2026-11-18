@@ -71,6 +71,11 @@ export function triggerGigTargets(state: GameState) {
     const current = state.resolution.current!;
     return Object.values(state.objects.gigs).filter(g => g.location.zone === "GIGS" && g.roll.kind === "ROLLED" && (current.effect.kind !== "OPTIONAL_DECREASE_FRIENDLY_GIG_THEN_DRAW_IF_MIN" || g.controllerId === current.controllerId)).map(g => g.id).sort();
 }
+/** Batch V13: public Units in the controller's own trash, other than the trigger subject ("another Unit"). */
+export function trashUnitTargets(state: GameState, current: PendingEffect, context: EngineContext): CardInstanceId[] {
+    const actor = current.controllerId, subjectId = current.trigger?.subjectId;
+    return state.players[actor].zones.TRASH.filter(id => id !== subjectId && state.objects.cards[id]?.ownerId === actor && state.objects.cards[id].face === "UP" && cardRevision(state, id, context)?.type === "UNIT").sort();
+}
 export function triggerChoice(state: GameState, context: EngineContext): PendingChoice {
     const c = state.resolution.triggerContinuation!, current = state.resolution.current;
     let actorId = current?.controllerId ?? nextTriggerGroup(state)[0].controllerId;
@@ -85,6 +90,8 @@ export function triggerChoice(state: GameState, context: EngineContext): Pending
             ? listSpendUnitTargets(state, actorId, current.effect.target, context).map(cardInstanceId => ({ kind: "CARD", cardInstanceId }))
             : current?.effect.kind === "READY_UNIT"
             ? readyLegendTargets(state, actorId, context).map(cardInstanceId => ({ kind: "CARD", cardInstanceId }))
+            : current?.effect.kind === "RETURN_TRASH_UNIT_TO_HAND"
+            ? trashUnitTargets(state, current, context).map(cardInstanceId => ({ kind: "CARD", cardInstanceId }))
             : current?.effect.kind === "LOOK_AT_FRIENDLY_FACE_DOWN_LEGEND"
             ? privateLookTargets(state, actorId, context).map(slot => ({ kind: "LEGEND_SLOT", slot }))
             : current?.effect.kind === "POWER_UNTIL_END_OF_TURN" && current.effect.target.kind === "FRIENDLY_UNIT"

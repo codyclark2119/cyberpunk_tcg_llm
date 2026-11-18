@@ -28,6 +28,10 @@ export function supportsTriggerCard(card: DeepReadonly<CardRevisionSnapshot> | u
     if (card.type === "UNIT" && card.printedCost.kind === "EDDIES" && card.printedCost.amount === 3 && card.power === 0 && card.keywords.length === 0 && card.sellProfile.allowed === false
         && canonicalSerialize({ colors: card.colors, ram: card.ram, tags: card.tags, abilities: m.abilities.map(a => ({ trigger: a.trigger, inherited: a.inherited ?? null, guard: a.guard ?? null, effects: a.effects })) })
         === canonicalSerialize({ colors: ["BLUE"], ram: { BLUE: 3 }, tags: ["AI"], abilities: [{ trigger: "WHEN_PLAYED", inherited: null, guard: null, effects: [{ kind: "DRAW", count: 2 }] }] })) return success(null);
+    // Batch V13: Screw: Lovelorn Fool, the complete printed shape and its single DEFEATED trash return.
+    if (card.type === "UNIT" && card.printedCost.kind === "EDDIES" && card.printedCost.amount === 5 && card.power === 7 && card.keywords.length === 0 && card.sellProfile.allowed === false
+        && canonicalSerialize({ colors: card.colors, ram: card.ram, tags: card.tags, abilities: m.abilities.map(a => ({ trigger: a.trigger, inherited: a.inherited ?? null, guard: a.guard ?? null, effects: a.effects })) })
+        === canonicalSerialize({ colors: ["RED"], ram: { RED: 2 }, tags: ["Ganger", "Maelstrom"], abilities: [{ trigger: "WHEN_DEFEATED", inherited: null, guard: null, effects: [{ kind: "RETURN_TRASH_UNIT_TO_HAND", exclude: "SUBJECT" }] }] })) return success(null);
     if (card.type === "UNIT" && card.printedCost.kind === "EDDIES" && card.printedCost.amount === 3 && card.power === 4 && m.abilities.length === 3 && m.abilities.every(a => !a.inherited && !a.guard)) {
         const expected = [
             { trigger: "WHEN_PLAYED", effect: { kind: "ADJUST_GIG_UP_TO", target: { kind: "GIGS", relation: "ANY" }, maximum: 1 } },

@@ -2817,6 +2817,24 @@
                           "properties": {
                             "kind": {
                               "type": "string",
+                              "const": "RETURN_TRASH_UNIT_TO_HAND"
+                            },
+                            "exclude": {
+                              "type": "string",
+                              "const": "SUBJECT"
+                            }
+                          },
+                          "required": [
+                            "kind",
+                            "exclude"
+                          ],
+                          "additionalProperties": false
+                        },
+                        {
+                          "type": "object",
+                          "properties": {
+                            "kind": {
+                              "type": "string",
                               "const": "DEFEAT_UNIT"
                             },
                             "target": {
@@ -5113,6 +5131,24 @@
                         "properties": {
                           "kind": {
                             "type": "string",
+                            "const": "RETURN_TRASH_UNIT_TO_HAND"
+                          },
+                          "exclude": {
+                            "type": "string",
+                            "const": "SUBJECT"
+                          }
+                        },
+                        "required": [
+                          "kind",
+                          "exclude"
+                        ],
+                        "additionalProperties": false
+                      },
+                      {
+                        "type": "object",
+                        "properties": {
+                          "kind": {
+                            "type": "string",
                             "const": "DEFEAT_UNIT"
                           },
                           "target": {
@@ -7397,6 +7433,24 @@
                         "required": [
                           "kind",
                           "target"
+                        ],
+                        "additionalProperties": false
+                      },
+                      {
+                        "type": "object",
+                        "properties": {
+                          "kind": {
+                            "type": "string",
+                            "const": "RETURN_TRASH_UNIT_TO_HAND"
+                          },
+                          "exclude": {
+                            "type": "string",
+                            "const": "SUBJECT"
+                          }
+                        },
+                        "required": [
+                          "kind",
+                          "exclude"
                         ],
                         "additionalProperties": false
                       },
