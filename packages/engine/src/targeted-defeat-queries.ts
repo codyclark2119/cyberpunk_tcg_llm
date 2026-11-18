@@ -1,6 +1,6 @@
 import { hashCanonical, type DefeatGearTarget, type DefeatTarget, type GameState, type PendingChoice, type PlayerId } from "@tcg/domain";
 import type { EngineContext } from "./state";
-import { effectivePower } from "./characteristics";
+import { effectiveCardTypes, effectivePower } from "./characteristics";
 import { referencedPower } from "./combat-resolution-policy";
 import { defeatSupport, gearDefeatSupport } from "./defeat";
 import { targetedGearDefeatPolicyComplete } from "./targeted-gear-defeat-support";
@@ -9,6 +9,13 @@ import { testCondition } from "./conditions";
 /** Friendly means current control, and Fixer dice have no usable friendly value. */
 export function controlledGigValuesByDieType(state: GameState, actor: PlayerId, dieType: "D20") {
     return Object.values(state.objects.gigs).filter(g => g.controllerId === actor && g.location.zone === "GIGS" && g.dieType === dieType).flatMap(g => g.roll.kind === "ROLLED" ? [g.roll.currentValue] : []);
+}
+/** Batch V16 "less power than a friendly Unit": strictly below the highest current power among the actor's face-up
+ * field Units (field Legends included); no friendly Unit means no bound and so no target. */
+function strongestFriendlyBound(state: GameState, actor: PlayerId, context: EngineContext) {
+    const powers = state.players[actor].zones.BATTLEFIELD.filter(id => { const c = state.objects.cards[id]; return c.controllerId === actor && c.face === "UP" && effectiveCardTypes(state, id, context).includes("UNIT"); })
+        .flatMap(id => { const p = effectivePower(state, id, context); return p === null ? [] : [referencedPower(p)]; });
+    return powers.length ? [Math.max(...powers) - 1] : [];
 }
 /** Uses the same characteristics as RulesView, without recursively validating a pending state. */
 /** 3.17.3.2/3.17.3.3: a Gear's own power, never its host's. Both active areas are eligible (4.10.2). */
@@ -30,7 +37,7 @@ export function listDefeatableUnits(state: GameState, actor: PlayerId, target: D
     if (target.kind !== "UNITS" || !targetedDefeatEnabled(context)) return [];
     // "Instead" bounds are queried against the current state at every listing (choice, resolution, revalidation).
     const atMost = target.power.kind === "AT_MOST" ? (target.instead && testCondition(state, actor, target.instead.condition, context) ? target.instead.power.value : target.power.value) : null;
-    const values = target.power.kind === "ANY" ? [Infinity] : atMost !== null ? [atMost] : target.power.kind === "CONTROLLED_GIG_VALUE" ? controlledGigValuesByDieType(state, actor, target.power.dieType) : [];
+    const values = target.power.kind === "ANY" ? [Infinity] : atMost !== null ? [atMost] : target.power.kind === "CONTROLLED_GIG_VALUE" ? controlledGigValuesByDieType(state, actor, target.power.dieType) : target.power.kind === "LESS_THAN_FRIENDLY_UNIT" ? strongestFriendlyBound(state, actor, context) : [];
     if (!values.length) return []; // Absence is not a zero-valued D20.
     return Object.values(state.objects.cards).filter(c => {
         if (target.relation === "RIVAL" && c.controllerId === actor || target.relation === "CONTROLLED" && c.controllerId !== actor || !defeatSupport(state, c.id, context).ok) return false;

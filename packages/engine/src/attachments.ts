@@ -4,6 +4,7 @@ import { supportsDelayedAttackGear } from "./delayed-effect-support";
 import { supportsPrivateLookGear } from "./private-look-support";
 import { supportsCapabilityGear } from "./capability-support";
 import { supportsTriggerCard } from "./trigger-support";
+import { supportsPlayCostReduction } from "./play-cost-support";
 import { turnSliceAllows, failure, success, type GameState, type CardInstanceId, type CardRevisionSnapshot, type DeepReadonly } from "@tcg/domain";
 import type { EngineContext } from "./state";
 export function gearEnabled(context: EngineContext) { return turnSliceAllows(context.content.ruleset.gameplay?.turnSlice, "gear"); }
@@ -15,6 +16,7 @@ export function supportsGear(card: DeepReadonly<CardRevisionSnapshot> | undefine
     if (card?.execution?.scope === "GEAR_DELAYED_ATTACK_V1") return supportsDelayedAttackGear(card, context);
     if (card?.execution?.scope === "GEAR_PRIVATE_LOOK_V1") return supportsPrivateLookGear(card, context);
     if (card?.execution?.scope === "GEAR_CAPABILITIES_V1") return supportsCapabilityGear(card, context);
+    if (card?.type === "GEAR" && card.execution?.scope === "PLAY_COST_REDUCTION_V1") return supportsPlayCostReduction(card, context);
     if (gearEnabled(context) && card?.type === "GEAR" && card.execution?.scope === "COMBAT_TRIGGERS_V1") return supportsTriggerCard(card, context);
     if (gearEnabled(context) && card?.type === "GEAR" && card.execution?.scope === "END_TURN_HISTORY_V1") return supportsEndTurnCard(card, context);
     if (!gearEnabled(context) || !card || card.type !== "GEAR" || card.execution?.scope !== "NONCOMBAT_PLAY_V1" || card.execution.status !== "SUPPORTED" || card.printedCost.kind !== "EDDIES" || card.printedCost.amount > 1000 || card.power === undefined || card.mechanics.restrictions?.length || card.mechanics.equip?.kind !== "FRIENDLY_UNIT_OR_FACE_UP_LEGEND" || card.mechanics.abilities.length || card.mechanics.keywords.length || card.mechanics.modifiers.length !== 1 || card.mechanics.modifiers[0].kind !== "GRANT_PRINTED_POWER_TO_HOST")

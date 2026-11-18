@@ -9,12 +9,12 @@
   },
   "totals": {
     "cards": 151,
-    "admitted": 59,
-    "notAdmitted": 92,
+    "admitted": 61,
+    "notAdmitted": 90,
     "notAdmittedOnlyCoveredFamilies": 0,
     "byAdmission": {
-      "NOT_ADMITTED": 92,
-      "SOURCE_MATCH": 59
+      "NOT_ADMITTED": 90,
+      "SOURCE_MATCH": 61
     }
   },
   "families": [
@@ -24,16 +24,7 @@
       "summary": "Conditions and filters on Gig values: min/max, value-pairs, even/odd, 8+, die type, counts compared with a Rival.",
       "notes": "Conditions only, each a fixed shape.",
       "cardCount": 40,
-      "notAdmittedCount": 32,
-      "soleBlockerCount": 0
-    },
-    {
-      "family": "CONDITION_BOARD",
-      "status": "PARTIAL",
-      "summary": "Generic target filters and board conditions: classification, cost, power, ready/spent, equipped, face-up, named, lowest power.",
-      "notes": "Documented as unsupported: generic condition/filter language. Each admitted filter is a literal.",
-      "cardCount": 34,
-      "notAdmittedCount": 25,
+      "notAdmittedCount": 31,
       "soleBlockerCount": 0
     },
     {
@@ -43,6 +34,15 @@
       "notes": "Routed. Variable counts need SCALED_AMOUNT; 'may draw' needs an optional prompt.",
       "cardCount": 38,
       "notAdmittedCount": 25,
+      "soleBlockerCount": 0
+    },
+    {
+      "family": "CONDITION_BOARD",
+      "status": "PARTIAL",
+      "summary": "Generic target filters and board conditions: classification, cost, power, ready/spent, equipped, face-up, named, lowest power.",
+      "notes": "Documented as unsupported: generic condition/filter language. Each admitted filter is a literal.",
+      "cardCount": 34,
+      "notAdmittedCount": 24,
       "soleBlockerCount": 0
     },
     {
@@ -78,15 +78,6 @@
       "summary": "Equip a Gear to a friendly Unit or face-up Legend; Gear power adds to its host.",
       "notes": "Equip onto Units is supported for the admitted Gear. Gear on a Legend host in combat (a Go Solo Legend) is unsupported.",
       "cardCount": 22,
-      "notAdmittedCount": 15,
-      "soleBlockerCount": 0
-    },
-    {
-      "family": "SCALED_AMOUNT",
-      "status": "PARTIAL",
-      "summary": "Amounts computed from the board: 'for each', 'equal to'.",
-      "notes": "Only Royce's per-equipped-Gear modifier counts anything.",
-      "cardCount": 18,
       "notAdmittedCount": 14,
       "soleBlockerCount": 0
     },
@@ -114,6 +105,15 @@
       "summary": "Lasting and delayed effects: 'until your next turn', 'next time ... this turn', 'at the end of this turn'.",
       "notes": "",
       "cardCount": 14,
+      "notAdmittedCount": 12,
+      "soleBlockerCount": 0
+    },
+    {
+      "family": "SCALED_AMOUNT",
+      "status": "PARTIAL",
+      "summary": "Amounts computed from the board: 'for each', 'equal to'.",
+      "notes": "Only Royce's per-equipped-Gear modifier counts anything.",
+      "cardCount": 18,
       "notAdmittedCount": 12,
       "soleBlockerCount": 0
     },
@@ -163,15 +163,6 @@
       "soleBlockerCount": 0
     },
     {
-      "family": "UNIT_DEFEAT",
-      "status": "PARTIAL",
-      "summary": "Defeat a Unit or Gear chosen with a filter.",
-      "notes": "Filters are fixed literals (power at most 5, power at most a friendly d20, Gear power at most 2).",
-      "cardCount": 18,
-      "notAdmittedCount": 9,
-      "soleBlockerCount": 0
-    },
-    {
       "family": "MODAL_CHOICE",
       "status": "MISSING",
       "summary": "'Choose one effect' (and 'choose both instead' upgrades).",
@@ -199,12 +190,12 @@
       "soleBlockerCount": 0
     },
     {
-      "family": "COST_MODIFIER",
-      "status": "MISSING",
-      "summary": "Play-cost reductions, alternative costs, ability-cost and Go Solo cost changes.",
-      "notes": "",
-      "cardCount": 10,
-      "notAdmittedCount": 7,
+      "family": "UNIT_DEFEAT",
+      "status": "PARTIAL",
+      "summary": "Defeat a Unit or Gear chosen with a filter.",
+      "notes": "Filters are fixed literals (power at most 5, power at most a friendly d20, Gear power at most 2).",
+      "cardCount": 18,
+      "notAdmittedCount": 8,
       "soleBlockerCount": 0
     },
     {
@@ -285,6 +276,15 @@
       "summary": "Conditions on Street Cred.",
       "notes": "Nearly complete as conditions; gating an effect mode on them is not.",
       "cardCount": 13,
+      "notAdmittedCount": 5,
+      "soleBlockerCount": 0
+    },
+    {
+      "family": "COST_MODIFIER",
+      "status": "MISSING",
+      "summary": "Play-cost reductions, alternative costs, ability-cost and Go Solo cost changes.",
+      "notes": "",
+      "cardCount": 10,
       "notAdmittedCount": 5,
       "soleBlockerCount": 0
     },
@@ -784,8 +784,8 @@
       "colors": [
         "RED"
       ],
-      "admission": "NOT_ADMITTED",
-      "revision": null,
+      "admission": "SOURCE_MATCH",
+      "revision": 1,
       "families": [
         "CONDITION_BOARD",
         "CONDITION_GIG",
@@ -793,13 +793,7 @@
         "SCALED_AMOUNT",
         "UNIT_DEFEAT"
       ],
-      "blockingFamilies": [
-        "CONDITION_BOARD",
-        "CONDITION_GIG",
-        "COST_MODIFIER",
-        "SCALED_AMOUNT",
-        "UNIT_DEFEAT"
-      ],
+      "blockingFamilies": [],
       "note": null
     },
     {
@@ -3571,18 +3565,14 @@
       "colors": [
         "GREEN"
       ],
-      "admission": "NOT_ADMITTED",
-      "revision": null,
+      "admission": "SOURCE_MATCH",
+      "revision": 1,
       "families": [
         "COST_MODIFIER",
         "GEAR_EQUIP",
         "SCALED_AMOUNT"
       ],
-      "blockingFamilies": [
-        "COST_MODIFIER",
-        "GEAR_EQUIP",
-        "SCALED_AMOUNT"
-      ],
+      "blockingFamilies": [],
       "note": "No equip reminder text. See rules question Q1."
     },
     {

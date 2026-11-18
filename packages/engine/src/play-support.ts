@@ -5,7 +5,7 @@ import { hasValueConditionMetadata, supportsValueConditionCard } from "./value-c
 import { hasMinGigProgramMetadata, supportsMinGigProgramCard } from "./min-gig-program-support";
 import { hasFriendlyPlayPowerMetadata, supportsFriendlyPlayPowerUnit } from "./friendly-play-power-support";
 import { supportsTargetedSpendCard } from "./targeted-spend-support";
-import { hasPlayCostReductionMetadata, playPaymentAmount, supportsPlayCostReductionUnit } from "./play-cost-support";
+import { hasPlayCostReductionMetadata, playPaymentAmount, supportsPlayCostReduction } from "./play-cost-support";
 import { supportsFieldLegend } from "./field-legend-support";
 import { supportsEndTurnCard } from "./end-turn-support";
 import { supportsOrderedAttackCard } from "./ordered-effects-support";
@@ -26,7 +26,7 @@ export function revisionOf(state: GameState, id: CardInstanceId, context: Engine
 }
 /** Admission certifies only reviewed semantic shapes, never catalog legality or arbitrary metadata. */
 export function supportsPlay(card: DeepReadonly<CardRevisionSnapshot> | undefined, context: EngineContext) {
-    if (card && hasPlayCostReductionMetadata(card)) return supportsPlayCostReductionUnit(card, context);
+    if (card && hasPlayCostReductionMetadata(card)) return supportsPlayCostReduction(card, context);
     if (card && hasFriendlyPlayPowerMetadata(card)) return supportsFriendlyPlayPowerUnit(card, context);
     if (card && hasAttackConditionPowerMetadata(card)) return supportsAttackConditionPowerCard(card, context);
     if (card && hasTargetedGearDefeatMetadata(card)) return supportsTargetedGearDefeatCard(card, context);

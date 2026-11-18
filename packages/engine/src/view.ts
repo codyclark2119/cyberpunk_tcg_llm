@@ -1,5 +1,5 @@
 import { areAllFriendlyLegendsFaceUp } from "./legend-face-condition";
-import { supportsPlayCostReductionUnit } from "./play-cost-support";
+import { supportsPlayCostReduction } from "./play-cost-support";
 import { listDefeatableUnits, listDefeatTargets, controlledGigValuesByDieType } from "./targeted-defeat-queries";
 import type { DefeatTarget, DefeatUnitTarget } from "@tcg/domain";
 import { getDelayedEffectsForTurn } from "./delayed-effects";
@@ -90,7 +90,7 @@ export class RulesView {
     getCapabilitySources(id: CardInstanceId, keyword: Keyword) { return this.getEffectiveCapabilities(id).find(c => c.keyword === keyword)?.sources ?? []; }
     getEffectiveKeywords(id: CardInstanceId) { return this.getKeywords(id); }
     getKeywords(id: CardInstanceId) {
-        if (this.getRevision(id)?.mechanics.modifiers.some(m => m.kind !== "POWER_PER_EQUIPPED_GEAR_DURING_OWN_TURN" && !(m.kind === "SELF_PLAY_COST_REDUCTION" && supportsPlayCostReductionUnit(this.getRevision(id), this.context).ok) && !(m.kind === "FRIENDLY_ARASAKA_ATTACKING_UNIT_POWER" && supportsAttackingAuraLegend(this.getRevision(id), this.context).ok) && !(m.kind === "GRANT_KEYWORD_TO_HOST" && supportsCapabilityGear(this.getRevision(id), this.context).ok) && !(gearEnabled(this.context) && m.kind === "GRANT_PRINTED_POWER_TO_HOST" && this.getRevision(id)?.type === "GEAR"))) throw new Error("UNSUPPORTED_CONTINUOUS_MODIFIERS");
+        if (this.getRevision(id)?.mechanics.modifiers.some(m => m.kind !== "POWER_PER_EQUIPPED_GEAR_DURING_OWN_TURN" && !(m.kind === "SELF_PLAY_COST_REDUCTION" && supportsPlayCostReduction(this.getRevision(id), this.context).ok) && !(m.kind === "FRIENDLY_ARASAKA_ATTACKING_UNIT_POWER" && supportsAttackingAuraLegend(this.getRevision(id), this.context).ok) && !(m.kind === "GRANT_KEYWORD_TO_HOST" && supportsCapabilityGear(this.getRevision(id), this.context).ok) && !(gearEnabled(this.context) && m.kind === "GRANT_PRINTED_POWER_TO_HOST" && this.getRevision(id)?.type === "GEAR"))) throw new Error("UNSUPPORTED_CONTINUOUS_MODIFIERS");
         return effectiveKeywords(this.state, id, this.context);
     }
     getLegalTargets(source: CardInstanceId, target: TargetSelector) {

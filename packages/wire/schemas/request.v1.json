@@ -1794,6 +1794,19 @@
                                                       "kind"
                                                     ],
                                                     "additionalProperties": false
+                                                  },
+                                                  {
+                                                    "type": "object",
+                                                    "properties": {
+                                                      "kind": {
+                                                        "type": "string",
+                                                        "const": "LESS_THAN_FRIENDLY_UNIT"
+                                                      }
+                                                    },
+                                                    "required": [
+                                                      "kind"
+                                                    ],
+                                                    "additionalProperties": false
                                                   }
                                                 ]
                                               },
@@ -3856,7 +3869,8 @@
                                   "enum": [
                                     "FRIENDLY_GIG_VALUE_AT_LEAST_8",
                                     "FRIENDLY_TRASH_UNIT",
-                                    "RIVAL_UNIT"
+                                    "RIVAL_UNIT",
+                                    "FRIENDLY_FACE_UP_LEGEND"
                                   ]
                                 },
                                 "amount": {
@@ -7139,6 +7153,19 @@
                                                 "kind"
                                               ],
                                               "additionalProperties": false
+                                            },
+                                            {
+                                              "type": "object",
+                                              "properties": {
+                                                "kind": {
+                                                  "type": "string",
+                                                  "const": "LESS_THAN_FRIENDLY_UNIT"
+                                                }
+                                              },
+                                              "required": [
+                                                "kind"
+                                              ],
+                                              "additionalProperties": false
                                             }
                                           ]
                                         },
@@ -9539,6 +9566,19 @@
                                               "kind"
                                             ],
                                             "additionalProperties": false
+                                          },
+                                          {
+                                            "type": "object",
+                                            "properties": {
+                                              "kind": {
+                                                "type": "string",
+                                                "const": "LESS_THAN_FRIENDLY_UNIT"
+                                              }
+                                            },
+                                            "required": [
+                                              "kind"
+                                            ],
+                                            "additionalProperties": false
                                           }
                                         ]
                                       },
@@ -11929,6 +11969,19 @@
                                               "kind": {
                                                 "type": "string",
                                                 "const": "ANY"
+                                              }
+                                            },
+                                            "required": [
+                                              "kind"
+                                            ],
+                                            "additionalProperties": false
+                                          },
+                                          {
+                                            "type": "object",
+                                            "properties": {
+                                              "kind": {
+                                                "type": "string",
+                                                "const": "LESS_THAN_FRIENDLY_UNIT"
                                               }
                                             },
                                             "required": [
@@ -16145,6 +16198,19 @@
                                                       "kind"
                                                     ],
                                                     "additionalProperties": false
+                                                  },
+                                                  {
+                                                    "type": "object",
+                                                    "properties": {
+                                                      "kind": {
+                                                        "type": "string",
+                                                        "const": "LESS_THAN_FRIENDLY_UNIT"
+                                                      }
+                                                    },
+                                                    "required": [
+                                                      "kind"
+                                                    ],
+                                                    "additionalProperties": false
                                                   }
                                                 ]
                                               },
@@ -18207,7 +18273,8 @@
                                   "enum": [
                                     "FRIENDLY_GIG_VALUE_AT_LEAST_8",
                                     "FRIENDLY_TRASH_UNIT",
-                                    "RIVAL_UNIT"
+                                    "RIVAL_UNIT",
+                                    "FRIENDLY_FACE_UP_LEGEND"
                                   ]
                                 },
                                 "amount": {

@@ -4,7 +4,7 @@ import { readFileSync } from "node:fs";
 import { CardRevisionSnapshotSchema, GameStateSchema, hashCanonical, type CardInstanceId, type CardRevisionSnapshot, type GameState } from "@tcg/domain";
 import { createGameWithEvents, listLegalActions, validateState } from "@tcg/engine";
 import { supportsPlay } from "../packages/engine/src/play-support";
-import { playPaymentAmount, supportsPlayCostReductionUnit } from "../packages/engine/src/play-cost-support";
+import { playPaymentAmount, supportsPlayCostReduction } from "../packages/engine/src/play-cost-support";
 import { numericCost } from "../packages/engine/src/cost-value";
 import { reviewEngineCandidateV1 } from "../scripts/lib/engine-candidates";
 import { batchV11Cards, batchV11Context, batchV11Input, v11Source, OCTANT, TRAUMA, HEAVY } from "./api-admission-batch-v11-fixture";
@@ -59,7 +59,7 @@ test("V11 revisions are exact source projections and match their engine candidat
 });
 
 test("each V11 card passes only its own exact pin; any changed field is rejected", () => {
-    for (const c of batchV11Cards) { assert.ok(supportsPlayCostReductionUnit(c, context).ok, c.id); assert.ok(supportsPlay(c, context).ok, c.id); }
+    for (const c of batchV11Cards) { assert.ok(supportsPlayCostReduction(c, context).ok, c.id); assert.ok(supportsPlay(c, context).ok, c.id); }
     const forge = (c: CardRevisionSnapshot, edit: (d: CardRevisionSnapshot) => void) => { const d = structuredClone(c) as CardRevisionSnapshot; edit(d); return CardRevisionSnapshotSchema.parse(d); };
     const edits: [string, string, (d: CardRevisionSnapshot) => void][] = [
         [OCTANT, "swapped count", d => { d.mechanics.modifiers = [{ kind: "SELF_PLAY_COST_REDUCTION", per: "RIVAL_UNIT", amount: 1, minimum: 1 }]; }],
