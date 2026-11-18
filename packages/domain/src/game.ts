@@ -51,11 +51,11 @@ export const DelayedEffectSchema = z.strictObject({
 });
 export type DelayedEffect = DeepReadonly<z.infer<typeof DelayedEffectSchema>>;
 export const TriggerBindingSchema = z.strictObject({ sourceId: CardInstanceIdSchema, subjectId: CardInstanceIdSchema, controllerId: PlayerIdSchema,
-    source: CardReferenceSchema, abilityId: z.string().min(1), delayedId: HashSchema.optional(), kind: z.enum(["DELAYED_END_TURN", "WHEN_FIGHT_WON", "WHEN_DEFEATED", "WHEN_PLAYED", "WHEN_ATTACKING", "WHEN_CARD_PLAYED", "WHEN_OWN_TURN_ENDS", "WHEN_UNIT_ATTACKS"]) });
+    source: CardReferenceSchema, abilityId: z.string().min(1), delayedId: HashSchema.optional(), kind: z.enum(["DELAYED_END_TURN", "WHEN_FIGHT_WON", "WHEN_DEFEATED", "WHEN_PLAYED", "WHEN_ATTACKING", "WHEN_CARD_PLAYED", "WHEN_OWN_TURN_ENDS", "WHEN_UNIT_ATTACKS", "WHEN_BLOCKER_USED"]) });
 export type TriggerBinding = DeepReadonly<z.infer<typeof TriggerBindingSchema>>;
 export const TriggerOriginSchema = z.discriminatedUnion("kind", [
     z.strictObject({ kind: z.literal("END_TURN"), playerId: PlayerIdSchema, turn: z.number().int().positive(), delayedEffects: z.array(DelayedEffectSchema).min(1).optional() }),
-    z.strictObject({ kind: z.enum(["PLAY", "ATTACK"]), subjectId: CardInstanceIdSchema }),
+    z.strictObject({ kind: z.enum(["PLAY", "ATTACK", "BLOCK"]), subjectId: CardInstanceIdSchema }),
     z.strictObject({ kind: z.literal("FIGHT"), result: FightResultSchema }),
     z.strictObject({ kind: z.literal("DEFEAT"), effectSource: CardInstanceIdSchema.optional(), defeated: z.array(z.strictObject({ targetId: CardInstanceIdSchema, defeatedBy: CardInstanceIdSchema })).min(1) })
 ]);

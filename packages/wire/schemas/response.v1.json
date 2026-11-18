@@ -1774,7 +1774,8 @@
                                       "type": "string",
                                       "enum": [
                                         "PLAY",
-                                        "ATTACK"
+                                        "ATTACK",
+                                        "BLOCK"
                                       ]
                                     },
                                     "subjectId": {
@@ -1994,7 +1995,8 @@
                                       "WHEN_ATTACKING",
                                       "WHEN_CARD_PLAYED",
                                       "WHEN_OWN_TURN_ENDS",
-                                      "WHEN_UNIT_ATTACKS"
+                                      "WHEN_UNIT_ATTACKS",
+                                      "WHEN_BLOCKER_USED"
                                     ]
                                   }
                                 },
@@ -3327,7 +3329,10 @@
                                         },
                                         "player": {
                                           "type": "string",
-                                          "const": "CONTROLLER"
+                                          "enum": [
+                                            "CONTROLLER",
+                                            "RIVAL"
+                                          ]
                                         },
                                         "count": {
                                           "type": "number",
@@ -4985,7 +4990,8 @@
                                         "WHEN_ATTACKING",
                                         "WHEN_CARD_PLAYED",
                                         "WHEN_OWN_TURN_ENDS",
-                                        "WHEN_UNIT_ATTACKS"
+                                        "WHEN_UNIT_ATTACKS",
+                                        "WHEN_BLOCKER_USED"
                                       ]
                                     },
                                     "turn": {
@@ -5740,7 +5746,10 @@
                                       },
                                       "player": {
                                         "type": "string",
-                                        "const": "CONTROLLER"
+                                        "enum": [
+                                          "CONTROLLER",
+                                          "RIVAL"
+                                        ]
                                       },
                                       "count": {
                                         "type": "number",
@@ -7398,7 +7407,8 @@
                                       "WHEN_ATTACKING",
                                       "WHEN_CARD_PLAYED",
                                       "WHEN_OWN_TURN_ENDS",
-                                      "WHEN_UNIT_ATTACKS"
+                                      "WHEN_UNIT_ATTACKS",
+                                      "WHEN_BLOCKER_USED"
                                     ]
                                   },
                                   "turn": {
@@ -8149,7 +8159,10 @@
                                       },
                                       "player": {
                                         "type": "string",
-                                        "const": "CONTROLLER"
+                                        "enum": [
+                                          "CONTROLLER",
+                                          "RIVAL"
+                                        ]
                                       },
                                       "count": {
                                         "type": "number",
@@ -9807,7 +9820,8 @@
                                       "WHEN_ATTACKING",
                                       "WHEN_CARD_PLAYED",
                                       "WHEN_OWN_TURN_ENDS",
-                                      "WHEN_UNIT_ATTACKS"
+                                      "WHEN_UNIT_ATTACKS",
+                                      "WHEN_BLOCKER_USED"
                                     ]
                                   },
                                   "turn": {
@@ -12321,7 +12335,8 @@
                                       "type": "string",
                                       "enum": [
                                         "PLAY",
-                                        "ATTACK"
+                                        "ATTACK",
+                                        "BLOCK"
                                       ]
                                     },
                                     "subjectId": {
@@ -12541,7 +12556,8 @@
                                       "WHEN_ATTACKING",
                                       "WHEN_CARD_PLAYED",
                                       "WHEN_OWN_TURN_ENDS",
-                                      "WHEN_UNIT_ATTACKS"
+                                      "WHEN_UNIT_ATTACKS",
+                                      "WHEN_BLOCKER_USED"
                                     ]
                                   }
                                 },
@@ -13874,7 +13890,10 @@
                                         },
                                         "player": {
                                           "type": "string",
-                                          "const": "CONTROLLER"
+                                          "enum": [
+                                            "CONTROLLER",
+                                            "RIVAL"
+                                          ]
                                         },
                                         "count": {
                                           "type": "number",
@@ -15532,7 +15551,8 @@
                                         "WHEN_ATTACKING",
                                         "WHEN_CARD_PLAYED",
                                         "WHEN_OWN_TURN_ENDS",
-                                        "WHEN_UNIT_ATTACKS"
+                                        "WHEN_UNIT_ATTACKS",
+                                        "WHEN_BLOCKER_USED"
                                       ]
                                     },
                                     "turn": {
@@ -16287,7 +16307,10 @@
                                       },
                                       "player": {
                                         "type": "string",
-                                        "const": "CONTROLLER"
+                                        "enum": [
+                                          "CONTROLLER",
+                                          "RIVAL"
+                                        ]
                                       },
                                       "count": {
                                         "type": "number",
@@ -17945,7 +17968,8 @@
                                       "WHEN_ATTACKING",
                                       "WHEN_CARD_PLAYED",
                                       "WHEN_OWN_TURN_ENDS",
-                                      "WHEN_UNIT_ATTACKS"
+                                      "WHEN_UNIT_ATTACKS",
+                                      "WHEN_BLOCKER_USED"
                                     ]
                                   },
                                   "turn": {
@@ -18696,7 +18720,10 @@
                                       },
                                       "player": {
                                         "type": "string",
-                                        "const": "CONTROLLER"
+                                        "enum": [
+                                          "CONTROLLER",
+                                          "RIVAL"
+                                        ]
                                       },
                                       "count": {
                                         "type": "number",
@@ -20354,7 +20381,8 @@
                                       "WHEN_ATTACKING",
                                       "WHEN_CARD_PLAYED",
                                       "WHEN_OWN_TURN_ENDS",
-                                      "WHEN_UNIT_ATTACKS"
+                                      "WHEN_UNIT_ATTACKS",
+                                      "WHEN_BLOCKER_USED"
                                     ]
                                   },
                                   "turn": {
@@ -23751,7 +23779,8 @@
                               "WHEN_ATTACKING",
                               "WHEN_CARD_PLAYED",
                               "WHEN_OWN_TURN_ENDS",
-                              "WHEN_UNIT_ATTACKS"
+                              "WHEN_UNIT_ATTACKS",
+                              "WHEN_BLOCKER_USED"
                             ]
                           }
                         },
@@ -25054,7 +25083,8 @@
                                   "WHEN_ATTACKING",
                                   "WHEN_CARD_PLAYED",
                                   "WHEN_OWN_TURN_ENDS",
-                                  "WHEN_UNIT_ATTACKS"
+                                  "WHEN_UNIT_ATTACKS",
+                                  "WHEN_BLOCKER_USED"
                                 ]
                               }
                             },

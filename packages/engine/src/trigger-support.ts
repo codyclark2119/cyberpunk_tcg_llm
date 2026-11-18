@@ -8,6 +8,7 @@ import { supportsEndTurnCard } from "./end-turn-support";
 import { supportsOrderedAttackCard } from "./ordered-effects-support";
 import { supportsPrivateLookGear, privateInformationEnabled } from "./private-look-support";
 import { supportsAttackPlay } from "./attack-support";
+import { supportsBlockerUsedUnit } from "./blocker-trigger-support";
 import { hasFriendlyPlayPowerMetadata, supportsFriendlyPlayPowerUnit } from "./friendly-play-power-support";
 import { turnSliceAllows, canonicalSerialize, failure, success, type CardRevisionSnapshot, type DeepReadonly } from "@tcg/domain";
 import type { EngineContext } from "./state";
@@ -15,6 +16,7 @@ export function triggersEnabled(context: EngineContext) { return turnSliceAllows
 /** Complete shapes, not card-name matching. The bundle must still pin explicitly reviewed immutable revisions. */
 export function supportsTriggerCard(card: DeepReadonly<CardRevisionSnapshot> | undefined, context: EngineContext) {
     if (card && hasFriendlyPlayPowerMetadata(card)) return supportsFriendlyPlayPowerUnit(card, context);
+    if (card?.mechanics.keywords.length && supportsBlockerUsedUnit(card, context).ok) return success(null);
     if (!triggersEnabled(context) || !card || !card.provenance.reviewed || card.execution?.scope !== "COMBAT_TRIGGERS_V1" || card.execution.status !== "SUPPORTED" || card.mechanics.keywords.length || card.mechanics.restrictions?.length)
         return failure("UNSUPPORTED_TRIGGER_CARD", "Explicit reviewed trigger scope and complete supported mechanics required");
     const m = card.mechanics;

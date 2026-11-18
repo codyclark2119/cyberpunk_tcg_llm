@@ -5,7 +5,7 @@ export const GameAreaSchema = z.enum(["DECK", "HAND", "BATTLEFIELD", "TRASH", "E
 export const ZoneSchema = z.enum([...GameAreaSchema.options, "RESOLVING_PROGRAM"]);
 export const ZoneRefSchema = z.strictObject({ playerId: PlayerIdSchema, zone: ZoneSchema });
 export const KeywordSchema = z.enum(["GO_SOLO", "QUICK", "BLOCKER", "ADRENALINE"]);
-export const TriggerSchema = z.enum(["WHEN_SOLD", "WHEN_CALLED", "WHEN_PLAYED", "WHEN_ATTACKING", "WHEN_DEFEATED", "WHEN_FIGHT_WON", "WHEN_CARD_PLAYED", "WHEN_OWN_TURN_ENDS", "WHEN_UNIT_ATTACKS"]);
+export const TriggerSchema = z.enum(["WHEN_SOLD", "WHEN_CALLED", "WHEN_PLAYED", "WHEN_ATTACKING", "WHEN_DEFEATED", "WHEN_FIGHT_WON", "WHEN_CARD_PLAYED", "WHEN_OWN_TURN_ENDS", "WHEN_UNIT_ATTACKS", "WHEN_BLOCKER_USED"]);
 export const EquipTargetSchema = z.strictObject({ kind: z.literal("FRIENDLY_UNIT_OR_FACE_UP_LEGEND") });
 export const TargetRelationshipSchema = z.enum(["CONTROLLED", "RIVAL", "ANY"]);
 export const TargetSelectorSchema = z.discriminatedUnion("kind", [
@@ -72,7 +72,7 @@ export const PendingChoiceSchema = z.strictObject({
     ordered: z.boolean(), continuationId: z.string().min(1)
 }).refine(c => c.min <= c.max && c.max <= c.options.length, "Invalid choice bounds");
 export const DiscardCardsEffectSchema = z.strictObject({
-    kind: z.literal("DISCARD_CARDS"), player: z.literal("CONTROLLER"), count: z.literal(1),
+    kind: z.literal("DISCARD_CARDS"), player: z.enum(["CONTROLLER", "RIVAL"]), count: z.literal(1),
     selection: z.literal("CHOSEN_BY_AFFECTED_PLAYER"),
     when: z.strictObject({ timing: z.literal("RESOLUTION"), condition: ConditionSchema }).optional()
 });

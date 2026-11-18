@@ -12,8 +12,11 @@ export function getDiscardableCards(state: GameState, player: PlayerId): CardIns
  * Trash is public; CARD_DISCARDED records why, CARD_MOVED records the actual area transition. */
 export function discardCard(m: TurnMutation, effect: DiscardCardsEffect, cardInstanceId: CardInstanceId, forced: boolean) {
     const current = m.state.resolution.current;
-    if (effect.kind !== "DISCARD_CARDS" || !current?.sourceId || !getDiscardableCards(m.state, current.controllerId).includes(cardInstanceId)) return failure("INVALID_DISCARD", "Discard the affected controller's currently eligible hand card");
+    if (effect.kind !== "DISCARD_CARDS" || !current?.sourceId) return failure("INVALID_DISCARD", "Discard the affected controller's currently eligible hand card");
+    // Batch V17: a RIVAL discard affects the player other than the effect's controller.
+    const player = effect.player === "RIVAL" ? m.state.match.playerOrder.find(id => id !== current.controllerId)! : current.controllerId;
+    if (!getDiscardableCards(m.state, player).includes(cardInstanceId)) return failure("INVALID_DISCARD", "Discard the affected controller's currently eligible hand card");
     moveCardLocation(m, cardInstanceId, "TRASH");
-    m.emit({ kind: "CARD_DISCARDED", cardInstanceId, playerId: current.controllerId, sourceId: current.sourceId, effectId: current.id, forced });
+    m.emit({ kind: "CARD_DISCARDED", cardInstanceId, playerId: player, sourceId: current.sourceId, effectId: current.id, forced });
     return success(null);
 }
