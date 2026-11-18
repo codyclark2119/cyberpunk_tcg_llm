@@ -1656,6 +1656,74 @@
                                     "properties": {
                                       "kind": {
                                         "type": "string",
+                                        "const": "BOTTOM_DECK_UNIT"
+                                      },
+                                      "target": {
+                                        "type": "object",
+                                        "properties": {
+                                          "relation": {
+                                            "type": "string",
+                                            "enum": [
+                                              "RIVAL",
+                                              "CONTROLLED"
+                                            ]
+                                          },
+                                          "readiness": {
+                                            "type": "string",
+                                            "enum": [
+                                              "READY",
+                                              "SPENT"
+                                            ]
+                                          },
+                                          "lowestPower": {
+                                            "type": "boolean",
+                                            "const": true
+                                          }
+                                        },
+                                        "required": [
+                                          "relation"
+                                        ],
+                                        "additionalProperties": false
+                                      },
+                                      "then": {
+                                        "type": "object",
+                                        "properties": {
+                                          "relation": {
+                                            "type": "string",
+                                            "enum": [
+                                              "RIVAL",
+                                              "CONTROLLED"
+                                            ]
+                                          },
+                                          "readiness": {
+                                            "type": "string",
+                                            "enum": [
+                                              "READY",
+                                              "SPENT"
+                                            ]
+                                          },
+                                          "lowestPower": {
+                                            "type": "boolean",
+                                            "const": true
+                                          }
+                                        },
+                                        "required": [
+                                          "relation"
+                                        ],
+                                        "additionalProperties": false
+                                      }
+                                    },
+                                    "required": [
+                                      "kind",
+                                      "target"
+                                    ],
+                                    "additionalProperties": false
+                                  },
+                                  {
+                                    "type": "object",
+                                    "properties": {
+                                      "kind": {
+                                        "type": "string",
                                         "const": "DEFEAT_UNIT"
                                       },
                                       "target": {
@@ -6616,6 +6684,12 @@
                         "maxLength": 200,
                         "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$"
                       }
+                    },
+                    "bottomDecked": {
+                      "type": "string",
+                      "minLength": 1,
+                      "maxLength": 200,
+                      "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$"
                     }
                   },
                   "required": [
@@ -6919,6 +6993,74 @@
                               "required": [
                                 "kind",
                                 "count"
+                              ],
+                              "additionalProperties": false
+                            },
+                            {
+                              "type": "object",
+                              "properties": {
+                                "kind": {
+                                  "type": "string",
+                                  "const": "BOTTOM_DECK_UNIT"
+                                },
+                                "target": {
+                                  "type": "object",
+                                  "properties": {
+                                    "relation": {
+                                      "type": "string",
+                                      "enum": [
+                                        "RIVAL",
+                                        "CONTROLLED"
+                                      ]
+                                    },
+                                    "readiness": {
+                                      "type": "string",
+                                      "enum": [
+                                        "READY",
+                                        "SPENT"
+                                      ]
+                                    },
+                                    "lowestPower": {
+                                      "type": "boolean",
+                                      "const": true
+                                    }
+                                  },
+                                  "required": [
+                                    "relation"
+                                  ],
+                                  "additionalProperties": false
+                                },
+                                "then": {
+                                  "type": "object",
+                                  "properties": {
+                                    "relation": {
+                                      "type": "string",
+                                      "enum": [
+                                        "RIVAL",
+                                        "CONTROLLED"
+                                      ]
+                                    },
+                                    "readiness": {
+                                      "type": "string",
+                                      "enum": [
+                                        "READY",
+                                        "SPENT"
+                                      ]
+                                    },
+                                    "lowestPower": {
+                                      "type": "boolean",
+                                      "const": true
+                                    }
+                                  },
+                                  "required": [
+                                    "relation"
+                                  ],
+                                  "additionalProperties": false
+                                }
+                              },
+                              "required": [
+                                "kind",
+                                "target"
                               ],
                               "additionalProperties": false
                             },
@@ -9259,6 +9401,74 @@
                             "properties": {
                               "kind": {
                                 "type": "string",
+                                "const": "BOTTOM_DECK_UNIT"
+                              },
+                              "target": {
+                                "type": "object",
+                                "properties": {
+                                  "relation": {
+                                    "type": "string",
+                                    "enum": [
+                                      "RIVAL",
+                                      "CONTROLLED"
+                                    ]
+                                  },
+                                  "readiness": {
+                                    "type": "string",
+                                    "enum": [
+                                      "READY",
+                                      "SPENT"
+                                    ]
+                                  },
+                                  "lowestPower": {
+                                    "type": "boolean",
+                                    "const": true
+                                  }
+                                },
+                                "required": [
+                                  "relation"
+                                ],
+                                "additionalProperties": false
+                              },
+                              "then": {
+                                "type": "object",
+                                "properties": {
+                                  "relation": {
+                                    "type": "string",
+                                    "enum": [
+                                      "RIVAL",
+                                      "CONTROLLED"
+                                    ]
+                                  },
+                                  "readiness": {
+                                    "type": "string",
+                                    "enum": [
+                                      "READY",
+                                      "SPENT"
+                                    ]
+                                  },
+                                  "lowestPower": {
+                                    "type": "boolean",
+                                    "const": true
+                                  }
+                                },
+                                "required": [
+                                  "relation"
+                                ],
+                                "additionalProperties": false
+                              }
+                            },
+                            "required": [
+                              "kind",
+                              "target"
+                            ],
+                            "additionalProperties": false
+                          },
+                          {
+                            "type": "object",
+                            "properties": {
+                              "kind": {
+                                "type": "string",
                                 "const": "DEFEAT_UNIT"
                               },
                               "target": {
@@ -11579,6 +11789,74 @@
                             "required": [
                               "kind",
                               "count"
+                            ],
+                            "additionalProperties": false
+                          },
+                          {
+                            "type": "object",
+                            "properties": {
+                              "kind": {
+                                "type": "string",
+                                "const": "BOTTOM_DECK_UNIT"
+                              },
+                              "target": {
+                                "type": "object",
+                                "properties": {
+                                  "relation": {
+                                    "type": "string",
+                                    "enum": [
+                                      "RIVAL",
+                                      "CONTROLLED"
+                                    ]
+                                  },
+                                  "readiness": {
+                                    "type": "string",
+                                    "enum": [
+                                      "READY",
+                                      "SPENT"
+                                    ]
+                                  },
+                                  "lowestPower": {
+                                    "type": "boolean",
+                                    "const": true
+                                  }
+                                },
+                                "required": [
+                                  "relation"
+                                ],
+                                "additionalProperties": false
+                              },
+                              "then": {
+                                "type": "object",
+                                "properties": {
+                                  "relation": {
+                                    "type": "string",
+                                    "enum": [
+                                      "RIVAL",
+                                      "CONTROLLED"
+                                    ]
+                                  },
+                                  "readiness": {
+                                    "type": "string",
+                                    "enum": [
+                                      "READY",
+                                      "SPENT"
+                                    ]
+                                  },
+                                  "lowestPower": {
+                                    "type": "boolean",
+                                    "const": true
+                                  }
+                                },
+                                "required": [
+                                  "relation"
+                                ],
+                                "additionalProperties": false
+                              }
+                            },
+                            "required": [
+                              "kind",
+                              "target"
                             ],
                             "additionalProperties": false
                           },
@@ -15721,6 +15999,74 @@
                                     "required": [
                                       "kind",
                                       "count"
+                                    ],
+                                    "additionalProperties": false
+                                  },
+                                  {
+                                    "type": "object",
+                                    "properties": {
+                                      "kind": {
+                                        "type": "string",
+                                        "const": "BOTTOM_DECK_UNIT"
+                                      },
+                                      "target": {
+                                        "type": "object",
+                                        "properties": {
+                                          "relation": {
+                                            "type": "string",
+                                            "enum": [
+                                              "RIVAL",
+                                              "CONTROLLED"
+                                            ]
+                                          },
+                                          "readiness": {
+                                            "type": "string",
+                                            "enum": [
+                                              "READY",
+                                              "SPENT"
+                                            ]
+                                          },
+                                          "lowestPower": {
+                                            "type": "boolean",
+                                            "const": true
+                                          }
+                                        },
+                                        "required": [
+                                          "relation"
+                                        ],
+                                        "additionalProperties": false
+                                      },
+                                      "then": {
+                                        "type": "object",
+                                        "properties": {
+                                          "relation": {
+                                            "type": "string",
+                                            "enum": [
+                                              "RIVAL",
+                                              "CONTROLLED"
+                                            ]
+                                          },
+                                          "readiness": {
+                                            "type": "string",
+                                            "enum": [
+                                              "READY",
+                                              "SPENT"
+                                            ]
+                                          },
+                                          "lowestPower": {
+                                            "type": "boolean",
+                                            "const": true
+                                          }
+                                        },
+                                        "required": [
+                                          "relation"
+                                        ],
+                                        "additionalProperties": false
+                                      }
+                                    },
+                                    "required": [
+                                      "kind",
+                                      "target"
                                     ],
                                     "additionalProperties": false
                                   },

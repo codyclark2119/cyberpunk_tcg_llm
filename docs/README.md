@@ -56,6 +56,7 @@ were recorded in their pull requests (#4, #7, #8); later batches have documents 
 | V12 (2026-11-18) | Bonnie and Clyde, Live with the Aftermath | [optional second defeat, each-player defeat](api-admission-batch-v12.md); coverage 55/151 |
 | V13 (2026-11-18) | Screw: Lovelorn Fool | [Defeated trash-to-hand return](api-admission-batch-v13.md); coverage 56/151 |
 | V14 (2026-11-18) | All Is Lost | [trash 3, return a Unit among them](api-admission-batch-v14.md); coverage 57/151 |
+| V15 (2026-11-18) | Les Élémens, Unlikely Bond | [bottom-deck Units](api-admission-batch-v15.md); coverage 59/151 |
 | V7 (2026-11-15) | Royce: Don't Call Me Simon, Wild in the Streets, Delamain: Rideshare AI | [shared defeat filter and exact pin table](api-admission-batch-v7.md); coverage 42/151 |
 | V6 (2026-09-22) | Trust No One | [contract and executable slice](api-admission-batch-v6.md), [baseline verification](api-admission-batch-v6-verification.md) |
 
