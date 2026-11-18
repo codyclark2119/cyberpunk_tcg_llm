@@ -9,12 +9,12 @@
   },
   "totals": {
     "cards": 151,
-    "admitted": 50,
-    "notAdmitted": 101,
+    "admitted": 53,
+    "notAdmitted": 98,
     "notAdmittedOnlyCoveredFamilies": 0,
     "byAdmission": {
-      "NOT_ADMITTED": 101,
-      "SOURCE_MATCH": 50
+      "NOT_ADMITTED": 98,
+      "SOURCE_MATCH": 53
     }
   },
   "families": [
@@ -24,7 +24,7 @@
       "summary": "Conditions and filters on Gig values: min/max, value-pairs, even/odd, 8+, die type, counts compared with a Rival.",
       "notes": "Conditions only, each a fixed shape.",
       "cardCount": 40,
-      "notAdmittedCount": 34,
+      "notAdmittedCount": 33,
       "soleBlockerCount": 0
     },
     {
@@ -52,15 +52,6 @@
       "notes": "Trigger WHEN_PLAYED.",
       "cardCount": 27,
       "notAdmittedCount": 19,
-      "soleBlockerCount": 0
-    },
-    {
-      "family": "SCALED_AMOUNT",
-      "status": "PARTIAL",
-      "summary": "Amounts computed from the board: 'for each', 'equal to'.",
-      "notes": "Only Royce's per-equipped-Gear modifier counts anything.",
-      "cardCount": 18,
-      "notAdmittedCount": 17,
       "soleBlockerCount": 0
     },
     {
@@ -100,6 +91,15 @@
       "soleBlockerCount": 0
     },
     {
+      "family": "SCALED_AMOUNT",
+      "status": "PARTIAL",
+      "summary": "Amounts computed from the board: 'for each', 'equal to'.",
+      "notes": "Only Royce's per-equipped-Gear modifier counts anything.",
+      "cardCount": 18,
+      "notAdmittedCount": 14,
+      "soleBlockerCount": 0
+    },
+    {
       "family": "DISCARD",
       "status": "PARTIAL",
       "summary": "Discard: self discard, a Rival discards, discard as a cost, discard a hand.",
@@ -133,15 +133,6 @@
       "notes": "Filters are fixed literals (power at most 5, power at most a friendly d20, Gear power at most 2).",
       "cardCount": 18,
       "notAdmittedCount": 11,
-      "soleBlockerCount": 0
-    },
-    {
-      "family": "COST_MODIFIER",
-      "status": "MISSING",
-      "summary": "Play-cost reductions, alternative costs, ability-cost and Go Solo cost changes.",
-      "notes": "",
-      "cardCount": 10,
-      "notAdmittedCount": 10,
       "soleBlockerCount": 0
     },
     {
@@ -214,6 +205,15 @@
       "notes": "Only the history condition SUBJECT_STOLE_GIG_THIS_TURN exists (Delamain Cab); there is no steal trigger.",
       "cardCount": 8,
       "notAdmittedCount": 8,
+      "soleBlockerCount": 0
+    },
+    {
+      "family": "COST_MODIFIER",
+      "status": "MISSING",
+      "summary": "Play-cost reductions, alternative costs, ability-cost and Go Solo cost changes.",
+      "notes": "",
+      "cardCount": 10,
+      "notAdmittedCount": 7,
       "soleBlockerCount": 0
     },
     {
@@ -1938,16 +1938,13 @@
       "colors": [
         "GREEN"
       ],
-      "admission": "NOT_ADMITTED",
-      "revision": null,
+      "admission": "SOURCE_MATCH",
+      "revision": 1,
       "families": [
         "COST_MODIFIER",
         "SCALED_AMOUNT"
       ],
-      "blockingFamilies": [
-        "COST_MODIFIER",
-        "SCALED_AMOUNT"
-      ],
+      "blockingFamilies": [],
       "note": null
     },
     {
@@ -2242,18 +2239,14 @@
       "colors": [
         "RED"
       ],
-      "admission": "NOT_ADMITTED",
-      "revision": null,
+      "admission": "SOURCE_MATCH",
+      "revision": 1,
       "families": [
         "CONDITION_GIG",
         "COST_MODIFIER",
         "SCALED_AMOUNT"
       ],
-      "blockingFamilies": [
-        "CONDITION_GIG",
-        "COST_MODIFIER",
-        "SCALED_AMOUNT"
-      ],
+      "blockingFamilies": [],
       "note": null
     },
     {
@@ -3200,16 +3193,13 @@
       "colors": [
         "YELLOW"
       ],
-      "admission": "NOT_ADMITTED",
-      "revision": null,
+      "admission": "SOURCE_MATCH",
+      "revision": 1,
       "families": [
         "COST_MODIFIER",
         "SCALED_AMOUNT"
       ],
-      "blockingFamilies": [
-        "COST_MODIFIER",
-        "SCALED_AMOUNT"
-      ],
+      "blockingFamilies": [],
       "note": null
     },
     {

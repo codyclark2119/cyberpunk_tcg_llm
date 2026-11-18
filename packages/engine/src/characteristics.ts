@@ -1,4 +1,5 @@
 import { attackingAuraEnabled, supportsAttackingAuraLegend } from "./attacking-aura-support";
+import { supportsPlayCostReductionUnit } from "./play-cost-support";
 import { supportsCapabilityGear } from "./capability-support";
 import { supportsAttackPreventionUnit } from "./attack-prevention-support";
 import type { CardInstanceId, GameState } from "@tcg/domain";
@@ -32,6 +33,7 @@ export function applicablePowerModifiers(state: GameState, id: CardInstanceId, c
         if (modifier.kind === "GRANT_KEYWORD_TO_HOST" && supportsCapabilityGear(revision, context).ok) continue;
         if (modifier.kind === "RIVAL_LAGGING_UNITS_CANNOT_ATTACK" && supportsAttackPreventionUnit(revision, context).ok) continue;
         if (modifier.kind === "GRANT_PRINTED_POWER_TO_HOST" && revision.type === "GEAR" && gearEnabled(context)) continue;
+        if (modifier.kind === "SELF_PLAY_COST_REDUCTION" && supportsPlayCostReductionUnit(revision, context).ok) continue; // Payment only, never power.
         if (modifier.kind !== "POWER_PER_EQUIPPED_GEAR_DURING_OWN_TURN") throw new Error("UNSUPPORTED_CONTINUOUS_MODIFIERS");
         if (card.face === "UP" && card.zone.zone === "LEGENDS" && state.timing.turn > 0 && state.timing.activePlayer === card.controllerId)
             result.push({ sourceId: id, subjectId: id, kind: modifier.kind, amount: modifier.amount * gear.length });

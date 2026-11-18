@@ -340,6 +340,10 @@
                           "type": "string",
                           "const": "PROGRAM_PLAY_HISTORY_V1"
                         },
+                        "playCostReduction": {
+                          "type": "string",
+                          "const": "PLAY_COST_REDUCTION_V1"
+                        },
                         "friendlyPlayPower": {
                           "type": "string",
                           "const": "FRIENDLY_PLAY_POWER_V1"
@@ -888,7 +892,8 @@
                           "ATTACK_CONDITION_POWER_V1",
                           "TARGETED_SPEND_V1",
                           "TARGETED_DEFEAT_V1",
-                          "TARGETED_GEAR_DEFEAT_V1"
+                          "TARGETED_GEAR_DEFEAT_V1",
+                          "PLAY_COST_REDUCTION_V1"
                         ]
                       },
                       "status": {
@@ -3701,6 +3706,38 @@
                               "required": [
                                 "kind",
                                 "amount"
+                              ],
+                              "additionalProperties": false
+                            },
+                            {
+                              "type": "object",
+                              "properties": {
+                                "kind": {
+                                  "type": "string",
+                                  "const": "SELF_PLAY_COST_REDUCTION"
+                                },
+                                "per": {
+                                  "type": "string",
+                                  "enum": [
+                                    "FRIENDLY_GIG_VALUE_AT_LEAST_8",
+                                    "FRIENDLY_TRASH_UNIT",
+                                    "RIVAL_UNIT"
+                                  ]
+                                },
+                                "amount": {
+                                  "type": "number",
+                                  "const": 1
+                                },
+                                "minimum": {
+                                  "type": "number",
+                                  "const": 1
+                                }
+                              },
+                              "required": [
+                                "kind",
+                                "per",
+                                "amount",
+                                "minimum"
                               ],
                               "additionalProperties": false
                             },
@@ -14095,6 +14132,10 @@
                           "type": "string",
                           "const": "PROGRAM_PLAY_HISTORY_V1"
                         },
+                        "playCostReduction": {
+                          "type": "string",
+                          "const": "PLAY_COST_REDUCTION_V1"
+                        },
                         "friendlyPlayPower": {
                           "type": "string",
                           "const": "FRIENDLY_PLAY_POWER_V1"
@@ -14643,7 +14684,8 @@
                           "ATTACK_CONDITION_POWER_V1",
                           "TARGETED_SPEND_V1",
                           "TARGETED_DEFEAT_V1",
-                          "TARGETED_GEAR_DEFEAT_V1"
+                          "TARGETED_GEAR_DEFEAT_V1",
+                          "PLAY_COST_REDUCTION_V1"
                         ]
                       },
                       "status": {
@@ -17456,6 +17498,38 @@
                               "required": [
                                 "kind",
                                 "amount"
+                              ],
+                              "additionalProperties": false
+                            },
+                            {
+                              "type": "object",
+                              "properties": {
+                                "kind": {
+                                  "type": "string",
+                                  "const": "SELF_PLAY_COST_REDUCTION"
+                                },
+                                "per": {
+                                  "type": "string",
+                                  "enum": [
+                                    "FRIENDLY_GIG_VALUE_AT_LEAST_8",
+                                    "FRIENDLY_TRASH_UNIT",
+                                    "RIVAL_UNIT"
+                                  ]
+                                },
+                                "amount": {
+                                  "type": "number",
+                                  "const": 1
+                                },
+                                "minimum": {
+                                  "type": "number",
+                                  "const": 1
+                                }
+                              },
+                              "required": [
+                                "kind",
+                                "per",
+                                "amount",
+                                "minimum"
                               ],
                               "additionalProperties": false
                             },

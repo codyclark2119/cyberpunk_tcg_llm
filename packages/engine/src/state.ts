@@ -7,6 +7,7 @@ import { validateValueConditionMetadata } from "./value-conditions-support";
 import { validateMinGigProgramMetadata } from "./min-gig-program-support";
 import { validateAttackingAuraMetadata } from "./attacking-aura-support";
 import { validateAttackPreventionMetadata } from "./attack-prevention-support";
+import { validatePlayCostReductionMetadata } from "./play-cost-support";
 import { validateFirstAttackMetadata } from "./first-attack-support";
 import { validateFirstAttackHistory } from "./first-attack-history";
 import { validateFieldLegendMetadata } from "./field-legend-support";
@@ -106,6 +107,7 @@ export function validateState(input: unknown, context: EngineContext): Result<Ga
     const valueMetadata = validateValueConditionMetadata(s, context); if (!valueMetadata.ok) return valueMetadata;
     const auraMetadata = validateAttackingAuraMetadata(s, context); if (!auraMetadata.ok) return auraMetadata;
     const preventionMetadata = validateAttackPreventionMetadata(s, context); if (!preventionMetadata.ok) return preventionMetadata;
+    const costMetadata = validatePlayCostReductionMetadata(s, context); if (!costMetadata.ok) return costMetadata;
     const firstMetadata = validateFirstAttackMetadata(s, context); if (!firstMetadata.ok) return firstMetadata;
     const firstHistory = validateFirstAttackHistory(s, context); if (!firstHistory.ok) return firstHistory;
     const fieldMetadata = validateFieldLegendMetadata(s, context); if (!fieldMetadata.ok) return fieldMetadata;

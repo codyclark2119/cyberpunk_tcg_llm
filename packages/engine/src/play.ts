@@ -10,6 +10,7 @@ import type { TurnMutation } from "./turn";
 import { revisionOf } from "./play-support";
 import { playChoice, playEffectId, adjustmentTargets } from "./play-state";
 import { forcedPaymentSources, paymentValue, validatePayment } from "./payment";
+import { playPaymentAmount } from "./play-cost-support";
 import { HandlerRegistry } from "./effects";
 import { changeGigValue, gigAdjustmentDelta } from "./gig-value";
 import { testCondition } from "./conditions";
@@ -75,7 +76,7 @@ function beginEffects(m: TurnMutation): Result<null> {
 }
 function completePayment(m: TurnMutation, sources: PaymentSource[]): Result<null> {
     const s = m.state, c = s.resolution.playContinuation!, r = revisionOf(s, c.sourceId, m.context)!;
-    const payment = validatePayment(s, c.actorId, m.context, sources, r.printedCost);
+    const payment = validatePayment(s, c.actorId, m.context, sources, { kind: "EDDIES", amount: playPaymentAmount(s, c.actorId, c.sourceId, m.context)! });
     return payment.ok ? payValidated(m, payment.value) : payment;
 }
 
@@ -85,8 +86,8 @@ export function startPlay(m: TurnMutation, actorId: PlayerId, sourceId: CardInst
     s.resolution.returnTo = actionReturnContext(s);
     s.objects.cards[sourceId].face = "UP";
     m.emit({ kind: "CARD_REVEALED", cardInstanceId: sourceId });
-    s.resolution.playContinuation = { kind: "PLAY", actorId, sourceId, ...(r.type !== "GEAR" && r.mechanics.abilities[0] ? { abilityId: r.mechanics.abilities[0].id } : {}), phase: "PAYMENT", remainingCost: r.printedCost.amount, selectedSources: [], effectIndex: 0 };
-    const forced = forcedPaymentSources(s, actorId, m.context, r.printedCost.amount, []);
+    s.resolution.playContinuation = { kind: "PLAY", actorId, sourceId, ...(r.type !== "GEAR" && r.mechanics.abilities[0] ? { abilityId: r.mechanics.abilities[0].id } : {}), phase: "PAYMENT", remainingCost: playPaymentAmount(s, actorId, sourceId, m.context)!, selectedSources: [], effectIndex: 0 };
+    const forced = forcedPaymentSources(s, actorId, m.context, s.resolution.playContinuation.remainingCost, []);
     if (forced) return completePayment(m, forced);
     return offerPlayChoice(m);
 }
