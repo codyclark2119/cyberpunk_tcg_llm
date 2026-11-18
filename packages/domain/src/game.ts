@@ -88,7 +88,7 @@ export const DefeatInstructionSchema = z.strictObject({ targetId: CardInstanceId
 export type DefeatInstruction = z.infer<typeof DefeatInstructionSchema>;
 export const ResolutionStateSchema = z.strictObject({
     stage: z.enum(["DECISION", "RESOLVE_EFFECT", "STATE_BASED_CHECKS", "DISCOVER_TRIGGERS", "ORDER_TRIGGERS", "CHOICE", "UNSUPPORTED"]),
-    targetedDefeatContinuation: z.strictObject({ phase: z.enum(["TARGET", "ORDER"]) }).optional(),
+    targetedDefeatContinuation: z.strictObject({ phase: z.enum(["TARGET", "SECOND", "EACH", "ORDER"]) }).optional(),
     triggerContinuation: TriggerContinuationSchema.optional(),
     returnTo: ActionReturnContextSchema.optional(),
     gigStealContinuation: z.strictObject({ selected: z.array(GigInstanceIdSchema), remaining: z.number().int().positive() }).optional(),

@@ -9,12 +9,12 @@
   },
   "totals": {
     "cards": 151,
-    "admitted": 53,
-    "notAdmitted": 98,
+    "admitted": 55,
+    "notAdmitted": 96,
     "notAdmittedOnlyCoveredFamilies": 0,
     "byAdmission": {
-      "NOT_ADMITTED": 98,
-      "SOURCE_MATCH": 53
+      "NOT_ADMITTED": 96,
+      "SOURCE_MATCH": 55
     }
   },
   "families": [
@@ -24,7 +24,7 @@
       "summary": "Conditions and filters on Gig values: min/max, value-pairs, even/odd, 8+, die type, counts compared with a Rival.",
       "notes": "Conditions only, each a fixed shape.",
       "cardCount": 40,
-      "notAdmittedCount": 33,
+      "notAdmittedCount": 32,
       "soleBlockerCount": 0
     },
     {
@@ -127,15 +127,6 @@
       "soleBlockerCount": 0
     },
     {
-      "family": "UNIT_DEFEAT",
-      "status": "PARTIAL",
-      "summary": "Defeat a Unit or Gear chosen with a filter.",
-      "notes": "Filters are fixed literals (power at most 5, power at most a friendly d20, Gear power at most 2).",
-      "cardCount": 18,
-      "notAdmittedCount": 11,
-      "soleBlockerCount": 0
-    },
-    {
       "family": "GIG_ADJUST",
       "status": "PARTIAL",
       "summary": "Increase, decrease, adjust or set Gig values.",
@@ -168,6 +159,15 @@
       "summary": "Spend or ready Units and Legends by an effect, and 'can't ready' locks.",
       "notes": "SPEND_UNIT (rival, cost at most 4) only; readying Units or Legends is missing.",
       "cardCount": 15,
+      "notAdmittedCount": 9,
+      "soleBlockerCount": 0
+    },
+    {
+      "family": "UNIT_DEFEAT",
+      "status": "PARTIAL",
+      "summary": "Defeat a Unit or Gear chosen with a filter.",
+      "notes": "Filters are fixed literals (power at most 5, power at most a friendly d20, Gear power at most 2).",
+      "cardCount": 18,
       "notAdmittedCount": 9,
       "soleBlockerCount": 0
     },
@@ -352,15 +352,6 @@
       "soleBlockerCount": 0
     },
     {
-      "family": "MASS_EFFECT",
-      "status": "MISSING",
-      "summary": "Effects on all Units or each player.",
-      "notes": "",
-      "cardCount": 5,
-      "notAdmittedCount": 3,
-      "soleBlockerCount": 0
-    },
-    {
       "family": "REPLACEMENT_EFFECT",
       "status": "MISSING",
       "summary": "'If X would ..., instead ...' replacement effects.",
@@ -402,6 +393,15 @@
       "summary": "Look at friendly face-down Legends.",
       "notes": "One Legend, attack-triggered (Kiroshi Optics). 'All face-down Legends' is missing.",
       "cardCount": 3,
+      "notAdmittedCount": 2,
+      "soleBlockerCount": 0
+    },
+    {
+      "family": "MASS_EFFECT",
+      "status": "MISSING",
+      "summary": "Effects on all Units or each player.",
+      "notes": "",
+      "cardCount": 5,
       "notAdmittedCount": 2,
       "soleBlockerCount": 0
     },
@@ -725,16 +725,13 @@
       "colors": [
         "RED"
       ],
-      "admission": "NOT_ADMITTED",
-      "revision": null,
+      "admission": "SOURCE_MATCH",
+      "revision": 1,
       "families": [
         "CONDITION_GIG",
         "UNIT_DEFEAT"
       ],
-      "blockingFamilies": [
-        "CONDITION_GIG",
-        "UNIT_DEFEAT"
-      ],
+      "blockingFamilies": [],
       "note": null
     },
     {
@@ -1784,16 +1781,13 @@
       "colors": [
         "YELLOW"
       ],
-      "admission": "NOT_ADMITTED",
-      "revision": null,
+      "admission": "SOURCE_MATCH",
+      "revision": 1,
       "families": [
         "MASS_EFFECT",
         "UNIT_DEFEAT"
       ],
-      "blockingFamilies": [
-        "MASS_EFFECT",
-        "UNIT_DEFEAT"
-      ],
+      "blockingFamilies": [],
       "note": null
     },
     {

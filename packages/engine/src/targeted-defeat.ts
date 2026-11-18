@@ -5,7 +5,7 @@ import { defeatCards } from "./defeat";
 import { defeatOrderChoice, unfinishedDefeatOrder } from "./combat-outcome-queries";
 import { completePlayEffect } from "./play";
 import { appendDefeatedTriggers, completed, prepareTriggerBatch } from "./trigger-resolution";
-import { allOtherDefeatTargets, targetedDefeatChoice } from "./targeted-defeat-queries";
+import { allOtherDefeatTargets, eachDefeatChoice, eachDefeatPlayers, ownDefeatTargets, secondDefeatChoice, secondDefeatTargets, targetedDefeatChoice } from "./targeted-defeat-queries";
 function finishWithoutDefeat(m: TurnMutation) { return m.state.resolution.triggerContinuation ? completed(m) : completePlayEffect(m); }
 export function beginTargetedDefeat(m: TurnMutation): Result<null> {
     const r = m.state.resolution, current = r.current!;
@@ -24,12 +24,37 @@ export function beginTargetedDefeat(m: TurnMutation): Result<null> {
         r.targetedDefeatContinuation = { phase: "ORDER" };
         return advanceOwnerOrder(m);
     }
+    if (current.effect.target.kind === "UNITS" && current.effect.target.each) {
+        r.targetedDefeatContinuation = { phase: "EACH" }; // Defeats are recorded once the first is selected.
+        return advanceEach(m);
+    }
     const choice = targetedDefeatChoice(m.state, m.context);
     if (!choice.options.length) return finishWithoutDefeat(m);
     r.targetedDefeatContinuation = { phase: "TARGET" }; r.choice = choice;
     if (choice.options.length === 1) return continueTargetedDefeat(m, 0, true);
     r.stage = "CHOICE"; m.state.timing.actingPlayer = choice.actorId; m.state.timing.step = "TARGET_SELECTION"; m.state.timing.window = "TARGET_SELECTION"; m.emit({ kind: "PHASE_CHANGED", step: "TARGET_SELECTION" });
     return success(null);
+}
+function pauseForTarget(m: TurnMutation, choice: NonNullable<TurnMutation["state"]["resolution"]["choice"]>): Result<null> {
+    const r = m.state.resolution;
+    r.choice = choice; r.stage = "CHOICE"; m.state.timing.actingPlayer = choice.actorId; m.state.timing.step = "TARGET_SELECTION"; m.state.timing.window = "TARGET_SELECTION"; m.emit({ kind: "PHASE_CHANGED", step: "TARGET_SELECTION" });
+    return success(null);
+}
+/** Each player, in turn order from the controller, picks one of their own Units; one candidate is forced, none is skipped. */
+function advanceEach(m: TurnMutation): Result<null> {
+    const r = m.state.resolution, current = r.current!, d = r.defeatContinuation ?? { defeats: [], orders: [] };
+    for (const player of eachDefeatPlayers(m.state, current)) {
+        if (d.defeats.some(x => m.state.objects.cards[x.targetId].controllerId === player)) continue;
+        const options = ownDefeatTargets(m.state, player, current, m.context);
+        if (!options.length) continue;
+        if (options.length > 1) { if (d.defeats.length) r.defeatContinuation = d; return pauseForTarget(m, eachDefeatChoice(m.state, m.context, player)); }
+        m.emit({ kind: "DEFEAT_TARGET_SELECTED", effectId: current.id, sourceId: current.sourceId!, targetId: options[0], controllerId: current.controllerId, forced: true });
+        d.defeats.push({ targetId: options[0], defeatedBy: current.sourceId! }); d.orders.push({ targetId: options[0], cardIds: [] });
+    }
+    r.defeatContinuation = d;
+    if (!d.defeats.length) { delete r.defeatContinuation; delete r.targetedDefeatContinuation; r.choice = null; m.state.timing.actingPlayer = current.controllerId; return finishWithoutDefeat(m); }
+    r.targetedDefeatContinuation = { phase: "ORDER" };
+    return advanceOwnerOrder(m);
 }
 function advanceOwnerOrder(m: TurnMutation): Result<null> {
     const r = m.state.resolution;
@@ -55,11 +80,28 @@ function advanceOwnerOrder(m: TurnMutation): Result<null> {
 }
 export function continueTargetedDefeat(m: TurnMutation, index: number, forced = false): Result<null> {
     const r = m.state.resolution, c = r.targetedDefeatContinuation!, current = r.current!, choice = r.choice!, option = choice.options[index];
+    if (c.phase === "SECOND" && option?.kind === "CONFIRM" && !option.confirmed) { c.phase = "ORDER"; return advanceOwnerOrder(m); } // Declined: defeat only the first.
     if (option?.kind !== "CARD") return failure("INVALID_DEFEAT_TARGET", "Choose one enumerated Unit or owner-order card");
+    if (c.phase === "EACH") {
+        if (!eachDefeatChoice(m.state, m.context, choice.actorId).options.some(o => o.kind === "CARD" && o.cardInstanceId === option.cardInstanceId)) return failure("INVALID_DEFEAT_TARGET", "Choose one of your own eligible Units");
+        m.emit({ kind: "DEFEAT_TARGET_SELECTED", effectId: current.id, sourceId: current.sourceId!, targetId: option.cardInstanceId, controllerId: current.controllerId, forced });
+        const d = r.defeatContinuation ??= { defeats: [], orders: [] };
+        d.defeats.push({ targetId: option.cardInstanceId, defeatedBy: current.sourceId! }); d.orders.push({ targetId: option.cardInstanceId, cardIds: [] });
+        return advanceEach(m);
+    }
+    if (c.phase === "SECOND") {
+        const firstId = r.defeatContinuation!.defeats[0].targetId;
+        if (!secondDefeatTargets(m.state, current, firstId, m.context).includes(option.cardInstanceId)) return failure("INVALID_DEFEAT_TARGET", "Second target must remain eligible and distinct");
+        m.emit({ kind: "DEFEAT_TARGET_SELECTED", effectId: current.id, sourceId: current.sourceId!, targetId: option.cardInstanceId, controllerId: current.controllerId, forced });
+        r.defeatContinuation!.defeats.push({ targetId: option.cardInstanceId, defeatedBy: current.sourceId! }); r.defeatContinuation!.orders.push({ targetId: option.cardInstanceId, cardIds: [] });
+        c.phase = "ORDER";
+        return advanceOwnerOrder(m);
+    }
     if (c.phase === "TARGET") {
         if (!targetedDefeatChoice(m.state, m.context).options.some(o => o.kind === "CARD" && o.cardInstanceId === option.cardInstanceId)) return failure("INVALID_DEFEAT_TARGET", "Target must remain eligible");
         m.emit({ kind: "DEFEAT_TARGET_SELECTED", effectId: current.id, sourceId: current.sourceId!, targetId: option.cardInstanceId, controllerId: current.controllerId, forced });
         r.defeatContinuation = { defeats: [{ targetId: option.cardInstanceId, defeatedBy: current.sourceId! }], orders: [{ targetId: option.cardInstanceId, cardIds: [] }] };
+        if (secondDefeatTargets(m.state, current, option.cardInstanceId, m.context).length) { c.phase = "SECOND"; return pauseForTarget(m, secondDefeatChoice(m.state, m.context, option.cardInstanceId)); }
         c.phase = "ORDER";
     } else {
         const order = unfinishedDefeatOrder(m.state);

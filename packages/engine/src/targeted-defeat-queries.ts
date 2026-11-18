@@ -44,6 +44,36 @@ export function allOtherDefeatTargets(state: GameState, e: NonNullable<GameState
     if (e.effect.kind !== "DEFEAT_UNIT" || e.effect.target.kind !== "UNITS" || e.effect.target.all !== "OTHER_THAN_SOURCE") return null;
     return listDefeatTargets(state, e.controllerId, e.effect.target, context).filter(id => id !== e.sourceId);
 }
+/** Batch V12 Bonnie and Clyde: some Rival controls at least `minimum` more Gigs (in the Gig area) than `actor`. */
+export function rivalGigCountLead(state: GameState, actor: PlayerId, minimum: number) {
+    const count = (id: PlayerId) => Object.values(state.objects.gigs).filter(g => g.controllerId === id && g.location.zone === "GIGS").length;
+    return state.match.playerOrder.some(id => id !== actor && count(id) - count(actor) >= minimum);
+}
+type Current = NonNullable<GameState["resolution"]["current"]>;
+/** The optional second target: remaining eligible Units after the first pick, while the condition holds now. */
+export function secondDefeatTargets(state: GameState, e: Current, firstId: string, context: EngineContext) {
+    if (e.effect.kind !== "DEFEAT_UNIT" || e.effect.target.kind !== "UNITS" || !e.effect.target.second || !rivalGigCountLead(state, e.controllerId, e.effect.target.second.condition.minimum)) return [];
+    return listDefeatTargets(state, e.controllerId, e.effect.target, context).filter(id => id !== firstId);
+}
+export function secondDefeatChoice(state: GameState, context: EngineContext, firstId: string): PendingChoice {
+    const e = state.resolution.current!;
+    return { id: hashCanonical({ protocol: "targeted-defeat-second@1", turn: state.timing.turn, sourceId: e.sourceId, effectId: e.id, firstId }), actorId: e.controllerId, kind: "TARGET", min: 1, max: 1, ordered: false, continuationId: "targeted-defeat-second@1",
+        options: [...secondDefeatTargets(state, e, firstId, context).map(cardInstanceId => ({ kind: "CARD" as const, cardInstanceId })), { kind: "CONFIRM" as const, confirmed: false }] };
+}
+/** "Each player defeats one of their Units": players in turn order from the effect controller. */
+export function eachDefeatPlayers(state: GameState, e: Current) {
+    const order = state.match.playerOrder, start = order.indexOf(e.controllerId);
+    return [...order.slice(start), ...order.slice(0, start)];
+}
+export function ownDefeatTargets(state: GameState, player: PlayerId, e: Current, context: EngineContext) {
+    if (e.effect.kind !== "DEFEAT_UNIT" || e.effect.target.kind !== "UNITS" || e.effect.target.each !== "PLAYER_CHOOSES_OWN") return [];
+    return listDefeatTargets(state, player, e.effect.target, context);
+}
+export function eachDefeatChoice(state: GameState, context: EngineContext, player: PlayerId): PendingChoice {
+    const e = state.resolution.current!;
+    return { id: hashCanonical({ protocol: "targeted-defeat-each@1", turn: state.timing.turn, sourceId: e.sourceId, effectId: e.id, player }), actorId: player, kind: "TARGET", min: 1, max: 1, ordered: false, continuationId: "targeted-defeat-each@1",
+        options: ownDefeatTargets(state, player, e, context).map(cardInstanceId => ({ kind: "CARD" as const, cardInstanceId })) };
+}
 export function targetedDefeatChoice(state: GameState, context: EngineContext): PendingChoice {
     const e = state.resolution.current!;
     if (e.effect.kind !== "DEFEAT_UNIT") throw new Error("Expected a targeted defeat effect");
