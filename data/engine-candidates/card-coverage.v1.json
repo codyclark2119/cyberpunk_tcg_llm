@@ -9,12 +9,12 @@
   },
   "totals": {
     "cards": 151,
-    "admitted": 55,
-    "notAdmitted": 96,
+    "admitted": 56,
+    "notAdmitted": 95,
     "notAdmittedOnlyCoveredFamilies": 0,
     "byAdmission": {
-      "NOT_ADMITTED": 96,
-      "SOURCE_MATCH": 55
+      "NOT_ADMITTED": 95,
+      "SOURCE_MATCH": 56
     }
   },
   "families": [
@@ -235,15 +235,6 @@
       "soleBlockerCount": 0
     },
     {
-      "family": "TRASH_RECURSION",
-      "status": "MISSING",
-      "summary": "Return a card from the trash (or from cards just trashed) to hand.",
-      "notes": "",
-      "cardCount": 7,
-      "notAdmittedCount": 7,
-      "soleBlockerCount": 0
-    },
-    {
       "family": "TRIGGER_ATTACK",
       "status": "PARTIAL",
       "summary": "[Attack] abilities and 'when a Unit attacks' triggers.",
@@ -271,19 +262,19 @@
       "soleBlockerCount": 0
     },
     {
-      "family": "TRIGGER_CALL",
-      "status": "PARTIAL",
-      "summary": "[Call] abilities of a Legend.",
-      "notes": "Trigger WHEN_CALLED; only Viktor's search is routed. Every other Call body needs its effects routed too.",
+      "family": "TRASH_RECURSION",
+      "status": "MISSING",
+      "summary": "Return a card from the trash (or from cards just trashed) to hand.",
+      "notes": "",
       "cardCount": 7,
       "notAdmittedCount": 6,
       "soleBlockerCount": 0
     },
     {
-      "family": "TRIGGER_DEFEATED",
+      "family": "TRIGGER_CALL",
       "status": "PARTIAL",
-      "summary": "[Defeated] abilities.",
-      "notes": "Trigger WHEN_DEFEATED, admitted only for Dexter: One Last Chance.",
+      "summary": "[Call] abilities of a Legend.",
+      "notes": "Trigger WHEN_CALLED; only Viktor's search is routed. Every other Call body needs its effects routed too.",
       "cardCount": 7,
       "notAdmittedCount": 6,
       "soleBlockerCount": 0
@@ -312,6 +303,15 @@
       "summary": "Call a Legend by an effect or for free outside the normal Call.",
       "notes": "",
       "cardCount": 5,
+      "notAdmittedCount": 5,
+      "soleBlockerCount": 0
+    },
+    {
+      "family": "TRIGGER_DEFEATED",
+      "status": "PARTIAL",
+      "summary": "[Defeated] abilities.",
+      "notes": "Trigger WHEN_DEFEATED, admitted only for Dexter: One Last Chance.",
+      "cardCount": 7,
       "notAdmittedCount": 5,
       "soleBlockerCount": 0
     },
@@ -2910,16 +2910,13 @@
       "colors": [
         "RED"
       ],
-      "admission": "NOT_ADMITTED",
-      "revision": null,
+      "admission": "SOURCE_MATCH",
+      "revision": 1,
       "families": [
         "TRASH_RECURSION",
         "TRIGGER_DEFEATED"
       ],
-      "blockingFamilies": [
-        "TRASH_RECURSION",
-        "TRIGGER_DEFEATED"
-      ],
+      "blockingFamilies": [],
       "note": null
     },
     {

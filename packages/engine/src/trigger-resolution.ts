@@ -27,7 +27,8 @@ import { finishCombat, completeFightResult } from "./combat-resolution";
 import { HandlerRegistry } from "./effects";
 import { changeGigValue, gigAdjustmentDelta } from "./gig-value";
 import { triggersEnabled } from "./trigger-support";
-import { discoverTriggers, pendingTrigger, triggerChoice, triggerGigTargets } from "./trigger-queries";
+import { discoverTriggers, pendingTrigger, trashUnitTargets, triggerChoice, triggerGigTargets } from "./trigger-queries";
+import { moveCardLocation } from "./card-movement";
 
 export function recordPlayedCard(m: TurnMutation, sourceId: CardInstanceId) {
     const c = m.state.objects.cards[sourceId], r = cardRevision(m.state, sourceId, m.context)!;
@@ -161,6 +162,11 @@ export function advanceTriggers(m: TurnMutation): Result<null> {
         if (!moved.ok) return moved;
         m.state.resolution.stage = stage; return completed(m);
     }
+    // Batch V13: "[Defeated] Add another Unit from your trash to your hand"; nothing happens with no other Unit.
+    if (e.kind === "RETURN_TRASH_UNIT_TO_HAND") {
+        if (!trashUnitTargets(m.state, r.current, m.context).length) return completed(m);
+        c.phase = "TARGET"; return offer(m);
+    }
     if (e.kind === "REGISTER_END_TURN_EFFECT") { const result = registerEndTurnEffect(m); return result.ok ? completed(m) : result; }
     if (e.kind === "READY_EDDIES") {
         const current = r.current, a = cardRevision(m.state, current.sourceId!, m.context)!.mechanics.abilities.find(a => a.id === current.trigger!.abilityId)!;
@@ -251,6 +257,12 @@ export function continueTrigger(m: TurnMutation, index: number, forced = false):
             if (option.kind !== "CARD" || !readyLegendTargets(m.state, current.controllerId, m.context).includes(option.cardInstanceId)) return failure("INVALID_READY_TARGET", "Choose a current friendly face-up Legend");
             m.emit({ kind: "CARD_TARGET_SELECTED", effectId: current.id, sourceId: current.sourceId!, targetId: option.cardInstanceId, controllerId: current.controllerId, forced });
             readyCardForEffect(m, option.cardInstanceId);
+            return completed(m);
+        }
+        if (current.effect.kind === "RETURN_TRASH_UNIT_TO_HAND") {
+            if (option.kind !== "CARD" || !trashUnitTargets(m.state, current, m.context).includes(option.cardInstanceId)) return failure("INVALID_TRASH_TARGET", "Choose another Unit in your trash");
+            m.emit({ kind: "CARD_TARGET_SELECTED", effectId: current.id, sourceId: current.sourceId!, targetId: option.cardInstanceId, controllerId: current.controllerId, forced });
+            moveCardLocation(m, option.cardInstanceId, "HAND");
             return completed(m);
         }
         if (current.effect.kind === "LOOK_AT_FRIENDLY_FACE_DOWN_LEGEND") {
