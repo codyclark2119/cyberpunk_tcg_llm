@@ -12,6 +12,7 @@ import { playChoice, playEffectId, adjustmentTargets } from "./play-state";
 import { forcedPaymentSources, paymentValue, validatePayment } from "./payment";
 import { playPaymentAmount } from "./play-cost-support";
 import { HandlerRegistry } from "./effects";
+import { chooseTrashedUnit } from "./trash-return";
 import { changeGigValue, gigAdjustmentDelta } from "./gig-value";
 import { testCondition } from "./conditions";
 
@@ -130,6 +131,11 @@ export function continuePlay(m: TurnMutation, index: number): Result<null> {
         if (option.kind !== "CARD") return failure("INVALID_SPEND_TARGET", "Choose an enumerated Unit");
         const spent = resolveSpendTarget(m, option.cardInstanceId);
         return spent.ok ? completePlayEffect(m) : spent;
+    }
+    if (s.resolution.current?.effect.kind === "TRASH_THEN_RETURN_UNIT") {
+        if (option.kind !== "CARD") return failure("INVALID_TRASH_TARGET", "Choose an enumerated trashed Unit");
+        const returned = chooseTrashedUnit(m, option.cardInstanceId);
+        return returned.ok ? completePlayEffect(m) : returned;
     }
     if (s.resolution.current?.effect.kind === "POWER_UNTIL_END_OF_TURN") {
         if (option.kind !== "CARD") return failure("INVALID_POWER_TARGET", "Choose an enumerated rival Unit");

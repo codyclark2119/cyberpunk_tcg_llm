@@ -15,7 +15,7 @@ import { supportsAttackPreventionUnit } from "./attack-prevention-support";
 import { isReactDecision, supportsReactPlay } from "./react-support";
 import { supportsAttackPlay } from "./attack-support";
 import { supportsGear, legalEquipHosts } from "./attachments";
-import { turnSliceAllows, failure, success, type CardRevisionSnapshot, type DeepReadonly, type GameState, type CardInstanceId, type PlayerId } from "@tcg/domain";
+import { turnSliceAllows, canonicalSerialize, failure, success, type CardRevisionSnapshot, type DeepReadonly, type GameState, type CardInstanceId, type PlayerId } from "@tcg/domain";
 import type { EngineContext } from "./state";
 import { paymentCandidates } from "./payment";
 import { testCondition } from "./conditions";
@@ -53,6 +53,10 @@ export function supportsPlay(card: DeepReadonly<CardRevisionSnapshot> | undefine
     if (a.cost.kind !== "NONE") return failure("UNSUPPORTED_CARD_PLAY", "Ordinary play uses printed cost; activated costs are separate");
     if (card.type === "PROGRAM") {
         const [adjust, draw] = a.effects;
+        // Batch V14: All Is Lost, its complete printed shape pinned literally.
+        if (canonicalSerialize({ colors: card.colors, ram: card.ram, tags: card.tags, cost: card.printedCost.amount, power: card.power ?? null, sell: card.sellProfile.allowed, keywords: card.keywords, trigger: a.trigger ?? null, activation: a.activation ?? null, inherited: a.inherited ?? null, guard: a.guard ?? null, conditions: a.conditions, effects: a.effects })
+            === canonicalSerialize({ colors: ["RED"], ram: { RED: 2 }, tags: ["Zetatech"], cost: 1, power: null, sell: true, keywords: [], trigger: "WHEN_PLAYED", activation: null, inherited: null, guard: null, conditions: [], effects: [{ kind: "TRASH_THEN_RETURN_UNIT", count: 3 }] })) return success(null);
+        if (a.effects.some(e => e.kind === "TRASH_THEN_RETURN_UNIT")) return failure("UNSUPPORTED_CARD_PLAY", "Trash-return requires the pinned Batch V14 shape");
         if (a.trigger === "WHEN_PLAYED" && !a.activation && !a.conditions.length && a.effects.length === 2 && adjust.kind === "ADJUST_GIG_UP_TO" && draw.kind === "CONDITIONAL_DRAW" && draw.condition.kind === "DISTINCT_GIG_VALUES" && draw.condition.minimum === 2 && draw.count === 1) return success(null);
     }
     if (card.type === "UNIT") {

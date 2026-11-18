@@ -2542,6 +2542,17 @@
                   "minLength": 1,
                   "maxLength": 200,
                   "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$"
+                },
+                "trashedIds": {
+                  "minItems": 1,
+                  "maxItems": 3,
+                  "type": "array",
+                  "items": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 200,
+                    "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$"
+                  }
                 }
               },
               "required": [
@@ -2827,6 +2838,24 @@
                           "required": [
                             "kind",
                             "exclude"
+                          ],
+                          "additionalProperties": false
+                        },
+                        {
+                          "type": "object",
+                          "properties": {
+                            "kind": {
+                              "type": "string",
+                              "const": "TRASH_THEN_RETURN_UNIT"
+                            },
+                            "count": {
+                              "type": "number",
+                              "const": 3
+                            }
+                          },
+                          "required": [
+                            "kind",
+                            "count"
                           ],
                           "additionalProperties": false
                         },
@@ -5149,6 +5178,24 @@
                         "properties": {
                           "kind": {
                             "type": "string",
+                            "const": "TRASH_THEN_RETURN_UNIT"
+                          },
+                          "count": {
+                            "type": "number",
+                            "const": 3
+                          }
+                        },
+                        "required": [
+                          "kind",
+                          "count"
+                        ],
+                        "additionalProperties": false
+                      },
+                      {
+                        "type": "object",
+                        "properties": {
+                          "kind": {
+                            "type": "string",
                             "const": "DEFEAT_UNIT"
                           },
                           "target": {
@@ -7451,6 +7498,24 @@
                         "required": [
                           "kind",
                           "exclude"
+                        ],
+                        "additionalProperties": false
+                      },
+                      {
+                        "type": "object",
+                        "properties": {
+                          "kind": {
+                            "type": "string",
+                            "const": "TRASH_THEN_RETURN_UNIT"
+                          },
+                          "count": {
+                            "type": "number",
+                            "const": 3
+                          }
+                        },
+                        "required": [
+                          "kind",
+                          "count"
                         ],
                         "additionalProperties": false
                       },
