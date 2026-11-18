@@ -6,6 +6,7 @@ import { validateValueConditionMetadata } from "./value-conditions-support";
 import { validateMinGigProgramMetadata } from "./min-gig-program-support";
 import { validateAttackingAuraMetadata } from "./attacking-aura-support";
 import { validateAttackPreventionMetadata } from "./attack-prevention-support";
+import { validatePlayCostReductionMetadata } from "./play-cost-support";
 import { validateFirstAttackMetadata } from "./first-attack-support";
 import { validateFirstAttackHistory } from "./first-attack-history";
 import { validateFieldLegendMetadata } from "./field-legend-support";
@@ -87,6 +88,7 @@ export function createGameWithEvents(input: z.input<typeof CreateGameInputSchema
     const valueMetadata = validateValueConditionMetadata(s, context); if (!valueMetadata.ok) return valueMetadata;
     const auraMetadata = validateAttackingAuraMetadata(s, context); if (!auraMetadata.ok) return auraMetadata;
     const preventionMetadata = validateAttackPreventionMetadata(s, context); if (!preventionMetadata.ok) return preventionMetadata;
+    const costMetadata = validatePlayCostReductionMetadata(s, context); if (!costMetadata.ok) return costMetadata;
     const firstMetadata = validateFirstAttackMetadata(s, context); if (!firstMetadata.ok) return firstMetadata;
     const firstHistory = validateFirstAttackHistory(s, context); if (!firstHistory.ok) return firstHistory;
     const fieldMetadata = validateFieldLegendMetadata(s, context); if (!fieldMetadata.ok) return fieldMetadata;
@@ -110,7 +112,7 @@ export function createGameWithEvents(input: z.input<typeof CreateGameInputSchema
             if (!supported.ok)
                 return supported;
         }
-        else if (content.execution?.scope === "ATTACK_CONDITION_POWER_V1" || content.execution?.scope === "TARGETED_SPEND_V1" || content.execution?.scope === "TARGETED_DEFEAT_V1" || content.execution?.scope === "VALUE_CONDITIONS_V1" || content.execution?.scope === "MIN_GIG_PROGRAM_V1" || content.execution?.scope === "NONCOMBAT_PLAY_V1" || content.execution?.scope === "COMBAT_ATTACK_V1" || content.execution?.scope === "COMBAT_REACT_V1" || content.execution?.scope === "COMBAT_RESTRICTIONS_V1" || content.execution?.scope === "COMBAT_TRIGGERS_V1" || content.execution?.scope === "GEAR_CAPABILITIES_V1" || content.execution?.scope === "GEAR_PRIVATE_LOOK_V1" || content.execution?.scope === "ATTACK_ORDERED_EFFECTS_V1" || content.execution?.scope === "END_TURN_HISTORY_V1" || content.execution?.scope === "GEAR_DELAYED_ATTACK_V1" || content.execution?.scope === "ATTACK_PREVENTION_V1" || content.execution?.scope === "TARGETED_GEAR_DEFEAT_V1") {
+        else if (content.execution?.scope === "ATTACK_CONDITION_POWER_V1" || content.execution?.scope === "TARGETED_SPEND_V1" || content.execution?.scope === "TARGETED_DEFEAT_V1" || content.execution?.scope === "VALUE_CONDITIONS_V1" || content.execution?.scope === "MIN_GIG_PROGRAM_V1" || content.execution?.scope === "NONCOMBAT_PLAY_V1" || content.execution?.scope === "COMBAT_ATTACK_V1" || content.execution?.scope === "COMBAT_REACT_V1" || content.execution?.scope === "COMBAT_RESTRICTIONS_V1" || content.execution?.scope === "COMBAT_TRIGGERS_V1" || content.execution?.scope === "GEAR_CAPABILITIES_V1" || content.execution?.scope === "GEAR_PRIVATE_LOOK_V1" || content.execution?.scope === "ATTACK_ORDERED_EFFECTS_V1" || content.execution?.scope === "END_TURN_HISTORY_V1" || content.execution?.scope === "GEAR_DELAYED_ATTACK_V1" || content.execution?.scope === "ATTACK_PREVENTION_V1" || content.execution?.scope === "TARGETED_GEAR_DEFEAT_V1" || content.execution?.scope === "PLAY_COST_REDUCTION_V1") {
             const supported = supportsPlay(content, context);
             if (!supported.ok) return supported;
         }

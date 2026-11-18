@@ -1,4 +1,5 @@
 import { listSpendUnitTargets } from "./targeted-spend-queries";
+import { playPaymentAmount } from "./play-cost-support";
 import { gigAdjustmentOptions } from "./gig-value";
 import { powerTargets } from "./react-queries";
 import { legalEquipHosts } from "./attachments";
@@ -49,8 +50,8 @@ export function validatePlayState(state: GameState, context: EngineContext) {
     const source = state.objects.cards[c.sourceId], revision = revisionOf(state, c.sourceId, context), ability = revision?.mechanics.abilities[0];
     if (!supportsPlay(revision, context).ok || !source || c.kind !== "PLAY" || c.actorId !== (state.resolution.targetedDefeatContinuation?.phase === "ORDER" ? state.timing.activePlayer : state.timing.actingPlayer) || source.controllerId !== c.actorId || source.zone.playerId !== c.actorId || source.face !== "UP" || (revision?.type === "GEAR" ? undefined : ability?.id) !== c.abilityId || state.setup || (state.timing.combat.stage !== "NONE" && (state.timing.combat.stage !== "RIVAL_REACT" || revision?.type !== "PROGRAM" || !revision.mechanics.keywords.includes("QUICK"))) || state.match.outcome || state.resolution.searchContinuation || state.resolution.callContinuation || state.resolution.discovered.length || state.resolution.stage !== "CHOICE")
         return failure("INVALID_PLAY_CONTINUATION", "Play source, scope, actor or exclusive decision state invalid");
-    const cost = revision!.printedCost;
-    if (cost.kind !== "EDDIES" || new Set(c.selectedSources.map(p => p.cardInstanceId)).size !== c.selectedSources.length || c.selectedSources.reduce((n, p) => n + paymentValue(state, context, p), 0) + c.remainingCost !== cost.amount)
+    const cost = revision!.printedCost, amount = playPaymentAmount(state, c.actorId, c.sourceId, context);
+    if (cost.kind !== "EDDIES" || new Set(c.selectedSources.map(p => p.cardInstanceId)).size !== c.selectedSources.length || c.selectedSources.reduce((n, p) => n + paymentValue(state, context, p), 0) + c.remainingCost !== amount)
         return failure("INVALID_PLAY_PAYMENT", "Exact cost and unique selected sources must match the printed cost");
     if (c.phase === "PAYMENT") {
         const available = paymentSources(state, c.actorId, context).map(canonicalSerialize);
