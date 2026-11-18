@@ -22,7 +22,13 @@ const TARGETED_DEFEAT_SHAPES = [
         effects: [{ kind: "SPEND_ALL_UNITS", relation: "RIVAL" }, { kind: "DEFEAT_UNIT", target: { kind: "UNITS", relation: "ANY", power: { kind: "ANY" }, readiness: "SPENT" } }] },
     // Batch V10: Adam Smasher: Metal Over Meat, {Play} defeat all other Units.
     { type: "UNIT", colors: ["YELLOW"], ram: { YELLOW: 6 }, tags: ["Arasaka", "Merc"], cost: 9, sell: false, power: 15,
-        effects: [{ kind: "DEFEAT_UNIT", target: { kind: "UNITS", relation: "ANY", power: { kind: "ANY" }, all: "OTHER_THAN_SOURCE" } }] }
+        effects: [{ kind: "DEFEAT_UNIT", target: { kind: "UNITS", relation: "ANY", power: { kind: "ANY" }, all: "OTHER_THAN_SOURCE" } }] },
+    // Batch V12: Bonnie and Clyde, a rival Unit with power 4 or less; optionally a second while a Rival leads by 2+ Gigs.
+    { type: "PROGRAM", colors: ["RED"], ram: { RED: 3 }, tags: ["Braindance"], cost: 3, sell: true, power: null,
+        effects: [{ kind: "DEFEAT_UNIT", target: { kind: "UNITS", relation: "RIVAL", power: { kind: "AT_MOST", value: 4 }, second: { condition: { kind: "RIVAL_GIG_COUNT_LEAD_AT_LEAST", minimum: 2 } } } }] },
+    // Batch V12: Live with the Aftermath, each player defeats one of their own Units.
+    { type: "PROGRAM", colors: ["YELLOW"], ram: { YELLOW: 3 }, tags: ["Plan"], cost: 3, sell: true, power: null,
+        effects: [{ kind: "DEFEAT_UNIT", target: { kind: "UNITS", relation: "CONTROLLED", power: { kind: "ANY" }, each: "PLAYER_CHOOSES_OWN" } }] }
 ] as const;
 /** Complete per-card shapes; no source-name dispatch or arbitrary filter/defeat admission. */
 export function supportsTargetedDefeatCard(card: DeepReadonly<CardRevisionSnapshot> | undefined, context: EngineContext) {

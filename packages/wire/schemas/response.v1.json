@@ -1575,6 +1575,8 @@
                               "type": "string",
                               "enum": [
                                 "TARGET",
+                                "SECOND",
+                                "EACH",
                                 "ORDER"
                               ]
                             }
@@ -2899,6 +2901,37 @@
                                                 "all": {
                                                   "type": "string",
                                                   "const": "OTHER_THAN_SOURCE"
+                                                },
+                                                "second": {
+                                                  "type": "object",
+                                                  "properties": {
+                                                    "condition": {
+                                                      "type": "object",
+                                                      "properties": {
+                                                        "kind": {
+                                                          "type": "string",
+                                                          "const": "RIVAL_GIG_COUNT_LEAD_AT_LEAST"
+                                                        },
+                                                        "minimum": {
+                                                          "type": "number",
+                                                          "const": 2
+                                                        }
+                                                      },
+                                                      "required": [
+                                                        "kind",
+                                                        "minimum"
+                                                      ],
+                                                      "additionalProperties": false
+                                                    }
+                                                  },
+                                                  "required": [
+                                                    "condition"
+                                                  ],
+                                                  "additionalProperties": false
+                                                },
+                                                "each": {
+                                                  "type": "string",
+                                                  "const": "PLAYER_CHOOSES_OWN"
                                                 }
                                               },
                                               "required": [
@@ -5164,6 +5197,37 @@
                                               "all": {
                                                 "type": "string",
                                                 "const": "OTHER_THAN_SOURCE"
+                                              },
+                                              "second": {
+                                                "type": "object",
+                                                "properties": {
+                                                  "condition": {
+                                                    "type": "object",
+                                                    "properties": {
+                                                      "kind": {
+                                                        "type": "string",
+                                                        "const": "RIVAL_GIG_COUNT_LEAD_AT_LEAST"
+                                                      },
+                                                      "minimum": {
+                                                        "type": "number",
+                                                        "const": 2
+                                                      }
+                                                    },
+                                                    "required": [
+                                                      "kind",
+                                                      "minimum"
+                                                    ],
+                                                    "additionalProperties": false
+                                                  }
+                                                },
+                                                "required": [
+                                                  "condition"
+                                                ],
+                                                "additionalProperties": false
+                                              },
+                                              "each": {
+                                                "type": "string",
+                                                "const": "PLAYER_CHOOSES_OWN"
                                               }
                                             },
                                             "required": [
@@ -7425,6 +7489,37 @@
                                               "all": {
                                                 "type": "string",
                                                 "const": "OTHER_THAN_SOURCE"
+                                              },
+                                              "second": {
+                                                "type": "object",
+                                                "properties": {
+                                                  "condition": {
+                                                    "type": "object",
+                                                    "properties": {
+                                                      "kind": {
+                                                        "type": "string",
+                                                        "const": "RIVAL_GIG_COUNT_LEAD_AT_LEAST"
+                                                      },
+                                                      "minimum": {
+                                                        "type": "number",
+                                                        "const": 2
+                                                      }
+                                                    },
+                                                    "required": [
+                                                      "kind",
+                                                      "minimum"
+                                                    ],
+                                                    "additionalProperties": false
+                                                  }
+                                                },
+                                                "required": [
+                                                  "condition"
+                                                ],
+                                                "additionalProperties": false
+                                              },
+                                              "each": {
+                                                "type": "string",
+                                                "const": "PLAYER_CHOOSES_OWN"
                                               }
                                             },
                                             "required": [
@@ -11659,6 +11754,8 @@
                               "type": "string",
                               "enum": [
                                 "TARGET",
+                                "SECOND",
+                                "EACH",
                                 "ORDER"
                               ]
                             }
@@ -12983,6 +13080,37 @@
                                                 "all": {
                                                   "type": "string",
                                                   "const": "OTHER_THAN_SOURCE"
+                                                },
+                                                "second": {
+                                                  "type": "object",
+                                                  "properties": {
+                                                    "condition": {
+                                                      "type": "object",
+                                                      "properties": {
+                                                        "kind": {
+                                                          "type": "string",
+                                                          "const": "RIVAL_GIG_COUNT_LEAD_AT_LEAST"
+                                                        },
+                                                        "minimum": {
+                                                          "type": "number",
+                                                          "const": 2
+                                                        }
+                                                      },
+                                                      "required": [
+                                                        "kind",
+                                                        "minimum"
+                                                      ],
+                                                      "additionalProperties": false
+                                                    }
+                                                  },
+                                                  "required": [
+                                                    "condition"
+                                                  ],
+                                                  "additionalProperties": false
+                                                },
+                                                "each": {
+                                                  "type": "string",
+                                                  "const": "PLAYER_CHOOSES_OWN"
                                                 }
                                               },
                                               "required": [
@@ -15248,6 +15376,37 @@
                                               "all": {
                                                 "type": "string",
                                                 "const": "OTHER_THAN_SOURCE"
+                                              },
+                                              "second": {
+                                                "type": "object",
+                                                "properties": {
+                                                  "condition": {
+                                                    "type": "object",
+                                                    "properties": {
+                                                      "kind": {
+                                                        "type": "string",
+                                                        "const": "RIVAL_GIG_COUNT_LEAD_AT_LEAST"
+                                                      },
+                                                      "minimum": {
+                                                        "type": "number",
+                                                        "const": 2
+                                                      }
+                                                    },
+                                                    "required": [
+                                                      "kind",
+                                                      "minimum"
+                                                    ],
+                                                    "additionalProperties": false
+                                                  }
+                                                },
+                                                "required": [
+                                                  "condition"
+                                                ],
+                                                "additionalProperties": false
+                                              },
+                                              "each": {
+                                                "type": "string",
+                                                "const": "PLAYER_CHOOSES_OWN"
                                               }
                                             },
                                             "required": [
@@ -17509,6 +17668,37 @@
                                               "all": {
                                                 "type": "string",
                                                 "const": "OTHER_THAN_SOURCE"
+                                              },
+                                              "second": {
+                                                "type": "object",
+                                                "properties": {
+                                                  "condition": {
+                                                    "type": "object",
+                                                    "properties": {
+                                                      "kind": {
+                                                        "type": "string",
+                                                        "const": "RIVAL_GIG_COUNT_LEAD_AT_LEAST"
+                                                      },
+                                                      "minimum": {
+                                                        "type": "number",
+                                                        "const": 2
+                                                      }
+                                                    },
+                                                    "required": [
+                                                      "kind",
+                                                      "minimum"
+                                                    ],
+                                                    "additionalProperties": false
+                                                  }
+                                                },
+                                                "required": [
+                                                  "condition"
+                                                ],
+                                                "additionalProperties": false
+                                              },
+                                              "each": {
+                                                "type": "string",
+                                                "const": "PLAYER_CHOOSES_OWN"
                                               }
                                             },
                                             "required": [

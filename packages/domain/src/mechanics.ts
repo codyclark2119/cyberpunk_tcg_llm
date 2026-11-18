@@ -95,7 +95,13 @@ export const DefeatUnitTargetSchema = z.strictObject({ kind: z.literal("UNITS"),
     // "If <condition>, defeat ... with power N or less instead": replaces the AT_MOST bound while the condition holds.
     instead: z.strictObject({ condition: z.strictObject({ kind: z.literal("STREET_CRED_GREATER_THAN_RIVAL") }), power: DefeatPowerAtMostSchema }).optional(),
     // "Defeat all other Units" (batch V10): every eligible Unit except the effect source, with no target choice.
-    all: z.literal("OTHER_THAN_SOURCE").optional() });
+    all: z.literal("OTHER_THAN_SOURCE").optional(),
+    // "You may defeat 2 instead if a Rival controls at least 2 Gigs more than you" (batch V12): an optional
+    // second distinct target, offered at resolution only while the condition holds.
+    second: z.strictObject({ condition: z.strictObject({ kind: z.literal("RIVAL_GIG_COUNT_LEAD_AT_LEAST"), minimum: z.literal(2) }) }).optional(),
+    // "Each player defeats one of their Units" (batch V12): from the effect controller in turn order, each
+    // player chooses one Unit they control; all chosen Units are defeated together.
+    each: z.literal("PLAYER_CHOOSES_OWN").optional() });
 export type DefeatUnitTarget = z.infer<typeof DefeatUnitTargetSchema>;
 // Preserve the Unit selectors and historical effect discriminator. Vocabulary is not execution admission.
 export const DefeatGearTargetSchema = z.strictObject({ kind: z.literal("GEAR"), relation: z.literal("RIVAL"),
