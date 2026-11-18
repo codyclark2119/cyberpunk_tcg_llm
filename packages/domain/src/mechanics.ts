@@ -85,6 +85,9 @@ export const RegisterEndTurnEffectSchema = z.strictObject({ kind: z.literal("REG
 export const SpendUnitTargetSchema = z.strictObject({ kind: z.literal("UNITS"), relation: TargetRelationshipSchema, costAtMost: z.literal(4).optional() });
 export type SpendUnitTarget = z.infer<typeof SpendUnitTargetSchema>;
 export const SpendUnitEffectSchema = z.strictObject({ kind: z.literal("SPEND_UNIT"), target: SpendUnitTargetSchema });
+// Batch V15: field Units to bottom-deck, by relation, optional readiness and "lowest-power" (every tied minimum).
+export const BottomDeckTargetSchema = z.strictObject({ relation: z.enum(["RIVAL", "CONTROLLED"]), readiness: z.enum(["READY", "SPENT"]).optional(), lowestPower: z.literal(true).optional() });
+export type BottomDeckTarget = z.infer<typeof BottomDeckTargetSchema>;
 // Shared Unit-defeat filter (plan section 6, scope 3b). The grammar admits nothing by itself:
 // every card using it is pinned literally by its execution gate (exact per-card check).
 const DefeatPowerAtMostSchema = z.strictObject({ kind: z.literal("AT_MOST"), value: z.number().int().nonnegative() });
@@ -127,6 +130,9 @@ export const EffectSchema = z.discriminatedUnion("kind", [
     // "Trash 3. Add a Unit from among them to your hand." (batch V14): 11.10.2.1 trash the top card of
     // your deck 3 times, one at a time, then return one Unit among exactly those cards.
     z.strictObject({ kind: z.literal("TRASH_THEN_RETURN_UNIT"), count: z.literal(3) }),
+    // "Bottom-deck a Rival's lowest-power Unit" / "Bottom-deck a ready friendly Unit. If you do, bottom-deck a
+    // spent rival Unit." (batch V15): 11.15, the owner bottom-decks; `then` applies only after the first Unit was.
+    z.strictObject({ kind: z.literal("BOTTOM_DECK_UNIT"), target: BottomDeckTargetSchema, then: BottomDeckTargetSchema.optional() }),
     DefeatUnitEffectSchema,
     ReadyEddiesEffectSchema,
     RegisterEndTurnEffectSchema,

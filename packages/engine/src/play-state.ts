@@ -8,6 +8,7 @@ import type { EngineContext } from "./state";
 import { revisionOf, supportsPlay } from "./play-support";
 import { paymentCandidates, paymentSources, paymentValue, forcedPaymentSources } from "./payment";
 import { trashedUnitTargets, validateTrashReturn } from "./trash-return";
+import { currentBottomDeckTargets, validateBottomDeck } from "./bottom-deck";
 
 function playIdentity(state: GameState) {
     const c = state.resolution.playContinuation!;
@@ -33,6 +34,9 @@ export function playChoice(state: GameState, context: EngineContext): PendingCho
     } else if (state.resolution.current?.effect.kind === "TRASH_THEN_RETURN_UNIT") {
         kind = "TARGET";
         options = trashedUnitTargets(state, context).map(cardInstanceId => ({ kind: "CARD", cardInstanceId }));
+    } else if (state.resolution.current?.effect.kind === "BOTTOM_DECK_UNIT") {
+        kind = "TARGET";
+        options = currentBottomDeckTargets(state, context).map(cardInstanceId => ({ kind: "CARD", cardInstanceId }));
     } else if (state.resolution.current?.effect.kind === "POWER_UNTIL_END_OF_TURN") {
         kind = "TARGET";
         options = powerTargets(state, c.actorId, context).map(cardInstanceId => ({ kind: "CARD", cardInstanceId }));
@@ -45,7 +49,7 @@ export function playChoice(state: GameState, context: EngineContext): PendingCho
         const effect = state.resolution.current!.effect;
         options = effect.kind === "ADJUST_GIG_UP_TO" ? gigAdjustmentOptions(gig, effect) : [];
     }
-    return { id: hashCanonical({ continuation: playIdentity(state), phase: c.phase, index: c.effectIndex, selected: c.selectedSources, target: c.targetGigId ?? null }), actorId: c.actorId, kind, options, min: 1, max: 1, ordered: false, continuationId: "noncombat-play@1" };
+    return { id: hashCanonical({ continuation: playIdentity(state), phase: c.phase, index: c.effectIndex, selected: c.selectedSources, target: c.targetGigId ?? null, ...(c.bottomDecked ? { bottomDecked: c.bottomDecked } : {}) }), actorId: c.actorId, kind, options, min: 1, max: 1, ordered: false, continuationId: "noncombat-play@1" };
 }
 export function validatePlayState(state: GameState, context: EngineContext) {
     const c = state.resolution.playContinuation, current = state.resolution.current;
@@ -65,7 +69,7 @@ export function validatePlayState(state: GameState, context: EngineContext) {
         if (revision!.type !== "GEAR" || source.readiness !== "READY" || source.zone.zone !== "HAND" || c.remainingCost !== 0 || c.effectIndex !== 0 || c.abilityId || c.targetGigId || current || state.resolution.pending.length || resolving.length || state.timing.step !== "TARGET_SELECTION" || !legalEquipHosts(state, c.sourceId, context).length)
             return failure("INVALID_EQUIP_CONTINUATION", "Paid Gear, source area, current host set and target decision must agree");
     } else {
-        if (revision!.type !== "PROGRAM" || source.zone.zone !== "RESOLVING_PROGRAM" || resolving.length !== 1 || c.remainingCost !== 0 || !ability || c.effectIndex >= ability.effects.length || (c.effectIndex !== 0 && current?.effect.kind !== "DEFEAT_UNIT") || (current?.effect.kind !== "SPEND_UNIT" && current?.effect.kind !== "DEFEAT_UNIT" && current?.effect.kind !== "ADJUST_GIG_UP_TO" && current?.effect.kind !== "POWER_UNTIL_END_OF_TURN" && current?.effect.kind !== "TRASH_THEN_RETURN_UNIT") || current.id !== playEffectId(state, c.effectIndex) || current.sourceId !== c.sourceId || current.controllerId !== c.actorId || canonicalSerialize(current.effect) !== canonicalSerialize(ability.effects[c.effectIndex]) || state.resolution.pending.length !== ability.effects.length - 1 - c.effectIndex)
+        if (revision!.type !== "PROGRAM" || source.zone.zone !== "RESOLVING_PROGRAM" || resolving.length !== 1 || c.remainingCost !== 0 || !ability || c.effectIndex >= ability.effects.length || (c.effectIndex !== 0 && current?.effect.kind !== "DEFEAT_UNIT") || (current?.effect.kind !== "SPEND_UNIT" && current?.effect.kind !== "DEFEAT_UNIT" && current?.effect.kind !== "ADJUST_GIG_UP_TO" && current?.effect.kind !== "POWER_UNTIL_END_OF_TURN" && current?.effect.kind !== "TRASH_THEN_RETURN_UNIT" && current?.effect.kind !== "BOTTOM_DECK_UNIT") || current.id !== playEffectId(state, c.effectIndex) || current.sourceId !== c.sourceId || current.controllerId !== c.actorId || canonicalSerialize(current.effect) !== canonicalSerialize(ability.effects[c.effectIndex]) || state.resolution.pending.length !== ability.effects.length - 1 - c.effectIndex)
             return failure("INVALID_PROGRAM_EFFECT", "Resolving Program and current primitive must match its pinned ordered ability");
         for (const [index, effect] of state.resolution.pending.entries()) {
             if (effect.id !== playEffectId(state, c.effectIndex + index + 1) || effect.sourceId !== c.sourceId || effect.controllerId !== c.actorId || effect.causedBySequence !== current.causedBySequence || canonicalSerialize(effect.effect) !== canonicalSerialize(ability!.effects[c.effectIndex + index + 1])) return failure("INVALID_PROGRAM_EFFECT", "Remaining primitive chain differs from the pinned ability");
@@ -77,6 +81,8 @@ export function validatePlayState(state: GameState, context: EngineContext) {
             if (!state.resolution.targetedDefeatContinuation || c.targetGigId) return failure("INVALID_TARGETED_DEFEAT", "Program defeat needs its bounded continuation");
         } else if (current.effect.kind === "TRASH_THEN_RETURN_UNIT") {
             const trashed = validateTrashReturn(state, context); if (!trashed.ok) return trashed;
+        } else if (current.effect.kind === "BOTTOM_DECK_UNIT") {
+            const bottomed = validateBottomDeck(state, context); if (!bottomed.ok) return bottomed;
         } else if (current.effect.kind === "POWER_UNTIL_END_OF_TURN") {
             if (c.targetGigId || powerTargets(state, c.actorId, context).length < 2 || state.timing.step !== "TARGET_SELECTION") return failure("INVALID_POWER_TARGET", "Only strategic current rival-Unit choices pause the power primitive");
         } else {
@@ -85,6 +91,7 @@ export function validatePlayState(state: GameState, context: EngineContext) {
         }
     }
     if (c.trashedIds && current?.effect.kind !== "TRASH_THEN_RETURN_UNIT") return failure("INVALID_TRASH_RETURN", "Trashed cards belong only to the current trash-return primitive");
+    if (c.bottomDecked && current?.effect.kind !== "BOTTOM_DECK_UNIT") return failure("INVALID_BOTTOM_DECK", "A bottom-decked Unit belongs only to the current bottom-deck primitive");
     if (c.phase !== "PAYMENT") {
         for (const p of c.selectedSources) {
             const paid = state.objects.cards[p.cardInstanceId], r = revisionOf(state, p.cardInstanceId, context);
