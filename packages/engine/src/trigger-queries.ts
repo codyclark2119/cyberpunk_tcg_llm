@@ -14,6 +14,7 @@ import type { EngineContext } from "./state";
 import { cardRevision } from "./characteristics";
 import { attachedGear } from "./attachments";
 import { supportsEffectiveTriggerSource, triggersEnabled } from "./trigger-support";
+import { searchTargets } from "./search-state";
 
 /** Physical ability source, inherited subject and trigger-time controller are distinct identities. */
 export function effectiveTriggeredAbilities(state: GameState, subjectId: CardInstanceId, context: EngineContext): TriggerBinding[] {
@@ -92,7 +93,9 @@ export function triggerChoice(state: GameState, context: EngineContext): Pending
     else if (c.phase === "OPTIONAL") { kind = "OPTIONAL"; options = [{ kind: "CONFIRM", confirmed: true }, { kind: "CONFIRM", confirmed: false }]; }
     else if (c.phase === "TARGET") {
         kind = "TARGET";
-        options = current?.effect.kind === "SPEND_UNIT"
+        options = current?.effect.kind === "SEARCH_GEAR"
+            ? [{ kind: "MODE", mode: "DONE" }, ...searchTargets(state, context).filter(id => !state.resolution.searchContinuation?.selected.includes(id)).map(cardInstanceId => ({ kind: "CARD" as const, cardInstanceId }))]
+            : current?.effect.kind === "SPEND_UNIT"
             ? listSpendUnitTargets(state, actorId, current.effect.target, context).map(cardInstanceId => ({ kind: "CARD", cardInstanceId }))
             : current?.effect.kind === "READY_UNIT"
             ? readyLegendTargets(state, actorId, context).map(cardInstanceId => ({ kind: "CARD", cardInstanceId }))

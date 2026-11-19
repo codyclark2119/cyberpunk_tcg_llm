@@ -9,7 +9,8 @@ export function actionReturnContext(state: GameState): ActionReturnContext {
 }
 export function validateActionReturn(state: GameState, context: EngineContext) {
     const r = state.resolution, destination = r.returnTo;
-    const continuation = r.legendEntryContinuation || r.playContinuation || r.callContinuation || r.searchContinuation;
+    // Batch V19: an attack-trigger search belongs to its trigger batch, which trigger-state validates.
+    const continuation = r.legendEntryContinuation || r.playContinuation || r.callContinuation || (!r.triggerContinuation && r.searchContinuation);
     if (!continuation) return destination ? failure("INVALID_RETURN_CONTEXT", "Return context requires an unfinished action") : success(null);
     if (state.timing.combat.stage === "RIVAL_REACT") {
         if (!reactEnabled(context) || destination?.kind !== "RIVAL_REACT" || state.timing.actingPlayer === state.timing.activePlayer) return failure("INVALID_RETURN_CONTEXT", "Defender continuation must explicitly return to React");
