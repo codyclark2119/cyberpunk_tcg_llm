@@ -100,7 +100,7 @@ export function triggerChoice(state: GameState, context: EngineContext): Pending
             ? trashedProgramTargets(state, context).map(cardInstanceId => ({ kind: "CARD", cardInstanceId }))
             : current?.effect.kind === "GRANT_KEYWORD_UNTIL_END_OF_TURN"
             ? keywordGrantTargets(state, current, context).map(cardInstanceId => ({ kind: "CARD", cardInstanceId }))
-            : current?.effect.kind === "SPEND_UNIT"
+            : current?.effect.kind === "SPEND_UNIT" || current?.effect.kind === "PREVENT_UNIT_READY"
             ? listSpendUnitTargets(state, actorId, current.effect.target, context).map(cardInstanceId => ({ kind: "CARD", cardInstanceId }))
             : current?.effect.kind === "READY_UNIT"
             ? readyLegendTargets(state, actorId, context).map(cardInstanceId => ({ kind: "CARD", cardInstanceId }))

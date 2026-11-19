@@ -84,7 +84,8 @@ export const RegisterEndTurnEffectSchema = z.strictObject({ kind: z.literal("REG
 // costAtMost absent means any cost (batch V8); admission stays with the exact per-card gate.
 export const SpendUnitTargetSchema = z.strictObject({ kind: z.literal("UNITS"), relation: TargetRelationshipSchema, costAtMost: z.literal(4).optional() });
 export type SpendUnitTarget = z.infer<typeof SpendUnitTargetSchema>;
-export const SpendUnitEffectSchema = z.strictObject({ kind: z.literal("SPEND_UNIT"), target: SpendUnitTargetSchema });
+// Batch V22: "Spend a rival Unit. It can't ready until your next turn." locks the chosen Unit too.
+export const SpendUnitEffectSchema = z.strictObject({ kind: z.literal("SPEND_UNIT"), target: SpendUnitTargetSchema, preventReady: z.literal("UNTIL_YOUR_NEXT_TURN").optional() });
 // Batch V15: field Units to bottom-deck, by relation, optional readiness and "lowest-power" (every tied minimum).
 export const BottomDeckTargetSchema = z.strictObject({ relation: z.enum(["RIVAL", "CONTROLLED"]), readiness: z.enum(["READY", "SPENT"]).optional(), lowestPower: z.literal(true).optional() });
 export type BottomDeckTarget = z.infer<typeof BottomDeckTargetSchema>;
@@ -154,6 +155,8 @@ export const EffectSchema = z.discriminatedUnion("kind", [
     z.strictObject({ kind: z.literal("GRANT_KEYWORD_UNTIL_END_OF_TURN"), keyword: z.literal("ADRENALINE"), target: z.strictObject({ kind: z.literal("ANOTHER_FRIENDLY_UNIT"), costAtMost: z.literal(5) }) }),
     // Batch V21: "[Play] Until your next turn, rival Units can't steal friendly Gigs with value higher than their power" (and the Legend / less-than mirror).
     z.strictObject({ kind: z.literal("RESTRICT_RIVAL_GIG_STEAL"), actor: z.enum(["UNIT", "LEGEND"]), forbidden: z.enum(["VALUE_ABOVE_POWER", "VALUE_BELOW_POWER"]), duration: z.literal("UNTIL_YOUR_NEXT_TURN") }),
+    // Batch V22: "[Play] If your Street Cred is an even number, a rival Unit can't ready until your next turn." (10.16.1.1: checked on resolution).
+    z.strictObject({ kind: z.literal("PREVENT_UNIT_READY"), target: SpendUnitTargetSchema, when: z.strictObject({ timing: z.literal("RESOLUTION"), condition: z.strictObject({ kind: z.literal("STREET_CRED_IS_EVEN") }) }).optional(), duration: z.literal("UNTIL_YOUR_NEXT_TURN") }),
     z.strictObject({ kind: z.literal("DRAW"), count: z.number().int().positive() }),
     z.strictObject({ kind: z.literal("DAMAGE"), target: TargetSelectorSchema, amount: z.number().int().nonnegative() }),
     z.strictObject({ kind: z.literal("MOVE_CARD"), target: TargetSelectorSchema, destination: ZoneSchema }),

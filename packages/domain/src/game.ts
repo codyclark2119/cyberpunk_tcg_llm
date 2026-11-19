@@ -87,6 +87,11 @@ export type TemporaryKeywordGrant = z.infer<typeof TemporaryKeywordGrantSchema>;
 export const GigStealRestrictionSchema = z.strictObject({ kind: z.literal("GIG_STEAL_RESTRICTION"), actor: z.enum(["UNIT", "LEGEND"]), forbidden: z.enum(["VALUE_ABOVE_POWER", "VALUE_BELOW_POWER"]),
     sourceId: CardInstanceIdSchema, protectedPlayerId: PlayerIdSchema, createdTurn: z.number().int().positive(), origin: z.strictObject({ effectId: HashSchema, abilityId: z.string().min(1), ordinal: z.number().int().positive() }) });
 export type GigStealRestriction = z.infer<typeof GigStealRestrictionSchema>;
+/** Batch V22: a chosen rival Unit that can't ready (2.6) until the start of the locking player's next turn (8.6.2.1), or until it leaves the field.
+ * A PLAY-trigger origin carries its trigger ordinal; a resolving Program's primitive does not. */
+export const ReadyLockSchema = z.strictObject({ kind: z.literal("READY_LOCK"), targetId: CardInstanceIdSchema, sourceId: CardInstanceIdSchema, lockingPlayerId: PlayerIdSchema, createdTurn: z.number().int().positive(),
+    origin: z.strictObject({ effectId: HashSchema, abilityId: z.string().min(1), ordinal: z.number().int().positive().optional() }) });
+export type ReadyLock = z.infer<typeof ReadyLockSchema>;
 export const FightPreventionSchema = z.strictObject({
     kind: z.literal("PREVENT_NEXT_RIVAL_FIGHT_DEFEAT"), id: HashSchema, sourceId: CardInstanceIdSchema, controllerId: PlayerIdSchema,
     createdTurn: z.number().int().positive(), expires: z.strictObject({ kind: z.literal("END_OF_TURN"), turn: z.number().int().positive() })
@@ -138,6 +143,7 @@ export const GameStateSchema = z.strictObject({
     temporaryModifiers: z.array(TemporaryPowerModifierSchema).optional(),
     temporaryKeywords: z.array(TemporaryKeywordGrantSchema).min(1).optional(),
     gigStealRestrictions: z.array(GigStealRestrictionSchema).min(1).optional(),
+    readyLocks: z.array(ReadyLockSchema).min(1).optional(),
     resolution: ResolutionStateSchema, rng: RngStateSchema
 });
 export type DeepReadonly<T> = T extends string | number | boolean | null | undefined ? T : T extends object ? {
@@ -187,6 +193,9 @@ export const EventPayloadSchema = z.discriminatedUnion("kind", [
     z.strictObject({ kind: z.literal("KEYWORD_GRANTED"), grant: TemporaryKeywordGrantSchema }),
     z.strictObject({ kind: z.literal("GIG_STEAL_RESTRICTED"), restriction: GigStealRestrictionSchema }),
     z.strictObject({ kind: z.literal("GIG_STEAL_RESTRICTION_EXPIRED"), sourceId: CardInstanceIdSchema, protectedPlayerId: PlayerIdSchema, effectId: HashSchema }),
+    z.strictObject({ kind: z.literal("READY_LOCKED"), lock: ReadyLockSchema }),
+    z.strictObject({ kind: z.literal("READY_LOCK_EXPIRED"), targetId: CardInstanceIdSchema, sourceId: CardInstanceIdSchema, effectId: HashSchema, reason: z.enum(["NEXT_TURN", "LEFT_FIELD"]) }),
+    z.strictObject({ kind: z.literal("READY_PREVENTED"), cardInstanceId: CardInstanceIdSchema, effectIds: z.array(HashSchema).min(1) }),
     z.strictObject({ kind: z.literal("KEYWORD_GRANT_EXPIRED"), sourceId: CardInstanceIdSchema, targetId: CardInstanceIdSchema, effectId: HashSchema, reason: z.enum(["TURN_END", "LEFT_FIELD"]) }),
     z.strictObject({ kind: z.literal("POWER_MODIFIER_EXPIRED"), sourceId: CardInstanceIdSchema, targetId: CardInstanceIdSchema, reason: z.enum(["TURN_END", "HIDDEN_AREA"]), effectId: HashSchema.optional() }),
     z.strictObject({ kind: z.literal("BLOCKER_SPENT"), cardInstanceId: CardInstanceIdSchema }),

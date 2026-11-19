@@ -28,6 +28,7 @@ import { HandlerRegistry, finishSearch } from "./effects";
 import { searchTargets } from "./search-state";
 import { applyKeywordGrant, applyStealRestriction, beginTrashProgram, chooseTrashedProgram, keywordGrantTargets } from "./play-pin-effects";
 import { changeGigValue, gigAdjustmentDelta } from "./gig-value";
+import { applyReadyLock } from "./ready-lock";
 import { triggersEnabled } from "./trigger-support";
 import { discardingPlayer, discoverTriggers, pendingTrigger, trashUnitTargets, triggerChoice, triggerGigTargets } from "./trigger-queries";
 import { moveCardLocation } from "./card-movement";
@@ -206,6 +207,13 @@ export function advanceTriggers(m: TurnMutation): Result<null> {
         c.phase = "TARGET"; return offer(m);
     }
     // Batch V21: "[Play] Until your next turn, rival Units/Legends can't steal friendly Gigs ..." has no choice.
+    // Batch V22: "[Play] If your Street Cred is an even number, a rival Unit can't ready until your next turn" (10.16.1.1: checked on resolution).
+    if (e.kind === "PREVENT_UNIT_READY") {
+        const current = r.current;
+        if (e.when) { const met = testCondition(m.state, current.controllerId, e.when.condition, m.context, current.sourceId); m.emit({ kind: "CONDITION_EVALUATED", effectId: current.id, met }); if (!met) return completed(m); }
+        if (!listSpendUnitTargets(m.state, current.controllerId, e.target, m.context).length) return completed(m);
+        c.phase = "TARGET"; return offer(m);
+    }
     if (e.kind === "RESTRICT_RIVAL_GIG_STEAL") { const restricted = applyStealRestriction(m); return restricted.ok ? completed(m) : restricted; }
     if (e.kind === "LOOK_AT_FRIENDLY_FACE_DOWN_LEGEND") {
         if (!privateLookTargets(m.state, r.current.controllerId, m.context).length) return completed(m);
@@ -297,6 +305,11 @@ export function continueTrigger(m: TurnMutation, index: number, forced = false):
         if (current.effect.kind === "GRANT_KEYWORD_UNTIL_END_OF_TURN") {
             if (option.kind !== "CARD") return failure("INVALID_KEYWORD_TARGET", "Choose another friendly Unit");
             const granted = applyKeywordGrant(m, option.cardInstanceId, forced); return granted.ok ? completed(m) : granted;
+        }
+        if (current.effect.kind === "PREVENT_UNIT_READY") {
+            if (option.kind !== "CARD" || !listSpendUnitTargets(m.state, current.controllerId, current.effect.target, m.context).includes(option.cardInstanceId)) return failure("INVALID_READY_LOCK_TARGET", "Choose a current rival Unit");
+            m.emit({ kind: "CARD_TARGET_SELECTED", effectId: current.id, sourceId: current.sourceId!, targetId: option.cardInstanceId, controllerId: current.controllerId, forced });
+            const locked = applyReadyLock(m, option.cardInstanceId); return locked.ok ? completed(m) : locked;
         }
         if (current.effect.kind === "SEARCH_GEAR") {
             // 11.17.4.1: a hidden search may purposely fail to find; the rest is bottom-decked either way.

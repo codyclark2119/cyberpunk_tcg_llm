@@ -1749,6 +1749,73 @@
             "additionalProperties": false
           }
         },
+        "readyLocks": {
+          "minItems": 1,
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "kind": {
+                "type": "string",
+                "const": "READY_LOCK"
+              },
+              "targetId": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 200,
+                "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$"
+              },
+              "sourceId": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 200,
+                "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$"
+              },
+              "lockingPlayerId": {
+                "type": "string",
+                "format": "uuid",
+                "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+              },
+              "createdTurn": {
+                "type": "integer",
+                "exclusiveMinimum": 0,
+                "maximum": 9007199254740991
+              },
+              "origin": {
+                "type": "object",
+                "properties": {
+                  "effectId": {
+                    "type": "string",
+                    "pattern": "^[a-f0-9]{64}$"
+                  },
+                  "abilityId": {
+                    "type": "string",
+                    "minLength": 1
+                  },
+                  "ordinal": {
+                    "type": "integer",
+                    "exclusiveMinimum": 0,
+                    "maximum": 9007199254740991
+                  }
+                },
+                "required": [
+                  "effectId",
+                  "abilityId"
+                ],
+                "additionalProperties": false
+              }
+            },
+            "required": [
+              "kind",
+              "targetId",
+              "sourceId",
+              "lockingPlayerId",
+              "createdTurn",
+              "origin"
+            ],
+            "additionalProperties": false
+          }
+        },
         "resolution": {
           "type": "object",
           "properties": {
@@ -2890,6 +2957,10 @@
                                 "relation"
                               ],
                               "additionalProperties": false
+                            },
+                            "preventReady": {
+                              "type": "string",
+                              "const": "UNTIL_YOUR_NEXT_TURN"
                             }
                           },
                           "required": [
@@ -4403,6 +4474,78 @@
                           "properties": {
                             "kind": {
                               "type": "string",
+                              "const": "PREVENT_UNIT_READY"
+                            },
+                            "target": {
+                              "type": "object",
+                              "properties": {
+                                "kind": {
+                                  "type": "string",
+                                  "const": "UNITS"
+                                },
+                                "relation": {
+                                  "type": "string",
+                                  "enum": [
+                                    "CONTROLLED",
+                                    "RIVAL",
+                                    "ANY"
+                                  ]
+                                },
+                                "costAtMost": {
+                                  "type": "number",
+                                  "const": 4
+                                }
+                              },
+                              "required": [
+                                "kind",
+                                "relation"
+                              ],
+                              "additionalProperties": false
+                            },
+                            "when": {
+                              "type": "object",
+                              "properties": {
+                                "timing": {
+                                  "type": "string",
+                                  "const": "RESOLUTION"
+                                },
+                                "condition": {
+                                  "type": "object",
+                                  "properties": {
+                                    "kind": {
+                                      "type": "string",
+                                      "const": "STREET_CRED_IS_EVEN"
+                                    }
+                                  },
+                                  "required": [
+                                    "kind"
+                                  ],
+                                  "additionalProperties": false
+                                }
+                              },
+                              "required": [
+                                "timing",
+                                "condition"
+                              ],
+                              "additionalProperties": false
+                            },
+                            "duration": {
+                              "type": "string",
+                              "const": "UNTIL_YOUR_NEXT_TURN"
+                            }
+                          },
+                          "required": [
+                            "kind",
+                            "target",
+                            "duration"
+                          ],
+                          "additionalProperties": false
+                        },
+                        {
+                          "type": "object",
+                          "properties": {
+                            "kind": {
+                              "type": "string",
                               "const": "DRAW"
                             },
                             "count": {
@@ -5395,6 +5538,10 @@
                               "relation"
                             ],
                             "additionalProperties": false
+                          },
+                          "preventReady": {
+                            "type": "string",
+                            "const": "UNTIL_YOUR_NEXT_TURN"
                           }
                         },
                         "required": [
@@ -6908,6 +7055,78 @@
                         "properties": {
                           "kind": {
                             "type": "string",
+                            "const": "PREVENT_UNIT_READY"
+                          },
+                          "target": {
+                            "type": "object",
+                            "properties": {
+                              "kind": {
+                                "type": "string",
+                                "const": "UNITS"
+                              },
+                              "relation": {
+                                "type": "string",
+                                "enum": [
+                                  "CONTROLLED",
+                                  "RIVAL",
+                                  "ANY"
+                                ]
+                              },
+                              "costAtMost": {
+                                "type": "number",
+                                "const": 4
+                              }
+                            },
+                            "required": [
+                              "kind",
+                              "relation"
+                            ],
+                            "additionalProperties": false
+                          },
+                          "when": {
+                            "type": "object",
+                            "properties": {
+                              "timing": {
+                                "type": "string",
+                                "const": "RESOLUTION"
+                              },
+                              "condition": {
+                                "type": "object",
+                                "properties": {
+                                  "kind": {
+                                    "type": "string",
+                                    "const": "STREET_CRED_IS_EVEN"
+                                  }
+                                },
+                                "required": [
+                                  "kind"
+                                ],
+                                "additionalProperties": false
+                              }
+                            },
+                            "required": [
+                              "timing",
+                              "condition"
+                            ],
+                            "additionalProperties": false
+                          },
+                          "duration": {
+                            "type": "string",
+                            "const": "UNTIL_YOUR_NEXT_TURN"
+                          }
+                        },
+                        "required": [
+                          "kind",
+                          "target",
+                          "duration"
+                        ],
+                        "additionalProperties": false
+                      },
+                      {
+                        "type": "object",
+                        "properties": {
+                          "kind": {
+                            "type": "string",
                             "const": "DRAW"
                           },
                           "count": {
@@ -7896,6 +8115,10 @@
                               "relation"
                             ],
                             "additionalProperties": false
+                          },
+                          "preventReady": {
+                            "type": "string",
+                            "const": "UNTIL_YOUR_NEXT_TURN"
                           }
                         },
                         "required": [
@@ -9400,6 +9623,78 @@
                           "kind",
                           "actor",
                           "forbidden",
+                          "duration"
+                        ],
+                        "additionalProperties": false
+                      },
+                      {
+                        "type": "object",
+                        "properties": {
+                          "kind": {
+                            "type": "string",
+                            "const": "PREVENT_UNIT_READY"
+                          },
+                          "target": {
+                            "type": "object",
+                            "properties": {
+                              "kind": {
+                                "type": "string",
+                                "const": "UNITS"
+                              },
+                              "relation": {
+                                "type": "string",
+                                "enum": [
+                                  "CONTROLLED",
+                                  "RIVAL",
+                                  "ANY"
+                                ]
+                              },
+                              "costAtMost": {
+                                "type": "number",
+                                "const": 4
+                              }
+                            },
+                            "required": [
+                              "kind",
+                              "relation"
+                            ],
+                            "additionalProperties": false
+                          },
+                          "when": {
+                            "type": "object",
+                            "properties": {
+                              "timing": {
+                                "type": "string",
+                                "const": "RESOLUTION"
+                              },
+                              "condition": {
+                                "type": "object",
+                                "properties": {
+                                  "kind": {
+                                    "type": "string",
+                                    "const": "STREET_CRED_IS_EVEN"
+                                  }
+                                },
+                                "required": [
+                                  "kind"
+                                ],
+                                "additionalProperties": false
+                              }
+                            },
+                            "required": [
+                              "timing",
+                              "condition"
+                            ],
+                            "additionalProperties": false
+                          },
+                          "duration": {
+                            "type": "string",
+                            "const": "UNTIL_YOUR_NEXT_TURN"
+                          }
+                        },
+                        "required": [
+                          "kind",
+                          "target",
                           "duration"
                         ],
                         "additionalProperties": false
@@ -11649,6 +11944,37 @@
               "forbidden",
               "sourceId",
               "protectedSeat",
+              "createdTurn"
+            ],
+            "additionalProperties": false
+          }
+        },
+        "readyLocks": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "targetId": {
+                "type": "string"
+              },
+              "sourceId": {
+                "type": "string"
+              },
+              "lockingSeat": {
+                "type": "integer",
+                "minimum": -9007199254740991,
+                "maximum": 9007199254740991
+              },
+              "createdTurn": {
+                "type": "integer",
+                "exclusiveMinimum": 0,
+                "maximum": 9007199254740991
+              }
+            },
+            "required": [
+              "targetId",
+              "sourceId",
+              "lockingSeat",
               "createdTurn"
             ],
             "additionalProperties": false

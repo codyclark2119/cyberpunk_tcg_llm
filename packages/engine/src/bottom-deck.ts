@@ -7,6 +7,7 @@ import { moveCardLocation } from "./card-movement";
 import { forgetLegendKnowledge } from "./private-knowledge";
 import { expirePowerOnHiddenEntry } from "./temporary-power";
 import { expireKeywordGrantsOnDeparture } from "./play-pin-effects";
+import { expireReadyLocksOnDeparture } from "./ready-lock";
 import { cardRevision, effectivePower } from "./characteristics";
 
 /** Batch V15: public effective Units on the field, filtered by relation and readiness; "lowest-power" keeps every tied minimum. */
@@ -44,6 +45,7 @@ function bottomDeck(m: TurnMutation, id: CardInstanceId, forced: boolean): Resul
     for (const cid of order) {
         expirePowerOnHiddenEntry(m, cid);
         expireKeywordGrantsOnDeparture(m, cid);
+        expireReadyLocksOnDeparture(m, cid);
         forgetLegendKnowledge(m, cid);
         const card = s.objects.cards[cid], from = { ...card.zone }, refs = s.players[from.playerId].zones[from.zone]!;
         refs.splice(refs.indexOf(cid), 1);

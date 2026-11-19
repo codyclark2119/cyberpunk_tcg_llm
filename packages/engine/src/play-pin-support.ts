@@ -1,7 +1,8 @@
 import { turnSliceAllows, canonicalSerialize, failure, success, type CardRevisionSnapshot, type DeepReadonly } from "@tcg/domain";
 import type { EngineContext } from "./state";
 import { adrenalineEnabled } from "./restriction-support";
-/** Batches V20-V21: exact per-card pin table (Cody, 2026-11-15) for single-primitive {Play} Units. Each admitted
+import { targetedSpendEnabled } from "./targeted-spend-support";
+/** Batches V20-V22: exact per-card pin table (Cody, 2026-11-15) for single-primitive {Play} Units. Each admitted
  * card's complete printed shape is literal here; the primitives resolve in the reviewed PLAY trigger batch. */
 const PLAY_PIN_SHAPES = [
     // Hacked Corpo: "{Play} Trash 3. Add a Program from among them to your hand."
@@ -22,10 +23,15 @@ const PLAY_PIN_SHAPES = [
     { type: "UNIT", colors: ["BLUE"], ram: { BLUE: 2 }, tags: ["Netrunner"], cost: 4, power: 5, sell: false, keywords: [],
         equip: null, modifiers: [], restrictions: [],
         abilities: [{ trigger: "WHEN_PLAYED", inherited: null, guard: null, activation: null, conditions: [], cost: { kind: "NONE" },
-            effects: [{ kind: "RESTRICT_RIVAL_GIG_STEAL", actor: "LEGEND", forbidden: "VALUE_BELOW_POWER", duration: "UNTIL_YOUR_NEXT_TURN" }] }] }
+            effects: [{ kind: "RESTRICT_RIVAL_GIG_STEAL", actor: "LEGEND", forbidden: "VALUE_BELOW_POWER", duration: "UNTIL_YOUR_NEXT_TURN" }] }] },
+    // Batch V22, Pacifica Netrunner: "{Play} If your Street Cred is an even number, a rival Unit can't ready until your next turn."
+    { type: "UNIT", colors: ["GREEN"], ram: { GREEN: 2 }, tags: ["Netrunner"], cost: 4, power: 1, sell: false, keywords: [],
+        equip: null, modifiers: [], restrictions: [],
+        abilities: [{ trigger: "WHEN_PLAYED", inherited: null, guard: null, activation: null, conditions: [], cost: { kind: "NONE" },
+            effects: [{ kind: "PREVENT_UNIT_READY", target: { kind: "UNITS", relation: "RIVAL" }, when: { timing: "RESOLUTION", condition: { kind: "STREET_CRED_IS_EVEN" } }, duration: "UNTIL_YOUR_NEXT_TURN" }] }] }
 ].map(shape => canonicalSerialize(shape));
 export function hasPinnedPlayEffect(card: DeepReadonly<CardRevisionSnapshot> | undefined) {
-    return Boolean(card?.mechanics.abilities.some(a => a.effects.some(e => e.kind === "TRASH_THEN_RETURN_PROGRAM" || e.kind === "GRANT_KEYWORD_UNTIL_END_OF_TURN" || e.kind === "RESTRICT_RIVAL_GIG_STEAL")));
+    return Boolean(card?.mechanics.abilities.some(a => a.effects.some(e => e.kind === "TRASH_THEN_RETURN_PROGRAM" || e.kind === "GRANT_KEYWORD_UNTIL_END_OF_TURN" || e.kind === "RESTRICT_RIVAL_GIG_STEAL" || e.kind === "PREVENT_UNIT_READY")));
 }
 export function supportsPinnedPlayUnit(card: DeepReadonly<CardRevisionSnapshot> | undefined, context: EngineContext) {
     const p = context.content.ruleset.gameplay?.turnSlice, m = card?.mechanics;
@@ -33,6 +39,8 @@ export function supportsPinnedPlayUnit(card: DeepReadonly<CardRevisionSnapshot> 
         return failure("UNSUPPORTED_PLAY_PIN", "Reviewed trigger scope, card play and trigger policies required");
     if (m.abilities.some(a => a.effects.some(e => e.kind === "GRANT_KEYWORD_UNTIL_END_OF_TURN")) && !adrenalineEnabled(context))
         return failure("UNSUPPORTED_PLAY_PIN", "A granted Adrenaline requires the reviewed Adrenaline policy");
+    if (m.abilities.some(a => a.effects.some(e => e.kind === "PREVENT_UNIT_READY")) && !targetedSpendEnabled(context))
+        return failure("UNSUPPORTED_PLAY_PIN", "A ready lock chooses its Unit through the reviewed targeted-spend selector");
     const actual = canonicalSerialize({ type: card.type, colors: card.colors, ram: card.ram, tags: card.tags, cost: card.printedCost.amount, power: card.power ?? null, sell: card.sellProfile.allowed,
         keywords: m.keywords, equip: m.equip ?? null, modifiers: m.modifiers, restrictions: m.restrictions ?? [],
         abilities: m.abilities.map(a => ({ trigger: a.trigger ?? null, inherited: a.inherited ?? null, guard: a.guard ?? null, activation: a.activation ?? null, conditions: a.conditions, cost: a.cost, effects: a.effects })) });

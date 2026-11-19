@@ -9,12 +9,12 @@
   },
   "totals": {
     "cards": 151,
-    "admitted": 69,
-    "notAdmitted": 82,
+    "admitted": 71,
+    "notAdmitted": 80,
     "notAdmittedOnlyCoveredFamilies": 0,
     "byAdmission": {
-      "NOT_ADMITTED": 82,
-      "SOURCE_MATCH": 69
+      "NOT_ADMITTED": 80,
+      "SOURCE_MATCH": 71
     }
   },
   "families": [
@@ -33,7 +33,7 @@
       "summary": "Draw cards, fixed or conditional.",
       "notes": "Routed. Variable counts need SCALED_AMOUNT; 'may draw' needs an optional prompt.",
       "cardCount": 38,
-      "notAdmittedCount": 25,
+      "notAdmittedCount": 24,
       "soleBlockerCount": 0
     },
     {
@@ -78,7 +78,7 @@
       "summary": "[Play] abilities and Program bodies resolving when played.",
       "notes": "Trigger WHEN_PLAYED.",
       "cardCount": 27,
-      "notAdmittedCount": 14,
+      "notAdmittedCount": 13,
       "soleBlockerCount": 0
     },
     {
@@ -118,15 +118,6 @@
       "soleBlockerCount": 0
     },
     {
-      "family": "DURATION_DELAYED",
-      "status": "PARTIAL",
-      "summary": "Lasting and delayed effects: 'until your next turn', 'next time ... this turn', 'at the end of this turn'.",
-      "notes": "",
-      "cardCount": 14,
-      "notAdmittedCount": 10,
-      "soleBlockerCount": 0
-    },
-    {
       "family": "KEYWORD_QUICK",
       "status": "PARTIAL",
       "summary": "[Quick] timing: Programs and activated abilities usable in the react window.",
@@ -145,12 +136,12 @@
       "soleBlockerCount": 0
     },
     {
-      "family": "SPEND_OR_READY",
+      "family": "DURATION_DELAYED",
       "status": "PARTIAL",
-      "summary": "Spend or ready Units and Legends by an effect, and 'can't ready' locks.",
-      "notes": "SPEND_UNIT (rival, cost at most 4) only; readying Units or Legends is missing.",
-      "cardCount": 15,
-      "notAdmittedCount": 9,
+      "summary": "Lasting and delayed effects: 'until your next turn', 'next time ... this turn', 'at the end of this turn'.",
+      "notes": "",
+      "cardCount": 14,
+      "notAdmittedCount": 8,
       "soleBlockerCount": 0
     },
     {
@@ -178,6 +169,15 @@
       "notes": "Only the history condition SUBJECT_STOLE_GIG_THIS_TURN exists (Delamain Cab); there is no steal trigger.",
       "cardCount": 8,
       "notAdmittedCount": 8,
+      "soleBlockerCount": 0
+    },
+    {
+      "family": "SPEND_OR_READY",
+      "status": "PARTIAL",
+      "summary": "Spend or ready Units and Legends by an effect, and 'can't ready' locks.",
+      "notes": "SPEND_UNIT (rival, cost at most 4) only; readying Units or Legends is missing.",
+      "cardCount": 15,
+      "notAdmittedCount": 7,
       "soleBlockerCount": 0
     },
     {
@@ -262,15 +262,6 @@
       "soleBlockerCount": 0
     },
     {
-      "family": "CONDITION_STREET_CRED",
-      "status": "PARTIAL",
-      "summary": "Conditions on Street Cred.",
-      "notes": "Nearly complete as conditions; gating an effect mode on them is not.",
-      "cardCount": 13,
-      "notAdmittedCount": 5,
-      "soleBlockerCount": 0
-    },
-    {
       "family": "COST_MODIFIER",
       "status": "MISSING",
       "summary": "Play-cost reductions, alternative costs, ability-cost and Go Solo cost changes.",
@@ -340,6 +331,15 @@
       "notes": "Trigger WHEN_FIGHT_WON (Satori). Losing a fight and win margins are missing.",
       "cardCount": 5,
       "notAdmittedCount": 4,
+      "soleBlockerCount": 0
+    },
+    {
+      "family": "CONDITION_STREET_CRED",
+      "status": "PARTIAL",
+      "summary": "Conditions on Street Cred.",
+      "notes": "Nearly complete as conditions; gating an effect mode on them is not.",
+      "cardCount": 13,
+      "notAdmittedCount": 3,
       "soleBlockerCount": 0
     },
     {
@@ -1949,20 +1949,15 @@
       "colors": [
         "GREEN"
       ],
-      "admission": "NOT_ADMITTED",
-      "revision": null,
+      "admission": "SOURCE_MATCH",
+      "revision": 1,
       "families": [
         "CONDITION_STREET_CRED",
         "DRAW",
         "DURATION_DELAYED",
         "SPEND_OR_READY"
       ],
-      "blockingFamilies": [
-        "CONDITION_STREET_CRED",
-        "DRAW",
-        "DURATION_DELAYED",
-        "SPEND_OR_READY"
-      ],
+      "blockingFamilies": [],
       "note": null
     },
     {
@@ -2278,20 +2273,15 @@
       "colors": [
         "GREEN"
       ],
-      "admission": "NOT_ADMITTED",
-      "revision": null,
+      "admission": "SOURCE_MATCH",
+      "revision": 1,
       "families": [
         "CONDITION_STREET_CRED",
         "DURATION_DELAYED",
         "SPEND_OR_READY",
         "TRIGGER_PLAY"
       ],
-      "blockingFamilies": [
-        "CONDITION_STREET_CRED",
-        "DURATION_DELAYED",
-        "SPEND_OR_READY",
-        "TRIGGER_PLAY"
-      ],
+      "blockingFamilies": [],
       "note": null
     },
     {
