@@ -36,7 +36,9 @@ export const ConditionSchema = z.discriminatedUnion("kind", [
     // Batch V24: the trigger subject is on the field with at least one attached Gear ("if it's equipped").
     z.strictObject({ kind: z.literal("SUBJECT_IS_EQUIPPED") }),
     // Batch V27: "if you control 2 or more Gigs with 8+ value".
-    z.strictObject({ kind: z.literal("GIG_COUNT_WITH_VALUE_AT_LEAST"), minimum: z.literal(8), count: z.literal(2) })
+    z.strictObject({ kind: z.literal("GIG_COUNT_WITH_VALUE_AT_LEAST"), minimum: z.literal(8), count: z.literal(2) }),
+    // Batch V29: "If you control a value-pair of Gigs" (6.6: 2 dice with the same value in the same Gig area).
+    z.strictObject({ kind: z.literal("CONTROLS_VALUE_PAIR") })
 ]);
 export const CombatRestrictionSchema = z.discriminatedUnion("kind", [
     z.strictObject({ kind: z.literal("CANNOT_ATTACK") }),
@@ -170,6 +172,9 @@ export const EffectSchema = z.discriminatedUnion("kind", [
     // counted when the effect resolves.
     z.strictObject({ kind: z.literal("POWER_PER_FRIENDLY_GIG"), target: z.strictObject({ kind: z.literal("SOURCE_SUBJECT") }), amount: z.literal(2), parity: z.literal("EVEN") }),
     z.strictObject({ kind: z.literal("DRAW_PER_FRIENDLY_GIG"), count: z.literal(1), parity: z.literal("ODD") }),
+    // Batch V29: "If you control a value-pair of Gigs, ready up to 2 MERC Legends in your Legends area."
+    z.strictObject({ kind: z.literal("READY_LEGENDS_UP_TO"), tag: z.literal("Merc"), maximum: z.literal(2),
+        when: z.strictObject({ timing: z.literal("RESOLUTION"), condition: z.strictObject({ kind: z.literal("CONTROLS_VALUE_PAIR") }) }) }),
     z.strictObject({ kind: z.literal("DRAW"), count: z.number().int().positive() }),
     z.strictObject({ kind: z.literal("DAMAGE"), target: TargetSelectorSchema, amount: z.number().int().nonnegative() }),
     z.strictObject({ kind: z.literal("MOVE_CARD"), target: TargetSelectorSchema, destination: ZoneSchema }),

@@ -53,5 +53,6 @@ export function testCondition(state: GameState, actor: PlayerId, condition: Cond
         case "GIG_VALUE": return values.includes(condition.value);
         case "GIG_VALUE_AT_LEAST": return values.some(value => value >= condition.minimum);
         case "GIG_COUNT_WITH_VALUE_AT_LEAST": return values.filter(value => value >= condition.minimum).length >= condition.count;
+        case "CONTROLS_VALUE_PAIR": return new Set(values).size < values.length; // Batch V29, 6.6: two own Gigs share a value.
     }
 }

@@ -2411,6 +2411,17 @@
                               "minLength": 1,
                               "maxLength": 200,
                               "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$"
+                            },
+                            "readiedLegends": {
+                              "minItems": 1,
+                              "maxItems": 1,
+                              "type": "array",
+                              "items": {
+                                "type": "string",
+                                "minLength": 1,
+                                "maxLength": 200,
+                                "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$"
+                              }
                             }
                           },
                           "required": [
@@ -4037,6 +4048,19 @@
                                                     "count"
                                                   ],
                                                   "additionalProperties": false
+                                                },
+                                                {
+                                                  "type": "object",
+                                                  "properties": {
+                                                    "kind": {
+                                                      "type": "string",
+                                                      "const": "CONTROLS_VALUE_PAIR"
+                                                    }
+                                                  },
+                                                  "required": [
+                                                    "kind"
+                                                  ],
+                                                  "additionalProperties": false
                                                 }
                                               ]
                                             }
@@ -4537,6 +4561,19 @@
                                                 "count"
                                               ],
                                               "additionalProperties": false
+                                            },
+                                            {
+                                              "type": "object",
+                                              "properties": {
+                                                "kind": {
+                                                  "type": "string",
+                                                  "const": "CONTROLS_VALUE_PAIR"
+                                                }
+                                              },
+                                              "required": [
+                                                "kind"
+                                              ],
+                                              "additionalProperties": false
                                             }
                                           ]
                                         },
@@ -4820,6 +4857,57 @@
                                         "kind",
                                         "count",
                                         "parity"
+                                      ],
+                                      "additionalProperties": false
+                                    },
+                                    {
+                                      "type": "object",
+                                      "properties": {
+                                        "kind": {
+                                          "type": "string",
+                                          "const": "READY_LEGENDS_UP_TO"
+                                        },
+                                        "tag": {
+                                          "type": "string",
+                                          "const": "Merc"
+                                        },
+                                        "maximum": {
+                                          "type": "number",
+                                          "const": 2
+                                        },
+                                        "when": {
+                                          "type": "object",
+                                          "properties": {
+                                            "timing": {
+                                              "type": "string",
+                                              "const": "RESOLUTION"
+                                            },
+                                            "condition": {
+                                              "type": "object",
+                                              "properties": {
+                                                "kind": {
+                                                  "type": "string",
+                                                  "const": "CONTROLS_VALUE_PAIR"
+                                                }
+                                              },
+                                              "required": [
+                                                "kind"
+                                              ],
+                                              "additionalProperties": false
+                                            }
+                                          },
+                                          "required": [
+                                            "timing",
+                                            "condition"
+                                          ],
+                                          "additionalProperties": false
+                                        }
+                                      },
+                                      "required": [
+                                        "kind",
+                                        "tag",
+                                        "maximum",
+                                        "when"
                                       ],
                                       "additionalProperties": false
                                     },
@@ -6819,6 +6907,19 @@
                                                   "count"
                                                 ],
                                                 "additionalProperties": false
+                                              },
+                                              {
+                                                "type": "object",
+                                                "properties": {
+                                                  "kind": {
+                                                    "type": "string",
+                                                    "const": "CONTROLS_VALUE_PAIR"
+                                                  }
+                                                },
+                                                "required": [
+                                                  "kind"
+                                                ],
+                                                "additionalProperties": false
                                               }
                                             ]
                                           }
@@ -7319,6 +7420,19 @@
                                               "count"
                                             ],
                                             "additionalProperties": false
+                                          },
+                                          {
+                                            "type": "object",
+                                            "properties": {
+                                              "kind": {
+                                                "type": "string",
+                                                "const": "CONTROLS_VALUE_PAIR"
+                                              }
+                                            },
+                                            "required": [
+                                              "kind"
+                                            ],
+                                            "additionalProperties": false
                                           }
                                         ]
                                       },
@@ -7602,6 +7716,57 @@
                                       "kind",
                                       "count",
                                       "parity"
+                                    ],
+                                    "additionalProperties": false
+                                  },
+                                  {
+                                    "type": "object",
+                                    "properties": {
+                                      "kind": {
+                                        "type": "string",
+                                        "const": "READY_LEGENDS_UP_TO"
+                                      },
+                                      "tag": {
+                                        "type": "string",
+                                        "const": "Merc"
+                                      },
+                                      "maximum": {
+                                        "type": "number",
+                                        "const": 2
+                                      },
+                                      "when": {
+                                        "type": "object",
+                                        "properties": {
+                                          "timing": {
+                                            "type": "string",
+                                            "const": "RESOLUTION"
+                                          },
+                                          "condition": {
+                                            "type": "object",
+                                            "properties": {
+                                              "kind": {
+                                                "type": "string",
+                                                "const": "CONTROLS_VALUE_PAIR"
+                                              }
+                                            },
+                                            "required": [
+                                              "kind"
+                                            ],
+                                            "additionalProperties": false
+                                          }
+                                        },
+                                        "required": [
+                                          "timing",
+                                          "condition"
+                                        ],
+                                        "additionalProperties": false
+                                      }
+                                    },
+                                    "required": [
+                                      "kind",
+                                      "tag",
+                                      "maximum",
+                                      "when"
                                     ],
                                     "additionalProperties": false
                                   },
@@ -9597,6 +9762,19 @@
                                                   "count"
                                                 ],
                                                 "additionalProperties": false
+                                              },
+                                              {
+                                                "type": "object",
+                                                "properties": {
+                                                  "kind": {
+                                                    "type": "string",
+                                                    "const": "CONTROLS_VALUE_PAIR"
+                                                  }
+                                                },
+                                                "required": [
+                                                  "kind"
+                                                ],
+                                                "additionalProperties": false
                                               }
                                             ]
                                           }
@@ -10097,6 +10275,19 @@
                                               "count"
                                             ],
                                             "additionalProperties": false
+                                          },
+                                          {
+                                            "type": "object",
+                                            "properties": {
+                                              "kind": {
+                                                "type": "string",
+                                                "const": "CONTROLS_VALUE_PAIR"
+                                              }
+                                            },
+                                            "required": [
+                                              "kind"
+                                            ],
+                                            "additionalProperties": false
                                           }
                                         ]
                                       },
@@ -10380,6 +10571,57 @@
                                       "kind",
                                       "count",
                                       "parity"
+                                    ],
+                                    "additionalProperties": false
+                                  },
+                                  {
+                                    "type": "object",
+                                    "properties": {
+                                      "kind": {
+                                        "type": "string",
+                                        "const": "READY_LEGENDS_UP_TO"
+                                      },
+                                      "tag": {
+                                        "type": "string",
+                                        "const": "Merc"
+                                      },
+                                      "maximum": {
+                                        "type": "number",
+                                        "const": 2
+                                      },
+                                      "when": {
+                                        "type": "object",
+                                        "properties": {
+                                          "timing": {
+                                            "type": "string",
+                                            "const": "RESOLUTION"
+                                          },
+                                          "condition": {
+                                            "type": "object",
+                                            "properties": {
+                                              "kind": {
+                                                "type": "string",
+                                                "const": "CONTROLS_VALUE_PAIR"
+                                              }
+                                            },
+                                            "required": [
+                                              "kind"
+                                            ],
+                                            "additionalProperties": false
+                                          }
+                                        },
+                                        "required": [
+                                          "timing",
+                                          "condition"
+                                        ],
+                                        "additionalProperties": false
+                                      }
+                                    },
+                                    "required": [
+                                      "kind",
+                                      "tag",
+                                      "maximum",
+                                      "when"
                                     ],
                                     "additionalProperties": false
                                   },
@@ -14430,6 +14672,17 @@
                               "minLength": 1,
                               "maxLength": 200,
                               "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$"
+                            },
+                            "readiedLegends": {
+                              "minItems": 1,
+                              "maxItems": 1,
+                              "type": "array",
+                              "items": {
+                                "type": "string",
+                                "minLength": 1,
+                                "maxLength": 200,
+                                "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$"
+                              }
                             }
                           },
                           "required": [
@@ -16056,6 +16309,19 @@
                                                     "count"
                                                   ],
                                                   "additionalProperties": false
+                                                },
+                                                {
+                                                  "type": "object",
+                                                  "properties": {
+                                                    "kind": {
+                                                      "type": "string",
+                                                      "const": "CONTROLS_VALUE_PAIR"
+                                                    }
+                                                  },
+                                                  "required": [
+                                                    "kind"
+                                                  ],
+                                                  "additionalProperties": false
                                                 }
                                               ]
                                             }
@@ -16556,6 +16822,19 @@
                                                 "count"
                                               ],
                                               "additionalProperties": false
+                                            },
+                                            {
+                                              "type": "object",
+                                              "properties": {
+                                                "kind": {
+                                                  "type": "string",
+                                                  "const": "CONTROLS_VALUE_PAIR"
+                                                }
+                                              },
+                                              "required": [
+                                                "kind"
+                                              ],
+                                              "additionalProperties": false
                                             }
                                           ]
                                         },
@@ -16839,6 +17118,57 @@
                                         "kind",
                                         "count",
                                         "parity"
+                                      ],
+                                      "additionalProperties": false
+                                    },
+                                    {
+                                      "type": "object",
+                                      "properties": {
+                                        "kind": {
+                                          "type": "string",
+                                          "const": "READY_LEGENDS_UP_TO"
+                                        },
+                                        "tag": {
+                                          "type": "string",
+                                          "const": "Merc"
+                                        },
+                                        "maximum": {
+                                          "type": "number",
+                                          "const": 2
+                                        },
+                                        "when": {
+                                          "type": "object",
+                                          "properties": {
+                                            "timing": {
+                                              "type": "string",
+                                              "const": "RESOLUTION"
+                                            },
+                                            "condition": {
+                                              "type": "object",
+                                              "properties": {
+                                                "kind": {
+                                                  "type": "string",
+                                                  "const": "CONTROLS_VALUE_PAIR"
+                                                }
+                                              },
+                                              "required": [
+                                                "kind"
+                                              ],
+                                              "additionalProperties": false
+                                            }
+                                          },
+                                          "required": [
+                                            "timing",
+                                            "condition"
+                                          ],
+                                          "additionalProperties": false
+                                        }
+                                      },
+                                      "required": [
+                                        "kind",
+                                        "tag",
+                                        "maximum",
+                                        "when"
                                       ],
                                       "additionalProperties": false
                                     },
@@ -18838,6 +19168,19 @@
                                                   "count"
                                                 ],
                                                 "additionalProperties": false
+                                              },
+                                              {
+                                                "type": "object",
+                                                "properties": {
+                                                  "kind": {
+                                                    "type": "string",
+                                                    "const": "CONTROLS_VALUE_PAIR"
+                                                  }
+                                                },
+                                                "required": [
+                                                  "kind"
+                                                ],
+                                                "additionalProperties": false
                                               }
                                             ]
                                           }
@@ -19338,6 +19681,19 @@
                                               "count"
                                             ],
                                             "additionalProperties": false
+                                          },
+                                          {
+                                            "type": "object",
+                                            "properties": {
+                                              "kind": {
+                                                "type": "string",
+                                                "const": "CONTROLS_VALUE_PAIR"
+                                              }
+                                            },
+                                            "required": [
+                                              "kind"
+                                            ],
+                                            "additionalProperties": false
                                           }
                                         ]
                                       },
@@ -19621,6 +19977,57 @@
                                       "kind",
                                       "count",
                                       "parity"
+                                    ],
+                                    "additionalProperties": false
+                                  },
+                                  {
+                                    "type": "object",
+                                    "properties": {
+                                      "kind": {
+                                        "type": "string",
+                                        "const": "READY_LEGENDS_UP_TO"
+                                      },
+                                      "tag": {
+                                        "type": "string",
+                                        "const": "Merc"
+                                      },
+                                      "maximum": {
+                                        "type": "number",
+                                        "const": 2
+                                      },
+                                      "when": {
+                                        "type": "object",
+                                        "properties": {
+                                          "timing": {
+                                            "type": "string",
+                                            "const": "RESOLUTION"
+                                          },
+                                          "condition": {
+                                            "type": "object",
+                                            "properties": {
+                                              "kind": {
+                                                "type": "string",
+                                                "const": "CONTROLS_VALUE_PAIR"
+                                              }
+                                            },
+                                            "required": [
+                                              "kind"
+                                            ],
+                                            "additionalProperties": false
+                                          }
+                                        },
+                                        "required": [
+                                          "timing",
+                                          "condition"
+                                        ],
+                                        "additionalProperties": false
+                                      }
+                                    },
+                                    "required": [
+                                      "kind",
+                                      "tag",
+                                      "maximum",
+                                      "when"
                                     ],
                                     "additionalProperties": false
                                   },
@@ -21616,6 +22023,19 @@
                                                   "count"
                                                 ],
                                                 "additionalProperties": false
+                                              },
+                                              {
+                                                "type": "object",
+                                                "properties": {
+                                                  "kind": {
+                                                    "type": "string",
+                                                    "const": "CONTROLS_VALUE_PAIR"
+                                                  }
+                                                },
+                                                "required": [
+                                                  "kind"
+                                                ],
+                                                "additionalProperties": false
                                               }
                                             ]
                                           }
@@ -22116,6 +22536,19 @@
                                               "count"
                                             ],
                                             "additionalProperties": false
+                                          },
+                                          {
+                                            "type": "object",
+                                            "properties": {
+                                              "kind": {
+                                                "type": "string",
+                                                "const": "CONTROLS_VALUE_PAIR"
+                                              }
+                                            },
+                                            "required": [
+                                              "kind"
+                                            ],
+                                            "additionalProperties": false
                                           }
                                         ]
                                       },
@@ -22399,6 +22832,57 @@
                                       "kind",
                                       "count",
                                       "parity"
+                                    ],
+                                    "additionalProperties": false
+                                  },
+                                  {
+                                    "type": "object",
+                                    "properties": {
+                                      "kind": {
+                                        "type": "string",
+                                        "const": "READY_LEGENDS_UP_TO"
+                                      },
+                                      "tag": {
+                                        "type": "string",
+                                        "const": "Merc"
+                                      },
+                                      "maximum": {
+                                        "type": "number",
+                                        "const": 2
+                                      },
+                                      "when": {
+                                        "type": "object",
+                                        "properties": {
+                                          "timing": {
+                                            "type": "string",
+                                            "const": "RESOLUTION"
+                                          },
+                                          "condition": {
+                                            "type": "object",
+                                            "properties": {
+                                              "kind": {
+                                                "type": "string",
+                                                "const": "CONTROLS_VALUE_PAIR"
+                                              }
+                                            },
+                                            "required": [
+                                              "kind"
+                                            ],
+                                            "additionalProperties": false
+                                          }
+                                        },
+                                        "required": [
+                                          "timing",
+                                          "condition"
+                                        ],
+                                        "additionalProperties": false
+                                      }
+                                    },
+                                    "required": [
+                                      "kind",
+                                      "tag",
+                                      "maximum",
+                                      "when"
                                     ],
                                     "additionalProperties": false
                                   },
