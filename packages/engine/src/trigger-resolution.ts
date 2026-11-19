@@ -53,12 +53,14 @@ function resume(m: TurnMutation, origin: TriggerOrigin): Result<null> {
     if (origin.kind === "BLOCK" && "target" in combat && combat.target) { m.state.timing.combat = { ...combat, stage: "RIVAL_REACT" }; return finishAttackEffects(m); }
     if (origin.kind === "FIGHT") return completeFightResult(m, origin.result);
     if (origin.kind === "DEFEAT") return origin.effectSource ? finishAction(m) : finishCombat(m);
+    // Batch V24 (9.20.2): after the steal triggers resolve, the Steal Step and the attack end.
+    if (origin.kind === "STEAL") return finishCombat(m);
     return failure("INVALID_TRIGGER_RETURN", "Trigger batch must return to its original reviewed stage");
 }
 export type PreparedTriggerBatch = { origin: TriggerOrigin; ordinal: number; bindings: TriggerBinding[]; pending: PendingEffect[] };
 /** Creation of pending work is separate from resolution, so a Program can finish before it starts. */
 export function prepareTriggerBatch(m: TurnMutation, origin: TriggerOrigin, captured?: readonly TriggerBinding[]): PreparedTriggerBatch | null {
-    const bindings = [...(captured ?? discoverTriggers(m.state, origin, m.context))].sort((a, b) => a.sourceId < b.sourceId ? -1 : a.sourceId > b.sourceId ? 1 : a.abilityId < b.abilityId ? -1 : 1);
+    const bindings = [...(captured ?? discoverTriggers(m.state, origin, m.context))].sort((a, b) => a.sourceId < b.sourceId ? -1 : a.sourceId > b.sourceId ? 1 : a.abilityId < b.abilityId ? -1 : a.abilityId > b.abilityId ? 1 : (a.gigInstanceId ?? "") < (b.gigInstanceId ?? "") ? -1 : 1);
     if (!bindings.length) return null;
     const ordinal = ++m.state.turnHistory!.triggeredBatches, sequence = m.state.match.eventSequence;
     const pending = bindings.map(b => PendingEffectSchema.parse(pendingTrigger(m.state, b, ordinal, sequence, m.context)));

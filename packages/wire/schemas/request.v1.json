@@ -1032,7 +1032,8 @@
                                 "WHEN_CARD_PLAYED",
                                 "WHEN_OWN_TURN_ENDS",
                                 "WHEN_UNIT_ATTACKS",
-                                "WHEN_BLOCKER_USED"
+                                "WHEN_BLOCKER_USED",
+                                "WHEN_GIG_STOLEN"
                               ]
                             },
                             "inherited": {
@@ -1411,6 +1412,19 @@
                                       "kind": {
                                         "type": "string",
                                         "const": "SUBJECT_IS_SPENT"
+                                      }
+                                    },
+                                    "required": [
+                                      "kind"
+                                    ],
+                                    "additionalProperties": false
+                                  },
+                                  {
+                                    "type": "object",
+                                    "properties": {
+                                      "kind": {
+                                        "type": "string",
+                                        "const": "SUBJECT_IS_EQUIPPED"
                                       }
                                     },
                                     "required": [
@@ -2443,6 +2457,19 @@
                                                   "kind"
                                                 ],
                                                 "additionalProperties": false
+                                              },
+                                              {
+                                                "type": "object",
+                                                "properties": {
+                                                  "kind": {
+                                                    "type": "string",
+                                                    "const": "SUBJECT_IS_EQUIPPED"
+                                                  }
+                                                },
+                                                "required": [
+                                                  "kind"
+                                                ],
+                                                "additionalProperties": false
                                               }
                                             ]
                                           }
@@ -2876,6 +2903,19 @@
                                               "kind": {
                                                 "type": "string",
                                                 "const": "SUBJECT_IS_SPENT"
+                                              }
+                                            },
+                                            "required": [
+                                              "kind"
+                                            ],
+                                            "additionalProperties": false
+                                          },
+                                          {
+                                            "type": "object",
+                                            "properties": {
+                                              "kind": {
+                                                "type": "string",
+                                                "const": "SUBJECT_IS_EQUIPPED"
                                               }
                                             },
                                             "required": [
@@ -6479,6 +6519,37 @@
                           "properties": {
                             "kind": {
                               "type": "string",
+                              "const": "STEAL"
+                            },
+                            "subjectId": {
+                              "type": "string",
+                              "minLength": 1,
+                              "maxLength": 200,
+                              "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$"
+                            },
+                            "gigInstanceIds": {
+                              "minItems": 1,
+                              "type": "array",
+                              "items": {
+                                "type": "string",
+                                "minLength": 1,
+                                "maxLength": 200,
+                                "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$"
+                              }
+                            }
+                          },
+                          "required": [
+                            "kind",
+                            "subjectId",
+                            "gigInstanceIds"
+                          ],
+                          "additionalProperties": false
+                        },
+                        {
+                          "type": "object",
+                          "properties": {
+                            "kind": {
+                              "type": "string",
                               "const": "DEFEAT"
                             },
                             "effectSource": {
@@ -6590,8 +6661,15 @@
                               "WHEN_CARD_PLAYED",
                               "WHEN_OWN_TURN_ENDS",
                               "WHEN_UNIT_ATTACKS",
-                              "WHEN_BLOCKER_USED"
+                              "WHEN_BLOCKER_USED",
+                              "WHEN_GIG_STOLEN"
                             ]
+                          },
+                          "gigInstanceId": {
+                            "type": "string",
+                            "minLength": 1,
+                            "maxLength": 200,
+                            "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$"
                           }
                         },
                         "required": [
@@ -8225,6 +8303,19 @@
                                             "kind"
                                           ],
                                           "additionalProperties": false
+                                        },
+                                        {
+                                          "type": "object",
+                                          "properties": {
+                                            "kind": {
+                                              "type": "string",
+                                              "const": "SUBJECT_IS_EQUIPPED"
+                                            }
+                                          },
+                                          "required": [
+                                            "kind"
+                                          ],
+                                          "additionalProperties": false
                                         }
                                       ]
                                     }
@@ -8658,6 +8749,19 @@
                                         "kind": {
                                           "type": "string",
                                           "const": "SUBJECT_IS_SPENT"
+                                        }
+                                      },
+                                      "required": [
+                                        "kind"
+                                      ],
+                                      "additionalProperties": false
+                                    },
+                                    {
+                                      "type": "object",
+                                      "properties": {
+                                        "kind": {
+                                          "type": "string",
+                                          "const": "SUBJECT_IS_EQUIPPED"
                                         }
                                       },
                                       "required": [
@@ -9778,8 +9882,15 @@
                                 "WHEN_CARD_PLAYED",
                                 "WHEN_OWN_TURN_ENDS",
                                 "WHEN_UNIT_ATTACKS",
-                                "WHEN_BLOCKER_USED"
+                                "WHEN_BLOCKER_USED",
+                                "WHEN_GIG_STOLEN"
                               ]
+                            },
+                            "gigInstanceId": {
+                              "type": "string",
+                              "minLength": 1,
+                              "maxLength": 200,
+                              "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$"
                             },
                             "turn": {
                               "type": "integer",
@@ -10824,6 +10935,19 @@
                                           "kind"
                                         ],
                                         "additionalProperties": false
+                                      },
+                                      {
+                                        "type": "object",
+                                        "properties": {
+                                          "kind": {
+                                            "type": "string",
+                                            "const": "SUBJECT_IS_EQUIPPED"
+                                          }
+                                        },
+                                        "required": [
+                                          "kind"
+                                        ],
+                                        "additionalProperties": false
                                       }
                                     ]
                                   }
@@ -11257,6 +11381,19 @@
                                       "kind": {
                                         "type": "string",
                                         "const": "SUBJECT_IS_SPENT"
+                                      }
+                                    },
+                                    "required": [
+                                      "kind"
+                                    ],
+                                    "additionalProperties": false
+                                  },
+                                  {
+                                    "type": "object",
+                                    "properties": {
+                                      "kind": {
+                                        "type": "string",
+                                        "const": "SUBJECT_IS_EQUIPPED"
                                       }
                                     },
                                     "required": [
@@ -12377,8 +12514,15 @@
                               "WHEN_CARD_PLAYED",
                               "WHEN_OWN_TURN_ENDS",
                               "WHEN_UNIT_ATTACKS",
-                              "WHEN_BLOCKER_USED"
+                              "WHEN_BLOCKER_USED",
+                              "WHEN_GIG_STOLEN"
                             ]
+                          },
+                          "gigInstanceId": {
+                            "type": "string",
+                            "minLength": 1,
+                            "maxLength": 200,
+                            "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$"
                           },
                           "turn": {
                             "type": "integer",
@@ -13419,6 +13563,19 @@
                                           "kind"
                                         ],
                                         "additionalProperties": false
+                                      },
+                                      {
+                                        "type": "object",
+                                        "properties": {
+                                          "kind": {
+                                            "type": "string",
+                                            "const": "SUBJECT_IS_EQUIPPED"
+                                          }
+                                        },
+                                        "required": [
+                                          "kind"
+                                        ],
+                                        "additionalProperties": false
                                       }
                                     ]
                                   }
@@ -13852,6 +14009,19 @@
                                       "kind": {
                                         "type": "string",
                                         "const": "SUBJECT_IS_SPENT"
+                                      }
+                                    },
+                                    "required": [
+                                      "kind"
+                                    ],
+                                    "additionalProperties": false
+                                  },
+                                  {
+                                    "type": "object",
+                                    "properties": {
+                                      "kind": {
+                                        "type": "string",
+                                        "const": "SUBJECT_IS_EQUIPPED"
                                       }
                                     },
                                     "required": [
@@ -14972,8 +15142,15 @@
                               "WHEN_CARD_PLAYED",
                               "WHEN_OWN_TURN_ENDS",
                               "WHEN_UNIT_ATTACKS",
-                              "WHEN_BLOCKER_USED"
+                              "WHEN_BLOCKER_USED",
+                              "WHEN_GIG_STOLEN"
                             ]
+                          },
+                          "gigInstanceId": {
+                            "type": "string",
+                            "minLength": 1,
+                            "maxLength": 200,
+                            "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$"
                           },
                           "turn": {
                             "type": "integer",
@@ -16418,7 +16595,8 @@
                                 "WHEN_CARD_PLAYED",
                                 "WHEN_OWN_TURN_ENDS",
                                 "WHEN_UNIT_ATTACKS",
-                                "WHEN_BLOCKER_USED"
+                                "WHEN_BLOCKER_USED",
+                                "WHEN_GIG_STOLEN"
                               ]
                             },
                             "inherited": {
@@ -16797,6 +16975,19 @@
                                       "kind": {
                                         "type": "string",
                                         "const": "SUBJECT_IS_SPENT"
+                                      }
+                                    },
+                                    "required": [
+                                      "kind"
+                                    ],
+                                    "additionalProperties": false
+                                  },
+                                  {
+                                    "type": "object",
+                                    "properties": {
+                                      "kind": {
+                                        "type": "string",
+                                        "const": "SUBJECT_IS_EQUIPPED"
                                       }
                                     },
                                     "required": [
@@ -17829,6 +18020,19 @@
                                                   "kind"
                                                 ],
                                                 "additionalProperties": false
+                                              },
+                                              {
+                                                "type": "object",
+                                                "properties": {
+                                                  "kind": {
+                                                    "type": "string",
+                                                    "const": "SUBJECT_IS_EQUIPPED"
+                                                  }
+                                                },
+                                                "required": [
+                                                  "kind"
+                                                ],
+                                                "additionalProperties": false
                                               }
                                             ]
                                           }
@@ -18262,6 +18466,19 @@
                                               "kind": {
                                                 "type": "string",
                                                 "const": "SUBJECT_IS_SPENT"
+                                              }
+                                            },
+                                            "required": [
+                                              "kind"
+                                            ],
+                                            "additionalProperties": false
+                                          },
+                                          {
+                                            "type": "object",
+                                            "properties": {
+                                              "kind": {
+                                                "type": "string",
+                                                "const": "SUBJECT_IS_EQUIPPED"
                                               }
                                             },
                                             "required": [

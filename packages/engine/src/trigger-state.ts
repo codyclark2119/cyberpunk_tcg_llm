@@ -42,6 +42,9 @@ function validBinding(state: GameState, b: TriggerBinding, context: EngineContex
     if (origin.kind === "FIGHT") return b.kind === "WHEN_FIGHT_WON" && b.subjectId === origin.result.winnerId && validFightFact(state, origin.result);
     if (origin.kind === "DEFEAT") return b.kind === "WHEN_DEFEATED" && origin.defeated.some(d => d.targetId === b.subjectId) && !["BATTLEFIELD", "LEGENDS"].includes(subject.zone.zone);
     if (origin.kind === "BLOCK") return b.kind === "WHEN_BLOCKER_USED" && b.sourceId === b.subjectId && b.subjectId === origin.subjectId && supportsTriggerCard(r, context).ok;
+    // Batch V24: a steal trigger binding names one Gig its subject stole in this Steal Step; no other binding names a Gig.
+    if ((origin.kind === "STEAL") !== (b.gigInstanceId !== undefined)) return false;
+    if (origin.kind === "STEAL") return b.kind === "WHEN_GIG_STOLEN" && b.sourceId === b.subjectId && b.subjectId === origin.subjectId && origin.gigInstanceIds.includes(b.gigInstanceId!) && supportsTriggerCard(r, context).ok;
     if (origin.kind === "ATTACK") {
         if (b.kind === "WHEN_UNIT_ATTACKS") return b.sourceId === b.subjectId && source.face === "UP" && source.zone.zone === "LEGENDS" && supportsFirstAttackLegend(r, context).ok && state.objects.cards[origin.subjectId]?.controllerId === b.controllerId && isFirstArasakaAttack(state, origin.subjectId, context);
         return b.kind === "WHEN_ATTACKING" && b.subjectId === origin.subjectId;
@@ -77,6 +80,17 @@ export function validateTriggerState(state: GameState, context: EngineContext) {
             return failure("INVALID_BLOCK_TRIGGER", "The spent blocking Unit must be the current defending Unit");
         if (canonicalSerialize(discoverTriggers(state, c.origin, context).map(b => canonicalSerialize(b)).sort()) !== canonicalSerialize(c.bindings.map(b => canonicalSerialize(b)).sort()))
             return failure("INVALID_TRIGGER_BATCH", "Every Blocker-used ability must be captured once");
+    }
+    // Batch V24: the stolen Gigs are distinct, rolled and now in the attacking player's Gig area; the steal
+    // subject is the attacker of the paused Gig-area attack, and every steal binding is captured once.
+    if (c.origin.kind === "STEAL") {
+        const ids = c.origin.gigInstanceIds, subject = state.objects.cards[c.origin.subjectId];
+        if (combat.stage !== "TRIGGER_RESOLUTION" || combat.target.kind !== "GIG_AREA" || combat.attackerId !== c.origin.subjectId || !subject || subject.zone.zone !== "BATTLEFIELD"
+            || new Set(ids).size !== ids.length || canonicalSerialize([...ids].sort()) !== canonicalSerialize(ids)
+            || ids.some(id => { const g = state.objects.gigs[id]; return !g || g.controllerId !== combat.attackingPlayerId || g.location.zone !== "GIGS" || g.roll.kind !== "ROLLED"; }))
+            return failure("INVALID_STEAL_TRIGGER", "Steal triggers need the current Gig-area attacker and the distinct Gigs it stole");
+        if (canonicalSerialize(discoverTriggers(state, c.origin, context).map(b => canonicalSerialize(b)).sort()) !== canonicalSerialize(c.bindings.map(b => canonicalSerialize(b)).sort()))
+            return failure("INVALID_TRIGGER_BATCH", "Every steal trigger must be captured once per stolen Gig");
     }
     if (c.origin.kind === "DEFEAT" && (new Set(c.origin.defeated.map(d => d.targetId)).size !== c.origin.defeated.length || c.origin.defeated.some(d => !state.objects.cards[d.defeatedBy] || !state.objects.cards[d.targetId] || ["BATTLEFIELD", "LEGENDS"].includes(state.objects.cards[d.targetId].zone.zone)))) return failure("INVALID_DEFEATED_TRIGGER", "Defeat declaration and movement must precede the pending batch");
     const effectDefeats = validateEffectDefeatFacts(state, context); if (!effectDefeats.ok) return effectDefeats;
@@ -143,9 +157,12 @@ export function validateTriggerState(state: GameState, context: EngineContext) {
     }
     if (r.current?.effect.kind === "DISCARD_CARDS" && r.current.effect.player === "RIVAL") {
         // Batch V17: the unconditional rival discard pauses only for the rival's own hand card.
-        const e = r.current;
-        if (c.phase !== "DISCARD" || c.conditionMet !== undefined || e.effect.kind !== "DISCARD_CARDS" || e.effect.when || e.primitiveIndex !== undefined || c.origin.kind !== "BLOCK" || e.trigger?.kind !== "WHEN_BLOCKER_USED" || !supportsTriggerCard(cardRevision(state, e.sourceId!, context), context).ok)
-            return failure("INVALID_DISCARD_CONTINUATION", "Only the reviewed Blocker-used rival discard pauses without a condition");
+        const e = r.current, when = e.effect.kind === "DISCARD_CARDS" ? e.effect.when : undefined;
+        const blocker = c.conditionMet === undefined && !when && c.origin.kind === "BLOCK" && e.trigger?.kind === "WHEN_BLOCKER_USED";
+        // Batch V24: the steal-trigger rival discard pauses only after its resolution-time "if it's equipped" held.
+        const steal = c.conditionMet === true && when?.condition.kind === "SUBJECT_IS_EQUIPPED" && c.origin.kind === "STEAL" && e.trigger?.kind === "WHEN_GIG_STOLEN" && testCondition(state, e.controllerId, when.condition, context, e.sourceId);
+        if (c.phase !== "DISCARD" || e.effect.kind !== "DISCARD_CARDS" || e.primitiveIndex !== undefined || !(blocker || steal) || !supportsTriggerCard(cardRevision(state, e.sourceId!, context), context).ok)
+            return failure("INVALID_DISCARD_CONTINUATION", "Only the reviewed Blocker-used and steal-trigger rival discards pause");
     }
     else if (c.phase === "DISCARD" || r.current?.effect.kind === "DISCARD_CARDS" || c.conditionMet !== undefined) {
         const e = r.current;

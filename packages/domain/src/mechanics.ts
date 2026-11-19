@@ -5,7 +5,7 @@ export const GameAreaSchema = z.enum(["DECK", "HAND", "BATTLEFIELD", "TRASH", "E
 export const ZoneSchema = z.enum([...GameAreaSchema.options, "RESOLVING_PROGRAM"]);
 export const ZoneRefSchema = z.strictObject({ playerId: PlayerIdSchema, zone: ZoneSchema });
 export const KeywordSchema = z.enum(["GO_SOLO", "QUICK", "BLOCKER", "ADRENALINE"]);
-export const TriggerSchema = z.enum(["WHEN_SOLD", "WHEN_CALLED", "WHEN_PLAYED", "WHEN_ATTACKING", "WHEN_DEFEATED", "WHEN_FIGHT_WON", "WHEN_CARD_PLAYED", "WHEN_OWN_TURN_ENDS", "WHEN_UNIT_ATTACKS", "WHEN_BLOCKER_USED"]);
+export const TriggerSchema = z.enum(["WHEN_SOLD", "WHEN_CALLED", "WHEN_PLAYED", "WHEN_ATTACKING", "WHEN_DEFEATED", "WHEN_FIGHT_WON", "WHEN_CARD_PLAYED", "WHEN_OWN_TURN_ENDS", "WHEN_UNIT_ATTACKS", "WHEN_BLOCKER_USED", "WHEN_GIG_STOLEN"]);
 export const EquipTargetSchema = z.strictObject({ kind: z.literal("FRIENDLY_UNIT_OR_FACE_UP_LEGEND") });
 export const TargetRelationshipSchema = z.enum(["CONTROLLED", "RIVAL", "ANY"]);
 export const TargetSelectorSchema = z.discriminatedUnion("kind", [
@@ -32,7 +32,9 @@ export const ConditionSchema = z.discriminatedUnion("kind", [
     z.strictObject({ kind: z.literal("STREET_CRED"), minimum: z.number().int().nonnegative() }),
     z.strictObject({ kind: z.literal("GIG_VALUE"), value: z.number().int() }),
     // The trigger subject is on the field and currently spent (batch V8).
-    z.strictObject({ kind: z.literal("SUBJECT_IS_SPENT") })
+    z.strictObject({ kind: z.literal("SUBJECT_IS_SPENT") }),
+    // Batch V24: the trigger subject is on the field with at least one attached Gear ("if it's equipped").
+    z.strictObject({ kind: z.literal("SUBJECT_IS_EQUIPPED") })
 ]);
 export const CombatRestrictionSchema = z.discriminatedUnion("kind", [
     z.strictObject({ kind: z.literal("CANNOT_ATTACK") }),

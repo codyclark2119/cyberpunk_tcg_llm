@@ -1,6 +1,7 @@
 import { endTurnEnabled } from "./end-turn-support";
 import { beginTriggers } from "./trigger-resolution";
 import { triggersEnabled } from "./trigger-support";
+import { discoverTriggers } from "./trigger-queries";
 import { FightResultSchema, type FightResult } from "@tcg/domain";
 import { applyFightPreventions } from "./fight-prevention";
 import { failure, success } from "@tcg/domain";
@@ -80,6 +81,9 @@ function advanceGigSteal(m: TurnMutation) {
     });
     if (!transferred.ok) return transferred;
     if (m.state.match.outcome) return success(null);
+    // Batch V24 (11.5.1.7, 9.20.2): "When this Unit steals a Gig" becomes pending after the move, then resolves before the attack ends.
+    const stolen = { kind: "STEAL" as const, subjectId: c.attackerId, gigInstanceIds: [...continuation.selected].sort() };
+    if (triggersEnabled(m.context) && discoverTriggers(m.state, stolen, m.context).length) return beginTriggers(m, stolen);
     return finishCombat(m);
 }
 export function continueGigSteal(m: TurnMutation, index: number) {

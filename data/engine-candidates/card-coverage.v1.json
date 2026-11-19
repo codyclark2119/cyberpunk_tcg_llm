@@ -9,12 +9,12 @@
   },
   "totals": {
     "cards": 151,
-    "admitted": 72,
-    "notAdmitted": 79,
+    "admitted": 73,
+    "notAdmitted": 78,
     "notAdmittedOnlyCoveredFamilies": 0,
     "byAdmission": {
-      "NOT_ADMITTED": 79,
-      "SOURCE_MATCH": 72
+      "NOT_ADMITTED": 78,
+      "SOURCE_MATCH": 73
     }
   },
   "families": [
@@ -42,7 +42,7 @@
       "summary": "Generic target filters and board conditions: classification, cost, power, ready/spent, equipped, face-up, named, lowest power.",
       "notes": "Documented as unsupported: generic condition/filter language. Each admitted filter is a literal.",
       "cardCount": 34,
-      "notAdmittedCount": 23,
+      "notAdmittedCount": 22,
       "soleBlockerCount": 0
     },
     {
@@ -70,15 +70,6 @@
       "notes": "Equip onto Units is supported for the admitted Gear. Gear on a Legend host in combat (a Go Solo Legend) is unsupported.",
       "cardCount": 22,
       "notAdmittedCount": 14,
-      "soleBlockerCount": 0
-    },
-    {
-      "family": "DISCARD",
-      "status": "PARTIAL",
-      "summary": "Discard: self discard, a Rival discards, discard as a cost, discard a hand.",
-      "notes": "DISCARD_CARDS supports only the controller discarding exactly 1.",
-      "cardCount": 15,
-      "notAdmittedCount": 12,
       "soleBlockerCount": 0
     },
     {
@@ -113,6 +104,15 @@
       "status": "PARTIAL",
       "summary": "Top-of-deck manipulation: search/look/reveal top N, trash from the top (Trash N), bottom-deck the rest.",
       "notes": "SEARCH_GEAR (count<=5, Gear with max cost, take<=2) only.",
+      "cardCount": 15,
+      "notAdmittedCount": 11,
+      "soleBlockerCount": 0
+    },
+    {
+      "family": "DISCARD",
+      "status": "PARTIAL",
+      "summary": "Discard: self discard, a Rival discards, discard as a cost, discard a hand.",
+      "notes": "DISCARD_CARDS supports only the controller discarding exactly 1.",
       "cardCount": 15,
       "notAdmittedCount": 11,
       "soleBlockerCount": 0
@@ -163,20 +163,20 @@
       "soleBlockerCount": 0
     },
     {
-      "family": "TRIGGER_STEAL",
-      "status": "MISSING",
-      "summary": "Triggers when a Unit or Legend steals a Gig.",
-      "notes": "Only the history condition SUBJECT_STOLE_GIG_THIS_TURN exists (Delamain Cab); there is no steal trigger.",
-      "cardCount": 8,
-      "notAdmittedCount": 8,
-      "soleBlockerCount": 0
-    },
-    {
       "family": "SPEND_OR_READY",
       "status": "PARTIAL",
       "summary": "Spend or ready Units and Legends by an effect, and 'can't ready' locks.",
       "notes": "SPEND_UNIT (rival, cost at most 4) only; readying Units or Legends is missing.",
       "cardCount": 15,
+      "notAdmittedCount": 7,
+      "soleBlockerCount": 0
+    },
+    {
+      "family": "TRIGGER_STEAL",
+      "status": "MISSING",
+      "summary": "Triggers when a Unit or Legend steals a Gig.",
+      "notes": "Only the history condition SUBJECT_STOLE_GIG_THIS_TURN exists (Delamain Cab); there is no steal trigger.",
+      "cardCount": 8,
       "notAdmittedCount": 7,
       "soleBlockerCount": 0
     },
@@ -1788,18 +1788,14 @@
       "colors": [
         "YELLOW"
       ],
-      "admission": "NOT_ADMITTED",
-      "revision": null,
+      "admission": "SOURCE_MATCH",
+      "revision": 1,
       "families": [
         "CONDITION_BOARD",
         "DISCARD",
         "TRIGGER_STEAL"
       ],
-      "blockingFamilies": [
-        "CONDITION_BOARD",
-        "DISCARD",
-        "TRIGGER_STEAL"
-      ],
+      "blockingFamilies": [],
       "note": null
     },
     {

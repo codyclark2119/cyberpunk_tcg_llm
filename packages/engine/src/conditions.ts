@@ -1,6 +1,7 @@
 import { areAllFriendlyLegendsFaceUp } from "./legend-face-condition";
 import { combatResolutionEnabled, referencedPower } from "./combat-resolution-policy";
 import { effectivePower, effectiveCardTypes } from "./characteristics";
+import { attachedGear } from "./attachments";
 import type { EngineContext } from "./state";
 import type { Condition, GameState, PlayerId, CardInstanceId } from "@tcg/domain";
 /** Queries the supplied state now; caller explicitly owns condition timing. */
@@ -18,6 +19,8 @@ export function testCondition(state: GameState, actor: PlayerId, condition: Cond
             return Boolean(r && context && c && (effectiveCardTypes(state, c.id, context).includes("UNIT") || c.zone.zone === "REMOVED" && lastValidTypes?.includes("UNIT")) && r.deckbuildingIdentity === condition.identity);
         }
         case "SUBJECT_IS_SPENT": { const c = sourceId && state.objects.cards[sourceId]; return Boolean(c && c.zone.zone === "BATTLEFIELD" && c.face === "UP" && c.readiness === "SPENT"); }
+        // Batch V24 (10.16.1.1, checked at resolution): the subject is on the field with an attached Gear.
+        case "SUBJECT_IS_EQUIPPED": { const c = sourceId && state.objects.cards[sourceId]; return Boolean(c && context && c.zone.zone === "BATTLEFIELD" && c.face === "UP" && attachedGear(state, c.id, context).length > 0); }
         case "SUBJECT_STOLE_GIG_THIS_TURN": return Boolean(sourceId && state.turnHistory?.turn === state.timing.turn && (state.turnHistory.gigsStolenByUnit?.[sourceId] ?? 0) > 0);
         case "STREET_CRED_DIFFERENCE_AT_LEAST": {
             if (!values.length) return false; // Null cannot participate in numeric subtraction (2.10.2).

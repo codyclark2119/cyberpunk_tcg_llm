@@ -26,7 +26,7 @@ export function effectiveTriggeredAbilities(state: GameState, subjectId: CardIns
         const r = cardRevision(state, source.id, context);
         if (!supportsEffectiveTriggerSource(r, context) || !r) return [];
         return r.mechanics.abilities.flatMap(a => {
-            if (!a.trigger || (source.id !== subjectId) !== (a.inherited === "EQUIPPED_HOST") || !(a.trigger === "WHEN_FIGHT_WON" || a.trigger === "WHEN_DEFEATED" || a.trigger === "WHEN_PLAYED" || a.trigger === "WHEN_ATTACKING" || a.trigger === "WHEN_CARD_PLAYED" || a.trigger === "WHEN_OWN_TURN_ENDS" || a.trigger === "WHEN_UNIT_ATTACKS" || a.trigger === "WHEN_BLOCKER_USED")) return [];
+            if (!a.trigger || (source.id !== subjectId) !== (a.inherited === "EQUIPPED_HOST") || !(a.trigger === "WHEN_FIGHT_WON" || a.trigger === "WHEN_DEFEATED" || a.trigger === "WHEN_PLAYED" || a.trigger === "WHEN_ATTACKING" || a.trigger === "WHEN_CARD_PLAYED" || a.trigger === "WHEN_OWN_TURN_ENDS" || a.trigger === "WHEN_UNIT_ATTACKS" || a.trigger === "WHEN_BLOCKER_USED" || a.trigger === "WHEN_GIG_STOLEN")) return [];
             return [{ sourceId: source.id, subjectId, controllerId: subject.controllerId, source: { cardId: r.id, revision: r.revision }, abilityId: a.id, kind: a.trigger }];
         });
     }).sort((a, b) => a.sourceId < b.sourceId ? -1 : a.sourceId > b.sourceId ? 1 : a.abilityId < b.abilityId ? -1 : a.abilityId > b.abilityId ? 1 : 0);
@@ -40,6 +40,8 @@ export function discoverTriggers(state: GameState, origin: TriggerOrigin, contex
     if (origin.kind === "DEFEAT") return origin.defeated.flatMap(d => effectiveTriggeredAbilities(state, d.targetId, context).filter(b => b.kind === "WHEN_DEFEATED")); // Capture before movement; enqueue after.
     // Batch V17: "When this Unit uses [Blocker]" belongs to the blocking Unit only (9.11).
     if (origin.kind === "BLOCK") return effectiveTriggeredAbilities(state, origin.subjectId, context).filter(b => b.kind === "WHEN_BLOCKER_USED" && b.sourceId === b.subjectId);
+    // Batch V24 (10.16.3, 11.5.1.7): "When this Unit steals a Gig" is pending once per stolen Gig, after all have moved.
+    if (origin.kind === "STEAL") return [...origin.gigInstanceIds].sort().flatMap(gigInstanceId => effectiveTriggeredAbilities(state, origin.subjectId, context).filter(b => b.kind === "WHEN_GIG_STOLEN" && b.sourceId === b.subjectId).map(b => ({ ...b, gigInstanceId })));
     const own = effectiveTriggeredAbilities(state, origin.subjectId, context).filter(b => {
         if (b.kind !== (origin.kind === "PLAY" ? "WHEN_PLAYED" : "WHEN_ATTACKING")) return false;
         // Losing His Way FAQ0c5b038a: becoming face-up after declaration does not create a trigger.
@@ -57,7 +59,7 @@ export function discoverTriggers(state: GameState, origin: TriggerOrigin, contex
 }
 export function triggerId(state: GameState, binding: TriggerBinding, ordinal: number) {
     if (binding.delayedId) return binding.delayedId;
-    return hashCanonical({ protocol: "reviewed-trigger@1", turn: state.timing.turn, ordinal, sourceId: binding.sourceId, subjectId: binding.subjectId, source: binding.source, abilityId: binding.abilityId, kind: binding.kind, controllerSeat: state.players[binding.controllerId].seat });
+    return hashCanonical({ protocol: "reviewed-trigger@1", turn: state.timing.turn, ordinal, sourceId: binding.sourceId, subjectId: binding.subjectId, source: binding.source, abilityId: binding.abilityId, kind: binding.kind, controllerSeat: state.players[binding.controllerId].seat, ...(binding.gigInstanceId ? { gigInstanceId: binding.gigInstanceId } : {}) });
 }
 export function pendingTrigger(state: GameState, binding: TriggerBinding, ordinal: number, sequence: number, context: EngineContext, primitiveIndex: 0 | 1 = 0): PendingEffect {
     const a = context.content.cards.find(c => c.id === binding.source.cardId && c.revision === binding.source.revision)!.mechanics.abilities.find(a => a.id === binding.abilityId)!;
