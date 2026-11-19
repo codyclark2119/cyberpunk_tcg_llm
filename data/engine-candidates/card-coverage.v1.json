@@ -9,12 +9,12 @@
   },
   "totals": {
     "cards": 151,
-    "admitted": 63,
-    "notAdmitted": 88,
+    "admitted": 64,
+    "notAdmitted": 87,
     "notAdmittedOnlyCoveredFamilies": 0,
     "byAdmission": {
-      "NOT_ADMITTED": 88,
-      "SOURCE_MATCH": 63
+      "NOT_ADMITTED": 87,
+      "SOURCE_MATCH": 64
     }
   },
   "families": [
@@ -51,7 +51,7 @@
       "summary": "[Play] abilities and Program bodies resolving when played.",
       "notes": "Trigger WHEN_PLAYED.",
       "cardCount": 27,
-      "notAdmittedCount": 19,
+      "notAdmittedCount": 18,
       "soleBlockerCount": 0
     },
     {
@@ -190,24 +190,6 @@
       "soleBlockerCount": 0
     },
     {
-      "family": "UNIT_DEFEAT",
-      "status": "PARTIAL",
-      "summary": "Defeat a Unit or Gear chosen with a filter.",
-      "notes": "Filters are fixed literals (power at most 5, power at most a friendly d20, Gear power at most 2).",
-      "cardCount": 18,
-      "notAdmittedCount": 8,
-      "soleBlockerCount": 0
-    },
-    {
-      "family": "GO_SOLO",
-      "status": "PARTIAL",
-      "summary": "[Go Solo]: play a Legend as a ready Unit that can attack this turn and is removed when it leaves the field.",
-      "notes": "Supported only for Go Solo Legends with no other text or with Blocker (V: Corporate Exile, Goro: Hands Unclean). Go Solo Legends with Play/Attack/Defeated triggers, Go Solo cost changes and Gear on Legend hosts in combat are not.",
-      "cardCount": 10,
-      "notAdmittedCount": 7,
-      "soleBlockerCount": 0
-    },
-    {
       "family": "TRIGGER_ATTACK",
       "status": "PARTIAL",
       "summary": "[Attack] abilities and 'when a Unit attacks' triggers.",
@@ -226,6 +208,15 @@
       "soleBlockerCount": 0
     },
     {
+      "family": "UNIT_DEFEAT",
+      "status": "PARTIAL",
+      "summary": "Defeat a Unit or Gear chosen with a filter.",
+      "notes": "Filters are fixed literals (power at most 5, power at most a friendly d20, Gear power at most 2).",
+      "cardCount": 18,
+      "notAdmittedCount": 7,
+      "soleBlockerCount": 0
+    },
+    {
       "family": "UNIT_ZONE_MOVE",
       "status": "MISSING",
       "summary": "Move a Unit off the field other than defeat: bottom-deck it or return it to hand.",
@@ -240,6 +231,15 @@
       "summary": "Ready Eddies, sell cards from unusual zones, pay Eddies during resolution.",
       "notes": "READY_EDDIES (controller, 1 or 2) only.",
       "cardCount": 8,
+      "notAdmittedCount": 6,
+      "soleBlockerCount": 0
+    },
+    {
+      "family": "GO_SOLO",
+      "status": "PARTIAL",
+      "summary": "[Go Solo]: play a Legend as a ready Unit that can attack this turn and is removed when it leaves the field.",
+      "notes": "Supported only for Go Solo Legends with no other text or with Blocker (V: Corporate Exile, Goro: Hands Unclean). Go Solo Legends with Play/Attack/Defeated triggers, Go Solo cost changes and Gear on Legend hosts in combat are not.",
+      "cardCount": 10,
       "notAdmittedCount": 6,
       "soleBlockerCount": 0
     },
@@ -498,18 +498,14 @@
       "colors": [
         "RED"
       ],
-      "admission": "NOT_ADMITTED",
-      "revision": null,
+      "admission": "SOURCE_MATCH",
+      "revision": 1,
       "families": [
         "GO_SOLO",
         "TRIGGER_PLAY",
         "UNIT_DEFEAT"
       ],
-      "blockingFamilies": [
-        "GO_SOLO",
-        "TRIGGER_PLAY",
-        "UNIT_DEFEAT"
-      ],
+      "blockingFamilies": [],
       "note": null
     },
     {

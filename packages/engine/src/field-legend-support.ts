@@ -1,5 +1,6 @@
 import { turnSliceAllows, canonicalSerialize, failure, success, type CardRevisionSnapshot, type DeepReadonly, type GameState } from "@tcg/domain";
 import type { EngineContext } from "./state";
+import { supportsTargetedDefeatCard } from "./targeted-defeat-support";
 export function fieldLegendsEnabled(context: EngineContext) { return turnSliceAllows(context.content.ruleset.gameplay?.turnSlice, "fieldLegends"); }
 /** Complete reviewed variants share one lifecycle. A keyword alone never admits additional Legend text.
  * Shape matching is admission metadata; movement/payment/combat do not branch on a card identity. */
@@ -9,6 +10,12 @@ const reviewedShapes = [
 ];
 export function supportsFieldLegend(card: DeepReadonly<CardRevisionSnapshot> | undefined, context: EngineContext) {
     const m = card?.mechanics, policy = context.content.ruleset.gameplay?.turnSlice;
+    // Batch V18: a Go Solo Legend with a {Play} ability is admitted only through its exact targeted-defeat pin.
+    if (card?.type === "LEGEND" && card.execution?.scope === "TARGETED_DEFEAT_V1") {
+        if (!fieldLegendsEnabled(context) || !turnSliceAllows(policy, "gear") || !turnSliceAllows(policy, "combat") || !turnSliceAllows(policy, "react") || canonicalSerialize(card.mechanics.keywords) !== canonicalSerialize(["GO_SOLO"]))
+            return failure("UNSUPPORTED_FIELD_LEGEND", "Reviewed Go Solo Legend with a Play defeat requires the field-Legend policy");
+        return supportsTargetedDefeatCard(card, context);
+    }
     if (!fieldLegendsEnabled(context) || !turnSliceAllows(policy, "cardPlay") || !turnSliceAllows(policy, "gear") || !turnSliceAllows(policy, "combat") || !turnSliceAllows(policy, "react") || !turnSliceAllows(policy, "combatResolution") || !card?.provenance.reviewed || card.execution?.scope !== "FIELD_LEGENDS_V1" || card.execution.status !== "SUPPORTED" || card.type !== "LEGEND" || card.printedCost.kind !== "EDDIES" || card.printedCost.amount !== 5 || card.power === undefined || !card.sellProfile.allowed || card.keywords.length || !m || m.equip || m.abilities.length || m.modifiers.length || m.restrictions?.length || !reviewedShapes.some(shape => canonicalSerialize(shape) === canonicalSerialize({ colors: card.colors, ram: card.ram, tags: card.tags, power: card.power, keywords: m.keywords })))
         return failure("UNSUPPORTED_FIELD_LEGEND", "Complete reviewed cost5 Go Solo Legend variant (Blue RAM2 Corpo/Merc power8, or Green RAM2 Arasaka/Corpo power7 with printed Blocker) and explicit field-Legend policy required");
     return success(null);

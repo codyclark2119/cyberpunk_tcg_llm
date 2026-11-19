@@ -59,6 +59,7 @@ were recorded in their pull requests (#4, #7, #8); later batches have documents 
 | V15 (2026-11-18) | Les Élémens, Unlikely Bond | [bottom-deck Units](api-admission-batch-v15.md); coverage 59/151 |
 | V16 (2026-11-18) | Carnage at the Colosseum, Zetatech Berserk | [play-cost reduction on a Program and a Gear](api-admission-batch-v16.md); coverage 61/151 |
 | V17 (2026-11-18) | La Llorona: Ghost of the Past, Augmented Negotiators | ["When this Unit uses Blocker" triggers](api-admission-batch-v17.md); coverage 63/151 |
+| V18 (2026-11-19) | Adam Smasher: Ender of Legends | [Go Solo Legend with a Play defeat](api-admission-batch-v18.md); coverage 64/151 |
 | V7 (2026-11-15) | Royce: Don't Call Me Simon, Wild in the Streets, Delamain: Rideshare AI | [shared defeat filter and exact pin table](api-admission-batch-v7.md); coverage 42/151 |
 | V6 (2026-09-22) | Trust No One | [contract and executable slice](api-admission-batch-v6.md), [baseline verification](api-admission-batch-v6-verification.md) |
 
