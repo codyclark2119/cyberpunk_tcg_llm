@@ -72,7 +72,7 @@ const callHandlers = new HandlerRegistry();
 export function resolveCallPrimitive(m: TurnMutation, effect: Effect): Result<null> {
     return callHandlers.resolve(m, effect);
 }
-function finishSearch(m: TurnMutation): Result<null> {
+export function finishSearch(m: TurnMutation): Result<null> {
     const s = m.state, current = s.resolution.current!, c = s.resolution.searchContinuation!, actor = current.controllerId, p = s.players[actor];
     const selected = new Set(c.selected);
     p.zones.DECK.splice(0, c.looked.length);

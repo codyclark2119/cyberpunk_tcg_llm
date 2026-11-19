@@ -122,6 +122,7 @@ function describeAction(a: GameAction, state: GameState, actor: PlayerId, view: 
             if (state.resolution.current?.effect.kind === "SPEND_UNIT" && option.kind === "CARD") return `Spend ${view.getRevision(option.cardInstanceId)?.displayName} (${option.cardInstanceId}, cost ${view.getReferencedCost(option.cardInstanceId)}, ${state.objects.cards[option.cardInstanceId].readiness.toLowerCase()})`;
             if (state.resolution.targetedDefeatContinuation && option.kind === "CARD") return state.resolution.targetedDefeatContinuation.phase === "ORDER" ? `Next in your Trash: ${view.getRevision(option.cardInstanceId)?.displayName} (${option.cardInstanceId})` : `Defeat ${view.getRevision(option.cardInstanceId)?.displayName} (${option.cardInstanceId}, power ${view.getEffectivePower(option.cardInstanceId)})`;
             if (state.resolution.triggerContinuation) {
+                if (state.resolution.searchContinuation) return option.kind === "CARD" ? `Reveal and take ${view.getRevision(option.cardInstanceId)?.displayName}` : "Take no Gear";
                 if (option.kind === "CARD" && state.resolution.current?.effect.kind === "POWER_UNTIL_END_OF_TURN" && state.resolution.current.effect.target.kind === "FRIENDLY_UNIT") return `Give ${view.getRevision(option.cardInstanceId)?.displayName} (${option.cardInstanceId}) +2 power this turn`;
                 if (option.kind === "EDDIE_SLOT") return `Ready Eddie ${option.slot + 1}`;
                 if (option.kind === "LEGEND_SLOT") return `Look at friendly face-down Legend slot ${option.slot + 1}`;

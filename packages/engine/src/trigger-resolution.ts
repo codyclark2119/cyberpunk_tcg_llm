@@ -24,7 +24,8 @@ import { cardRevision } from "./characteristics";
 import { finishAction } from "./action-return";
 import { finishAttackEffects } from "./combat";
 import { finishCombat, completeFightResult } from "./combat-resolution";
-import { HandlerRegistry } from "./effects";
+import { HandlerRegistry, finishSearch } from "./effects";
+import { searchTargets } from "./search-state";
 import { changeGigValue, gigAdjustmentDelta } from "./gig-value";
 import { triggersEnabled } from "./trigger-support";
 import { discardingPlayer, discoverTriggers, pendingTrigger, trashUnitTargets, triggerChoice, triggerGigTargets } from "./trigger-queries";
@@ -185,6 +186,13 @@ export function advanceTriggers(m: TurnMutation): Result<null> {
         if (e.when) c.conditionMet = true;
         c.phase = "DISCARD"; return offer(m);
     }
+    // Batch V19: "[Attack] Search the top N. Reveal a Gear and add it to your hand. Bottom-deck the rest."
+    if (e.kind === "SEARCH_GEAR") {
+        const actor = r.current.controllerId;
+        r.searchContinuation = { looked: [...m.state.players[actor].zones.DECK.slice(0, e.count)], selected: [] };
+        if (!searchTargets(m.state, m.context).length) { const done = finishSearch(m); return done.ok ? completed(m) : done; }
+        c.phase = "TARGET"; return offer(m);
+    }
     if (e.kind === "LOOK_AT_FRIENDLY_FACE_DOWN_LEGEND") {
         if (!privateLookTargets(m.state, r.current.controllerId, m.context).length) return completed(m);
         c.phase = "TARGET"; return offer(m);
@@ -267,6 +275,16 @@ export function continueTrigger(m: TurnMutation, index: number, forced = false):
             m.emit({ kind: "CARD_TARGET_SELECTED", effectId: current.id, sourceId: current.sourceId!, targetId: option.cardInstanceId, controllerId: current.controllerId, forced });
             moveCardLocation(m, option.cardInstanceId, "HAND");
             return completed(m);
+        }
+        if (current.effect.kind === "SEARCH_GEAR") {
+            // 11.17.4.1: a hidden search may purposely fail to find; the rest is bottom-decked either way.
+            const search = r.searchContinuation!;
+            if (option.kind === "CARD") {
+                if (search.selected.includes(option.cardInstanceId) || !searchTargets(m.state, m.context).includes(option.cardInstanceId)) return failure("INVALID_SEARCH_TARGET", "Chosen Gear is no longer eligible");
+                search.selected.push(option.cardInstanceId);
+            } else if (option.kind !== "MODE" || option.mode !== "DONE") return failure("INVALID_SEARCH_TARGET", "Choose a looked-at Gear or take none");
+            if (option.kind === "CARD" && search.selected.length < current.effect.maxTake && searchTargets(m.state, m.context).some(id => !search.selected.includes(id))) return offer(m);
+            const done = finishSearch(m); return done.ok ? completed(m) : done;
         }
         if (current.effect.kind === "LOOK_AT_FRIENDLY_FACE_DOWN_LEGEND") {
             if (option.kind !== "LEGEND_SLOT") return failure("INVALID_LOOK_TARGET", "Choose a public Legend slot");
