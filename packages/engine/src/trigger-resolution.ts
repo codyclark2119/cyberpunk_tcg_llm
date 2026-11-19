@@ -12,7 +12,7 @@ import { supportsDelayedAttackGear } from "./delayed-effect-support";
 import { finishEndTurn } from "./end-turn";
 import { readyableEddieSlots, readyEddie } from "./eddie-ready";
 import { discardCard, getDiscardableCards } from "./discard";
-import { testCondition } from "./conditions";
+import { friendlyValuePairCount, testCondition } from "./conditions";
 import { supportsOrderedTriggerSource } from "./ordered-effects-support";
 import { grantLegendKnowledge, privateLookTargets } from "./private-knowledge";
 import { friendlyPowerTargets } from "./friendly-play-power-queries";
@@ -153,6 +153,13 @@ export function advanceTriggers(m: TurnMutation): Result<null> {
         c.phase = "TARGET"; return offer(m);
     }
     // Batch V8: own-turn-end ready; the printed "if" is rechecked at resolution.
+    // Batch V30: "Spend a rival Unit for each friendly value-pair of Gigs": the pairs are counted once, here (6.6.1), then each
+    // spend is its own pick; a single rival Unit is forced. Readiness is not a selector filter.
+    if (e.kind === "SPEND_UNITS_PER_VALUE_PAIR") {
+        const pairs = friendlyValuePairCount(m.state, r.current.controllerId);
+        if (!pairs || !listSpendUnitTargets(m.state, r.current.controllerId, e.target, m.context).length) return completed(m);
+        c.spendsRemaining = pairs; c.phase = "TARGET"; return offer(m);
+    }
     // Batch V29: "If you control a value-pair of Gigs, ready up to 2 MERC Legends": the condition is checked here (10.16.1.1),
     // then each pick readies one Legend until 2 are chosen, none remain, or the controller is done.
     if (e.kind === "READY_LEGENDS_UP_TO") {
@@ -303,6 +310,14 @@ export function continueTrigger(m: TurnMutation, index: number, forced = false):
             if (option.kind !== "CARD") return failure("INVALID_SPEND_TARGET", "Choose a current rival Unit");
             const spent = resolveSpendTarget(m, option.cardInstanceId, forced);
             return spent.ok ? completed(m) : spent;
+        }
+        if (current.effect.kind === "SPEND_UNITS_PER_VALUE_PAIR") {
+            if (option.kind !== "CARD" || !c.spendsRemaining || !listSpendUnitTargets(m.state, current.controllerId, current.effect.target, m.context).includes(option.cardInstanceId)) return failure("INVALID_SPEND_TARGET", "Choose a current rival Unit");
+            m.emit({ kind: "CARD_TARGET_SELECTED", effectId: current.id, sourceId: current.sourceId!, targetId: option.cardInstanceId, controllerId: current.controllerId, forced });
+            const spent = spendUnitForEffect(m, option.cardInstanceId, current.sourceId!, current.id);
+            if (!spent.ok) return spent;
+            if (c.spendsRemaining === 1) { delete c.spendsRemaining; return completed(m); }
+            c.spendsRemaining--; return offer(m);
         }
         if (current.effect.kind === "READY_LEGENDS_UP_TO") {
             if (option.kind === "MODE" && option.mode === "DONE") { delete c.readiedLegends; return completed(m); }

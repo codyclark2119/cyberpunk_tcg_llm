@@ -6,6 +6,7 @@ import type { CardInstanceId, GameState } from "@tcg/domain";
 import type { EngineContext } from "./state";
 import { combatResolutionEnabled } from "./combat-resolution-policy";
 import { attachedGear, gearEnabled } from "./attachments";
+import { supportsValuePairUnit } from "./value-pair-support";
 export function cardRevision(state: GameState, id: CardInstanceId, context: EngineContext) {
     const c = state.objects.cards[id];
     return context.content.cards.find(r => r.id === c?.cardId && r.revision === c?.revision);
@@ -34,6 +35,7 @@ export function applicablePowerModifiers(state: GameState, id: CardInstanceId, c
         if (modifier.kind === "RIVAL_LAGGING_UNITS_CANNOT_ATTACK" && supportsAttackPreventionUnit(revision, context).ok) continue;
         if (modifier.kind === "GRANT_PRINTED_POWER_TO_HOST" && revision.type === "GEAR" && gearEnabled(context)) continue;
         if (modifier.kind === "SELF_PLAY_COST_REDUCTION" && supportsPlayCostReduction(revision, context).ok) continue; // Payment only, never power.
+        if (modifier.kind === "CAN_ATTACK_RIVAL_UNITS_WHILE_LAGGING" && supportsValuePairUnit(revision, context).ok) continue; // Batch V30: attack permission only.
         if (modifier.kind !== "POWER_PER_EQUIPPED_GEAR_DURING_OWN_TURN") throw new Error("UNSUPPORTED_CONTINUOUS_MODIFIERS");
         if (card.face === "UP" && card.zone.zone === "LEGENDS" && state.timing.turn > 0 && state.timing.activePlayer === card.controllerId)
             result.push({ sourceId: id, subjectId: id, kind: modifier.kind, amount: modifier.amount * gear.length });

@@ -9,12 +9,12 @@
   },
   "totals": {
     "cards": 151,
-    "admitted": 78,
-    "notAdmitted": 73,
+    "admitted": 79,
+    "notAdmitted": 72,
     "notAdmittedOnlyCoveredFamilies": 0,
     "byAdmission": {
-      "NOT_ADMITTED": 73,
-      "SOURCE_MATCH": 78
+      "NOT_ADMITTED": 72,
+      "SOURCE_MATCH": 79
     }
   },
   "families": [
@@ -24,7 +24,7 @@
       "summary": "Conditions and filters on Gig values: min/max, value-pairs, even/odd, 8+, die type, counts compared with a Rival.",
       "notes": "Conditions only, each a fixed shape.",
       "cardCount": 40,
-      "notAdmittedCount": 24,
+      "notAdmittedCount": 23,
       "soleBlockerCount": 0
     },
     {
@@ -73,24 +73,6 @@
       "soleBlockerCount": 0
     },
     {
-      "family": "TRIGGER_PLAY",
-      "status": "PARTIAL",
-      "summary": "[Play] abilities and Program bodies resolving when played.",
-      "notes": "Trigger WHEN_PLAYED.",
-      "cardCount": 27,
-      "notAdmittedCount": 12,
-      "soleBlockerCount": 0
-    },
-    {
-      "family": "ATTACK_PERMISSION",
-      "status": "PARTIAL",
-      "summary": "Who may attack what and when: can't attack, may attack ready/spent Units, must attack, can't be blocked.",
-      "notes": "Restrictions on the card itself are supported; permissions granted by effects, forced attacks and off-turn timing are not.",
-      "cardCount": 16,
-      "notAdmittedCount": 11,
-      "soleBlockerCount": 0
-    },
-    {
       "family": "DECK_SEARCH_REVEAL",
       "status": "PARTIAL",
       "summary": "Top-of-deck manipulation: search/look/reveal top N, trash from the top (Trash N), bottom-deck the rest.",
@@ -109,12 +91,30 @@
       "soleBlockerCount": 0
     },
     {
+      "family": "TRIGGER_PLAY",
+      "status": "PARTIAL",
+      "summary": "[Play] abilities and Program bodies resolving when played.",
+      "notes": "Trigger WHEN_PLAYED.",
+      "cardCount": 27,
+      "notAdmittedCount": 11,
+      "soleBlockerCount": 0
+    },
+    {
+      "family": "ATTACK_PERMISSION",
+      "status": "PARTIAL",
+      "summary": "Who may attack what and when: can't attack, may attack ready/spent Units, must attack, can't be blocked.",
+      "notes": "Restrictions on the card itself are supported; permissions granted by effects, forced attacks and off-turn timing are not.",
+      "cardCount": 16,
+      "notAdmittedCount": 10,
+      "soleBlockerCount": 0
+    },
+    {
       "family": "SCALED_AMOUNT",
       "status": "PARTIAL",
       "summary": "Amounts computed from the board: 'for each', 'equal to'.",
       "notes": "Only Royce's per-equipped-Gear modifier counts anything.",
       "cardCount": 18,
-      "notAdmittedCount": 11,
+      "notAdmittedCount": 10,
       "soleBlockerCount": 0
     },
     {
@@ -253,15 +253,6 @@
       "soleBlockerCount": 0
     },
     {
-      "family": "SPEND_OR_READY",
-      "status": "PARTIAL",
-      "summary": "Spend or ready Units and Legends by an effect, and 'can't ready' locks.",
-      "notes": "SPEND_UNIT (rival, cost at most 4) only; readying Units or Legends is missing.",
-      "cardCount": 15,
-      "notAdmittedCount": 5,
-      "soleBlockerCount": 0
-    },
-    {
       "family": "STEAL_CONTROL",
       "status": "MISSING",
       "summary": "Gig control outside the ordinary attack steal: swap, extra steal, steal fewer, steal prevention.",
@@ -276,6 +267,15 @@
       "summary": "Fight-scoped rules: power while fighting, can't be defeated in a fight, wins all fights against, fight-outcome riders.",
       "notes": "Only Reboot Optics' next-fight prevention.",
       "cardCount": 5,
+      "notAdmittedCount": 4,
+      "soleBlockerCount": 0
+    },
+    {
+      "family": "SPEND_OR_READY",
+      "status": "PARTIAL",
+      "summary": "Spend or ready Units and Legends by an effect, and 'can't ready' locks.",
+      "notes": "SPEND_UNIT (rival, cost at most 4) only; readying Units or Legends is missing.",
+      "cardCount": 15,
       "notAdmittedCount": 4,
       "soleBlockerCount": 0
     },
@@ -2737,8 +2737,8 @@
       "colors": [
         "GREEN"
       ],
-      "admission": "NOT_ADMITTED",
-      "revision": null,
+      "admission": "SOURCE_MATCH",
+      "revision": 1,
       "families": [
         "ATTACK_PERMISSION",
         "CONDITION_GIG",
@@ -2746,13 +2746,7 @@
         "SPEND_OR_READY",
         "TRIGGER_PLAY"
       ],
-      "blockingFamilies": [
-        "ATTACK_PERMISSION",
-        "CONDITION_GIG",
-        "SCALED_AMOUNT",
-        "SPEND_OR_READY",
-        "TRIGGER_PLAY"
-      ],
+      "blockingFamilies": [],
       "note": null
     },
     {

@@ -122,7 +122,7 @@ export function triggerChoice(state: GameState, context: EngineContext): Pending
             ? trashedProgramTargets(state, context).map(cardInstanceId => ({ kind: "CARD", cardInstanceId }))
             : current?.effect.kind === "GRANT_KEYWORD_UNTIL_END_OF_TURN"
             ? keywordGrantTargets(state, current, context).map(cardInstanceId => ({ kind: "CARD", cardInstanceId }))
-            : current?.effect.kind === "SPEND_UNIT" || current?.effect.kind === "PREVENT_UNIT_READY"
+            : current?.effect.kind === "SPEND_UNIT" || current?.effect.kind === "PREVENT_UNIT_READY" || current?.effect.kind === "SPEND_UNITS_PER_VALUE_PAIR"
             ? listSpendUnitTargets(state, actorId, current.effect.target, context).map(cardInstanceId => ({ kind: "CARD", cardInstanceId }))
             : current?.effect.kind === "READY_LEGENDS_UP_TO"
             ? [{ kind: "MODE", mode: "DONE" }, ...taggedLegendReadyTargets(state, actorId, current.effect.tag, context).filter(id => !c.readiedLegends?.includes(id)).map(cardInstanceId => ({ kind: "CARD" as const, cardInstanceId }))]
@@ -142,5 +142,5 @@ export function triggerChoice(state: GameState, context: EngineContext): Pending
             ? gigAdjustmentOptions(g, current.effect)
             : Array.from({ length: Math.min(2, value - 1) + 1 }, (_, amount) => ({ kind: "AMOUNT", amount }));
     }
-    return { id: hashCanonical({ protocol: "trigger-choice@1", turn: state.timing.turn, ordinal: c.ordinal, resolved: c.resolvedIds, current: current?.id ?? null, phase: c.phase, ...(c.selectedEddieSlots ? { selectedEddieSlots: c.selectedEddieSlots } : {}), ...(c.readiedLegends ? { readiedLegends: c.readiedLegends } : {}), ...(current?.primitiveIndex === 1 ? { primitiveIndex: 1 } : {}), target: c.targetGigId ?? null }), actorId, kind, options, min: 1, max: 1, ordered: false, continuationId: "reviewed-trigger@1" };
+    return { id: hashCanonical({ protocol: "trigger-choice@1", turn: state.timing.turn, ordinal: c.ordinal, resolved: c.resolvedIds, current: current?.id ?? null, phase: c.phase, ...(c.selectedEddieSlots ? { selectedEddieSlots: c.selectedEddieSlots } : {}), ...(c.readiedLegends ? { readiedLegends: c.readiedLegends } : {}), ...(c.spendsRemaining ? { spendsRemaining: c.spendsRemaining } : {}), ...(current?.primitiveIndex === 1 ? { primitiveIndex: 1 } : {}), target: c.targetGigId ?? null }), actorId, kind, options, min: 1, max: 1, ordered: false, continuationId: "reviewed-trigger@1" };
 }

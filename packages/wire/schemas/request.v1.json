@@ -3366,6 +3366,38 @@
                                     "properties": {
                                       "kind": {
                                         "type": "string",
+                                        "const": "SPEND_UNITS_PER_VALUE_PAIR"
+                                      },
+                                      "target": {
+                                        "type": "object",
+                                        "properties": {
+                                          "kind": {
+                                            "type": "string",
+                                            "const": "UNITS"
+                                          },
+                                          "relation": {
+                                            "type": "string",
+                                            "const": "RIVAL"
+                                          }
+                                        },
+                                        "required": [
+                                          "kind",
+                                          "relation"
+                                        ],
+                                        "additionalProperties": false
+                                      }
+                                    },
+                                    "required": [
+                                      "kind",
+                                      "target"
+                                    ],
+                                    "additionalProperties": false
+                                  },
+                                  {
+                                    "type": "object",
+                                    "properties": {
+                                      "kind": {
+                                        "type": "string",
                                         "const": "READY_LEGENDS_UP_TO"
                                       },
                                       "tag": {
@@ -4266,6 +4298,19 @@
                         "type": "array",
                         "items": {
                           "oneOf": [
+                            {
+                              "type": "object",
+                              "properties": {
+                                "kind": {
+                                  "type": "string",
+                                  "const": "CAN_ATTACK_RIVAL_UNITS_WHILE_LAGGING"
+                                }
+                              },
+                              "required": [
+                                "kind"
+                              ],
+                              "additionalProperties": false
+                            },
                             {
                               "type": "object",
                               "properties": {
@@ -7095,6 +7140,11 @@
                         "maxLength": 200,
                         "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$"
                       }
+                    },
+                    "spendsRemaining": {
+                      "type": "integer",
+                      "exclusiveMinimum": 0,
+                      "maximum": 9007199254740991
                     }
                   },
                   "required": [
@@ -9530,6 +9580,38 @@
                                 "kind",
                                 "count",
                                 "parity"
+                              ],
+                              "additionalProperties": false
+                            },
+                            {
+                              "type": "object",
+                              "properties": {
+                                "kind": {
+                                  "type": "string",
+                                  "const": "SPEND_UNITS_PER_VALUE_PAIR"
+                                },
+                                "target": {
+                                  "type": "object",
+                                  "properties": {
+                                    "kind": {
+                                      "type": "string",
+                                      "const": "UNITS"
+                                    },
+                                    "relation": {
+                                      "type": "string",
+                                      "const": "RIVAL"
+                                    }
+                                  },
+                                  "required": [
+                                    "kind",
+                                    "relation"
+                                  ],
+                                  "additionalProperties": false
+                                }
+                              },
+                              "required": [
+                                "kind",
+                                "target"
                               ],
                               "additionalProperties": false
                             },
@@ -12397,6 +12479,38 @@
                             "properties": {
                               "kind": {
                                 "type": "string",
+                                "const": "SPEND_UNITS_PER_VALUE_PAIR"
+                              },
+                              "target": {
+                                "type": "object",
+                                "properties": {
+                                  "kind": {
+                                    "type": "string",
+                                    "const": "UNITS"
+                                  },
+                                  "relation": {
+                                    "type": "string",
+                                    "const": "RIVAL"
+                                  }
+                                },
+                                "required": [
+                                  "kind",
+                                  "relation"
+                                ],
+                                "additionalProperties": false
+                              }
+                            },
+                            "required": [
+                              "kind",
+                              "target"
+                            ],
+                            "additionalProperties": false
+                          },
+                          {
+                            "type": "object",
+                            "properties": {
+                              "kind": {
+                                "type": "string",
                                 "const": "READY_LEGENDS_UP_TO"
                               },
                               "tag": {
@@ -15244,6 +15358,38 @@
                               "kind",
                               "count",
                               "parity"
+                            ],
+                            "additionalProperties": false
+                          },
+                          {
+                            "type": "object",
+                            "properties": {
+                              "kind": {
+                                "type": "string",
+                                "const": "SPEND_UNITS_PER_VALUE_PAIR"
+                              },
+                              "target": {
+                                "type": "object",
+                                "properties": {
+                                  "kind": {
+                                    "type": "string",
+                                    "const": "UNITS"
+                                  },
+                                  "relation": {
+                                    "type": "string",
+                                    "const": "RIVAL"
+                                  }
+                                },
+                                "required": [
+                                  "kind",
+                                  "relation"
+                                ],
+                                "additionalProperties": false
+                              }
+                            },
+                            "required": [
+                              "kind",
+                              "target"
                             ],
                             "additionalProperties": false
                           },
@@ -19974,6 +20120,38 @@
                                     "properties": {
                                       "kind": {
                                         "type": "string",
+                                        "const": "SPEND_UNITS_PER_VALUE_PAIR"
+                                      },
+                                      "target": {
+                                        "type": "object",
+                                        "properties": {
+                                          "kind": {
+                                            "type": "string",
+                                            "const": "UNITS"
+                                          },
+                                          "relation": {
+                                            "type": "string",
+                                            "const": "RIVAL"
+                                          }
+                                        },
+                                        "required": [
+                                          "kind",
+                                          "relation"
+                                        ],
+                                        "additionalProperties": false
+                                      }
+                                    },
+                                    "required": [
+                                      "kind",
+                                      "target"
+                                    ],
+                                    "additionalProperties": false
+                                  },
+                                  {
+                                    "type": "object",
+                                    "properties": {
+                                      "kind": {
+                                        "type": "string",
                                         "const": "READY_LEGENDS_UP_TO"
                                       },
                                       "tag": {
@@ -20874,6 +21052,19 @@
                         "type": "array",
                         "items": {
                           "oneOf": [
+                            {
+                              "type": "object",
+                              "properties": {
+                                "kind": {
+                                  "type": "string",
+                                  "const": "CAN_ATTACK_RIVAL_UNITS_WHILE_LAGGING"
+                                }
+                              },
+                              "required": [
+                                "kind"
+                              ],
+                              "additionalProperties": false
+                            },
                             {
                               "type": "object",
                               "properties": {

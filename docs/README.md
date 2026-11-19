@@ -71,6 +71,7 @@ were recorded in their pull requests (#4, #7, #8); later batches have documents 
 | V27 (2026-11-19) | V: Roamer of the Badlands | [Steal trigger: increase the stolen Gig; end-of-turn draw](api-admission-batch-v27.md); coverage 76/151 |
 | V28 (2026-11-19) | Jackie Welles: Ride or Die Choom | [Power and draw counted from friendly Gig parity](api-admission-batch-v28.md); coverage 77/151 |
 | V29 (2026-11-19) | Pepe Najarro: Working Doubles | [Value-pair condition: ready up to 2 MERC Legends](api-admission-batch-v29.md); coverage 78/151 |
+| V30 (2026-11-19) | Sandayu Oda: Hanako's Guardian | [Spend a rival Unit per value-pair; attack rival Units the turn it's played](api-admission-batch-v30.md); coverage 79/151 |
 | V7 (2026-11-15) | Royce: Don't Call Me Simon, Wild in the Streets, Delamain: Rideshare AI | [shared defeat filter and exact pin table](api-admission-batch-v7.md); coverage 42/151 |
 | V6 (2026-09-22) | Trust No One | [contract and executable slice](api-admission-batch-v6.md), [baseline verification](api-admission-batch-v6-verification.md) |
 

@@ -6,12 +6,13 @@ import { cardRevision, effectiveCardTypes } from "./characteristics";
 import { supportsPlay } from "./play-support";
 import { adrenalineEnabled } from "./restriction-support";
 import { effectiveKeywords } from "./capabilities";
+import { laggingUnitAttackOnly } from "./value-pair-support";
 export function isUnitForGameplay(state: GameState, id: CardInstanceId, context: EngineContext) { return effectiveCardTypes(state, id, context).includes("UNIT"); }
 /** 11.23.2: Units with [ADRENALINE] may attack while lagging; Lag itself and every other attack criterion still apply. */
 export function laggingAttackPermitted(state: GameState, id: CardInstanceId, context: EngineContext) { return adrenalineEnabled(context) && effectiveKeywords(state, id, context).includes("ADRENALINE"); }
 export function attackSourceValid(state: GameState, actor: PlayerId, id: CardInstanceId, context: EngineContext) {
     const c = state.objects.cards[id];
-    return Boolean(combatEnabled(context) && c && c.controllerId === actor && c.zone.playerId === actor && c.zone.zone === "BATTLEFIELD" && c.face === "UP" && isUnitForGameplay(state, id, context) && supportsPlay(cardRevision(state, id, context), context).ok && (!c.statuses.includes("LAG") || c.statuses.includes("GO_SOLO") || laggingAttackPermitted(state, id, context)) && !getAttackRestrictions(state, id, context).length);
+    return Boolean(combatEnabled(context) && c && c.controllerId === actor && c.zone.playerId === actor && c.zone.zone === "BATTLEFIELD" && c.face === "UP" && isUnitForGameplay(state, id, context) && supportsPlay(cardRevision(state, id, context), context).ok && (!c.statuses.includes("LAG") || c.statuses.includes("GO_SOLO") || laggingAttackPermitted(state, id, context) || laggingUnitAttackOnly(cardRevision(state, id, context), context)) && !getAttackRestrictions(state, id, context).length);
 }
 /** 9.3.2: target the nonempty area, never a die to steal. No readiness requirement on the attacker here. */
 export function listAttackTargets(state: GameState, attackerId: CardInstanceId, actor: PlayerId, context: EngineContext): AttackTarget[] {
@@ -21,7 +22,9 @@ export function listAttackTargets(state: GameState, attackerId: CardInstanceId, 
     if (!rival) return [];
     const cards: AttackTarget[] = Object.values(state.objects.cards).filter(c => c.controllerId === rival && c.zone.playerId === rival && c.zone.zone === "BATTLEFIELD" && c.face === "UP" && c.readiness === "SPENT" && isUnitForGameplay(state, c.id, context)).map(c => ({ kind: "CARD", cardInstanceId: c.id }));
     // 9.3.2.3: a printed restriction removes the Gig area from this Unit's valid targets; rival Units remain valid.
-    if (!currentCombatRestrictions(state, attackerId, context).some(x => x.kind === "CANNOT_ATTACK_GIG_AREA") && Object.values(state.objects.gigs).some(g => g.controllerId === rival && g.location.playerId === rival && g.location.zone === "GIGS" && g.roll.kind === "ROLLED")) cards.push({ kind: "GIG_AREA", playerId: rival });
+    // Batch V30: attacking only because "it can attack rival Units the turn it's played" keeps the Gig area closed.
+    const unitsOnly = source.statuses.includes("LAG") && !source.statuses.includes("GO_SOLO") && !laggingAttackPermitted(state, attackerId, context) && laggingUnitAttackOnly(cardRevision(state, attackerId, context), context);
+    if (!unitsOnly && !currentCombatRestrictions(state, attackerId, context).some(x => x.kind === "CANNOT_ATTACK_GIG_AREA") && Object.values(state.objects.gigs).some(g => g.controllerId === rival && g.location.playerId === rival && g.location.zone === "GIGS" && g.roll.kind === "ROLLED")) cards.push({ kind: "GIG_AREA", playerId: rival });
     return cards.sort((a, b) => canonicalSerialize(a) < canonicalSerialize(b) ? -1 : 1);
 }
 export function isAttackEligible(state: GameState, actor: PlayerId, id: CardInstanceId, context: EngineContext) {

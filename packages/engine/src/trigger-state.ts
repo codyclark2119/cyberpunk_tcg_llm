@@ -12,7 +12,7 @@ import { firstAttackHistoryEnabled, supportsFirstAttackLegend } from "./first-at
 import { isFirstArasakaAttack } from "./first-attack-history";
 import { supportsOrderedTriggerSource } from "./ordered-effects-support";
 import { supportsFriendlyPlayPowerUnit } from "./friendly-play-power-support";
-import { testCondition } from "./conditions";
+import { friendlyValuePairCount, testCondition } from "./conditions";
 import { stolenGigReadyTargets, taggedLegendReadyTargets } from "./ready-unit";
 import { canonicalSerialize, failure, success, type GameState, type FightResult, type TriggerBinding } from "@tcg/domain";
 import { supportsAttackSearchUnit } from "./attack-search-support";
@@ -117,7 +117,7 @@ export function validateTriggerState(state: GameState, context: EngineContext) {
     const rivalHasResolved = c.resolvedIds.some(id => !activeIds.includes(id));
     if ((r.current && r.current.controllerId !== state.timing.activePlayer || rivalHasResolved) && activeIds.some(id => !c.resolvedIds.includes(id))) return failure("INVALID_TRIGGER_PRIORITY", "Turn player's pending effects precede the rival's");
     if (c.phase === "SELECT" ? Boolean(r.current) || nextTriggerGroup(state).length < 2 : !r.current) return failure("INVALID_TRIGGER_PHASE", "Ordering is strategic only with multiple eligible effects; effect choices require a current effect");
-    if (c.phase !== "SELECT" && (!r.current || !["DEFEAT_UNIT", "READY_EDDIES", "DISCARD_CARDS", "DECREASE_GIG_UP_TO", "ADJUST_GIG_UP_TO", "OPTIONAL_DECREASE_FRIENDLY_GIG_THEN_DRAW_IF_MIN", "LOOK_AT_FRIENDLY_FACE_DOWN_LEGEND", "POWER_UNTIL_END_OF_TURN", "SPEND_UNIT", "READY_UNIT", "RETURN_TRASH_UNIT_TO_HAND", "SEARCH_GEAR", "TRASH_THEN_RETURN_PROGRAM", "GRANT_KEYWORD_UNTIL_END_OF_TURN", "PREVENT_UNIT_READY", "SWAP_GIGS", "READY_LEGENDS_UP_TO"].includes(r.current.effect.kind))) return failure("INVALID_TRIGGER_PHASE", "Only reviewed adjustment/look/discard/ready/power/spend/trash-return primitives pause for choices");
+    if (c.phase !== "SELECT" && (!r.current || !["DEFEAT_UNIT", "READY_EDDIES", "DISCARD_CARDS", "DECREASE_GIG_UP_TO", "ADJUST_GIG_UP_TO", "OPTIONAL_DECREASE_FRIENDLY_GIG_THEN_DRAW_IF_MIN", "LOOK_AT_FRIENDLY_FACE_DOWN_LEGEND", "POWER_UNTIL_END_OF_TURN", "SPEND_UNIT", "READY_UNIT", "RETURN_TRASH_UNIT_TO_HAND", "SEARCH_GEAR", "TRASH_THEN_RETURN_PROGRAM", "GRANT_KEYWORD_UNTIL_END_OF_TURN", "PREVENT_UNIT_READY", "SWAP_GIGS", "READY_LEGENDS_UP_TO", "SPEND_UNITS_PER_VALUE_PAIR"].includes(r.current.effect.kind))) return failure("INVALID_TRIGGER_PHASE", "Only reviewed adjustment/look/discard/ready/power/spend/trash-return primitives pause for choices");
     // Batch V19: the reviewed [Attack] Gear search pauses only for its own looked-at cards (search-state owns the details).
     if ((r.current?.effect.kind === "SEARCH_GEAR") !== Boolean(r.searchContinuation) || r.current?.effect.kind === "SEARCH_GEAR" && (c.phase !== "TARGET" || c.origin.kind !== "ATTACK" || r.current.trigger?.kind !== "WHEN_ATTACKING" || !supportsAttackSearchUnit(cardRevision(state, r.current.sourceId!, context), context).ok)) return failure("INVALID_SEARCH_CONTINUATION", "Only the reviewed attack search pauses for its looked-at cards");
     // Batch V20: the pinned {Play} trash-3 Program pick and Adrenaline grant pause only for their own strategic targets.
@@ -151,6 +151,15 @@ export function validateTriggerState(state: GameState, context: EngineContext) {
             || !testCondition(state, r.current.controllerId, e.when.condition, context, source.id)
             || (c.readiedLegends ?? []).some(id => !all.includes(id)) || (c.readiedLegends?.length ?? 0) >= e.maximum || !all.some(id => !c.readiedLegends?.includes(id)))
             return failure("INVALID_READY_LEGENDS_CONTINUATION", "Only the reviewed value-pair Legend ready pauses, with an eligible Legend left to choose");
+    }
+    // Batch V30: the per-value-pair rival spend pauses only in its own PLAY batch, with 1 to (pairs) spends left and 2+ rival Units.
+    if (c.spendsRemaining !== undefined && r.current?.effect.kind !== "SPEND_UNITS_PER_VALUE_PAIR") return failure("INVALID_SPEND_COUNT", "Remaining spends belong only to the current per-value-pair spend");
+    if (r.current?.effect.kind === "SPEND_UNITS_PER_VALUE_PAIR") {
+        const source = r.current.sourceId ? state.objects.cards[r.current.sourceId] : undefined;
+        if (c.phase !== "TARGET" || c.origin.kind !== "PLAY" || r.current.trigger?.kind !== "WHEN_PLAYED" || r.current.primitiveIndex !== undefined || !source
+            || c.origin.subjectId !== source.id || r.current.trigger.subjectId !== source.id || !supportsTriggerCard(cardRevision(state, source.id, context), context).ok
+            || !c.spendsRemaining || c.spendsRemaining > friendlyValuePairCount(state, r.current.controllerId) || listSpendUnitTargets(state, r.current.controllerId, r.current.effect.target, context).length < 2)
+            return failure("INVALID_SPEND_CONTINUATION", "Only the reviewed per-value-pair PLAY spend pauses, with spends left, for 2+ rival Units");
     }
     // Batch V25: the steal-trigger ready of another friendly Unit pauses only in its steal batch, for its eligible Units.
     if (r.current?.effect.kind === "READY_UNIT" && (c.phase !== "TARGET" || (r.current.effect.target.kind === "ANOTHER_FRIENDLY_UNIT"

@@ -172,6 +172,8 @@ export const EffectSchema = z.discriminatedUnion("kind", [
     // counted when the effect resolves.
     z.strictObject({ kind: z.literal("POWER_PER_FRIENDLY_GIG"), target: z.strictObject({ kind: z.literal("SOURCE_SUBJECT") }), amount: z.literal(2), parity: z.literal("EVEN") }),
     z.strictObject({ kind: z.literal("DRAW_PER_FRIENDLY_GIG"), count: z.literal(1), parity: z.literal("ODD") }),
+    // Batch V30: "Spend a rival Unit for each friendly value-pair of Gigs" (6.6.1), counted when the effect resolves.
+    z.strictObject({ kind: z.literal("SPEND_UNITS_PER_VALUE_PAIR"), target: z.strictObject({ kind: z.literal("UNITS"), relation: z.literal("RIVAL") }) }),
     // Batch V29: "If you control a value-pair of Gigs, ready up to 2 MERC Legends in your Legends area."
     z.strictObject({ kind: z.literal("READY_LEGENDS_UP_TO"), tag: z.literal("Merc"), maximum: z.literal(2),
         when: z.strictObject({ timing: z.literal("RESOLUTION"), condition: z.strictObject({ kind: z.literal("CONTROLS_VALUE_PAIR") }) }) }),
@@ -195,6 +197,8 @@ export const AbilitySchema = z.strictObject({ id: z.string().min(1), trigger: Tr
     activation: z.strictObject({ timing: z.literal("MAIN"), conditionTiming: z.literal("ACTIVATION_AND_RESOLUTION"), costs: z.array(ActivationCostSchema) }).optional(),
     conditions: z.array(ConditionSchema), cost: CostSchema, effects: z.array(EffectSchema) });
 export const ContinuousModifierSchema = z.discriminatedUnion("kind", [
+    // Batch V30: "This Unit can attack rival Units the turn it's played" (11.3.1): while lagging, rival Units only.
+    z.strictObject({ kind: z.literal("CAN_ATTACK_RIVAL_UNITS_WHILE_LAGGING") }),
     z.strictObject({ kind: z.literal("FRIENDLY_ARASAKA_ATTACKING_UNIT_POWER"), amount: z.literal(1) }),
     z.strictObject({ kind: z.literal("GRANT_KEYWORD_TO_HOST"), keyword: z.literal("BLOCKER") }),
     // 2.6/11.3.1: prevents rival Units that entered the field this turn (lagging) from attacking.
