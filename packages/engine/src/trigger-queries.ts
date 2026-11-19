@@ -88,6 +88,11 @@ export function swapSidesAvailable(state: GameState, controllerId: PlayerId) {
 }
 export function triggerGigTargets(state: GameState) {
     const current = state.resolution.current!, chosen = state.resolution.triggerContinuation?.targetGigId;
+    // Batch V27: "increase it" offers only the rolled Gig the steal trigger names, while it is in a Gig area.
+    if (current.effect.kind === "ADJUST_GIG_UP_TO" && current.effect.target.kind === "STOLEN_GIG") {
+        const g = current.trigger?.gigInstanceId ? state.objects.gigs[current.trigger.gigInstanceId] : undefined;
+        return g && g.location.zone === "GIGS" && g.roll.kind === "ROLLED" ? [g.id] : [];
+    }
     // Batch V23: a swap chooses the friendly Gig first, then the rival Gig.
     const side = current.effect.kind === "SWAP_GIGS" ? (chosen ? "RIVAL" : "FRIENDLY") : current.effect.kind === "OPTIONAL_DECREASE_FRIENDLY_GIG_THEN_DRAW_IF_MIN" ? "FRIENDLY" : "ANY";
     return Object.values(state.objects.gigs).filter(g => g.location.zone === "GIGS" && g.roll.kind === "ROLLED" && (side === "ANY" || (g.controllerId === current.controllerId) === (side === "FRIENDLY"))).map(g => g.id).sort();

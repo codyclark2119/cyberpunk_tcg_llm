@@ -52,5 +52,6 @@ export function testCondition(state: GameState, actor: PlayerId, condition: Cond
         case "STREET_CRED": return values.reduce((a, b) => a + b, 0) >= condition.minimum;
         case "GIG_VALUE": return values.includes(condition.value);
         case "GIG_VALUE_AT_LEAST": return values.some(value => value >= condition.minimum);
+        case "GIG_COUNT_WITH_VALUE_AT_LEAST": return values.filter(value => value >= condition.minimum).length >= condition.count;
     }
 }

@@ -3926,6 +3926,29 @@
                                                     "kind"
                                                   ],
                                                   "additionalProperties": false
+                                                },
+                                                {
+                                                  "type": "object",
+                                                  "properties": {
+                                                    "kind": {
+                                                      "type": "string",
+                                                      "const": "GIG_COUNT_WITH_VALUE_AT_LEAST"
+                                                    },
+                                                    "minimum": {
+                                                      "type": "number",
+                                                      "const": 8
+                                                    },
+                                                    "count": {
+                                                      "type": "number",
+                                                      "const": 2
+                                                    }
+                                                  },
+                                                  "required": [
+                                                    "kind",
+                                                    "minimum",
+                                                    "count"
+                                                  ],
+                                                  "additionalProperties": false
                                                 }
                                               ]
                                             }
@@ -4039,22 +4062,39 @@
                                           "const": "ADJUST_GIG_UP_TO"
                                         },
                                         "target": {
-                                          "type": "object",
-                                          "properties": {
-                                            "kind": {
-                                              "type": "string",
-                                              "const": "GIGS"
+                                          "anyOf": [
+                                            {
+                                              "type": "object",
+                                              "properties": {
+                                                "kind": {
+                                                  "type": "string",
+                                                  "const": "GIGS"
+                                                },
+                                                "relation": {
+                                                  "type": "string",
+                                                  "const": "ANY"
+                                                }
+                                              },
+                                              "required": [
+                                                "kind",
+                                                "relation"
+                                              ],
+                                              "additionalProperties": false
                                             },
-                                            "relation": {
-                                              "type": "string",
-                                              "const": "ANY"
+                                            {
+                                              "type": "object",
+                                              "properties": {
+                                                "kind": {
+                                                  "type": "string",
+                                                  "const": "STOLEN_GIG"
+                                                }
+                                              },
+                                              "required": [
+                                                "kind"
+                                              ],
+                                              "additionalProperties": false
                                             }
-                                          },
-                                          "required": [
-                                            "kind",
-                                            "relation"
-                                          ],
-                                          "additionalProperties": false
+                                          ]
                                         },
                                         "maximum": {
                                           "anyOf": [
@@ -4069,6 +4109,10 @@
                                             {
                                               "type": "number",
                                               "const": 4
+                                            },
+                                            {
+                                              "type": "number",
+                                              "const": 5
                                             },
                                             {
                                               "type": "number",
@@ -4380,6 +4424,29 @@
                                               },
                                               "required": [
                                                 "kind"
+                                              ],
+                                              "additionalProperties": false
+                                            },
+                                            {
+                                              "type": "object",
+                                              "properties": {
+                                                "kind": {
+                                                  "type": "string",
+                                                  "const": "GIG_COUNT_WITH_VALUE_AT_LEAST"
+                                                },
+                                                "minimum": {
+                                                  "type": "number",
+                                                  "const": 8
+                                                },
+                                                "count": {
+                                                  "type": "number",
+                                                  "const": 2
+                                                }
+                                              },
+                                              "required": [
+                                                "kind",
+                                                "minimum",
+                                                "count"
                                               ],
                                               "additionalProperties": false
                                             }
@@ -6581,6 +6648,29 @@
                                                   "kind"
                                                 ],
                                                 "additionalProperties": false
+                                              },
+                                              {
+                                                "type": "object",
+                                                "properties": {
+                                                  "kind": {
+                                                    "type": "string",
+                                                    "const": "GIG_COUNT_WITH_VALUE_AT_LEAST"
+                                                  },
+                                                  "minimum": {
+                                                    "type": "number",
+                                                    "const": 8
+                                                  },
+                                                  "count": {
+                                                    "type": "number",
+                                                    "const": 2
+                                                  }
+                                                },
+                                                "required": [
+                                                  "kind",
+                                                  "minimum",
+                                                  "count"
+                                                ],
+                                                "additionalProperties": false
                                               }
                                             ]
                                           }
@@ -6694,22 +6784,39 @@
                                         "const": "ADJUST_GIG_UP_TO"
                                       },
                                       "target": {
-                                        "type": "object",
-                                        "properties": {
-                                          "kind": {
-                                            "type": "string",
-                                            "const": "GIGS"
+                                        "anyOf": [
+                                          {
+                                            "type": "object",
+                                            "properties": {
+                                              "kind": {
+                                                "type": "string",
+                                                "const": "GIGS"
+                                              },
+                                              "relation": {
+                                                "type": "string",
+                                                "const": "ANY"
+                                              }
+                                            },
+                                            "required": [
+                                              "kind",
+                                              "relation"
+                                            ],
+                                            "additionalProperties": false
                                           },
-                                          "relation": {
-                                            "type": "string",
-                                            "const": "ANY"
+                                          {
+                                            "type": "object",
+                                            "properties": {
+                                              "kind": {
+                                                "type": "string",
+                                                "const": "STOLEN_GIG"
+                                              }
+                                            },
+                                            "required": [
+                                              "kind"
+                                            ],
+                                            "additionalProperties": false
                                           }
-                                        },
-                                        "required": [
-                                          "kind",
-                                          "relation"
-                                        ],
-                                        "additionalProperties": false
+                                        ]
                                       },
                                       "maximum": {
                                         "anyOf": [
@@ -6724,6 +6831,10 @@
                                           {
                                             "type": "number",
                                             "const": 4
+                                          },
+                                          {
+                                            "type": "number",
+                                            "const": 5
                                           },
                                           {
                                             "type": "number",
@@ -7035,6 +7146,29 @@
                                             },
                                             "required": [
                                               "kind"
+                                            ],
+                                            "additionalProperties": false
+                                          },
+                                          {
+                                            "type": "object",
+                                            "properties": {
+                                              "kind": {
+                                                "type": "string",
+                                                "const": "GIG_COUNT_WITH_VALUE_AT_LEAST"
+                                              },
+                                              "minimum": {
+                                                "type": "number",
+                                                "const": 8
+                                              },
+                                              "count": {
+                                                "type": "number",
+                                                "const": 2
+                                              }
+                                            },
+                                            "required": [
+                                              "kind",
+                                              "minimum",
+                                              "count"
                                             ],
                                             "additionalProperties": false
                                           }
@@ -9232,6 +9366,29 @@
                                                   "kind"
                                                 ],
                                                 "additionalProperties": false
+                                              },
+                                              {
+                                                "type": "object",
+                                                "properties": {
+                                                  "kind": {
+                                                    "type": "string",
+                                                    "const": "GIG_COUNT_WITH_VALUE_AT_LEAST"
+                                                  },
+                                                  "minimum": {
+                                                    "type": "number",
+                                                    "const": 8
+                                                  },
+                                                  "count": {
+                                                    "type": "number",
+                                                    "const": 2
+                                                  }
+                                                },
+                                                "required": [
+                                                  "kind",
+                                                  "minimum",
+                                                  "count"
+                                                ],
+                                                "additionalProperties": false
                                               }
                                             ]
                                           }
@@ -9345,22 +9502,39 @@
                                         "const": "ADJUST_GIG_UP_TO"
                                       },
                                       "target": {
-                                        "type": "object",
-                                        "properties": {
-                                          "kind": {
-                                            "type": "string",
-                                            "const": "GIGS"
+                                        "anyOf": [
+                                          {
+                                            "type": "object",
+                                            "properties": {
+                                              "kind": {
+                                                "type": "string",
+                                                "const": "GIGS"
+                                              },
+                                              "relation": {
+                                                "type": "string",
+                                                "const": "ANY"
+                                              }
+                                            },
+                                            "required": [
+                                              "kind",
+                                              "relation"
+                                            ],
+                                            "additionalProperties": false
                                           },
-                                          "relation": {
-                                            "type": "string",
-                                            "const": "ANY"
+                                          {
+                                            "type": "object",
+                                            "properties": {
+                                              "kind": {
+                                                "type": "string",
+                                                "const": "STOLEN_GIG"
+                                              }
+                                            },
+                                            "required": [
+                                              "kind"
+                                            ],
+                                            "additionalProperties": false
                                           }
-                                        },
-                                        "required": [
-                                          "kind",
-                                          "relation"
-                                        ],
-                                        "additionalProperties": false
+                                        ]
                                       },
                                       "maximum": {
                                         "anyOf": [
@@ -9375,6 +9549,10 @@
                                           {
                                             "type": "number",
                                             "const": 4
+                                          },
+                                          {
+                                            "type": "number",
+                                            "const": 5
                                           },
                                           {
                                             "type": "number",
@@ -9686,6 +9864,29 @@
                                             },
                                             "required": [
                                               "kind"
+                                            ],
+                                            "additionalProperties": false
+                                          },
+                                          {
+                                            "type": "object",
+                                            "properties": {
+                                              "kind": {
+                                                "type": "string",
+                                                "const": "GIG_COUNT_WITH_VALUE_AT_LEAST"
+                                              },
+                                              "minimum": {
+                                                "type": "number",
+                                                "const": 8
+                                              },
+                                              "count": {
+                                                "type": "number",
+                                                "const": 2
+                                              }
+                                            },
+                                            "required": [
+                                              "kind",
+                                              "minimum",
+                                              "count"
                                             ],
                                             "additionalProperties": false
                                           }
@@ -15476,6 +15677,29 @@
                                                     "kind"
                                                   ],
                                                   "additionalProperties": false
+                                                },
+                                                {
+                                                  "type": "object",
+                                                  "properties": {
+                                                    "kind": {
+                                                      "type": "string",
+                                                      "const": "GIG_COUNT_WITH_VALUE_AT_LEAST"
+                                                    },
+                                                    "minimum": {
+                                                      "type": "number",
+                                                      "const": 8
+                                                    },
+                                                    "count": {
+                                                      "type": "number",
+                                                      "const": 2
+                                                    }
+                                                  },
+                                                  "required": [
+                                                    "kind",
+                                                    "minimum",
+                                                    "count"
+                                                  ],
+                                                  "additionalProperties": false
                                                 }
                                               ]
                                             }
@@ -15589,22 +15813,39 @@
                                           "const": "ADJUST_GIG_UP_TO"
                                         },
                                         "target": {
-                                          "type": "object",
-                                          "properties": {
-                                            "kind": {
-                                              "type": "string",
-                                              "const": "GIGS"
+                                          "anyOf": [
+                                            {
+                                              "type": "object",
+                                              "properties": {
+                                                "kind": {
+                                                  "type": "string",
+                                                  "const": "GIGS"
+                                                },
+                                                "relation": {
+                                                  "type": "string",
+                                                  "const": "ANY"
+                                                }
+                                              },
+                                              "required": [
+                                                "kind",
+                                                "relation"
+                                              ],
+                                              "additionalProperties": false
                                             },
-                                            "relation": {
-                                              "type": "string",
-                                              "const": "ANY"
+                                            {
+                                              "type": "object",
+                                              "properties": {
+                                                "kind": {
+                                                  "type": "string",
+                                                  "const": "STOLEN_GIG"
+                                                }
+                                              },
+                                              "required": [
+                                                "kind"
+                                              ],
+                                              "additionalProperties": false
                                             }
-                                          },
-                                          "required": [
-                                            "kind",
-                                            "relation"
-                                          ],
-                                          "additionalProperties": false
+                                          ]
                                         },
                                         "maximum": {
                                           "anyOf": [
@@ -15619,6 +15860,10 @@
                                             {
                                               "type": "number",
                                               "const": 4
+                                            },
+                                            {
+                                              "type": "number",
+                                              "const": 5
                                             },
                                             {
                                               "type": "number",
@@ -15930,6 +16175,29 @@
                                               },
                                               "required": [
                                                 "kind"
+                                              ],
+                                              "additionalProperties": false
+                                            },
+                                            {
+                                              "type": "object",
+                                              "properties": {
+                                                "kind": {
+                                                  "type": "string",
+                                                  "const": "GIG_COUNT_WITH_VALUE_AT_LEAST"
+                                                },
+                                                "minimum": {
+                                                  "type": "number",
+                                                  "const": 8
+                                                },
+                                                "count": {
+                                                  "type": "number",
+                                                  "const": 2
+                                                }
+                                              },
+                                              "required": [
+                                                "kind",
+                                                "minimum",
+                                                "count"
                                               ],
                                               "additionalProperties": false
                                             }
@@ -18131,6 +18399,29 @@
                                                   "kind"
                                                 ],
                                                 "additionalProperties": false
+                                              },
+                                              {
+                                                "type": "object",
+                                                "properties": {
+                                                  "kind": {
+                                                    "type": "string",
+                                                    "const": "GIG_COUNT_WITH_VALUE_AT_LEAST"
+                                                  },
+                                                  "minimum": {
+                                                    "type": "number",
+                                                    "const": 8
+                                                  },
+                                                  "count": {
+                                                    "type": "number",
+                                                    "const": 2
+                                                  }
+                                                },
+                                                "required": [
+                                                  "kind",
+                                                  "minimum",
+                                                  "count"
+                                                ],
+                                                "additionalProperties": false
                                               }
                                             ]
                                           }
@@ -18244,22 +18535,39 @@
                                         "const": "ADJUST_GIG_UP_TO"
                                       },
                                       "target": {
-                                        "type": "object",
-                                        "properties": {
-                                          "kind": {
-                                            "type": "string",
-                                            "const": "GIGS"
+                                        "anyOf": [
+                                          {
+                                            "type": "object",
+                                            "properties": {
+                                              "kind": {
+                                                "type": "string",
+                                                "const": "GIGS"
+                                              },
+                                              "relation": {
+                                                "type": "string",
+                                                "const": "ANY"
+                                              }
+                                            },
+                                            "required": [
+                                              "kind",
+                                              "relation"
+                                            ],
+                                            "additionalProperties": false
                                           },
-                                          "relation": {
-                                            "type": "string",
-                                            "const": "ANY"
+                                          {
+                                            "type": "object",
+                                            "properties": {
+                                              "kind": {
+                                                "type": "string",
+                                                "const": "STOLEN_GIG"
+                                              }
+                                            },
+                                            "required": [
+                                              "kind"
+                                            ],
+                                            "additionalProperties": false
                                           }
-                                        },
-                                        "required": [
-                                          "kind",
-                                          "relation"
-                                        ],
-                                        "additionalProperties": false
+                                        ]
                                       },
                                       "maximum": {
                                         "anyOf": [
@@ -18274,6 +18582,10 @@
                                           {
                                             "type": "number",
                                             "const": 4
+                                          },
+                                          {
+                                            "type": "number",
+                                            "const": 5
                                           },
                                           {
                                             "type": "number",
@@ -18585,6 +18897,29 @@
                                             },
                                             "required": [
                                               "kind"
+                                            ],
+                                            "additionalProperties": false
+                                          },
+                                          {
+                                            "type": "object",
+                                            "properties": {
+                                              "kind": {
+                                                "type": "string",
+                                                "const": "GIG_COUNT_WITH_VALUE_AT_LEAST"
+                                              },
+                                              "minimum": {
+                                                "type": "number",
+                                                "const": 8
+                                              },
+                                              "count": {
+                                                "type": "number",
+                                                "const": 2
+                                              }
+                                            },
+                                            "required": [
+                                              "kind",
+                                              "minimum",
+                                              "count"
                                             ],
                                             "additionalProperties": false
                                           }
@@ -20782,6 +21117,29 @@
                                                   "kind"
                                                 ],
                                                 "additionalProperties": false
+                                              },
+                                              {
+                                                "type": "object",
+                                                "properties": {
+                                                  "kind": {
+                                                    "type": "string",
+                                                    "const": "GIG_COUNT_WITH_VALUE_AT_LEAST"
+                                                  },
+                                                  "minimum": {
+                                                    "type": "number",
+                                                    "const": 8
+                                                  },
+                                                  "count": {
+                                                    "type": "number",
+                                                    "const": 2
+                                                  }
+                                                },
+                                                "required": [
+                                                  "kind",
+                                                  "minimum",
+                                                  "count"
+                                                ],
+                                                "additionalProperties": false
                                               }
                                             ]
                                           }
@@ -20895,22 +21253,39 @@
                                         "const": "ADJUST_GIG_UP_TO"
                                       },
                                       "target": {
-                                        "type": "object",
-                                        "properties": {
-                                          "kind": {
-                                            "type": "string",
-                                            "const": "GIGS"
+                                        "anyOf": [
+                                          {
+                                            "type": "object",
+                                            "properties": {
+                                              "kind": {
+                                                "type": "string",
+                                                "const": "GIGS"
+                                              },
+                                              "relation": {
+                                                "type": "string",
+                                                "const": "ANY"
+                                              }
+                                            },
+                                            "required": [
+                                              "kind",
+                                              "relation"
+                                            ],
+                                            "additionalProperties": false
                                           },
-                                          "relation": {
-                                            "type": "string",
-                                            "const": "ANY"
+                                          {
+                                            "type": "object",
+                                            "properties": {
+                                              "kind": {
+                                                "type": "string",
+                                                "const": "STOLEN_GIG"
+                                              }
+                                            },
+                                            "required": [
+                                              "kind"
+                                            ],
+                                            "additionalProperties": false
                                           }
-                                        },
-                                        "required": [
-                                          "kind",
-                                          "relation"
-                                        ],
-                                        "additionalProperties": false
+                                        ]
                                       },
                                       "maximum": {
                                         "anyOf": [
@@ -20925,6 +21300,10 @@
                                           {
                                             "type": "number",
                                             "const": 4
+                                          },
+                                          {
+                                            "type": "number",
+                                            "const": 5
                                           },
                                           {
                                             "type": "number",
@@ -21236,6 +21615,29 @@
                                             },
                                             "required": [
                                               "kind"
+                                            ],
+                                            "additionalProperties": false
+                                          },
+                                          {
+                                            "type": "object",
+                                            "properties": {
+                                              "kind": {
+                                                "type": "string",
+                                                "const": "GIG_COUNT_WITH_VALUE_AT_LEAST"
+                                              },
+                                              "minimum": {
+                                                "type": "number",
+                                                "const": 8
+                                              },
+                                              "count": {
+                                                "type": "number",
+                                                "const": 2
+                                              }
+                                            },
+                                            "required": [
+                                              "kind",
+                                              "minimum",
+                                              "count"
                                             ],
                                             "additionalProperties": false
                                           }
