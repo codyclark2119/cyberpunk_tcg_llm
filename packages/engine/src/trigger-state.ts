@@ -13,6 +13,7 @@ import { isFirstArasakaAttack } from "./first-attack-history";
 import { supportsOrderedTriggerSource } from "./ordered-effects-support";
 import { supportsFriendlyPlayPowerUnit } from "./friendly-play-power-support";
 import { testCondition } from "./conditions";
+import { stolenGigReadyTargets } from "./ready-unit";
 import { canonicalSerialize, failure, success, type GameState, type FightResult, type TriggerBinding } from "@tcg/domain";
 import { supportsAttackSearchUnit } from "./attack-search-support";
 import type { EngineContext } from "./state";
@@ -137,7 +138,10 @@ export function validateTriggerState(state: GameState, context: EngineContext) {
     // Batch V8: the Unit PLAY rival spend pauses only as its ordered second primitive; the
     // Legend ready pauses only in its own-turn end batch.
     if (r.current?.effect.kind === "SPEND_UNIT" && (c.phase !== "TARGET" || c.origin.kind !== "PLAY" || r.current.trigger?.kind !== "WHEN_PLAYED" || r.current.primitiveIndex !== 1)) return failure("INVALID_SPEND_CONTINUATION", "Only the reviewed ordered PLAY spend may pause for a rival Unit");
-    if (r.current?.effect.kind === "READY_UNIT" && (c.phase !== "TARGET" || c.origin.kind !== "END_TURN" || r.current.effect.target.kind !== "FRIENDLY_FACE_UP_LEGEND")) return failure("INVALID_READY_UNIT_CONTINUATION", "Only the reviewed own-turn end Legend ready may pause for a target");
+    // Batch V25: the steal-trigger ready of another friendly Unit pauses only in its steal batch, for its eligible Units.
+    if (r.current?.effect.kind === "READY_UNIT" && (c.phase !== "TARGET" || (r.current.effect.target.kind === "ANOTHER_FRIENDLY_UNIT"
+        ? c.origin.kind !== "STEAL" || r.current.trigger?.kind !== "WHEN_GIG_STOLEN" || !r.current.trigger.gigInstanceId || !stolenGigReadyTargets(state, r.current, context).length || !supportsTriggerCard(cardRevision(state, r.current.sourceId!, context), context).ok
+        : c.origin.kind !== "END_TURN" || r.current.effect.target.kind !== "FRIENDLY_FACE_UP_LEGEND"))) return failure("INVALID_READY_UNIT_CONTINUATION", "Only the reviewed own-turn end Legend ready and steal-trigger Unit ready may pause for a target");
     if (r.current?.effect.kind === "POWER_UNTIL_END_OF_TURN") {
         const source = r.current.sourceId && state.objects.cards[r.current.sourceId];
         if (c.phase !== "TARGET" || r.current.effect.target.kind !== "FRIENDLY_UNIT" || r.current.effect.amount !== 2

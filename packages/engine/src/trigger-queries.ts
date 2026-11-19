@@ -8,7 +8,7 @@ import { getDiscardableCards } from "./discard";
 import { privateLookTargets } from "./private-knowledge";
 import { friendlyPowerTargets } from "./friendly-play-power-queries";
 import { listSpendUnitTargets } from "./targeted-spend-queries";
-import { readyLegendTargets } from "./ready-unit";
+import { readyLegendTargets, stolenGigReadyTargets } from "./ready-unit";
 import { hashCanonical, type GameState, type CardInstanceId, type PlayerId, type TriggerBinding, type TriggerOrigin, type PendingChoice, type PendingEffect } from "@tcg/domain";
 import type { EngineContext } from "./state";
 import { cardRevision } from "./characteristics";
@@ -112,7 +112,7 @@ export function triggerChoice(state: GameState, context: EngineContext): Pending
             : current?.effect.kind === "SPEND_UNIT" || current?.effect.kind === "PREVENT_UNIT_READY"
             ? listSpendUnitTargets(state, actorId, current.effect.target, context).map(cardInstanceId => ({ kind: "CARD", cardInstanceId }))
             : current?.effect.kind === "READY_UNIT"
-            ? readyLegendTargets(state, actorId, context).map(cardInstanceId => ({ kind: "CARD", cardInstanceId }))
+            ? (current.effect.target.kind === "ANOTHER_FRIENDLY_UNIT" ? stolenGigReadyTargets(state, current, context) : readyLegendTargets(state, actorId, context)).map(cardInstanceId => ({ kind: "CARD", cardInstanceId }))
             : current?.effect.kind === "RETURN_TRASH_UNIT_TO_HAND"
             ? trashUnitTargets(state, current, context).map(cardInstanceId => ({ kind: "CARD", cardInstanceId }))
             : current?.effect.kind === "LOOK_AT_FRIENDLY_FACE_DOWN_LEGEND"

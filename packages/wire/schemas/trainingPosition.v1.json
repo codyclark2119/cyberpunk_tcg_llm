@@ -3054,6 +3054,24 @@
                                     "kind"
                                   ],
                                   "additionalProperties": false
+                                },
+                                {
+                                  "type": "object",
+                                  "properties": {
+                                    "kind": {
+                                      "type": "string",
+                                      "const": "ANOTHER_FRIENDLY_UNIT"
+                                    },
+                                    "power": {
+                                      "type": "string",
+                                      "const": "EQUALS_STOLEN_GIG_VALUE"
+                                    }
+                                  },
+                                  "required": [
+                                    "kind",
+                                    "power"
+                                  ],
+                                  "additionalProperties": false
                                 }
                               ]
                             }
@@ -5686,6 +5704,24 @@
                                   "kind"
                                 ],
                                 "additionalProperties": false
+                              },
+                              {
+                                "type": "object",
+                                "properties": {
+                                  "kind": {
+                                    "type": "string",
+                                    "const": "ANOTHER_FRIENDLY_UNIT"
+                                  },
+                                  "power": {
+                                    "type": "string",
+                                    "const": "EQUALS_STOLEN_GIG_VALUE"
+                                  }
+                                },
+                                "required": [
+                                  "kind",
+                                  "power"
+                                ],
+                                "additionalProperties": false
                               }
                             ]
                           }
@@ -8312,6 +8348,24 @@
                                 },
                                 "required": [
                                   "kind"
+                                ],
+                                "additionalProperties": false
+                              },
+                              {
+                                "type": "object",
+                                "properties": {
+                                  "kind": {
+                                    "type": "string",
+                                    "const": "ANOTHER_FRIENDLY_UNIT"
+                                  },
+                                  "power": {
+                                    "type": "string",
+                                    "const": "EQUALS_STOLEN_GIG_VALUE"
+                                  }
+                                },
+                                "required": [
+                                  "kind",
+                                  "power"
                                 ],
                                 "additionalProperties": false
                               }

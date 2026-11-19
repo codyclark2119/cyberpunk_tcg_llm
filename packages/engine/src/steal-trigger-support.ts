@@ -4,10 +4,13 @@ import type { EngineContext } from "./state";
 const STEAL_TRIGGER_SHAPES = [
     // Batch V24: Maelstrom Goons. "When this Unit steals a Gig, if it's equipped, a Rival discards 1."
     { colors: ["YELLOW"], ram: { YELLOW: 2 }, tags: ["Ganger", "Maelstrom"], cost: 3, power: 3,
-        effects: [{ kind: "DISCARD_CARDS", player: "RIVAL", count: 1, selection: "CHOSEN_BY_AFFECTED_PLAYER", when: { timing: "RESOLUTION", condition: { kind: "SUBJECT_IS_EQUIPPED" } } }] }
+        effects: [{ kind: "DISCARD_CARDS", player: "RIVAL", count: 1, selection: "CHOSEN_BY_AFFECTED_PLAYER", when: { timing: "RESOLUTION", condition: { kind: "SUBJECT_IS_EQUIPPED" } } }] },
+    // Batch V25: Wraith Marauders. "When this Unit steals a Gig, ready another friendly Unit with power equal to the Gig's value."
+    { colors: ["GREEN"], ram: { GREEN: 2 }, tags: ["Ganger", "Nomad", "Raffen Shiv"], cost: 5, power: 4,
+        effects: [{ kind: "READY_UNIT", target: { kind: "ANOTHER_FRIENDLY_UNIT", power: "EQUALS_STOLEN_GIG_VALUE" } }] }
 ].map(shape => canonicalSerialize({ type: "UNIT", sell: false, keywords: [], equip: null, modifiers: [], restrictions: [], trigger: "WHEN_GIG_STOLEN", inherited: null, guard: null, activation: null, conditions: [], abilityCost: { kind: "NONE" }, ...shape }));
 export function hasStealTrigger(card: DeepReadonly<CardRevisionSnapshot> | undefined) {
-    return Boolean(card?.mechanics.abilities.some(a => a.trigger === "WHEN_GIG_STOLEN" || a.conditions.some(c => c.kind === "SUBJECT_IS_EQUIPPED") || a.effects.some(e => "when" in e && e.when?.condition.kind === "SUBJECT_IS_EQUIPPED")));
+    return Boolean(card?.mechanics.abilities.some(a => a.trigger === "WHEN_GIG_STOLEN" || a.effects.some(e => e.kind === "READY_UNIT" && e.target.kind === "ANOTHER_FRIENDLY_UNIT") || a.conditions.some(c => c.kind === "SUBJECT_IS_EQUIPPED") || a.effects.some(e => "when" in e && e.when?.condition.kind === "SUBJECT_IS_EQUIPPED")));
 }
 export function supportsStealTriggerUnit(card: DeepReadonly<CardRevisionSnapshot> | undefined, context: EngineContext) {
     const m = card?.mechanics, a = m?.abilities[0];

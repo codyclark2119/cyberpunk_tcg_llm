@@ -66,6 +66,7 @@ were recorded in their pull requests (#4, #7, #8); later batches have documents 
 | V22 (2026-11-19) | Pacifica Netrunner, Memory Relapse | [Ready locks until your next turn](api-admission-batch-v22.md); coverage 71/151 |
 | V23 (2026-11-19) | MaxTac AV | [Optional Gig swap](api-admission-batch-v23.md); coverage 72/151 |
 | V24 (2026-11-19) | Maelstrom Goons | [Steal triggers: equipped rival discard](api-admission-batch-v24.md); coverage 73/151 |
+| V25 (2026-11-19) | Wraith Marauders | [Steal trigger: ready a Unit matching the stolen Gig](api-admission-batch-v25.md); coverage 74/151 |
 | V7 (2026-11-15) | Royce: Don't Call Me Simon, Wild in the Streets, Delamain: Rideshare AI | [shared defeat filter and exact pin table](api-admission-batch-v7.md); coverage 42/151 |
 | V6 (2026-09-22) | Trust No One | [contract and executable slice](api-admission-batch-v6.md), [baseline verification](api-admission-batch-v6-verification.md) |
 

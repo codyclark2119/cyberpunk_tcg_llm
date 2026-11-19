@@ -9,12 +9,12 @@
   },
   "totals": {
     "cards": 151,
-    "admitted": 73,
-    "notAdmitted": 78,
+    "admitted": 74,
+    "notAdmitted": 77,
     "notAdmittedOnlyCoveredFamilies": 0,
     "byAdmission": {
-      "NOT_ADMITTED": 78,
-      "SOURCE_MATCH": 73
+      "NOT_ADMITTED": 77,
+      "SOURCE_MATCH": 74
     }
   },
   "families": [
@@ -24,7 +24,7 @@
       "summary": "Conditions and filters on Gig values: min/max, value-pairs, even/odd, 8+, die type, counts compared with a Rival.",
       "notes": "Conditions only, each a fixed shape.",
       "cardCount": 40,
-      "notAdmittedCount": 29,
+      "notAdmittedCount": 28,
       "soleBlockerCount": 0
     },
     {
@@ -42,7 +42,7 @@
       "summary": "Generic target filters and board conditions: classification, cost, power, ready/spent, equipped, face-up, named, lowest power.",
       "notes": "Documented as unsupported: generic condition/filter language. Each admitted filter is a literal.",
       "cardCount": 34,
-      "notAdmittedCount": 22,
+      "notAdmittedCount": 21,
       "soleBlockerCount": 0
     },
     {
@@ -163,24 +163,6 @@
       "soleBlockerCount": 0
     },
     {
-      "family": "SPEND_OR_READY",
-      "status": "PARTIAL",
-      "summary": "Spend or ready Units and Legends by an effect, and 'can't ready' locks.",
-      "notes": "SPEND_UNIT (rival, cost at most 4) only; readying Units or Legends is missing.",
-      "cardCount": 15,
-      "notAdmittedCount": 7,
-      "soleBlockerCount": 0
-    },
-    {
-      "family": "TRIGGER_STEAL",
-      "status": "MISSING",
-      "summary": "Triggers when a Unit or Legend steals a Gig.",
-      "notes": "Only the history condition SUBJECT_STOLE_GIG_THIS_TURN exists (Delamain Cab); there is no steal trigger.",
-      "cardCount": 8,
-      "notAdmittedCount": 7,
-      "soleBlockerCount": 0
-    },
-    {
       "family": "TURN_HISTORY",
       "status": "PARTIAL",
       "summary": "'First time each turn', 'this turn you played', 'if it stole or fought this turn'.",
@@ -226,6 +208,15 @@
       "soleBlockerCount": 0
     },
     {
+      "family": "SPEND_OR_READY",
+      "status": "PARTIAL",
+      "summary": "Spend or ready Units and Legends by an effect, and 'can't ready' locks.",
+      "notes": "SPEND_UNIT (rival, cost at most 4) only; readying Units or Legends is missing.",
+      "cardCount": 15,
+      "notAdmittedCount": 6,
+      "soleBlockerCount": 0
+    },
+    {
       "family": "TRIGGER_ATTACK",
       "status": "PARTIAL",
       "summary": "[Attack] abilities and 'when a Unit attacks' triggers.",
@@ -240,6 +231,15 @@
       "summary": "[Call] abilities of a Legend.",
       "notes": "Trigger WHEN_CALLED; only Viktor's search is routed. Every other Call body needs its effects routed too.",
       "cardCount": 7,
+      "notAdmittedCount": 6,
+      "soleBlockerCount": 0
+    },
+    {
+      "family": "TRIGGER_STEAL",
+      "status": "MISSING",
+      "summary": "Triggers when a Unit or Legend steals a Gig.",
+      "notes": "Only the history condition SUBJECT_STOLE_GIG_THIS_TURN exists (Delamain Cab); there is no steal trigger.",
+      "cardCount": 8,
       "notAdmittedCount": 6,
       "soleBlockerCount": 0
     },
@@ -3445,20 +3445,15 @@
       "colors": [
         "GREEN"
       ],
-      "admission": "NOT_ADMITTED",
-      "revision": null,
+      "admission": "SOURCE_MATCH",
+      "revision": 1,
       "families": [
         "CONDITION_BOARD",
         "CONDITION_GIG",
         "SPEND_OR_READY",
         "TRIGGER_STEAL"
       ],
-      "blockingFamilies": [
-        "CONDITION_BOARD",
-        "CONDITION_GIG",
-        "SPEND_OR_READY",
-        "TRIGGER_STEAL"
-      ],
+      "blockingFamilies": [],
       "note": null
     },
     {

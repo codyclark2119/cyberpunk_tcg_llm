@@ -124,7 +124,9 @@ export const EffectSchema = z.discriminatedUnion("kind", [
     // "Spend this Unit" (batch V8).
     z.strictObject({ kind: z.literal("SPEND_SOURCE") }),
     // "Ready this Unit" / "ready a friendly face-up Legend" (batch V8).
-    z.strictObject({ kind: z.literal("READY_UNIT"), target: z.discriminatedUnion("kind", [z.strictObject({ kind: z.literal("SOURCE") }), z.strictObject({ kind: z.literal("FRIENDLY_FACE_UP_LEGEND") })]) }),
+    z.strictObject({ kind: z.literal("READY_UNIT"), target: z.discriminatedUnion("kind", [z.strictObject({ kind: z.literal("SOURCE") }), z.strictObject({ kind: z.literal("FRIENDLY_FACE_UP_LEGEND") }),
+        // Batch V25: "ready another friendly Unit with power equal to the Gig's value" (the Gig the steal trigger names).
+        z.strictObject({ kind: z.literal("ANOTHER_FRIENDLY_UNIT"), power: z.literal("EQUALS_STOLEN_GIG_VALUE") })]) }),
     // "Spend all rival Units" (batch V9).
     z.strictObject({ kind: z.literal("SPEND_ALL_UNITS"), relation: z.literal("RIVAL") }),
     // "Return this Unit to its owner's hand" (batch V9); 4.12: equipped Gear moves with it.

@@ -42,7 +42,7 @@ export function supportsEndTurnCard(card: DeepReadonly<CardRevisionSnapshot> | u
 export function validateEndTurnMetadata(state: GameState, context: EngineContext) {
     for (const c of Object.values(state.objects.cards)) {
         const r = context.content.cards.find(r => r.id === c.cardId && r.revision === c.revision);
-        if (r && (r.execution?.scope === "END_TURN_HISTORY_V1" || r.mechanics.abilities.some(a => a.trigger === "WHEN_OWN_TURN_ENDS" || a.conditions.some(c => c.kind === "SUBJECT_STOLE_GIG_THIS_TURN" || c.kind === "SUBJECT_IS_SPENT") || a.effects.some(e => e.kind === "READY_EDDIES" || e.kind === "READY_UNIT" || e.kind === "RETURN_TO_HAND" || e.kind === "CONDITIONAL_DRAW" && e.condition.kind === "SUBJECT_STOLE_GIG_THIS_TURN" || e.kind === "DISCARD_CARDS" && e.when?.condition.kind === "SUBJECT_STOLE_GIG_THIS_TURN")))) {
+        if (r && (r.execution?.scope === "END_TURN_HISTORY_V1" || r.mechanics.abilities.some(a => a.trigger === "WHEN_OWN_TURN_ENDS" || a.conditions.some(c => c.kind === "SUBJECT_STOLE_GIG_THIS_TURN" || c.kind === "SUBJECT_IS_SPENT") || a.effects.some(e => e.kind === "READY_EDDIES" || e.kind === "READY_UNIT" && e.target.kind !== "ANOTHER_FRIENDLY_UNIT" || e.kind === "RETURN_TO_HAND" || e.kind === "CONDITIONAL_DRAW" && e.condition.kind === "SUBJECT_STOLE_GIG_THIS_TURN" || e.kind === "DISCARD_CARDS" && e.when?.condition.kind === "SUBJECT_STOLE_GIG_THIS_TURN")))) {
             const supported = supportsEndTurnCard(r, context); if (!supported.ok) return supported;
         }
     }

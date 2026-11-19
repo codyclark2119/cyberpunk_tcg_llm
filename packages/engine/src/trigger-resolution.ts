@@ -3,7 +3,7 @@ import { beginTargetedDefeat } from "./targeted-defeat";
 import { resolveSpendTarget } from "./targeted-spend";
 import { listSpendUnitTargets } from "./targeted-spend-queries";
 import { isUnitSpendSubject, spendUnitForEffect } from "./unit-spend";
-import { readyCardForEffect, readyLegendTargets } from "./ready-unit";
+import { readyCardForEffect, readyLegendTargets, stolenGigReadyTargets } from "./ready-unit";
 import type { PendingEffect, DefeatInstruction } from "@tcg/domain";
 import { effectiveCardTypes } from "./characteristics";
 import { registerEndTurnEffect } from "./delayed-effects";
@@ -159,6 +159,8 @@ export function advanceTriggers(m: TurnMutation): Result<null> {
         if (a.conditions.length) m.emit({ kind: "CONDITION_EVALUATED", effectId: current.id, met });
         if (!met) return completed(m);
         if (e.target.kind === "SOURCE") { const s = m.state.objects.cards[current.trigger!.subjectId]; if ((s?.zone.zone === "BATTLEFIELD" || s?.zone.zone === "LEGENDS") && s.face === "UP") readyCardForEffect(m, s.id); return completed(m); }
+        // Batch V25: with no Unit of matching power, the ready does nothing.
+        if (e.target.kind === "ANOTHER_FRIENDLY_UNIT") { if (!stolenGigReadyTargets(m.state, current, m.context).length) return completed(m); c.phase = "TARGET"; return offer(m); }
         if (!readyLegendTargets(m.state, current.controllerId, m.context).length) return completed(m);
         c.phase = "TARGET"; return offer(m);
     }
@@ -295,7 +297,8 @@ export function continueTrigger(m: TurnMutation, index: number, forced = false):
             return spent.ok ? completed(m) : spent;
         }
         if (current.effect.kind === "READY_UNIT") {
-            if (option.kind !== "CARD" || !readyLegendTargets(m.state, current.controllerId, m.context).includes(option.cardInstanceId)) return failure("INVALID_READY_TARGET", "Choose a current friendly face-up Legend");
+            const targets = current.effect.target.kind === "ANOTHER_FRIENDLY_UNIT" ? stolenGigReadyTargets(m.state, current, m.context) : readyLegendTargets(m.state, current.controllerId, m.context);
+            if (option.kind !== "CARD" || !targets.includes(option.cardInstanceId)) return failure("INVALID_READY_TARGET", "Choose a current eligible friendly Legend or Unit");
             m.emit({ kind: "CARD_TARGET_SELECTED", effectId: current.id, sourceId: current.sourceId!, targetId: option.cardInstanceId, controllerId: current.controllerId, forced });
             readyCardForEffect(m, option.cardInstanceId);
             return completed(m);
