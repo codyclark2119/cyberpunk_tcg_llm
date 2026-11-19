@@ -10,6 +10,7 @@ import { supportsPrivateLookGear, privateInformationEnabled } from "./private-lo
 import { supportsAttackPlay } from "./attack-support";
 import { supportsBlockerUsedUnit } from "./blocker-trigger-support";
 import { hasStealTrigger, supportsStealTriggerUnit } from "./steal-trigger-support";
+import { hasGigParityEffect, supportsGigParityUnit } from "./gig-parity-support";
 import { supportsAttackSearchUnit } from "./attack-search-support";
 import { hasPinnedPlayEffect, supportsPinnedPlayUnit } from "./play-pin-support";
 import { hasFriendlyPlayPowerMetadata, supportsFriendlyPlayPowerUnit } from "./friendly-play-power-support";
@@ -22,6 +23,8 @@ export function supportsTriggerCard(card: DeepReadonly<CardRevisionSnapshot> | u
     if (card?.mechanics.keywords.length && supportsBlockerUsedUnit(card, context).ok) return success(null);
     // Batch V24: steal triggers and the "if it's equipped" condition are admitted only by their exact pins.
     if (hasStealTrigger(card)) return supportsStealTriggerUnit(card, context);
+    // Batch V28: amounts counted from friendly Gig parity are admitted only by their exact pins.
+    if (hasGigParityEffect(card)) return supportsGigParityUnit(card, context);
     // Batch V19: the [Attack] Gear search is admitted only by its exact pin.
     if (card?.mechanics.abilities.some(a => a.effects.some(e => e.kind === "SEARCH_GEAR"))) return supportsAttackSearchUnit(card, context);
     // Batch V20: the {Play} trash-3 Program pick and the {Play} Adrenaline grant are admitted only by their exact pins.

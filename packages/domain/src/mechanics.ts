@@ -166,6 +166,10 @@ export const EffectSchema = z.discriminatedUnion("kind", [
     // Batch V23: "You may swap a friendly Gig with a rival Gig." (6.7; a swap is not stealing, 6.7.2)
     z.strictObject({ kind: z.literal("SWAP_GIGS"), optional: z.literal(true) }),
     z.strictObject({ kind: z.literal("PREVENT_UNIT_READY"), target: SpendUnitTargetSchema, when: z.strictObject({ timing: z.literal("RESOLUTION"), condition: z.strictObject({ kind: z.literal("STREET_CRED_IS_EVEN") }) }).optional(), duration: z.literal("UNTIL_YOUR_NEXT_TURN") }),
+    // Batch V28: "+2 power this turn for each friendly Gig with an even value" / "Draw 1 for each friendly Gig with an odd value",
+    // counted when the effect resolves.
+    z.strictObject({ kind: z.literal("POWER_PER_FRIENDLY_GIG"), target: z.strictObject({ kind: z.literal("SOURCE_SUBJECT") }), amount: z.literal(2), parity: z.literal("EVEN") }),
+    z.strictObject({ kind: z.literal("DRAW_PER_FRIENDLY_GIG"), count: z.literal(1), parity: z.literal("ODD") }),
     z.strictObject({ kind: z.literal("DRAW"), count: z.number().int().positive() }),
     z.strictObject({ kind: z.literal("DAMAGE"), target: TargetSelectorSchema, amount: z.number().int().nonnegative() }),
     z.strictObject({ kind: z.literal("MOVE_CARD"), target: TargetSelectorSchema, destination: ZoneSchema }),

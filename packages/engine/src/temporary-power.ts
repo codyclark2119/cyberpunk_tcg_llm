@@ -10,10 +10,11 @@ import { supportsFieldLegend } from "./field-legend-support";
 import { powerTargets } from "./react-queries";
 import { friendlyPowerTargets } from "./friendly-play-power-queries";
 import { supportsFriendlyPlayPowerUnit, validateFriendlyPlayPowerMetadata } from "./friendly-play-power-support";
+import { supportsGigParityUnit } from "./gig-parity-support";
 
 export function compareTemporaryPower(a: TemporaryPowerModifier, b: TemporaryPowerModifier) {
     if (a.sourceId !== b.sourceId) return a.sourceId < b.sourceId ? -1 : 1;
-    const occurrence = (x: TemporaryPowerModifier) => x.amount !== -1 ? x.origin.effectId : "";
+    const occurrence = (x: TemporaryPowerModifier) => "origin" in x ? x.origin.effectId : "";
     return occurrence(a) < occurrence(b) ? -1 : occurrence(a) > occurrence(b) ? 1 : 0;
 }
 export function applyTemporaryPower(m: TurnMutation, targetId: CardInstanceId, forced = false) {
@@ -56,14 +57,14 @@ export function applyTemporaryPower(m: TurnMutation, targetId: CardInstanceId, f
 export function expireTemporaryPower(m: TurnMutation) {
     const modifiers = m.state.temporaryModifiers;
     if (!modifiers) return;
-    for (const modifier of modifiers) m.emit({ kind: "POWER_MODIFIER_EXPIRED", sourceId: modifier.sourceId, targetId: modifier.targetId, reason: "TURN_END", ...(modifier.amount !== -1 ? { effectId: modifier.origin.effectId } : {}) });
+    for (const modifier of modifiers) m.emit({ kind: "POWER_MODIFIER_EXPIRED", sourceId: modifier.sourceId, targetId: modifier.targetId, reason: "TURN_END", ...("origin" in modifier ? { effectId: modifier.origin.effectId } : {}) });
     delete m.state.temporaryModifiers;
 }
 /** 5.3.2.2: duration tracks the physical card until hidden entry, independent of combat. */
 export function expirePowerOnHiddenEntry(m: TurnMutation, targetId: CardInstanceId) {
     if (!combatResolutionEnabled(m.context) || !m.state.temporaryModifiers) return;
     for (const x of m.state.temporaryModifiers.filter(x => x.targetId === targetId))
-        m.emit({ kind: "POWER_MODIFIER_EXPIRED", sourceId: x.sourceId, targetId, reason: "HIDDEN_AREA", ...(x.amount !== -1 ? { effectId: x.origin.effectId } : {}) });
+        m.emit({ kind: "POWER_MODIFIER_EXPIRED", sourceId: x.sourceId, targetId, reason: "HIDDEN_AREA", ...("origin" in x ? { effectId: x.origin.effectId } : {}) });
     m.state.temporaryModifiers = m.state.temporaryModifiers.filter(x => x.targetId !== targetId);
     if (!m.state.temporaryModifiers.length) delete m.state.temporaryModifiers;
 }
@@ -72,9 +73,20 @@ export function validateTemporaryPower(state: GameState, context: EngineContext)
     if (!metadata.ok) return metadata;
     const modifiers = state.temporaryModifiers;
     if (!modifiers) return success(null);
-    if (!reactEnabled(context) || !modifiers.length || new Set(modifiers.map(x => canonicalSerialize([x.sourceId, x.amount !== -1 ? x.origin.effectId : null]))).size !== modifiers.length || canonicalSerialize(modifiers) !== canonicalSerialize([...modifiers].sort(compareTemporaryPower))) return failure("INVALID_TEMPORARY_POWER", "Nonempty canonical reviewed modifiers with distinct source/occurrences required");
+    if (!reactEnabled(context) || !modifiers.length || new Set(modifiers.map(x => canonicalSerialize([x.sourceId, "origin" in x ? x.origin.effectId : null]))).size !== modifiers.length || canonicalSerialize(modifiers) !== canonicalSerialize([...modifiers].sort(compareTemporaryPower))) return failure("INVALID_TEMPORARY_POWER", "Nonempty canonical reviewed modifiers with distinct source/occurrences required");
     for (const x of modifiers) {
         const source = state.objects.cards[x.sourceId], target = state.objects.cards[x.targetId], r = cardRevision(state, x.sourceId, context);
+        // Batch V28: the scaled self power of a resolved current-turn ATTACK occurrence; at most +2 for every Gig in the game.
+        if ("scaled" in x) {
+            const origin = x.origin, a = r?.mechanics.abilities.find(a => a.id === origin.abilityId), continuation = state.resolution.triggerContinuation;
+            if (!source || !r || !a || a.trigger !== "WHEN_ATTACKING" || a.effects[0]?.kind !== "POWER_PER_FRIENDLY_GIG" || x.sourceId !== x.targetId || !supportsGigParityUnit(r, context).ok
+                || source.face !== "UP" || !["BATTLEFIELD", "TRASH"].includes(source.zone.zone) || x.expires.turn !== state.timing.turn
+                || x.amount > a.effects[0].amount * Object.keys(state.objects.gigs).length || origin.ordinal > (state.turnHistory?.triggeredBatches ?? 0)
+                || origin.effectId !== triggerId(state, { sourceId: source.id, subjectId: source.id, source: { cardId: r.id, revision: r.revision }, controllerId: source.controllerId, abilityId: a.id, kind: "WHEN_ATTACKING" }, origin.ordinal)
+                || continuation?.ordinal === origin.ordinal && !continuation.resolvedIds.includes(origin.effectId))
+                return failure("INVALID_TEMPORARY_POWER", "Gig-parity power needs its reviewed public Unit and resolved current-turn ATTACK occurrence");
+            continue;
+        }
         if (x.amount === 5) {
             const origin = x.origin, a = r?.mechanics.abilities.find(a => a.id === origin.abilityId), continuation = state.resolution.triggerContinuation;
             if (!source || !target || x.sourceId !== x.targetId || !supportsAttackConditionPowerCard(r, context).ok || !a || !r || source.face !== "UP" || !["BATTLEFIELD", "TRASH"].includes(source.zone.zone) || x.expires.turn !== state.timing.turn || origin.ordinal > (state.turnHistory?.triggeredBatches ?? 0) || origin.effectId !== triggerId(state, { sourceId: source.id, subjectId: source.id, source: { cardId: r.id, revision: r.revision }, controllerId: source.controllerId, abilityId: a.id, kind: "WHEN_ATTACKING" }, origin.ordinal) || continuation?.ordinal === origin.ordinal && !continuation.resolvedIds.includes(origin.effectId)) return failure("INVALID_TEMPORARY_POWER", "Self+5 needs a reviewed public Unit and resolved current-turn ATTACK occurrence");

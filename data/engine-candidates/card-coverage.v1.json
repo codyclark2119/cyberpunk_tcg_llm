@@ -9,12 +9,12 @@
   },
   "totals": {
     "cards": 151,
-    "admitted": 76,
-    "notAdmitted": 75,
+    "admitted": 77,
+    "notAdmitted": 74,
     "notAdmittedOnlyCoveredFamilies": 0,
     "byAdmission": {
-      "NOT_ADMITTED": 75,
-      "SOURCE_MATCH": 76
+      "NOT_ADMITTED": 74,
+      "SOURCE_MATCH": 77
     }
   },
   "families": [
@@ -24,7 +24,7 @@
       "summary": "Conditions and filters on Gig values: min/max, value-pairs, even/odd, 8+, die type, counts compared with a Rival.",
       "notes": "Conditions only, each a fixed shape.",
       "cardCount": 40,
-      "notAdmittedCount": 26,
+      "notAdmittedCount": 25,
       "soleBlockerCount": 0
     },
     {
@@ -33,7 +33,7 @@
       "summary": "Draw cards, fixed or conditional.",
       "notes": "Routed. Variable counts need SCALED_AMOUNT; 'may draw' needs an optional prompt.",
       "cardCount": 38,
-      "notAdmittedCount": 23,
+      "notAdmittedCount": 22,
       "soleBlockerCount": 0
     },
     {
@@ -55,15 +55,6 @@
       "soleBlockerCount": 0
     },
     {
-      "family": "TEMPORARY_BUFF",
-      "status": "PARTIAL",
-      "summary": "Power or keyword changes 'this turn' on a chosen Unit.",
-      "notes": "Fixed amounts on RIVAL_UNIT, SOURCE_SUBJECT or FRIENDLY_UNIT. Keyword grants, all-Unit and filtered targets are missing.",
-      "cardCount": 19,
-      "notAdmittedCount": 15,
-      "soleBlockerCount": 0
-    },
-    {
       "family": "GEAR_EQUIP",
       "status": "PARTIAL",
       "summary": "Equip a Gear to a friendly Unit or face-up Legend; Gear power adds to its host.",
@@ -73,12 +64,12 @@
       "soleBlockerCount": 0
     },
     {
-      "family": "SCALED_AMOUNT",
+      "family": "TEMPORARY_BUFF",
       "status": "PARTIAL",
-      "summary": "Amounts computed from the board: 'for each', 'equal to'.",
-      "notes": "Only Royce's per-equipped-Gear modifier counts anything.",
-      "cardCount": 18,
-      "notAdmittedCount": 12,
+      "summary": "Power or keyword changes 'this turn' on a chosen Unit.",
+      "notes": "Fixed amounts on RIVAL_UNIT, SOURCE_SUBJECT or FRIENDLY_UNIT. Keyword grants, all-Unit and filtered targets are missing.",
+      "cardCount": 19,
+      "notAdmittedCount": 14,
       "soleBlockerCount": 0
     },
     {
@@ -114,6 +105,15 @@
       "summary": "Discard: self discard, a Rival discards, discard as a cost, discard a hand.",
       "notes": "DISCARD_CARDS supports only the controller discarding exactly 1.",
       "cardCount": 15,
+      "notAdmittedCount": 11,
+      "soleBlockerCount": 0
+    },
+    {
+      "family": "SCALED_AMOUNT",
+      "status": "PARTIAL",
+      "summary": "Amounts computed from the board: 'for each', 'equal to'.",
+      "notes": "Only Royce's per-equipped-Gear modifier counts anything.",
+      "cardCount": 18,
       "notAdmittedCount": 11,
       "soleBlockerCount": 0
     },
@@ -217,15 +217,6 @@
       "soleBlockerCount": 0
     },
     {
-      "family": "TRIGGER_ATTACK",
-      "status": "PARTIAL",
-      "summary": "[Attack] abilities and 'when a Unit attacks' triggers.",
-      "notes": "Triggers WHEN_ATTACKING and WHEN_UNIT_ATTACKS.",
-      "cardCount": 14,
-      "notAdmittedCount": 6,
-      "soleBlockerCount": 0
-    },
-    {
       "family": "TRIGGER_CALL",
       "status": "PARTIAL",
       "summary": "[Call] abilities of a Legend.",
@@ -280,11 +271,11 @@
       "soleBlockerCount": 0
     },
     {
-      "family": "TRIGGER_DEFEATED",
+      "family": "TRIGGER_ATTACK",
       "status": "PARTIAL",
-      "summary": "[Defeated] abilities.",
-      "notes": "Trigger WHEN_DEFEATED, admitted only for Dexter: One Last Chance.",
-      "cardCount": 7,
+      "summary": "[Attack] abilities and 'when a Unit attacks' triggers.",
+      "notes": "Triggers WHEN_ATTACKING and WHEN_UNIT_ATTACKS.",
+      "cardCount": 14,
       "notAdmittedCount": 5,
       "soleBlockerCount": 0
     },
@@ -302,6 +293,15 @@
       "status": "MISSING",
       "summary": "Return a card from the trash (or from cards just trashed) to hand.",
       "notes": "",
+      "cardCount": 7,
+      "notAdmittedCount": 4,
+      "soleBlockerCount": 0
+    },
+    {
+      "family": "TRIGGER_DEFEATED",
+      "status": "PARTIAL",
+      "summary": "[Defeated] abilities.",
+      "notes": "Trigger WHEN_DEFEATED, admitted only for Dexter: One Last Chance.",
       "cardCount": 7,
       "notAdmittedCount": 4,
       "soleBlockerCount": 0
@@ -1513,8 +1513,8 @@
       "colors": [
         "YELLOW"
       ],
-      "admission": "NOT_ADMITTED",
-      "revision": null,
+      "admission": "SOURCE_MATCH",
+      "revision": 1,
       "families": [
         "CONDITION_GIG",
         "DRAW",
@@ -1523,14 +1523,7 @@
         "TRIGGER_ATTACK",
         "TRIGGER_DEFEATED"
       ],
-      "blockingFamilies": [
-        "CONDITION_GIG",
-        "DRAW",
-        "SCALED_AMOUNT",
-        "TEMPORARY_BUFF",
-        "TRIGGER_ATTACK",
-        "TRIGGER_DEFEATED"
-      ],
+      "blockingFamilies": [],
       "note": null
     },
     {
