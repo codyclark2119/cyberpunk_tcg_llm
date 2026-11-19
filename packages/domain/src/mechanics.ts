@@ -80,7 +80,9 @@ export const PendingChoiceSchema = z.strictObject({
 export const DiscardCardsEffectSchema = z.strictObject({
     kind: z.literal("DISCARD_CARDS"), player: z.enum(["CONTROLLER", "RIVAL"]), count: z.literal(1),
     selection: z.literal("CHOSEN_BY_AFFECTED_PLAYER"),
-    when: z.strictObject({ timing: z.literal("RESOLUTION"), condition: ConditionSchema }).optional()
+    when: z.strictObject({ timing: z.literal("RESOLUTION"), condition: ConditionSchema }).optional(),
+    // Batch V31: "If the card's cost equals the value of a friendly Gig, that Rival discards 1 more."
+    more: z.strictObject({ condition: z.strictObject({ kind: z.literal("DISCARDED_COST_EQUALS_FRIENDLY_GIG_VALUE") }), count: z.literal(1) }).optional()
 });
 export type DiscardCardsEffect = z.infer<typeof DiscardCardsEffectSchema>;
 export const ReadyEddiesEffectSchema = z.strictObject({ kind: z.literal("READY_EDDIES"), player: z.literal("CONTROLLER"), count: z.union([z.literal(1), z.literal(2)]),
@@ -104,6 +106,8 @@ export const DefeatUnitTargetSchema = z.strictObject({ kind: z.literal("UNITS"),
         z.strictObject({ kind: z.literal("LESS_THAN_FRIENDLY_UNIT") })]),
     // Only Units whose current readiness is SPENT are eligible.
     readiness: z.literal("SPENT").optional(),
+    // "with cost 2 or less" (batch V31): the Unit's referenced cost, alongside the power bound.
+    cost: z.strictObject({ kind: z.literal("AT_MOST"), value: z.literal(2) }).optional(),
     // "If <condition>, defeat ... with power N or less instead": replaces the AT_MOST bound while the condition holds.
     instead: z.strictObject({ condition: z.strictObject({ kind: z.literal("STREET_CRED_GREATER_THAN_RIVAL") }), power: DefeatPowerAtMostSchema }).optional(),
     // "Defeat all other Units" (batch V10): every eligible Unit except the effect source, with no target choice.

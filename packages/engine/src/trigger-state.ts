@@ -22,7 +22,9 @@ import { keywordGrantTargets, validateTrashProgramPause } from "./play-pin-effec
 import { supportsPinnedPlayUnit } from "./play-pin-support";
 import { listSpendUnitTargets } from "./targeted-spend-queries";
 import { supportsEffectiveTriggerSource, supportsTriggerCard, triggersEnabled } from "./trigger-support";
-import { discoverTriggers, nextTriggerGroup, pendingTrigger, swapSidesAvailable, triggerChoice, triggerGigTargets, triggerId } from "./trigger-queries";
+import { discardingPlayer, discoverTriggers, nextTriggerGroup, pendingTrigger, swapSidesAvailable, triggerChoice, triggerGigTargets, triggerId } from "./trigger-queries";
+import { discardedCostMatchesFriendlyGig } from "./discard";
+import { supportsTargetedDefeatCard } from "./targeted-defeat-support";
 
 /** Validate the historical comparison, not a new comparison using post-trigger power. */
 export function validFightFact(state: GameState, f: FightResult) {
@@ -153,6 +155,7 @@ export function validateTriggerState(state: GameState, context: EngineContext) {
             return failure("INVALID_READY_LEGENDS_CONTINUATION", "Only the reviewed value-pair Legend ready pauses, with an eligible Legend left to choose");
     }
     // Batch V30: the per-value-pair rival spend pauses only in its own PLAY batch, with 1 to (pairs) spends left and 2+ rival Units.
+    if (c.discardedCardId && (c.phase !== "DISCARD" || r.current?.effect.kind !== "DISCARD_CARDS" || !r.current.effect.more)) return failure("INVALID_DISCARD_CONTINUATION", "A held discarded card belongs only to the current \"discards 1 more\"");
     if (c.spendsRemaining !== undefined && r.current?.effect.kind !== "SPEND_UNITS_PER_VALUE_PAIR") return failure("INVALID_SPEND_COUNT", "Remaining spends belong only to the current per-value-pair spend");
     if (r.current?.effect.kind === "SPEND_UNITS_PER_VALUE_PAIR") {
         const source = r.current.sourceId ? state.objects.cards[r.current.sourceId] : undefined;
@@ -188,8 +191,12 @@ export function validateTriggerState(state: GameState, context: EngineContext) {
         const blocker = c.conditionMet === undefined && !when && c.origin.kind === "BLOCK" && e.trigger?.kind === "WHEN_BLOCKER_USED";
         // Batch V24: the steal-trigger rival discard pauses only after its resolution-time "if it's equipped" held.
         const steal = c.conditionMet === true && when?.condition.kind === "SUBJECT_IS_EQUIPPED" && c.origin.kind === "STEAL" && e.trigger?.kind === "WHEN_GIG_STOLEN" && testCondition(state, e.controllerId, when.condition, context, e.sourceId);
-        if (c.phase !== "DISCARD" || e.effect.kind !== "DISCARD_CARDS" || e.primitiveIndex !== undefined || !(blocker || steal) || !supportsTriggerCard(cardRevision(state, e.sourceId!, context), context).ok)
-            return failure("INVALID_DISCARD_CONTINUATION", "Only the reviewed Blocker-used and steal-trigger rival discards pause");
+        // Batch V31: the defeated rival discard, and its "1 more" only after a discarded card whose cost matched a friendly Gig.
+        const more = e.effect.kind === "DISCARD_CARDS" ? e.effect.more : undefined, first = c.discardedCardId ? state.objects.cards[c.discardedCardId] : undefined;
+        const defeated = c.conditionMet === undefined && !when && Boolean(more) && c.origin.kind === "DEFEAT" && e.trigger?.kind === "WHEN_DEFEATED" && supportsTargetedDefeatCard(cardRevision(state, e.sourceId!, context), context).ok
+            && (!c.discardedCardId || Boolean(first) && first!.zone.zone === "TRASH" && first!.ownerId === discardingPlayer(state, e) && discardedCostMatchesFriendlyGig(state, e.controllerId, first!.id, context));
+        if (c.phase !== "DISCARD" || e.effect.kind !== "DISCARD_CARDS" || e.primitiveIndex !== undefined || !(blocker || steal || defeated) || !(defeated || supportsTriggerCard(cardRevision(state, e.sourceId!, context), context).ok))
+            return failure("INVALID_DISCARD_CONTINUATION", "Only the reviewed Blocker-used, steal-trigger and defeated rival discards pause");
     }
     else if (c.phase === "DISCARD" || r.current?.effect.kind === "DISCARD_CARDS" || c.conditionMet !== undefined) {
         const e = r.current;

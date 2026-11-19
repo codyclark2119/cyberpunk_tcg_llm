@@ -69,7 +69,9 @@ export const TriggerContinuationSchema = z.strictObject({ effectDefeats: z.array
     // Batch V29: the Legend already readied by a current "ready up to 2" choice.
     readiedLegends: z.array(CardInstanceIdSchema).length(1).optional(),
     // Batch V30: rival Units still to spend, one per friendly value-pair counted when the effect began.
-    spendsRemaining: z.number().int().positive().optional() });
+    spendsRemaining: z.number().int().positive().optional(),
+    // Batch V31: the card the first discard moved, while its "discards 1 more" is open.
+    discardedCardId: CardInstanceIdSchema.optional() });
 export const QualifyingAttackSummarySchema = z.strictObject({
     count: z.number().int().nonnegative(),
     first: z.strictObject({ attackerId: CardInstanceIdSchema, attacker: CardReferenceSchema }).nullable()

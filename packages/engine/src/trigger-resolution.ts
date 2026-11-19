@@ -11,7 +11,7 @@ import { delayedSubjectTypes } from "./delayed-effects";
 import { supportsDelayedAttackGear } from "./delayed-effect-support";
 import { finishEndTurn } from "./end-turn";
 import { readyableEddieSlots, readyEddie } from "./eddie-ready";
-import { discardCard, getDiscardableCards } from "./discard";
+import { discardCard, discardedCostMatchesFriendlyGig, getDiscardableCards } from "./discard";
 import { friendlyValuePairCount, testCondition } from "./conditions";
 import { supportsOrderedTriggerSource } from "./ordered-effects-support";
 import { grantLegendKnowledge, privateLookTargets } from "./private-knowledge";
@@ -291,7 +291,15 @@ export function continueTrigger(m: TurnMutation, index: number, forced = false):
     if (c.phase === "DISCARD") {
         if (current.effect.kind !== "DISCARD_CARDS" || option.kind !== "CARD") return failure("INVALID_DISCARD", "Choose one current own-hand card");
         const result = discardCard(m, current.effect, option.cardInstanceId, forced);
-        return result.ok ? completed(m) : result;
+        if (!result.ok) return result;
+        // Batch V31: "If the card's cost equals the value of a friendly Gig, that Rival discards 1 more."
+        if (current.effect.more && !c.discardedCardId) {
+            const met = discardedCostMatchesFriendlyGig(m.state, current.controllerId, option.cardInstanceId, m.context);
+            m.emit({ kind: "CONDITION_EVALUATED", effectId: current.id, met });
+            if (met && getDiscardableCards(m.state, discardingPlayer(m.state, current)).length) { c.discardedCardId = option.cardInstanceId; return offer(m); }
+        }
+        delete c.discardedCardId;
+        return completed(m);
     }
     if (c.phase === "OPTIONAL") {
         if (option.kind !== "CONFIRM") return failure("INVALID_OPTIONAL_TRIGGER", "Accept or decline explicitly");

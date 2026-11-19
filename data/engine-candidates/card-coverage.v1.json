@@ -9,12 +9,12 @@
   },
   "totals": {
     "cards": 151,
-    "admitted": 79,
-    "notAdmitted": 72,
+    "admitted": 80,
+    "notAdmitted": 71,
     "notAdmittedOnlyCoveredFamilies": 0,
     "byAdmission": {
-      "NOT_ADMITTED": 72,
-      "SOURCE_MATCH": 79
+      "NOT_ADMITTED": 71,
+      "SOURCE_MATCH": 80
     }
   },
   "families": [
@@ -24,7 +24,7 @@
       "summary": "Conditions and filters on Gig values: min/max, value-pairs, even/odd, 8+, die type, counts compared with a Rival.",
       "notes": "Conditions only, each a fixed shape.",
       "cardCount": 40,
-      "notAdmittedCount": 23,
+      "notAdmittedCount": 22,
       "soleBlockerCount": 0
     },
     {
@@ -82,24 +82,6 @@
       "soleBlockerCount": 0
     },
     {
-      "family": "DISCARD",
-      "status": "PARTIAL",
-      "summary": "Discard: self discard, a Rival discards, discard as a cost, discard a hand.",
-      "notes": "DISCARD_CARDS supports only the controller discarding exactly 1.",
-      "cardCount": 15,
-      "notAdmittedCount": 11,
-      "soleBlockerCount": 0
-    },
-    {
-      "family": "TRIGGER_PLAY",
-      "status": "PARTIAL",
-      "summary": "[Play] abilities and Program bodies resolving when played.",
-      "notes": "Trigger WHEN_PLAYED.",
-      "cardCount": 27,
-      "notAdmittedCount": 11,
-      "soleBlockerCount": 0
-    },
-    {
       "family": "ATTACK_PERMISSION",
       "status": "PARTIAL",
       "summary": "Who may attack what and when: can't attack, may attack ready/spent Units, must attack, can't be blocked.",
@@ -109,11 +91,29 @@
       "soleBlockerCount": 0
     },
     {
+      "family": "DISCARD",
+      "status": "PARTIAL",
+      "summary": "Discard: self discard, a Rival discards, discard as a cost, discard a hand.",
+      "notes": "DISCARD_CARDS supports only the controller discarding exactly 1.",
+      "cardCount": 15,
+      "notAdmittedCount": 10,
+      "soleBlockerCount": 0
+    },
+    {
       "family": "SCALED_AMOUNT",
       "status": "PARTIAL",
       "summary": "Amounts computed from the board: 'for each', 'equal to'.",
       "notes": "Only Royce's per-equipped-Gear modifier counts anything.",
       "cardCount": 18,
+      "notAdmittedCount": 10,
+      "soleBlockerCount": 0
+    },
+    {
+      "family": "TRIGGER_PLAY",
+      "status": "PARTIAL",
+      "summary": "[Play] abilities and Program bodies resolving when played.",
+      "notes": "Trigger WHEN_PLAYED.",
+      "cardCount": 27,
       "notAdmittedCount": 10,
       "soleBlockerCount": 0
     },
@@ -159,15 +159,6 @@
       "summary": "'First time each turn', 'this turn you played', 'if it stole or fought this turn'.",
       "notes": "Guards FIRST_BLUE_UNIT_OR_GEAR_PLAY_PER_TURN and FIRST_FRIENDLY_ARASAKA_UNIT_ATTACK_PER_TURN.",
       "cardCount": 11,
-      "notAdmittedCount": 7,
-      "soleBlockerCount": 0
-    },
-    {
-      "family": "UNIT_DEFEAT",
-      "status": "PARTIAL",
-      "summary": "Defeat a Unit or Gear chosen with a filter.",
-      "notes": "Filters are fixed literals (power at most 5, power at most a friendly d20, Gear power at most 2).",
-      "cardCount": 18,
       "notAdmittedCount": 7,
       "soleBlockerCount": 0
     },
@@ -222,6 +213,15 @@
       "summary": "WHEN_SPENT: 'when this Unit or Legend is spent' (includes Zetatech Faceplate).",
       "notes": "Documented as unsupported; needs every spending path (attack, Blocker, [Spend] costs, effects) to emit one event.",
       "cardCount": 6,
+      "notAdmittedCount": 6,
+      "soleBlockerCount": 0
+    },
+    {
+      "family": "UNIT_DEFEAT",
+      "status": "PARTIAL",
+      "summary": "Defeat a Unit or Gear chosen with a filter.",
+      "notes": "Filters are fixed literals (power at most 5, power at most a friendly d20, Gear power at most 2).",
+      "cardCount": 18,
       "notAdmittedCount": 6,
       "soleBlockerCount": 0
     },
@@ -298,15 +298,6 @@
       "soleBlockerCount": 0
     },
     {
-      "family": "TRIGGER_DEFEATED",
-      "status": "PARTIAL",
-      "summary": "[Defeated] abilities.",
-      "notes": "Trigger WHEN_DEFEATED, admitted only for Dexter: One Last Chance.",
-      "cardCount": 7,
-      "notAdmittedCount": 4,
-      "soleBlockerCount": 0
-    },
-    {
       "family": "TRIGGER_FIGHT_RESULT",
       "status": "PARTIAL",
       "summary": "Triggers on winning or losing a fight, or winning by a margin.",
@@ -348,6 +339,15 @@
       "summary": "'If X would ..., instead ...' replacement effects.",
       "notes": "",
       "cardCount": 3,
+      "notAdmittedCount": 3,
+      "soleBlockerCount": 0
+    },
+    {
+      "family": "TRIGGER_DEFEATED",
+      "status": "PARTIAL",
+      "summary": "[Defeated] abilities.",
+      "notes": "Trigger WHEN_DEFEATED, admitted only for Dexter: One Last Chance.",
+      "cardCount": 7,
       "notAdmittedCount": 3,
       "soleBlockerCount": 0
     },
@@ -748,8 +748,8 @@
       "colors": [
         "YELLOW"
       ],
-      "admission": "NOT_ADMITTED",
-      "revision": null,
+      "admission": "SOURCE_MATCH",
+      "revision": 1,
       "families": [
         "CONDITION_GIG",
         "DISCARD",
@@ -757,13 +757,7 @@
         "TRIGGER_PLAY",
         "UNIT_DEFEAT"
       ],
-      "blockingFamilies": [
-        "CONDITION_GIG",
-        "DISCARD",
-        "TRIGGER_DEFEATED",
-        "TRIGGER_PLAY",
-        "UNIT_DEFEAT"
-      ],
+      "blockingFamilies": [],
       "note": null
     },
     {

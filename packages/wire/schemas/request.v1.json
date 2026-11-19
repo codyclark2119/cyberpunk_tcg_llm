@@ -1889,6 +1889,24 @@
                                                 "type": "string",
                                                 "const": "SPENT"
                                               },
+                                              "cost": {
+                                                "type": "object",
+                                                "properties": {
+                                                  "kind": {
+                                                    "type": "string",
+                                                    "const": "AT_MOST"
+                                                  },
+                                                  "value": {
+                                                    "type": "number",
+                                                    "const": 2
+                                                  }
+                                                },
+                                                "required": [
+                                                  "kind",
+                                                  "value"
+                                                ],
+                                                "additionalProperties": false
+                                              },
                                               "instead": {
                                                 "type": "object",
                                                 "properties": {
@@ -2569,6 +2587,33 @@
                                         "required": [
                                           "timing",
                                           "condition"
+                                        ],
+                                        "additionalProperties": false
+                                      },
+                                      "more": {
+                                        "type": "object",
+                                        "properties": {
+                                          "condition": {
+                                            "type": "object",
+                                            "properties": {
+                                              "kind": {
+                                                "type": "string",
+                                                "const": "DISCARDED_COST_EQUALS_FRIENDLY_GIG_VALUE"
+                                              }
+                                            },
+                                            "required": [
+                                              "kind"
+                                            ],
+                                            "additionalProperties": false
+                                          },
+                                          "count": {
+                                            "type": "number",
+                                            "const": 1
+                                          }
+                                        },
+                                        "required": [
+                                          "condition",
+                                          "count"
                                         ],
                                         "additionalProperties": false
                                       }
@@ -7145,6 +7190,12 @@
                       "type": "integer",
                       "exclusiveMinimum": 0,
                       "maximum": 9007199254740991
+                    },
+                    "discardedCardId": {
+                      "type": "string",
+                      "minLength": 1,
+                      "maxLength": 200,
+                      "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$"
                     }
                   },
                   "required": [
@@ -8111,6 +8162,24 @@
                                           "type": "string",
                                           "const": "SPENT"
                                         },
+                                        "cost": {
+                                          "type": "object",
+                                          "properties": {
+                                            "kind": {
+                                              "type": "string",
+                                              "const": "AT_MOST"
+                                            },
+                                            "value": {
+                                              "type": "number",
+                                              "const": 2
+                                            }
+                                          },
+                                          "required": [
+                                            "kind",
+                                            "value"
+                                          ],
+                                          "additionalProperties": false
+                                        },
                                         "instead": {
                                           "type": "object",
                                           "properties": {
@@ -8791,6 +8860,33 @@
                                   "required": [
                                     "timing",
                                     "condition"
+                                  ],
+                                  "additionalProperties": false
+                                },
+                                "more": {
+                                  "type": "object",
+                                  "properties": {
+                                    "condition": {
+                                      "type": "object",
+                                      "properties": {
+                                        "kind": {
+                                          "type": "string",
+                                          "const": "DISCARDED_COST_EQUALS_FRIENDLY_GIG_VALUE"
+                                        }
+                                      },
+                                      "required": [
+                                        "kind"
+                                      ],
+                                      "additionalProperties": false
+                                    },
+                                    "count": {
+                                      "type": "number",
+                                      "const": 1
+                                    }
+                                  },
+                                  "required": [
+                                    "condition",
+                                    "count"
                                   ],
                                   "additionalProperties": false
                                 }
@@ -11002,6 +11098,24 @@
                                         "type": "string",
                                         "const": "SPENT"
                                       },
+                                      "cost": {
+                                        "type": "object",
+                                        "properties": {
+                                          "kind": {
+                                            "type": "string",
+                                            "const": "AT_MOST"
+                                          },
+                                          "value": {
+                                            "type": "number",
+                                            "const": 2
+                                          }
+                                        },
+                                        "required": [
+                                          "kind",
+                                          "value"
+                                        ],
+                                        "additionalProperties": false
+                                      },
                                       "instead": {
                                         "type": "object",
                                         "properties": {
@@ -11682,6 +11796,33 @@
                                 "required": [
                                   "timing",
                                   "condition"
+                                ],
+                                "additionalProperties": false
+                              },
+                              "more": {
+                                "type": "object",
+                                "properties": {
+                                  "condition": {
+                                    "type": "object",
+                                    "properties": {
+                                      "kind": {
+                                        "type": "string",
+                                        "const": "DISCARDED_COST_EQUALS_FRIENDLY_GIG_VALUE"
+                                      }
+                                    },
+                                    "required": [
+                                      "kind"
+                                    ],
+                                    "additionalProperties": false
+                                  },
+                                  "count": {
+                                    "type": "number",
+                                    "const": 1
+                                  }
+                                },
+                                "required": [
+                                  "condition",
+                                  "count"
                                 ],
                                 "additionalProperties": false
                               }
@@ -13889,6 +14030,24 @@
                                         "type": "string",
                                         "const": "SPENT"
                                       },
+                                      "cost": {
+                                        "type": "object",
+                                        "properties": {
+                                          "kind": {
+                                            "type": "string",
+                                            "const": "AT_MOST"
+                                          },
+                                          "value": {
+                                            "type": "number",
+                                            "const": 2
+                                          }
+                                        },
+                                        "required": [
+                                          "kind",
+                                          "value"
+                                        ],
+                                        "additionalProperties": false
+                                      },
                                       "instead": {
                                         "type": "object",
                                         "properties": {
@@ -14569,6 +14728,33 @@
                                 "required": [
                                   "timing",
                                   "condition"
+                                ],
+                                "additionalProperties": false
+                              },
+                              "more": {
+                                "type": "object",
+                                "properties": {
+                                  "condition": {
+                                    "type": "object",
+                                    "properties": {
+                                      "kind": {
+                                        "type": "string",
+                                        "const": "DISCARDED_COST_EQUALS_FRIENDLY_GIG_VALUE"
+                                      }
+                                    },
+                                    "required": [
+                                      "kind"
+                                    ],
+                                    "additionalProperties": false
+                                  },
+                                  "count": {
+                                    "type": "number",
+                                    "const": 1
+                                  }
+                                },
+                                "required": [
+                                  "condition",
+                                  "count"
                                 ],
                                 "additionalProperties": false
                               }
@@ -18643,6 +18829,24 @@
                                                 "type": "string",
                                                 "const": "SPENT"
                                               },
+                                              "cost": {
+                                                "type": "object",
+                                                "properties": {
+                                                  "kind": {
+                                                    "type": "string",
+                                                    "const": "AT_MOST"
+                                                  },
+                                                  "value": {
+                                                    "type": "number",
+                                                    "const": 2
+                                                  }
+                                                },
+                                                "required": [
+                                                  "kind",
+                                                  "value"
+                                                ],
+                                                "additionalProperties": false
+                                              },
                                               "instead": {
                                                 "type": "object",
                                                 "properties": {
@@ -19323,6 +19527,33 @@
                                         "required": [
                                           "timing",
                                           "condition"
+                                        ],
+                                        "additionalProperties": false
+                                      },
+                                      "more": {
+                                        "type": "object",
+                                        "properties": {
+                                          "condition": {
+                                            "type": "object",
+                                            "properties": {
+                                              "kind": {
+                                                "type": "string",
+                                                "const": "DISCARDED_COST_EQUALS_FRIENDLY_GIG_VALUE"
+                                              }
+                                            },
+                                            "required": [
+                                              "kind"
+                                            ],
+                                            "additionalProperties": false
+                                          },
+                                          "count": {
+                                            "type": "number",
+                                            "const": 1
+                                          }
+                                        },
+                                        "required": [
+                                          "condition",
+                                          "count"
                                         ],
                                         "additionalProperties": false
                                       }
