@@ -1634,6 +1634,83 @@
                         "additionalProperties": false
                       }
                     },
+                    "gigStealRestrictions": {
+                      "minItems": 1,
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "kind": {
+                            "type": "string",
+                            "const": "GIG_STEAL_RESTRICTION"
+                          },
+                          "actor": {
+                            "type": "string",
+                            "enum": [
+                              "UNIT",
+                              "LEGEND"
+                            ]
+                          },
+                          "forbidden": {
+                            "type": "string",
+                            "enum": [
+                              "VALUE_ABOVE_POWER",
+                              "VALUE_BELOW_POWER"
+                            ]
+                          },
+                          "sourceId": {
+                            "type": "string",
+                            "minLength": 1,
+                            "maxLength": 200,
+                            "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$"
+                          },
+                          "protectedPlayerId": {
+                            "type": "string",
+                            "format": "uuid",
+                            "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+                          },
+                          "createdTurn": {
+                            "type": "integer",
+                            "exclusiveMinimum": 0,
+                            "maximum": 9007199254740991
+                          },
+                          "origin": {
+                            "type": "object",
+                            "properties": {
+                              "effectId": {
+                                "type": "string",
+                                "pattern": "^[a-f0-9]{64}$"
+                              },
+                              "abilityId": {
+                                "type": "string",
+                                "minLength": 1
+                              },
+                              "ordinal": {
+                                "type": "integer",
+                                "exclusiveMinimum": 0,
+                                "maximum": 9007199254740991
+                              }
+                            },
+                            "required": [
+                              "effectId",
+                              "abilityId",
+                              "ordinal"
+                            ],
+                            "additionalProperties": false
+                          }
+                        },
+                        "required": [
+                          "kind",
+                          "actor",
+                          "forbidden",
+                          "sourceId",
+                          "protectedPlayerId",
+                          "createdTurn",
+                          "origin"
+                        ],
+                        "additionalProperties": false
+                      }
+                    },
                     "resolution": {
                       "type": "object",
                       "properties": {
@@ -4254,6 +4331,40 @@
                                       "properties": {
                                         "kind": {
                                           "type": "string",
+                                          "const": "RESTRICT_RIVAL_GIG_STEAL"
+                                        },
+                                        "actor": {
+                                          "type": "string",
+                                          "enum": [
+                                            "UNIT",
+                                            "LEGEND"
+                                          ]
+                                        },
+                                        "forbidden": {
+                                          "type": "string",
+                                          "enum": [
+                                            "VALUE_ABOVE_POWER",
+                                            "VALUE_BELOW_POWER"
+                                          ]
+                                        },
+                                        "duration": {
+                                          "type": "string",
+                                          "const": "UNTIL_YOUR_NEXT_TURN"
+                                        }
+                                      },
+                                      "required": [
+                                        "kind",
+                                        "actor",
+                                        "forbidden",
+                                        "duration"
+                                      ],
+                                      "additionalProperties": false
+                                    },
+                                    {
+                                      "type": "object",
+                                      "properties": {
+                                        "kind": {
+                                          "type": "string",
                                           "const": "DRAW"
                                         },
                                         "count": {
@@ -6725,6 +6836,40 @@
                                     "properties": {
                                       "kind": {
                                         "type": "string",
+                                        "const": "RESTRICT_RIVAL_GIG_STEAL"
+                                      },
+                                      "actor": {
+                                        "type": "string",
+                                        "enum": [
+                                          "UNIT",
+                                          "LEGEND"
+                                        ]
+                                      },
+                                      "forbidden": {
+                                        "type": "string",
+                                        "enum": [
+                                          "VALUE_ABOVE_POWER",
+                                          "VALUE_BELOW_POWER"
+                                        ]
+                                      },
+                                      "duration": {
+                                        "type": "string",
+                                        "const": "UNTIL_YOUR_NEXT_TURN"
+                                      }
+                                    },
+                                    "required": [
+                                      "kind",
+                                      "actor",
+                                      "forbidden",
+                                      "duration"
+                                    ],
+                                    "additionalProperties": false
+                                  },
+                                  {
+                                    "type": "object",
+                                    "properties": {
+                                      "kind": {
+                                        "type": "string",
                                         "const": "DRAW"
                                       },
                                       "count": {
@@ -9184,6 +9329,40 @@
                                       "kind",
                                       "keyword",
                                       "target"
+                                    ],
+                                    "additionalProperties": false
+                                  },
+                                  {
+                                    "type": "object",
+                                    "properties": {
+                                      "kind": {
+                                        "type": "string",
+                                        "const": "RESTRICT_RIVAL_GIG_STEAL"
+                                      },
+                                      "actor": {
+                                        "type": "string",
+                                        "enum": [
+                                          "UNIT",
+                                          "LEGEND"
+                                        ]
+                                      },
+                                      "forbidden": {
+                                        "type": "string",
+                                        "enum": [
+                                          "VALUE_ABOVE_POWER",
+                                          "VALUE_BELOW_POWER"
+                                        ]
+                                      },
+                                      "duration": {
+                                        "type": "string",
+                                        "const": "UNTIL_YOUR_NEXT_TURN"
+                                      }
+                                    },
+                                    "required": [
+                                      "kind",
+                                      "actor",
+                                      "forbidden",
+                                      "duration"
                                     ],
                                     "additionalProperties": false
                                   },
@@ -12449,6 +12628,83 @@
                         "additionalProperties": false
                       }
                     },
+                    "gigStealRestrictions": {
+                      "minItems": 1,
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "kind": {
+                            "type": "string",
+                            "const": "GIG_STEAL_RESTRICTION"
+                          },
+                          "actor": {
+                            "type": "string",
+                            "enum": [
+                              "UNIT",
+                              "LEGEND"
+                            ]
+                          },
+                          "forbidden": {
+                            "type": "string",
+                            "enum": [
+                              "VALUE_ABOVE_POWER",
+                              "VALUE_BELOW_POWER"
+                            ]
+                          },
+                          "sourceId": {
+                            "type": "string",
+                            "minLength": 1,
+                            "maxLength": 200,
+                            "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$"
+                          },
+                          "protectedPlayerId": {
+                            "type": "string",
+                            "format": "uuid",
+                            "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+                          },
+                          "createdTurn": {
+                            "type": "integer",
+                            "exclusiveMinimum": 0,
+                            "maximum": 9007199254740991
+                          },
+                          "origin": {
+                            "type": "object",
+                            "properties": {
+                              "effectId": {
+                                "type": "string",
+                                "pattern": "^[a-f0-9]{64}$"
+                              },
+                              "abilityId": {
+                                "type": "string",
+                                "minLength": 1
+                              },
+                              "ordinal": {
+                                "type": "integer",
+                                "exclusiveMinimum": 0,
+                                "maximum": 9007199254740991
+                              }
+                            },
+                            "required": [
+                              "effectId",
+                              "abilityId",
+                              "ordinal"
+                            ],
+                            "additionalProperties": false
+                          }
+                        },
+                        "required": [
+                          "kind",
+                          "actor",
+                          "forbidden",
+                          "sourceId",
+                          "protectedPlayerId",
+                          "createdTurn",
+                          "origin"
+                        ],
+                        "additionalProperties": false
+                      }
+                    },
                     "resolution": {
                       "type": "object",
                       "properties": {
@@ -15069,6 +15325,40 @@
                                       "properties": {
                                         "kind": {
                                           "type": "string",
+                                          "const": "RESTRICT_RIVAL_GIG_STEAL"
+                                        },
+                                        "actor": {
+                                          "type": "string",
+                                          "enum": [
+                                            "UNIT",
+                                            "LEGEND"
+                                          ]
+                                        },
+                                        "forbidden": {
+                                          "type": "string",
+                                          "enum": [
+                                            "VALUE_ABOVE_POWER",
+                                            "VALUE_BELOW_POWER"
+                                          ]
+                                        },
+                                        "duration": {
+                                          "type": "string",
+                                          "const": "UNTIL_YOUR_NEXT_TURN"
+                                        }
+                                      },
+                                      "required": [
+                                        "kind",
+                                        "actor",
+                                        "forbidden",
+                                        "duration"
+                                      ],
+                                      "additionalProperties": false
+                                    },
+                                    {
+                                      "type": "object",
+                                      "properties": {
+                                        "kind": {
+                                          "type": "string",
                                           "const": "DRAW"
                                         },
                                         "count": {
@@ -17532,6 +17822,40 @@
                                       "kind",
                                       "keyword",
                                       "target"
+                                    ],
+                                    "additionalProperties": false
+                                  },
+                                  {
+                                    "type": "object",
+                                    "properties": {
+                                      "kind": {
+                                        "type": "string",
+                                        "const": "RESTRICT_RIVAL_GIG_STEAL"
+                                      },
+                                      "actor": {
+                                        "type": "string",
+                                        "enum": [
+                                          "UNIT",
+                                          "LEGEND"
+                                        ]
+                                      },
+                                      "forbidden": {
+                                        "type": "string",
+                                        "enum": [
+                                          "VALUE_ABOVE_POWER",
+                                          "VALUE_BELOW_POWER"
+                                        ]
+                                      },
+                                      "duration": {
+                                        "type": "string",
+                                        "const": "UNTIL_YOUR_NEXT_TURN"
+                                      }
+                                    },
+                                    "required": [
+                                      "kind",
+                                      "actor",
+                                      "forbidden",
+                                      "duration"
                                     ],
                                     "additionalProperties": false
                                   },
@@ -20007,6 +20331,40 @@
                                     "properties": {
                                       "kind": {
                                         "type": "string",
+                                        "const": "RESTRICT_RIVAL_GIG_STEAL"
+                                      },
+                                      "actor": {
+                                        "type": "string",
+                                        "enum": [
+                                          "UNIT",
+                                          "LEGEND"
+                                        ]
+                                      },
+                                      "forbidden": {
+                                        "type": "string",
+                                        "enum": [
+                                          "VALUE_ABOVE_POWER",
+                                          "VALUE_BELOW_POWER"
+                                        ]
+                                      },
+                                      "duration": {
+                                        "type": "string",
+                                        "const": "UNTIL_YOUR_NEXT_TURN"
+                                      }
+                                    },
+                                    "required": [
+                                      "kind",
+                                      "actor",
+                                      "forbidden",
+                                      "duration"
+                                    ],
+                                    "additionalProperties": false
+                                  },
+                                  {
+                                    "type": "object",
+                                    "properties": {
+                                      "kind": {
+                                        "type": "string",
                                         "const": "DRAW"
                                       },
                                       "count": {
@@ -22269,6 +22627,124 @@
                             "required": [
                               "kind",
                               "grant"
+                            ],
+                            "additionalProperties": false
+                          },
+                          {
+                            "type": "object",
+                            "properties": {
+                              "kind": {
+                                "type": "string",
+                                "const": "GIG_STEAL_RESTRICTED"
+                              },
+                              "restriction": {
+                                "type": "object",
+                                "properties": {
+                                  "kind": {
+                                    "type": "string",
+                                    "const": "GIG_STEAL_RESTRICTION"
+                                  },
+                                  "actor": {
+                                    "type": "string",
+                                    "enum": [
+                                      "UNIT",
+                                      "LEGEND"
+                                    ]
+                                  },
+                                  "forbidden": {
+                                    "type": "string",
+                                    "enum": [
+                                      "VALUE_ABOVE_POWER",
+                                      "VALUE_BELOW_POWER"
+                                    ]
+                                  },
+                                  "sourceId": {
+                                    "type": "string",
+                                    "minLength": 1,
+                                    "maxLength": 200,
+                                    "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$"
+                                  },
+                                  "protectedPlayerId": {
+                                    "type": "string",
+                                    "format": "uuid",
+                                    "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+                                  },
+                                  "createdTurn": {
+                                    "type": "integer",
+                                    "exclusiveMinimum": 0,
+                                    "maximum": 9007199254740991
+                                  },
+                                  "origin": {
+                                    "type": "object",
+                                    "properties": {
+                                      "effectId": {
+                                        "type": "string",
+                                        "pattern": "^[a-f0-9]{64}$"
+                                      },
+                                      "abilityId": {
+                                        "type": "string",
+                                        "minLength": 1
+                                      },
+                                      "ordinal": {
+                                        "type": "integer",
+                                        "exclusiveMinimum": 0,
+                                        "maximum": 9007199254740991
+                                      }
+                                    },
+                                    "required": [
+                                      "effectId",
+                                      "abilityId",
+                                      "ordinal"
+                                    ],
+                                    "additionalProperties": false
+                                  }
+                                },
+                                "required": [
+                                  "kind",
+                                  "actor",
+                                  "forbidden",
+                                  "sourceId",
+                                  "protectedPlayerId",
+                                  "createdTurn",
+                                  "origin"
+                                ],
+                                "additionalProperties": false
+                              }
+                            },
+                            "required": [
+                              "kind",
+                              "restriction"
+                            ],
+                            "additionalProperties": false
+                          },
+                          {
+                            "type": "object",
+                            "properties": {
+                              "kind": {
+                                "type": "string",
+                                "const": "GIG_STEAL_RESTRICTION_EXPIRED"
+                              },
+                              "sourceId": {
+                                "type": "string",
+                                "minLength": 1,
+                                "maxLength": 200,
+                                "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$"
+                              },
+                              "protectedPlayerId": {
+                                "type": "string",
+                                "format": "uuid",
+                                "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+                              },
+                              "effectId": {
+                                "type": "string",
+                                "pattern": "^[a-f0-9]{64}$"
+                              }
+                            },
+                            "required": [
+                              "kind",
+                              "sourceId",
+                              "protectedPlayerId",
+                              "effectId"
                             ],
                             "additionalProperties": false
                           },
@@ -24950,6 +25426,49 @@
                         "additionalProperties": false
                       }
                     },
+                    "gigStealRestrictions": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "actor": {
+                            "type": "string",
+                            "enum": [
+                              "UNIT",
+                              "LEGEND"
+                            ]
+                          },
+                          "forbidden": {
+                            "type": "string",
+                            "enum": [
+                              "VALUE_ABOVE_POWER",
+                              "VALUE_BELOW_POWER"
+                            ]
+                          },
+                          "sourceId": {
+                            "type": "string"
+                          },
+                          "protectedSeat": {
+                            "type": "integer",
+                            "minimum": -9007199254740991,
+                            "maximum": 9007199254740991
+                          },
+                          "createdTurn": {
+                            "type": "integer",
+                            "exclusiveMinimum": 0,
+                            "maximum": 9007199254740991
+                          }
+                        },
+                        "required": [
+                          "actor",
+                          "forbidden",
+                          "sourceId",
+                          "protectedSeat",
+                          "createdTurn"
+                        ],
+                        "additionalProperties": false
+                      }
+                    },
                     "inspectedCards": {
                       "type": "array",
                       "items": {
@@ -26330,6 +26849,49 @@
                               "targetId",
                               "expires",
                               "origin"
+                            ],
+                            "additionalProperties": false
+                          }
+                        },
+                        "gigStealRestrictions": {
+                          "type": "array",
+                          "items": {
+                            "type": "object",
+                            "properties": {
+                              "actor": {
+                                "type": "string",
+                                "enum": [
+                                  "UNIT",
+                                  "LEGEND"
+                                ]
+                              },
+                              "forbidden": {
+                                "type": "string",
+                                "enum": [
+                                  "VALUE_ABOVE_POWER",
+                                  "VALUE_BELOW_POWER"
+                                ]
+                              },
+                              "sourceId": {
+                                "type": "string"
+                              },
+                              "protectedSeat": {
+                                "type": "integer",
+                                "minimum": -9007199254740991,
+                                "maximum": 9007199254740991
+                              },
+                              "createdTurn": {
+                                "type": "integer",
+                                "exclusiveMinimum": 0,
+                                "maximum": 9007199254740991
+                              }
+                            },
+                            "required": [
+                              "actor",
+                              "forbidden",
+                              "sourceId",
+                              "protectedSeat",
+                              "createdTurn"
                             ],
                             "additionalProperties": false
                           }

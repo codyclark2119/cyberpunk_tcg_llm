@@ -11,6 +11,7 @@ import { turnSliceAllows, GameStateSchema, GameEventSchema, EffectSchema, hashCa
 import { type EngineContext, validateState } from "./state";
 import { RulesView } from "./view";
 import { evaluateWinConditions } from "./win";
+import { expireStealRestrictions } from "./play-pin-effects";
 export type DraftState = z.infer<typeof GameStateSchema>;
 export class TurnMutation {
     readonly state: DraftState;
@@ -74,6 +75,7 @@ export class TurnMutation {
             this.finish(actor, s.match.playerOrder.find(id => id !== actor)!, "START_TURN_GIGS");
             return success(null);
         }
+        expireStealRestrictions(this, actor); // 8.6.2.1, after the 8.6.1 check.
         this.phase("READY");
         for (const zone of policy.readyZones)
             for (const id of s.players[actor].zones[zone]) {

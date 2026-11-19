@@ -24,7 +24,7 @@ import { validateTriggerState } from "./trigger-state";
 import { validateFightPreventions } from "./fight-prevention";
 import { validateActionReturn } from "./action-return";
 import { validateTemporaryPower } from "./temporary-power";
-import { validateKeywordGrants } from "./play-pin-effects";
+import { validateKeywordGrants, validateStealRestrictions } from "./play-pin-effects";
 import { supportsCall } from "./effect-support";
 import { validateCombatState } from "./combat-state";
 import { gearEnabled, validateGearAttachments } from "./attachments";
@@ -166,6 +166,8 @@ export function validateState(input: unknown, context: EngineContext): Result<Ga
     if (!temporary.ok) return temporary;
     const granted = validateKeywordGrants(s, context);
     if (!granted.ok) return granted;
+    const restricted = validateStealRestrictions(s, context);
+    if (!restricted.ok) return restricted;
     const prevention = validateFightPreventions(s, context);
     if (!prevention.ok) return prevention;
     const combat = validateCombatState(s, context);

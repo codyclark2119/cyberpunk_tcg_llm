@@ -9,12 +9,12 @@
   },
   "totals": {
     "cards": 151,
-    "admitted": 67,
-    "notAdmitted": 84,
+    "admitted": 69,
+    "notAdmitted": 82,
     "notAdmittedOnlyCoveredFamilies": 0,
     "byAdmission": {
-      "NOT_ADMITTED": 84,
-      "SOURCE_MATCH": 67
+      "NOT_ADMITTED": 82,
+      "SOURCE_MATCH": 69
     }
   },
   "families": [
@@ -24,7 +24,7 @@
       "summary": "Conditions and filters on Gig values: min/max, value-pairs, even/odd, 8+, die type, counts compared with a Rival.",
       "notes": "Conditions only, each a fixed shape.",
       "cardCount": 40,
-      "notAdmittedCount": 31,
+      "notAdmittedCount": 29,
       "soleBlockerCount": 0
     },
     {
@@ -55,15 +55,6 @@
       "soleBlockerCount": 0
     },
     {
-      "family": "TRIGGER_PLAY",
-      "status": "PARTIAL",
-      "summary": "[Play] abilities and Program bodies resolving when played.",
-      "notes": "Trigger WHEN_PLAYED.",
-      "cardCount": 27,
-      "notAdmittedCount": 16,
-      "soleBlockerCount": 0
-    },
-    {
       "family": "TEMPORARY_BUFF",
       "status": "PARTIAL",
       "summary": "Power or keyword changes 'this turn' on a chosen Unit.",
@@ -82,20 +73,20 @@
       "soleBlockerCount": 0
     },
     {
+      "family": "TRIGGER_PLAY",
+      "status": "PARTIAL",
+      "summary": "[Play] abilities and Program bodies resolving when played.",
+      "notes": "Trigger WHEN_PLAYED.",
+      "cardCount": 27,
+      "notAdmittedCount": 14,
+      "soleBlockerCount": 0
+    },
+    {
       "family": "DISCARD",
       "status": "PARTIAL",
       "summary": "Discard: self discard, a Rival discards, discard as a cost, discard a hand.",
       "notes": "DISCARD_CARDS supports only the controller discarding exactly 1.",
       "cardCount": 15,
-      "notAdmittedCount": 12,
-      "soleBlockerCount": 0
-    },
-    {
-      "family": "DURATION_DELAYED",
-      "status": "PARTIAL",
-      "summary": "Lasting and delayed effects: 'until your next turn', 'next time ... this turn', 'at the end of this turn'.",
-      "notes": "",
-      "cardCount": 14,
       "notAdmittedCount": 12,
       "soleBlockerCount": 0
     },
@@ -124,6 +115,15 @@
       "notes": "SEARCH_GEAR (count<=5, Gear with max cost, take<=2) only.",
       "cardCount": 15,
       "notAdmittedCount": 11,
+      "soleBlockerCount": 0
+    },
+    {
+      "family": "DURATION_DELAYED",
+      "status": "PARTIAL",
+      "summary": "Lasting and delayed effects: 'until your next turn', 'next time ... this turn', 'at the end of this turn'.",
+      "notes": "",
+      "cardCount": 14,
+      "notAdmittedCount": 10,
       "soleBlockerCount": 0
     },
     {
@@ -167,15 +167,6 @@
       "status": "MISSING",
       "summary": "'Choose one effect' (and 'choose both instead' upgrades).",
       "notes": "PendingChoice MODE exists for setup, search and Gig steps, but no ability carries modes.",
-      "cardCount": 8,
-      "notAdmittedCount": 8,
-      "soleBlockerCount": 0
-    },
-    {
-      "family": "STEAL_CONTROL",
-      "status": "MISSING",
-      "summary": "Gig control outside the ordinary attack steal: swap, extra steal, steal fewer, steal prevention.",
-      "notes": "Documented as unsupported (control transfer / steal).",
       "cardCount": 8,
       "notAdmittedCount": 8,
       "soleBlockerCount": 0
@@ -231,6 +222,15 @@
       "summary": "[Go Solo]: play a Legend as a ready Unit that can attack this turn and is removed when it leaves the field.",
       "notes": "Supported only for Go Solo Legends with no other text or with Blocker (V: Corporate Exile, Goro: Hands Unclean). Go Solo Legends with Play/Attack/Defeated triggers, Go Solo cost changes and Gear on Legend hosts in combat are not.",
       "cardCount": 10,
+      "notAdmittedCount": 6,
+      "soleBlockerCount": 0
+    },
+    {
+      "family": "STEAL_CONTROL",
+      "status": "MISSING",
+      "summary": "Gig control outside the ordinary attack steal: swap, extra steal, steal fewer, steal prevention.",
+      "notes": "Documented as unsupported (control transfer / steal).",
+      "cardCount": 8,
       "notAdmittedCount": 6,
       "soleBlockerCount": 0
     },
@@ -796,20 +796,15 @@
       "colors": [
         "RED"
       ],
-      "admission": "NOT_ADMITTED",
-      "revision": null,
+      "admission": "SOURCE_MATCH",
+      "revision": 1,
       "families": [
         "CONDITION_GIG",
         "DURATION_DELAYED",
         "STEAL_CONTROL",
         "TRIGGER_PLAY"
       ],
-      "blockingFamilies": [
-        "CONDITION_GIG",
-        "DURATION_DELAYED",
-        "STEAL_CONTROL",
-        "TRIGGER_PLAY"
-      ],
+      "blockingFamilies": [],
       "note": null
     },
     {
@@ -3433,20 +3428,15 @@
       "colors": [
         "BLUE"
       ],
-      "admission": "NOT_ADMITTED",
-      "revision": null,
+      "admission": "SOURCE_MATCH",
+      "revision": 1,
       "families": [
         "CONDITION_GIG",
         "DURATION_DELAYED",
         "STEAL_CONTROL",
         "TRIGGER_PLAY"
       ],
-      "blockingFamilies": [
-        "CONDITION_GIG",
-        "DURATION_DELAYED",
-        "STEAL_CONTROL",
-        "TRIGGER_PLAY"
-      ],
+      "blockingFamilies": [],
       "note": null
     },
     {

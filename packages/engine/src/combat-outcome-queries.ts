@@ -3,9 +3,14 @@ import type { EngineContext } from "./state";
 import { effectivePower } from "./characteristics";
 import { referencedPower } from "./combat-resolution-policy";
 import { defeatBatch } from "./defeat";
+import { permittedStealGigs } from "./play-pin-effects";
 
 export function listStealableGigs(state: GameState, defender: PlayerId) {
     return Object.values(state.objects.gigs).filter(g => g.controllerId === defender && g.location.playerId === defender && g.location.zone === "GIGS" && g.roll.kind === "ROLLED").sort((a, b) => a.id < b.id ? -1 : 1);
+}
+/** The Gigs this attacker may select after reviewed steal restrictions (11.5.1.3). */
+export function stealableGigsFor(state: GameState, context: EngineContext, defender: PlayerId, attackerId: CardInstanceId) {
+    return permittedStealGigs(state, context, defender, attackerId, listStealableGigs(state, defender));
 }
 /** Same authoritative characteristics as RulesView; usable inside validation without recursive validation. */
 export function evaluateFight(state: GameState, context: EngineContext, power = (id: CardInstanceId) => effectivePower(state, id, context)) {
@@ -19,10 +24,10 @@ export function evaluateFight(state: GameState, context: EngineContext, power = 
     const defeats: DefeatInstruction[] = [ ...(a <= d && d > 0 ? [{ targetId: attackerId, defeatedBy: defenderId }] : []), ...(d <= a && a > 0 ? [{ targetId: defenderId, defeatedBy: attackerId }] : []) ];
     return { event: { kind: "FIGHT_RESULT" as const, attackerId, defenderId, attackerPower, defenderPower, attackerComparisonPower: a, defenderComparisonPower: d, winnerId: a === d ? null : a > d ? attackerId : defenderId, loserIds }, defeats };
 }
-export function gigStealChoice(state: GameState): PendingChoice {
+export function gigStealChoice(state: GameState, context: EngineContext): PendingChoice {
     const c = state.timing.combat, continuation = state.resolution.gigStealContinuation!;
     if (!("target" in c) || c.target?.kind !== "GIG_AREA") throw new Error("Expected Gig attack");
-    return { id: hashCanonical({ protocol: "gig-steal@1", turn: state.timing.turn, attackerId: c.attackerId, selected: continuation.selected }), actorId: c.attackingPlayerId, kind: "STEAL_GIGS", min: 1, max: 1, ordered: false, continuationId: "gig-steal@1", options: listStealableGigs(state, c.target.playerId).filter(g => !continuation.selected.includes(g.id)).map(g => ({ kind: "GIG", gigInstanceId: g.id })) };
+    return { id: hashCanonical({ protocol: "gig-steal@1", turn: state.timing.turn, attackerId: c.attackerId, selected: continuation.selected }), actorId: c.attackingPlayerId, kind: "STEAL_GIGS", min: 1, max: 1, ordered: false, continuationId: "gig-steal@1", options: stealableGigsFor(state, context, c.target.playerId, c.attackerId).filter(g => !continuation.selected.includes(g.id)).map(g => ({ kind: "GIG", gigInstanceId: g.id })) };
 }
 export function unfinishedDefeatOrder(state: GameState) {
     return state.resolution.defeatContinuation?.orders.find(o => o.cardIds.length < defeatBatch(state, o.targetId).length);

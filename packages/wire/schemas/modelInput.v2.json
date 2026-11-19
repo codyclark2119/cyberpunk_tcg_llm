@@ -918,6 +918,49 @@
             "additionalProperties": false
           }
         },
+        "gigStealRestrictions": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "actor": {
+                "type": "string",
+                "enum": [
+                  "UNIT",
+                  "LEGEND"
+                ]
+              },
+              "forbidden": {
+                "type": "string",
+                "enum": [
+                  "VALUE_ABOVE_POWER",
+                  "VALUE_BELOW_POWER"
+                ]
+              },
+              "sourceId": {
+                "type": "string"
+              },
+              "protectedSeat": {
+                "type": "integer",
+                "minimum": -9007199254740991,
+                "maximum": 9007199254740991
+              },
+              "createdTurn": {
+                "type": "integer",
+                "exclusiveMinimum": 0,
+                "maximum": 9007199254740991
+              }
+            },
+            "required": [
+              "actor",
+              "forbidden",
+              "sourceId",
+              "protectedSeat",
+              "createdTurn"
+            ],
+            "additionalProperties": false
+          }
+        },
         "inspectedCards": {
           "type": "array",
           "items": {

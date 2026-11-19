@@ -26,7 +26,7 @@ import { finishAttackEffects } from "./combat";
 import { finishCombat, completeFightResult } from "./combat-resolution";
 import { HandlerRegistry, finishSearch } from "./effects";
 import { searchTargets } from "./search-state";
-import { applyKeywordGrant, beginTrashProgram, chooseTrashedProgram, keywordGrantTargets } from "./play-pin-effects";
+import { applyKeywordGrant, applyStealRestriction, beginTrashProgram, chooseTrashedProgram, keywordGrantTargets } from "./play-pin-effects";
 import { changeGigValue, gigAdjustmentDelta } from "./gig-value";
 import { triggersEnabled } from "./trigger-support";
 import { discardingPlayer, discoverTriggers, pendingTrigger, trashUnitTargets, triggerChoice, triggerGigTargets } from "./trigger-queries";
@@ -205,6 +205,8 @@ export function advanceTriggers(m: TurnMutation): Result<null> {
         if (!targets.length) return completed(m);
         c.phase = "TARGET"; return offer(m);
     }
+    // Batch V21: "[Play] Until your next turn, rival Units/Legends can't steal friendly Gigs ..." has no choice.
+    if (e.kind === "RESTRICT_RIVAL_GIG_STEAL") { const restricted = applyStealRestriction(m); return restricted.ok ? completed(m) : restricted; }
     if (e.kind === "LOOK_AT_FRIENDLY_FACE_DOWN_LEGEND") {
         if (!privateLookTargets(m.state, r.current.controllerId, m.context).length) return completed(m);
         c.phase = "TARGET"; return offer(m);

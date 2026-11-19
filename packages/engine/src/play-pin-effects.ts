@@ -1,7 +1,7 @@
-import { canonicalSerialize, failure, success, type CardInstanceId, type GameState, type PendingEffect, type Result, type TemporaryKeywordGrant } from "@tcg/domain";
+import { canonicalSerialize, failure, success, type CardInstanceId, type GameState, type GigInstanceState, type GigStealRestriction, type PendingEffect, type PlayerId, type Result, type TemporaryKeywordGrant } from "@tcg/domain";
 import type { EngineContext } from "./state";
 import type { TurnMutation } from "./turn";
-import { cardRevision, effectiveCardTypes } from "./characteristics";
+import { cardRevision, effectiveCardTypes, effectivePower } from "./characteristics";
 import { moveCardLocation } from "./card-movement";
 import { supportsPinnedPlayUnit } from "./play-pin-support";
 import { triggerId } from "./trigger-queries";
@@ -101,6 +101,61 @@ export function validateKeywordGrants(state: GameState, context: EngineContext) 
             || x.origin.effectId !== triggerId(state, { sourceId: source.id, subjectId: source.id, source: { cardId: r.id, revision: r.revision }, controllerId: source.controllerId, abilityId: a.id, kind: "WHEN_PLAYED" }, x.origin.ordinal)
             || continuation?.ordinal === x.origin.ordinal && !continuation.resolvedIds.includes(x.origin.effectId))
             return failure("INVALID_KEYWORD_GRANT", "A grant needs its resolved current-turn PLAY occurrence and a face-up friendly field Unit target");
+    }
+    return success(null);
+}
+
+/** Batch V21: restrictions protecting the defender from this attacker. 11.5.1.3 applies restrictions on the actor's ability to steal
+ * before any Gig is selected, so a restricted Gig is never an option and does not count toward 9.20.1.3. A field Legend is also a Unit. */
+function restrictionsAgainst(state: GameState, context: EngineContext, defender: PlayerId, attackerId: CardInstanceId) {
+    const attacker = state.objects.cards[attackerId];
+    if (!attacker || attacker.controllerId === defender) return [];
+    const types = effectiveCardTypes(state, attackerId, context);
+    return (state.gigStealRestrictions ?? []).filter(x => x.protectedPlayerId === defender && types.includes(x.actor));
+}
+export function permittedStealGigs<G extends GigInstanceState>(state: GameState, context: EngineContext, defender: PlayerId, attackerId: CardInstanceId, gigs: G[]): G[] {
+    const restrictions = restrictionsAgainst(state, context, defender, attackerId);
+    if (!restrictions.length) return gigs;
+    const power = effectivePower(state, attackerId, context);
+    if (power === null) return [];
+    return gigs.filter(g => { const roll = g.roll; return roll.kind === "ROLLED" && restrictions.every(x => x.forbidden === "VALUE_ABOVE_POWER" ? roll.currentValue <= power : roll.currentValue >= power); });
+}
+function compareRestrictions(a: GigStealRestriction, b: GigStealRestriction) { return a.origin.effectId < b.origin.effectId ? -1 : a.origin.effectId > b.origin.effectId ? 1 : 0; }
+export function applyStealRestriction(m: TurnMutation): Result<null> {
+    const s = m.state, current = s.resolution.current, t = current?.trigger;
+    if (current?.effect.kind !== "RESTRICT_RIVAL_GIG_STEAL" || !current.sourceId || !t) return failure("INVALID_STEAL_RESTRICTION", "Current reviewed steal restriction required");
+    if (s.gigStealRestrictions?.some(x => x.origin.effectId === current.id)) return failure("DUPLICATE_STEAL_RESTRICTION", "A resolved restriction occurrence cannot be applied twice");
+    const restriction: GigStealRestriction = { kind: "GIG_STEAL_RESTRICTION", actor: current.effect.actor, forbidden: current.effect.forbidden, sourceId: current.sourceId, protectedPlayerId: current.controllerId,
+        createdTurn: s.timing.turn, origin: { effectId: current.id, abilityId: t.abilityId, ordinal: t.ordinal } };
+    (s.gigStealRestrictions ??= []).push(restriction);
+    s.gigStealRestrictions.sort(compareRestrictions);
+    m.emit({ kind: "GIG_STEAL_RESTRICTED", restriction });
+    return success(null);
+}
+/** 8.6.2.1: effects lasting "until your next turn" end in that player's Start Phase. */
+export function expireStealRestrictions(m: TurnMutation, player: PlayerId) {
+    const all = m.state.gigStealRestrictions;
+    if (!all?.some(x => x.protectedPlayerId === player)) return;
+    for (const x of all.filter(x => x.protectedPlayerId === player)) m.emit({ kind: "GIG_STEAL_RESTRICTION_EXPIRED", sourceId: x.sourceId, protectedPlayerId: player, effectId: x.origin.effectId });
+    m.state.gigStealRestrictions = all.filter(x => x.protectedPlayerId !== player);
+    if (!m.state.gigStealRestrictions.length) delete m.state.gigStealRestrictions;
+}
+/** A restriction lives from its own PLAY resolution through the rival's turn, and into the protected player's next turn only before 8.6.2.1
+ * (the 8.6.1 check) or in a game that ended there. */
+export function validateStealRestrictions(state: GameState, context: EngineContext) {
+    const all = state.gigStealRestrictions;
+    if (!all) return success(null);
+    if (new Set(all.map(x => x.origin.effectId)).size !== all.length || canonicalSerialize(all) !== canonicalSerialize([...all].sort(compareRestrictions)))
+        return failure("INVALID_STEAL_RESTRICTION", "Unique, ordered restriction occurrences required");
+    const continuation = state.resolution.triggerContinuation, turn = state.timing.turn;
+    for (const x of all) {
+        const source = state.objects.cards[x.sourceId], r = cardRevision(state, x.sourceId, context), a = r?.mechanics.abilities.find(a => a.id === x.origin.abilityId), effect = a?.effects[0];
+        const age = turn - x.createdTurn, active = state.timing.activePlayer === x.protectedPlayerId;
+        if (!source || !r || !a || !state.players[x.protectedPlayerId] || !supportsPinnedPlayUnit(r, context).ok || a.trigger !== "WHEN_PLAYED" || effect?.kind !== "RESTRICT_RIVAL_GIG_STEAL" || effect.actor !== x.actor || effect.forbidden !== x.forbidden
+            || !(age === 0 && active || age === 1 && !active || age === 2 && active && (state.timing.step === "TURN_START" || state.match.outcome))
+            || x.origin.effectId !== triggerId({ ...state, timing: { ...state.timing, turn: x.createdTurn } }, { sourceId: source.id, subjectId: source.id, source: { cardId: r.id, revision: r.revision }, controllerId: x.protectedPlayerId, abilityId: a.id, kind: "WHEN_PLAYED" }, x.origin.ordinal)
+            || age === 0 && (x.origin.ordinal > (state.turnHistory?.triggeredBatches ?? 0) || continuation?.ordinal === x.origin.ordinal && !continuation.resolvedIds.includes(x.origin.effectId)))
+            return failure("INVALID_STEAL_RESTRICTION", "A restriction needs its resolved PLAY occurrence and must end at its controller's next turn start");
     }
     return success(null);
 }

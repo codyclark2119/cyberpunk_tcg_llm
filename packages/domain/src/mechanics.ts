@@ -152,6 +152,8 @@ export const EffectSchema = z.discriminatedUnion("kind", [
     z.strictObject({ kind: z.literal("TRASH_THEN_RETURN_PROGRAM"), count: z.literal(3) }),
     // Batch V20: "[Play] Give another friendly Unit with cost 5 or less [Adrenaline] this turn."
     z.strictObject({ kind: z.literal("GRANT_KEYWORD_UNTIL_END_OF_TURN"), keyword: z.literal("ADRENALINE"), target: z.strictObject({ kind: z.literal("ANOTHER_FRIENDLY_UNIT"), costAtMost: z.literal(5) }) }),
+    // Batch V21: "[Play] Until your next turn, rival Units can't steal friendly Gigs with value higher than their power" (and the Legend / less-than mirror).
+    z.strictObject({ kind: z.literal("RESTRICT_RIVAL_GIG_STEAL"), actor: z.enum(["UNIT", "LEGEND"]), forbidden: z.enum(["VALUE_ABOVE_POWER", "VALUE_BELOW_POWER"]), duration: z.literal("UNTIL_YOUR_NEXT_TURN") }),
     z.strictObject({ kind: z.literal("DRAW"), count: z.number().int().positive() }),
     z.strictObject({ kind: z.literal("DAMAGE"), target: TargetSelectorSchema, amount: z.number().int().nonnegative() }),
     z.strictObject({ kind: z.literal("MOVE_CARD"), target: TargetSelectorSchema, destination: ZoneSchema }),
