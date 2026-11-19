@@ -5,6 +5,9 @@ import { isReactDecision } from "./react-support";
 import { combatResolutionEnabled } from "./combat-resolution-policy";
 import { resolveCombat } from "./combat-resolution";
 import { finishAttackEffects } from "./combat";
+import { triggersEnabled } from "./trigger-support";
+import { discoverTriggers } from "./trigger-queries";
+import { beginTriggers } from "./trigger-resolution";
 
 export function declareBlocker(m: TurnMutation, actor: PlayerId, id: CardInstanceId) {
     const s = m.state, c = s.timing.combat;
@@ -13,6 +16,9 @@ export function declareBlocker(m: TurnMutation, actor: PlayerId, id: CardInstanc
     m.emit({ kind: "BLOCKER_SPENT", cardInstanceId: id });
     m.emit({ kind: "BLOCKER_DECLARED", cardInstanceId: id, previousTarget: c.target });
     c.target = { kind: "CARD", cardInstanceId: id }; // 9.9.1: fully replaces previous target; history belongs in events.
+    // Batch V17 (9.11): a Blocker-used trigger is resolved before the defender may react again.
+    const origin = { kind: "BLOCK" as const, subjectId: id };
+    if (triggersEnabled(m.context) && discoverTriggers(s, origin, m.context).length) return beginTriggers(m, origin);
     return finishAttackEffects(m);
 }
 export function passReact(m: TurnMutation, actor: PlayerId) {

@@ -24,7 +24,7 @@ export function effectiveTriggeredAbilities(state: GameState, subjectId: CardIns
         const r = cardRevision(state, source.id, context);
         if (!supportsEffectiveTriggerSource(r, context) || !r) return [];
         return r.mechanics.abilities.flatMap(a => {
-            if (!a.trigger || (source.id !== subjectId) !== (a.inherited === "EQUIPPED_HOST") || !(a.trigger === "WHEN_FIGHT_WON" || a.trigger === "WHEN_DEFEATED" || a.trigger === "WHEN_PLAYED" || a.trigger === "WHEN_ATTACKING" || a.trigger === "WHEN_CARD_PLAYED" || a.trigger === "WHEN_OWN_TURN_ENDS" || a.trigger === "WHEN_UNIT_ATTACKS")) return [];
+            if (!a.trigger || (source.id !== subjectId) !== (a.inherited === "EQUIPPED_HOST") || !(a.trigger === "WHEN_FIGHT_WON" || a.trigger === "WHEN_DEFEATED" || a.trigger === "WHEN_PLAYED" || a.trigger === "WHEN_ATTACKING" || a.trigger === "WHEN_CARD_PLAYED" || a.trigger === "WHEN_OWN_TURN_ENDS" || a.trigger === "WHEN_UNIT_ATTACKS" || a.trigger === "WHEN_BLOCKER_USED")) return [];
             return [{ sourceId: source.id, subjectId, controllerId: subject.controllerId, source: { cardId: r.id, revision: r.revision }, abilityId: a.id, kind: a.trigger }];
         });
     }).sort((a, b) => a.sourceId < b.sourceId ? -1 : a.sourceId > b.sourceId ? 1 : a.abilityId < b.abilityId ? -1 : a.abilityId > b.abilityId ? 1 : 0);
@@ -36,6 +36,8 @@ export function discoverTriggers(state: GameState, origin: TriggerOrigin, contex
     }))];
     if (origin.kind === "FIGHT") return origin.result.winnerId ? effectiveTriggeredAbilities(state, origin.result.winnerId, context).filter(b => b.kind === "WHEN_FIGHT_WON") : [];
     if (origin.kind === "DEFEAT") return origin.defeated.flatMap(d => effectiveTriggeredAbilities(state, d.targetId, context).filter(b => b.kind === "WHEN_DEFEATED")); // Capture before movement; enqueue after.
+    // Batch V17: "When this Unit uses [Blocker]" belongs to the blocking Unit only (9.11).
+    if (origin.kind === "BLOCK") return effectiveTriggeredAbilities(state, origin.subjectId, context).filter(b => b.kind === "WHEN_BLOCKER_USED" && b.sourceId === b.subjectId);
     const own = effectiveTriggeredAbilities(state, origin.subjectId, context).filter(b => {
         if (b.kind !== (origin.kind === "PLAY" ? "WHEN_PLAYED" : "WHEN_ATTACKING")) return false;
         // Losing His Way FAQ0c5b038a: becoming face-up after declaration does not create a trigger.
@@ -76,13 +78,17 @@ export function trashUnitTargets(state: GameState, current: PendingEffect, conte
     const actor = current.controllerId, subjectId = current.trigger?.subjectId;
     return state.players[actor].zones.TRASH.filter(id => id !== subjectId && state.objects.cards[id]?.ownerId === actor && state.objects.cards[id].face === "UP" && cardRevision(state, id, context)?.type === "UNIT").sort();
 }
+/** The affected player chooses their own discard (Batch V17: "a Rival discards 1"). */
+export function discardingPlayer(state: GameState, current: PendingEffect) {
+    return current.effect.kind === "DISCARD_CARDS" && current.effect.player === "RIVAL" ? state.match.playerOrder.find(id => id !== current.controllerId)! : current.controllerId;
+}
 export function triggerChoice(state: GameState, context: EngineContext): PendingChoice {
     const c = state.resolution.triggerContinuation!, current = state.resolution.current;
     let actorId = current?.controllerId ?? nextTriggerGroup(state)[0].controllerId;
     let kind: PendingChoice["kind"], options: PendingChoice["options"];
     if (c.phase === "SELECT") { const group = nextTriggerGroup(state); actorId = group[0].controllerId; kind = "ORDER"; options = group.map(e => ({ kind: "EFFECT", effectId: e.id })); }
     else if (c.phase === "READY") { kind = "READY_EDDIE"; options = readyableEddieSlots(state, actorId).filter(slot => !c.selectedEddieSlots?.includes(slot)).map(slot => ({ kind: "EDDIE_SLOT", slot })); }
-    else if (c.phase === "DISCARD") { kind = "DISCARD"; options = getDiscardableCards(state, actorId).map(cardInstanceId => ({ kind: "CARD", cardInstanceId })); }
+    else if (c.phase === "DISCARD") { if (current) actorId = discardingPlayer(state, current); kind = "DISCARD"; options = getDiscardableCards(state, actorId).map(cardInstanceId => ({ kind: "CARD", cardInstanceId })); }
     else if (c.phase === "OPTIONAL") { kind = "OPTIONAL"; options = [{ kind: "CONFIRM", confirmed: true }, { kind: "CONFIRM", confirmed: false }]; }
     else if (c.phase === "TARGET") {
         kind = "TARGET";

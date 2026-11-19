@@ -15,7 +15,7 @@ test("the reviewed union holds every reviewed real-card revision exactly once", 
     for (const card of demoReferenceContext().content.cards) assert.ok(keys.includes(`${card.id}@${card.revision}`), `Demo card ${card.id} missing`);
     for (const id of ["japantown-jonin", "detonate", "trust-no-one", "corporate-surveillance", "goro-takemura-losing-his-way", "royce-don-t-call-me-simon", "wild-in-the-streets", "delamain-rideshare-ai", "offduty-malfini", "modded-muramasa", "maxtac-squadron", "sandevistan", "modded-kusanagi", "don-t-fear-the-reaper", "adam-smasher-metal-over-meat", "jacked-in-voodoo-boy", "octant", "trauma-team-operatives", "maxtac-heavy", "bonnie-and-clyde", "live-with-the-aftermath"])
         assert.ok(union.cards.some(c => c.id === id), `${id} missing`);
-    assert.equal(union.cards.length, 61); // 39 before batch V7 (2026-11-15), plus 3 each in V7, V8 and V9, 2 in V10, 3 in V11, 2 in V12, 1 in V13, 1 in V14, 2 in V15 and 2 in V16
+    assert.equal(union.cards.length, 63); // 39 before batch V7 (2026-11-15), plus 3 each in V7, V8 and V9, 2 in V10, 3 in V11, 2 in V12, 1 in V13, 1 in V14, 2 in V15, 2 in V16 and 2 in V17
 });
 
 test("the union ruleset turns on every reviewed gate and keeps Demo's overtime", () => {

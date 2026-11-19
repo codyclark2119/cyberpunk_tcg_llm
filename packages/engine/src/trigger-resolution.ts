@@ -27,7 +27,7 @@ import { finishCombat, completeFightResult } from "./combat-resolution";
 import { HandlerRegistry } from "./effects";
 import { changeGigValue, gigAdjustmentDelta } from "./gig-value";
 import { triggersEnabled } from "./trigger-support";
-import { discoverTriggers, pendingTrigger, trashUnitTargets, triggerChoice, triggerGigTargets } from "./trigger-queries";
+import { discardingPlayer, discoverTriggers, pendingTrigger, trashUnitTargets, triggerChoice, triggerGigTargets } from "./trigger-queries";
 import { moveCardLocation } from "./card-movement";
 
 export function recordPlayedCard(m: TurnMutation, sourceId: CardInstanceId) {
@@ -45,6 +45,8 @@ function resume(m: TurnMutation, origin: TriggerOrigin): Result<null> {
     if (origin.kind === "END_TURN") return finishEndTurn(m);
     if (origin.kind === "PLAY") return finishAction(m);
     if (origin.kind === "ATTACK" && "target" in combat && combat.target) { m.state.timing.combat = { ...combat, stage: "ATTACK_EFFECTS" }; return finishAttackEffects(m); }
+    // Batch V17 (9.11): Blocker-used effects resolve, then the defending player's React Step reopens.
+    if (origin.kind === "BLOCK" && "target" in combat && combat.target) { m.state.timing.combat = { ...combat, stage: "RIVAL_REACT" }; return finishAttackEffects(m); }
     if (origin.kind === "FIGHT") return completeFightResult(m, origin.result);
     if (origin.kind === "DEFEAT") return origin.effectSource ? finishAction(m) : finishCombat(m);
     return failure("INVALID_TRIGGER_RETURN", "Trigger batch must return to its original reviewed stage");
@@ -179,8 +181,9 @@ export function advanceTriggers(m: TurnMutation): Result<null> {
         // Evaluated only after the preceding primitive has actually changed authoritative state.
         const met = !e.when || testCondition(m.state, r.current.controllerId, e.when.condition, m.context, r.current.sourceId);
         if (e.when) m.emit({ kind: "CONDITION_EVALUATED", effectId: r.current.id, met });
-        if (!met || !getDiscardableCards(m.state, r.current.controllerId).length) return completed(m);
-        c.conditionMet = true; c.phase = "DISCARD"; return offer(m);
+        if (!met || !getDiscardableCards(m.state, discardingPlayer(m.state, r.current)).length) return completed(m);
+        if (e.when) c.conditionMet = true;
+        c.phase = "DISCARD"; return offer(m);
     }
     if (e.kind === "LOOK_AT_FRIENDLY_FACE_DOWN_LEGEND") {
         if (!privateLookTargets(m.state, r.current.controllerId, m.context).length) return completed(m);
