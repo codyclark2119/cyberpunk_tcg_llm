@@ -9,12 +9,12 @@
   },
   "totals": {
     "cards": 151,
-    "admitted": 74,
-    "notAdmitted": 77,
+    "admitted": 75,
+    "notAdmitted": 76,
     "notAdmittedOnlyCoveredFamilies": 0,
     "byAdmission": {
-      "NOT_ADMITTED": 77,
-      "SOURCE_MATCH": 74
+      "NOT_ADMITTED": 76,
+      "SOURCE_MATCH": 75
     }
   },
   "families": [
@@ -24,7 +24,7 @@
       "summary": "Conditions and filters on Gig values: min/max, value-pairs, even/odd, 8+, die type, counts compared with a Rival.",
       "notes": "Conditions only, each a fixed shape.",
       "cardCount": 40,
-      "notAdmittedCount": 28,
+      "notAdmittedCount": 27,
       "soleBlockerCount": 0
     },
     {
@@ -145,21 +145,21 @@
       "soleBlockerCount": 0
     },
     {
-      "family": "GIG_ADJUST",
-      "status": "PARTIAL",
-      "summary": "Increase, decrease, adjust or set Gig values.",
-      "notes": "Maxima are fixed literals; 'set to the value of another Gig' and 'adjust by exactly 1' are missing. MODIFY_GIG_VALUE is schema-only.",
-      "cardCount": 15,
-      "notAdmittedCount": 8,
-      "soleBlockerCount": 0
-    },
-    {
       "family": "MODAL_CHOICE",
       "status": "MISSING",
       "summary": "'Choose one effect' (and 'choose both instead' upgrades).",
       "notes": "PendingChoice MODE exists for setup, search and Gig steps, but no ability carries modes.",
       "cardCount": 8,
       "notAdmittedCount": 8,
+      "soleBlockerCount": 0
+    },
+    {
+      "family": "GIG_ADJUST",
+      "status": "PARTIAL",
+      "summary": "Increase, decrease, adjust or set Gig values.",
+      "notes": "Maxima are fixed literals; 'set to the value of another Gig' and 'adjust by exactly 1' are missing. MODIFY_GIG_VALUE is schema-only.",
+      "cardCount": 15,
+      "notAdmittedCount": 7,
       "soleBlockerCount": 0
     },
     {
@@ -235,15 +235,6 @@
       "soleBlockerCount": 0
     },
     {
-      "family": "TRIGGER_STEAL",
-      "status": "MISSING",
-      "summary": "Triggers when a Unit or Legend steals a Gig.",
-      "notes": "Only the history condition SUBJECT_STOLE_GIG_THIS_TURN exists (Delamain Cab); there is no steal trigger.",
-      "cardCount": 8,
-      "notAdmittedCount": 6,
-      "soleBlockerCount": 0
-    },
-    {
       "family": "TRIGGER_WHEN_SPENT",
       "status": "MISSING",
       "summary": "WHEN_SPENT: 'when this Unit or Legend is spent' (includes Zetatech Faceplate).",
@@ -294,6 +285,15 @@
       "summary": "[Defeated] abilities.",
       "notes": "Trigger WHEN_DEFEATED, admitted only for Dexter: One Last Chance.",
       "cardCount": 7,
+      "notAdmittedCount": 5,
+      "soleBlockerCount": 0
+    },
+    {
+      "family": "TRIGGER_STEAL",
+      "status": "MISSING",
+      "summary": "Triggers when a Unit or Legend steals a Gig.",
+      "notes": "Only the history condition SUBJECT_STOLE_GIG_THIS_TURN exists (Delamain Cab); there is no steal trigger.",
+      "cardCount": 8,
       "notAdmittedCount": 5,
       "soleBlockerCount": 0
     },
@@ -477,18 +477,14 @@
       "colors": [
         "RED"
       ],
-      "admission": "NOT_ADMITTED",
-      "revision": null,
+      "admission": "SOURCE_MATCH",
+      "revision": 1,
       "families": [
         "CONDITION_GIG",
         "GIG_ADJUST",
         "TRIGGER_STEAL"
       ],
-      "blockingFamilies": [
-        "CONDITION_GIG",
-        "GIG_ADJUST",
-        "TRIGGER_STEAL"
-      ],
+      "blockingFamilies": [],
       "note": null
     },
     {

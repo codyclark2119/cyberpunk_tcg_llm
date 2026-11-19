@@ -45,7 +45,10 @@ function validBinding(state: GameState, b: TriggerBinding, context: EngineContex
     if (origin.kind === "BLOCK") return b.kind === "WHEN_BLOCKER_USED" && b.sourceId === b.subjectId && b.subjectId === origin.subjectId && supportsTriggerCard(r, context).ok;
     // Batch V24: a steal trigger binding names one Gig its subject stole in this Steal Step; no other binding names a Gig.
     if ((origin.kind === "STEAL") !== (b.gigInstanceId !== undefined)) return false;
-    if (origin.kind === "STEAL") return b.kind === "WHEN_GIG_STOLEN" && b.sourceId === b.subjectId && b.subjectId === origin.subjectId && origin.gigInstanceIds.includes(b.gigInstanceId!) && supportsTriggerCard(r, context).ok;
+    if (origin.kind === "STEAL") return b.sourceId === b.subjectId && origin.gigInstanceIds.includes(b.gigInstanceId!) && supportsTriggerCard(r, context).ok
+        && (b.kind === "WHEN_GIG_STOLEN" ? b.subjectId === origin.subjectId
+            // Batch V26: a friendly field Unit observing a stolen d6.
+            : b.kind === "WHEN_FRIENDLY_UNIT_STEALS_GIG" && ability.guard === "STOLEN_GIG_IS_D6" && state.objects.gigs[b.gigInstanceId!]?.dieType === "D6" && subject.zone.zone === "BATTLEFIELD" && b.controllerId === state.objects.cards[origin.subjectId]?.controllerId);
     if (origin.kind === "ATTACK") {
         if (b.kind === "WHEN_UNIT_ATTACKS") return b.sourceId === b.subjectId && source.face === "UP" && source.zone.zone === "LEGENDS" && supportsFirstAttackLegend(r, context).ok && state.objects.cards[origin.subjectId]?.controllerId === b.controllerId && isFirstArasakaAttack(state, origin.subjectId, context);
         return b.kind === "WHEN_ATTACKING" && b.subjectId === origin.subjectId;

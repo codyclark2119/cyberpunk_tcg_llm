@@ -1033,7 +1033,8 @@
                                 "WHEN_OWN_TURN_ENDS",
                                 "WHEN_UNIT_ATTACKS",
                                 "WHEN_BLOCKER_USED",
-                                "WHEN_GIG_STOLEN"
+                                "WHEN_GIG_STOLEN",
+                                "WHEN_FRIENDLY_UNIT_STEALS_GIG"
                               ]
                             },
                             "inherited": {
@@ -1044,7 +1045,8 @@
                               "type": "string",
                               "enum": [
                                 "FIRST_BLUE_UNIT_OR_GEAR_PLAY_PER_TURN",
-                                "FIRST_FRIENDLY_ARASAKA_UNIT_ATTACK_PER_TURN"
+                                "FIRST_FRIENDLY_ARASAKA_UNIT_ATTACK_PER_TURN",
+                                "STOLEN_GIG_IS_D6"
                               ]
                             },
                             "activation": {
@@ -2631,6 +2633,10 @@
                                           {
                                             "type": "number",
                                             "const": 4
+                                          },
+                                          {
+                                            "type": "number",
+                                            "const": 6
                                           }
                                         ]
                                       },
@@ -6680,7 +6686,8 @@
                               "WHEN_OWN_TURN_ENDS",
                               "WHEN_UNIT_ATTACKS",
                               "WHEN_BLOCKER_USED",
-                              "WHEN_GIG_STOLEN"
+                              "WHEN_GIG_STOLEN",
+                              "WHEN_FRIENDLY_UNIT_STEALS_GIG"
                             ]
                           },
                           "gigInstanceId": {
@@ -8495,6 +8502,10 @@
                                     {
                                       "type": "number",
                                       "const": 4
+                                    },
+                                    {
+                                      "type": "number",
+                                      "const": 6
                                     }
                                   ]
                                 },
@@ -9919,7 +9930,8 @@
                                 "WHEN_OWN_TURN_ENDS",
                                 "WHEN_UNIT_ATTACKS",
                                 "WHEN_BLOCKER_USED",
-                                "WHEN_GIG_STOLEN"
+                                "WHEN_GIG_STOLEN",
+                                "WHEN_FRIENDLY_UNIT_STEALS_GIG"
                               ]
                             },
                             "gigInstanceId": {
@@ -11145,6 +11157,10 @@
                                   {
                                     "type": "number",
                                     "const": 4
+                                  },
+                                  {
+                                    "type": "number",
+                                    "const": 6
                                   }
                                 ]
                               },
@@ -12569,7 +12585,8 @@
                               "WHEN_OWN_TURN_ENDS",
                               "WHEN_UNIT_ATTACKS",
                               "WHEN_BLOCKER_USED",
-                              "WHEN_GIG_STOLEN"
+                              "WHEN_GIG_STOLEN",
+                              "WHEN_FRIENDLY_UNIT_STEALS_GIG"
                             ]
                           },
                           "gigInstanceId": {
@@ -13791,6 +13808,10 @@
                                   {
                                     "type": "number",
                                     "const": 4
+                                  },
+                                  {
+                                    "type": "number",
+                                    "const": 6
                                   }
                                 ]
                               },
@@ -15215,7 +15236,8 @@
                               "WHEN_OWN_TURN_ENDS",
                               "WHEN_UNIT_ATTACKS",
                               "WHEN_BLOCKER_USED",
-                              "WHEN_GIG_STOLEN"
+                              "WHEN_GIG_STOLEN",
+                              "WHEN_FRIENDLY_UNIT_STEALS_GIG"
                             ]
                           },
                           "gigInstanceId": {
@@ -16668,7 +16690,8 @@
                                 "WHEN_OWN_TURN_ENDS",
                                 "WHEN_UNIT_ATTACKS",
                                 "WHEN_BLOCKER_USED",
-                                "WHEN_GIG_STOLEN"
+                                "WHEN_GIG_STOLEN",
+                                "WHEN_FRIENDLY_UNIT_STEALS_GIG"
                               ]
                             },
                             "inherited": {
@@ -16679,7 +16702,8 @@
                               "type": "string",
                               "enum": [
                                 "FIRST_BLUE_UNIT_OR_GEAR_PLAY_PER_TURN",
-                                "FIRST_FRIENDLY_ARASAKA_UNIT_ATTACK_PER_TURN"
+                                "FIRST_FRIENDLY_ARASAKA_UNIT_ATTACK_PER_TURN",
+                                "STOLEN_GIG_IS_D6"
                               ]
                             },
                             "activation": {
@@ -18266,6 +18290,10 @@
                                           {
                                             "type": "number",
                                             "const": 4
+                                          },
+                                          {
+                                            "type": "number",
+                                            "const": 6
                                           }
                                         ]
                                       },
