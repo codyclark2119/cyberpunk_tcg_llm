@@ -8,6 +8,8 @@ export function supportsCall(card: DeepReadonly<CardRevisionSnapshot> | undefine
     if (card?.execution?.scope === "ATTACKING_AURA_V1") return supportsAttackingAuraLegend(card, context);
     if (card?.execution?.scope === "FIRST_ATTACK_HISTORY_V1") return supportsFirstAttackLegend(card, context);
     if (card?.execution?.scope === "FIELD_LEGENDS_V1") return supportsFieldLegend(card, context);
+    // Batch V18: a Go Solo Legend with a {Play} defeat has no {Call} effect; Calling it is admitted through its field-Legend pin.
+    if (card?.type === "LEGEND" && card.execution?.scope === "TARGETED_DEFEAT_V1") return supportsFieldLegend(card, context);
     if (card?.type === "LEGEND" && card.execution?.scope === "COMBAT_TRIGGERS_V1") return supportsTriggerCard(card, context);
     if (card?.mechanics.abilities.some(a => a.inherited || a.guard)) return failure("UNSUPPORTED_TRIGGER_METADATA", "Unsupported granted/guarded CALL shape");
     const reviewed = turnSliceAllows(context.content.ruleset.gameplay?.turnSlice, "callEffects");

@@ -32,14 +32,17 @@ const TARGETED_DEFEAT_SHAPES = [
     // Batch V16: Carnage at the Colosseum, -1 per friendly Gig of 8+ (min 1); a rival Unit weaker than a friendly Unit.
     { type: "PROGRAM", colors: ["RED"], ram: { RED: 3 }, tags: ["Braindance", "Extreme"], cost: 6, sell: true, power: null,
         modifiers: [{ kind: "SELF_PLAY_COST_REDUCTION", per: "FRIENDLY_GIG_VALUE_AT_LEAST_8", amount: 1, minimum: 1 }],
-        effects: [{ kind: "DEFEAT_UNIT", target: { kind: "UNITS", relation: "RIVAL", power: { kind: "LESS_THAN_FRIENDLY_UNIT" } } }] }
-].map(shape => canonicalSerialize({ modifiers: [], ...shape }));
+        effects: [{ kind: "DEFEAT_UNIT", target: { kind: "UNITS", relation: "RIVAL", power: { kind: "LESS_THAN_FRIENDLY_UNIT" } } }] },
+    // Batch V18: Adam Smasher: Ender of Legends, a printed Go Solo Legend whose {Play} defeats a rival Unit (11.24.2, 11.29.1).
+    { type: "LEGEND", colors: ["RED"], ram: { RED: 2 }, tags: ["Arasaka", "Merc"], cost: 9, sell: true, power: 9, keywords: ["GO_SOLO"],
+        effects: [{ kind: "DEFEAT_UNIT", target: { kind: "UNITS", relation: "RIVAL", power: { kind: "ANY" } } }] }
+].map(shape => canonicalSerialize({ modifiers: [], keywords: [], ...shape }));
 /** Complete per-card shapes; no source-name dispatch or arbitrary filter/defeat admission. */
 export function supportsTargetedDefeatCard(card: DeepReadonly<CardRevisionSnapshot> | undefined, context: EngineContext) {
     const m = card?.mechanics, a = m?.abilities[0], p = context.content.ruleset.gameplay?.turnSlice;
-    if (!targetedDefeatEnabled(context) || !combatResolutionEnabled(context) || !turnSliceAllows(p, "cardPlay") || !turnSliceAllows(p, "combatTriggers") || context.content.ruleset.gameplay?.gigValueBounds !== "DIE_FACES_V1" || !card?.provenance.reviewed || card.execution?.scope !== "TARGETED_DEFEAT_V1" || card.execution.status !== "SUPPORTED" || card.printedCost.kind !== "EDDIES" || card.keywords.length || !m || m.equip || m.keywords.length || m.restrictions?.length || m.abilities.length !== 1 || !a || a.trigger !== "WHEN_PLAYED" || a.activation || a.inherited || a.guard || a.conditions.length || a.cost.kind !== "NONE")
+    if (!targetedDefeatEnabled(context) || !combatResolutionEnabled(context) || !turnSliceAllows(p, "cardPlay") || !turnSliceAllows(p, "combatTriggers") || context.content.ruleset.gameplay?.gigValueBounds !== "DIE_FACES_V1" || !card?.provenance.reviewed || card.execution?.scope !== "TARGETED_DEFEAT_V1" || card.execution.status !== "SUPPORTED" || card.printedCost.kind !== "EDDIES" || card.keywords.length || !m || m.equip || m.restrictions?.length || m.abilities.length !== 1 || !a || a.trigger !== "WHEN_PLAYED" || a.activation || a.inherited || a.guard || a.conditions.length || a.cost.kind !== "NONE")
         return failure("UNSUPPORTED_TARGETED_DEFEAT", "Complete reviewed Unit/Program shape and semantic defeat policy required");
-    const actual = canonicalSerialize({ type: card.type, colors: card.colors, ram: card.ram, tags: card.tags, cost: card.printedCost.amount, sell: card.sellProfile.allowed, power: card.power ?? null, modifiers: m.modifiers, effects: a.effects });
+    const actual = canonicalSerialize({ type: card.type, colors: card.colors, ram: card.ram, tags: card.tags, cost: card.printedCost.amount, sell: card.sellProfile.allowed, power: card.power ?? null, keywords: m.keywords, modifiers: m.modifiers, effects: a.effects });
     if (!TARGETED_DEFEAT_SHAPES.includes(actual))
         return failure("UNSUPPORTED_TARGETED_DEFEAT", "Entire reviewed metadata, condition and distinct target/power shape required");
     return success(null);
