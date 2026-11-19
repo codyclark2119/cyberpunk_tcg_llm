@@ -130,8 +130,8 @@ function describeAction(a: GameAction, state: GameState, actor: PlayerId, view: 
                 if (option.kind === "EDDIE_SLOT") return `Ready Eddie ${option.slot + 1}`;
                 if (option.kind === "LEGEND_SLOT") return `Look at friendly face-down Legend slot ${option.slot + 1}`;
                 if (option.kind === "EFFECT") { const e = state.resolution.pending.find(e => e.id === option.effectId)!; return `Resolve ${view.getRevision(e.sourceId!)?.displayName} (${e.sourceId}) for ${view.getRevision(e.trigger!.subjectId)?.displayName}`; }
-                if (option.kind === "CONFIRM") return option.confirmed ? "Use the optional Gig decrease" : "Decline the optional effect";
-                if (option.kind === "GIG") { const g = view.getGig(option.gigInstanceId); return `Choose ${g.controllerId === actor ? "your" : "rival"} ${g.dieType} (current ${g.roll.kind === "ROLLED" ? g.roll.currentValue : "unrolled"})`; }
+                if (option.kind === "CONFIRM") return option.confirmed ? (state.resolution.current?.effect.kind === "SWAP_GIGS" ? "Swap a friendly Gig with a rival Gig" : "Use the optional Gig decrease") : "Decline the optional effect";
+                if (option.kind === "GIG") { const g = view.getGig(option.gigInstanceId); return `${state.resolution.current?.effect.kind === "SWAP_GIGS" ? (g.controllerId === actor ? "Give" : "Take") : "Choose"} ${g.controllerId === actor ? "your" : "rival"} ${g.dieType} (current ${g.roll.kind === "ROLLED" ? g.roll.currentValue : "unrolled"})${state.resolution.current?.effect.kind === "SWAP_GIGS" ? " in the swap" : ""}`; }
                 if (option.kind === "AMOUNT") return `Decrease by ${option.amount}`;
                 if (option.kind === "MODE") return option.mode === "KEEP" ? "Adjust by zero (keep current value)" : option.mode === "INCREASE_1" ? "Increase by 1" : "Decrease by 1";
             }

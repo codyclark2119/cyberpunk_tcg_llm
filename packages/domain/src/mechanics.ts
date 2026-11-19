@@ -156,6 +156,8 @@ export const EffectSchema = z.discriminatedUnion("kind", [
     // Batch V21: "[Play] Until your next turn, rival Units can't steal friendly Gigs with value higher than their power" (and the Legend / less-than mirror).
     z.strictObject({ kind: z.literal("RESTRICT_RIVAL_GIG_STEAL"), actor: z.enum(["UNIT", "LEGEND"]), forbidden: z.enum(["VALUE_ABOVE_POWER", "VALUE_BELOW_POWER"]), duration: z.literal("UNTIL_YOUR_NEXT_TURN") }),
     // Batch V22: "[Play] If your Street Cred is an even number, a rival Unit can't ready until your next turn." (10.16.1.1: checked on resolution).
+    // Batch V23: "You may swap a friendly Gig with a rival Gig." (6.7; a swap is not stealing, 6.7.2)
+    z.strictObject({ kind: z.literal("SWAP_GIGS"), optional: z.literal(true) }),
     z.strictObject({ kind: z.literal("PREVENT_UNIT_READY"), target: SpendUnitTargetSchema, when: z.strictObject({ timing: z.literal("RESOLUTION"), condition: z.strictObject({ kind: z.literal("STREET_CRED_IS_EVEN") }) }).optional(), duration: z.literal("UNTIL_YOUR_NEXT_TURN") }),
     z.strictObject({ kind: z.literal("DRAW"), count: z.number().int().positive() }),
     z.strictObject({ kind: z.literal("DAMAGE"), target: TargetSelectorSchema, amount: z.number().int().nonnegative() }),

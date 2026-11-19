@@ -195,6 +195,7 @@ export const EventPayloadSchema = z.discriminatedUnion("kind", [
     z.strictObject({ kind: z.literal("GIG_STEAL_RESTRICTION_EXPIRED"), sourceId: CardInstanceIdSchema, protectedPlayerId: PlayerIdSchema, effectId: HashSchema }),
     z.strictObject({ kind: z.literal("READY_LOCKED"), lock: ReadyLockSchema }),
     z.strictObject({ kind: z.literal("READY_LOCK_EXPIRED"), targetId: CardInstanceIdSchema, sourceId: CardInstanceIdSchema, effectId: HashSchema, reason: z.enum(["NEXT_TURN", "LEFT_FIELD"]) }),
+    z.strictObject({ kind: z.literal("GIGS_SWAPPED"), effectId: HashSchema, gigInstanceIds: z.tuple([GigInstanceIdSchema, GigInstanceIdSchema]) }),
     z.strictObject({ kind: z.literal("READY_PREVENTED"), cardInstanceId: CardInstanceIdSchema, effectIds: z.array(HashSchema).min(1) }),
     z.strictObject({ kind: z.literal("KEYWORD_GRANT_EXPIRED"), sourceId: CardInstanceIdSchema, targetId: CardInstanceIdSchema, effectId: HashSchema, reason: z.enum(["TURN_END", "LEFT_FIELD"]) }),
     z.strictObject({ kind: z.literal("POWER_MODIFIER_EXPIRED"), sourceId: CardInstanceIdSchema, targetId: CardInstanceIdSchema, reason: z.enum(["TURN_END", "HIDDEN_AREA"]), effectId: HashSchema.optional() }),

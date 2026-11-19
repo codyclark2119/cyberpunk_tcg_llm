@@ -22,3 +22,20 @@ export function transferGigs(m: TurnMutation, ids: readonly GigInstanceId[], con
     checkOvertimeVictory(m);
     return success(null);
 }
+/** Batch V23, 6.7: both Gig dice change areas at the same time and keep their values (6.7.1). A swap is not stealing (6.7.2),
+ * so it records no stolen facts and is not limited by steal restrictions. Gig counts are unchanged; the overtime check still runs. */
+export function swapGigs(m: TurnMutation, effectId: string, friendlyId: GigInstanceId, rivalId: GigInstanceId) {
+    const s = m.state, a = s.objects.gigs[friendlyId], b = s.objects.gigs[rivalId];
+    if (s.match.outcome) return failure("GAME_ALREADY_ENDED", "No control changes after terminal victory or loss");
+    if (!a || !b || a.roll.kind !== "ROLLED" || b.roll.kind !== "ROLLED" || a.location.zone !== "GIGS" || b.location.zone !== "GIGS" || a.controllerId === b.controllerId)
+        return failure("INVALID_GIG_SWAP", "A rolled friendly Gig and a rolled rival Gig in Gig areas are required");
+    const pa = a.controllerId, pb = b.controllerId, ra = s.players[pa].gigs.GIGS, rb = s.players[pb].gigs.GIGS;
+    ra.splice(ra.indexOf(friendlyId), 1); rb.splice(rb.indexOf(rivalId), 1);
+    a.controllerId = pb; a.location = { playerId: pb, zone: "GIGS" }; rb.push(friendlyId);
+    b.controllerId = pa; b.location = { playerId: pa, zone: "GIGS" }; ra.push(rivalId);
+    const moved = [{ id: friendlyId, previous: pa, current: pb }, { id: rivalId, previous: pb, current: pa }].sort((x, y) => x.id < y.id ? -1 : 1);
+    for (const x of moved) m.emit({ kind: "GIG_CONTROL_CHANGED", gigInstanceId: x.id, previous: x.previous, current: x.current });
+    m.emit({ kind: "GIGS_SWAPPED", effectId, gigInstanceIds: [friendlyId, rivalId] });
+    checkOvertimeVictory(m);
+    return success(null);
+}

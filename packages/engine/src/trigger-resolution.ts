@@ -29,8 +29,9 @@ import { searchTargets } from "./search-state";
 import { applyKeywordGrant, applyStealRestriction, beginTrashProgram, chooseTrashedProgram, keywordGrantTargets } from "./play-pin-effects";
 import { changeGigValue, gigAdjustmentDelta } from "./gig-value";
 import { applyReadyLock } from "./ready-lock";
+import { swapGigs } from "./gig-transfer";
 import { triggersEnabled } from "./trigger-support";
-import { discardingPlayer, discoverTriggers, pendingTrigger, trashUnitTargets, triggerChoice, triggerGigTargets } from "./trigger-queries";
+import { discardingPlayer, discoverTriggers, pendingTrigger, swapSidesAvailable, trashUnitTargets, triggerChoice, triggerGigTargets } from "./trigger-queries";
 import { moveCardLocation } from "./card-movement";
 
 export function recordPlayedCard(m: TurnMutation, sourceId: CardInstanceId) {
@@ -214,6 +215,11 @@ export function advanceTriggers(m: TurnMutation): Result<null> {
         if (!listSpendUnitTargets(m.state, current.controllerId, e.target, m.context).length) return completed(m);
         c.phase = "TARGET"; return offer(m);
     }
+    // Batch V23: "[Play] You may swap a friendly Gig with a rival Gig." Offered only when both sides have a Gig to swap (6.7).
+    if (e.kind === "SWAP_GIGS") {
+        if (!swapSidesAvailable(m.state, r.current.controllerId)) return completed(m);
+        c.phase = "OPTIONAL"; return offer(m);
+    }
     if (e.kind === "RESTRICT_RIVAL_GIG_STEAL") { const restricted = applyStealRestriction(m); return restricted.ok ? completed(m) : restricted; }
     if (e.kind === "LOOK_AT_FRIENDLY_FACE_DOWN_LEGEND") {
         if (!privateLookTargets(m.state, r.current.controllerId, m.context).length) return completed(m);
@@ -327,6 +333,14 @@ export function continueTrigger(m: TurnMutation, index: number, forced = false):
             return learned.ok ? completed(m) : learned;
         }
         if (option.kind !== "GIG" || !triggerGigTargets(m.state).includes(option.gigInstanceId)) return failure("INVALID_TRIGGER_TARGET", "Choose a currently valid Gig");
+        if (current.effect.kind === "SWAP_GIGS") {
+            m.emit({ kind: "GIG_TARGET_SELECTED", effectId: current.id, gigInstanceId: option.gigInstanceId });
+            if (!c.targetGigId) { c.targetGigId = option.gigInstanceId; return offer(m); }
+            const swapped = swapGigs(m, current.id, c.targetGigId, option.gigInstanceId);
+            if (!swapped.ok) return swapped;
+            if (m.state.match.outcome) { m.emit({ kind: "EFFECT_RESOLVED", effectId: current.id }); return success(null); }
+            return completed(m);
+        }
         c.targetGigId = option.gigInstanceId; c.phase = "AMOUNT";
         m.emit({ kind: "GIG_TARGET_SELECTED", effectId: current.id, gigInstanceId: option.gigInstanceId });
         return offer(m);

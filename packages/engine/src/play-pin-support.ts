@@ -2,7 +2,7 @@ import { turnSliceAllows, canonicalSerialize, failure, success, type CardRevisio
 import type { EngineContext } from "./state";
 import { adrenalineEnabled } from "./restriction-support";
 import { targetedSpendEnabled } from "./targeted-spend-support";
-/** Batches V20-V22: exact per-card pin table (Cody, 2026-11-15) for single-primitive {Play} Units. Each admitted
+/** Batches V20-V23: exact per-card pin table (Cody, 2026-11-15) for single-primitive {Play} Units. Each admitted
  * card's complete printed shape is literal here; the primitives resolve in the reviewed PLAY trigger batch. */
 const PLAY_PIN_SHAPES = [
     // Hacked Corpo: "{Play} Trash 3. Add a Program from among them to your hand."
@@ -28,10 +28,14 @@ const PLAY_PIN_SHAPES = [
     { type: "UNIT", colors: ["GREEN"], ram: { GREEN: 2 }, tags: ["Netrunner"], cost: 4, power: 1, sell: false, keywords: [],
         equip: null, modifiers: [], restrictions: [],
         abilities: [{ trigger: "WHEN_PLAYED", inherited: null, guard: null, activation: null, conditions: [], cost: { kind: "NONE" },
-            effects: [{ kind: "PREVENT_UNIT_READY", target: { kind: "UNITS", relation: "RIVAL" }, when: { timing: "RESOLUTION", condition: { kind: "STREET_CRED_IS_EVEN" } }, duration: "UNTIL_YOUR_NEXT_TURN" }] }] }
+            effects: [{ kind: "PREVENT_UNIT_READY", target: { kind: "UNITS", relation: "RIVAL" }, when: { timing: "RESOLUTION", condition: { kind: "STREET_CRED_IS_EVEN" } }, duration: "UNTIL_YOUR_NEXT_TURN" }] }] },
+    // Batch V23, MaxTac AV: "{Play} You may swap a friendly Gig with a rival Gig."
+    { type: "UNIT", colors: ["GREEN"], ram: { GREEN: 2 }, tags: ["NCPD", "Vehicle"], cost: 5, power: 8, sell: false, keywords: [],
+        equip: null, modifiers: [], restrictions: [],
+        abilities: [{ trigger: "WHEN_PLAYED", inherited: null, guard: null, activation: null, conditions: [], cost: { kind: "NONE" }, effects: [{ kind: "SWAP_GIGS", optional: true }] }] }
 ].map(shape => canonicalSerialize(shape));
 export function hasPinnedPlayEffect(card: DeepReadonly<CardRevisionSnapshot> | undefined) {
-    return Boolean(card?.mechanics.abilities.some(a => a.effects.some(e => e.kind === "TRASH_THEN_RETURN_PROGRAM" || e.kind === "GRANT_KEYWORD_UNTIL_END_OF_TURN" || e.kind === "RESTRICT_RIVAL_GIG_STEAL" || e.kind === "PREVENT_UNIT_READY")));
+    return Boolean(card?.mechanics.abilities.some(a => a.effects.some(e => e.kind === "TRASH_THEN_RETURN_PROGRAM" || e.kind === "GRANT_KEYWORD_UNTIL_END_OF_TURN" || e.kind === "RESTRICT_RIVAL_GIG_STEAL" || e.kind === "PREVENT_UNIT_READY" || e.kind === "SWAP_GIGS")));
 }
 export function supportsPinnedPlayUnit(card: DeepReadonly<CardRevisionSnapshot> | undefined, context: EngineContext) {
     const p = context.content.ruleset.gameplay?.turnSlice, m = card?.mechanics;

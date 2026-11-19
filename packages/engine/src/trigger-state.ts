@@ -21,7 +21,7 @@ import { keywordGrantTargets, validateTrashProgramPause } from "./play-pin-effec
 import { supportsPinnedPlayUnit } from "./play-pin-support";
 import { listSpendUnitTargets } from "./targeted-spend-queries";
 import { supportsEffectiveTriggerSource, supportsTriggerCard, triggersEnabled } from "./trigger-support";
-import { discoverTriggers, nextTriggerGroup, pendingTrigger, triggerChoice, triggerGigTargets, triggerId } from "./trigger-queries";
+import { discoverTriggers, nextTriggerGroup, pendingTrigger, swapSidesAvailable, triggerChoice, triggerGigTargets, triggerId } from "./trigger-queries";
 
 /** Validate the historical comparison, not a new comparison using post-trigger power. */
 export function validFightFact(state: GameState, f: FightResult) {
@@ -99,7 +99,7 @@ export function validateTriggerState(state: GameState, context: EngineContext) {
     const rivalHasResolved = c.resolvedIds.some(id => !activeIds.includes(id));
     if ((r.current && r.current.controllerId !== state.timing.activePlayer || rivalHasResolved) && activeIds.some(id => !c.resolvedIds.includes(id))) return failure("INVALID_TRIGGER_PRIORITY", "Turn player's pending effects precede the rival's");
     if (c.phase === "SELECT" ? Boolean(r.current) || nextTriggerGroup(state).length < 2 : !r.current) return failure("INVALID_TRIGGER_PHASE", "Ordering is strategic only with multiple eligible effects; effect choices require a current effect");
-    if (c.phase !== "SELECT" && (!r.current || !["DEFEAT_UNIT", "READY_EDDIES", "DISCARD_CARDS", "DECREASE_GIG_UP_TO", "ADJUST_GIG_UP_TO", "OPTIONAL_DECREASE_FRIENDLY_GIG_THEN_DRAW_IF_MIN", "LOOK_AT_FRIENDLY_FACE_DOWN_LEGEND", "POWER_UNTIL_END_OF_TURN", "SPEND_UNIT", "READY_UNIT", "RETURN_TRASH_UNIT_TO_HAND", "SEARCH_GEAR", "TRASH_THEN_RETURN_PROGRAM", "GRANT_KEYWORD_UNTIL_END_OF_TURN", "PREVENT_UNIT_READY"].includes(r.current.effect.kind))) return failure("INVALID_TRIGGER_PHASE", "Only reviewed adjustment/look/discard/ready/power/spend/trash-return primitives pause for choices");
+    if (c.phase !== "SELECT" && (!r.current || !["DEFEAT_UNIT", "READY_EDDIES", "DISCARD_CARDS", "DECREASE_GIG_UP_TO", "ADJUST_GIG_UP_TO", "OPTIONAL_DECREASE_FRIENDLY_GIG_THEN_DRAW_IF_MIN", "LOOK_AT_FRIENDLY_FACE_DOWN_LEGEND", "POWER_UNTIL_END_OF_TURN", "SPEND_UNIT", "READY_UNIT", "RETURN_TRASH_UNIT_TO_HAND", "SEARCH_GEAR", "TRASH_THEN_RETURN_PROGRAM", "GRANT_KEYWORD_UNTIL_END_OF_TURN", "PREVENT_UNIT_READY", "SWAP_GIGS"].includes(r.current.effect.kind))) return failure("INVALID_TRIGGER_PHASE", "Only reviewed adjustment/look/discard/ready/power/spend/trash-return primitives pause for choices");
     // Batch V19: the reviewed [Attack] Gear search pauses only for its own looked-at cards (search-state owns the details).
     if ((r.current?.effect.kind === "SEARCH_GEAR") !== Boolean(r.searchContinuation) || r.current?.effect.kind === "SEARCH_GEAR" && (c.phase !== "TARGET" || c.origin.kind !== "ATTACK" || r.current.trigger?.kind !== "WHEN_ATTACKING" || !supportsAttackSearchUnit(cardRevision(state, r.current.sourceId!, context), context).ok)) return failure("INVALID_SEARCH_CONTINUATION", "Only the reviewed attack search pauses for its looked-at cards");
     // Batch V20: the pinned {Play} trash-3 Program pick and Adrenaline grant pause only for their own strategic targets.
@@ -154,8 +154,16 @@ export function validateTriggerState(state: GameState, context: EngineContext) {
         if (c.phase !== "DISCARD" || e?.effect.kind !== "DISCARD_CARDS" || e.primitiveIndex !== 1 || c.conditionMet !== true || !e.effect.when || !testCondition(state, e.controllerId, e.effect.when.condition, context, e.sourceId)) return failure("INVALID_DISCARD_CONTINUATION", "Post-draw true condition and exact current second primitive required");
     }
     if (r.current?.effect.kind === "LOOK_AT_FRIENDLY_FACE_DOWN_LEGEND" && c.phase !== "TARGET") return failure("INVALID_TRIGGER_PHASE", "Private look pauses only for a target");
-    if (c.phase === "OPTIONAL" && r.current?.effect.kind !== "OPTIONAL_DECREASE_FRIENDLY_GIG_THEN_DRAW_IF_MIN") return failure("INVALID_OPTIONAL_TRIGGER", "Only the printed may effect offers acceptance");
-    if (c.phase === "AMOUNT" ? !c.targetGigId || !triggerGigTargets(state).includes(c.targetGigId) : Boolean(c.targetGigId)) return failure("INVALID_TRIGGER_TARGET", "Exact target required only during amount selection");
+    if (c.phase === "OPTIONAL" && r.current?.effect.kind !== "OPTIONAL_DECREASE_FRIENDLY_GIG_THEN_DRAW_IF_MIN" && r.current?.effect.kind !== "SWAP_GIGS") return failure("INVALID_OPTIONAL_TRIGGER", "Only the printed may effect offers acceptance");
+    // Batch V23: the pinned {Play} swap pauses to accept, then for its friendly Gig, then (holding that Gig) for the rival Gig.
+    if (r.current?.effect.kind === "SWAP_GIGS") {
+        const source = r.current.sourceId ? state.objects.cards[r.current.sourceId] : undefined, held = c.targetGigId ? state.objects.gigs[c.targetGigId] : undefined;
+        if (!(c.phase === "OPTIONAL" || c.phase === "TARGET") || c.origin.kind !== "PLAY" || r.current.trigger?.kind !== "WHEN_PLAYED" || r.current.primitiveIndex !== undefined || !source
+            || c.origin.subjectId !== source.id || r.current.trigger.subjectId !== source.id || !supportsPinnedPlayUnit(cardRevision(state, source.id, context), context).ok
+            || !swapSidesAvailable(state, r.current.controllerId) || c.targetGigId && (c.phase !== "TARGET" || !held || held.controllerId !== r.current.controllerId || held.location.zone !== "GIGS" || held.roll.kind !== "ROLLED"))
+            return failure("INVALID_GIG_SWAP_CONTINUATION", "Only the reviewed {Play} swap pauses, holding at most its chosen friendly Gig");
+    }
+    else if (c.phase === "AMOUNT" ? !c.targetGigId || !triggerGigTargets(state).includes(c.targetGigId) : Boolean(c.targetGigId)) return failure("INVALID_TRIGGER_TARGET", "Exact target required only during amount selection");
     if (r.targetedDefeatContinuation) return success(null); // Current target/owner order has its bounded validator.
     const expectedStep = c.phase === "READY" ? "EDDIE_READY_SELECTION" : c.phase === "DISCARD" ? "DISCARD_SELECTION" : c.phase === "SELECT" ? "TRIGGER_ORDER_SELECTION" : c.phase === "OPTIONAL" ? "OPTIONAL_TRIGGER_SELECTION" : c.phase === "TARGET" ? "TARGET_SELECTION" : "AMOUNT_SELECTION";
     if (state.timing.step !== expectedStep || state.timing.window !== expectedStep || canonicalSerialize(r.choice) !== canonicalSerialize(triggerChoice(state, context)) || r.choice.options.length < 2) return failure("INVALID_TRIGGER_CHOICE", "Only exact strategic current options may pause automatic resolution");
