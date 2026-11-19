@@ -2970,6 +2970,19 @@
                                                         "kind"
                                                       ],
                                                       "additionalProperties": false
+                                                    },
+                                                    {
+                                                      "type": "object",
+                                                      "properties": {
+                                                        "kind": {
+                                                          "type": "string",
+                                                          "const": "LESS_THAN_FRIENDLY_UNIT"
+                                                        }
+                                                      },
+                                                      "required": [
+                                                        "kind"
+                                                      ],
+                                                      "additionalProperties": false
                                                     }
                                                   ]
                                                 },
@@ -5370,6 +5383,19 @@
                                                       "kind"
                                                     ],
                                                     "additionalProperties": false
+                                                  },
+                                                  {
+                                                    "type": "object",
+                                                    "properties": {
+                                                      "kind": {
+                                                        "type": "string",
+                                                        "const": "LESS_THAN_FRIENDLY_UNIT"
+                                                      }
+                                                    },
+                                                    "required": [
+                                                      "kind"
+                                                    ],
+                                                    "additionalProperties": false
                                                   }
                                                 ]
                                               },
@@ -7760,6 +7786,19 @@
                                                       "kind": {
                                                         "type": "string",
                                                         "const": "ANY"
+                                                      }
+                                                    },
+                                                    "required": [
+                                                      "kind"
+                                                    ],
+                                                    "additionalProperties": false
+                                                  },
+                                                  {
+                                                    "type": "object",
+                                                    "properties": {
+                                                      "kind": {
+                                                        "type": "string",
+                                                        "const": "LESS_THAN_FRIENDLY_UNIT"
                                                       }
                                                     },
                                                     "required": [
@@ -13478,6 +13517,19 @@
                                                         "kind"
                                                       ],
                                                       "additionalProperties": false
+                                                    },
+                                                    {
+                                                      "type": "object",
+                                                      "properties": {
+                                                        "kind": {
+                                                          "type": "string",
+                                                          "const": "LESS_THAN_FRIENDLY_UNIT"
+                                                        }
+                                                      },
+                                                      "required": [
+                                                        "kind"
+                                                      ],
+                                                      "additionalProperties": false
                                                     }
                                                   ]
                                                 },
@@ -15878,6 +15930,19 @@
                                                       "kind"
                                                     ],
                                                     "additionalProperties": false
+                                                  },
+                                                  {
+                                                    "type": "object",
+                                                    "properties": {
+                                                      "kind": {
+                                                        "type": "string",
+                                                        "const": "LESS_THAN_FRIENDLY_UNIT"
+                                                      }
+                                                    },
+                                                    "required": [
+                                                      "kind"
+                                                    ],
+                                                    "additionalProperties": false
                                                   }
                                                 ]
                                               },
@@ -18268,6 +18333,19 @@
                                                       "kind": {
                                                         "type": "string",
                                                         "const": "ANY"
+                                                      }
+                                                    },
+                                                    "required": [
+                                                      "kind"
+                                                    ],
+                                                    "additionalProperties": false
+                                                  },
+                                                  {
+                                                    "type": "object",
+                                                    "properties": {
+                                                      "kind": {
+                                                        "type": "string",
+                                                        "const": "LESS_THAN_FRIENDLY_UNIT"
                                                       }
                                                     },
                                                     "required": [

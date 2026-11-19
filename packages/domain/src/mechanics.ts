@@ -92,7 +92,9 @@ export type BottomDeckTarget = z.infer<typeof BottomDeckTargetSchema>;
 // every card using it is pinned literally by its execution gate (exact per-card check).
 const DefeatPowerAtMostSchema = z.strictObject({ kind: z.literal("AT_MOST"), value: z.number().int().nonnegative() });
 export const DefeatUnitTargetSchema = z.strictObject({ kind: z.literal("UNITS"), relation: TargetRelationshipSchema,
-    power: z.discriminatedUnion("kind", [DefeatPowerAtMostSchema, z.strictObject({ kind: z.literal("CONTROLLED_GIG_VALUE"), dieType: z.literal("D20") }), z.strictObject({ kind: z.literal("ANY") })]),
+    power: z.discriminatedUnion("kind", [DefeatPowerAtMostSchema, z.strictObject({ kind: z.literal("CONTROLLED_GIG_VALUE"), dieType: z.literal("D20") }), z.strictObject({ kind: z.literal("ANY") }),
+        // "with less power than a friendly Unit" (batch V16): below the highest current power among the controller's Units.
+        z.strictObject({ kind: z.literal("LESS_THAN_FRIENDLY_UNIT") })]),
     // Only Units whose current readiness is SPENT are eligible.
     readiness: z.literal("SPENT").optional(),
     // "If <condition>, defeat ... with power N or less instead": replaces the AT_MOST bound while the condition holds.
@@ -171,7 +173,7 @@ export const ContinuousModifierSchema = z.discriminatedUnion("kind", [
     z.strictObject({ kind: z.literal("GRANT_PRINTED_POWER_TO_HOST") }),
     z.strictObject({ kind: z.literal("POWER_PER_EQUIPPED_GEAR_DURING_OWN_TURN"), amount: z.number().int() }),
     // 3.11.1.2: changes the amount paid to play this card, never its cost value; floors at the printed minimum.
-    z.strictObject({ kind: z.literal("SELF_PLAY_COST_REDUCTION"), per: z.enum(["FRIENDLY_GIG_VALUE_AT_LEAST_8", "FRIENDLY_TRASH_UNIT", "RIVAL_UNIT"]), amount: z.literal(1), minimum: z.literal(1) }),
+    z.strictObject({ kind: z.literal("SELF_PLAY_COST_REDUCTION"), per: z.enum(["FRIENDLY_GIG_VALUE_AT_LEAST_8", "FRIENDLY_TRASH_UNIT", "RIVAL_UNIT", "FRIENDLY_FACE_UP_LEGEND"]), amount: z.literal(1), minimum: z.literal(1) }),
     z.strictObject({ kind: z.literal("POWER"), target: TargetSelectorSchema, amount: z.number().int(), requiresFaceUp: z.boolean() }),
     z.strictObject({ kind: z.literal("KEYWORD"), target: TargetSelectorSchema, keyword: KeywordSchema, requiresFaceUp: z.boolean() })
 ]);

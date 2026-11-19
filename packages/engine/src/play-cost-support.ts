@@ -1,6 +1,7 @@
 import { turnSliceAllows, canonicalSerialize, failure, success, type CardInstanceId, type CardRevisionSnapshot, type ContinuousModifier, type DeepReadonly, type GameState, type PlayerId } from "@tcg/domain";
 import type { EngineContext } from "./state";
 import { effectiveCardTypes } from "./characteristics";
+import { supportsTargetedDefeatCard } from "./targeted-defeat-support";
 
 type Reduction = Extract<ContinuousModifier, { kind: "SELF_PLAY_COST_REDUCTION" }>;
 export function playCostReductionEnabled(context: EngineContext) {
@@ -16,13 +17,29 @@ const COST_REDUCTION_SHAPES = [
     // MaxTac Heavy: "Play this Unit for -1 €$ for each of a Rival's Units, to a minimum of 1 €$."
     { colors: ["GREEN"], ram: { GREEN: 3 }, tags: ["NCPD"], cost: 7, power: 8, sell: false, modifiers: [{ kind: "SELF_PLAY_COST_REDUCTION", per: "RIVAL_UNIT", amount: 1, minimum: 1 }] }
 ].map(shape => canonicalSerialize(shape));
+/** Batch V16 Zetatech Berserk: "Play this Gear for -1 €$ for each friendly face-up Legend, to a minimum of 1 €$." The whole Gear, literally. */
+const GEAR_REDUCTION_SHAPES = [
+    { colors: ["GREEN"], ram: { GREEN: 2 }, tags: ["Cyberware", "Zetatech"], cost: 6, power: 3, sell: true, equip: { kind: "FRIENDLY_UNIT_OR_FACE_UP_LEGEND" },
+        modifiers: [{ kind: "GRANT_PRINTED_POWER_TO_HOST" }, { kind: "SELF_PLAY_COST_REDUCTION", per: "FRIENDLY_FACE_UP_LEGEND", amount: 1, minimum: 1 }] }
+].map(shape => canonicalSerialize(shape));
 
 export function hasPlayCostReductionMetadata(card: DeepReadonly<CardRevisionSnapshot>) {
     return card.execution?.scope === "PLAY_COST_REDUCTION_V1" || card.mechanics.modifiers.some(m => m.kind === "SELF_PLAY_COST_REDUCTION");
 }
-/** Complete reviewed vanilla Unit whose only text is a self play-cost reduction; no other mechanics. */
-export function supportsPlayCostReductionUnit(card: DeepReadonly<CardRevisionSnapshot> | undefined, context: EngineContext) {
+/** Complete reviewed card carrying a self play-cost reduction: a vanilla Unit (V11), a pinned Gear (V16), or a
+ * Program whose whole shape, reduction included, is pinned by the targeted-defeat gate (V16). */
+export function supportsPlayCostReduction(card: DeepReadonly<CardRevisionSnapshot> | undefined, context: EngineContext) {
     const m = card?.mechanics;
+    if (card?.type === "PROGRAM" && card.execution?.scope === "TARGETED_DEFEAT_V1") {
+        if (!playCostReductionEnabled(context) || !m?.modifiers.length || m.modifiers.some(x => x.kind !== "SELF_PLAY_COST_REDUCTION")) return failure("UNSUPPORTED_PLAY_COST_REDUCTION", "A Program reduction needs its reviewed policy and only reduction modifiers");
+        return supportsTargetedDefeatCard(card, context);
+    }
+    if (card?.type === "GEAR") {
+        if (!playCostReductionEnabled(context) || !turnSliceAllows(context.content.ruleset.gameplay?.turnSlice, "gear") || !card.provenance.reviewed || card.execution?.scope !== "PLAY_COST_REDUCTION_V1" || card.execution.status !== "SUPPORTED" || card.printedCost.kind !== "EDDIES" || card.power === undefined || card.keywords.length || !m || m.keywords.length || m.restrictions?.length || m.abilities.length)
+            return failure("UNSUPPORTED_PLAY_COST_REDUCTION", "Complete reviewed Gear with only a pinned self play-cost reduction required");
+        const gear = canonicalSerialize({ colors: card.colors, ram: card.ram, tags: card.tags, cost: card.printedCost.amount, power: card.power, sell: card.sellProfile.allowed, equip: m.equip ?? null, modifiers: m.modifiers });
+        return GEAR_REDUCTION_SHAPES.includes(gear) ? success(null) : failure("UNSUPPORTED_PLAY_COST_REDUCTION", "Card does not match a pinned Batch V16 Gear cost-reduction shape");
+    }
     if (!playCostReductionEnabled(context) || !card?.provenance.reviewed || card.execution?.scope !== "PLAY_COST_REDUCTION_V1" || card.execution.status !== "SUPPORTED" || card.type !== "UNIT" || card.printedCost.kind !== "EDDIES" || card.power === undefined || card.keywords.length || !m || m.equip || m.keywords.length || m.restrictions?.length || m.abilities.length)
         return failure("UNSUPPORTED_PLAY_COST_REDUCTION", "Complete reviewed Unit with only a pinned self play-cost reduction required");
     const actual = canonicalSerialize({ colors: card.colors, ram: card.ram, tags: card.tags, cost: card.printedCost.amount, power: card.power, sell: card.sellProfile.allowed, modifiers: m.modifiers });
@@ -37,6 +54,8 @@ function reductionCount(state: GameState, actor: PlayerId, modifier: DeepReadonl
         case "RIVAL_UNIT": // "a Rival": the most favorable single Rival; one Rival in two-player games.
             return Math.max(0, ...state.match.playerOrder.filter(id => id !== actor).map(rival =>
                 state.players[rival].zones.BATTLEFIELD.filter(id => state.objects.cards[id].controllerId === rival && effectiveCardTypes(state, id, context).includes("UNIT")).length));
+        case "FRIENDLY_FACE_UP_LEGEND": // Legends-area and field Legends alike (4.4: both are valid Legend areas).
+            return [...state.players[actor].zones.LEGENDS, ...state.players[actor].zones.BATTLEFIELD].filter(id => { const c = state.objects.cards[id]; return c.controllerId === actor && c.face === "UP" && effectiveCardTypes(state, id, context).includes("LEGEND"); }).length;
     }
 }
 /** 3.11.1.2: the amount `actor` pays to play `id` now. The card's cost value stays its printed cost. */
@@ -44,14 +63,14 @@ export function playPaymentAmount(state: GameState, actor: PlayerId, id: CardIns
     const c = state.objects.cards[id], r = context.content.cards.find(r => r.id === c?.cardId && r.revision === c?.revision);
     if (r?.printedCost.kind !== "EDDIES") return null;
     const printed = r.printedCost.amount, reductions = r.mechanics.modifiers.filter((m): m is DeepReadonly<Reduction> => m.kind === "SELF_PLAY_COST_REDUCTION");
-    if (!reductions.length || !supportsPlayCostReductionUnit(r, context).ok) return printed;
+    if (!reductions.length || !supportsPlayCostReduction(r, context).ok) return printed;
     return reductions.reduce((amount, m) => Math.max(Math.min(amount, m.minimum), amount - m.amount * reductionCount(state, actor, m, context)), printed);
 }
 /** Hidden sources are validated too; an external state cannot carry an unpinned reduction. */
 export function validatePlayCostReductionMetadata(state: GameState, context: EngineContext) {
     for (const c of Object.values(state.objects.cards)) {
         const r = context.content.cards.find(r => r.id === c.cardId && r.revision === c.revision);
-        if (r && hasPlayCostReductionMetadata(r)) { const supported = supportsPlayCostReductionUnit(r, context); if (!supported.ok) return supported; }
+        if (r && hasPlayCostReductionMetadata(r)) { const supported = supportsPlayCostReduction(r, context); if (!supported.ok) return supported; }
     }
     return success(null);
 }
