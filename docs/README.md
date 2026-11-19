@@ -61,6 +61,10 @@ were recorded in their pull requests (#4, #7, #8); later batches have documents 
 | V17 (2026-11-18) | La Llorona: Ghost of the Past, Augmented Negotiators | ["When this Unit uses Blocker" triggers](api-admission-batch-v17.md); coverage 63/151 |
 | V18 (2026-11-19) | Adam Smasher: Ender of Legends | [Go Solo Legend with a Play defeat](api-admission-batch-v18.md); coverage 64/151 |
 | V19 (2026-11-19) | Sketchy Ripper | [Attack-trigger Gear search](api-admission-batch-v19.md); coverage 65/151 |
+| V20 (2026-11-19) | Hacked Corpo, Valentino Street Racer | [Play trash-3 Program pick and Adrenaline grant](api-admission-batch-v20.md); coverage 67/151 |
+| V21 (2026-11-19) | Chrome Fang, Westbrook Netrunner | [Play steal restrictions until your next turn](api-admission-batch-v21.md); coverage 69/151 |
+| V22 (2026-11-19) | Pacifica Netrunner, Memory Relapse | [Ready locks until your next turn](api-admission-batch-v22.md); coverage 71/151 |
+| V23 (2026-11-19) | MaxTac AV | [Optional Gig swap](api-admission-batch-v23.md); coverage 72/151 |
 | V7 (2026-11-15) | Royce: Don't Call Me Simon, Wild in the Streets, Delamain: Rideshare AI | [shared defeat filter and exact pin table](api-admission-batch-v7.md); coverage 42/151 |
 | V6 (2026-09-22) | Trust No One | [contract and executable slice](api-admission-batch-v6.md), [baseline verification](api-admission-batch-v6-verification.md) |
 

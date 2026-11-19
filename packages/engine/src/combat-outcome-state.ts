@@ -7,7 +7,7 @@ import { combatResolutionEnabled, getGigStealAllowance } from "./combat-resoluti
 import { effectivePower } from "./characteristics";
 import { attackSourceValid, listAttackTargets } from "./combat-queries";
 import { defeatBatch, defeatSupport } from "./defeat";
-import { defeatOrderChoice, defeatsFromFightResult, evaluateFight, gigStealChoice, listStealableGigs, unfinishedDefeatOrder } from "./combat-outcome-queries";
+import { defeatOrderChoice, defeatsFromFightResult, evaluateFight, gigStealChoice, stealableGigsFor, unfinishedDefeatOrder } from "./combat-outcome-queries";
 
 export function validateCombatOutcome(state: GameState, context: EngineContext) {
     const c = state.timing.combat, r = state.resolution;
@@ -21,8 +21,8 @@ export function validateCombatOutcome(state: GameState, context: EngineContext) 
     if (c.stage === "GIG_STEAL_SELECTION") {
         const continuation = r.gigStealContinuation, power = effectivePower(state, c.attackerId, context);
         if (c.target.kind !== "GIG_AREA" || !continuation || r.defeatContinuation || power === null || state.timing.actingPlayer !== c.attackingPlayerId) return failure("INVALID_GIG_STEAL", "Gig target, attacker choice and exclusive continuation required");
-        const all = listStealableGigs(state, c.target.playerId), selected = continuation.selected;
-        if (new Set(selected).size !== selected.length || selected.some(id => !all.some(g => g.id === id)) || selected.length + continuation.remaining !== Math.min(all.length, getGigStealAllowance(power, context)) || continuation.remaining >= all.length - selected.length || canonicalSerialize(r.choice) !== canonicalSerialize(gigStealChoice(state)))
+        const all = stealableGigsFor(state, context, c.target.playerId, c.attackerId), selected = continuation.selected;
+        if (new Set(selected).size !== selected.length || selected.some(id => !all.some(g => g.id === id)) || selected.length + continuation.remaining !== Math.min(all.length, getGigStealAllowance(power, context)) || continuation.remaining >= all.length - selected.length || canonicalSerialize(r.choice) !== canonicalSerialize(gigStealChoice(state, context)))
             return failure("INVALID_GIG_STEAL", "Exact remaining count, distinct still-rival selected Gigs and strategic current choices required");
     } else {
         const continuation = r.defeatContinuation;

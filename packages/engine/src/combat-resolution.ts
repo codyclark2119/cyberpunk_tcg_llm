@@ -8,7 +8,7 @@ import type { TurnMutation } from "./turn";
 import { RulesView } from "./view";
 import { defeatCards, defeatSupport } from "./defeat";
 import { transferGigs } from "./gig-transfer";
-import { defeatOrderChoice, defeatsFromFightResult, evaluateFight, gigStealChoice, listStealableGigs, unfinishedDefeatOrder } from "./combat-outcome-queries";
+import { defeatOrderChoice, defeatsFromFightResult, evaluateFight, gigStealChoice, stealableGigsFor, unfinishedDefeatOrder } from "./combat-outcome-queries";
 
 export function finishCombat(m: TurnMutation) {
     const c = m.state.timing.combat;
@@ -53,12 +53,12 @@ export function continueDefeatOrder(m: TurnMutation, index: number) {
 function advanceGigSteal(m: TurnMutation) {
     const c = m.state.timing.combat, continuation = m.state.resolution.gigStealContinuation!;
     if (!("target" in c) || c.target?.kind !== "GIG_AREA") return failure("INVALID_GIG_STEAL", "Current target must be a Gig area");
-    const available = listStealableGigs(m.state, c.target.playerId).filter(g => !continuation.selected.includes(g.id));
+    const available = stealableGigsFor(m.state, m.context, c.target.playerId, c.attackerId).filter(g => !continuation.selected.includes(g.id));
     if (continuation.remaining > 0 && continuation.remaining < available.length) {
         m.state.timing.combat = { ...c, target: c.target, stage: "GIG_STEAL_SELECTION" };
         m.state.timing.step = "GIG_STEAL_SELECTION"; m.state.timing.window = "GIG_STEAL_SELECTION";
         m.state.timing.actingPlayer = c.attackingPlayerId;
-        m.state.resolution.stage = "CHOICE"; m.state.resolution.choice = gigStealChoice(m.state);
+        m.state.resolution.stage = "CHOICE"; m.state.resolution.choice = gigStealChoice(m.state, m.context);
         return success(null);
     }
     for (const g of available.slice(0, continuation.remaining)) {
@@ -108,7 +108,7 @@ export function resolveCombat(m: TurnMutation) {
     }
     const power = view.getEffectivePower(c.attackerId);
     if (power === null) return failure("UNSUPPORTED_NULL_STEAL_POWER", "Null is not a numeric power");
-    const allowance = view.getGigStealAllowance(c.attackerId), available = listStealableGigs(m.state, c.target.playerId);
+    const allowance = view.getGigStealAllowance(c.attackerId), available = stealableGigsFor(m.state, m.context, c.target.playerId, c.attackerId);
     const count = Math.min(allowance!, available.length);
     m.emit({ kind: "GIG_STEAL_STARTED", attackerId: c.attackerId, defendingPlayerId: c.target.playerId, power, allowance: allowance!, count });
     if (!count) return finishCombat(m);

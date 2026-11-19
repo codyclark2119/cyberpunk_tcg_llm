@@ -9,12 +9,13 @@ import { privateLookTargets } from "./private-knowledge";
 import { friendlyPowerTargets } from "./friendly-play-power-queries";
 import { listSpendUnitTargets } from "./targeted-spend-queries";
 import { readyLegendTargets } from "./ready-unit";
-import { hashCanonical, type GameState, type CardInstanceId, type TriggerBinding, type TriggerOrigin, type PendingChoice, type PendingEffect } from "@tcg/domain";
+import { hashCanonical, type GameState, type CardInstanceId, type PlayerId, type TriggerBinding, type TriggerOrigin, type PendingChoice, type PendingEffect } from "@tcg/domain";
 import type { EngineContext } from "./state";
 import { cardRevision } from "./characteristics";
 import { attachedGear } from "./attachments";
 import { supportsEffectiveTriggerSource, triggersEnabled } from "./trigger-support";
 import { searchTargets } from "./search-state";
+import { keywordGrantTargets, trashedProgramTargets } from "./play-pin-effects";
 
 /** Physical ability source, inherited subject and trigger-time controller are distinct identities. */
 export function effectiveTriggeredAbilities(state: GameState, subjectId: CardInstanceId, context: EngineContext): TriggerBinding[] {
@@ -70,9 +71,16 @@ export function nextTriggerGroup(state: GameState) {
     const actor = pending.some(e => e.controllerId === state.timing.activePlayer) ? state.timing.activePlayer : state.match.playerOrder.find(id => pending.some(e => e.controllerId === id));
     return pending.filter(e => e.controllerId === actor).sort((a, b) => a.sourceId! < b.sourceId! ? -1 : a.sourceId! > b.sourceId! ? 1 : a.id < b.id ? -1 : 1);
 }
+/** 6.7: a swap needs a rolled friendly Gig and a rolled rival Gig, both in Gig areas. */
+export function swapSidesAvailable(state: GameState, controllerId: PlayerId) {
+    const gigs = Object.values(state.objects.gigs).filter(g => g.location.zone === "GIGS" && g.roll.kind === "ROLLED");
+    return gigs.some(g => g.controllerId === controllerId) && gigs.some(g => g.controllerId !== controllerId);
+}
 export function triggerGigTargets(state: GameState) {
-    const current = state.resolution.current!;
-    return Object.values(state.objects.gigs).filter(g => g.location.zone === "GIGS" && g.roll.kind === "ROLLED" && (current.effect.kind !== "OPTIONAL_DECREASE_FRIENDLY_GIG_THEN_DRAW_IF_MIN" || g.controllerId === current.controllerId)).map(g => g.id).sort();
+    const current = state.resolution.current!, chosen = state.resolution.triggerContinuation?.targetGigId;
+    // Batch V23: a swap chooses the friendly Gig first, then the rival Gig.
+    const side = current.effect.kind === "SWAP_GIGS" ? (chosen ? "RIVAL" : "FRIENDLY") : current.effect.kind === "OPTIONAL_DECREASE_FRIENDLY_GIG_THEN_DRAW_IF_MIN" ? "FRIENDLY" : "ANY";
+    return Object.values(state.objects.gigs).filter(g => g.location.zone === "GIGS" && g.roll.kind === "ROLLED" && (side === "ANY" || (g.controllerId === current.controllerId) === (side === "FRIENDLY"))).map(g => g.id).sort();
 }
 /** Batch V13: public Units in the controller's own trash, other than the trigger subject ("another Unit"). */
 export function trashUnitTargets(state: GameState, current: PendingEffect, context: EngineContext): CardInstanceId[] {
@@ -95,7 +103,11 @@ export function triggerChoice(state: GameState, context: EngineContext): Pending
         kind = "TARGET";
         options = current?.effect.kind === "SEARCH_GEAR"
             ? [{ kind: "MODE", mode: "DONE" }, ...searchTargets(state, context).filter(id => !state.resolution.searchContinuation?.selected.includes(id)).map(cardInstanceId => ({ kind: "CARD" as const, cardInstanceId }))]
-            : current?.effect.kind === "SPEND_UNIT"
+            : current?.effect.kind === "TRASH_THEN_RETURN_PROGRAM"
+            ? trashedProgramTargets(state, context).map(cardInstanceId => ({ kind: "CARD", cardInstanceId }))
+            : current?.effect.kind === "GRANT_KEYWORD_UNTIL_END_OF_TURN"
+            ? keywordGrantTargets(state, current, context).map(cardInstanceId => ({ kind: "CARD", cardInstanceId }))
+            : current?.effect.kind === "SPEND_UNIT" || current?.effect.kind === "PREVENT_UNIT_READY"
             ? listSpendUnitTargets(state, actorId, current.effect.target, context).map(cardInstanceId => ({ kind: "CARD", cardInstanceId }))
             : current?.effect.kind === "READY_UNIT"
             ? readyLegendTargets(state, actorId, context).map(cardInstanceId => ({ kind: "CARD", cardInstanceId }))

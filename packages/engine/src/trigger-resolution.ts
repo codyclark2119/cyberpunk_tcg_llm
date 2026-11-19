@@ -26,9 +26,12 @@ import { finishAttackEffects } from "./combat";
 import { finishCombat, completeFightResult } from "./combat-resolution";
 import { HandlerRegistry, finishSearch } from "./effects";
 import { searchTargets } from "./search-state";
+import { applyKeywordGrant, applyStealRestriction, beginTrashProgram, chooseTrashedProgram, keywordGrantTargets } from "./play-pin-effects";
 import { changeGigValue, gigAdjustmentDelta } from "./gig-value";
+import { applyReadyLock } from "./ready-lock";
+import { swapGigs } from "./gig-transfer";
 import { triggersEnabled } from "./trigger-support";
-import { discardingPlayer, discoverTriggers, pendingTrigger, trashUnitTargets, triggerChoice, triggerGigTargets } from "./trigger-queries";
+import { discardingPlayer, discoverTriggers, pendingTrigger, swapSidesAvailable, trashUnitTargets, triggerChoice, triggerGigTargets } from "./trigger-queries";
 import { moveCardLocation } from "./card-movement";
 
 export function recordPlayedCard(m: TurnMutation, sourceId: CardInstanceId) {
@@ -193,6 +196,31 @@ export function advanceTriggers(m: TurnMutation): Result<null> {
         if (!searchTargets(m.state, m.context).length) { const done = finishSearch(m); return done.ok ? completed(m) : done; }
         c.phase = "TARGET"; return offer(m);
     }
+    // Batch V20: "[Play] Trash 3. Add a Program from among them"; "[Play] Give another friendly Unit ... [Adrenaline] this turn".
+    if (e.kind === "TRASH_THEN_RETURN_PROGRAM") {
+        if (!beginTrashProgram(m)) return completed(m);
+        c.phase = "TARGET"; return offer(m);
+    }
+    if (e.kind === "GRANT_KEYWORD_UNTIL_END_OF_TURN") {
+        const targets = keywordGrantTargets(m.state, r.current, m.context);
+        if (targets.length === 1) { const granted = applyKeywordGrant(m, targets[0], true); return granted.ok ? completed(m) : granted; }
+        if (!targets.length) return completed(m);
+        c.phase = "TARGET"; return offer(m);
+    }
+    // Batch V21: "[Play] Until your next turn, rival Units/Legends can't steal friendly Gigs ..." has no choice.
+    // Batch V22: "[Play] If your Street Cred is an even number, a rival Unit can't ready until your next turn" (10.16.1.1: checked on resolution).
+    if (e.kind === "PREVENT_UNIT_READY") {
+        const current = r.current;
+        if (e.when) { const met = testCondition(m.state, current.controllerId, e.when.condition, m.context, current.sourceId); m.emit({ kind: "CONDITION_EVALUATED", effectId: current.id, met }); if (!met) return completed(m); }
+        if (!listSpendUnitTargets(m.state, current.controllerId, e.target, m.context).length) return completed(m);
+        c.phase = "TARGET"; return offer(m);
+    }
+    // Batch V23: "[Play] You may swap a friendly Gig with a rival Gig." Offered only when both sides have a Gig to swap (6.7).
+    if (e.kind === "SWAP_GIGS") {
+        if (!swapSidesAvailable(m.state, r.current.controllerId)) return completed(m);
+        c.phase = "OPTIONAL"; return offer(m);
+    }
+    if (e.kind === "RESTRICT_RIVAL_GIG_STEAL") { const restricted = applyStealRestriction(m); return restricted.ok ? completed(m) : restricted; }
     if (e.kind === "LOOK_AT_FRIENDLY_FACE_DOWN_LEGEND") {
         if (!privateLookTargets(m.state, r.current.controllerId, m.context).length) return completed(m);
         c.phase = "TARGET"; return offer(m);
@@ -276,6 +304,19 @@ export function continueTrigger(m: TurnMutation, index: number, forced = false):
             moveCardLocation(m, option.cardInstanceId, "HAND");
             return completed(m);
         }
+        if (current.effect.kind === "TRASH_THEN_RETURN_PROGRAM") {
+            if (option.kind !== "CARD") return failure("INVALID_TRASH_TARGET", "Choose a Program among the trashed cards");
+            const chosen = chooseTrashedProgram(m, option.cardInstanceId); return chosen.ok ? completed(m) : chosen;
+        }
+        if (current.effect.kind === "GRANT_KEYWORD_UNTIL_END_OF_TURN") {
+            if (option.kind !== "CARD") return failure("INVALID_KEYWORD_TARGET", "Choose another friendly Unit");
+            const granted = applyKeywordGrant(m, option.cardInstanceId, forced); return granted.ok ? completed(m) : granted;
+        }
+        if (current.effect.kind === "PREVENT_UNIT_READY") {
+            if (option.kind !== "CARD" || !listSpendUnitTargets(m.state, current.controllerId, current.effect.target, m.context).includes(option.cardInstanceId)) return failure("INVALID_READY_LOCK_TARGET", "Choose a current rival Unit");
+            m.emit({ kind: "CARD_TARGET_SELECTED", effectId: current.id, sourceId: current.sourceId!, targetId: option.cardInstanceId, controllerId: current.controllerId, forced });
+            const locked = applyReadyLock(m, option.cardInstanceId); return locked.ok ? completed(m) : locked;
+        }
         if (current.effect.kind === "SEARCH_GEAR") {
             // 11.17.4.1: a hidden search may purposely fail to find; the rest is bottom-decked either way.
             const search = r.searchContinuation!;
@@ -292,6 +333,14 @@ export function continueTrigger(m: TurnMutation, index: number, forced = false):
             return learned.ok ? completed(m) : learned;
         }
         if (option.kind !== "GIG" || !triggerGigTargets(m.state).includes(option.gigInstanceId)) return failure("INVALID_TRIGGER_TARGET", "Choose a currently valid Gig");
+        if (current.effect.kind === "SWAP_GIGS") {
+            m.emit({ kind: "GIG_TARGET_SELECTED", effectId: current.id, gigInstanceId: option.gigInstanceId });
+            if (!c.targetGigId) { c.targetGigId = option.gigInstanceId; return offer(m); }
+            const swapped = swapGigs(m, current.id, c.targetGigId, option.gigInstanceId);
+            if (!swapped.ok) return swapped;
+            if (m.state.match.outcome) { m.emit({ kind: "EFFECT_RESOLVED", effectId: current.id }); return success(null); }
+            return completed(m);
+        }
         c.targetGigId = option.gigInstanceId; c.phase = "AMOUNT";
         m.emit({ kind: "GIG_TARGET_SELECTED", effectId: current.id, gigInstanceId: option.gigInstanceId });
         return offer(m);

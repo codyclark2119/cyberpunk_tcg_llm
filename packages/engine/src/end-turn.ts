@@ -6,6 +6,7 @@ import type { TurnMutation } from "./turn";
 import { beginTriggers } from "./trigger-resolution";
 import { endTurnEnabled } from "./end-turn-support";
 import { expireTemporaryPower } from "./temporary-power";
+import { expireKeywordGrants } from "./play-pin-effects";
 import { expireFightPreventions } from "./fight-prevention";
 export function endTurn(m: TurnMutation) {
     // Historical policy pins retain their atomic preflight; supported overtime waits for all end work.
@@ -23,7 +24,7 @@ export function finishEndTurn(m: TurnMutation) {
             card.statuses = card.statuses.filter(status => status !== "LAG");
             m.emit({ kind: "LAG_REMOVED", cardInstanceId: card.id });
         }
-    expireTemporaryPower(m); expireFightPreventions(m);
+    expireTemporaryPower(m); expireKeywordGrants(m); expireFightPreventions(m);
     m.emit({ kind: "TURN_ENDED", playerId: actor, turn: s.timing.turn });
     if (enterOvertimeAfterTurn(m)) return { ok: true as const, value: null };
     s.timing.activePlayer = s.match.playerOrder[(s.players[actor].seat + 1) % s.match.playerOrder.length]; s.timing.turn++;

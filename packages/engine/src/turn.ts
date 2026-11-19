@@ -11,6 +11,8 @@ import { turnSliceAllows, GameStateSchema, GameEventSchema, EffectSchema, hashCa
 import { type EngineContext, validateState } from "./state";
 import { RulesView } from "./view";
 import { evaluateWinConditions } from "./win";
+import { expireStealRestrictions } from "./play-pin-effects";
+import { expireReadyLocks, readyLockIds } from "./ready-lock";
 export type DraftState = z.infer<typeof GameStateSchema>;
 export class TurnMutation {
     readonly state: DraftState;
@@ -74,12 +76,16 @@ export class TurnMutation {
             this.finish(actor, s.match.playerOrder.find(id => id !== actor)!, "START_TURN_GIGS");
             return success(null);
         }
+        expireStealRestrictions(this, actor); // 8.6.2.1, after the 8.6.1 check.
+        expireReadyLocks(this, actor);
         this.phase("READY");
         for (const zone of policy.readyZones)
             for (const id of s.players[actor].zones[zone]) {
                 const card = s.objects.cards[id];
                 const excepted = policy.firstTurnSpentLegendsStaySpent && s.timing.turn === 1 && actor === s.timing.firstPlayer && zone === "LEGENDS" && s.players[actor].zones.LEGENDS.indexOf(id) < rules.firstPlayerSpentLegends;
-                if (card.readiness === "SPENT" && !excepted) {
+                const locks = card.readiness === "SPENT" && !excepted ? readyLockIds(s, id) : [];
+                if (locks.length) this.emit({ kind: "READY_PREVENTED", cardInstanceId: id, effectIds: locks }); // Batch V22, 2.6.
+                else if (card.readiness === "SPENT" && !excepted) {
                     card.readiness = "READY";
                     this.emit({ kind: "CARD_READIED", cardInstanceId: id });
                 }

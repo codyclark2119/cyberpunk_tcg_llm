@@ -9,12 +9,12 @@
   },
   "totals": {
     "cards": 151,
-    "admitted": 65,
-    "notAdmitted": 86,
+    "admitted": 72,
+    "notAdmitted": 79,
     "notAdmittedOnlyCoveredFamilies": 0,
     "byAdmission": {
-      "NOT_ADMITTED": 86,
-      "SOURCE_MATCH": 65
+      "NOT_ADMITTED": 79,
+      "SOURCE_MATCH": 72
     }
   },
   "families": [
@@ -24,7 +24,7 @@
       "summary": "Conditions and filters on Gig values: min/max, value-pairs, even/odd, 8+, die type, counts compared with a Rival.",
       "notes": "Conditions only, each a fixed shape.",
       "cardCount": 40,
-      "notAdmittedCount": 31,
+      "notAdmittedCount": 29,
       "soleBlockerCount": 0
     },
     {
@@ -33,7 +33,7 @@
       "summary": "Draw cards, fixed or conditional.",
       "notes": "Routed. Variable counts need SCALED_AMOUNT; 'may draw' needs an optional prompt.",
       "cardCount": 38,
-      "notAdmittedCount": 25,
+      "notAdmittedCount": 24,
       "soleBlockerCount": 0
     },
     {
@@ -42,16 +42,7 @@
       "summary": "Generic target filters and board conditions: classification, cost, power, ready/spent, equipped, face-up, named, lowest power.",
       "notes": "Documented as unsupported: generic condition/filter language. Each admitted filter is a literal.",
       "cardCount": 34,
-      "notAdmittedCount": 24,
-      "soleBlockerCount": 0
-    },
-    {
-      "family": "TRIGGER_PLAY",
-      "status": "PARTIAL",
-      "summary": "[Play] abilities and Program bodies resolving when played.",
-      "notes": "Trigger WHEN_PLAYED.",
-      "cardCount": 27,
-      "notAdmittedCount": 18,
+      "notAdmittedCount": 23,
       "soleBlockerCount": 0
     },
     {
@@ -69,7 +60,7 @@
       "summary": "Power or keyword changes 'this turn' on a chosen Unit.",
       "notes": "Fixed amounts on RIVAL_UNIT, SOURCE_SUBJECT or FRIENDLY_UNIT. Keyword grants, all-Unit and filtered targets are missing.",
       "cardCount": 19,
-      "notAdmittedCount": 16,
+      "notAdmittedCount": 15,
       "soleBlockerCount": 0
     },
     {
@@ -82,29 +73,11 @@
       "soleBlockerCount": 0
     },
     {
-      "family": "DECK_SEARCH_REVEAL",
-      "status": "PARTIAL",
-      "summary": "Top-of-deck manipulation: search/look/reveal top N, trash from the top (Trash N), bottom-deck the rest.",
-      "notes": "SEARCH_GEAR (count<=5, Gear with max cost, take<=2) only.",
-      "cardCount": 15,
-      "notAdmittedCount": 12,
-      "soleBlockerCount": 0
-    },
-    {
       "family": "DISCARD",
       "status": "PARTIAL",
       "summary": "Discard: self discard, a Rival discards, discard as a cost, discard a hand.",
       "notes": "DISCARD_CARDS supports only the controller discarding exactly 1.",
       "cardCount": 15,
-      "notAdmittedCount": 12,
-      "soleBlockerCount": 0
-    },
-    {
-      "family": "DURATION_DELAYED",
-      "status": "PARTIAL",
-      "summary": "Lasting and delayed effects: 'until your next turn', 'next time ... this turn', 'at the end of this turn'.",
-      "notes": "",
-      "cardCount": 14,
       "notAdmittedCount": 12,
       "soleBlockerCount": 0
     },
@@ -118,11 +91,29 @@
       "soleBlockerCount": 0
     },
     {
+      "family": "TRIGGER_PLAY",
+      "status": "PARTIAL",
+      "summary": "[Play] abilities and Program bodies resolving when played.",
+      "notes": "Trigger WHEN_PLAYED.",
+      "cardCount": 27,
+      "notAdmittedCount": 12,
+      "soleBlockerCount": 0
+    },
+    {
       "family": "ATTACK_PERMISSION",
       "status": "PARTIAL",
       "summary": "Who may attack what and when: can't attack, may attack ready/spent Units, must attack, can't be blocked.",
       "notes": "Restrictions on the card itself are supported; permissions granted by effects, forced attacks and off-turn timing are not.",
       "cardCount": 16,
+      "notAdmittedCount": 11,
+      "soleBlockerCount": 0
+    },
+    {
+      "family": "DECK_SEARCH_REVEAL",
+      "status": "PARTIAL",
+      "summary": "Top-of-deck manipulation: search/look/reveal top N, trash from the top (Trash N), bottom-deck the rest.",
+      "notes": "SEARCH_GEAR (count<=5, Gear with max cost, take<=2) only.",
+      "cardCount": 15,
       "notAdmittedCount": 11,
       "soleBlockerCount": 0
     },
@@ -145,12 +136,12 @@
       "soleBlockerCount": 0
     },
     {
-      "family": "SPEND_OR_READY",
+      "family": "DURATION_DELAYED",
       "status": "PARTIAL",
-      "summary": "Spend or ready Units and Legends by an effect, and 'can't ready' locks.",
-      "notes": "SPEND_UNIT (rival, cost at most 4) only; readying Units or Legends is missing.",
-      "cardCount": 15,
-      "notAdmittedCount": 9,
+      "summary": "Lasting and delayed effects: 'until your next turn', 'next time ... this turn', 'at the end of this turn'.",
+      "notes": "",
+      "cardCount": 14,
+      "notAdmittedCount": 8,
       "soleBlockerCount": 0
     },
     {
@@ -172,21 +163,21 @@
       "soleBlockerCount": 0
     },
     {
-      "family": "STEAL_CONTROL",
-      "status": "MISSING",
-      "summary": "Gig control outside the ordinary attack steal: swap, extra steal, steal fewer, steal prevention.",
-      "notes": "Documented as unsupported (control transfer / steal).",
-      "cardCount": 8,
-      "notAdmittedCount": 8,
-      "soleBlockerCount": 0
-    },
-    {
       "family": "TRIGGER_STEAL",
       "status": "MISSING",
       "summary": "Triggers when a Unit or Legend steals a Gig.",
       "notes": "Only the history condition SUBJECT_STOLE_GIG_THIS_TURN exists (Delamain Cab); there is no steal trigger.",
       "cardCount": 8,
       "notAdmittedCount": 8,
+      "soleBlockerCount": 0
+    },
+    {
+      "family": "SPEND_OR_READY",
+      "status": "PARTIAL",
+      "summary": "Spend or ready Units and Legends by an effect, and 'can't ready' locks.",
+      "notes": "SPEND_UNIT (rival, cost at most 4) only; readying Units or Legends is missing.",
+      "cardCount": 15,
+      "notAdmittedCount": 7,
       "soleBlockerCount": 0
     },
     {
@@ -262,15 +253,6 @@
       "soleBlockerCount": 0
     },
     {
-      "family": "CONDITION_STREET_CRED",
-      "status": "PARTIAL",
-      "summary": "Conditions on Street Cred.",
-      "notes": "Nearly complete as conditions; gating an effect mode on them is not.",
-      "cardCount": 13,
-      "notAdmittedCount": 5,
-      "soleBlockerCount": 0
-    },
-    {
       "family": "COST_MODIFIER",
       "status": "MISSING",
       "summary": "Play-cost reductions, alternative costs, ability-cost and Go Solo cost changes.",
@@ -298,11 +280,11 @@
       "soleBlockerCount": 0
     },
     {
-      "family": "TRASH_RECURSION",
+      "family": "STEAL_CONTROL",
       "status": "MISSING",
-      "summary": "Return a card from the trash (or from cards just trashed) to hand.",
-      "notes": "",
-      "cardCount": 7,
+      "summary": "Gig control outside the ordinary attack steal: swap, extra steal, steal fewer, steal prevention.",
+      "notes": "Documented as unsupported (control transfer / steal).",
+      "cardCount": 8,
       "notAdmittedCount": 5,
       "soleBlockerCount": 0
     },
@@ -325,6 +307,15 @@
       "soleBlockerCount": 0
     },
     {
+      "family": "TRASH_RECURSION",
+      "status": "MISSING",
+      "summary": "Return a card from the trash (or from cards just trashed) to hand.",
+      "notes": "",
+      "cardCount": 7,
+      "notAdmittedCount": 4,
+      "soleBlockerCount": 0
+    },
+    {
       "family": "TRIGGER_END_OF_TURN",
       "status": "PARTIAL",
       "summary": "'At the end of your turn' abilities.",
@@ -340,6 +331,15 @@
       "notes": "Trigger WHEN_FIGHT_WON (Satori). Losing a fight and win margins are missing.",
       "cardCount": 5,
       "notAdmittedCount": 4,
+      "soleBlockerCount": 0
+    },
+    {
+      "family": "CONDITION_STREET_CRED",
+      "status": "PARTIAL",
+      "summary": "Conditions on Street Cred.",
+      "notes": "Nearly complete as conditions; gating an effect mode on them is not.",
+      "cardCount": 13,
+      "notAdmittedCount": 3,
       "soleBlockerCount": 0
     },
     {
@@ -367,15 +367,6 @@
       "notes": "",
       "cardCount": 3,
       "notAdmittedCount": 3,
-      "soleBlockerCount": 0
-    },
-    {
-      "family": "KEYWORD_ADRENALINE",
-      "status": "COVERED",
-      "summary": "[Adrenaline]: the Unit can attack the turn it is played.",
-      "notes": "Keyword ADRENALINE (Riding Nomad). Conditional or granted Adrenaline also needs STATIC_MODIFIER or TEMPORARY_BUFF.",
-      "cardCount": 4,
-      "notAdmittedCount": 2,
       "soleBlockerCount": 0
     },
     {
@@ -420,6 +411,15 @@
       "summary": "Hooks on rolling a Gig die: rerolls and triggers on rolled results.",
       "notes": "",
       "cardCount": 1,
+      "notAdmittedCount": 1,
+      "soleBlockerCount": 0
+    },
+    {
+      "family": "KEYWORD_ADRENALINE",
+      "status": "COVERED",
+      "summary": "[Adrenaline]: the Unit can attack the turn it is played.",
+      "notes": "Keyword ADRENALINE (Riding Nomad). Conditional or granted Adrenaline also needs STATIC_MODIFIER or TEMPORARY_BUFF.",
+      "cardCount": 4,
       "notAdmittedCount": 1,
       "soleBlockerCount": 0
     },
@@ -796,20 +796,15 @@
       "colors": [
         "RED"
       ],
-      "admission": "NOT_ADMITTED",
-      "revision": null,
+      "admission": "SOURCE_MATCH",
+      "revision": 1,
       "families": [
         "CONDITION_GIG",
         "DURATION_DELAYED",
         "STEAL_CONTROL",
         "TRIGGER_PLAY"
       ],
-      "blockingFamilies": [
-        "CONDITION_GIG",
-        "DURATION_DELAYED",
-        "STEAL_CONTROL",
-        "TRIGGER_PLAY"
-      ],
+      "blockingFamilies": [],
       "note": null
     },
     {
@@ -1361,18 +1356,14 @@
       "colors": [
         "BLUE"
       ],
-      "admission": "NOT_ADMITTED",
-      "revision": null,
+      "admission": "SOURCE_MATCH",
+      "revision": 1,
       "families": [
         "DECK_SEARCH_REVEAL",
         "TRASH_RECURSION",
         "TRIGGER_PLAY"
       ],
-      "blockingFamilies": [
-        "DECK_SEARCH_REVEAL",
-        "TRASH_RECURSION",
-        "TRIGGER_PLAY"
-      ],
+      "blockingFamilies": [],
       "note": null
     },
     {
@@ -1891,16 +1882,13 @@
       "colors": [
         "GREEN"
       ],
-      "admission": "NOT_ADMITTED",
-      "revision": null,
+      "admission": "SOURCE_MATCH",
+      "revision": 1,
       "families": [
         "STEAL_CONTROL",
         "TRIGGER_PLAY"
       ],
-      "blockingFamilies": [
-        "STEAL_CONTROL",
-        "TRIGGER_PLAY"
-      ],
+      "blockingFamilies": [],
       "note": null
     },
     {
@@ -1958,20 +1946,15 @@
       "colors": [
         "GREEN"
       ],
-      "admission": "NOT_ADMITTED",
-      "revision": null,
+      "admission": "SOURCE_MATCH",
+      "revision": 1,
       "families": [
         "CONDITION_STREET_CRED",
         "DRAW",
         "DURATION_DELAYED",
         "SPEND_OR_READY"
       ],
-      "blockingFamilies": [
-        "CONDITION_STREET_CRED",
-        "DRAW",
-        "DURATION_DELAYED",
-        "SPEND_OR_READY"
-      ],
+      "blockingFamilies": [],
       "note": null
     },
     {
@@ -2287,20 +2270,15 @@
       "colors": [
         "GREEN"
       ],
-      "admission": "NOT_ADMITTED",
-      "revision": null,
+      "admission": "SOURCE_MATCH",
+      "revision": 1,
       "families": [
         "CONDITION_STREET_CRED",
         "DURATION_DELAYED",
         "SPEND_OR_READY",
         "TRIGGER_PLAY"
       ],
-      "blockingFamilies": [
-        "CONDITION_STREET_CRED",
-        "DURATION_DELAYED",
-        "SPEND_OR_READY",
-        "TRIGGER_PLAY"
-      ],
+      "blockingFamilies": [],
       "note": null
     },
     {
@@ -3311,19 +3289,15 @@
       "colors": [
         "GREEN"
       ],
-      "admission": "NOT_ADMITTED",
-      "revision": null,
+      "admission": "SOURCE_MATCH",
+      "revision": 1,
       "families": [
         "CONDITION_BOARD",
         "KEYWORD_ADRENALINE",
         "TEMPORARY_BUFF",
         "TRIGGER_PLAY"
       ],
-      "blockingFamilies": [
-        "CONDITION_BOARD",
-        "TEMPORARY_BUFF",
-        "TRIGGER_PLAY"
-      ],
+      "blockingFamilies": [],
       "note": null
     },
     {
@@ -3441,20 +3415,15 @@
       "colors": [
         "BLUE"
       ],
-      "admission": "NOT_ADMITTED",
-      "revision": null,
+      "admission": "SOURCE_MATCH",
+      "revision": 1,
       "families": [
         "CONDITION_GIG",
         "DURATION_DELAYED",
         "STEAL_CONTROL",
         "TRIGGER_PLAY"
       ],
-      "blockingFamilies": [
-        "CONDITION_GIG",
-        "DURATION_DELAYED",
-        "STEAL_CONTROL",
-        "TRIGGER_PLAY"
-      ],
+      "blockingFamilies": [],
       "note": null
     },
     {

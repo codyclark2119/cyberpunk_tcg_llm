@@ -8,7 +8,10 @@ const TARGETED_SPEND_SHAPES = [
         effects: [{ kind: "SPEND_UNIT", target: { kind: "UNITS", relation: "RIVAL", costAtMost: 4 } }] },
     // Batch V8: Offduty Malfini, "[Play] Spend this Unit and a rival Unit." (ordered: source, then the rival Unit).
     { type: "UNIT", colors: ["YELLOW"], ram: { YELLOW: 2 }, tags: ["Ganger", "Voodoo Boys"], cost: 4, sell: false, power: 5,
-        effects: [{ kind: "SPEND_SOURCE" }, { kind: "SPEND_UNIT", target: { kind: "UNITS", relation: "RIVAL" } }] }
+        effects: [{ kind: "SPEND_SOURCE" }, { kind: "SPEND_UNIT", target: { kind: "UNITS", relation: "RIVAL" } }] },
+    // Batch V22: Memory Relapse, "Spend a rival Unit. It can't ready until your next turn. If your Street Cred is an even number, draw 1."
+    { type: "PROGRAM", colors: ["GREEN"], ram: { GREEN: 2 }, tags: ["Braindance"], cost: 4, sell: true, power: null,
+        effects: [{ kind: "SPEND_UNIT", target: { kind: "UNITS", relation: "RIVAL" }, preventReady: "UNTIL_YOUR_NEXT_TURN" }, { kind: "CONDITIONAL_DRAW", timing: "RESOLUTION", condition: { kind: "STREET_CRED_IS_EVEN" }, count: 1 }] }
 ] as const;
 /** This does not admit arbitrary spending cards or WHEN_SPENT. */
 export function supportsTargetedSpendCard(card: DeepReadonly<CardRevisionSnapshot> | undefined, context: EngineContext) {
