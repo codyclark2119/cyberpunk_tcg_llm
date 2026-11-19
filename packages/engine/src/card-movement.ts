@@ -7,6 +7,7 @@ import { validateState } from "./state";
 import { TurnMutation } from "./turn";
 import { attachmentHost, gearEnabled, legalEquipHosts } from "./attachments";
 import { expirePowerOnHiddenEntry } from "./temporary-power";
+import { expireKeywordGrantsOnDeparture } from "./play-pin-effects";
 import { combatResolutionEnabled } from "./combat-resolution-policy";
 type Destination = "HAND" | "TRASH" | "REMOVED";
 function revision(m: TurnMutation, id: CardInstanceId) {
@@ -17,6 +18,7 @@ function revision(m: TurnMutation, id: CardInstanceId) {
 export function moveCardLocation(m: TurnMutation, id: CardInstanceId, zone: "BATTLEFIELD" | "LEGENDS" | "RESOLVING_PROGRAM" | Destination) {
     if (zone === "HAND") expirePowerOnHiddenEntry(m, id);
     const card = m.state.objects.cards[id], from = { ...card.zone };
+    if (from.zone === "BATTLEFIELD" && zone !== "BATTLEFIELD") expireKeywordGrantsOnDeparture(m, id);
     forgetLegendKnowledge(m, id);
     const refs = m.state.players[from.playerId].zones[from.zone]!;
     refs.splice(refs.indexOf(id), 1);

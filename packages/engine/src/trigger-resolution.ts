@@ -26,6 +26,7 @@ import { finishAttackEffects } from "./combat";
 import { finishCombat, completeFightResult } from "./combat-resolution";
 import { HandlerRegistry, finishSearch } from "./effects";
 import { searchTargets } from "./search-state";
+import { applyKeywordGrant, beginTrashProgram, chooseTrashedProgram, keywordGrantTargets } from "./play-pin-effects";
 import { changeGigValue, gigAdjustmentDelta } from "./gig-value";
 import { triggersEnabled } from "./trigger-support";
 import { discardingPlayer, discoverTriggers, pendingTrigger, trashUnitTargets, triggerChoice, triggerGigTargets } from "./trigger-queries";
@@ -193,6 +194,17 @@ export function advanceTriggers(m: TurnMutation): Result<null> {
         if (!searchTargets(m.state, m.context).length) { const done = finishSearch(m); return done.ok ? completed(m) : done; }
         c.phase = "TARGET"; return offer(m);
     }
+    // Batch V20: "[Play] Trash 3. Add a Program from among them"; "[Play] Give another friendly Unit ... [Adrenaline] this turn".
+    if (e.kind === "TRASH_THEN_RETURN_PROGRAM") {
+        if (!beginTrashProgram(m)) return completed(m);
+        c.phase = "TARGET"; return offer(m);
+    }
+    if (e.kind === "GRANT_KEYWORD_UNTIL_END_OF_TURN") {
+        const targets = keywordGrantTargets(m.state, r.current, m.context);
+        if (targets.length === 1) { const granted = applyKeywordGrant(m, targets[0], true); return granted.ok ? completed(m) : granted; }
+        if (!targets.length) return completed(m);
+        c.phase = "TARGET"; return offer(m);
+    }
     if (e.kind === "LOOK_AT_FRIENDLY_FACE_DOWN_LEGEND") {
         if (!privateLookTargets(m.state, r.current.controllerId, m.context).length) return completed(m);
         c.phase = "TARGET"; return offer(m);
@@ -275,6 +287,14 @@ export function continueTrigger(m: TurnMutation, index: number, forced = false):
             m.emit({ kind: "CARD_TARGET_SELECTED", effectId: current.id, sourceId: current.sourceId!, targetId: option.cardInstanceId, controllerId: current.controllerId, forced });
             moveCardLocation(m, option.cardInstanceId, "HAND");
             return completed(m);
+        }
+        if (current.effect.kind === "TRASH_THEN_RETURN_PROGRAM") {
+            if (option.kind !== "CARD") return failure("INVALID_TRASH_TARGET", "Choose a Program among the trashed cards");
+            const chosen = chooseTrashedProgram(m, option.cardInstanceId); return chosen.ok ? completed(m) : chosen;
+        }
+        if (current.effect.kind === "GRANT_KEYWORD_UNTIL_END_OF_TURN") {
+            if (option.kind !== "CARD") return failure("INVALID_KEYWORD_TARGET", "Choose another friendly Unit");
+            const granted = applyKeywordGrant(m, option.cardInstanceId, forced); return granted.ok ? completed(m) : granted;
         }
         if (current.effect.kind === "SEARCH_GEAR") {
             // 11.17.4.1: a hidden search may purposely fail to find; the rest is bottom-decked either way.

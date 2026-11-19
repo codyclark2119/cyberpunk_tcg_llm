@@ -10,6 +10,7 @@ import { supportsPrivateLookGear, privateInformationEnabled } from "./private-lo
 import { supportsAttackPlay } from "./attack-support";
 import { supportsBlockerUsedUnit } from "./blocker-trigger-support";
 import { supportsAttackSearchUnit } from "./attack-search-support";
+import { hasPinnedPlayEffect, supportsPinnedPlayUnit } from "./play-pin-support";
 import { hasFriendlyPlayPowerMetadata, supportsFriendlyPlayPowerUnit } from "./friendly-play-power-support";
 import { turnSliceAllows, canonicalSerialize, failure, success, type CardRevisionSnapshot, type DeepReadonly } from "@tcg/domain";
 import type { EngineContext } from "./state";
@@ -20,6 +21,8 @@ export function supportsTriggerCard(card: DeepReadonly<CardRevisionSnapshot> | u
     if (card?.mechanics.keywords.length && supportsBlockerUsedUnit(card, context).ok) return success(null);
     // Batch V19: the [Attack] Gear search is admitted only by its exact pin.
     if (card?.mechanics.abilities.some(a => a.effects.some(e => e.kind === "SEARCH_GEAR"))) return supportsAttackSearchUnit(card, context);
+    // Batch V20: the {Play} trash-3 Program pick and the {Play} Adrenaline grant are admitted only by their exact pins.
+    if (hasPinnedPlayEffect(card)) return supportsPinnedPlayUnit(card, context);
     if (!triggersEnabled(context) || !card || !card.provenance.reviewed || card.execution?.scope !== "COMBAT_TRIGGERS_V1" || card.execution.status !== "SUPPORTED" || card.mechanics.keywords.length || card.mechanics.restrictions?.length)
         return failure("UNSUPPORTED_TRIGGER_CARD", "Explicit reviewed trigger scope and complete supported mechanics required");
     const m = card.mechanics;
