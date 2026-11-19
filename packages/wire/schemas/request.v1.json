@@ -3023,6 +3023,24 @@
                                     "properties": {
                                       "kind": {
                                         "type": "string",
+                                        "const": "SWAP_GIGS"
+                                      },
+                                      "optional": {
+                                        "type": "boolean",
+                                        "const": true
+                                      }
+                                    },
+                                    "required": [
+                                      "kind",
+                                      "optional"
+                                    ],
+                                    "additionalProperties": false
+                                  },
+                                  {
+                                    "type": "object",
+                                    "properties": {
+                                      "kind": {
+                                        "type": "string",
                                         "const": "PREVENT_UNIT_READY"
                                       },
                                       "target": {
@@ -8787,6 +8805,24 @@
                               "properties": {
                                 "kind": {
                                   "type": "string",
+                                  "const": "SWAP_GIGS"
+                                },
+                                "optional": {
+                                  "type": "boolean",
+                                  "const": true
+                                }
+                              },
+                              "required": [
+                                "kind",
+                                "optional"
+                              ],
+                              "additionalProperties": false
+                            },
+                            {
+                              "type": "object",
+                              "properties": {
+                                "kind": {
+                                  "type": "string",
                                   "const": "PREVENT_UNIT_READY"
                                 },
                                 "target": {
@@ -11368,6 +11404,24 @@
                             "properties": {
                               "kind": {
                                 "type": "string",
+                                "const": "SWAP_GIGS"
+                              },
+                              "optional": {
+                                "type": "boolean",
+                                "const": true
+                              }
+                            },
+                            "required": [
+                              "kind",
+                              "optional"
+                            ],
+                            "additionalProperties": false
+                          },
+                          {
+                            "type": "object",
+                            "properties": {
+                              "kind": {
+                                "type": "string",
                                 "const": "PREVENT_UNIT_READY"
                               },
                               "target": {
@@ -13937,6 +13991,24 @@
                               "actor",
                               "forbidden",
                               "duration"
+                            ],
+                            "additionalProperties": false
+                          },
+                          {
+                            "type": "object",
+                            "properties": {
+                              "kind": {
+                                "type": "string",
+                                "const": "SWAP_GIGS"
+                              },
+                              "optional": {
+                                "type": "boolean",
+                                "const": true
+                              }
+                            },
+                            "required": [
+                              "kind",
+                              "optional"
                             ],
                             "additionalProperties": false
                           },
@@ -18329,6 +18401,24 @@
                                       "actor",
                                       "forbidden",
                                       "duration"
+                                    ],
+                                    "additionalProperties": false
+                                  },
+                                  {
+                                    "type": "object",
+                                    "properties": {
+                                      "kind": {
+                                        "type": "string",
+                                        "const": "SWAP_GIGS"
+                                      },
+                                      "optional": {
+                                        "type": "boolean",
+                                        "const": true
+                                      }
+                                    },
+                                    "required": [
+                                      "kind",
+                                      "optional"
                                     ],
                                     "additionalProperties": false
                                   },
