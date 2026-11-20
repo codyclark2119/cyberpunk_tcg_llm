@@ -9,12 +9,12 @@
   },
   "totals": {
     "cards": 151,
-    "admitted": 85,
-    "notAdmitted": 66,
+    "admitted": 86,
+    "notAdmitted": 65,
     "notAdmittedOnlyCoveredFamilies": 0,
     "byAdmission": {
-      "NOT_ADMITTED": 66,
-      "SOURCE_MATCH": 85
+      "NOT_ADMITTED": 65,
+      "SOURCE_MATCH": 86
     }
   },
   "families": [
@@ -24,7 +24,7 @@
       "summary": "Draw cards, fixed or conditional.",
       "notes": "Routed. Variable counts need SCALED_AMOUNT; 'may draw' needs an optional prompt.",
       "cardCount": 38,
-      "notAdmittedCount": 21,
+      "notAdmittedCount": 20,
       "soleBlockerCount": 0
     },
     {
@@ -42,7 +42,7 @@
       "summary": "Conditions and filters on Gig values: min/max, value-pairs, even/odd, 8+, die type, counts compared with a Rival.",
       "notes": "Conditions only, each a fixed shape.",
       "cardCount": 40,
-      "notAdmittedCount": 19,
+      "notAdmittedCount": 18,
       "soleBlockerCount": 0
     },
     {
@@ -163,15 +163,6 @@
       "soleBlockerCount": 0
     },
     {
-      "family": "GIG_ADJUST",
-      "status": "PARTIAL",
-      "summary": "Increase, decrease, adjust or set Gig values.",
-      "notes": "Maxima are fixed literals; 'set to the value of another Gig' and 'adjust by exactly 1' are missing. MODIFY_GIG_VALUE is schema-only.",
-      "cardCount": 15,
-      "notAdmittedCount": 6,
-      "soleBlockerCount": 0
-    },
-    {
       "family": "GO_SOLO",
       "status": "PARTIAL",
       "summary": "[Go Solo]: play a Legend as a ready Unit that can attack this turn and is removed when it leaves the field.",
@@ -222,6 +213,15 @@
       "summary": "Call a Legend by an effect or for free outside the normal Call.",
       "notes": "",
       "cardCount": 5,
+      "notAdmittedCount": 5,
+      "soleBlockerCount": 0
+    },
+    {
+      "family": "GIG_ADJUST",
+      "status": "PARTIAL",
+      "summary": "Increase, decrease, adjust or set Gig values.",
+      "notes": "Maxima are fixed literals; 'set to the value of another Gig' and 'adjust by exactly 1' are missing. MODIFY_GIG_VALUE is schema-only.",
+      "cardCount": 15,
       "notAdmittedCount": 5,
       "soleBlockerCount": 0
     },
@@ -2332,18 +2332,14 @@
       "colors": [
         "GREEN"
       ],
-      "admission": "NOT_ADMITTED",
-      "revision": null,
+      "admission": "SOURCE_MATCH",
+      "revision": 1,
       "families": [
         "CONDITION_GIG",
         "DRAW",
         "GIG_ADJUST"
       ],
-      "blockingFamilies": [
-        "CONDITION_GIG",
-        "DRAW",
-        "GIG_ADJUST"
-      ],
+      "blockingFamilies": [],
       "note": null
     },
     {

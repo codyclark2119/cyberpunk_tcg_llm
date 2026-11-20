@@ -1,6 +1,6 @@
 import { listSpendUnitTargets } from "./targeted-spend-queries";
 import { playPaymentAmount } from "./play-cost-support";
-import { gigAdjustmentOptions } from "./gig-value";
+import { gigAdjustmentOptions, gigSetSources, gigSetTargets } from "./gig-value";
 import { powerTargets } from "./react-queries";
 import { legalEquipHosts } from "./attachments";
 import { canonicalSerialize, hashCanonical, failure, success, type GameState, type PendingChoice } from "@tcg/domain";
@@ -37,6 +37,10 @@ export function playChoice(state: GameState, context: EngineContext): PendingCho
     } else if (state.resolution.current?.effect.kind === "BOTTOM_DECK_UNIT") {
         kind = "TARGET";
         options = currentBottomDeckTargets(state, context).map(cardInstanceId => ({ kind: "CARD", cardInstanceId }));
+    } else if (state.resolution.current?.effect.kind === "SET_GIG_TO_ANOTHER_GIG_VALUE") {
+        // Batch V37: first the Gig to set (or the decline), then the other Gig whose value it takes.
+        kind = "TARGET";
+        options = c.targetGigId ? gigSetSources(state, c.targetGigId).map(gigInstanceId => ({ kind: "GIG", gigInstanceId })) : [{ kind: "CONFIRM", confirmed: false }, ...gigSetTargets(state).map(gigInstanceId => ({ kind: "GIG" as const, gigInstanceId }))];
     } else if (state.resolution.current?.effect.kind === "POWER_UNTIL_END_OF_TURN") {
         kind = "TARGET";
         options = powerTargets(state, c.actorId, context).map(cardInstanceId => ({ kind: "CARD", cardInstanceId }));
@@ -69,7 +73,7 @@ export function validatePlayState(state: GameState, context: EngineContext) {
         if (revision!.type !== "GEAR" || source.readiness !== "READY" || source.zone.zone !== "HAND" || c.remainingCost !== 0 || c.effectIndex !== 0 || c.abilityId || c.targetGigId || current || state.resolution.pending.length || resolving.length || state.timing.step !== "TARGET_SELECTION" || !legalEquipHosts(state, c.sourceId, context).length)
             return failure("INVALID_EQUIP_CONTINUATION", "Paid Gear, source area, current host set and target decision must agree");
     } else {
-        if (revision!.type !== "PROGRAM" || source.zone.zone !== "RESOLVING_PROGRAM" || resolving.length !== 1 || c.remainingCost !== 0 || !ability || c.effectIndex >= ability.effects.length || (c.effectIndex !== 0 && current?.effect.kind !== "DEFEAT_UNIT") || (current?.effect.kind !== "SPEND_UNIT" && current?.effect.kind !== "DEFEAT_UNIT" && current?.effect.kind !== "ADJUST_GIG_UP_TO" && current?.effect.kind !== "POWER_UNTIL_END_OF_TURN" && current?.effect.kind !== "TRASH_THEN_RETURN_UNIT" && current?.effect.kind !== "BOTTOM_DECK_UNIT" && current?.effect.kind !== "SEARCH_TAKE_ONE_PLUS_PER_MIN_GIG") || current.id !== playEffectId(state, c.effectIndex) || current.sourceId !== c.sourceId || current.controllerId !== c.actorId || canonicalSerialize(current.effect) !== canonicalSerialize(ability.effects[c.effectIndex]) || state.resolution.pending.length !== ability.effects.length - 1 - c.effectIndex)
+        if (revision!.type !== "PROGRAM" || source.zone.zone !== "RESOLVING_PROGRAM" || resolving.length !== 1 || c.remainingCost !== 0 || !ability || c.effectIndex >= ability.effects.length || (c.effectIndex !== 0 && current?.effect.kind !== "DEFEAT_UNIT") || (current?.effect.kind !== "SPEND_UNIT" && current?.effect.kind !== "DEFEAT_UNIT" && current?.effect.kind !== "ADJUST_GIG_UP_TO" && current?.effect.kind !== "POWER_UNTIL_END_OF_TURN" && current?.effect.kind !== "TRASH_THEN_RETURN_UNIT" && current?.effect.kind !== "BOTTOM_DECK_UNIT" && current?.effect.kind !== "SEARCH_TAKE_ONE_PLUS_PER_MIN_GIG" && current?.effect.kind !== "SET_GIG_TO_ANOTHER_GIG_VALUE") || current.id !== playEffectId(state, c.effectIndex) || current.sourceId !== c.sourceId || current.controllerId !== c.actorId || canonicalSerialize(current.effect) !== canonicalSerialize(ability.effects[c.effectIndex]) || state.resolution.pending.length !== ability.effects.length - 1 - c.effectIndex)
             return failure("INVALID_PROGRAM_EFFECT", "Resolving Program and current primitive must match its pinned ordered ability");
         for (const [index, effect] of state.resolution.pending.entries()) {
             if (effect.id !== playEffectId(state, c.effectIndex + index + 1) || effect.sourceId !== c.sourceId || effect.controllerId !== c.actorId || effect.causedBySequence !== current.causedBySequence || canonicalSerialize(effect.effect) !== canonicalSerialize(ability!.effects[c.effectIndex + index + 1])) return failure("INVALID_PROGRAM_EFFECT", "Remaining primitive chain differs from the pinned ability");
@@ -84,6 +88,10 @@ export function validatePlayState(state: GameState, context: EngineContext) {
         } else if (current.effect.kind === "SEARCH_TAKE_ONE_PLUS_PER_MIN_GIG") {
             // Batch V36: the dedicated search validator checks the looked-at cards, the bound and the exact choice.
             if (c.targetGigId || !state.resolution.searchContinuation) return failure("INVALID_SEARCH_STATE", "A Program search pauses only with its looked-at cards");
+        } else if (current.effect.kind === "SET_GIG_TO_ANOTHER_GIG_VALUE") {
+            // A lone source is applied without a choice, so a held target always has 2 or more.
+            if (state.timing.step !== "TARGET_SELECTION" || !gigSetTargets(state).length || (c.targetGigId && (!gigSetTargets(state).includes(c.targetGigId) || gigSetSources(state, c.targetGigId).length < 2)))
+                return failure("INVALID_GIG_TARGET", "The Gig to set and its source choices must remain eligible");
         } else if (current.effect.kind === "BOTTOM_DECK_UNIT") {
             const bottomed = validateBottomDeck(state, context); if (!bottomed.ok) return bottomed;
         } else if (current.effect.kind === "POWER_UNTIL_END_OF_TURN") {

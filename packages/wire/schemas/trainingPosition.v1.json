@@ -4770,6 +4770,24 @@
                           "properties": {
                             "kind": {
                               "type": "string",
+                              "const": "SET_GIG_TO_ANOTHER_GIG_VALUE"
+                            },
+                            "optional": {
+                              "type": "boolean",
+                              "const": true
+                            }
+                          },
+                          "required": [
+                            "kind",
+                            "optional"
+                          ],
+                          "additionalProperties": false
+                        },
+                        {
+                          "type": "object",
+                          "properties": {
+                            "kind": {
+                              "type": "string",
                               "const": "SEARCH_GEAR"
                             },
                             "count": {
@@ -7819,6 +7837,24 @@
                         "properties": {
                           "kind": {
                             "type": "string",
+                            "const": "SET_GIG_TO_ANOTHER_GIG_VALUE"
+                          },
+                          "optional": {
+                            "type": "boolean",
+                            "const": true
+                          }
+                        },
+                        "required": [
+                          "kind",
+                          "optional"
+                        ],
+                        "additionalProperties": false
+                      },
+                      {
+                        "type": "object",
+                        "properties": {
+                          "kind": {
+                            "type": "string",
                             "const": "SEARCH_GEAR"
                           },
                           "count": {
@@ -10856,6 +10892,24 @@
                         "required": [
                           "kind",
                           "count"
+                        ],
+                        "additionalProperties": false
+                      },
+                      {
+                        "type": "object",
+                        "properties": {
+                          "kind": {
+                            "type": "string",
+                            "const": "SET_GIG_TO_ANOTHER_GIG_VALUE"
+                          },
+                          "optional": {
+                            "type": "boolean",
+                            "const": true
+                          }
+                        },
+                        "required": [
+                          "kind",
+                          "optional"
                         ],
                         "additionalProperties": false
                       },

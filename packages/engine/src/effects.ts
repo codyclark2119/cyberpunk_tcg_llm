@@ -14,6 +14,7 @@ import { isUnitSpendSubject, spendUnitForEffect } from "./unit-spend";
 import { resolveTrashThenReturn } from "./trash-return";
 import { resolveBottomDeck } from "./bottom-deck";
 import { resolveDrawPerFriendlyGig, resolvePowerPerFriendlyGig } from "./gig-parity";
+import { gigSetTargets } from "./gig-value";
 
 type Primitive<K extends Effect["kind"]> = Extract<Effect, { kind: K }>;
 /** Handwritten, typed primitive registry; metadata cannot install arbitrary handlers. */
@@ -65,6 +66,8 @@ export class HandlerRegistry {
         if (effect.kind === "POWER_PER_FRIENDLY_GIG") return resolvePowerPerFriendlyGig(m);
         if (effect.kind === "DRAW_PER_FRIENDLY_GIG") return resolveDrawPerFriendlyGig(m);
         if (effect.kind === "SEARCH_GEAR") return this.primitives.SEARCH_GEAR(m, effect);
+        // Batch V37: the optional Gig set offers its targets and a decline; with no settable Gig it does nothing.
+        if (effect.kind === "SET_GIG_TO_ANOTHER_GIG_VALUE") return gigSetTargets(m.state).length ? offerPlayChoice(m) : success(null);
         if (effect.kind === "SEARCH_TAKE_ONE_PLUS_PER_MIN_GIG") return this.primitives.SEARCH_TAKE_ONE_PLUS_PER_MIN_GIG(m, effect);
         if (effect.kind === "TRASH_THEN_RETURN_UNIT") return resolveTrashThenReturn(m, effect, offerPlayChoice);
         if (effect.kind === "BOTTOM_DECK_UNIT") return resolveBottomDeck(m, offerPlayChoice);
