@@ -40,7 +40,7 @@ function arrange(attacker: string, defender: string, holder: PlayerId) {
 /** The actor attacks `defender` with `attacker`; `react` runs in the defender's React Step before it passes. */
 function attack(s: GameState, attacker: CardInstanceId, defender: CardInstanceId, react?: (s: GameState) => GameState) {
     let state = take(s, context, a => a.action.kind === "DECLARE_ATTACK" && a.action.cardInstanceId === attacker).state;
-    if (state.timing.step === "ATTACK_TARGET_SELECTION") state = pick(state, context, o => o.kind === "CARD" && o.cardInstanceId === defender).state;
+    if (state.timing.step === "ATTACK_TARGET_SELECTION") state = pick(state, context, o => o.kind === "ATTACK_TARGET" && o.target.kind === "CARD" && o.target.cardInstanceId === defender).state;
     assert.equal(state.timing.step, "RIVAL_REACT");
     if (react) state = react(state);
     const events = [];

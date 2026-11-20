@@ -167,8 +167,11 @@ export const EffectSchema = z.discriminatedUnion("kind", [
     RegisterEndTurnEffectSchema,
     // Batch V46: "The next time a friendly Unit loses a fight this turn, defeat the opposing rival Unit." Registered when the
     // Program resolves; it fires on that fight and its effect resolves after the fight ends (11.4.2.2.1).
-    z.strictObject({ kind: z.literal("REGISTER_NEXT_FIGHT_OUTCOME"), on: z.literal("FRIENDLY_UNIT_LOSES"),
-        effect: z.strictObject({ kind: z.literal("DEFEAT_UNIT"), target: DefeatOpposingTargetSchema }) }),
+    // Batch V47: "The next time a friendly Unit wins a fight by 3+ power this turn, it also steals a Gig."
+    z.strictObject({ kind: z.literal("REGISTER_NEXT_FIGHT_OUTCOME"), on: z.enum(["FRIENDLY_UNIT_LOSES", "FRIENDLY_UNIT_WINS_BY_3"]),
+        effect: z.union([z.strictObject({ kind: z.literal("DEFEAT_UNIT"), target: DefeatOpposingTargetSchema }), z.strictObject({ kind: z.literal("STEAL_GIG"), actor: z.literal("TRIGGER_SUBJECT"), count: z.literal(1) })]) }),
+    // Batch V47: the trigger subject steals rival Gigs outside an attack (11.5.1.1.2: the effect names the actor).
+    z.strictObject({ kind: z.literal("STEAL_GIG"), actor: z.literal("TRIGGER_SUBJECT"), count: z.literal(1) }),
     z.strictObject({ kind: z.literal("DECREASE_GIG_UP_TO"), target: z.strictObject({ kind: z.literal("GIGS"), relation: z.literal("ANY") }), maximum: z.literal(2) }),
     DiscardCardsEffectSchema,
     z.strictObject({ kind: z.literal("LOOK_AT_FRIENDLY_FACE_DOWN_LEGEND") }),

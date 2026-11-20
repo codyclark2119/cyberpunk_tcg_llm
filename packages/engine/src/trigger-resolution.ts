@@ -2,11 +2,12 @@ import { processDeparture } from "./card-movement";
 import { applyMustAttack, mustAttackTargets } from "./must-attack";
 import { REVEAL_TYPES } from "./type-reveal-support";
 import { beginTargetedDefeat } from "./targeted-defeat";
+import { effectStealTargets, resolveEffectSteal } from "./fight-steal";
 import { resolveSpendTarget } from "./targeted-spend";
 import { listSpendUnitTargets } from "./targeted-spend-queries";
 import { isUnitSpendSubject, spendUnitForEffect } from "./unit-spend";
 import { friendlyUnitReadyTargets, readyCardForEffect, readyLegendTargets, stolenGigReadyTargets, taggedLegendReadyTargets } from "./ready-unit";
-import type { PendingEffect, DefeatInstruction } from "@tcg/domain";
+import type { PendingEffect, DefeatInstruction, GigInstanceId } from "@tcg/domain";
 import { effectiveCardTypes } from "./characteristics";
 import { registerEndTurnEffect } from "./delayed-effects";
 import { delayedSubjectTypes } from "./delayed-effects";
@@ -103,6 +104,13 @@ function offer(m: TurnMutation): Result<null> {
     m.state.timing.step = step; m.state.timing.window = step;
     m.emit({ kind: "PHASE_CHANGED", step });
     return success(null);
+}
+/** Batch V47: a steal that ends the game keeps the resolved fact, as a swap does. */
+function finishEffectSteal(m: TurnMutation, gigId: GigInstanceId): Result<null> {
+    const effectId = m.state.resolution.current!.id, stolen = resolveEffectSteal(m, gigId);
+    if (!stolen.ok) return stolen;
+    if (m.state.match.outcome) { m.emit({ kind: "EFFECT_RESOLVED", effectId }); return success(null); }
+    return completed(m);
 }
 export function completed(m: TurnMutation): Result<null> {
     const current = m.state.resolution.current!, c = m.state.resolution.triggerContinuation!;
@@ -269,6 +277,13 @@ export function advanceTriggers(m: TurnMutation): Result<null> {
         const current = r.current;
         if (e.when) { const met = testCondition(m.state, current.controllerId, e.when.condition, m.context, current.sourceId); m.emit({ kind: "CONDITION_EVALUATED", effectId: current.id, met }); if (!met) return completed(m); }
         if (!listSpendUnitTargets(m.state, current.controllerId, e.target, m.context).length) return completed(m);
+        c.phase = "TARGET"; return offer(m);
+    }
+    // Batch V47: "it also steals a Gig": one rival Gig is forced; several are the controller's choice; none does nothing.
+    if (e.kind === "STEAL_GIG") {
+        const targets = effectStealTargets(m.state, m.context);
+        if (targets.length === 1) return finishEffectSteal(m, targets[0]);
+        if (!targets.length) return completed(m);
         c.phase = "TARGET"; return offer(m);
     }
     // Batch V23: "[Play] You may swap a friendly Gig with a rival Gig." Offered only when both sides have a Gig to swap (6.7).
@@ -474,6 +489,7 @@ export function continueTrigger(m: TurnMutation, index: number, forced = false):
             const learned = grantLegendKnowledge(m, current.controllerId, option.slot);
             return learned.ok ? completed(m) : learned;
         }
+        if (current.effect.kind === "STEAL_GIG") return option.kind === "GIG" ? finishEffectSteal(m, option.gigInstanceId) : failure("INVALID_EFFECT_STEAL", "Choose a rival Gig");
         if (option.kind !== "GIG" || !triggerGigTargets(m.state).includes(option.gigInstanceId)) return failure("INVALID_TRIGGER_TARGET", "Choose a currently valid Gig");
         if (current.effect.kind === "SWAP_GIGS") {
             m.emit({ kind: "GIG_TARGET_SELECTED", effectId: current.id, gigInstanceId: option.gigInstanceId });

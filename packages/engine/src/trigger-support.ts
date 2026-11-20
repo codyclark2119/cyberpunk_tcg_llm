@@ -27,6 +27,7 @@ import { turnSliceAllows, canonicalSerialize, failure, success, type CardRevisio
 import type { EngineContext } from "./state";
 import { hasModalChoice } from "./modal-program-support";
 import { hasSellTopEffect } from "./program-sell-support";
+import { hasFightStealEffect } from "./fight-steal-support";
 export function triggersEnabled(context: EngineContext) { return turnSliceAllows(context.content.ruleset.gameplay?.turnSlice, "combatTriggers"); }
 /** Complete shapes, not card-name matching. The bundle must still pin explicitly reviewed immutable revisions. */
 export function supportsTriggerCard(card: DeepReadonly<CardRevisionSnapshot> | undefined, context: EngineContext) {
@@ -34,6 +35,7 @@ export function supportsTriggerCard(card: DeepReadonly<CardRevisionSnapshot> | u
     if (hasModalChoice(card)) return failure("UNSUPPORTED_MODAL_CHOICE", "A modal ability is admitted only by its exact Program pin");
     // Batch V45: effect sells are read only by the sell Program gate.
     if (hasSellTopEffect(card)) return failure("UNSUPPORTED_EFFECT_SELL", "An effect sell is admitted only by its exact Program pin");
+    if (hasFightStealEffect(card)) return failure("UNSUPPORTED_FIGHT_STEAL", "A next-fight steal is admitted only by its exact Program pin"); // Batch V47.
     if (card && hasFriendlyPlayPowerMetadata(card)) return supportsFriendlyPlayPowerUnit(card, context);
     // Batch V43: the {Play} must-attack obligation (on a Blocker Unit) is admitted only by its exact pin.
     if (hasMustAttackEffect(card)) return supportsMustAttackUnit(card, context);

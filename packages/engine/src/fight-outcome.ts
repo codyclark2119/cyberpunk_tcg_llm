@@ -3,6 +3,7 @@ import type { EngineContext } from "./state";
 import type { TurnMutation } from "./turn";
 import { cardRevision } from "./characteristics";
 import { supportsTargetedDefeatCard } from "./targeted-defeat-support";
+import { supportsFightStealProgram } from "./fight-steal-support";
 import { triggersEnabled } from "./trigger-support";
 
 /** Batch V46: "The next time a friendly Unit loses a fight this turn, ..." A resolved Program registers the effect for the
@@ -13,9 +14,9 @@ export function fightOutcomeId(state: GameState, sourceId: CardInstanceId, contr
 }
 const byId = (a: FightOutcomeEffect, b: FightOutcomeEffect) => a.id < b.id ? -1 : a.id > b.id ? 1 : 0;
 /** The reviewed registering ability of the effect's source revision, or undefined. */
-function registration(state: GameState, e: FightOutcomeEffect, context: EngineContext) {
+export function registration(state: GameState, e: FightOutcomeEffect, context: EngineContext) {
     const r = context.content.cards.find(c => c.id === e.source.cardId && c.revision === e.source.revision), a = r?.mechanics.abilities.find(a => a.id === e.abilityId);
-    return r && a?.trigger === "WHEN_PLAYED" && a.effects[0]?.kind === "REGISTER_NEXT_FIGHT_OUTCOME" && supportsTargetedDefeatCard(r, context).ok ? a.effects[0] : undefined;
+    return r && a?.trigger === "WHEN_PLAYED" && a.effects[0]?.kind === "REGISTER_NEXT_FIGHT_OUTCOME" && (supportsTargetedDefeatCard(r, context).ok || supportsFightStealProgram(r, context).ok) ? a.effects[0] : undefined;
 }
 export function validFightOutcomeEffect(state: GameState, e: FightOutcomeEffect, context: EngineContext) {
     const source = state.objects.cards[e.sourceId];
@@ -35,7 +36,10 @@ export function createFightOutcomeEffect(m: TurnMutation) {
 }
 /** The friendly Unit whose outcome in this fight matches the registration, with the opposing Unit, or undefined. */
 function matchFight(state: GameState, e: FightOutcomeEffect, result: FightResult, context: EngineContext) {
-    const on = registration(state, e, context)?.on, subjectId = on === "FRIENDLY_UNIT_LOSES" ? result.loserIds.find(id => state.objects.cards[id]?.controllerId === e.controllerId) : undefined;
+    const on = registration(state, e, context)?.on, winner = result.winnerId, margin = Math.abs(result.attackerComparisonPower - result.defenderComparisonPower);
+    // Batch V47: "wins a fight by 3+ power": the winner's comparison power exceeds the loser's by at least 3.
+    const subjectId = on === "FRIENDLY_UNIT_LOSES" ? result.loserIds.find(id => state.objects.cards[id]?.controllerId === e.controllerId)
+        : on === "FRIENDLY_UNIT_WINS_BY_3" && winner && state.objects.cards[winner]?.controllerId === e.controllerId && margin >= 3 ? winner : undefined;
     return subjectId ? { subjectId, opposingId: subjectId === result.attackerId ? result.defenderId : result.attackerId } : undefined;
 }
 /** Fires every matching registration on this fight, in id order; each is consumed once. */

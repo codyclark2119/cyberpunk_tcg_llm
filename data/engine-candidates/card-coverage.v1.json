@@ -9,12 +9,12 @@
   },
   "totals": {
     "cards": 151,
-    "admitted": 95,
-    "notAdmitted": 56,
+    "admitted": 96,
+    "notAdmitted": 55,
     "notAdmittedOnlyCoveredFamilies": 0,
     "byAdmission": {
-      "NOT_ADMITTED": 56,
-      "SOURCE_MATCH": 95
+      "NOT_ADMITTED": 55,
+      "SOURCE_MATCH": 96
     }
   },
   "families": [
@@ -145,15 +145,6 @@
       "soleBlockerCount": 0
     },
     {
-      "family": "DURATION_DELAYED",
-      "status": "PARTIAL",
-      "summary": "Lasting and delayed effects: 'until your next turn', 'next time ... this turn', 'at the end of this turn'.",
-      "notes": "",
-      "cardCount": 14,
-      "notAdmittedCount": 6,
-      "soleBlockerCount": 0
-    },
-    {
       "family": "TRIGGER_CALL",
       "status": "PARTIAL",
       "summary": "[Call] abilities of a Legend.",
@@ -181,6 +172,15 @@
       "soleBlockerCount": 0
     },
     {
+      "family": "DURATION_DELAYED",
+      "status": "PARTIAL",
+      "summary": "Lasting and delayed effects: 'until your next turn', 'next time ... this turn', 'at the end of this turn'.",
+      "notes": "",
+      "cardCount": 14,
+      "notAdmittedCount": 5,
+      "soleBlockerCount": 0
+    },
+    {
       "family": "FREE_CALL",
       "status": "MISSING",
       "summary": "Call a Legend by an effect or for free outside the normal Call.",
@@ -195,15 +195,6 @@
       "summary": "Increase, decrease, adjust or set Gig values.",
       "notes": "Maxima are fixed literals; 'set to the value of another Gig' and 'adjust by exactly 1' are missing. MODIFY_GIG_VALUE is schema-only.",
       "cardCount": 15,
-      "notAdmittedCount": 5,
-      "soleBlockerCount": 0
-    },
-    {
-      "family": "STEAL_CONTROL",
-      "status": "MISSING",
-      "summary": "Gig control outside the ordinary attack steal: swap, extra steal, steal fewer, steal prevention.",
-      "notes": "Documented as unsupported (control transfer / steal).",
-      "cardCount": 8,
       "notAdmittedCount": 5,
       "soleBlockerCount": 0
     },
@@ -249,6 +240,15 @@
       "summary": "Printed [Blocker] on a Unit, or granted to a Gear's host.",
       "notes": "Keyword BLOCKER. Temporary grants by an effect are TEMPORARY_BUFF.",
       "cardCount": 11,
+      "notAdmittedCount": 4,
+      "soleBlockerCount": 0
+    },
+    {
+      "family": "STEAL_CONTROL",
+      "status": "MISSING",
+      "summary": "Gig control outside the ordinary attack steal: swap, extra steal, steal fewer, steal prevention.",
+      "notes": "Documented as unsupported (control transfer / steal).",
+      "cardCount": 8,
       "notAdmittedCount": 4,
       "soleBlockerCount": 0
     },
@@ -316,15 +316,6 @@
       "soleBlockerCount": 0
     },
     {
-      "family": "TRIGGER_FIGHT_RESULT",
-      "status": "PARTIAL",
-      "summary": "Triggers on winning or losing a fight, or winning by a margin.",
-      "notes": "Trigger WHEN_FIGHT_WON (Satori). Losing a fight and win margins are missing.",
-      "cardCount": 5,
-      "notAdmittedCount": 3,
-      "soleBlockerCount": 0
-    },
-    {
       "family": "TRIGGER_OTHER_EVENT",
       "status": "MISSING",
       "summary": "Other event triggers: another friendly Unit defeated, a Rival adjusting or swapping friendly Gigs.",
@@ -384,6 +375,15 @@
       "summary": "[Defeated] abilities.",
       "notes": "Trigger WHEN_DEFEATED, admitted only for Dexter: One Last Chance.",
       "cardCount": 7,
+      "notAdmittedCount": 2,
+      "soleBlockerCount": 0
+    },
+    {
+      "family": "TRIGGER_FIGHT_RESULT",
+      "status": "PARTIAL",
+      "summary": "Triggers on winning or losing a fight, or winning by a margin.",
+      "notes": "Trigger WHEN_FIGHT_WON (Satori). Losing a fight and win margins are missing.",
+      "cardCount": 5,
       "notAdmittedCount": 2,
       "soleBlockerCount": 0
     },
@@ -644,18 +644,14 @@
       "colors": [
         "RED"
       ],
-      "admission": "NOT_ADMITTED",
-      "revision": null,
+      "admission": "SOURCE_MATCH",
+      "revision": 1,
       "families": [
         "DURATION_DELAYED",
         "STEAL_CONTROL",
         "TRIGGER_FIGHT_RESULT"
       ],
-      "blockingFamilies": [
-        "DURATION_DELAYED",
-        "STEAL_CONTROL",
-        "TRIGGER_FIGHT_RESULT"
-      ],
+      "blockingFamilies": [],
       "note": null
     },
     {

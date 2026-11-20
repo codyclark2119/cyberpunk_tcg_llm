@@ -2219,6 +2219,33 @@
                         "triggerContinuation": {
                           "type": "object",
                           "properties": {
+                            "effectSteal": {
+                              "type": "object",
+                              "properties": {
+                                "subjectId": {
+                                  "type": "string",
+                                  "minLength": 1,
+                                  "maxLength": 200,
+                                  "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$"
+                                },
+                                "gigInstanceIds": {
+                                  "minItems": 1,
+                                  "maxItems": 1,
+                                  "type": "array",
+                                  "items": {
+                                    "type": "string",
+                                    "minLength": 1,
+                                    "maxLength": 200,
+                                    "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$"
+                                  }
+                                }
+                              },
+                              "required": [
+                                "subjectId",
+                                "gigInstanceIds"
+                              ],
+                              "additionalProperties": false
+                            },
                             "effectDefeats": {
                               "minItems": 1,
                               "maxItems": 1,
@@ -4429,40 +4456,93 @@
                                         },
                                         "on": {
                                           "type": "string",
-                                          "const": "FRIENDLY_UNIT_LOSES"
+                                          "enum": [
+                                            "FRIENDLY_UNIT_LOSES",
+                                            "FRIENDLY_UNIT_WINS_BY_3"
+                                          ]
                                         },
                                         "effect": {
-                                          "type": "object",
-                                          "properties": {
-                                            "kind": {
-                                              "type": "string",
-                                              "const": "DEFEAT_UNIT"
-                                            },
-                                            "target": {
+                                          "anyOf": [
+                                            {
                                               "type": "object",
                                               "properties": {
                                                 "kind": {
                                                   "type": "string",
-                                                  "const": "OPPOSING_UNIT"
+                                                  "const": "DEFEAT_UNIT"
+                                                },
+                                                "target": {
+                                                  "type": "object",
+                                                  "properties": {
+                                                    "kind": {
+                                                      "type": "string",
+                                                      "const": "OPPOSING_UNIT"
+                                                    }
+                                                  },
+                                                  "required": [
+                                                    "kind"
+                                                  ],
+                                                  "additionalProperties": false
                                                 }
                                               },
                                               "required": [
-                                                "kind"
+                                                "kind",
+                                                "target"
+                                              ],
+                                              "additionalProperties": false
+                                            },
+                                            {
+                                              "type": "object",
+                                              "properties": {
+                                                "kind": {
+                                                  "type": "string",
+                                                  "const": "STEAL_GIG"
+                                                },
+                                                "actor": {
+                                                  "type": "string",
+                                                  "const": "TRIGGER_SUBJECT"
+                                                },
+                                                "count": {
+                                                  "type": "number",
+                                                  "const": 1
+                                                }
+                                              },
+                                              "required": [
+                                                "kind",
+                                                "actor",
+                                                "count"
                                               ],
                                               "additionalProperties": false
                                             }
-                                          },
-                                          "required": [
-                                            "kind",
-                                            "target"
-                                          ],
-                                          "additionalProperties": false
+                                          ]
                                         }
                                       },
                                       "required": [
                                         "kind",
                                         "on",
                                         "effect"
+                                      ],
+                                      "additionalProperties": false
+                                    },
+                                    {
+                                      "type": "object",
+                                      "properties": {
+                                        "kind": {
+                                          "type": "string",
+                                          "const": "STEAL_GIG"
+                                        },
+                                        "actor": {
+                                          "type": "string",
+                                          "const": "TRIGGER_SUBJECT"
+                                        },
+                                        "count": {
+                                          "type": "number",
+                                          "const": 1
+                                        }
+                                      },
+                                      "required": [
+                                        "kind",
+                                        "actor",
+                                        "count"
                                       ],
                                       "additionalProperties": false
                                     },
@@ -7781,40 +7861,93 @@
                                       },
                                       "on": {
                                         "type": "string",
-                                        "const": "FRIENDLY_UNIT_LOSES"
+                                        "enum": [
+                                          "FRIENDLY_UNIT_LOSES",
+                                          "FRIENDLY_UNIT_WINS_BY_3"
+                                        ]
                                       },
                                       "effect": {
-                                        "type": "object",
-                                        "properties": {
-                                          "kind": {
-                                            "type": "string",
-                                            "const": "DEFEAT_UNIT"
-                                          },
-                                          "target": {
+                                        "anyOf": [
+                                          {
                                             "type": "object",
                                             "properties": {
                                               "kind": {
                                                 "type": "string",
-                                                "const": "OPPOSING_UNIT"
+                                                "const": "DEFEAT_UNIT"
+                                              },
+                                              "target": {
+                                                "type": "object",
+                                                "properties": {
+                                                  "kind": {
+                                                    "type": "string",
+                                                    "const": "OPPOSING_UNIT"
+                                                  }
+                                                },
+                                                "required": [
+                                                  "kind"
+                                                ],
+                                                "additionalProperties": false
                                               }
                                             },
                                             "required": [
-                                              "kind"
+                                              "kind",
+                                              "target"
+                                            ],
+                                            "additionalProperties": false
+                                          },
+                                          {
+                                            "type": "object",
+                                            "properties": {
+                                              "kind": {
+                                                "type": "string",
+                                                "const": "STEAL_GIG"
+                                              },
+                                              "actor": {
+                                                "type": "string",
+                                                "const": "TRIGGER_SUBJECT"
+                                              },
+                                              "count": {
+                                                "type": "number",
+                                                "const": 1
+                                              }
+                                            },
+                                            "required": [
+                                              "kind",
+                                              "actor",
+                                              "count"
                                             ],
                                             "additionalProperties": false
                                           }
-                                        },
-                                        "required": [
-                                          "kind",
-                                          "target"
-                                        ],
-                                        "additionalProperties": false
+                                        ]
                                       }
                                     },
                                     "required": [
                                       "kind",
                                       "on",
                                       "effect"
+                                    ],
+                                    "additionalProperties": false
+                                  },
+                                  {
+                                    "type": "object",
+                                    "properties": {
+                                      "kind": {
+                                        "type": "string",
+                                        "const": "STEAL_GIG"
+                                      },
+                                      "actor": {
+                                        "type": "string",
+                                        "const": "TRIGGER_SUBJECT"
+                                      },
+                                      "count": {
+                                        "type": "number",
+                                        "const": 1
+                                      }
+                                    },
+                                    "required": [
+                                      "kind",
+                                      "actor",
+                                      "count"
                                     ],
                                     "additionalProperties": false
                                   },
@@ -11129,40 +11262,93 @@
                                       },
                                       "on": {
                                         "type": "string",
-                                        "const": "FRIENDLY_UNIT_LOSES"
+                                        "enum": [
+                                          "FRIENDLY_UNIT_LOSES",
+                                          "FRIENDLY_UNIT_WINS_BY_3"
+                                        ]
                                       },
                                       "effect": {
-                                        "type": "object",
-                                        "properties": {
-                                          "kind": {
-                                            "type": "string",
-                                            "const": "DEFEAT_UNIT"
-                                          },
-                                          "target": {
+                                        "anyOf": [
+                                          {
                                             "type": "object",
                                             "properties": {
                                               "kind": {
                                                 "type": "string",
-                                                "const": "OPPOSING_UNIT"
+                                                "const": "DEFEAT_UNIT"
+                                              },
+                                              "target": {
+                                                "type": "object",
+                                                "properties": {
+                                                  "kind": {
+                                                    "type": "string",
+                                                    "const": "OPPOSING_UNIT"
+                                                  }
+                                                },
+                                                "required": [
+                                                  "kind"
+                                                ],
+                                                "additionalProperties": false
                                               }
                                             },
                                             "required": [
-                                              "kind"
+                                              "kind",
+                                              "target"
+                                            ],
+                                            "additionalProperties": false
+                                          },
+                                          {
+                                            "type": "object",
+                                            "properties": {
+                                              "kind": {
+                                                "type": "string",
+                                                "const": "STEAL_GIG"
+                                              },
+                                              "actor": {
+                                                "type": "string",
+                                                "const": "TRIGGER_SUBJECT"
+                                              },
+                                              "count": {
+                                                "type": "number",
+                                                "const": 1
+                                              }
+                                            },
+                                            "required": [
+                                              "kind",
+                                              "actor",
+                                              "count"
                                             ],
                                             "additionalProperties": false
                                           }
-                                        },
-                                        "required": [
-                                          "kind",
-                                          "target"
-                                        ],
-                                        "additionalProperties": false
+                                        ]
                                       }
                                     },
                                     "required": [
                                       "kind",
                                       "on",
                                       "effect"
+                                    ],
+                                    "additionalProperties": false
+                                  },
+                                  {
+                                    "type": "object",
+                                    "properties": {
+                                      "kind": {
+                                        "type": "string",
+                                        "const": "STEAL_GIG"
+                                      },
+                                      "actor": {
+                                        "type": "string",
+                                        "const": "TRIGGER_SUBJECT"
+                                      },
+                                      "count": {
+                                        "type": "number",
+                                        "const": 1
+                                      }
+                                    },
+                                    "required": [
+                                      "kind",
+                                      "actor",
+                                      "count"
                                     ],
                                     "additionalProperties": false
                                   },
@@ -16628,6 +16814,33 @@
                         "triggerContinuation": {
                           "type": "object",
                           "properties": {
+                            "effectSteal": {
+                              "type": "object",
+                              "properties": {
+                                "subjectId": {
+                                  "type": "string",
+                                  "minLength": 1,
+                                  "maxLength": 200,
+                                  "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$"
+                                },
+                                "gigInstanceIds": {
+                                  "minItems": 1,
+                                  "maxItems": 1,
+                                  "type": "array",
+                                  "items": {
+                                    "type": "string",
+                                    "minLength": 1,
+                                    "maxLength": 200,
+                                    "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$"
+                                  }
+                                }
+                              },
+                              "required": [
+                                "subjectId",
+                                "gigInstanceIds"
+                              ],
+                              "additionalProperties": false
+                            },
                             "effectDefeats": {
                               "minItems": 1,
                               "maxItems": 1,
@@ -18838,40 +19051,93 @@
                                         },
                                         "on": {
                                           "type": "string",
-                                          "const": "FRIENDLY_UNIT_LOSES"
+                                          "enum": [
+                                            "FRIENDLY_UNIT_LOSES",
+                                            "FRIENDLY_UNIT_WINS_BY_3"
+                                          ]
                                         },
                                         "effect": {
-                                          "type": "object",
-                                          "properties": {
-                                            "kind": {
-                                              "type": "string",
-                                              "const": "DEFEAT_UNIT"
-                                            },
-                                            "target": {
+                                          "anyOf": [
+                                            {
                                               "type": "object",
                                               "properties": {
                                                 "kind": {
                                                   "type": "string",
-                                                  "const": "OPPOSING_UNIT"
+                                                  "const": "DEFEAT_UNIT"
+                                                },
+                                                "target": {
+                                                  "type": "object",
+                                                  "properties": {
+                                                    "kind": {
+                                                      "type": "string",
+                                                      "const": "OPPOSING_UNIT"
+                                                    }
+                                                  },
+                                                  "required": [
+                                                    "kind"
+                                                  ],
+                                                  "additionalProperties": false
                                                 }
                                               },
                                               "required": [
-                                                "kind"
+                                                "kind",
+                                                "target"
+                                              ],
+                                              "additionalProperties": false
+                                            },
+                                            {
+                                              "type": "object",
+                                              "properties": {
+                                                "kind": {
+                                                  "type": "string",
+                                                  "const": "STEAL_GIG"
+                                                },
+                                                "actor": {
+                                                  "type": "string",
+                                                  "const": "TRIGGER_SUBJECT"
+                                                },
+                                                "count": {
+                                                  "type": "number",
+                                                  "const": 1
+                                                }
+                                              },
+                                              "required": [
+                                                "kind",
+                                                "actor",
+                                                "count"
                                               ],
                                               "additionalProperties": false
                                             }
-                                          },
-                                          "required": [
-                                            "kind",
-                                            "target"
-                                          ],
-                                          "additionalProperties": false
+                                          ]
                                         }
                                       },
                                       "required": [
                                         "kind",
                                         "on",
                                         "effect"
+                                      ],
+                                      "additionalProperties": false
+                                    },
+                                    {
+                                      "type": "object",
+                                      "properties": {
+                                        "kind": {
+                                          "type": "string",
+                                          "const": "STEAL_GIG"
+                                        },
+                                        "actor": {
+                                          "type": "string",
+                                          "const": "TRIGGER_SUBJECT"
+                                        },
+                                        "count": {
+                                          "type": "number",
+                                          "const": 1
+                                        }
+                                      },
+                                      "required": [
+                                        "kind",
+                                        "actor",
+                                        "count"
                                       ],
                                       "additionalProperties": false
                                     },
@@ -22190,40 +22456,93 @@
                                       },
                                       "on": {
                                         "type": "string",
-                                        "const": "FRIENDLY_UNIT_LOSES"
+                                        "enum": [
+                                          "FRIENDLY_UNIT_LOSES",
+                                          "FRIENDLY_UNIT_WINS_BY_3"
+                                        ]
                                       },
                                       "effect": {
-                                        "type": "object",
-                                        "properties": {
-                                          "kind": {
-                                            "type": "string",
-                                            "const": "DEFEAT_UNIT"
-                                          },
-                                          "target": {
+                                        "anyOf": [
+                                          {
                                             "type": "object",
                                             "properties": {
                                               "kind": {
                                                 "type": "string",
-                                                "const": "OPPOSING_UNIT"
+                                                "const": "DEFEAT_UNIT"
+                                              },
+                                              "target": {
+                                                "type": "object",
+                                                "properties": {
+                                                  "kind": {
+                                                    "type": "string",
+                                                    "const": "OPPOSING_UNIT"
+                                                  }
+                                                },
+                                                "required": [
+                                                  "kind"
+                                                ],
+                                                "additionalProperties": false
                                               }
                                             },
                                             "required": [
-                                              "kind"
+                                              "kind",
+                                              "target"
+                                            ],
+                                            "additionalProperties": false
+                                          },
+                                          {
+                                            "type": "object",
+                                            "properties": {
+                                              "kind": {
+                                                "type": "string",
+                                                "const": "STEAL_GIG"
+                                              },
+                                              "actor": {
+                                                "type": "string",
+                                                "const": "TRIGGER_SUBJECT"
+                                              },
+                                              "count": {
+                                                "type": "number",
+                                                "const": 1
+                                              }
+                                            },
+                                            "required": [
+                                              "kind",
+                                              "actor",
+                                              "count"
                                             ],
                                             "additionalProperties": false
                                           }
-                                        },
-                                        "required": [
-                                          "kind",
-                                          "target"
-                                        ],
-                                        "additionalProperties": false
+                                        ]
                                       }
                                     },
                                     "required": [
                                       "kind",
                                       "on",
                                       "effect"
+                                    ],
+                                    "additionalProperties": false
+                                  },
+                                  {
+                                    "type": "object",
+                                    "properties": {
+                                      "kind": {
+                                        "type": "string",
+                                        "const": "STEAL_GIG"
+                                      },
+                                      "actor": {
+                                        "type": "string",
+                                        "const": "TRIGGER_SUBJECT"
+                                      },
+                                      "count": {
+                                        "type": "number",
+                                        "const": 1
+                                      }
+                                    },
+                                    "required": [
+                                      "kind",
+                                      "actor",
+                                      "count"
                                     ],
                                     "additionalProperties": false
                                   },
@@ -25538,40 +25857,93 @@
                                       },
                                       "on": {
                                         "type": "string",
-                                        "const": "FRIENDLY_UNIT_LOSES"
+                                        "enum": [
+                                          "FRIENDLY_UNIT_LOSES",
+                                          "FRIENDLY_UNIT_WINS_BY_3"
+                                        ]
                                       },
                                       "effect": {
-                                        "type": "object",
-                                        "properties": {
-                                          "kind": {
-                                            "type": "string",
-                                            "const": "DEFEAT_UNIT"
-                                          },
-                                          "target": {
+                                        "anyOf": [
+                                          {
                                             "type": "object",
                                             "properties": {
                                               "kind": {
                                                 "type": "string",
-                                                "const": "OPPOSING_UNIT"
+                                                "const": "DEFEAT_UNIT"
+                                              },
+                                              "target": {
+                                                "type": "object",
+                                                "properties": {
+                                                  "kind": {
+                                                    "type": "string",
+                                                    "const": "OPPOSING_UNIT"
+                                                  }
+                                                },
+                                                "required": [
+                                                  "kind"
+                                                ],
+                                                "additionalProperties": false
                                               }
                                             },
                                             "required": [
-                                              "kind"
+                                              "kind",
+                                              "target"
+                                            ],
+                                            "additionalProperties": false
+                                          },
+                                          {
+                                            "type": "object",
+                                            "properties": {
+                                              "kind": {
+                                                "type": "string",
+                                                "const": "STEAL_GIG"
+                                              },
+                                              "actor": {
+                                                "type": "string",
+                                                "const": "TRIGGER_SUBJECT"
+                                              },
+                                              "count": {
+                                                "type": "number",
+                                                "const": 1
+                                              }
+                                            },
+                                            "required": [
+                                              "kind",
+                                              "actor",
+                                              "count"
                                             ],
                                             "additionalProperties": false
                                           }
-                                        },
-                                        "required": [
-                                          "kind",
-                                          "target"
-                                        ],
-                                        "additionalProperties": false
+                                        ]
                                       }
                                     },
                                     "required": [
                                       "kind",
                                       "on",
                                       "effect"
+                                    ],
+                                    "additionalProperties": false
+                                  },
+                                  {
+                                    "type": "object",
+                                    "properties": {
+                                      "kind": {
+                                        "type": "string",
+                                        "const": "STEAL_GIG"
+                                      },
+                                      "actor": {
+                                        "type": "string",
+                                        "const": "TRIGGER_SUBJECT"
+                                      },
+                                      "count": {
+                                        "type": "number",
+                                        "const": 1
+                                      }
+                                    },
+                                    "required": [
+                                      "kind",
+                                      "actor",
+                                      "count"
                                     ],
                                     "additionalProperties": false
                                   },

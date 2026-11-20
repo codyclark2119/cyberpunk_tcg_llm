@@ -76,7 +76,10 @@ export const TriggerOriginSchema = z.discriminatedUnion("kind", [
         fight: z.strictObject({ result: FightResultSchema, outcomes: z.array(FightOutcomeSchema).min(1) }).optional() })
 ]);
 export type TriggerOrigin = DeepReadonly<z.infer<typeof TriggerOriginSchema>>;
-export const TriggerContinuationSchema = z.strictObject({ effectDefeats: z.array(z.strictObject({ targetId: CardInstanceIdSchema, defeatedBy: CardInstanceIdSchema })).length(1).optional(), origin: TriggerOriginSchema, ordinal: z.number().int().positive(), bindings: z.array(TriggerBindingSchema).min(1),
+export const TriggerContinuationSchema = z.strictObject({
+    // Batch V47: a Gig an effect stole in this batch; its steal triggers join the batch (11.5.1.7).
+    effectSteal: z.strictObject({ subjectId: CardInstanceIdSchema, gigInstanceIds: z.array(GigInstanceIdSchema).length(1) }).optional(),
+    effectDefeats: z.array(z.strictObject({ targetId: CardInstanceIdSchema, defeatedBy: CardInstanceIdSchema })).length(1).optional(), origin: TriggerOriginSchema, ordinal: z.number().int().positive(), bindings: z.array(TriggerBindingSchema).min(1),
     selectedEddieSlots: z.array(z.number().int().nonnegative()).length(1).optional(), resolvedIds: z.array(HashSchema), phase: z.enum(["SELECT", "OPTIONAL", "TARGET", "AMOUNT", "DISCARD", "READY"]), trashedIds: z.array(CardInstanceIdSchema).min(1).max(3).optional(), conditionMet: z.literal(true).optional(), targetGigId: GigInstanceIdSchema.optional(),
     // Batch V29: the Legend already readied by a current "ready up to 2" choice.
     readiedLegends: z.array(CardInstanceIdSchema).length(1).optional(),

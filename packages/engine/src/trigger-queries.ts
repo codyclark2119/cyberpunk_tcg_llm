@@ -6,6 +6,7 @@ import { isFirstArasakaAttack } from "./first-attack-history";
 import { effectiveCardTypes } from "./characteristics";
 import { delayedBinding } from "./delayed-effects";
 import { fightOutcomeBinding } from "./fight-outcome";
+import { effectStealTargets } from "./fight-steal";
 import { readyableEddieSlots } from "./eddie-ready";
 import { testCondition } from "./conditions";
 import { getDiscardableCards } from "./discard";
@@ -98,8 +99,10 @@ export function swapSidesAvailable(state: GameState, controllerId: PlayerId) {
     const gigs = Object.values(state.objects.gigs).filter(g => g.location.zone === "GIGS" && g.roll.kind === "ROLLED");
     return gigs.some(g => g.controllerId === controllerId) && gigs.some(g => g.controllerId !== controllerId);
 }
-export function triggerGigTargets(state: GameState) {
+export function triggerGigTargets(state: GameState, context?: EngineContext) {
     const current = state.resolution.current!, chosen = state.resolution.triggerContinuation?.targetGigId;
+    // Batch V47: an effect steal offers the rival Gigs its subject may steal.
+    if (current.effect.kind === "STEAL_GIG") return context ? effectStealTargets(state, context) : [];
     // Batch V27: "increase it" offers only the rolled Gig the steal trigger names, while it is in a Gig area.
     if (current.effect.kind === "ADJUST_GIG_UP_TO" && current.effect.target.kind === "STOLEN_GIG") {
         const g = current.trigger?.gigInstanceId ? state.objects.gigs[current.trigger.gigInstanceId] : undefined;
@@ -161,7 +164,7 @@ export function triggerChoice(state: GameState, context: EngineContext): Pending
             ? privateLookTargets(state, actorId, context).map(slot => ({ kind: "LEGEND_SLOT", slot }))
             : current?.effect.kind === "POWER_UNTIL_END_OF_TURN" && current.effect.target.kind === "FRIENDLY_UNIT"
                 ? friendlyPowerTargets(state, actorId, context).map(cardInstanceId => ({ kind: "CARD", cardInstanceId }))
-                : triggerGigTargets(state).map(gigInstanceId => ({ kind: "GIG", gigInstanceId }));
+                : triggerGigTargets(state, context).map(gigInstanceId => ({ kind: "GIG", gigInstanceId }));
     }
     else {
         kind = "AMOUNT"; const g = state.objects.gigs[c.targetGigId!], value = g.roll.kind === "ROLLED" ? g.roll.currentValue : 0;

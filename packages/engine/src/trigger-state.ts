@@ -32,7 +32,8 @@ import { supportsLegendStealTrigger } from "./legend-steal-support";
 import { supportsLegendReveal } from "./legend-reveal-support";
 import { discardingPlayer, discoverTriggers, nextTriggerGroup, pendingTrigger, stealerIsLegend, stolenGigParity, swapSidesAvailable, triggerChoice, triggerGigTargets, triggerId } from "./trigger-queries";
 import { discardedCostMatchesFriendlyGig } from "./discard";
-import { fightOutcomeBinding, validFightOutcomes } from "./fight-outcome";
+import { fightOutcomeBinding, registration, validFightOutcomes } from "./fight-outcome";
+import { effectStealTargets } from "./fight-steal";
 import { supportsTargetedDefeatCard } from "./targeted-defeat-support";
 
 /** Validate the historical comparison, not a new comparison using post-trigger power. */
@@ -57,16 +58,19 @@ function validBinding(state: GameState, b: TriggerBinding, context: EngineContex
     }
     if (origin.kind === "END_TURN") return b.kind === "WHEN_OWN_TURN_ENDS" && (b.sourceId === b.subjectId || r?.type === "GEAR" && ability.inherited === "EQUIPPED_HOST" && supportsEndTurnCard(r, context).ok) && b.controllerId === origin.playerId && ability.conditions.every(c => testCondition(state, b.controllerId, c, context, b.subjectId));
     if (origin.kind === "FIGHT") return b.kind === "WHEN_FIGHT_WON" && b.subjectId === origin.result.winnerId && validFightFact(state, origin.result);
-    if (origin.kind === "DEFEAT") return b.kind === "WHEN_DEFEATED" && origin.defeated.some(d => d.targetId === b.subjectId) && !["BATTLEFIELD", "LEGENDS"].includes(subject.zone.zone);
+    if (origin.kind === "DEFEAT" && (b.gigInstanceId === undefined || !origin.fight)) return b.kind === "WHEN_DEFEATED" && origin.defeated.some(d => d.targetId === b.subjectId) && !["BATTLEFIELD", "LEGENDS"].includes(subject.zone.zone);
     if (origin.kind === "BLOCK") return b.kind === "WHEN_BLOCKER_USED" && b.sourceId === b.subjectId && b.subjectId === origin.subjectId && supportsTriggerCard(r, context).ok;
     // Batch V24: a steal trigger binding names one Gig its subject stole in this Steal Step; no other binding names a Gig.
-    if ((origin.kind === "STEAL") !== (b.gigInstanceId !== undefined)) return false;
-    if (origin.kind === "STEAL") return b.sourceId === b.subjectId && origin.gigInstanceIds.includes(b.gigInstanceId!) && supportsTriggerCard(r, context).ok
-        && (b.kind === "WHEN_GIG_STOLEN" ? b.subjectId === origin.subjectId
+    // Batch V47: an effect steal in a post-fight batch appends its steal bindings exactly as a Steal Step would.
+    const steal = origin.kind === "STEAL" ? origin : b.gigInstanceId !== undefined && origin.kind === "DEFEAT" && origin.fight ? c.effectSteal : undefined;
+    if (Boolean(steal) !== (b.gigInstanceId !== undefined)) return false;
+    if (steal) return b.sourceId === b.subjectId && steal.gigInstanceIds.includes(b.gigInstanceId!) && supportsTriggerCard(r, context).ok
+        && (b.kind === "WHEN_GIG_STOLEN" ? b.subjectId === steal.subjectId
             // Batch V26: a friendly field Unit observing a stolen d6.
-            : b.kind === "WHEN_FRIENDLY_UNIT_STEALS_GIG" && ability.guard === "STOLEN_GIG_IS_D6" && state.objects.gigs[b.gigInstanceId!]?.dieType === "D6" && subject.zone.zone === "BATTLEFIELD" && b.controllerId === state.objects.cards[origin.subjectId]?.controllerId
+            : b.kind === "WHEN_FRIENDLY_UNIT_STEALS_GIG" && ability.guard === "STOLEN_GIG_IS_D6" && state.objects.gigs[b.gigInstanceId!]?.dieType === "D6" && subject.zone.zone === "BATTLEFIELD" && b.controllerId === state.objects.cards[steal.subjectId]?.controllerId
             // Batch V40: a face-up friendly field or Legends-area source observing a stealing friendly Legend.
-            || b.kind === "WHEN_FRIENDLY_UNIT_STEALS_GIG" && ability.guard === "STEALER_IS_LEGEND" && stealerIsLegend(state, origin.subjectId, context) && ["BATTLEFIELD", "LEGENDS"].includes(subject.zone.zone) && b.controllerId === state.objects.cards[origin.subjectId]?.controllerId);
+            || b.kind === "WHEN_FRIENDLY_UNIT_STEALS_GIG" && ability.guard === "STEALER_IS_LEGEND" && stealerIsLegend(state, steal.subjectId, context) && ["BATTLEFIELD", "LEGENDS"].includes(subject.zone.zone) && b.controllerId === state.objects.cards[steal.subjectId]?.controllerId);
+    if (origin.kind === "DEFEAT") return false;
     if (origin.kind === "ATTACK") {
         if (b.kind === "WHEN_UNIT_ATTACKS") return b.sourceId === b.subjectId && source.face === "UP" && source.zone.zone === "LEGENDS" && supportsFirstAttackLegend(r, context).ok && state.objects.cards[origin.subjectId]?.controllerId === b.controllerId && isFirstArasakaAttack(state, origin.subjectId, context);
         return b.kind === "WHEN_ATTACKING" && b.subjectId === origin.subjectId;
@@ -117,6 +121,15 @@ export function validateTriggerState(state: GameState, context: EngineContext) {
     // Batch V46: a post-fight batch carries the historical fight and exactly the registrations it fired; only then may it hold no defeat.
     if (c.origin.kind === "DEFEAT" && (c.origin.fight ? c.origin.effectSource || !validFightFact(state, c.origin.fight.result) || !validFightOutcomes(state, c.origin.fight.result, c.origin.fight.outcomes, context) || c.origin.fight.outcomes.some(o => !c.bindings.some(b => canonicalSerialize(b) === canonicalSerialize(fightOutcomeBinding(o)))) : !c.origin.defeated.length)) return failure("INVALID_FIGHT_OUTCOME", "A post-fight batch needs its historical fight and exactly the next-fight-outcome effects it fired");
     if (c.origin.kind === "DEFEAT" && (new Set(c.origin.defeated.map(d => d.targetId)).size !== c.origin.defeated.length || c.origin.defeated.some(d => !state.objects.cards[d.defeatedBy] || !state.objects.cards[d.targetId] || ["BATTLEFIELD", "LEGENDS"].includes(state.objects.cards[d.targetId].zone.zone)))) return failure("INVALID_DEFEATED_TRIGGER", "Defeat declaration and movement must precede the pending batch");
+    // Batch V47: an effect steal names the subject of a fired steal registration and one Gig it now controls; every steal
+    // binding of that Gig is captured once, as in a Steal Step.
+    if (c.effectSteal) {
+        const e = c.effectSteal, subject = state.objects.cards[e.subjectId], g = state.objects.gigs[e.gigInstanceIds[0]];
+        if (c.origin.kind !== "DEFEAT" || !c.origin.fight?.outcomes.some(o => o.subjectId === e.subjectId && registration(state, o.effect, context)?.effect.kind === "STEAL_GIG")
+            || !subject || !g || g.controllerId !== subject.controllerId || g.location.zone !== "GIGS" || g.roll.kind !== "ROLLED"
+            || canonicalSerialize(discoverTriggers(state, { kind: "STEAL", subjectId: e.subjectId, gigInstanceIds: [...e.gigInstanceIds] }, context).map(b => canonicalSerialize(b)).sort()) !== canonicalSerialize(c.bindings.filter(b => b.gigInstanceId !== undefined).map(b => canonicalSerialize(b)).sort()))
+            return failure("INVALID_EFFECT_STEAL", "An effect steal needs its fired registration, a Gig its subject's controller now controls and every steal binding once");
+    }
     const effectDefeats = validateEffectDefeatFacts(state, context); if (!effectDefeats.ok) return effectDefeats;
     if (c.bindings.some(b => !validBinding(state, b, context))) return failure("INVALID_TRIGGER_SOURCE", "Immutable source, inherited subject, trigger-time controller and origin must match reviewed text");
     if (c.origin.kind === "ATTACK" && (firstAttackHistoryEnabled(context) || attackConditionPowerEnabled(context))) {
@@ -137,7 +150,9 @@ export function validateTriggerState(state: GameState, context: EngineContext) {
     const rivalHasResolved = c.resolvedIds.some(id => !activeIds.includes(id));
     if ((r.current && r.current.controllerId !== state.timing.activePlayer || rivalHasResolved) && activeIds.some(id => !c.resolvedIds.includes(id))) return failure("INVALID_TRIGGER_PRIORITY", "Turn player's pending effects precede the rival's");
     if (c.phase === "SELECT" ? Boolean(r.current) || nextTriggerGroup(state).length < 2 : !r.current) return failure("INVALID_TRIGGER_PHASE", "Ordering is strategic only with multiple eligible effects; effect choices require a current effect");
-    if (c.phase !== "SELECT" && (!r.current || !["DEFEAT_UNIT", "READY_EDDIES", "DISCARD_CARDS", "DECREASE_GIG_UP_TO", "ADJUST_GIG_UP_TO", "OPTIONAL_DECREASE_FRIENDLY_GIG_THEN_DRAW_IF_MIN", "LOOK_AT_FRIENDLY_FACE_DOWN_LEGEND", "POWER_UNTIL_END_OF_TURN", "SPEND_UNIT", "READY_UNIT", "RETURN_TRASH_UNIT_TO_HAND", "SEARCH_GEAR", "SEARCH_COST_MATCHING_GIGS", "TRASH_THEN_RETURN_PROGRAM", "GRANT_KEYWORD_UNTIL_END_OF_TURN", "PREVENT_UNIT_READY", "SWAP_GIGS", "READY_LEGENDS_UP_TO", "READY_UNITS_UP_TO", "SPEND_UNITS_PER_VALUE_PAIR", "DISCARD_PROGRAMS_THEN_BOTTOM_DECK", "STOLEN_GIG_PARITY_DRAW_OR_RIVAL_DISCARD", "CHOOSE_TYPE_REVEAL_TOP_ADD_AND_READY_EDDIE", "FORCE_RIVAL_UNIT_ATTACK"].includes(r.current.effect.kind))) return failure("INVALID_TRIGGER_PHASE", "Only reviewed adjustment/look/discard/ready/power/spend/trash-return primitives pause for choices");
+    if (c.phase !== "SELECT" && (!r.current || !["DEFEAT_UNIT", "READY_EDDIES", "DISCARD_CARDS", "DECREASE_GIG_UP_TO", "ADJUST_GIG_UP_TO", "OPTIONAL_DECREASE_FRIENDLY_GIG_THEN_DRAW_IF_MIN", "LOOK_AT_FRIENDLY_FACE_DOWN_LEGEND", "POWER_UNTIL_END_OF_TURN", "SPEND_UNIT", "READY_UNIT", "RETURN_TRASH_UNIT_TO_HAND", "SEARCH_GEAR", "SEARCH_COST_MATCHING_GIGS", "TRASH_THEN_RETURN_PROGRAM", "GRANT_KEYWORD_UNTIL_END_OF_TURN", "PREVENT_UNIT_READY", "SWAP_GIGS", "READY_LEGENDS_UP_TO", "READY_UNITS_UP_TO", "SPEND_UNITS_PER_VALUE_PAIR", "DISCARD_PROGRAMS_THEN_BOTTOM_DECK", "STOLEN_GIG_PARITY_DRAW_OR_RIVAL_DISCARD", "CHOOSE_TYPE_REVEAL_TOP_ADD_AND_READY_EDDIE", "FORCE_RIVAL_UNIT_ATTACK", "STEAL_GIG"].includes(r.current.effect.kind))) return failure("INVALID_TRIGGER_PHASE", "Only reviewed adjustment/look/discard/ready/power/spend/trash-return primitives pause for choices");
+    // Batch V47: an effect steal pauses only for a Gig choice between at least two rival Gigs its fired subject may steal.
+    if (r.current?.effect.kind === "STEAL_GIG" && (c.phase !== "TARGET" || r.current.trigger?.kind !== "DELAYED_FIGHT_OUTCOME" || c.effectSteal || effectStealTargets(state, context).length < 2)) return failure("INVALID_EFFECT_STEAL", "An effect steal pauses only to choose among two or more stealable rival Gigs");
     // Batch V19: the reviewed [Attack] Gear search pauses only for its own looked-at cards (search-state owns the details).
     if (isSearchEffect(r.current?.effect) !== Boolean(r.searchContinuation) || r.current?.effect.kind === "SEARCH_GEAR" && (c.phase !== "TARGET" || c.origin.kind !== "ATTACK" || r.current.trigger?.kind !== "WHEN_ATTACKING" || !supportsAttackSearchUnit(cardRevision(state, r.current.sourceId!, context), context).ok)) return failure("INVALID_SEARCH_CONTINUATION", "Only the reviewed attack search pauses for its looked-at cards");
     // Batch V35: the pinned {Play} cost-matching search pauses only in its own PLAY batch.

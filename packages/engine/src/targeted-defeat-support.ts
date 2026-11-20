@@ -70,7 +70,7 @@ export function supportsTargetedDefeatCard(card: DeepReadonly<CardRevisionSnapsh
 // Owns TARGETED_DEFEAT_V1 and Unit-target defeat effects only. The Gear scope and Gear-target
 // effects are owned by validateTargetedGearDefeatMetadata, which validateState registers alongside
 // this one; a mixed card is claimed by both detectors and must satisfy both complete gates.
-export function hasTargetedDefeatMetadata(card: DeepReadonly<CardRevisionSnapshot>) { return card.execution?.scope === "TARGETED_DEFEAT_V1" || card.mechanics.abilities.some(a => a.effects.some(e => e.kind === "DEFEAT_UNIT" && e.target.kind !== "GEAR" || e.kind === "SPEND_ALL_UNITS" || e.kind === "REGISTER_NEXT_FIGHT_OUTCOME")); }
+export function hasTargetedDefeatMetadata(card: DeepReadonly<CardRevisionSnapshot>) { return card.execution?.scope === "TARGETED_DEFEAT_V1" || card.mechanics.abilities.some(a => a.effects.some(e => e.kind === "DEFEAT_UNIT" && e.target.kind !== "GEAR" || e.kind === "SPEND_ALL_UNITS" || e.kind === "REGISTER_NEXT_FIGHT_OUTCOME" && e.effect.kind === "DEFEAT_UNIT")); }
 export function validateTargetedDefeatMetadata(state: GameState, context: EngineContext) {
     for (const c of Object.values(state.objects.cards)) { const r = context.content.cards.find(r => r.id === c.cardId && r.revision === c.revision); if (r && hasTargetedDefeatMetadata(r)) { const v = supportsTargetedDefeatCard(r, context); if (!v.ok) return v; } }
     return success(null);
