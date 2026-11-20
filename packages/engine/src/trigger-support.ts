@@ -15,6 +15,7 @@ import { hasGigParityEffect, supportsGigParityUnit } from "./gig-parity-support"
 import { hasValuePairMetadata, supportsValuePairUnit } from "./value-pair-support";
 import { hasProgramDiscardEffect, supportsProgramDiscardUnit } from "./program-discard-support";
 import { hasGigSearchEffect, supportsGigSearchUnit } from "./gig-search-support";
+import { hasAttackingReadyMetadata, supportsAttackingReadyUnit } from "./attacking-ready-support";
 import { supportsAttackSearchUnit } from "./attack-search-support";
 import { hasPinnedPlayEffect, supportsPinnedPlayUnit } from "./play-pin-support";
 import { hasFriendlyPlayPowerMetadata, supportsFriendlyPlayPowerUnit } from "./friendly-play-power-support";
@@ -33,6 +34,8 @@ export function supportsTriggerCard(card: DeepReadonly<CardRevisionSnapshot> | u
     if (hasValuePairMetadata(card)) return supportsValuePairUnit(card, context);
     // Batch V32: "you may discard N Programs, then bottom-deck a rival Unit" is admitted only by its exact pins.
     if (hasProgramDiscardEffect(card)) return supportsProgramDiscardUnit(card, context);
+    // Batch V38: the other-attackers aura and own-turn end "ready up to 3 friendly Units" are admitted only by their exact pins.
+    if (hasAttackingReadyMetadata(card)) return supportsAttackingReadyUnit(card, context);
     // Batch V35: the {Play} cost-matching search is admitted only by its exact pin.
     if (hasGigSearchEffect(card)) return supportsGigSearchUnit(card, context);
     // Batch V19: the [Attack] Gear search is admitted only by its exact pin.

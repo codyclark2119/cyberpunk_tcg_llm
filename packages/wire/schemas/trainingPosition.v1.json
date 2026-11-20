@@ -2461,6 +2461,17 @@
                     "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$"
                   }
                 },
+                "readiedUnits": {
+                  "minItems": 1,
+                  "maxItems": 2,
+                  "type": "array",
+                  "items": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 200,
+                    "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$"
+                  }
+                },
                 "spendsRemaining": {
                   "type": "integer",
                   "exclusiveMinimum": 0,
@@ -5125,6 +5136,29 @@
                             "kind",
                             "count",
                             "then"
+                          ],
+                          "additionalProperties": false
+                        },
+                        {
+                          "type": "object",
+                          "properties": {
+                            "kind": {
+                              "type": "string",
+                              "const": "READY_UNITS_UP_TO"
+                            },
+                            "relation": {
+                              "type": "string",
+                              "const": "FRIENDLY"
+                            },
+                            "maximum": {
+                              "type": "number",
+                              "const": 3
+                            }
+                          },
+                          "required": [
+                            "kind",
+                            "relation",
+                            "maximum"
                           ],
                           "additionalProperties": false
                         },
@@ -8200,6 +8234,29 @@
                         "properties": {
                           "kind": {
                             "type": "string",
+                            "const": "READY_UNITS_UP_TO"
+                          },
+                          "relation": {
+                            "type": "string",
+                            "const": "FRIENDLY"
+                          },
+                          "maximum": {
+                            "type": "number",
+                            "const": 3
+                          }
+                        },
+                        "required": [
+                          "kind",
+                          "relation",
+                          "maximum"
+                        ],
+                        "additionalProperties": false
+                      },
+                      {
+                        "type": "object",
+                        "properties": {
+                          "kind": {
+                            "type": "string",
                             "const": "READY_LEGENDS_UP_TO"
                           },
                           "tag": {
@@ -11255,6 +11312,29 @@
                           "kind",
                           "count",
                           "then"
+                        ],
+                        "additionalProperties": false
+                      },
+                      {
+                        "type": "object",
+                        "properties": {
+                          "kind": {
+                            "type": "string",
+                            "const": "READY_UNITS_UP_TO"
+                          },
+                          "relation": {
+                            "type": "string",
+                            "const": "FRIENDLY"
+                          },
+                          "maximum": {
+                            "type": "number",
+                            "const": 3
+                          }
+                        },
+                        "required": [
+                          "kind",
+                          "relation",
+                          "maximum"
                         ],
                         "additionalProperties": false
                       },

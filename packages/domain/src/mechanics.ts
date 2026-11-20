@@ -194,6 +194,8 @@ export const EffectSchema = z.discriminatedUnion("kind", [
     // follows only after the discard (11.15: the owner bottom-decks the Unit and its Gear).
     // Batch V33: "You may discard 2 Programs. If you do, bottom-deck a rival unequipped Unit." (no attached Gear, 4.12).
     z.strictObject({ kind: z.literal("DISCARD_PROGRAMS_THEN_BOTTOM_DECK"), count: z.union([z.literal(1), z.literal(2)]), then: z.strictObject({ relation: z.literal("RIVAL"), unequipped: z.literal(true).optional() }) }),
+    // Batch V38: "At the end of your turn, ready up to 3 friendly Units."
+    z.strictObject({ kind: z.literal("READY_UNITS_UP_TO"), relation: z.literal("FRIENDLY"), maximum: z.literal(3) }),
     // Batch V29: "If you control a value-pair of Gigs, ready up to 2 MERC Legends in your Legends area."
     z.strictObject({ kind: z.literal("READY_LEGENDS_UP_TO"), tag: z.literal("Merc"), maximum: z.literal(2),
         when: z.strictObject({ timing: z.literal("RESOLUTION"), condition: z.strictObject({ kind: z.literal("CONTROLS_VALUE_PAIR") }) }) }),
@@ -220,6 +222,8 @@ export const ContinuousModifierSchema = z.discriminatedUnion("kind", [
     // Batch V30: "This Unit can attack rival Units the turn it's played" (11.3.1): while lagging, rival Units only.
     z.strictObject({ kind: z.literal("CAN_ATTACK_RIVAL_UNITS_WHILE_LAGGING") }),
     z.strictObject({ kind: z.literal("FRIENDLY_ARASAKA_ATTACKING_UNIT_POWER"), amount: z.literal(1) }),
+    // Batch V38: "Other friendly Units have +2 power while attacking." A field Unit's live contribution, never to itself.
+    z.strictObject({ kind: z.literal("OTHER_FRIENDLY_ATTACKING_UNIT_POWER"), amount: z.literal(2) }),
     z.strictObject({ kind: z.literal("GRANT_KEYWORD_TO_HOST"), keyword: z.literal("BLOCKER") }),
     // 2.6/11.3.1: prevents rival Units that entered the field this turn (lagging) from attacking.
     z.strictObject({ kind: z.literal("RIVAL_LAGGING_UNITS_CANNOT_ATTACK") }),

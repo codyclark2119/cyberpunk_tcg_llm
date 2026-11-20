@@ -9,12 +9,12 @@
   },
   "totals": {
     "cards": 151,
-    "admitted": 86,
-    "notAdmitted": 65,
+    "admitted": 87,
+    "notAdmitted": 64,
     "notAdmittedOnlyCoveredFamilies": 0,
     "byAdmission": {
-      "NOT_ADMITTED": 65,
-      "SOURCE_MATCH": 86
+      "NOT_ADMITTED": 64,
+      "SOURCE_MATCH": 87
     }
   },
   "families": [
@@ -271,15 +271,6 @@
       "soleBlockerCount": 0
     },
     {
-      "family": "SPEND_OR_READY",
-      "status": "PARTIAL",
-      "summary": "Spend or ready Units and Legends by an effect, and 'can't ready' locks.",
-      "notes": "SPEND_UNIT (rival, cost at most 4) only; readying Units or Legends is missing.",
-      "cardCount": 15,
-      "notAdmittedCount": 4,
-      "soleBlockerCount": 0
-    },
-    {
       "family": "TRASH_RECURSION",
       "status": "MISSING",
       "summary": "Return a card from the trash (or from cards just trashed) to hand.",
@@ -334,6 +325,15 @@
       "soleBlockerCount": 0
     },
     {
+      "family": "SPEND_OR_READY",
+      "status": "PARTIAL",
+      "summary": "Spend or ready Units and Legends by an effect, and 'can't ready' locks.",
+      "notes": "SPEND_UNIT (rival, cost at most 4) only; readying Units or Legends is missing.",
+      "cardCount": 15,
+      "notAdmittedCount": 3,
+      "soleBlockerCount": 0
+    },
+    {
       "family": "TRIGGER_ATTACK",
       "status": "PARTIAL",
       "summary": "[Attack] abilities and 'when a Unit attacks' triggers.",
@@ -348,15 +348,6 @@
       "summary": "[Defeated] abilities.",
       "notes": "Trigger WHEN_DEFEATED, admitted only for Dexter: One Last Chance.",
       "cardCount": 7,
-      "notAdmittedCount": 3,
-      "soleBlockerCount": 0
-    },
-    {
-      "family": "TRIGGER_END_OF_TURN",
-      "status": "PARTIAL",
-      "summary": "'At the end of your turn' abilities.",
-      "notes": "Trigger WHEN_OWN_TURN_ENDS; only Eddie readying is routed.",
-      "cardCount": 9,
       "notAdmittedCount": 3,
       "soleBlockerCount": 0
     },
@@ -397,11 +388,11 @@
       "soleBlockerCount": 0
     },
     {
-      "family": "STATIC_MODIFIER",
+      "family": "TRIGGER_END_OF_TURN",
       "status": "PARTIAL",
-      "summary": "Continuous modifiers: auras, while-attacking power, conditional keywords.",
-      "notes": "Each admitted modifier is a bespoke shape.",
-      "cardCount": 4,
+      "summary": "'At the end of your turn' abilities.",
+      "notes": "Trigger WHEN_OWN_TURN_ENDS; only Eddie readying is routed.",
+      "cardCount": 9,
       "notAdmittedCount": 2,
       "soleBlockerCount": 0
     },
@@ -431,6 +422,15 @@
       "cardCount": 1,
       "notAdmittedCount": 1,
       "soleBlockerCount": 1
+    },
+    {
+      "family": "STATIC_MODIFIER",
+      "status": "PARTIAL",
+      "summary": "Continuous modifiers: auras, while-attacking power, conditional keywords.",
+      "notes": "Each admitted modifier is a bespoke shape.",
+      "cardCount": 4,
+      "notAdmittedCount": 1,
+      "soleBlockerCount": 0
     },
     {
       "family": "TRIGGER_BLOCKER_USED",
@@ -2790,18 +2790,14 @@
       "colors": [
         "GREEN"
       ],
-      "admission": "NOT_ADMITTED",
-      "revision": null,
+      "admission": "SOURCE_MATCH",
+      "revision": 1,
       "families": [
         "SPEND_OR_READY",
         "STATIC_MODIFIER",
         "TRIGGER_END_OF_TURN"
       ],
-      "blockingFamilies": [
-        "SPEND_OR_READY",
-        "STATIC_MODIFIER",
-        "TRIGGER_END_OF_TURN"
-      ],
+      "blockingFamilies": [],
       "note": null
     },
     {

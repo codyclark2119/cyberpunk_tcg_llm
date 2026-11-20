@@ -68,6 +68,8 @@ export const TriggerContinuationSchema = z.strictObject({ effectDefeats: z.array
     selectedEddieSlots: z.array(z.number().int().nonnegative()).length(1).optional(), resolvedIds: z.array(HashSchema), phase: z.enum(["SELECT", "OPTIONAL", "TARGET", "AMOUNT", "DISCARD", "READY"]), trashedIds: z.array(CardInstanceIdSchema).min(1).max(3).optional(), conditionMet: z.literal(true).optional(), targetGigId: GigInstanceIdSchema.optional(),
     // Batch V29: the Legend already readied by a current "ready up to 2" choice.
     readiedLegends: z.array(CardInstanceIdSchema).length(1).optional(),
+    // Batch V38: the Units already readied by a current "ready up to 3 friendly Units" choice.
+    readiedUnits: z.array(CardInstanceIdSchema).min(1).max(2).optional(),
     // Batch V30: rival Units still to spend, one per friendly value-pair counted when the effect began.
     spendsRemaining: z.number().int().positive().optional(),
     // Batch V31: the card the first discard moved, while its "discards 1 more" is open.
