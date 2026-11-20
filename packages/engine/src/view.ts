@@ -27,6 +27,7 @@ import { listSpendUnitTargets } from "./targeted-spend-queries";
 import type { SpendUnitTarget } from "@tcg/domain";
 import { type GameState, type PlayerId, type CardInstanceId, type GigInstanceId, type Condition, type TargetSelector, type PaymentSource, type Cost, type Keyword } from "@tcg/domain";
 import { type EngineContext, validateState, freeze } from "./state";
+import { supportsValuePairUnit } from "./value-pair-support";
 /** Construct from a validated/frozen state. Selectors never mutate authoritative objects. */
 export class RulesView {
     readonly state: GameState;
@@ -90,7 +91,7 @@ export class RulesView {
     getCapabilitySources(id: CardInstanceId, keyword: Keyword) { return this.getEffectiveCapabilities(id).find(c => c.keyword === keyword)?.sources ?? []; }
     getEffectiveKeywords(id: CardInstanceId) { return this.getKeywords(id); }
     getKeywords(id: CardInstanceId) {
-        if (this.getRevision(id)?.mechanics.modifiers.some(m => m.kind !== "POWER_PER_EQUIPPED_GEAR_DURING_OWN_TURN" && !(m.kind === "SELF_PLAY_COST_REDUCTION" && supportsPlayCostReduction(this.getRevision(id), this.context).ok) && !(m.kind === "FRIENDLY_ARASAKA_ATTACKING_UNIT_POWER" && supportsAttackingAuraLegend(this.getRevision(id), this.context).ok) && !(m.kind === "GRANT_KEYWORD_TO_HOST" && supportsCapabilityGear(this.getRevision(id), this.context).ok) && !(gearEnabled(this.context) && m.kind === "GRANT_PRINTED_POWER_TO_HOST" && this.getRevision(id)?.type === "GEAR"))) throw new Error("UNSUPPORTED_CONTINUOUS_MODIFIERS");
+        if (this.getRevision(id)?.mechanics.modifiers.some(m => m.kind !== "POWER_PER_EQUIPPED_GEAR_DURING_OWN_TURN" && !(m.kind === "SELF_PLAY_COST_REDUCTION" && supportsPlayCostReduction(this.getRevision(id), this.context).ok) && !(m.kind === "CAN_ATTACK_RIVAL_UNITS_WHILE_LAGGING" && supportsValuePairUnit(this.getRevision(id), this.context).ok) && !(m.kind === "FRIENDLY_ARASAKA_ATTACKING_UNIT_POWER" && supportsAttackingAuraLegend(this.getRevision(id), this.context).ok) && !(m.kind === "GRANT_KEYWORD_TO_HOST" && supportsCapabilityGear(this.getRevision(id), this.context).ok) && !(gearEnabled(this.context) && m.kind === "GRANT_PRINTED_POWER_TO_HOST" && this.getRevision(id)?.type === "GEAR"))) throw new Error("UNSUPPORTED_CONTINUOUS_MODIFIERS");
         return effectiveKeywords(this.state, id, this.context);
     }
     getLegalTargets(source: CardInstanceId, target: TargetSelector) {

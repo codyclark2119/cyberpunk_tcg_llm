@@ -6,6 +6,7 @@ import { defeatSupport, gearDefeatSupport } from "./defeat";
 import { targetedGearDefeatPolicyComplete } from "./targeted-gear-defeat-support";
 import { targetedDefeatEnabled } from "./targeted-defeat-support";
 import { testCondition } from "./conditions";
+import { referencedCost } from "./cost-value";
 /** Friendly means current control, and Fixer dice have no usable friendly value. */
 export function controlledGigValuesByDieType(state: GameState, actor: PlayerId, dieType: "D20") {
     return Object.values(state.objects.gigs).filter(g => g.controllerId === actor && g.location.zone === "GIGS" && g.dieType === dieType).flatMap(g => g.roll.kind === "ROLLED" ? [g.roll.currentValue] : []);
@@ -42,6 +43,7 @@ export function listDefeatableUnits(state: GameState, actor: PlayerId, target: D
     return Object.values(state.objects.cards).filter(c => {
         if (target.relation === "RIVAL" && c.controllerId === actor || target.relation === "CONTROLLED" && c.controllerId !== actor || !defeatSupport(state, c.id, context).ok) return false;
         if (target.readiness && c.readiness !== target.readiness) return false;
+        if (target.cost) { const cost = referencedCost(state, c.id, context); if (cost === null || cost > target.cost.value) return false; }
         const power = effectivePower(state, c.id, context);
         return power !== null && values.some(value => referencedPower(power) <= value);
     }).map(c => c.id).sort();

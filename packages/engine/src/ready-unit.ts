@@ -1,5 +1,5 @@
 import type { CardInstanceId, GameState, PendingEffect, PlayerId } from "@tcg/domain";
-import { effectiveCardTypes, effectivePower } from "./characteristics";
+import { effectiveCardTypes, effectivePower, hasClassification } from "./characteristics";
 import type { EngineContext } from "./state";
 import type { TurnMutation } from "./turn";
 import { readyLockIds } from "./ready-lock";
@@ -17,6 +17,11 @@ export function stolenGigReadyTargets(state: GameState, current: PendingEffect, 
     return state.players[current.controllerId].zones.BATTLEFIELD.filter(id => { const c = state.objects.cards[id]; return id !== subjectId && c.controllerId === current.controllerId && c.face === "UP" && effectiveCardTypes(state, id, context).includes("UNIT") && effectivePower(state, id, context) === value; }).sort();
 }
 /** Effect-caused ready. Readying a ready card is not a transition and emits nothing. */
+/** Batch V29: face-up Legends in the actor's Legends area with the classification. A face-down Legend has no public
+ * classification. As with the Legend ready, readiness is not a selector filter. */
+export function taggedLegendReadyTargets(state: GameState, actor: PlayerId, tag: string, context: EngineContext): CardInstanceId[] {
+    return readyLegendTargets(state, actor, context).filter(id => hasClassification(state, id, tag, context));
+}
 export function readyCardForEffect(m: TurnMutation, id: CardInstanceId) {
     const c = m.state.objects.cards[id];
     if (!c || c.readiness !== "SPENT") return;

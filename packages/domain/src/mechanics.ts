@@ -36,7 +36,9 @@ export const ConditionSchema = z.discriminatedUnion("kind", [
     // Batch V24: the trigger subject is on the field with at least one attached Gear ("if it's equipped").
     z.strictObject({ kind: z.literal("SUBJECT_IS_EQUIPPED") }),
     // Batch V27: "if you control 2 or more Gigs with 8+ value".
-    z.strictObject({ kind: z.literal("GIG_COUNT_WITH_VALUE_AT_LEAST"), minimum: z.literal(8), count: z.literal(2) })
+    z.strictObject({ kind: z.literal("GIG_COUNT_WITH_VALUE_AT_LEAST"), minimum: z.literal(8), count: z.literal(2) }),
+    // Batch V29: "If you control a value-pair of Gigs" (6.6: 2 dice with the same value in the same Gig area).
+    z.strictObject({ kind: z.literal("CONTROLS_VALUE_PAIR") })
 ]);
 export const CombatRestrictionSchema = z.discriminatedUnion("kind", [
     z.strictObject({ kind: z.literal("CANNOT_ATTACK") }),
@@ -78,7 +80,9 @@ export const PendingChoiceSchema = z.strictObject({
 export const DiscardCardsEffectSchema = z.strictObject({
     kind: z.literal("DISCARD_CARDS"), player: z.enum(["CONTROLLER", "RIVAL"]), count: z.literal(1),
     selection: z.literal("CHOSEN_BY_AFFECTED_PLAYER"),
-    when: z.strictObject({ timing: z.literal("RESOLUTION"), condition: ConditionSchema }).optional()
+    when: z.strictObject({ timing: z.literal("RESOLUTION"), condition: ConditionSchema }).optional(),
+    // Batch V31: "If the card's cost equals the value of a friendly Gig, that Rival discards 1 more."
+    more: z.strictObject({ condition: z.strictObject({ kind: z.literal("DISCARDED_COST_EQUALS_FRIENDLY_GIG_VALUE") }), count: z.literal(1) }).optional()
 });
 export type DiscardCardsEffect = z.infer<typeof DiscardCardsEffectSchema>;
 export const ReadyEddiesEffectSchema = z.strictObject({ kind: z.literal("READY_EDDIES"), player: z.literal("CONTROLLER"), count: z.union([z.literal(1), z.literal(2)]),
@@ -102,6 +106,8 @@ export const DefeatUnitTargetSchema = z.strictObject({ kind: z.literal("UNITS"),
         z.strictObject({ kind: z.literal("LESS_THAN_FRIENDLY_UNIT") })]),
     // Only Units whose current readiness is SPENT are eligible.
     readiness: z.literal("SPENT").optional(),
+    // "with cost 2 or less" (batch V31): the Unit's referenced cost, alongside the power bound.
+    cost: z.strictObject({ kind: z.literal("AT_MOST"), value: z.literal(2) }).optional(),
     // "If <condition>, defeat ... with power N or less instead": replaces the AT_MOST bound while the condition holds.
     instead: z.strictObject({ condition: z.strictObject({ kind: z.literal("STREET_CRED_GREATER_THAN_RIVAL") }), power: DefeatPowerAtMostSchema }).optional(),
     // "Defeat all other Units" (batch V10): every eligible Unit except the effect source, with no target choice.
@@ -166,6 +172,15 @@ export const EffectSchema = z.discriminatedUnion("kind", [
     // Batch V23: "You may swap a friendly Gig with a rival Gig." (6.7; a swap is not stealing, 6.7.2)
     z.strictObject({ kind: z.literal("SWAP_GIGS"), optional: z.literal(true) }),
     z.strictObject({ kind: z.literal("PREVENT_UNIT_READY"), target: SpendUnitTargetSchema, when: z.strictObject({ timing: z.literal("RESOLUTION"), condition: z.strictObject({ kind: z.literal("STREET_CRED_IS_EVEN") }) }).optional(), duration: z.literal("UNTIL_YOUR_NEXT_TURN") }),
+    // Batch V28: "+2 power this turn for each friendly Gig with an even value" / "Draw 1 for each friendly Gig with an odd value",
+    // counted when the effect resolves.
+    z.strictObject({ kind: z.literal("POWER_PER_FRIENDLY_GIG"), target: z.strictObject({ kind: z.literal("SOURCE_SUBJECT") }), amount: z.literal(2), parity: z.literal("EVEN") }),
+    z.strictObject({ kind: z.literal("DRAW_PER_FRIENDLY_GIG"), count: z.literal(1), parity: z.literal("ODD") }),
+    // Batch V30: "Spend a rival Unit for each friendly value-pair of Gigs" (6.6.1), counted when the effect resolves.
+    z.strictObject({ kind: z.literal("SPEND_UNITS_PER_VALUE_PAIR"), target: z.strictObject({ kind: z.literal("UNITS"), relation: z.literal("RIVAL") }) }),
+    // Batch V29: "If you control a value-pair of Gigs, ready up to 2 MERC Legends in your Legends area."
+    z.strictObject({ kind: z.literal("READY_LEGENDS_UP_TO"), tag: z.literal("Merc"), maximum: z.literal(2),
+        when: z.strictObject({ timing: z.literal("RESOLUTION"), condition: z.strictObject({ kind: z.literal("CONTROLS_VALUE_PAIR") }) }) }),
     z.strictObject({ kind: z.literal("DRAW"), count: z.number().int().positive() }),
     z.strictObject({ kind: z.literal("DAMAGE"), target: TargetSelectorSchema, amount: z.number().int().nonnegative() }),
     z.strictObject({ kind: z.literal("MOVE_CARD"), target: TargetSelectorSchema, destination: ZoneSchema }),
@@ -186,6 +201,8 @@ export const AbilitySchema = z.strictObject({ id: z.string().min(1), trigger: Tr
     activation: z.strictObject({ timing: z.literal("MAIN"), conditionTiming: z.literal("ACTIVATION_AND_RESOLUTION"), costs: z.array(ActivationCostSchema) }).optional(),
     conditions: z.array(ConditionSchema), cost: CostSchema, effects: z.array(EffectSchema) });
 export const ContinuousModifierSchema = z.discriminatedUnion("kind", [
+    // Batch V30: "This Unit can attack rival Units the turn it's played" (11.3.1): while lagging, rival Units only.
+    z.strictObject({ kind: z.literal("CAN_ATTACK_RIVAL_UNITS_WHILE_LAGGING") }),
     z.strictObject({ kind: z.literal("FRIENDLY_ARASAKA_ATTACKING_UNIT_POWER"), amount: z.literal(1) }),
     z.strictObject({ kind: z.literal("GRANT_KEYWORD_TO_HOST"), keyword: z.literal("BLOCKER") }),
     // 2.6/11.3.1: prevents rival Units that entered the field this turn (lagging) from attacking.

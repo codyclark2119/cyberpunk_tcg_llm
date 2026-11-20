@@ -37,9 +37,26 @@ const TARGETED_DEFEAT_SHAPES = [
     { type: "LEGEND", colors: ["RED"], ram: { RED: 2 }, tags: ["Arasaka", "Merc"], cost: 9, sell: true, power: 9, keywords: ["GO_SOLO"],
         effects: [{ kind: "DEFEAT_UNIT", target: { kind: "UNITS", relation: "RIVAL", power: { kind: "ANY" } } }] }
 ].map(shape => canonicalSerialize({ modifiers: [], keywords: [], ...shape }));
+/** A multi-ability defeat card as pinned: every ability whole, in printed order; anything not listed is absent. */
+const ability = (a: { trigger: string; effects: unknown[] }) => ({ trigger: a.trigger, inherited: null, guard: null, activation: null, conditions: [], abilityCost: { kind: "NONE" }, effects: a.effects });
+const WHOLE_DEFEAT_SHAPES = [
+    // Batch V31: Caliber: Totentanz's Top Dog. "{Play} Defeat a rival Unit with cost 2 or less. {Defeated} A Rival discards 1. If the
+    // card's cost equals the value of a friendly Gig, that Rival discards 1 more."
+    { type: "UNIT", colors: ["YELLOW"], ram: { YELLOW: 2 }, tags: ["Ganger", "Maelstrom"], cost: 5, sell: false, power: 5, abilities: [
+        ability({ trigger: "WHEN_PLAYED", effects: [{ kind: "DEFEAT_UNIT", target: { kind: "UNITS", relation: "RIVAL", power: { kind: "ANY" }, cost: { kind: "AT_MOST", value: 2 } } }] }),
+        ability({ trigger: "WHEN_DEFEATED", effects: [{ kind: "DISCARD_CARDS", player: "RIVAL", count: 1, selection: "CHOSEN_BY_AFFECTED_PLAYER", more: { condition: { kind: "DISCARDED_COST_EQUALS_FRIENDLY_GIG_VALUE" }, count: 1 } }] })] }
+].map(shape => canonicalSerialize({ keywords: [], modifiers: [], equip: null, restrictions: [], ...shape }));
 /** Complete per-card shapes; no source-name dispatch or arbitrary filter/defeat admission. */
 export function supportsTargetedDefeatCard(card: DeepReadonly<CardRevisionSnapshot> | undefined, context: EngineContext) {
     const m = card?.mechanics, a = m?.abilities[0], p = context.content.ruleset.gameplay?.turnSlice;
+    // Batch V31: a defeat card with more than one ability is admitted only by its whole pinned ability list.
+    if (card && m && m.abilities.length > 1) {
+        if (!targetedDefeatEnabled(context) || !combatResolutionEnabled(context) || !turnSliceAllows(p, "cardPlay") || !turnSliceAllows(p, "combatTriggers") || context.content.ruleset.gameplay?.gigValueBounds !== "DIE_FACES_V1" || !card.provenance.reviewed || card.execution?.scope !== "TARGETED_DEFEAT_V1" || card.execution.status !== "SUPPORTED" || card.printedCost.kind !== "EDDIES" || card.keywords.length
+            || !WHOLE_DEFEAT_SHAPES.includes(canonicalSerialize({ type: card.type, colors: card.colors, ram: card.ram, tags: card.tags, cost: card.printedCost.amount, sell: card.sellProfile.allowed, power: card.power ?? null, keywords: m.keywords, modifiers: m.modifiers, equip: m.equip ?? null, restrictions: m.restrictions ?? [],
+                abilities: m.abilities.map(a => ({ trigger: a.trigger ?? null, inherited: a.inherited ?? null, guard: a.guard ?? null, activation: a.activation ?? null, conditions: a.conditions, abilityCost: a.cost, effects: a.effects })) })))
+            return failure("UNSUPPORTED_TARGETED_DEFEAT", "Entire reviewed multi-ability defeat shape required");
+        return success(null);
+    }
     if (!targetedDefeatEnabled(context) || !combatResolutionEnabled(context) || !turnSliceAllows(p, "cardPlay") || !turnSliceAllows(p, "combatTriggers") || context.content.ruleset.gameplay?.gigValueBounds !== "DIE_FACES_V1" || !card?.provenance.reviewed || card.execution?.scope !== "TARGETED_DEFEAT_V1" || card.execution.status !== "SUPPORTED" || card.printedCost.kind !== "EDDIES" || card.keywords.length || !m || m.equip || m.restrictions?.length || m.abilities.length !== 1 || !a || a.trigger !== "WHEN_PLAYED" || a.activation || a.inherited || a.guard || a.conditions.length || a.cost.kind !== "NONE")
         return failure("UNSUPPORTED_TARGETED_DEFEAT", "Complete reviewed Unit/Program shape and semantic defeat policy required");
     const actual = canonicalSerialize({ type: card.type, colors: card.colors, ram: card.ram, tags: card.tags, cost: card.printedCost.amount, sell: card.sellProfile.allowed, power: card.power ?? null, keywords: m.keywords, modifiers: m.modifiers, effects: a.effects });

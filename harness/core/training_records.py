@@ -81,7 +81,7 @@ _SUPPORTED = _ANNOTATIONS | {
     "type", "properties", "required", "additionalProperties", "const", "enum",
     "minLength", "maxLength", "pattern", "items", "prefixItems", "minItems", "maxItems",
     "minimum", "maximum", "exclusiveMinimum", "exclusiveMaximum", "oneOf", "anyOf", "allOf",
-    "propertyNames",
+    "propertyNames", "multipleOf",
 }
 # Formats the exports use; each is also enforced by a sibling `pattern`. An
 # unknown format may carry a constraint zod enforces and this module would not.
@@ -151,6 +151,10 @@ class SchemaValidator:
             raise SchemaError(f"unsupported format: {node['format']!r}")
         if "pattern" in node:
             self._compile(node["pattern"])
+        if "multipleOf" in node:
+            m = node["multipleOf"]
+            if isinstance(m, bool) or not isinstance(m, int) or m <= 0:
+                raise SchemaError(f"unsupported multipleOf: {m!r} (positive integers only)")
         for key in ("properties",):
             for sub in node.get(key, {}).values():
                 self._check_supported(sub)
@@ -222,6 +226,10 @@ class SchemaValidator:
                 out.append(f"{path}: {v} <= exclusiveMinimum {s['exclusiveMinimum']}")
             if "exclusiveMaximum" in s and v >= s["exclusiveMaximum"]:
                 out.append(f"{path}: {v} >= exclusiveMaximum {s['exclusiveMaximum']}")
+            # zod .multipleOf exports only integer divisors (the scaled power modifier uses 2);
+            # a fractional divisor would need decimal arithmetic, so it is refused at load.
+            if "multipleOf" in s and not (float(v).is_integer() and int(v) % s["multipleOf"] == 0):
+                out.append(f"{path}: {v} is not a multiple of {s['multipleOf']}")
         if isinstance(v, list):
             if "minItems" in s and len(v) < s["minItems"]:
                 out.append(f"{path}: fewer than {s['minItems']} items")

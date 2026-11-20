@@ -65,7 +65,13 @@ export const TriggerOriginSchema = z.discriminatedUnion("kind", [
 ]);
 export type TriggerOrigin = DeepReadonly<z.infer<typeof TriggerOriginSchema>>;
 export const TriggerContinuationSchema = z.strictObject({ effectDefeats: z.array(z.strictObject({ targetId: CardInstanceIdSchema, defeatedBy: CardInstanceIdSchema })).length(1).optional(), origin: TriggerOriginSchema, ordinal: z.number().int().positive(), bindings: z.array(TriggerBindingSchema).min(1),
-    selectedEddieSlots: z.array(z.number().int().nonnegative()).length(1).optional(), resolvedIds: z.array(HashSchema), phase: z.enum(["SELECT", "OPTIONAL", "TARGET", "AMOUNT", "DISCARD", "READY"]), trashedIds: z.array(CardInstanceIdSchema).min(1).max(3).optional(), conditionMet: z.literal(true).optional(), targetGigId: GigInstanceIdSchema.optional() });
+    selectedEddieSlots: z.array(z.number().int().nonnegative()).length(1).optional(), resolvedIds: z.array(HashSchema), phase: z.enum(["SELECT", "OPTIONAL", "TARGET", "AMOUNT", "DISCARD", "READY"]), trashedIds: z.array(CardInstanceIdSchema).min(1).max(3).optional(), conditionMet: z.literal(true).optional(), targetGigId: GigInstanceIdSchema.optional(),
+    // Batch V29: the Legend already readied by a current "ready up to 2" choice.
+    readiedLegends: z.array(CardInstanceIdSchema).length(1).optional(),
+    // Batch V30: rival Units still to spend, one per friendly value-pair counted when the effect began.
+    spendsRemaining: z.number().int().positive().optional(),
+    // Batch V31: the card the first discard moved, while its "discards 1 more" is open.
+    discardedCardId: CardInstanceIdSchema.optional() });
 export const QualifyingAttackSummarySchema = z.strictObject({
     count: z.number().int().nonnegative(),
     first: z.strictObject({ attackerId: CardInstanceIdSchema, attacker: CardReferenceSchema }).nullable()
@@ -81,7 +87,10 @@ export const TemporaryPowerModifierSchema = z.discriminatedUnion("amount", [
     TemporaryPowerBaseSchema.extend({ amount: z.literal(-1) }),
     TemporaryPowerBaseSchema.extend({ amount: z.literal(2), origin: z.strictObject({ effectId: HashSchema, abilityId: z.string().min(1), ordinal: z.number().int().positive() }) }),
     TemporaryPowerBaseSchema.extend({ amount: z.literal(5), origin: z.strictObject({ effectId: HashSchema, abilityId: z.string().min(1), ordinal: z.number().int().positive() }) })
-]);
+]).or(
+    // Batch V28: "+2 power this turn for each friendly Gig with an even value", counted once at resolution; `scaled` keeps it apart from the fixed +2.
+    TemporaryPowerBaseSchema.extend({ amount: z.number().int().positive().multipleOf(2), scaled: z.literal("FRIENDLY_EVEN_GIGS"), origin: z.strictObject({ effectId: HashSchema, abilityId: z.string().min(1), ordinal: z.number().int().positive() }) })
+);
 export type TemporaryPowerModifier = z.infer<typeof TemporaryPowerModifierSchema>;
 /** Batch V20: a keyword granted "this turn" by a resolved PLAY occurrence; it tracks the target only while it stays on the field. */
 export const TemporaryKeywordGrantSchema = z.strictObject({ kind: z.literal("KEYWORD"), keyword: z.literal("ADRENALINE"), sourceId: CardInstanceIdSchema, targetId: CardInstanceIdSchema,

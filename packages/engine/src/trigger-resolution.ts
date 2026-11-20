@@ -3,7 +3,7 @@ import { beginTargetedDefeat } from "./targeted-defeat";
 import { resolveSpendTarget } from "./targeted-spend";
 import { listSpendUnitTargets } from "./targeted-spend-queries";
 import { isUnitSpendSubject, spendUnitForEffect } from "./unit-spend";
-import { readyCardForEffect, readyLegendTargets, stolenGigReadyTargets } from "./ready-unit";
+import { readyCardForEffect, readyLegendTargets, stolenGigReadyTargets, taggedLegendReadyTargets } from "./ready-unit";
 import type { PendingEffect, DefeatInstruction } from "@tcg/domain";
 import { effectiveCardTypes } from "./characteristics";
 import { registerEndTurnEffect } from "./delayed-effects";
@@ -11,8 +11,8 @@ import { delayedSubjectTypes } from "./delayed-effects";
 import { supportsDelayedAttackGear } from "./delayed-effect-support";
 import { finishEndTurn } from "./end-turn";
 import { readyableEddieSlots, readyEddie } from "./eddie-ready";
-import { discardCard, getDiscardableCards } from "./discard";
-import { testCondition } from "./conditions";
+import { discardCard, discardedCostMatchesFriendlyGig, getDiscardableCards } from "./discard";
+import { friendlyValuePairCount, testCondition } from "./conditions";
 import { supportsOrderedTriggerSource } from "./ordered-effects-support";
 import { grantLegendKnowledge, privateLookTargets } from "./private-knowledge";
 import { friendlyPowerTargets } from "./friendly-play-power-queries";
@@ -153,6 +153,21 @@ export function advanceTriggers(m: TurnMutation): Result<null> {
         c.phase = "TARGET"; return offer(m);
     }
     // Batch V8: own-turn-end ready; the printed "if" is rechecked at resolution.
+    // Batch V30: "Spend a rival Unit for each friendly value-pair of Gigs": the pairs are counted once, here (6.6.1), then each
+    // spend is its own pick; a single rival Unit is forced. Readiness is not a selector filter.
+    if (e.kind === "SPEND_UNITS_PER_VALUE_PAIR") {
+        const pairs = friendlyValuePairCount(m.state, r.current.controllerId);
+        if (!pairs || !listSpendUnitTargets(m.state, r.current.controllerId, e.target, m.context).length) return completed(m);
+        c.spendsRemaining = pairs; c.phase = "TARGET"; return offer(m);
+    }
+    // Batch V29: "If you control a value-pair of Gigs, ready up to 2 MERC Legends": the condition is checked here (10.16.1.1),
+    // then each pick readies one Legend until 2 are chosen, none remain, or the controller is done.
+    if (e.kind === "READY_LEGENDS_UP_TO") {
+        const met = testCondition(m.state, r.current.controllerId, e.when.condition, m.context, r.current.sourceId ?? undefined);
+        m.emit({ kind: "CONDITION_EVALUATED", effectId: r.current.id, met });
+        if (!met || !taggedLegendReadyTargets(m.state, r.current.controllerId, e.tag, m.context).length) return completed(m);
+        c.phase = "TARGET"; return offer(m);
+    }
     if (e.kind === "READY_UNIT") {
         const current = r.current, a = cardRevision(m.state, current.sourceId!, m.context)!.mechanics.abilities.find(a => a.id === current.trigger!.abilityId)!;
         const met = a.conditions.every(cond => testCondition(m.state, current.controllerId, cond, m.context, current.trigger!.subjectId));
@@ -276,7 +291,15 @@ export function continueTrigger(m: TurnMutation, index: number, forced = false):
     if (c.phase === "DISCARD") {
         if (current.effect.kind !== "DISCARD_CARDS" || option.kind !== "CARD") return failure("INVALID_DISCARD", "Choose one current own-hand card");
         const result = discardCard(m, current.effect, option.cardInstanceId, forced);
-        return result.ok ? completed(m) : result;
+        if (!result.ok) return result;
+        // Batch V31: "If the card's cost equals the value of a friendly Gig, that Rival discards 1 more."
+        if (current.effect.more && !c.discardedCardId) {
+            const met = discardedCostMatchesFriendlyGig(m.state, current.controllerId, option.cardInstanceId, m.context);
+            m.emit({ kind: "CONDITION_EVALUATED", effectId: current.id, met });
+            if (met && getDiscardableCards(m.state, discardingPlayer(m.state, current)).length) { c.discardedCardId = option.cardInstanceId; return offer(m); }
+        }
+        delete c.discardedCardId;
+        return completed(m);
     }
     if (c.phase === "OPTIONAL") {
         if (option.kind !== "CONFIRM") return failure("INVALID_OPTIONAL_TRIGGER", "Accept or decline explicitly");
@@ -295,6 +318,24 @@ export function continueTrigger(m: TurnMutation, index: number, forced = false):
             if (option.kind !== "CARD") return failure("INVALID_SPEND_TARGET", "Choose a current rival Unit");
             const spent = resolveSpendTarget(m, option.cardInstanceId, forced);
             return spent.ok ? completed(m) : spent;
+        }
+        if (current.effect.kind === "SPEND_UNITS_PER_VALUE_PAIR") {
+            if (option.kind !== "CARD" || !c.spendsRemaining || !listSpendUnitTargets(m.state, current.controllerId, current.effect.target, m.context).includes(option.cardInstanceId)) return failure("INVALID_SPEND_TARGET", "Choose a current rival Unit");
+            m.emit({ kind: "CARD_TARGET_SELECTED", effectId: current.id, sourceId: current.sourceId!, targetId: option.cardInstanceId, controllerId: current.controllerId, forced });
+            const spent = spendUnitForEffect(m, option.cardInstanceId, current.sourceId!, current.id);
+            if (!spent.ok) return spent;
+            if (c.spendsRemaining === 1) { delete c.spendsRemaining; return completed(m); }
+            c.spendsRemaining--; return offer(m);
+        }
+        if (current.effect.kind === "READY_LEGENDS_UP_TO") {
+            if (option.kind === "MODE" && option.mode === "DONE") { delete c.readiedLegends; return completed(m); }
+            const targets = taggedLegendReadyTargets(m.state, current.controllerId, current.effect.tag, m.context).filter(id => !c.readiedLegends?.includes(id));
+            if (option.kind !== "CARD" || !targets.includes(option.cardInstanceId)) return failure("INVALID_READY_TARGET", "Choose a current eligible friendly Legend not already chosen, or finish");
+            m.emit({ kind: "CARD_TARGET_SELECTED", effectId: current.id, sourceId: current.sourceId!, targetId: option.cardInstanceId, controllerId: current.controllerId, forced });
+            readyCardForEffect(m, option.cardInstanceId);
+            const readied = [...(c.readiedLegends ?? []), option.cardInstanceId];
+            if (readied.length >= current.effect.maximum || targets.length === 1) { delete c.readiedLegends; return completed(m); }
+            c.readiedLegends = readied; return offer(m);
         }
         if (current.effect.kind === "READY_UNIT") {
             const targets = current.effect.target.kind === "ANOTHER_FRIENDLY_UNIT" ? stolenGigReadyTargets(m.state, current, m.context) : readyLegendTargets(m.state, current.controllerId, m.context);

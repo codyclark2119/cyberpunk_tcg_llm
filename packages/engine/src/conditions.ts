@@ -53,5 +53,12 @@ export function testCondition(state: GameState, actor: PlayerId, condition: Cond
         case "GIG_VALUE": return values.includes(condition.value);
         case "GIG_VALUE_AT_LEAST": return values.some(value => value >= condition.minimum);
         case "GIG_COUNT_WITH_VALUE_AT_LEAST": return values.filter(value => value >= condition.minimum).length >= condition.count;
+        case "CONTROLS_VALUE_PAIR": return new Set(values).size < values.length; // Batch V29, 6.6: two own Gigs share a value.
     }
+}
+/** Batch V30, 6.6 and 6.6.1: friendly value-pairs, each own rolled Gig counting towards at most one pair. */
+export function friendlyValuePairCount(state: GameState, actor: PlayerId) {
+    const counts = new Map<number, number>();
+    for (const g of Object.values(state.objects.gigs)) if (g.controllerId === actor && g.location.zone === "GIGS" && g.roll.kind === "ROLLED") counts.set(g.roll.currentValue, (counts.get(g.roll.currentValue) ?? 0) + 1);
+    return [...counts.values()].reduce((n, k) => n + Math.floor(k / 2), 0);
 }

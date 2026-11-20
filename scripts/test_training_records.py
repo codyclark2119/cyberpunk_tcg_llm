@@ -299,6 +299,17 @@ def test_reader_and_writer_fail_closed():
         pass
     else:
         raise AssertionError("unknown JSON Schema keyword was accepted")
+    # multipleOf (an exported zod bound): integer divisors only, checked exactly.
+    even = tr.SchemaValidator({"type": "integer", "multipleOf": 2})
+    assert even.errors(4) == [] and even.errors(4.0) == []
+    assert even.errors(3) and even.errors(5)
+    for bad in (0.5, 0, True):
+        try:
+            tr.SchemaValidator({"type": "number", "multipleOf": bad})
+        except tr.SchemaError:
+            pass
+        else:
+            raise AssertionError(f"multipleOf {bad!r} was accepted")
 
 
 def test_hook_refuses_attempts_that_contradict_the_engine():
