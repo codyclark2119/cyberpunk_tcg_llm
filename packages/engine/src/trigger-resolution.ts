@@ -25,7 +25,7 @@ import { finishAction } from "./action-return";
 import { finishAttackEffects } from "./combat";
 import { finishCombat, completeFightResult } from "./combat-resolution";
 import { HandlerRegistry, finishSearch } from "./effects";
-import { searchTargets } from "./search-state";
+import { isSearchEffect, searchMaxTake, searchTargets } from "./search-state";
 import { applyKeywordGrant, applyStealRestriction, beginTrashProgram, chooseTrashedProgram, keywordGrantTargets } from "./play-pin-effects";
 import { changeGigValue, gigAdjustmentDelta } from "./gig-value";
 import { applyReadyLock } from "./ready-lock";
@@ -216,7 +216,8 @@ export function advanceTriggers(m: TurnMutation): Result<null> {
         c.phase = "DISCARD"; return offer(m);
     }
     // Batch V19: "[Attack] Search the top N. Reveal a Gear and add it to your hand. Bottom-deck the rest."
-    if (e.kind === "SEARCH_GEAR") {
+    // Batch V35: "{Play} Search the top 4 ... any number of cards with cost equal to any friendly Gig values"; none bottom-decks all 4.
+    if (e.kind === "SEARCH_GEAR" || e.kind === "SEARCH_COST_MATCHING_GIGS") {
         const actor = r.current.controllerId;
         r.searchContinuation = { looked: [...m.state.players[actor].zones.DECK.slice(0, e.count)], selected: [] };
         if (!searchTargets(m.state, m.context).length) { const done = finishSearch(m); return done.ok ? completed(m) : done; }
@@ -387,14 +388,14 @@ export function continueTrigger(m: TurnMutation, index: number, forced = false):
             m.emit({ kind: "CARD_TARGET_SELECTED", effectId: current.id, sourceId: current.sourceId!, targetId: option.cardInstanceId, controllerId: current.controllerId, forced });
             const locked = applyReadyLock(m, option.cardInstanceId); return locked.ok ? completed(m) : locked;
         }
-        if (current.effect.kind === "SEARCH_GEAR") {
+        if (isSearchEffect(current.effect)) {
             // 11.17.4.1: a hidden search may purposely fail to find; the rest is bottom-decked either way.
             const search = r.searchContinuation!;
             if (option.kind === "CARD") {
                 if (search.selected.includes(option.cardInstanceId) || !searchTargets(m.state, m.context).includes(option.cardInstanceId)) return failure("INVALID_SEARCH_TARGET", "Chosen Gear is no longer eligible");
                 search.selected.push(option.cardInstanceId);
             } else if (option.kind !== "MODE" || option.mode !== "DONE") return failure("INVALID_SEARCH_TARGET", "Choose a looked-at Gear or take none");
-            if (option.kind === "CARD" && search.selected.length < current.effect.maxTake && searchTargets(m.state, m.context).some(id => !search.selected.includes(id))) return offer(m);
+            if (option.kind === "CARD" && search.selected.length < searchMaxTake(current.effect) && searchTargets(m.state, m.context).some(id => !search.selected.includes(id))) return offer(m);
             const done = finishSearch(m); return done.ok ? completed(m) : done;
         }
         if (current.effect.kind === "LOOK_AT_FRIENDLY_FACE_DOWN_LEGEND") {

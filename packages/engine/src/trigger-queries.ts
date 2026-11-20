@@ -119,7 +119,7 @@ export function triggerChoice(state: GameState, context: EngineContext): Pending
     else if (c.phase === "OPTIONAL") { kind = "OPTIONAL"; options = [{ kind: "CONFIRM", confirmed: true }, { kind: "CONFIRM", confirmed: false }]; }
     else if (c.phase === "TARGET") {
         kind = "TARGET";
-        options = current?.effect.kind === "SEARCH_GEAR"
+        options = current?.effect.kind === "SEARCH_GEAR" || current?.effect.kind === "SEARCH_COST_MATCHING_GIGS"
             ? [{ kind: "MODE", mode: "DONE" }, ...searchTargets(state, context).filter(id => !state.resolution.searchContinuation?.selected.includes(id)).map(cardInstanceId => ({ kind: "CARD" as const, cardInstanceId }))]
             : current?.effect.kind === "TRASH_THEN_RETURN_PROGRAM"
             ? trashedProgramTargets(state, context).map(cardInstanceId => ({ kind: "CARD", cardInstanceId }))

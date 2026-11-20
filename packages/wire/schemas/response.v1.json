@@ -4696,6 +4696,24 @@
                                       "properties": {
                                         "kind": {
                                           "type": "string",
+                                          "const": "SEARCH_COST_MATCHING_GIGS"
+                                        },
+                                        "count": {
+                                          "type": "number",
+                                          "const": 4
+                                        }
+                                      },
+                                      "required": [
+                                        "kind",
+                                        "count"
+                                      ],
+                                      "additionalProperties": false
+                                    },
+                                    {
+                                      "type": "object",
+                                      "properties": {
+                                        "kind": {
+                                          "type": "string",
                                           "const": "SEARCH_GEAR"
                                         },
                                         "count": {
@@ -7709,6 +7727,24 @@
                                     "properties": {
                                       "kind": {
                                         "type": "string",
+                                        "const": "SEARCH_COST_MATCHING_GIGS"
+                                      },
+                                      "count": {
+                                        "type": "number",
+                                        "const": 4
+                                      }
+                                    },
+                                    "required": [
+                                      "kind",
+                                      "count"
+                                    ],
+                                    "additionalProperties": false
+                                  },
+                                  {
+                                    "type": "object",
+                                    "properties": {
+                                      "kind": {
+                                        "type": "string",
                                         "const": "SEARCH_GEAR"
                                       },
                                       "count": {
@@ -10709,6 +10745,24 @@
                                       "kind",
                                       "timing",
                                       "condition",
+                                      "count"
+                                    ],
+                                    "additionalProperties": false
+                                  },
+                                  {
+                                    "type": "object",
+                                    "properties": {
+                                      "kind": {
+                                        "type": "string",
+                                        "const": "SEARCH_COST_MATCHING_GIGS"
+                                      },
+                                      "count": {
+                                        "type": "number",
+                                        "const": 4
+                                      }
+                                    },
+                                    "required": [
+                                      "kind",
                                       "count"
                                     ],
                                     "additionalProperties": false
@@ -17441,6 +17495,24 @@
                                       "properties": {
                                         "kind": {
                                           "type": "string",
+                                          "const": "SEARCH_COST_MATCHING_GIGS"
+                                        },
+                                        "count": {
+                                          "type": "number",
+                                          "const": 4
+                                        }
+                                      },
+                                      "required": [
+                                        "kind",
+                                        "count"
+                                      ],
+                                      "additionalProperties": false
+                                    },
+                                    {
+                                      "type": "object",
+                                      "properties": {
+                                        "kind": {
+                                          "type": "string",
                                           "const": "SEARCH_GEAR"
                                         },
                                         "count": {
@@ -20454,6 +20526,24 @@
                                     "properties": {
                                       "kind": {
                                         "type": "string",
+                                        "const": "SEARCH_COST_MATCHING_GIGS"
+                                      },
+                                      "count": {
+                                        "type": "number",
+                                        "const": 4
+                                      }
+                                    },
+                                    "required": [
+                                      "kind",
+                                      "count"
+                                    ],
+                                    "additionalProperties": false
+                                  },
+                                  {
+                                    "type": "object",
+                                    "properties": {
+                                      "kind": {
+                                        "type": "string",
                                         "const": "SEARCH_GEAR"
                                       },
                                       "count": {
@@ -23454,6 +23544,24 @@
                                       "kind",
                                       "timing",
                                       "condition",
+                                      "count"
+                                    ],
+                                    "additionalProperties": false
+                                  },
+                                  {
+                                    "type": "object",
+                                    "properties": {
+                                      "kind": {
+                                        "type": "string",
+                                        "const": "SEARCH_COST_MATCHING_GIGS"
+                                      },
+                                      "count": {
+                                        "type": "number",
+                                        "const": 4
+                                      }
+                                    },
+                                    "required": [
+                                      "kind",
                                       "count"
                                     ],
                                     "additionalProperties": false
