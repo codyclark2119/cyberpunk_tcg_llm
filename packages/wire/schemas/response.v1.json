@@ -2433,6 +2433,17 @@
                               "minLength": 1,
                               "maxLength": 200,
                               "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$"
+                            },
+                            "discardedPrograms": {
+                              "minItems": 1,
+                              "maxItems": 2,
+                              "type": "array",
+                              "items": {
+                                "type": "string",
+                                "minLength": 1,
+                                "maxLength": 200,
+                                "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$"
+                              }
                             }
                           },
                           "required": [
@@ -3511,7 +3522,10 @@
                                                 },
                                                 "relation": {
                                                   "type": "string",
-                                                  "const": "RIVAL"
+                                                  "enum": [
+                                                    "RIVAL",
+                                                    "ANY"
+                                                  ]
                                                 },
                                                 "power": {
                                                   "type": "object",
@@ -3534,8 +3548,7 @@
                                               },
                                               "required": [
                                                 "kind",
-                                                "relation",
-                                                "power"
+                                                "relation"
                                               ],
                                               "additionalProperties": false
                                             }
@@ -3565,6 +3578,37 @@
                                           "required": [
                                             "timing",
                                             "condition"
+                                          ],
+                                          "additionalProperties": false
+                                        },
+                                        "optional": {
+                                          "type": "boolean",
+                                          "const": true
+                                        },
+                                        "draw": {
+                                          "type": "object",
+                                          "properties": {
+                                            "condition": {
+                                              "type": "object",
+                                              "properties": {
+                                                "kind": {
+                                                  "type": "string",
+                                                  "const": "DEFEATED_COST_EQUALS_FRIENDLY_GIG_VALUE"
+                                                }
+                                              },
+                                              "required": [
+                                                "kind"
+                                              ],
+                                              "additionalProperties": false
+                                            },
+                                            "count": {
+                                              "type": "number",
+                                              "const": 1
+                                            }
+                                          },
+                                          "required": [
+                                            "condition",
+                                            "count"
                                           ],
                                           "additionalProperties": false
                                         }
@@ -4652,6 +4696,24 @@
                                       "properties": {
                                         "kind": {
                                           "type": "string",
+                                          "const": "SEARCH_COST_MATCHING_GIGS"
+                                        },
+                                        "count": {
+                                          "type": "number",
+                                          "const": 4
+                                        }
+                                      },
+                                      "required": [
+                                        "kind",
+                                        "count"
+                                      ],
+                                      "additionalProperties": false
+                                    },
+                                    {
+                                      "type": "object",
+                                      "properties": {
+                                        "kind": {
+                                          "type": "string",
                                           "const": "SEARCH_GEAR"
                                         },
                                         "count": {
@@ -4945,6 +5007,50 @@
                                       "required": [
                                         "kind",
                                         "target"
+                                      ],
+                                      "additionalProperties": false
+                                    },
+                                    {
+                                      "type": "object",
+                                      "properties": {
+                                        "kind": {
+                                          "type": "string",
+                                          "const": "DISCARD_PROGRAMS_THEN_BOTTOM_DECK"
+                                        },
+                                        "count": {
+                                          "anyOf": [
+                                            {
+                                              "type": "number",
+                                              "const": 1
+                                            },
+                                            {
+                                              "type": "number",
+                                              "const": 2
+                                            }
+                                          ]
+                                        },
+                                        "then": {
+                                          "type": "object",
+                                          "properties": {
+                                            "relation": {
+                                              "type": "string",
+                                              "const": "RIVAL"
+                                            },
+                                            "unequipped": {
+                                              "type": "boolean",
+                                              "const": true
+                                            }
+                                          },
+                                          "required": [
+                                            "relation"
+                                          ],
+                                          "additionalProperties": false
+                                        }
+                                      },
+                                      "required": [
+                                        "kind",
+                                        "count",
+                                        "then"
                                       ],
                                       "additionalProperties": false
                                     },
@@ -6447,7 +6553,10 @@
                                               },
                                               "relation": {
                                                 "type": "string",
-                                                "const": "RIVAL"
+                                                "enum": [
+                                                  "RIVAL",
+                                                  "ANY"
+                                                ]
                                               },
                                               "power": {
                                                 "type": "object",
@@ -6470,8 +6579,7 @@
                                             },
                                             "required": [
                                               "kind",
-                                              "relation",
-                                              "power"
+                                              "relation"
                                             ],
                                             "additionalProperties": false
                                           }
@@ -6501,6 +6609,37 @@
                                         "required": [
                                           "timing",
                                           "condition"
+                                        ],
+                                        "additionalProperties": false
+                                      },
+                                      "optional": {
+                                        "type": "boolean",
+                                        "const": true
+                                      },
+                                      "draw": {
+                                        "type": "object",
+                                        "properties": {
+                                          "condition": {
+                                            "type": "object",
+                                            "properties": {
+                                              "kind": {
+                                                "type": "string",
+                                                "const": "DEFEATED_COST_EQUALS_FRIENDLY_GIG_VALUE"
+                                              }
+                                            },
+                                            "required": [
+                                              "kind"
+                                            ],
+                                            "additionalProperties": false
+                                          },
+                                          "count": {
+                                            "type": "number",
+                                            "const": 1
+                                          }
+                                        },
+                                        "required": [
+                                          "condition",
+                                          "count"
                                         ],
                                         "additionalProperties": false
                                       }
@@ -7588,6 +7727,24 @@
                                     "properties": {
                                       "kind": {
                                         "type": "string",
+                                        "const": "SEARCH_COST_MATCHING_GIGS"
+                                      },
+                                      "count": {
+                                        "type": "number",
+                                        "const": 4
+                                      }
+                                    },
+                                    "required": [
+                                      "kind",
+                                      "count"
+                                    ],
+                                    "additionalProperties": false
+                                  },
+                                  {
+                                    "type": "object",
+                                    "properties": {
+                                      "kind": {
+                                        "type": "string",
                                         "const": "SEARCH_GEAR"
                                       },
                                       "count": {
@@ -7881,6 +8038,50 @@
                                     "required": [
                                       "kind",
                                       "target"
+                                    ],
+                                    "additionalProperties": false
+                                  },
+                                  {
+                                    "type": "object",
+                                    "properties": {
+                                      "kind": {
+                                        "type": "string",
+                                        "const": "DISCARD_PROGRAMS_THEN_BOTTOM_DECK"
+                                      },
+                                      "count": {
+                                        "anyOf": [
+                                          {
+                                            "type": "number",
+                                            "const": 1
+                                          },
+                                          {
+                                            "type": "number",
+                                            "const": 2
+                                          }
+                                        ]
+                                      },
+                                      "then": {
+                                        "type": "object",
+                                        "properties": {
+                                          "relation": {
+                                            "type": "string",
+                                            "const": "RIVAL"
+                                          },
+                                          "unequipped": {
+                                            "type": "boolean",
+                                            "const": true
+                                          }
+                                        },
+                                        "required": [
+                                          "relation"
+                                        ],
+                                        "additionalProperties": false
+                                      }
+                                    },
+                                    "required": [
+                                      "kind",
+                                      "count",
+                                      "then"
                                     ],
                                     "additionalProperties": false
                                   },
@@ -9379,7 +9580,10 @@
                                               },
                                               "relation": {
                                                 "type": "string",
-                                                "const": "RIVAL"
+                                                "enum": [
+                                                  "RIVAL",
+                                                  "ANY"
+                                                ]
                                               },
                                               "power": {
                                                 "type": "object",
@@ -9402,8 +9606,7 @@
                                             },
                                             "required": [
                                               "kind",
-                                              "relation",
-                                              "power"
+                                              "relation"
                                             ],
                                             "additionalProperties": false
                                           }
@@ -9433,6 +9636,37 @@
                                         "required": [
                                           "timing",
                                           "condition"
+                                        ],
+                                        "additionalProperties": false
+                                      },
+                                      "optional": {
+                                        "type": "boolean",
+                                        "const": true
+                                      },
+                                      "draw": {
+                                        "type": "object",
+                                        "properties": {
+                                          "condition": {
+                                            "type": "object",
+                                            "properties": {
+                                              "kind": {
+                                                "type": "string",
+                                                "const": "DEFEATED_COST_EQUALS_FRIENDLY_GIG_VALUE"
+                                              }
+                                            },
+                                            "required": [
+                                              "kind"
+                                            ],
+                                            "additionalProperties": false
+                                          },
+                                          "count": {
+                                            "type": "number",
+                                            "const": 1
+                                          }
+                                        },
+                                        "required": [
+                                          "condition",
+                                          "count"
                                         ],
                                         "additionalProperties": false
                                       }
@@ -10520,6 +10754,24 @@
                                     "properties": {
                                       "kind": {
                                         "type": "string",
+                                        "const": "SEARCH_COST_MATCHING_GIGS"
+                                      },
+                                      "count": {
+                                        "type": "number",
+                                        "const": 4
+                                      }
+                                    },
+                                    "required": [
+                                      "kind",
+                                      "count"
+                                    ],
+                                    "additionalProperties": false
+                                  },
+                                  {
+                                    "type": "object",
+                                    "properties": {
+                                      "kind": {
+                                        "type": "string",
                                         "const": "SEARCH_GEAR"
                                       },
                                       "count": {
@@ -10813,6 +11065,50 @@
                                     "required": [
                                       "kind",
                                       "target"
+                                    ],
+                                    "additionalProperties": false
+                                  },
+                                  {
+                                    "type": "object",
+                                    "properties": {
+                                      "kind": {
+                                        "type": "string",
+                                        "const": "DISCARD_PROGRAMS_THEN_BOTTOM_DECK"
+                                      },
+                                      "count": {
+                                        "anyOf": [
+                                          {
+                                            "type": "number",
+                                            "const": 1
+                                          },
+                                          {
+                                            "type": "number",
+                                            "const": 2
+                                          }
+                                        ]
+                                      },
+                                      "then": {
+                                        "type": "object",
+                                        "properties": {
+                                          "relation": {
+                                            "type": "string",
+                                            "const": "RIVAL"
+                                          },
+                                          "unequipped": {
+                                            "type": "boolean",
+                                            "const": true
+                                          }
+                                        },
+                                        "required": [
+                                          "relation"
+                                        ],
+                                        "additionalProperties": false
+                                      }
+                                    },
+                                    "required": [
+                                      "kind",
+                                      "count",
+                                      "then"
                                     ],
                                     "additionalProperties": false
                                   },
@@ -14936,6 +15232,17 @@
                               "minLength": 1,
                               "maxLength": 200,
                               "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$"
+                            },
+                            "discardedPrograms": {
+                              "minItems": 1,
+                              "maxItems": 2,
+                              "type": "array",
+                              "items": {
+                                "type": "string",
+                                "minLength": 1,
+                                "maxLength": 200,
+                                "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$"
+                              }
                             }
                           },
                           "required": [
@@ -16014,7 +16321,10 @@
                                                 },
                                                 "relation": {
                                                   "type": "string",
-                                                  "const": "RIVAL"
+                                                  "enum": [
+                                                    "RIVAL",
+                                                    "ANY"
+                                                  ]
                                                 },
                                                 "power": {
                                                   "type": "object",
@@ -16037,8 +16347,7 @@
                                               },
                                               "required": [
                                                 "kind",
-                                                "relation",
-                                                "power"
+                                                "relation"
                                               ],
                                               "additionalProperties": false
                                             }
@@ -16068,6 +16377,37 @@
                                           "required": [
                                             "timing",
                                             "condition"
+                                          ],
+                                          "additionalProperties": false
+                                        },
+                                        "optional": {
+                                          "type": "boolean",
+                                          "const": true
+                                        },
+                                        "draw": {
+                                          "type": "object",
+                                          "properties": {
+                                            "condition": {
+                                              "type": "object",
+                                              "properties": {
+                                                "kind": {
+                                                  "type": "string",
+                                                  "const": "DEFEATED_COST_EQUALS_FRIENDLY_GIG_VALUE"
+                                                }
+                                              },
+                                              "required": [
+                                                "kind"
+                                              ],
+                                              "additionalProperties": false
+                                            },
+                                            "count": {
+                                              "type": "number",
+                                              "const": 1
+                                            }
+                                          },
+                                          "required": [
+                                            "condition",
+                                            "count"
                                           ],
                                           "additionalProperties": false
                                         }
@@ -17155,6 +17495,24 @@
                                       "properties": {
                                         "kind": {
                                           "type": "string",
+                                          "const": "SEARCH_COST_MATCHING_GIGS"
+                                        },
+                                        "count": {
+                                          "type": "number",
+                                          "const": 4
+                                        }
+                                      },
+                                      "required": [
+                                        "kind",
+                                        "count"
+                                      ],
+                                      "additionalProperties": false
+                                    },
+                                    {
+                                      "type": "object",
+                                      "properties": {
+                                        "kind": {
+                                          "type": "string",
                                           "const": "SEARCH_GEAR"
                                         },
                                         "count": {
@@ -17448,6 +17806,50 @@
                                       "required": [
                                         "kind",
                                         "target"
+                                      ],
+                                      "additionalProperties": false
+                                    },
+                                    {
+                                      "type": "object",
+                                      "properties": {
+                                        "kind": {
+                                          "type": "string",
+                                          "const": "DISCARD_PROGRAMS_THEN_BOTTOM_DECK"
+                                        },
+                                        "count": {
+                                          "anyOf": [
+                                            {
+                                              "type": "number",
+                                              "const": 1
+                                            },
+                                            {
+                                              "type": "number",
+                                              "const": 2
+                                            }
+                                          ]
+                                        },
+                                        "then": {
+                                          "type": "object",
+                                          "properties": {
+                                            "relation": {
+                                              "type": "string",
+                                              "const": "RIVAL"
+                                            },
+                                            "unequipped": {
+                                              "type": "boolean",
+                                              "const": true
+                                            }
+                                          },
+                                          "required": [
+                                            "relation"
+                                          ],
+                                          "additionalProperties": false
+                                        }
+                                      },
+                                      "required": [
+                                        "kind",
+                                        "count",
+                                        "then"
                                       ],
                                       "additionalProperties": false
                                     },
@@ -18950,7 +19352,10 @@
                                               },
                                               "relation": {
                                                 "type": "string",
-                                                "const": "RIVAL"
+                                                "enum": [
+                                                  "RIVAL",
+                                                  "ANY"
+                                                ]
                                               },
                                               "power": {
                                                 "type": "object",
@@ -18973,8 +19378,7 @@
                                             },
                                             "required": [
                                               "kind",
-                                              "relation",
-                                              "power"
+                                              "relation"
                                             ],
                                             "additionalProperties": false
                                           }
@@ -19004,6 +19408,37 @@
                                         "required": [
                                           "timing",
                                           "condition"
+                                        ],
+                                        "additionalProperties": false
+                                      },
+                                      "optional": {
+                                        "type": "boolean",
+                                        "const": true
+                                      },
+                                      "draw": {
+                                        "type": "object",
+                                        "properties": {
+                                          "condition": {
+                                            "type": "object",
+                                            "properties": {
+                                              "kind": {
+                                                "type": "string",
+                                                "const": "DEFEATED_COST_EQUALS_FRIENDLY_GIG_VALUE"
+                                              }
+                                            },
+                                            "required": [
+                                              "kind"
+                                            ],
+                                            "additionalProperties": false
+                                          },
+                                          "count": {
+                                            "type": "number",
+                                            "const": 1
+                                          }
+                                        },
+                                        "required": [
+                                          "condition",
+                                          "count"
                                         ],
                                         "additionalProperties": false
                                       }
@@ -20091,6 +20526,24 @@
                                     "properties": {
                                       "kind": {
                                         "type": "string",
+                                        "const": "SEARCH_COST_MATCHING_GIGS"
+                                      },
+                                      "count": {
+                                        "type": "number",
+                                        "const": 4
+                                      }
+                                    },
+                                    "required": [
+                                      "kind",
+                                      "count"
+                                    ],
+                                    "additionalProperties": false
+                                  },
+                                  {
+                                    "type": "object",
+                                    "properties": {
+                                      "kind": {
+                                        "type": "string",
                                         "const": "SEARCH_GEAR"
                                       },
                                       "count": {
@@ -20384,6 +20837,50 @@
                                     "required": [
                                       "kind",
                                       "target"
+                                    ],
+                                    "additionalProperties": false
+                                  },
+                                  {
+                                    "type": "object",
+                                    "properties": {
+                                      "kind": {
+                                        "type": "string",
+                                        "const": "DISCARD_PROGRAMS_THEN_BOTTOM_DECK"
+                                      },
+                                      "count": {
+                                        "anyOf": [
+                                          {
+                                            "type": "number",
+                                            "const": 1
+                                          },
+                                          {
+                                            "type": "number",
+                                            "const": 2
+                                          }
+                                        ]
+                                      },
+                                      "then": {
+                                        "type": "object",
+                                        "properties": {
+                                          "relation": {
+                                            "type": "string",
+                                            "const": "RIVAL"
+                                          },
+                                          "unequipped": {
+                                            "type": "boolean",
+                                            "const": true
+                                          }
+                                        },
+                                        "required": [
+                                          "relation"
+                                        ],
+                                        "additionalProperties": false
+                                      }
+                                    },
+                                    "required": [
+                                      "kind",
+                                      "count",
+                                      "then"
                                     ],
                                     "additionalProperties": false
                                   },
@@ -21882,7 +22379,10 @@
                                               },
                                               "relation": {
                                                 "type": "string",
-                                                "const": "RIVAL"
+                                                "enum": [
+                                                  "RIVAL",
+                                                  "ANY"
+                                                ]
                                               },
                                               "power": {
                                                 "type": "object",
@@ -21905,8 +22405,7 @@
                                             },
                                             "required": [
                                               "kind",
-                                              "relation",
-                                              "power"
+                                              "relation"
                                             ],
                                             "additionalProperties": false
                                           }
@@ -21936,6 +22435,37 @@
                                         "required": [
                                           "timing",
                                           "condition"
+                                        ],
+                                        "additionalProperties": false
+                                      },
+                                      "optional": {
+                                        "type": "boolean",
+                                        "const": true
+                                      },
+                                      "draw": {
+                                        "type": "object",
+                                        "properties": {
+                                          "condition": {
+                                            "type": "object",
+                                            "properties": {
+                                              "kind": {
+                                                "type": "string",
+                                                "const": "DEFEATED_COST_EQUALS_FRIENDLY_GIG_VALUE"
+                                              }
+                                            },
+                                            "required": [
+                                              "kind"
+                                            ],
+                                            "additionalProperties": false
+                                          },
+                                          "count": {
+                                            "type": "number",
+                                            "const": 1
+                                          }
+                                        },
+                                        "required": [
+                                          "condition",
+                                          "count"
                                         ],
                                         "additionalProperties": false
                                       }
@@ -23023,6 +23553,24 @@
                                     "properties": {
                                       "kind": {
                                         "type": "string",
+                                        "const": "SEARCH_COST_MATCHING_GIGS"
+                                      },
+                                      "count": {
+                                        "type": "number",
+                                        "const": 4
+                                      }
+                                    },
+                                    "required": [
+                                      "kind",
+                                      "count"
+                                    ],
+                                    "additionalProperties": false
+                                  },
+                                  {
+                                    "type": "object",
+                                    "properties": {
+                                      "kind": {
+                                        "type": "string",
                                         "const": "SEARCH_GEAR"
                                       },
                                       "count": {
@@ -23316,6 +23864,50 @@
                                     "required": [
                                       "kind",
                                       "target"
+                                    ],
+                                    "additionalProperties": false
+                                  },
+                                  {
+                                    "type": "object",
+                                    "properties": {
+                                      "kind": {
+                                        "type": "string",
+                                        "const": "DISCARD_PROGRAMS_THEN_BOTTOM_DECK"
+                                      },
+                                      "count": {
+                                        "anyOf": [
+                                          {
+                                            "type": "number",
+                                            "const": 1
+                                          },
+                                          {
+                                            "type": "number",
+                                            "const": 2
+                                          }
+                                        ]
+                                      },
+                                      "then": {
+                                        "type": "object",
+                                        "properties": {
+                                          "relation": {
+                                            "type": "string",
+                                            "const": "RIVAL"
+                                          },
+                                          "unequipped": {
+                                            "type": "boolean",
+                                            "const": true
+                                          }
+                                        },
+                                        "required": [
+                                          "relation"
+                                        ],
+                                        "additionalProperties": false
+                                      }
+                                    },
+                                    "required": [
+                                      "kind",
+                                      "count",
+                                      "then"
                                     ],
                                     "additionalProperties": false
                                   },

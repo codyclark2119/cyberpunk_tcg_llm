@@ -1,5 +1,6 @@
 import { supportsAttackConditionPowerCard } from "./attack-condition-power-support";
 import { supportsTargetedDefeatCard } from "./targeted-defeat-support";
+import { supportsTargetedGearDefeatCard } from "./targeted-gear-defeat-support";
 import { supportsTargetedSpendCard } from "./targeted-spend-support";
 import { supportsValueConditionCard } from "./value-conditions-support";
 import { firstAttackHistoryEnabled, supportsFirstAttackLegend } from "./first-attack-support";
@@ -12,6 +13,8 @@ import { supportsBlockerUsedUnit } from "./blocker-trigger-support";
 import { hasStealTrigger, supportsStealTriggerUnit } from "./steal-trigger-support";
 import { hasGigParityEffect, supportsGigParityUnit } from "./gig-parity-support";
 import { hasValuePairMetadata, supportsValuePairUnit } from "./value-pair-support";
+import { hasProgramDiscardEffect, supportsProgramDiscardUnit } from "./program-discard-support";
+import { hasGigSearchEffect, supportsGigSearchUnit } from "./gig-search-support";
 import { supportsAttackSearchUnit } from "./attack-search-support";
 import { hasPinnedPlayEffect, supportsPinnedPlayUnit } from "./play-pin-support";
 import { hasFriendlyPlayPowerMetadata, supportsFriendlyPlayPowerUnit } from "./friendly-play-power-support";
@@ -28,6 +31,10 @@ export function supportsTriggerCard(card: DeepReadonly<CardRevisionSnapshot> | u
     if (hasGigParityEffect(card)) return supportsGigParityUnit(card, context);
     // Batch V29: value-pair conditions and the tagged Legend ready are admitted only by their exact pins.
     if (hasValuePairMetadata(card)) return supportsValuePairUnit(card, context);
+    // Batch V32: "you may discard N Programs, then bottom-deck a rival Unit" is admitted only by its exact pins.
+    if (hasProgramDiscardEffect(card)) return supportsProgramDiscardUnit(card, context);
+    // Batch V35: the {Play} cost-matching search is admitted only by its exact pin.
+    if (hasGigSearchEffect(card)) return supportsGigSearchUnit(card, context);
     // Batch V19: the [Attack] Gear search is admitted only by its exact pin.
     if (card?.mechanics.abilities.some(a => a.effects.some(e => e.kind === "SEARCH_GEAR"))) return supportsAttackSearchUnit(card, context);
     // Batch V20: the {Play} trash-3 Program pick and the {Play} Adrenaline grant are admitted only by their exact pins.
@@ -62,5 +69,5 @@ export function supportsTriggerCard(card: DeepReadonly<CardRevisionSnapshot> | u
 
 /** Scheduler admission includes the older complete printed ATTACK shape only in the new private-look bundle. */
 export function supportsEffectiveTriggerSource(card: DeepReadonly<CardRevisionSnapshot> | undefined, context: EngineContext) {
-    return supportsAttackConditionPowerCard(card, context).ok || ((card?.type === "UNIT" || card?.type === "LEGEND") && supportsTargetedDefeatCard(card, context).ok) || (card?.type === "UNIT" && supportsTargetedSpendCard(card, context).ok) || (card?.type === "UNIT" && supportsValueConditionCard(card, context).ok) || supportsFirstAttackLegend(card, context).ok || supportsDelayedAttackGear(card, context).ok || supportsEndTurnCard(card, context).ok || supportsOrderedAttackCard(card, context).ok || supportsTriggerCard(card, context).ok || supportsPrivateLookGear(card, context).ok || ((privateInformationEnabled(context) || firstAttackHistoryEnabled(context)) && supportsAttackPlay(card, context).ok);
+    return supportsAttackConditionPowerCard(card, context).ok || ((card?.type === "UNIT" || card?.type === "LEGEND") && supportsTargetedDefeatCard(card, context).ok) || (card?.type === "UNIT" && supportsTargetedGearDefeatCard(card, context).ok) || (card?.type === "UNIT" && supportsTargetedSpendCard(card, context).ok) || (card?.type === "UNIT" && supportsValueConditionCard(card, context).ok) || supportsFirstAttackLegend(card, context).ok || supportsDelayedAttackGear(card, context).ok || supportsEndTurnCard(card, context).ok || supportsOrderedAttackCard(card, context).ok || supportsTriggerCard(card, context).ok || supportsPrivateLookGear(card, context).ok || ((privateInformationEnabled(context) || firstAttackHistoryEnabled(context)) && supportsAttackPlay(card, context).ok);
 }

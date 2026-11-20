@@ -57,8 +57,9 @@ test("V5 foundation Gear vocabulary is a separate literal-two rival-only target"
     assert.equal(DefeatUnitTargetSchema.safeParse(gearTarget).success, false);
     for (const value of [-1, 0, 1, 3, 5])
         assert.equal(DefeatGearTargetSchema.safeParse({ ...gearTarget, power: { kind: "AT_MOST", value } }).success, false, `threshold ${value}`);
-    for (const relation of ["ANY", "CONTROLLED"])
-        assert.equal(DefeatGearTargetSchema.safeParse({ ...gearTarget, relation }).success, false, relation);
+    // Batch V34 (2026-11-20) added relation ANY with no power bound ("defeat a Gear"); admission stays with the exact per-card gate.
+    assert.equal(DefeatGearTargetSchema.safeParse({ kind: "GEAR", relation: "ANY" }).success, true);
+    assert.equal(DefeatGearTargetSchema.safeParse({ ...gearTarget, relation: "CONTROLLED" }).success, false, "CONTROLLED");
     assert.equal(DefeatGearTargetSchema.safeParse({ ...gearTarget, power: { kind: "CONTROLLED_GIG_VALUE", dieType: "D20" } }).success, false);
     assert.equal(DefeatGearTargetSchema.safeParse({ ...gearTarget, count: 2 }).success, false);
     assert.deepEqual(EffectSchema.parse({ kind: "DEFEAT_UNIT", target: gearTarget }), { kind: "DEFEAT_UNIT", target: gearTarget });

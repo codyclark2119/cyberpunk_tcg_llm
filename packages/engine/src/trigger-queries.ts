@@ -1,3 +1,4 @@
+import { handPrograms, programBottomDeckTargets } from "./program-discard";
 import { gigAdjustmentOptions } from "./gig-value";
 import { isFirstArasakaAttack } from "./first-attack-history";
 import { effectiveCardTypes } from "./characteristics";
@@ -112,11 +113,13 @@ export function triggerChoice(state: GameState, context: EngineContext): Pending
     let kind: PendingChoice["kind"], options: PendingChoice["options"];
     if (c.phase === "SELECT") { const group = nextTriggerGroup(state); actorId = group[0].controllerId; kind = "ORDER"; options = group.map(e => ({ kind: "EFFECT", effectId: e.id })); }
     else if (c.phase === "READY") { kind = "READY_EDDIE"; options = readyableEddieSlots(state, actorId).filter(slot => !c.selectedEddieSlots?.includes(slot)).map(slot => ({ kind: "EDDIE_SLOT", slot })); }
+    // Batch V32: a Program discard offers only own-hand Programs, and declining only before the first discard.
+    else if (c.phase === "DISCARD" && current?.effect.kind === "DISCARD_PROGRAMS_THEN_BOTTOM_DECK") { kind = "DISCARD"; options = [...(c.discardedPrograms ? [] : [{ kind: "MODE" as const, mode: "DONE" as const }]), ...handPrograms(state, actorId, context).map(cardInstanceId => ({ kind: "CARD" as const, cardInstanceId }))]; }
     else if (c.phase === "DISCARD") { if (current) actorId = discardingPlayer(state, current); kind = "DISCARD"; options = getDiscardableCards(state, actorId).map(cardInstanceId => ({ kind: "CARD", cardInstanceId })); }
     else if (c.phase === "OPTIONAL") { kind = "OPTIONAL"; options = [{ kind: "CONFIRM", confirmed: true }, { kind: "CONFIRM", confirmed: false }]; }
     else if (c.phase === "TARGET") {
         kind = "TARGET";
-        options = current?.effect.kind === "SEARCH_GEAR"
+        options = current?.effect.kind === "SEARCH_GEAR" || current?.effect.kind === "SEARCH_COST_MATCHING_GIGS"
             ? [{ kind: "MODE", mode: "DONE" }, ...searchTargets(state, context).filter(id => !state.resolution.searchContinuation?.selected.includes(id)).map(cardInstanceId => ({ kind: "CARD" as const, cardInstanceId }))]
             : current?.effect.kind === "TRASH_THEN_RETURN_PROGRAM"
             ? trashedProgramTargets(state, context).map(cardInstanceId => ({ kind: "CARD", cardInstanceId }))
@@ -124,6 +127,8 @@ export function triggerChoice(state: GameState, context: EngineContext): Pending
             ? keywordGrantTargets(state, current, context).map(cardInstanceId => ({ kind: "CARD", cardInstanceId }))
             : current?.effect.kind === "SPEND_UNIT" || current?.effect.kind === "PREVENT_UNIT_READY" || current?.effect.kind === "SPEND_UNITS_PER_VALUE_PAIR"
             ? listSpendUnitTargets(state, actorId, current.effect.target, context).map(cardInstanceId => ({ kind: "CARD", cardInstanceId }))
+            : current?.effect.kind === "DISCARD_PROGRAMS_THEN_BOTTOM_DECK"
+            ? programBottomDeckTargets(state, current, context).map(cardInstanceId => ({ kind: "CARD", cardInstanceId }))
             : current?.effect.kind === "READY_LEGENDS_UP_TO"
             ? [{ kind: "MODE", mode: "DONE" }, ...taggedLegendReadyTargets(state, actorId, current.effect.tag, context).filter(id => !c.readiedLegends?.includes(id)).map(cardInstanceId => ({ kind: "CARD" as const, cardInstanceId }))]
             : current?.effect.kind === "READY_UNIT"
@@ -142,5 +147,5 @@ export function triggerChoice(state: GameState, context: EngineContext): Pending
             ? gigAdjustmentOptions(g, current.effect)
             : Array.from({ length: Math.min(2, value - 1) + 1 }, (_, amount) => ({ kind: "AMOUNT", amount }));
     }
-    return { id: hashCanonical({ protocol: "trigger-choice@1", turn: state.timing.turn, ordinal: c.ordinal, resolved: c.resolvedIds, current: current?.id ?? null, phase: c.phase, ...(c.selectedEddieSlots ? { selectedEddieSlots: c.selectedEddieSlots } : {}), ...(c.readiedLegends ? { readiedLegends: c.readiedLegends } : {}), ...(c.spendsRemaining ? { spendsRemaining: c.spendsRemaining } : {}), ...(c.discardedCardId ? { discardedCardId: c.discardedCardId } : {}), ...(current?.primitiveIndex === 1 ? { primitiveIndex: 1 } : {}), target: c.targetGigId ?? null }), actorId, kind, options, min: 1, max: 1, ordered: false, continuationId: "reviewed-trigger@1" };
+    return { id: hashCanonical({ protocol: "trigger-choice@1", turn: state.timing.turn, ordinal: c.ordinal, resolved: c.resolvedIds, current: current?.id ?? null, phase: c.phase, ...(c.selectedEddieSlots ? { selectedEddieSlots: c.selectedEddieSlots } : {}), ...(c.readiedLegends ? { readiedLegends: c.readiedLegends } : {}), ...(c.spendsRemaining ? { spendsRemaining: c.spendsRemaining } : {}), ...(c.discardedCardId ? { discardedCardId: c.discardedCardId } : {}), ...(c.discardedPrograms ? { discardedPrograms: c.discardedPrograms } : {}), ...(current?.primitiveIndex === 1 ? { primitiveIndex: 1 } : {}), target: c.targetGigId ?? null }), actorId, kind, options, min: 1, max: 1, ordered: false, continuationId: "reviewed-trigger@1" };
 }

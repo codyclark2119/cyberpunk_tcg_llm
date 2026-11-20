@@ -120,13 +120,18 @@ export const DefeatUnitTargetSchema = z.strictObject({ kind: z.literal("UNITS"),
     each: z.literal("PLAYER_CHOOSES_OWN").optional() });
 export type DefeatUnitTarget = z.infer<typeof DefeatUnitTargetSchema>;
 // Preserve the Unit selectors and historical effect discriminator. Vocabulary is not execution admission.
-export const DefeatGearTargetSchema = z.strictObject({ kind: z.literal("GEAR"), relation: z.literal("RIVAL"),
-    power: z.strictObject({ kind: z.literal("AT_MOST"), value: z.literal(2) }) });
+export const DefeatGearTargetSchema = z.strictObject({ kind: z.literal("GEAR"), relation: z.enum(["RIVAL", "ANY"]),
+    // Batch V34: "defeat a Gear" has no power bound; any controller's Gear qualifies (relation ANY).
+    power: z.strictObject({ kind: z.literal("AT_MOST"), value: z.literal(2) }).optional() });
 export type DefeatGearTarget = z.infer<typeof DefeatGearTargetSchema>;
 export const DefeatTargetSchema = z.discriminatedUnion("kind", [DefeatUnitTargetSchema, DefeatGearTargetSchema]);
 export type DefeatTarget = z.infer<typeof DefeatTargetSchema>;
 export const DefeatUnitEffectSchema = z.strictObject({ kind: z.literal("DEFEAT_UNIT"), target: DefeatTargetSchema,
-    when: z.strictObject({ timing: z.literal("RESOLUTION"), condition: z.strictObject({ kind: z.literal("STREET_CRED_GREATER_THAN_RIVAL") }) }).optional() });
+    when: z.strictObject({ timing: z.literal("RESOLUTION"), condition: z.strictObject({ kind: z.literal("STREET_CRED_GREATER_THAN_RIVAL") }) }).optional(),
+    // Batch V34: "You may defeat a Gear": the controller may decline the target choice.
+    optional: z.literal(true).optional(),
+    // Batch V34: "If its cost equals the value of a friendly Gig, draw 1": checked after the defeated card has moved.
+    draw: z.strictObject({ condition: z.strictObject({ kind: z.literal("DEFEATED_COST_EQUALS_FRIENDLY_GIG_VALUE") }), count: z.literal(1) }).optional() });
 export const EffectSchema = z.discriminatedUnion("kind", [
     SpendUnitEffectSchema,
     // "Spend this Unit" (batch V8).
@@ -161,6 +166,9 @@ export const EffectSchema = z.discriminatedUnion("kind", [
     z.strictObject({ kind: z.literal("ADJUST_GIG_UP_TO"), target: z.union([z.strictObject({ kind: z.literal("GIGS"), relation: z.literal("ANY") }), z.strictObject({ kind: z.literal("STOLEN_GIG") })]), maximum: z.union([z.literal(1), z.literal(3), z.literal(4), z.literal(5), z.literal(6)]), direction: z.enum(["INCREASE", "DECREASE"]).optional() }),
     z.strictObject({ kind: z.literal("CONDITIONAL_DRAW"), timing: z.literal("RESOLUTION"), condition: ConditionSchema, count: z.number().int().positive() }),
     // Batch V19: an absent maxCost is "a Gear" with no cost limit.
+    // Batch V35: "Search the top 4 cards of your deck. Reveal any number of cards with cost equal to any friendly Gig values and add
+    // them to your hand. Bottom-deck the rest."
+    z.strictObject({ kind: z.literal("SEARCH_COST_MATCHING_GIGS"), count: z.literal(4) }),
     z.strictObject({ kind: z.literal("SEARCH_GEAR"), count: z.number().int().positive().max(5), maxCost: z.number().int().nonnegative().optional(), maxTake: z.number().int().positive().max(2) }),
     // Batch V20: "[Play] Trash 3. Add a Program from among them to your hand."
     z.strictObject({ kind: z.literal("TRASH_THEN_RETURN_PROGRAM"), count: z.literal(3) }),
@@ -178,6 +186,10 @@ export const EffectSchema = z.discriminatedUnion("kind", [
     z.strictObject({ kind: z.literal("DRAW_PER_FRIENDLY_GIG"), count: z.literal(1), parity: z.literal("ODD") }),
     // Batch V30: "Spend a rival Unit for each friendly value-pair of Gigs" (6.6.1), counted when the effect resolves.
     z.strictObject({ kind: z.literal("SPEND_UNITS_PER_VALUE_PAIR"), target: z.strictObject({ kind: z.literal("UNITS"), relation: z.literal("RIVAL") }) }),
+    // Batch V32: "You may discard 1 Program. If you do, bottom-deck a rival Unit." Own-hand Programs only; the bottom-deck
+    // follows only after the discard (11.15: the owner bottom-decks the Unit and its Gear).
+    // Batch V33: "You may discard 2 Programs. If you do, bottom-deck a rival unequipped Unit." (no attached Gear, 4.12).
+    z.strictObject({ kind: z.literal("DISCARD_PROGRAMS_THEN_BOTTOM_DECK"), count: z.union([z.literal(1), z.literal(2)]), then: z.strictObject({ relation: z.literal("RIVAL"), unequipped: z.literal(true).optional() }) }),
     // Batch V29: "If you control a value-pair of Gigs, ready up to 2 MERC Legends in your Legends area."
     z.strictObject({ kind: z.literal("READY_LEGENDS_UP_TO"), tag: z.literal("Merc"), maximum: z.literal(2),
         when: z.strictObject({ timing: z.literal("RESOLUTION"), condition: z.strictObject({ kind: z.literal("CONTROLS_VALUE_PAIR") }) }) }),

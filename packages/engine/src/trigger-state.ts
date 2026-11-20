@@ -1,3 +1,6 @@
+import { isSearchEffect } from "./search-state";
+import { supportsGigSearchUnit } from "./gig-search-support";
+import { validateProgramDiscard } from "./program-discard";
 import { programPlayHistoryEnabled } from "./restriction-support";
 import { supportsEndTurnCard } from "./end-turn-support";
 import { attackConditionPowerEnabled } from "./attack-condition-power-support";
@@ -67,7 +70,7 @@ export function validateTriggerState(state: GameState, context: EngineContext) {
     if (state.setup && history) return failure("INVALID_TURN_HISTORY", "Turn history starts with the first actual turn");
     if (history && (programPlayHistoryEnabled(context) ? !history.programPlays || canonicalSerialize(Object.keys(history.programPlays).sort()) !== canonicalSerialize([...state.match.playerOrder].sort()) : history.programPlays)) return failure("INVALID_TURN_HISTORY", "Program-play counters exist exactly for each player under the reviewed policy");
     if (!c) return all.some(e => e.trigger || e.primitiveIndex !== undefined) || state.timing.combat.stage === "TRIGGER_RESOLUTION" || ["EDDIE_READY_SELECTION", "DISCARD_SELECTION", "TRIGGER_ORDER_SELECTION", "OPTIONAL_TRIGGER_SELECTION"].includes(state.timing.step ?? "") ? failure("ORPHAN_TRIGGER", "Pending trigger metadata requires its continuation") : success(null);
-    if (!enabled || state.setup || state.match.outcome || r.returnTo || r.legendEntryContinuation || r.playContinuation || r.callContinuation || (r.searchContinuation && r.current?.effect.kind !== "SEARCH_GEAR") || r.gigStealContinuation || (r.defeatContinuation && !r.targetedDefeatContinuation) || r.discovered.length || r.stage !== "CHOICE" || !r.choice || c.ordinal !== history?.triggeredBatches || Object.values(state.objects.cards).some(c => c.zone.zone === "RESOLVING_PROGRAM")) return failure("INVALID_TRIGGER_CONTINUATION", "Exclusive player-choice trigger batch required");
+    if (!enabled || state.setup || state.match.outcome || r.returnTo || r.legendEntryContinuation || r.playContinuation || r.callContinuation || (r.searchContinuation && !isSearchEffect(r.current?.effect)) || r.gigStealContinuation || (r.defeatContinuation && !r.targetedDefeatContinuation) || r.discovered.length || r.stage !== "CHOICE" || !r.choice || c.ordinal !== history?.triggeredBatches || Object.values(state.objects.cards).some(c => c.zone.zone === "RESOLVING_PROGRAM")) return failure("INVALID_TRIGGER_CONTINUATION", "Exclusive player-choice trigger batch required");
     const combat = state.timing.combat;
     if (c.origin.kind === "END_TURN" && (!(endTurnEnabled(context) || delayedEffectsEnabled(context)) || c.origin.playerId !== state.timing.activePlayer || c.origin.turn !== state.timing.turn)) return failure("INVALID_END_TURN_RETURN", "Current active player/global turn and supported end-turn policy required");
     if (c.origin.kind === "PLAY" || c.origin.kind === "END_TURN" || c.origin.kind === "DEFEAT" && c.origin.effectSource ? combat.stage !== "NONE" : combat.stage !== "TRIGGER_RESOLUTION" || combat.attackingPlayerId !== state.timing.activePlayer) return failure("INVALID_TRIGGER_COMBAT", "Trigger batch must pause its original combat stage");
@@ -119,9 +122,11 @@ export function validateTriggerState(state: GameState, context: EngineContext) {
     const rivalHasResolved = c.resolvedIds.some(id => !activeIds.includes(id));
     if ((r.current && r.current.controllerId !== state.timing.activePlayer || rivalHasResolved) && activeIds.some(id => !c.resolvedIds.includes(id))) return failure("INVALID_TRIGGER_PRIORITY", "Turn player's pending effects precede the rival's");
     if (c.phase === "SELECT" ? Boolean(r.current) || nextTriggerGroup(state).length < 2 : !r.current) return failure("INVALID_TRIGGER_PHASE", "Ordering is strategic only with multiple eligible effects; effect choices require a current effect");
-    if (c.phase !== "SELECT" && (!r.current || !["DEFEAT_UNIT", "READY_EDDIES", "DISCARD_CARDS", "DECREASE_GIG_UP_TO", "ADJUST_GIG_UP_TO", "OPTIONAL_DECREASE_FRIENDLY_GIG_THEN_DRAW_IF_MIN", "LOOK_AT_FRIENDLY_FACE_DOWN_LEGEND", "POWER_UNTIL_END_OF_TURN", "SPEND_UNIT", "READY_UNIT", "RETURN_TRASH_UNIT_TO_HAND", "SEARCH_GEAR", "TRASH_THEN_RETURN_PROGRAM", "GRANT_KEYWORD_UNTIL_END_OF_TURN", "PREVENT_UNIT_READY", "SWAP_GIGS", "READY_LEGENDS_UP_TO", "SPEND_UNITS_PER_VALUE_PAIR"].includes(r.current.effect.kind))) return failure("INVALID_TRIGGER_PHASE", "Only reviewed adjustment/look/discard/ready/power/spend/trash-return primitives pause for choices");
+    if (c.phase !== "SELECT" && (!r.current || !["DEFEAT_UNIT", "READY_EDDIES", "DISCARD_CARDS", "DECREASE_GIG_UP_TO", "ADJUST_GIG_UP_TO", "OPTIONAL_DECREASE_FRIENDLY_GIG_THEN_DRAW_IF_MIN", "LOOK_AT_FRIENDLY_FACE_DOWN_LEGEND", "POWER_UNTIL_END_OF_TURN", "SPEND_UNIT", "READY_UNIT", "RETURN_TRASH_UNIT_TO_HAND", "SEARCH_GEAR", "SEARCH_COST_MATCHING_GIGS", "TRASH_THEN_RETURN_PROGRAM", "GRANT_KEYWORD_UNTIL_END_OF_TURN", "PREVENT_UNIT_READY", "SWAP_GIGS", "READY_LEGENDS_UP_TO", "SPEND_UNITS_PER_VALUE_PAIR", "DISCARD_PROGRAMS_THEN_BOTTOM_DECK"].includes(r.current.effect.kind))) return failure("INVALID_TRIGGER_PHASE", "Only reviewed adjustment/look/discard/ready/power/spend/trash-return primitives pause for choices");
     // Batch V19: the reviewed [Attack] Gear search pauses only for its own looked-at cards (search-state owns the details).
-    if ((r.current?.effect.kind === "SEARCH_GEAR") !== Boolean(r.searchContinuation) || r.current?.effect.kind === "SEARCH_GEAR" && (c.phase !== "TARGET" || c.origin.kind !== "ATTACK" || r.current.trigger?.kind !== "WHEN_ATTACKING" || !supportsAttackSearchUnit(cardRevision(state, r.current.sourceId!, context), context).ok)) return failure("INVALID_SEARCH_CONTINUATION", "Only the reviewed attack search pauses for its looked-at cards");
+    if (isSearchEffect(r.current?.effect) !== Boolean(r.searchContinuation) || r.current?.effect.kind === "SEARCH_GEAR" && (c.phase !== "TARGET" || c.origin.kind !== "ATTACK" || r.current.trigger?.kind !== "WHEN_ATTACKING" || !supportsAttackSearchUnit(cardRevision(state, r.current.sourceId!, context), context).ok)) return failure("INVALID_SEARCH_CONTINUATION", "Only the reviewed attack search pauses for its looked-at cards");
+    // Batch V35: the pinned {Play} cost-matching search pauses only in its own PLAY batch.
+    if (r.current?.effect.kind === "SEARCH_COST_MATCHING_GIGS" && (c.phase !== "TARGET" || c.origin.kind !== "PLAY" || r.current.trigger?.kind !== "WHEN_PLAYED" || !supportsGigSearchUnit(cardRevision(state, r.current.sourceId!, context), context).ok)) return failure("INVALID_SEARCH_CONTINUATION", "Only the reviewed {Play} cost-matching search pauses for its looked-at cards");
     // Batch V20: the pinned {Play} trash-3 Program pick and Adrenaline grant pause only for their own strategic targets.
     const trashed = validateTrashProgramPause(state, context); if (!trashed.ok) return trashed;
     if (r.current?.effect.kind === "GRANT_KEYWORD_UNTIL_END_OF_TURN") {
@@ -164,6 +169,9 @@ export function validateTriggerState(state: GameState, context: EngineContext) {
             || !c.spendsRemaining || c.spendsRemaining > friendlyValuePairCount(state, r.current.controllerId) || listSpendUnitTargets(state, r.current.controllerId, r.current.effect.target, context).length < 2)
             return failure("INVALID_SPEND_CONTINUATION", "Only the reviewed per-value-pair PLAY spend pauses, with spends left, for 2+ rival Units");
     }
+    // Batch V32: the pinned Program discard holds its discarded Programs only while it is current.
+    if (c.discardedPrograms && r.current?.effect.kind !== "DISCARD_PROGRAMS_THEN_BOTTOM_DECK") return failure("INVALID_PROGRAM_DISCARD_CONTINUATION", "Discarded Programs belong only to the current Program discard");
+    if (r.current?.effect.kind === "DISCARD_PROGRAMS_THEN_BOTTOM_DECK") { const v = validateProgramDiscard(state, context); if (!v.ok) return v; }
     // Batch V25: the steal-trigger ready of another friendly Unit pauses only in its steal batch, for its eligible Units.
     if (r.current?.effect.kind === "READY_UNIT" && (c.phase !== "TARGET" || (r.current.effect.target.kind === "ANOTHER_FRIENDLY_UNIT"
         ? c.origin.kind !== "STEAL" || r.current.trigger?.kind !== "WHEN_GIG_STOLEN" || !r.current.trigger.gigInstanceId || !stolenGigReadyTargets(state, r.current, context).length || !supportsTriggerCard(cardRevision(state, r.current.sourceId!, context), context).ok
@@ -198,7 +206,7 @@ export function validateTriggerState(state: GameState, context: EngineContext) {
         if (c.phase !== "DISCARD" || e.effect.kind !== "DISCARD_CARDS" || e.primitiveIndex !== undefined || !(blocker || steal || defeated) || !(defeated || supportsTriggerCard(cardRevision(state, e.sourceId!, context), context).ok))
             return failure("INVALID_DISCARD_CONTINUATION", "Only the reviewed Blocker-used, steal-trigger and defeated rival discards pause");
     }
-    else if (c.phase === "DISCARD" || r.current?.effect.kind === "DISCARD_CARDS" || c.conditionMet !== undefined) {
+    else if (c.phase === "DISCARD" && r.current?.effect.kind !== "DISCARD_PROGRAMS_THEN_BOTTOM_DECK" || r.current?.effect.kind === "DISCARD_CARDS" || c.conditionMet !== undefined) {
         const e = r.current;
         // No admitted primitive can change Gigs while paused here. Historical true and current
         // true must agree; advancing an index cannot manufacture a false-condition discard.
