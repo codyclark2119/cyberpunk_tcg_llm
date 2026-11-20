@@ -38,7 +38,9 @@ export const ConditionSchema = z.discriminatedUnion("kind", [
     // Batch V27: "if you control 2 or more Gigs with 8+ value".
     z.strictObject({ kind: z.literal("GIG_COUNT_WITH_VALUE_AT_LEAST"), minimum: z.literal(8), count: z.literal(2) }),
     // Batch V29: "If you control a value-pair of Gigs" (6.6: 2 dice with the same value in the same Gig area).
-    z.strictObject({ kind: z.literal("CONTROLS_VALUE_PAIR") })
+    z.strictObject({ kind: z.literal("CONTROLS_VALUE_PAIR") }),
+    // Batch V39: "If a Rival controls at least 2 more Gigs than you" (Gigs in each Gig area, counted live).
+    z.strictObject({ kind: z.literal("RIVAL_CONTROLS_MORE_GIGS"), minimum: z.literal(2) })
 ]);
 export const CombatRestrictionSchema = z.discriminatedUnion("kind", [
     z.strictObject({ kind: z.literal("CANNOT_ATTACK") }),
@@ -225,6 +227,8 @@ export const ContinuousModifierSchema = z.discriminatedUnion("kind", [
     // Batch V38: "Other friendly Units have +2 power while attacking." A field Unit's live contribution, never to itself.
     z.strictObject({ kind: z.literal("OTHER_FRIENDLY_ATTACKING_UNIT_POWER"), amount: z.literal(2) }),
     z.strictObject({ kind: z.literal("GRANT_KEYWORD_TO_HOST"), keyword: z.literal("BLOCKER") }),
+    // Batch V39: "If a Rival controls at least 2 more Gigs than you, this Unit has [Adrenaline]": a Gear's live conditional grant.
+    z.strictObject({ kind: z.literal("GRANT_KEYWORD_TO_HOST_IF"), keyword: z.literal("ADRENALINE"), condition: z.strictObject({ kind: z.literal("RIVAL_CONTROLS_MORE_GIGS"), minimum: z.literal(2) }) }),
     // 2.6/11.3.1: prevents rival Units that entered the field this turn (lagging) from attacking.
     z.strictObject({ kind: z.literal("RIVAL_LAGGING_UNITS_CANNOT_ATTACK") }),
     z.strictObject({ kind: z.literal("GRANT_PRINTED_POWER_TO_HOST") }),
