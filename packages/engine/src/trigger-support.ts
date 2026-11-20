@@ -12,6 +12,7 @@ import { supportsBlockerUsedUnit } from "./blocker-trigger-support";
 import { hasStealTrigger, supportsStealTriggerUnit } from "./steal-trigger-support";
 import { hasGigParityEffect, supportsGigParityUnit } from "./gig-parity-support";
 import { hasValuePairMetadata, supportsValuePairUnit } from "./value-pair-support";
+import { hasProgramDiscardEffect, supportsProgramDiscardUnit } from "./program-discard-support";
 import { supportsAttackSearchUnit } from "./attack-search-support";
 import { hasPinnedPlayEffect, supportsPinnedPlayUnit } from "./play-pin-support";
 import { hasFriendlyPlayPowerMetadata, supportsFriendlyPlayPowerUnit } from "./friendly-play-power-support";
@@ -28,6 +29,8 @@ export function supportsTriggerCard(card: DeepReadonly<CardRevisionSnapshot> | u
     if (hasGigParityEffect(card)) return supportsGigParityUnit(card, context);
     // Batch V29: value-pair conditions and the tagged Legend ready are admitted only by their exact pins.
     if (hasValuePairMetadata(card)) return supportsValuePairUnit(card, context);
+    // Batch V32: "you may discard N Programs, then bottom-deck a rival Unit" is admitted only by its exact pins.
+    if (hasProgramDiscardEffect(card)) return supportsProgramDiscardUnit(card, context);
     // Batch V19: the [Attack] Gear search is admitted only by its exact pin.
     if (card?.mechanics.abilities.some(a => a.effects.some(e => e.kind === "SEARCH_GEAR"))) return supportsAttackSearchUnit(card, context);
     // Batch V20: the {Play} trash-3 Program pick and the {Play} Adrenaline grant are admitted only by their exact pins.

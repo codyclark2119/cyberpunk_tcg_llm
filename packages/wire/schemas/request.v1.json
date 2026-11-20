@@ -3443,6 +3443,38 @@
                                     "properties": {
                                       "kind": {
                                         "type": "string",
+                                        "const": "DISCARD_PROGRAMS_THEN_BOTTOM_DECK"
+                                      },
+                                      "count": {
+                                        "type": "number",
+                                        "const": 1
+                                      },
+                                      "then": {
+                                        "type": "object",
+                                        "properties": {
+                                          "relation": {
+                                            "type": "string",
+                                            "const": "RIVAL"
+                                          }
+                                        },
+                                        "required": [
+                                          "relation"
+                                        ],
+                                        "additionalProperties": false
+                                      }
+                                    },
+                                    "required": [
+                                      "kind",
+                                      "count",
+                                      "then"
+                                    ],
+                                    "additionalProperties": false
+                                  },
+                                  {
+                                    "type": "object",
+                                    "properties": {
+                                      "kind": {
+                                        "type": "string",
                                         "const": "READY_LEGENDS_UP_TO"
                                       },
                                       "tag": {
@@ -7196,6 +7228,17 @@
                       "minLength": 1,
                       "maxLength": 200,
                       "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$"
+                    },
+                    "discardedPrograms": {
+                      "minItems": 1,
+                      "maxItems": 2,
+                      "type": "array",
+                      "items": {
+                        "type": "string",
+                        "minLength": 1,
+                        "maxLength": 200,
+                        "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$"
+                      }
                     }
                   },
                   "required": [
@@ -9708,6 +9751,38 @@
                               "required": [
                                 "kind",
                                 "target"
+                              ],
+                              "additionalProperties": false
+                            },
+                            {
+                              "type": "object",
+                              "properties": {
+                                "kind": {
+                                  "type": "string",
+                                  "const": "DISCARD_PROGRAMS_THEN_BOTTOM_DECK"
+                                },
+                                "count": {
+                                  "type": "number",
+                                  "const": 1
+                                },
+                                "then": {
+                                  "type": "object",
+                                  "properties": {
+                                    "relation": {
+                                      "type": "string",
+                                      "const": "RIVAL"
+                                    }
+                                  },
+                                  "required": [
+                                    "relation"
+                                  ],
+                                  "additionalProperties": false
+                                }
+                              },
+                              "required": [
+                                "kind",
+                                "count",
+                                "then"
                               ],
                               "additionalProperties": false
                             },
@@ -12652,6 +12727,38 @@
                             "properties": {
                               "kind": {
                                 "type": "string",
+                                "const": "DISCARD_PROGRAMS_THEN_BOTTOM_DECK"
+                              },
+                              "count": {
+                                "type": "number",
+                                "const": 1
+                              },
+                              "then": {
+                                "type": "object",
+                                "properties": {
+                                  "relation": {
+                                    "type": "string",
+                                    "const": "RIVAL"
+                                  }
+                                },
+                                "required": [
+                                  "relation"
+                                ],
+                                "additionalProperties": false
+                              }
+                            },
+                            "required": [
+                              "kind",
+                              "count",
+                              "then"
+                            ],
+                            "additionalProperties": false
+                          },
+                          {
+                            "type": "object",
+                            "properties": {
+                              "kind": {
+                                "type": "string",
                                 "const": "READY_LEGENDS_UP_TO"
                               },
                               "tag": {
@@ -15576,6 +15683,38 @@
                             "required": [
                               "kind",
                               "target"
+                            ],
+                            "additionalProperties": false
+                          },
+                          {
+                            "type": "object",
+                            "properties": {
+                              "kind": {
+                                "type": "string",
+                                "const": "DISCARD_PROGRAMS_THEN_BOTTOM_DECK"
+                              },
+                              "count": {
+                                "type": "number",
+                                "const": 1
+                              },
+                              "then": {
+                                "type": "object",
+                                "properties": {
+                                  "relation": {
+                                    "type": "string",
+                                    "const": "RIVAL"
+                                  }
+                                },
+                                "required": [
+                                  "relation"
+                                ],
+                                "additionalProperties": false
+                              }
+                            },
+                            "required": [
+                              "kind",
+                              "count",
+                              "then"
                             ],
                             "additionalProperties": false
                           },
@@ -20375,6 +20514,38 @@
                                     "required": [
                                       "kind",
                                       "target"
+                                    ],
+                                    "additionalProperties": false
+                                  },
+                                  {
+                                    "type": "object",
+                                    "properties": {
+                                      "kind": {
+                                        "type": "string",
+                                        "const": "DISCARD_PROGRAMS_THEN_BOTTOM_DECK"
+                                      },
+                                      "count": {
+                                        "type": "number",
+                                        "const": 1
+                                      },
+                                      "then": {
+                                        "type": "object",
+                                        "properties": {
+                                          "relation": {
+                                            "type": "string",
+                                            "const": "RIVAL"
+                                          }
+                                        },
+                                        "required": [
+                                          "relation"
+                                        ],
+                                        "additionalProperties": false
+                                      }
+                                    },
+                                    "required": [
+                                      "kind",
+                                      "count",
+                                      "then"
                                     ],
                                     "additionalProperties": false
                                   },

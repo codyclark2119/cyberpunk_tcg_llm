@@ -29,7 +29,7 @@ export function currentBottomDeckTargets(state: GameState, context: EngineContex
 }
 /** 11.15.1: the owner places the Unit and its equipped Gear (4.12.3, 11.15.1.3) on the bottom of their deck in a random
  * order, face down. A Legend in the deck is in an invalid area and is then removed from the game (4.4, 4.4.2). */
-function bottomDeck(m: TurnMutation, id: CardInstanceId, forced: boolean): Result<null> {
+export function bottomDeck(m: TurnMutation, id: CardInstanceId, forced: boolean): Result<null> {
     const s = m.state, current = s.resolution.current!, host = s.objects.cards[id], owner = host.ownerId, gearIds = [...host.attachments].sort();
     const batch = [id, ...gearIds];
     if (batch.some(cid => s.objects.cards[cid].ownerId !== owner)) return failure("UNSUPPORTED_MULTI_OWNER_ORDER", "Bottom-decking cards of different owners together needs a reviewed protocol");

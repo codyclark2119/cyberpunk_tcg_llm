@@ -71,7 +71,9 @@ export const TriggerContinuationSchema = z.strictObject({ effectDefeats: z.array
     // Batch V30: rival Units still to spend, one per friendly value-pair counted when the effect began.
     spendsRemaining: z.number().int().positive().optional(),
     // Batch V31: the card the first discard moved, while its "discards 1 more" is open.
-    discardedCardId: CardInstanceIdSchema.optional() });
+    discardedCardId: CardInstanceIdSchema.optional(),
+    // Batch V32: the Programs a current "you may discard N Programs" has discarded; complete before its bottom-deck pauses.
+    discardedPrograms: z.array(CardInstanceIdSchema).min(1).max(2).optional() });
 export const QualifyingAttackSummarySchema = z.strictObject({
     count: z.number().int().nonnegative(),
     first: z.strictObject({ attackerId: CardInstanceIdSchema, attacker: CardReferenceSchema }).nullable()

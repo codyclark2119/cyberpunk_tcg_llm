@@ -33,6 +33,8 @@ import { swapGigs } from "./gig-transfer";
 import { triggersEnabled } from "./trigger-support";
 import { discardingPlayer, discoverTriggers, pendingTrigger, swapSidesAvailable, trashUnitTargets, triggerChoice, triggerGigTargets } from "./trigger-queries";
 import { moveCardLocation } from "./card-movement";
+import { discardProgram, handPrograms, programBottomDeckTargets } from "./program-discard";
+import { bottomDeck } from "./bottom-deck";
 
 export function recordPlayedCard(m: TurnMutation, sourceId: CardInstanceId) {
     const c = m.state.objects.cards[sourceId], r = cardRevision(m.state, sourceId, m.context)!;
@@ -208,6 +210,11 @@ export function advanceTriggers(m: TurnMutation): Result<null> {
         if (e.when) c.conditionMet = true;
         c.phase = "DISCARD"; return offer(m);
     }
+    // Batch V32: "You may discard 1 Program. If you do, bottom-deck a rival Unit." Offered only with enough own-hand Programs.
+    if (e.kind === "DISCARD_PROGRAMS_THEN_BOTTOM_DECK") {
+        if (handPrograms(m.state, r.current.controllerId, m.context).length < e.count) return completed(m);
+        c.phase = "DISCARD"; return offer(m);
+    }
     // Batch V19: "[Attack] Search the top N. Reveal a Gear and add it to your hand. Bottom-deck the rest."
     if (e.kind === "SEARCH_GEAR") {
         const actor = r.current.controllerId;
@@ -288,6 +295,17 @@ export function continueTrigger(m: TurnMutation, index: number, forced = false):
         c.selectedEddieSlots = [...(c.selectedEddieSlots ?? []), option.slot].sort((a, b) => a - b);
         return advanceReady(m);
     }
+    if (c.phase === "DISCARD" && current.effect.kind === "DISCARD_PROGRAMS_THEN_BOTTOM_DECK") {
+        // Batch V32: declining is offered only before the first discard; then the bottom-deck follows the last one.
+        if (option.kind === "MODE" && option.mode === "DONE" && !c.discardedPrograms) { m.emit({ kind: "OPTIONAL_TRIGGER_DECLINED", effectId: current.id, controllerId: current.controllerId }); return completed(m); }
+        if (option.kind !== "CARD") return failure("INVALID_DISCARD", "Choose a Program in your hand, or decline");
+        const discarded = discardProgram(m, current, option.cardInstanceId, forced);
+        if (!discarded.ok) return discarded;
+        c.discardedPrograms = [...(c.discardedPrograms ?? []), option.cardInstanceId];
+        if (c.discardedPrograms.length < current.effect.count) return offer(m);
+        if (!programBottomDeckTargets(m.state, current, m.context).length) { delete c.discardedPrograms; return completed(m); }
+        c.phase = "TARGET"; return offer(m);
+    }
     if (c.phase === "DISCARD") {
         if (current.effect.kind !== "DISCARD_CARDS" || option.kind !== "CARD") return failure("INVALID_DISCARD", "Choose one current own-hand card");
         const result = discardCard(m, current.effect, option.cardInstanceId, forced);
@@ -326,6 +344,12 @@ export function continueTrigger(m: TurnMutation, index: number, forced = false):
             if (!spent.ok) return spent;
             if (c.spendsRemaining === 1) { delete c.spendsRemaining; return completed(m); }
             c.spendsRemaining--; return offer(m);
+        }
+        if (current.effect.kind === "DISCARD_PROGRAMS_THEN_BOTTOM_DECK") {
+            if (option.kind !== "CARD" || c.discardedPrograms?.length !== current.effect.count || !programBottomDeckTargets(m.state, current, m.context).includes(option.cardInstanceId)) return failure("INVALID_BOTTOM_DECK_TARGET", "Choose a current rival Unit");
+            delete c.discardedPrograms;
+            const moved = bottomDeck(m, option.cardInstanceId, forced);
+            return moved.ok ? completed(m) : moved;
         }
         if (current.effect.kind === "READY_LEGENDS_UP_TO") {
             if (option.kind === "MODE" && option.mode === "DONE") { delete c.readiedLegends; return completed(m); }
