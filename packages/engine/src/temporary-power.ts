@@ -11,6 +11,7 @@ import { powerTargets } from "./react-queries";
 import { friendlyPowerTargets } from "./friendly-play-power-queries";
 import { supportsFriendlyPlayPowerUnit, validateFriendlyPlayPowerMetadata } from "./friendly-play-power-support";
 import { supportsGigParityUnit } from "./gig-parity-support";
+import { supportsLegendReveal } from "./legend-reveal-support";
 
 export function compareTemporaryPower(a: TemporaryPowerModifier, b: TemporaryPowerModifier) {
     if (a.sourceId !== b.sourceId) return a.sourceId < b.sourceId ? -1 : 1;
@@ -76,6 +77,17 @@ export function validateTemporaryPower(state: GameState, context: EngineContext)
     if (!reactEnabled(context) || !modifiers.length || new Set(modifiers.map(x => canonicalSerialize([x.sourceId, "origin" in x ? x.origin.effectId : null]))).size !== modifiers.length || canonicalSerialize(modifiers) !== canonicalSerialize([...modifiers].sort(compareTemporaryPower))) return failure("INVALID_TEMPORARY_POWER", "Nonempty canonical reviewed modifiers with distinct source/occurrences required");
     for (const x of modifiers) {
         const source = state.objects.cards[x.sourceId], target = state.objects.cards[x.targetId], r = cardRevision(state, x.sourceId, context);
+        // Batch V41: the revealed card's printed cost, on the Go Solo Legend that revealed it during a resolved current-turn ATTACK occurrence.
+        if ("scaled" in x && x.scaled === "REVEALED_CARD_COST") {
+            const origin = x.origin, a = r?.mechanics.abilities.find(a => a.id === origin.abilityId), continuation = state.resolution.triggerContinuation, cost = cardRevision(state, x.revealedCardId, context)?.printedCost;
+            if (!source || !r || !a || a.trigger !== "WHEN_ATTACKING" || a.effects[0]?.kind !== "REVEAL_TOP_TO_HAND_GAIN_POWER_EQUAL_COST" || x.sourceId !== x.targetId || !supportsLegendReveal(r, context).ok
+                || source.face !== "UP" || !["BATTLEFIELD", "REMOVED"].includes(source.zone.zone) || x.expires.turn !== state.timing.turn
+                || cost?.kind !== "EDDIES" || x.amount !== cost.amount || origin.ordinal > (state.turnHistory?.triggeredBatches ?? 0)
+                || origin.effectId !== triggerId(state, { sourceId: source.id, subjectId: source.id, source: { cardId: r.id, revision: r.revision }, controllerId: source.controllerId, abilityId: a.id, kind: "WHEN_ATTACKING" }, origin.ordinal)
+                || continuation?.ordinal === origin.ordinal && !continuation.resolvedIds.includes(origin.effectId))
+                return failure("INVALID_TEMPORARY_POWER", "Revealed-cost power needs its reviewed public Legend, the revealed card's cost and a resolved current-turn ATTACK occurrence");
+            continue;
+        }
         // Batch V28: the scaled self power of a resolved current-turn ATTACK occurrence; at most +2 for every Gig in the game.
         if ("scaled" in x) {
             const origin = x.origin, a = r?.mechanics.abilities.find(a => a.id === origin.abilityId), continuation = state.resolution.triggerContinuation;

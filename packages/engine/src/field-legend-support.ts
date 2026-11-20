@@ -2,6 +2,7 @@ import { turnSliceAllows, canonicalSerialize, failure, success, type CardRevisio
 import type { EngineContext } from "./state";
 import { supportsTargetedDefeatCard } from "./targeted-defeat-support";
 import { hasLegendStealTrigger, supportsLegendStealTrigger } from "./legend-steal-support";
+import { hasLegendRevealEffect, supportsLegendReveal } from "./legend-reveal-support";
 export function fieldLegendsEnabled(context: EngineContext) { return turnSliceAllows(context.content.ruleset.gameplay?.turnSlice, "fieldLegends"); }
 /** Complete reviewed variants share one lifecycle. A keyword alone never admits additional Legend text.
  * Shape matching is admission metadata; movement/payment/combat do not branch on a card identity. */
@@ -19,6 +20,8 @@ export function supportsFieldLegend(card: DeepReadonly<CardRevisionSnapshot> | u
     }
     // Batch V40: a Go Solo Legend with a friendly-Legend steal trigger is admitted only through its exact pin.
     if (card?.type === "LEGEND" && card.execution?.scope === "COMBAT_TRIGGERS_V1" && hasLegendStealTrigger(card)) return supportsLegendStealTrigger(card, context);
+    // Batch V41: likewise the Go Solo Legend with an {Attack} reveal for power.
+    if (card?.type === "LEGEND" && card.execution?.scope === "COMBAT_TRIGGERS_V1" && hasLegendRevealEffect(card)) return supportsLegendReveal(card, context);
     if (!fieldLegendsEnabled(context) || !turnSliceAllows(policy, "cardPlay") || !turnSliceAllows(policy, "gear") || !turnSliceAllows(policy, "combat") || !turnSliceAllows(policy, "react") || !turnSliceAllows(policy, "combatResolution") || !card?.provenance.reviewed || card.execution?.scope !== "FIELD_LEGENDS_V1" || card.execution.status !== "SUPPORTED" || card.type !== "LEGEND" || card.printedCost.kind !== "EDDIES" || card.printedCost.amount !== 5 || card.power === undefined || !card.sellProfile.allowed || card.keywords.length || !m || m.equip || m.abilities.length || m.modifiers.length || m.restrictions?.length || !reviewedShapes.some(shape => canonicalSerialize(shape) === canonicalSerialize({ colors: card.colors, ram: card.ram, tags: card.tags, power: card.power, keywords: m.keywords })))
         return failure("UNSUPPORTED_FIELD_LEGEND", "Complete reviewed cost5 Go Solo Legend variant (Blue RAM2 Corpo/Merc power8, or Green RAM2 Arasaka/Corpo power7 with printed Blocker) and explicit field-Legend policy required");
     return success(null);

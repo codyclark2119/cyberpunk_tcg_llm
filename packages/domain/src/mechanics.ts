@@ -199,6 +199,8 @@ export const EffectSchema = z.discriminatedUnion("kind", [
     // Batch V40: "if its value is even, draw 1. If its value is odd, a Rival discards 1." One effect: the stolen Gig's parity is read
     // once, on resolution, so exactly one branch applies.
     z.strictObject({ kind: z.literal("STOLEN_GIG_PARITY_DRAW_OR_RIVAL_DISCARD"), count: z.literal(1) }),
+    // Batch V41: "Reveal the top card of your deck and add it to your hand. This Unit gains power equal to that card's cost this turn."
+    z.strictObject({ kind: z.literal("REVEAL_TOP_TO_HAND_GAIN_POWER_EQUAL_COST"), count: z.literal(1) }),
     // Batch V38: "At the end of your turn, ready up to 3 friendly Units."
     z.strictObject({ kind: z.literal("READY_UNITS_UP_TO"), relation: z.literal("FRIENDLY"), maximum: z.literal(3) }),
     // Batch V29: "If you control a value-pair of Gigs, ready up to 2 MERC Legends in your Legends area."

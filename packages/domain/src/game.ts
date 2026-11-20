@@ -94,6 +94,9 @@ export const TemporaryPowerModifierSchema = z.discriminatedUnion("amount", [
 ]).or(
     // Batch V28: "+2 power this turn for each friendly Gig with an even value", counted once at resolution; `scaled` keeps it apart from the fixed +2.
     TemporaryPowerBaseSchema.extend({ amount: z.number().int().positive().multipleOf(2), scaled: z.literal("FRIENDLY_EVEN_GIGS"), origin: z.strictObject({ effectId: HashSchema, abilityId: z.string().min(1), ordinal: z.number().int().positive() }) })
+).or(
+    // Batch V41: "This Unit gains power equal to that card's cost this turn": the revealed card is named, so the amount is its printed cost.
+    TemporaryPowerBaseSchema.extend({ amount: z.number().int().positive(), scaled: z.literal("REVEALED_CARD_COST"), revealedCardId: CardInstanceIdSchema, origin: z.strictObject({ effectId: HashSchema, abilityId: z.string().min(1), ordinal: z.number().int().positive() }) })
 );
 export type TemporaryPowerModifier = z.infer<typeof TemporaryPowerModifierSchema>;
 /** Batch V20: a keyword granted "this turn" by a resolved PLAY occurrence; it tracks the target only while it stays on the field. */

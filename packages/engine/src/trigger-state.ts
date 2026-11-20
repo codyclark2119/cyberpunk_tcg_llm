@@ -27,6 +27,7 @@ import { supportsPinnedPlayUnit } from "./play-pin-support";
 import { listSpendUnitTargets } from "./targeted-spend-queries";
 import { supportsEffectiveTriggerSource, supportsTriggerCard, triggersEnabled } from "./trigger-support";
 import { supportsLegendStealTrigger } from "./legend-steal-support";
+import { supportsLegendReveal } from "./legend-reveal-support";
 import { discardingPlayer, discoverTriggers, nextTriggerGroup, pendingTrigger, stealerIsLegend, stolenGigParity, swapSidesAvailable, triggerChoice, triggerGigTargets, triggerId } from "./trigger-queries";
 import { discardedCostMatchesFriendlyGig } from "./discard";
 import { supportsTargetedDefeatCard } from "./targeted-defeat-support";
@@ -217,7 +218,9 @@ export function validateTriggerState(state: GameState, context: EngineContext) {
         const more = e.effect.kind === "DISCARD_CARDS" ? e.effect.more : undefined, first = c.discardedCardId ? state.objects.cards[c.discardedCardId] : undefined;
         const defeated = c.conditionMet === undefined && !when && Boolean(more) && c.origin.kind === "DEFEAT" && e.trigger?.kind === "WHEN_DEFEATED" && supportsTargetedDefeatCard(cardRevision(state, e.sourceId!, context), context).ok
             && (!c.discardedCardId || Boolean(first) && first!.zone.zone === "TRASH" && first!.ownerId === discardingPlayer(state, e) && discardedCostMatchesFriendlyGig(state, e.controllerId, first!.id, context));
-        if (c.phase !== "DISCARD" || e.effect.kind !== "DISCARD_CARDS" || e.primitiveIndex !== undefined || !(blocker || steal || defeated) || !(defeated || supportsTriggerCard(cardRevision(state, e.sourceId!, context), context).ok))
+        // Batch V41: the Go Solo Legend's plain {Defeated} rival discard.
+        const legend = c.conditionMet === undefined && !when && !more && c.origin.kind === "DEFEAT" && e.trigger?.kind === "WHEN_DEFEATED" && supportsLegendReveal(cardRevision(state, e.sourceId!, context), context).ok;
+        if (c.phase !== "DISCARD" || e.effect.kind !== "DISCARD_CARDS" || e.primitiveIndex !== undefined || !(blocker || steal || defeated || legend) || !(defeated || supportsTriggerCard(cardRevision(state, e.sourceId!, context), context).ok))
             return failure("INVALID_DISCARD_CONTINUATION", "Only the reviewed Blocker-used, steal-trigger and defeated rival discards pause");
     }
     // Batch V40: the parity branch pauses only for the rival's discard, in its friendly-Legend STEAL batch, while the stolen Gig is odd.

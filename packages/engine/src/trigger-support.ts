@@ -12,6 +12,7 @@ import { supportsAttackPlay } from "./attack-support";
 import { supportsBlockerUsedUnit } from "./blocker-trigger-support";
 import { hasStealTrigger, supportsStealTriggerUnit } from "./steal-trigger-support";
 import { hasLegendStealTrigger, supportsLegendStealTrigger } from "./legend-steal-support";
+import { hasLegendRevealEffect, supportsLegendReveal } from "./legend-reveal-support";
 import { hasGigParityEffect, supportsGigParityUnit } from "./gig-parity-support";
 import { hasValuePairMetadata, supportsValuePairUnit } from "./value-pair-support";
 import { hasProgramDiscardEffect, supportsProgramDiscardUnit } from "./program-discard-support";
@@ -29,6 +30,8 @@ export function supportsTriggerCard(card: DeepReadonly<CardRevisionSnapshot> | u
     if (card?.mechanics.keywords.length && supportsBlockerUsedUnit(card, context).ok) return success(null);
     // Batch V40: the friendly-Legend steal trigger and its parity branch are admitted only by their exact pins.
     if (hasLegendStealTrigger(card)) return supportsLegendStealTrigger(card, context);
+    // Batch V41: the Go Solo Legend's {Attack} reveal for power and {Defeated} rival discard are admitted only by their exact pins.
+    if (hasLegendRevealEffect(card)) return supportsLegendReveal(card, context);
     // Batch V24: steal triggers and the "if it's equipped" condition are admitted only by their exact pins.
     if (hasStealTrigger(card)) return supportsStealTriggerUnit(card, context);
     // Batch V28: amounts counted from friendly Gig parity are admitted only by their exact pins.

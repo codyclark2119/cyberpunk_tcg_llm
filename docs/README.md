@@ -82,6 +82,7 @@ were recorded in their pull requests (#4, #7, #8); later batches have documents 
 | V38 (2026-11-20) | Saul Bright: Stormrider | [Other attacking friendly Units +2; end of turn ready up to 3 friendly Units](api-admission-batch-v38.md); coverage 87/151 |
 | V39 (2026-11-20) | Adrenaline Converter | [Gear: host has Adrenaline while a Rival controls 2 more Gigs](api-admission-batch-v39.md); coverage 88/151 |
 | V40 (2026-11-20) | Rogue Amendiares: Preem Solo | [Go Solo Legend: a friendly Legend's even steal draws 1, an odd one makes a Rival discard 1](api-admission-batch-v40.md); coverage 89/151 |
+| V41 (2026-11-20) | Sasha Yakovleva: Won't Let You Down | [Go Solo Legend: {Attack} reveal the top card into hand for its cost in power; {Defeated} a Rival discards 1](api-admission-batch-v41.md); coverage 90/151 |
 | V7 (2026-11-15) | Royce: Don't Call Me Simon, Wild in the Streets, Delamain: Rideshare AI | [shared defeat filter and exact pin table](api-admission-batch-v7.md); coverage 42/151 |
 | V6 (2026-09-22) | Trust No One | [contract and executable slice](api-admission-batch-v6.md), [baseline verification](api-admission-batch-v6-verification.md) |
 
