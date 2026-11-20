@@ -1,3 +1,4 @@
+import { validateArasakaDefeatHistory } from "./arasaka-defeat";
 import { validateTargetedDefeatState } from "./targeted-defeat-state";
 import { validateMustAttack } from "./must-attack";
 import { validateAttackConditionPowerMetadata } from "./attack-condition-power-support";
@@ -120,6 +121,7 @@ export function validateState(input: unknown, context: EngineContext): Result<Ga
     const firstMetadata = validateFirstAttackMetadata(s, context); if (!firstMetadata.ok) return firstMetadata;
     const firstHistory = validateFirstAttackHistory(s, context); if (!firstHistory.ok) return firstHistory;
     const belowPower = validateBelowPowerHistory(s, context); if (!belowPower.ok) return belowPower; // Batch V49.
+    const arasakaDefeat = validateArasakaDefeatHistory(s, context); if (!arasakaDefeat.ok) return arasakaDefeat; // Batch V50.
     const fieldMetadata = validateFieldLegendMetadata(s, context); if (!fieldMetadata.ok) return fieldMetadata;
     const delayedMetadata = validateDelayedMetadata(s, context); if (!delayedMetadata.ok) return delayedMetadata;
     const delayedState = validateDelayedState(s, context); if (!delayedState.ok) return delayedState;

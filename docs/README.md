@@ -91,6 +91,7 @@ were recorded in their pull requests (#4, #7, #8); later batches have documents 
 | V47 (2026-11-20) | Appetite for Destruction | [Program: the next time a friendly Unit wins a fight by 3+ power this turn, it also steals a Gig after the fight](api-admission-batch-v47.md); coverage 96/151 |
 | V48 (2026-11-20) | The Relic: Experimental Biochip | [Gear: when its host is defeated, play another trash Unit for free, then bottom-deck the host; the first free play, and fixes to V46/V47](api-admission-batch-v48.md); coverage 97/151 |
 | V49 (2026-11-20) | Rogue Amendiares: Queen of the Afterlife | [Unit: a paid Quick activation (a rival Unit loses this Unit's power), also as a reaction, and a first below-power steal trigger](api-admission-batch-v49.md); coverage 98/151 |
+| V50 (2026-11-20) | Yorinobu Arasaka: Steel Dragon | [Unit: an optional {Play} free play of a cost-4 Unit from hand or trash that can attack rival Units this turn, and a first-ARASAKA-defeat draw](api-admission-batch-v50.md); coverage 99/151 |
 | V7 (2026-11-15) | Royce: Don't Call Me Simon, Wild in the Streets, Delamain: Rideshare AI | [shared defeat filter and exact pin table](api-admission-batch-v7.md); coverage 42/151 |
 | V6 (2026-09-22) | Trust No One | [contract and executable slice](api-admission-batch-v6.md), [baseline verification](api-admission-batch-v6-verification.md) |
 

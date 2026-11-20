@@ -208,7 +208,7 @@ export function advanceTriggers(m: TurnMutation): Result<null> {
     }
     // Batch V48: "Play another Unit with cost 9 or less from your trash for free. Then, bottom-deck this Unit."
     if (e.kind === "PLAY_UNIT_FREE") {
-        if (freePlayTargets(m.state, m.context).length) { c.phase = "TARGET"; return offer(m); }
+        if (freePlayTargets(m.state, m.context).length) { c.phase = "TARGET"; return offer(m); } // Batch V50: an optional play always offers its decline.
         const done = bottomDeckSubject(m); return done.ok ? completed(m) : done;
     }
     if (e.kind === "REGISTER_END_TURN_EFFECT") { const result = registerEndTurnEffect(m); return result.ok ? completed(m) : result; }
@@ -464,7 +464,8 @@ export function continueTrigger(m: TurnMutation, index: number, forced = false):
             return completed(m);
         }
         if (current.effect.kind === "PLAY_UNIT_FREE") {
-            if (option.kind !== "CARD") return failure("INVALID_FREE_PLAY", "Choose another Unit in your trash");
+            if (option.kind === "CONFIRM" && !option.confirmed && current.effect.optional) { m.emit({ kind: "OPTIONAL_TRIGGER_DECLINED", effectId: current.id, controllerId: current.controllerId }); return completed(m); }
+            if (option.kind !== "CARD") return failure("INVALID_FREE_PLAY", "Choose an eligible Unit");
             const played = resolveFreePlay(m, option.cardInstanceId, forced); if (!played.ok) return played;
             const done = bottomDeckSubject(m); return done.ok ? completed(m) : done;
         }

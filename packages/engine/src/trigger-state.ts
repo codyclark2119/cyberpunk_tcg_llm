@@ -53,6 +53,13 @@ function validBinding(state: GameState, b: TriggerBinding, context: EngineContex
     if (b.opposingId !== undefined) return false;
     if (!source || !subject || !state.players[b.controllerId] || b.controllerId !== subject.controllerId || b.controllerId !== source.controllerId || !supportsEffectiveTriggerSource(r, context) || source.cardId !== b.source.cardId || source.revision !== b.source.revision || !ability || (b.delayedId ? ability.trigger !== "WHEN_ATTACKING" : ability.trigger !== b.kind) || (b.sourceId !== b.subjectId) !== (ability.inherited === "EQUIPPED_HOST")) return false;
     const origin = c.origin;
+    // Batch V50: an observer of the turn's first ARASAKA Unit defeat, defeated by this batch's origin or an effect in it. The observer
+    // is on the field, or was defeated with it (bindings are captured before movement).
+    if (b.kind === "WHEN_UNIT_DEFEATED") {
+        const first = state.turnHistory?.firstArasakaDefeat, defeated = [...(origin.kind === "DEFEAT" ? origin.defeated : []), ...(c.effectDefeats ?? [])].map(d => d.targetId);
+        return ability.guard === "FIRST_ARASAKA_UNIT_DEFEAT_PER_TURN" && b.sourceId === b.subjectId && b.gigInstanceId === undefined && supportsFreePlayCard(r, context).ok && first !== undefined && defeated.includes(first)
+            && (source.zone.zone === "BATTLEFIELD" && source.face === "UP" || defeated.includes(source.id) && !["BATTLEFIELD", "LEGENDS"].includes(source.zone.zone));
+    }
     // Batch V48: a Unit an effect played in this batch brings its {Play} bindings, and the first-blue-play observer of that play.
     if (b.kind === "WHEN_PLAYED" && c.effectPlays?.some(p => p.subjectId === b.subjectId)) return true;
     if (b.kind === "WHEN_CARD_PLAYED" && c.effectPlays?.some(p => p.qualifyingOrdinal === 1 && state.objects.cards[p.subjectId]?.ownerId === b.controllerId))
@@ -195,8 +202,9 @@ export function validateTriggerState(state: GameState, context: EngineContext) {
     }
     // Batch V13: the reviewed Unit DEFEATED trash return pauses only for its own target.
     // Batch V48: a free play pauses only for a strategic choice among 2+ trash Units, inside its {Defeated} trigger.
-    if (r.current?.effect.kind === "PLAY_UNIT_FREE" && (c.phase !== "TARGET" || r.current.trigger?.kind !== "WHEN_DEFEATED" || r.current.primitiveIndex !== undefined || !supportsFreePlayCard(cardRevision(state, r.current.sourceId!, context), context).ok || freePlayTargets(state, context).length < 2))
-        return failure("INVALID_FREE_PLAY_CONTINUATION", "Only the reviewed {Defeated} free play may pause, for a choice among its trash Units");
+    // Batch V50: the optional {Play} free play pauses whenever it has a Unit to play, since declining is always a choice.
+    if (r.current?.effect.kind === "PLAY_UNIT_FREE" && (c.phase !== "TARGET" || r.current.trigger?.kind !== (r.current.effect.optional ? "WHEN_PLAYED" : "WHEN_DEFEATED") || r.current.primitiveIndex !== undefined || !supportsFreePlayCard(cardRevision(state, r.current.sourceId!, context), context).ok || freePlayTargets(state, context).length < (r.current.effect.optional ? 1 : 2)))
+        return failure("INVALID_FREE_PLAY_CONTINUATION", "Only a reviewed free play may pause, for a real choice among its Units");
     if (r.current?.effect.kind === "RETURN_TRASH_UNIT_TO_HAND" && (c.phase !== "TARGET" || c.origin.kind !== "DEFEAT" || r.current.trigger?.kind !== "WHEN_DEFEATED" || r.current.primitiveIndex !== undefined || !supportsTriggerCard(cardRevision(state, r.current.sourceId!, context), context).ok)) return failure("INVALID_TRASH_RETURN_CONTINUATION", "Only the reviewed DEFEATED trash return may pause for a trash Unit");
     // Batch V8: the Unit PLAY rival spend pauses only as its ordered second primitive; the
     // Legend ready pauses only in its own-turn end batch.
