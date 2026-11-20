@@ -8,7 +8,7 @@ import { adjustmentTargets } from "./play-state";
 import { offerPlayChoice } from "./play";
 import { failure, success, type Effect, type Result } from "@tcg/domain";
 import type { TurnMutation } from "./turn";
-import { searchChoice, searchTargets } from "./search-state";
+import { isProgramSearchEffect, programSearchMaxTake, searchChoice, searchTargets } from "./search-state";
 import { drawDeterministicInteger } from "./rng";
 import { isUnitSpendSubject, spendUnitForEffect } from "./unit-spend";
 import { resolveTrashThenReturn } from "./trash-return";
@@ -45,6 +45,12 @@ export class HandlerRegistry {
         const s = m.state, actor = s.timing.actingPlayer;
         s.resolution.searchContinuation = { looked: [...s.players[actor].zones.DECK.slice(0, effect.count)], selected: [] };
         return offerSearch(m);
+    },
+    // Batch V36: the resolving Program's search; its choices pause the play continuation.
+    SEARCH_TAKE_ONE_PLUS_PER_MIN_GIG: (m: TurnMutation, effect: Primitive<"SEARCH_TAKE_ONE_PLUS_PER_MIN_GIG">): Result<null> => {
+        const s = m.state, actor = s.resolution.current!.controllerId;
+        s.resolution.searchContinuation = { looked: [...s.players[actor].zones.DECK.slice(0, effect.count)], selected: [] };
+        return offerSearch(m);
     }
     };
     resolve(m: TurnMutation, effect: Effect): Result<null> {
@@ -59,6 +65,7 @@ export class HandlerRegistry {
         if (effect.kind === "POWER_PER_FRIENDLY_GIG") return resolvePowerPerFriendlyGig(m);
         if (effect.kind === "DRAW_PER_FRIENDLY_GIG") return resolveDrawPerFriendlyGig(m);
         if (effect.kind === "SEARCH_GEAR") return this.primitives.SEARCH_GEAR(m, effect);
+        if (effect.kind === "SEARCH_TAKE_ONE_PLUS_PER_MIN_GIG") return this.primitives.SEARCH_TAKE_ONE_PLUS_PER_MIN_GIG(m, effect);
         if (effect.kind === "TRASH_THEN_RETURN_UNIT") return resolveTrashThenReturn(m, effect, offerPlayChoice);
         if (effect.kind === "BOTTOM_DECK_UNIT") return resolveBottomDeck(m, offerPlayChoice);
         return failure("UNSUPPORTED_CALL_EFFECT", "No registered typed CALL primitive");
@@ -77,11 +84,11 @@ export function resolveCallPrimitive(m: TurnMutation, effect: Effect): Result<nu
 }
 export function finishSearch(m: TurnMutation): Result<null> {
     const s = m.state, current = s.resolution.current!, c = s.resolution.searchContinuation!, actor = current.controllerId, p = s.players[actor];
-    const selected = new Set(c.selected);
+    const selected = new Set(c.selected), reveal = !isProgramSearchEffect(current.effect); // V36 says "add", not "reveal": taken cards stay hidden.
     p.zones.DECK.splice(0, c.looked.length);
     for (const id of c.selected) {
         const card = s.objects.cards[id], from = { ...card.zone };
-        m.emit({ kind: "CARD_REVEALED", cardInstanceId: id });
+        if (reveal) m.emit({ kind: "CARD_REVEALED", cardInstanceId: id });
         card.zone = { playerId: actor, zone: "HAND" };
         p.zones.HAND.push(id);
         m.emit({ kind: "CARD_MOVED", cardInstanceId: id, from, to: card.zone });
@@ -101,9 +108,12 @@ export function finishSearch(m: TurnMutation): Result<null> {
 }
 function offerSearch(m: TurnMutation): Result<null> {
     const s = m.state, current = s.resolution.current!, c = s.resolution.searchContinuation!;
-    if (current.effect.kind !== "SEARCH_GEAR") return failure("INVALID_SEARCH_STATE", "Expected search primitive");
-    if (c.selected.length === current.effect.maxTake || !searchTargets(s, m.context).some(id => !c.selected.includes(id))) return finishSearch(m);
+    if (current.effect.kind !== "SEARCH_GEAR" && !isProgramSearchEffect(current.effect)) return failure("INVALID_SEARCH_STATE", "Expected search primitive");
+    const max = current.effect.kind === "SEARCH_GEAR" ? current.effect.maxTake : programSearchMaxTake(s, current.controllerId), remaining = searchTargets(s, m.context).filter(id => !c.selected.includes(id));
+    if (c.selected.length >= max || !remaining.length) return finishSearch(m);
     s.resolution.choice = searchChoice(s, m.context);
+    // Batch V36: "Add 1" is mandatory, so a lone looked-at card is taken without a choice.
+    if (s.resolution.choice.options.length === 1) { c.selected.push(remaining[0]); s.resolution.choice = null; return offerSearch(m); }
     s.resolution.stage = "CHOICE";
     s.timing.step = "TARGET_SELECTION";
     s.timing.window = "TARGET_SELECTION";

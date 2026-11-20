@@ -4714,6 +4714,24 @@
                                       "properties": {
                                         "kind": {
                                           "type": "string",
+                                          "const": "SEARCH_TAKE_ONE_PLUS_PER_MIN_GIG"
+                                        },
+                                        "count": {
+                                          "type": "number",
+                                          "const": 3
+                                        }
+                                      },
+                                      "required": [
+                                        "kind",
+                                        "count"
+                                      ],
+                                      "additionalProperties": false
+                                    },
+                                    {
+                                      "type": "object",
+                                      "properties": {
+                                        "kind": {
+                                          "type": "string",
                                           "const": "SEARCH_GEAR"
                                         },
                                         "count": {
@@ -7745,6 +7763,24 @@
                                     "properties": {
                                       "kind": {
                                         "type": "string",
+                                        "const": "SEARCH_TAKE_ONE_PLUS_PER_MIN_GIG"
+                                      },
+                                      "count": {
+                                        "type": "number",
+                                        "const": 3
+                                      }
+                                    },
+                                    "required": [
+                                      "kind",
+                                      "count"
+                                    ],
+                                    "additionalProperties": false
+                                  },
+                                  {
+                                    "type": "object",
+                                    "properties": {
+                                      "kind": {
+                                        "type": "string",
                                         "const": "SEARCH_GEAR"
                                       },
                                       "count": {
@@ -10759,6 +10795,24 @@
                                       "count": {
                                         "type": "number",
                                         "const": 4
+                                      }
+                                    },
+                                    "required": [
+                                      "kind",
+                                      "count"
+                                    ],
+                                    "additionalProperties": false
+                                  },
+                                  {
+                                    "type": "object",
+                                    "properties": {
+                                      "kind": {
+                                        "type": "string",
+                                        "const": "SEARCH_TAKE_ONE_PLUS_PER_MIN_GIG"
+                                      },
+                                      "count": {
+                                        "type": "number",
+                                        "const": 3
                                       }
                                     },
                                     "required": [
@@ -17513,6 +17567,24 @@
                                       "properties": {
                                         "kind": {
                                           "type": "string",
+                                          "const": "SEARCH_TAKE_ONE_PLUS_PER_MIN_GIG"
+                                        },
+                                        "count": {
+                                          "type": "number",
+                                          "const": 3
+                                        }
+                                      },
+                                      "required": [
+                                        "kind",
+                                        "count"
+                                      ],
+                                      "additionalProperties": false
+                                    },
+                                    {
+                                      "type": "object",
+                                      "properties": {
+                                        "kind": {
+                                          "type": "string",
                                           "const": "SEARCH_GEAR"
                                         },
                                         "count": {
@@ -20544,6 +20616,24 @@
                                     "properties": {
                                       "kind": {
                                         "type": "string",
+                                        "const": "SEARCH_TAKE_ONE_PLUS_PER_MIN_GIG"
+                                      },
+                                      "count": {
+                                        "type": "number",
+                                        "const": 3
+                                      }
+                                    },
+                                    "required": [
+                                      "kind",
+                                      "count"
+                                    ],
+                                    "additionalProperties": false
+                                  },
+                                  {
+                                    "type": "object",
+                                    "properties": {
+                                      "kind": {
+                                        "type": "string",
                                         "const": "SEARCH_GEAR"
                                       },
                                       "count": {
@@ -23558,6 +23648,24 @@
                                       "count": {
                                         "type": "number",
                                         "const": 4
+                                      }
+                                    },
+                                    "required": [
+                                      "kind",
+                                      "count"
+                                    ],
+                                    "additionalProperties": false
+                                  },
+                                  {
+                                    "type": "object",
+                                    "properties": {
+                                      "kind": {
+                                        "type": "string",
+                                        "const": "SEARCH_TAKE_ONE_PLUS_PER_MIN_GIG"
+                                      },
+                                      "count": {
+                                        "type": "number",
+                                        "const": 3
                                       }
                                     },
                                     "required": [

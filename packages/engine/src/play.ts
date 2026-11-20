@@ -11,7 +11,7 @@ import { revisionOf } from "./play-support";
 import { playChoice, playEffectId, adjustmentTargets } from "./play-state";
 import { forcedPaymentSources, paymentValue, validatePayment } from "./payment";
 import { playPaymentAmount } from "./play-cost-support";
-import { HandlerRegistry } from "./effects";
+import { HandlerRegistry, continueSearch } from "./effects";
 import { chooseTrashedUnit } from "./trash-return";
 import { chooseBottomDeck } from "./bottom-deck";
 import { changeGigValue, gigAdjustmentDelta } from "./gig-value";
@@ -127,6 +127,10 @@ export function continuePlay(m: TurnMutation, index: number): Result<null> {
         // 11.20.2: play requirements are fulfilled only after equipping, not merely after payment.
         m.emit({ kind: "CARD_PLAYED", cardInstanceId: c.sourceId });
         return finishPlay(m, c.sourceId);
+    }
+    if (s.resolution.current?.effect.kind === "SEARCH_TAKE_ONE_PLUS_PER_MIN_GIG") {
+        const searched = continueSearch(m, index);
+        return !searched.ok || s.resolution.searchContinuation ? searched : completePlayEffect(m);
     }
     if (s.resolution.current?.effect.kind === "SPEND_UNIT") {
         if (option.kind !== "CARD") return failure("INVALID_SPEND_TARGET", "Choose an enumerated Unit");

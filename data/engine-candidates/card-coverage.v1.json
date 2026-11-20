@@ -9,12 +9,12 @@
   },
   "totals": {
     "cards": 151,
-    "admitted": 84,
-    "notAdmitted": 67,
+    "admitted": 85,
+    "notAdmitted": 66,
     "notAdmittedOnlyCoveredFamilies": 0,
     "byAdmission": {
-      "NOT_ADMITTED": 67,
-      "SOURCE_MATCH": 84
+      "NOT_ADMITTED": 66,
+      "SOURCE_MATCH": 85
     }
   },
   "families": [
@@ -28,20 +28,20 @@
       "soleBlockerCount": 0
     },
     {
-      "family": "CONDITION_GIG",
-      "status": "PARTIAL",
-      "summary": "Conditions and filters on Gig values: min/max, value-pairs, even/odd, 8+, die type, counts compared with a Rival.",
-      "notes": "Conditions only, each a fixed shape.",
-      "cardCount": 40,
-      "notAdmittedCount": 20,
-      "soleBlockerCount": 0
-    },
-    {
       "family": "CONDITION_BOARD",
       "status": "PARTIAL",
       "summary": "Generic target filters and board conditions: classification, cost, power, ready/spent, equipped, face-up, named, lowest power.",
       "notes": "Documented as unsupported: generic condition/filter language. Each admitted filter is a literal.",
       "cardCount": 34,
+      "notAdmittedCount": 19,
+      "soleBlockerCount": 0
+    },
+    {
+      "family": "CONDITION_GIG",
+      "status": "PARTIAL",
+      "summary": "Conditions and filters on Gig values: min/max, value-pairs, even/odd, 8+, die type, counts compared with a Rival.",
+      "notes": "Conditions only, each a fixed shape.",
+      "cardCount": 40,
       "notAdmittedCount": 19,
       "soleBlockerCount": 0
     },
@@ -87,16 +87,7 @@
       "summary": "Top-of-deck manipulation: search/look/reveal top N, trash from the top (Trash N), bottom-deck the rest.",
       "notes": "SEARCH_GEAR (count<=5, Gear with max cost, take<=2) only.",
       "cardCount": 15,
-      "notAdmittedCount": 10,
-      "soleBlockerCount": 0
-    },
-    {
-      "family": "SCALED_AMOUNT",
-      "status": "PARTIAL",
-      "summary": "Amounts computed from the board: 'for each', 'equal to'.",
-      "notes": "Only Royce's per-equipped-Gear modifier counts anything.",
-      "cardCount": 18,
-      "notAdmittedCount": 10,
+      "notAdmittedCount": 9,
       "soleBlockerCount": 0
     },
     {
@@ -114,6 +105,15 @@
       "summary": "Play a card by an effect: from hand, trash or deck top, for free or for its cost, with after-play riders.",
       "notes": "",
       "cardCount": 9,
+      "notAdmittedCount": 9,
+      "soleBlockerCount": 0
+    },
+    {
+      "family": "SCALED_AMOUNT",
+      "status": "PARTIAL",
+      "summary": "Amounts computed from the board: 'for each', 'equal to'.",
+      "notes": "Only Royce's per-equipped-Gear modifier counts anything.",
+      "cardCount": 18,
       "notAdmittedCount": 9,
       "soleBlockerCount": 0
     },
@@ -3038,18 +3038,14 @@
       "colors": [
         "BLUE"
       ],
-      "admission": "NOT_ADMITTED",
-      "revision": null,
+      "admission": "SOURCE_MATCH",
+      "revision": 1,
       "families": [
         "CONDITION_GIG",
         "DECK_SEARCH_REVEAL",
         "SCALED_AMOUNT"
       ],
-      "blockingFamilies": [
-        "CONDITION_GIG",
-        "DECK_SEARCH_REVEAL",
-        "SCALED_AMOUNT"
-      ],
+      "blockingFamilies": [],
       "note": null
     },
     {

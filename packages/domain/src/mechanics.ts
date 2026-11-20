@@ -169,6 +169,8 @@ export const EffectSchema = z.discriminatedUnion("kind", [
     // Batch V35: "Search the top 4 cards of your deck. Reveal any number of cards with cost equal to any friendly Gig values and add
     // them to your hand. Bottom-deck the rest."
     z.strictObject({ kind: z.literal("SEARCH_COST_MATCHING_GIGS"), count: z.literal(4) }),
+    // Batch V36: "Search the top 3 cards of your deck. Add 1 to your hand. You may add 1 more for each friendly min Gig. Bottom-deck the rest."
+    z.strictObject({ kind: z.literal("SEARCH_TAKE_ONE_PLUS_PER_MIN_GIG"), count: z.literal(3) }),
     z.strictObject({ kind: z.literal("SEARCH_GEAR"), count: z.number().int().positive().max(5), maxCost: z.number().int().nonnegative().optional(), maxTake: z.number().int().positive().max(2) }),
     // Batch V20: "[Play] Trash 3. Add a Program from among them to your hand."
     z.strictObject({ kind: z.literal("TRASH_THEN_RETURN_PROGRAM"), count: z.literal(3) }),
