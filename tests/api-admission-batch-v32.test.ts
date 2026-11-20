@@ -44,7 +44,7 @@ function place(s: GameState, cards: [string, PlayerId, "HAND" | "READY" | "SPENT
     return { state: s, ids };
 }
 const cards = (s: GameState) => s.resolution.choice!.options.flatMap(o => o.kind === "CARD" ? [o.cardInstanceId] : []).sort();
-const card = (s: GameState, id: string) => pick(s, context, o => o.kind === "CARD" && o.cardInstanceId === id);
+const card = (s: GameState, id: CardInstanceId) => pick(s, context, o => o.kind === "CARD" && o.cardInstanceId === id);
 const decline = (s: GameState) => pick(s, context, o => o.kind === "MODE" && o.mode === "DONE");
 /** Placide, ready on the field, attacks `target` (the rival Gig area when omitted). */
 function attack(prepared: GameState, target?: CardInstanceId) {
@@ -57,7 +57,7 @@ function attack(prepared: GameState, target?: CardInstanceId) {
     }
     return { state: r.state, events, placideId: unit.id };
 }
-const inRivalDeck = (s: GameState, id: string) => s.objects.cards[id].zone.zone === "DECK" && s.objects.cards[id].face === "DOWN" && s.players[rival].zones.DECK.includes(id);
+const inRivalDeck = (s: GameState, id: CardInstanceId) => s.objects.cards[id].zone.zone === "DECK" && s.objects.cards[id].face === "DOWN" && s.players[rival].zones.DECK.includes(id);
 
 test("the V32 revision is an exact source projection and matches its engine candidate", () => {
     const catalog = readFileSync(new URL("../data/engine-candidates/card-catalog.v1.jsonl", import.meta.url), "utf8").split("\n").filter(Boolean).map(l => JSON.parse(l));
