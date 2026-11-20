@@ -1,4 +1,5 @@
 import { processDeparture } from "./card-movement";
+import { applyMustAttack, mustAttackTargets } from "./must-attack";
 import { REVEAL_TYPES } from "./type-reveal-support";
 import { beginTargetedDefeat } from "./targeted-defeat";
 import { resolveSpendTarget } from "./targeted-spend";
@@ -228,6 +229,11 @@ export function advanceTriggers(m: TurnMutation): Result<null> {
         if (parity !== "ODD" || !getDiscardableCards(m.state, discardingPlayer(m.state, current)).length) return completed(m);
         c.phase = "DISCARD"; return offer(m);
     }
+    // Batch V43: "A rival Unit must attack next turn if it can." With no rival field Unit nothing happens.
+    if (e.kind === "FORCE_RIVAL_UNIT_ATTACK") {
+        if (!mustAttackTargets(m.state, r.current.controllerId, m.context).length) return completed(m);
+        c.phase = "TARGET"; return offer(m);
+    }
     // Batch V42: "choose a card type. Then, reveal the top card of your deck." With an empty deck there is nothing to reveal or choose for.
     if (e.kind === "CHOOSE_TYPE_REVEAL_TOP_ADD_AND_READY_EDDIE") {
         if (!m.state.players[r.current.controllerId].zones.DECK.length) return completed(m);
@@ -371,6 +377,11 @@ export function continueTrigger(m: TurnMutation, index: number, forced = false):
         m.emit({ kind: option.confirmed ? "OPTIONAL_TRIGGER_ACCEPTED" : "OPTIONAL_TRIGGER_DECLINED", effectId: current.id, controllerId: current.controllerId });
         if (!option.confirmed) return completed(m);
         c.phase = "TARGET"; return offer(m);
+    }
+    if (c.phase === "TARGET" && current.effect.kind === "FORCE_RIVAL_UNIT_ATTACK") {
+        if (option.kind !== "CARD") return failure("INVALID_MUST_ATTACK", "Choose a current rival field Unit");
+        m.emit({ kind: "CARD_TARGET_SELECTED", effectId: current.id, sourceId: current.sourceId!, targetId: option.cardInstanceId, controllerId: current.controllerId, forced });
+        const bound = applyMustAttack(m, option.cardInstanceId); return bound.ok ? completed(m) : bound;
     }
     if (c.phase === "TARGET" && current.effect.kind === "CHOOSE_TYPE_REVEAL_TOP_ADD_AND_READY_EDDIE") {
         if (option.kind !== "MODE" || !(REVEAL_TYPES as readonly string[]).includes(option.mode)) return failure("INVALID_CARD_TYPE", "Choose Unit, Gear or Program");

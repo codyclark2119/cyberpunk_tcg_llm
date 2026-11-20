@@ -204,6 +204,8 @@ export const EffectSchema = z.discriminatedUnion("kind", [
     // Batch V42: "choose a card type. Then, reveal the top card of your deck. If it's the chosen type, add it to your hand and ready 1
     // Eddie. Otherwise, trash it." The types are Unit, Gear and Program.
     z.strictObject({ kind: z.literal("CHOOSE_TYPE_REVEAL_TOP_ADD_AND_READY_EDDIE"), ready: z.literal(1) }),
+    // Batch V43: "A rival Unit must attack next turn if it can." The rival Unit is chosen on resolution.
+    z.strictObject({ kind: z.literal("FORCE_RIVAL_UNIT_ATTACK"), duration: z.literal("NEXT_TURN") }),
     // Batch V38: "At the end of your turn, ready up to 3 friendly Units."
     z.strictObject({ kind: z.literal("READY_UNITS_UP_TO"), relation: z.literal("FRIENDLY"), maximum: z.literal(3) }),
     // Batch V29: "If you control a value-pair of Gigs, ready up to 2 MERC Legends in your Legends area."

@@ -1,4 +1,5 @@
 import { supportsAttackConditionPowerCard } from "./attack-condition-power-support";
+import { hasMustAttackEffect, supportsMustAttackUnit } from "./must-attack-support";
 import { hasTypeRevealEffect, supportsTypeRevealUnit } from "./type-reveal-support";
 import { supportsTargetedDefeatCard } from "./targeted-defeat-support";
 import { supportsTargetedGearDefeatCard } from "./targeted-gear-defeat-support";
@@ -28,6 +29,8 @@ export function triggersEnabled(context: EngineContext) { return turnSliceAllows
 /** Complete shapes, not card-name matching. The bundle must still pin explicitly reviewed immutable revisions. */
 export function supportsTriggerCard(card: DeepReadonly<CardRevisionSnapshot> | undefined, context: EngineContext) {
     if (card && hasFriendlyPlayPowerMetadata(card)) return supportsFriendlyPlayPowerUnit(card, context);
+    // Batch V43: the {Play} must-attack obligation (on a Blocker Unit) is admitted only by its exact pin.
+    if (hasMustAttackEffect(card)) return supportsMustAttackUnit(card, context);
     if (card?.mechanics.keywords.length && supportsBlockerUsedUnit(card, context).ok) return success(null);
     // Batch V40: the friendly-Legend steal trigger and its parity branch are admitted only by their exact pins.
     if (hasLegendStealTrigger(card)) return supportsLegendStealTrigger(card, context);

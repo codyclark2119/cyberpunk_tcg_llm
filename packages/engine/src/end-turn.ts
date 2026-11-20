@@ -1,4 +1,5 @@
 import { enterOvertimeAfterTurn, overtimeEnabled } from "./overtime";
+import { unmetMustAttack } from "./must-attack";
 import { delayedEffectsEnabled } from "./delayed-effect-support";
 import { takeEndTurnOrigin } from "./delayed-effects";
 import { turnSliceAllows, failure } from "@tcg/domain";
@@ -10,6 +11,7 @@ import { expireKeywordGrants } from "./play-pin-effects";
 import { expireFightPreventions } from "./fight-prevention";
 export function endTurn(m: TurnMutation) {
     // Historical policy pins retain their atomic preflight; supported overtime waits for all end work.
+    if (unmetMustAttack(m.state, m.state.timing.activePlayer, m.context).length) return failure("MUST_ATTACK_UNMET", "A Unit that must attack this turn still can");
     if (!overtimeEnabled(m.context) && (m.state.timing.emptyFixerStarts ?? 0) >= 2) return failure("UNSUPPORTED_OVERTIME", "Two consecutive starts with both Fixers empty; overtime requires a reviewed implementation");
     m.phase("TURN_END");
     return endTurnEnabled(m.context) || delayedEffectsEnabled(m.context) ? beginTriggers(m, takeEndTurnOrigin(m)) : finishEndTurn(m);

@@ -1,4 +1,5 @@
 import { checkOvertimeVictory } from "./overtime";
+import { unmetMustAttack } from "./must-attack";
 import { attackConditionPowerEnabled } from "./attack-condition-power-support";
 import { targetedSpendEnabled } from "./targeted-spend-support";
 import { continueTargetedDefeat } from "./targeted-defeat";
@@ -74,7 +75,8 @@ function pushMainActions(state: GameState, actor: PlayerId, context: EngineConte
     for (const c of view.faceDownLegends(actor))
         if (view.canCallLegend(actor, c.id))
             actions.push({ actorId: actor, action: { kind: "CALL_LEGEND", cardInstanceId: c.id } });
-    actions.push({ actorId: actor, action: { kind: "END_TURN" } });
+    // Batch V43: the turn cannot end while a Unit that must attack this turn still can.
+    if (!unmetMustAttack(state, actor, context).length) actions.push({ actorId: actor, action: { kind: "END_TURN" } });
 }
 /** Engine actions for the acting player, before identity, labels and ordering. */
 function enumerateActions(state: GameState, actor: PlayerId, context: EngineContext, view: RulesView): Result<GameAction[]> {

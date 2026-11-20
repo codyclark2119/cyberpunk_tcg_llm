@@ -112,6 +112,10 @@ export type GigStealRestriction = z.infer<typeof GigStealRestrictionSchema>;
 export const ReadyLockSchema = z.strictObject({ kind: z.literal("READY_LOCK"), targetId: CardInstanceIdSchema, sourceId: CardInstanceIdSchema, lockingPlayerId: PlayerIdSchema, createdTurn: z.number().int().positive(),
     origin: z.strictObject({ effectId: HashSchema, abilityId: z.string().min(1), ordinal: z.number().int().positive().optional() }) });
 export type ReadyLock = z.infer<typeof ReadyLockSchema>;
+// Batch V43: "A rival Unit must attack next turn if it can": the obligation of one resolved PLAY occurrence on one rival Unit.
+export const MustAttackSchema = z.strictObject({ kind: z.literal("MUST_ATTACK"), targetId: CardInstanceIdSchema, sourceId: CardInstanceIdSchema, forcingPlayerId: PlayerIdSchema, createdTurn: z.number().int().positive(),
+    origin: z.strictObject({ effectId: HashSchema, abilityId: z.string().min(1), ordinal: z.number().int().positive() }) });
+export type MustAttack = z.infer<typeof MustAttackSchema>;
 export const FightPreventionSchema = z.strictObject({
     kind: z.literal("PREVENT_NEXT_RIVAL_FIGHT_DEFEAT"), id: HashSchema, sourceId: CardInstanceIdSchema, controllerId: PlayerIdSchema,
     createdTurn: z.number().int().positive(), expires: z.strictObject({ kind: z.literal("END_OF_TURN"), turn: z.number().int().positive() })
@@ -164,6 +168,7 @@ export const GameStateSchema = z.strictObject({
     temporaryKeywords: z.array(TemporaryKeywordGrantSchema).min(1).optional(),
     gigStealRestrictions: z.array(GigStealRestrictionSchema).min(1).optional(),
     readyLocks: z.array(ReadyLockSchema).min(1).optional(),
+    mustAttack: z.array(MustAttackSchema).min(1).optional(),
     resolution: ResolutionStateSchema, rng: RngStateSchema
 });
 export type DeepReadonly<T> = T extends string | number | boolean | null | undefined ? T : T extends object ? {
@@ -241,6 +246,9 @@ export const EventPayloadSchema = z.discriminatedUnion("kind", [
     z.strictObject({ kind: z.literal("GIG_ADJUSTMENT_DECLINED"), gigInstanceId: GigInstanceIdSchema }),
     z.strictObject({ kind: z.literal("CONDITION_EVALUATED"), effectId: z.string(), met: z.boolean() }),
     z.strictObject({ kind: z.literal("FIXER_PREPARED"), playerId: PlayerIdSchema }),
+    // Batch V43: a must-attack obligation is created, fulfilled by an attack declaration, or ends.
+    z.strictObject({ kind: z.literal("MUST_ATTACK_CREATED"), obligation: MustAttackSchema }),
+    z.strictObject({ kind: z.literal("MUST_ATTACK_ENDED"), targetId: CardInstanceIdSchema, effectId: HashSchema, reason: z.enum(["ATTACKED", "NEXT_TURN", "LEFT_FIELD"]) }),
     z.strictObject({ kind: z.literal("CARD_REVEALED"), cardInstanceId: CardInstanceIdSchema }),
     // Batch V42: the card type a player chose for an effect.
     z.strictObject({ kind: z.literal("CARD_TYPE_CHOSEN"), effectId: z.string().min(1), playerId: PlayerIdSchema, cardType: z.enum(["UNIT", "GEAR", "PROGRAM"]) }),

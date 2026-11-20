@@ -1176,6 +1176,37 @@
             "additionalProperties": false
           }
         },
+        "mustAttack": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "targetId": {
+                "type": "string"
+              },
+              "sourceId": {
+                "type": "string"
+              },
+              "forcingSeat": {
+                "type": "integer",
+                "minimum": -9007199254740991,
+                "maximum": 9007199254740991
+              },
+              "createdTurn": {
+                "type": "integer",
+                "exclusiveMinimum": 0,
+                "maximum": 9007199254740991
+              }
+            },
+            "required": [
+              "targetId",
+              "sourceId",
+              "forcingSeat",
+              "createdTurn"
+            ],
+            "additionalProperties": false
+          }
+        },
         "inspectedCards": {
           "type": "array",
           "items": {

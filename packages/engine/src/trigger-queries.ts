@@ -1,4 +1,5 @@
 import { handPrograms, programBottomDeckTargets } from "./program-discard";
+import { mustAttackTargets } from "./must-attack";
 import { REVEAL_TYPES } from "./type-reveal-support";
 import { gigAdjustmentOptions } from "./gig-value";
 import { isFirstArasakaAttack } from "./first-attack-history";
@@ -136,6 +137,8 @@ export function triggerChoice(state: GameState, context: EngineContext): Pending
         kind = "TARGET";
         options = current?.effect.kind === "SEARCH_GEAR" || current?.effect.kind === "SEARCH_COST_MATCHING_GIGS"
             ? [{ kind: "MODE", mode: "DONE" }, ...searchTargets(state, context).filter(id => !state.resolution.searchContinuation?.selected.includes(id)).map(cardInstanceId => ({ kind: "CARD" as const, cardInstanceId }))]
+            : current?.effect.kind === "FORCE_RIVAL_UNIT_ATTACK"
+            ? mustAttackTargets(state, actorId, context).map(cardInstanceId => ({ kind: "CARD", cardInstanceId }))
             : current?.effect.kind === "TRASH_THEN_RETURN_PROGRAM"
             ? trashedProgramTargets(state, context).map(cardInstanceId => ({ kind: "CARD", cardInstanceId }))
             : current?.effect.kind === "GRANT_KEYWORD_UNTIL_END_OF_TURN"
