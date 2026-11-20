@@ -9,24 +9,15 @@
   },
   "totals": {
     "cards": 151,
-    "admitted": 88,
-    "notAdmitted": 63,
+    "admitted": 89,
+    "notAdmitted": 62,
     "notAdmittedOnlyCoveredFamilies": 0,
     "byAdmission": {
-      "NOT_ADMITTED": 63,
-      "SOURCE_MATCH": 88
+      "NOT_ADMITTED": 62,
+      "SOURCE_MATCH": 89
     }
   },
   "families": [
-    {
-      "family": "DRAW",
-      "status": "PARTIAL",
-      "summary": "Draw cards, fixed or conditional.",
-      "notes": "Routed. Variable counts need SCALED_AMOUNT; 'may draw' needs an optional prompt.",
-      "cardCount": 38,
-      "notAdmittedCount": 20,
-      "soleBlockerCount": 0
-    },
     {
       "family": "CONDITION_BOARD",
       "status": "PARTIAL",
@@ -37,12 +28,21 @@
       "soleBlockerCount": 0
     },
     {
+      "family": "DRAW",
+      "status": "PARTIAL",
+      "summary": "Draw cards, fixed or conditional.",
+      "notes": "Routed. Variable counts need SCALED_AMOUNT; 'may draw' needs an optional prompt.",
+      "cardCount": 38,
+      "notAdmittedCount": 19,
+      "soleBlockerCount": 0
+    },
+    {
       "family": "CONDITION_GIG",
       "status": "PARTIAL",
       "summary": "Conditions and filters on Gig values: min/max, value-pairs, even/odd, 8+, die type, counts compared with a Rival.",
       "notes": "Conditions only, each a fixed shape.",
       "cardCount": 40,
-      "notAdmittedCount": 17,
+      "notAdmittedCount": 16,
       "soleBlockerCount": 0
     },
     {
@@ -118,15 +118,6 @@
       "soleBlockerCount": 0
     },
     {
-      "family": "DISCARD",
-      "status": "PARTIAL",
-      "summary": "Discard: self discard, a Rival discards, discard as a cost, discard a hand.",
-      "notes": "DISCARD_CARDS supports only the controller discarding exactly 1.",
-      "cardCount": 15,
-      "notAdmittedCount": 8,
-      "soleBlockerCount": 0
-    },
-    {
       "family": "DURATION_DELAYED",
       "status": "PARTIAL",
       "summary": "Lasting and delayed effects: 'until your next turn', 'next time ... this turn', 'at the end of this turn'.",
@@ -145,6 +136,15 @@
       "soleBlockerCount": 0
     },
     {
+      "family": "DISCARD",
+      "status": "PARTIAL",
+      "summary": "Discard: self discard, a Rival discards, discard as a cost, discard a hand.",
+      "notes": "DISCARD_CARDS supports only the controller discarding exactly 1.",
+      "cardCount": 15,
+      "notAdmittedCount": 7,
+      "soleBlockerCount": 0
+    },
+    {
       "family": "TURN_HISTORY",
       "status": "PARTIAL",
       "summary": "'First time each turn', 'this turn you played', 'if it stole or fought this turn'.",
@@ -159,15 +159,6 @@
       "summary": "Ready Eddies, sell cards from unusual zones, pay Eddies during resolution.",
       "notes": "READY_EDDIES (controller, 1 or 2) only.",
       "cardCount": 8,
-      "notAdmittedCount": 6,
-      "soleBlockerCount": 0
-    },
-    {
-      "family": "GO_SOLO",
-      "status": "PARTIAL",
-      "summary": "[Go Solo]: play a Legend as a ready Unit that can attack this turn and is removed when it leaves the field.",
-      "notes": "Supported only for Go Solo Legends with no other text or with Blocker (V: Corporate Exile, Goro: Hands Unclean). Go Solo Legends with Play/Attack/Defeated triggers, Go Solo cost changes and Gear on Legend hosts in combat are not.",
-      "cardCount": 10,
       "notAdmittedCount": 6,
       "soleBlockerCount": 0
     },
@@ -222,6 +213,15 @@
       "summary": "Increase, decrease, adjust or set Gig values.",
       "notes": "Maxima are fixed literals; 'set to the value of another Gig' and 'adjust by exactly 1' are missing. MODIFY_GIG_VALUE is schema-only.",
       "cardCount": 15,
+      "notAdmittedCount": 5,
+      "soleBlockerCount": 0
+    },
+    {
+      "family": "GO_SOLO",
+      "status": "PARTIAL",
+      "summary": "[Go Solo]: play a Legend as a ready Unit that can attack this turn and is removed when it leaves the field.",
+      "notes": "Supported only for Go Solo Legends with no other text or with Blocker (V: Corporate Exile, Goro: Hands Unclean). Go Solo Legends with Play/Attack/Defeated triggers, Go Solo cost changes and Gear on Legend hosts in combat are not.",
+      "cardCount": 10,
       "notAdmittedCount": 5,
       "soleBlockerCount": 0
     },
@@ -289,15 +289,6 @@
       "soleBlockerCount": 0
     },
     {
-      "family": "TRIGGER_STEAL",
-      "status": "MISSING",
-      "summary": "Triggers when a Unit or Legend steals a Gig.",
-      "notes": "Only the history condition SUBJECT_STOLE_GIG_THIS_TURN exists (Delamain Cab); there is no steal trigger.",
-      "cardCount": 8,
-      "notAdmittedCount": 4,
-      "soleBlockerCount": 0
-    },
-    {
       "family": "CONDITION_STREET_CRED",
       "status": "PARTIAL",
       "summary": "Conditions on Street Cred.",
@@ -357,6 +348,15 @@
       "summary": "Other event triggers: another friendly Unit defeated, a Rival adjusting or swapping friendly Gigs.",
       "notes": "",
       "cardCount": 3,
+      "notAdmittedCount": 3,
+      "soleBlockerCount": 0
+    },
+    {
+      "family": "TRIGGER_STEAL",
+      "status": "MISSING",
+      "summary": "Triggers when a Unit or Legend steals a Gig.",
+      "notes": "Only the history condition SUBJECT_STOLE_GIG_THIS_TURN exists (Delamain Cab); there is no steal trigger.",
+      "cardCount": 8,
       "notAdmittedCount": 3,
       "soleBlockerCount": 0
     },
@@ -2560,8 +2560,8 @@
       "colors": [
         "YELLOW"
       ],
-      "admission": "NOT_ADMITTED",
-      "revision": null,
+      "admission": "SOURCE_MATCH",
+      "revision": 1,
       "families": [
         "CONDITION_GIG",
         "DISCARD",
@@ -2569,13 +2569,7 @@
         "GO_SOLO",
         "TRIGGER_STEAL"
       ],
-      "blockingFamilies": [
-        "CONDITION_GIG",
-        "DISCARD",
-        "DRAW",
-        "GO_SOLO",
-        "TRIGGER_STEAL"
-      ],
+      "blockingFamilies": [],
       "note": null
     },
     {

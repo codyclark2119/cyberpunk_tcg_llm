@@ -11,6 +11,7 @@ import { supportsPrivateLookGear, privateInformationEnabled } from "./private-lo
 import { supportsAttackPlay } from "./attack-support";
 import { supportsBlockerUsedUnit } from "./blocker-trigger-support";
 import { hasStealTrigger, supportsStealTriggerUnit } from "./steal-trigger-support";
+import { hasLegendStealTrigger, supportsLegendStealTrigger } from "./legend-steal-support";
 import { hasGigParityEffect, supportsGigParityUnit } from "./gig-parity-support";
 import { hasValuePairMetadata, supportsValuePairUnit } from "./value-pair-support";
 import { hasProgramDiscardEffect, supportsProgramDiscardUnit } from "./program-discard-support";
@@ -26,6 +27,8 @@ export function triggersEnabled(context: EngineContext) { return turnSliceAllows
 export function supportsTriggerCard(card: DeepReadonly<CardRevisionSnapshot> | undefined, context: EngineContext) {
     if (card && hasFriendlyPlayPowerMetadata(card)) return supportsFriendlyPlayPowerUnit(card, context);
     if (card?.mechanics.keywords.length && supportsBlockerUsedUnit(card, context).ok) return success(null);
+    // Batch V40: the friendly-Legend steal trigger and its parity branch are admitted only by their exact pins.
+    if (hasLegendStealTrigger(card)) return supportsLegendStealTrigger(card, context);
     // Batch V24: steal triggers and the "if it's equipped" condition are admitted only by their exact pins.
     if (hasStealTrigger(card)) return supportsStealTriggerUnit(card, context);
     // Batch V28: amounts counted from friendly Gig parity are admitted only by their exact pins.

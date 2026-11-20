@@ -43,12 +43,14 @@ export function discoverTriggers(state: GameState, origin: TriggerOrigin, contex
     if (origin.kind === "BLOCK") return effectiveTriggeredAbilities(state, origin.subjectId, context).filter(b => b.kind === "WHEN_BLOCKER_USED" && b.sourceId === b.subjectId);
     // Batch V24 (10.16.3, 11.5.1.7): "When this Unit steals a Gig" is pending once per stolen Gig, after all have moved.
     // Batch V26: "When a friendly Unit steals a d6" belongs to each friendly field source, the stealing Unit included.
+    // Batch V40: "When a friendly Legend steals a Gig" also belongs to a face-up friendly Legend in the Legends area.
     if (origin.kind === "STEAL") {
         const actor = state.objects.cards[origin.subjectId]?.controllerId, unit = Boolean(actor) && effectiveCardTypes(state, origin.subjectId, context).includes("UNIT");
-        const observers = actor && unit ? state.players[actor].zones.BATTLEFIELD.flatMap(id => effectiveTriggeredAbilities(state, id, context).filter(b => b.kind === "WHEN_FRIENDLY_UNIT_STEALS_GIG" && b.sourceId === b.subjectId)) : [];
+        const observers = actor && unit ? [...state.players[actor].zones.BATTLEFIELD, ...state.players[actor].zones.LEGENDS].flatMap(id => effectiveTriggeredAbilities(state, id, context).filter(b => b.kind === "WHEN_FRIENDLY_UNIT_STEALS_GIG" && b.sourceId === b.subjectId)) : [];
+        const guard = (b: TriggerBinding) => cardRevision(state, b.sourceId, context)!.mechanics.abilities.find(a => a.id === b.abilityId)!.guard;
         return [...origin.gigInstanceIds].sort().flatMap(gigInstanceId => [
             ...effectiveTriggeredAbilities(state, origin.subjectId, context).filter(b => b.kind === "WHEN_GIG_STOLEN" && b.sourceId === b.subjectId),
-            ...observers.filter(b => cardRevision(state, b.sourceId, context)!.mechanics.abilities.find(a => a.id === b.abilityId)!.guard === "STOLEN_GIG_IS_D6" && state.objects.gigs[gigInstanceId]?.dieType === "D6")
+            ...observers.filter(b => guard(b) === "STOLEN_GIG_IS_D6" && state.objects.gigs[gigInstanceId]?.dieType === "D6" || guard(b) === "STEALER_IS_LEGEND" && stealerIsLegend(state, origin.subjectId, context))
         ].map(b => ({ ...b, gigInstanceId })));
     }
     const own = effectiveTriggeredAbilities(state, origin.subjectId, context).filter(b => {
@@ -65,6 +67,11 @@ export function discoverTriggers(state: GameState, origin: TriggerOrigin, contex
     const played = state.objects.cards[origin.subjectId], revision = cardRevision(state, origin.subjectId, context)!;
     if (!effectiveCardTypes(state, played.id, context).some(t => t === "UNIT" || t === "GEAR") || !revision.colors.includes("BLUE") || state.turnHistory?.blueUnitOrGearPlays[played.controllerId] !== 1) return own;
     return [...own, ...state.players[played.controllerId].zones.LEGENDS.flatMap(id => effectiveTriggeredAbilities(state, id, context).filter(b => b.kind === "WHEN_CARD_PLAYED"))];
+}
+/** Batch V40: a stealing Legend is a printed Legend on the field (a Go Solo Legend), never a Legend-area card. */
+export function stealerIsLegend(state: GameState, subjectId: CardInstanceId, context: EngineContext) {
+    const c = state.objects.cards[subjectId];
+    return Boolean(c && c.zone.zone === "BATTLEFIELD" && cardRevision(state, subjectId, context)?.type === "LEGEND");
 }
 export function triggerId(state: GameState, binding: TriggerBinding, ordinal: number) {
     if (binding.delayedId) return binding.delayedId;
@@ -105,7 +112,12 @@ export function trashUnitTargets(state: GameState, current: PendingEffect, conte
 }
 /** The affected player chooses their own discard (Batch V17: "a Rival discards 1"). */
 export function discardingPlayer(state: GameState, current: PendingEffect) {
-    return current.effect.kind === "DISCARD_CARDS" && current.effect.player === "RIVAL" ? state.match.playerOrder.find(id => id !== current.controllerId)! : current.controllerId;
+    return current.effect.kind === "DISCARD_CARDS" && current.effect.player === "RIVAL" || current.effect.kind === "STOLEN_GIG_PARITY_DRAW_OR_RIVAL_DISCARD" ? state.match.playerOrder.find(id => id !== current.controllerId)! : current.controllerId;
+}
+/** Batch V40: the parity of the Gig a steal trigger names, at its current value; an unrolled Gig has no parity. */
+export function stolenGigParity(state: GameState, current: PendingEffect): "EVEN" | "ODD" | null {
+    const roll = current.trigger?.gigInstanceId ? state.objects.gigs[current.trigger.gigInstanceId]?.roll : undefined;
+    return roll?.kind !== "ROLLED" ? null : roll.currentValue % 2 === 0 ? "EVEN" : "ODD";
 }
 export function triggerChoice(state: GameState, context: EngineContext): PendingChoice {
     const c = state.resolution.triggerContinuation!, current = state.resolution.current;

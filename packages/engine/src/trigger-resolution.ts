@@ -31,7 +31,7 @@ import { changeGigValue, gigAdjustmentDelta } from "./gig-value";
 import { applyReadyLock } from "./ready-lock";
 import { swapGigs } from "./gig-transfer";
 import { triggersEnabled } from "./trigger-support";
-import { discardingPlayer, discoverTriggers, pendingTrigger, swapSidesAvailable, trashUnitTargets, triggerChoice, triggerGigTargets } from "./trigger-queries";
+import { discardingPlayer, discoverTriggers, pendingTrigger, stolenGigParity, swapSidesAvailable, trashUnitTargets, triggerChoice, triggerGigTargets } from "./trigger-queries";
 import { moveCardLocation } from "./card-movement";
 import { discardProgram, handPrograms, programBottomDeckTargets } from "./program-discard";
 import { bottomDeck } from "./bottom-deck";
@@ -215,6 +215,18 @@ export function advanceTriggers(m: TurnMutation): Result<null> {
         if (e.when) c.conditionMet = true;
         c.phase = "DISCARD"; return offer(m);
     }
+    // Batch V40: "if its value is even, draw 1. If its value is odd, a Rival discards 1." The stolen Gig's value is read once, here.
+    if (e.kind === "STOLEN_GIG_PARITY_DRAW_OR_RIVAL_DISCARD") {
+        const current = r.current, parity = stolenGigParity(m.state, current);
+        m.emit({ kind: "CONDITION_EVALUATED", effectId: current.id, met: parity === "EVEN" });
+        if (parity === "EVEN") {
+            const drawn = m.draw(current.controllerId, e.count); if (!drawn.ok) return drawn;
+            if (m.state.match.outcome) { m.emit({ kind: "EFFECT_RESOLVED", effectId: current.id }); return success(null); }
+            return completed(m);
+        }
+        if (parity !== "ODD" || !getDiscardableCards(m.state, discardingPlayer(m.state, current)).length) return completed(m);
+        c.phase = "DISCARD"; return offer(m);
+    }
     // Batch V32: "You may discard 1 Program. If you do, bottom-deck a rival Unit." Offered only with enough own-hand Programs.
     if (e.kind === "DISCARD_PROGRAMS_THEN_BOTTOM_DECK") {
         if (handPrograms(m.state, r.current.controllerId, m.context).length < e.count) return completed(m);
@@ -313,6 +325,11 @@ export function continueTrigger(m: TurnMutation, index: number, forced = false):
         c.phase = "TARGET"; return offer(m);
     }
     if (c.phase === "DISCARD") {
+        if (current.effect.kind === "STOLEN_GIG_PARITY_DRAW_OR_RIVAL_DISCARD") {
+            if (option.kind !== "CARD") return failure("INVALID_DISCARD", "Choose one current own-hand card");
+            const result = discardCard(m, { kind: "DISCARD_CARDS", player: "RIVAL", count: 1, selection: "CHOSEN_BY_AFFECTED_PLAYER" }, option.cardInstanceId, forced);
+            return result.ok ? completed(m) : result;
+        }
         if (current.effect.kind !== "DISCARD_CARDS" || option.kind !== "CARD") return failure("INVALID_DISCARD", "Choose one current own-hand card");
         const result = discardCard(m, current.effect, option.cardInstanceId, forced);
         if (!result.ok) return result;

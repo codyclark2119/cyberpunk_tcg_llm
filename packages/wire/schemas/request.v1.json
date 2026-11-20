@@ -1046,7 +1046,8 @@
                               "enum": [
                                 "FIRST_BLUE_UNIT_OR_GEAR_PLAY_PER_TURN",
                                 "FIRST_FRIENDLY_ARASAKA_UNIT_ATTACK_PER_TURN",
-                                "STOLEN_GIG_IS_D6"
+                                "STOLEN_GIG_IS_D6",
+                                "STEALER_IS_LEGEND"
                               ]
                             },
                             "activation": {
@@ -3620,6 +3621,24 @@
                                       "kind",
                                       "count",
                                       "then"
+                                    ],
+                                    "additionalProperties": false
+                                  },
+                                  {
+                                    "type": "object",
+                                    "properties": {
+                                      "kind": {
+                                        "type": "string",
+                                        "const": "STOLEN_GIG_PARITY_DRAW_OR_RIVAL_DISCARD"
+                                      },
+                                      "count": {
+                                        "type": "number",
+                                        "const": 1
+                                      }
+                                    },
+                                    "required": [
+                                      "kind",
+                                      "count"
                                     ],
                                     "additionalProperties": false
                                   },
@@ -10168,6 +10187,24 @@
                               "properties": {
                                 "kind": {
                                   "type": "string",
+                                  "const": "STOLEN_GIG_PARITY_DRAW_OR_RIVAL_DISCARD"
+                                },
+                                "count": {
+                                  "type": "number",
+                                  "const": 1
+                                }
+                              },
+                              "required": [
+                                "kind",
+                                "count"
+                              ],
+                              "additionalProperties": false
+                            },
+                            {
+                              "type": "object",
+                              "properties": {
+                                "kind": {
+                                  "type": "string",
                                   "const": "READY_UNITS_UP_TO"
                                 },
                                 "relation": {
@@ -13286,6 +13323,24 @@
                               "kind",
                               "count",
                               "then"
+                            ],
+                            "additionalProperties": false
+                          },
+                          {
+                            "type": "object",
+                            "properties": {
+                              "kind": {
+                                "type": "string",
+                                "const": "STOLEN_GIG_PARITY_DRAW_OR_RIVAL_DISCARD"
+                              },
+                              "count": {
+                                "type": "number",
+                                "const": 1
+                              }
+                            },
+                            "required": [
+                              "kind",
+                              "count"
                             ],
                             "additionalProperties": false
                           },
@@ -16416,6 +16471,24 @@
                             "properties": {
                               "kind": {
                                 "type": "string",
+                                "const": "STOLEN_GIG_PARITY_DRAW_OR_RIVAL_DISCARD"
+                              },
+                              "count": {
+                                "type": "number",
+                                "const": 1
+                              }
+                            },
+                            "required": [
+                              "kind",
+                              "count"
+                            ],
+                            "additionalProperties": false
+                          },
+                          {
+                            "type": "object",
+                            "properties": {
+                              "kind": {
+                                "type": "string",
                                 "const": "READY_UNITS_UP_TO"
                               },
                               "relation": {
@@ -18841,7 +18914,8 @@
                               "enum": [
                                 "FIRST_BLUE_UNIT_OR_GEAR_PLAY_PER_TURN",
                                 "FIRST_FRIENDLY_ARASAKA_UNIT_ATTACK_PER_TURN",
-                                "STOLEN_GIG_IS_D6"
+                                "STOLEN_GIG_IS_D6",
+                                "STEALER_IS_LEGEND"
                               ]
                             },
                             "activation": {
@@ -21415,6 +21489,24 @@
                                       "kind",
                                       "count",
                                       "then"
+                                    ],
+                                    "additionalProperties": false
+                                  },
+                                  {
+                                    "type": "object",
+                                    "properties": {
+                                      "kind": {
+                                        "type": "string",
+                                        "const": "STOLEN_GIG_PARITY_DRAW_OR_RIVAL_DISCARD"
+                                      },
+                                      "count": {
+                                        "type": "number",
+                                        "const": 1
+                                      }
+                                    },
+                                    "required": [
+                                      "kind",
+                                      "count"
                                     ],
                                     "additionalProperties": false
                                   },

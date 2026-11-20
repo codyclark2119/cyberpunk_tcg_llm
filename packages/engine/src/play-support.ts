@@ -9,6 +9,7 @@ import { hasFriendlyPlayPowerMetadata, supportsFriendlyPlayPowerUnit } from "./f
 import { supportsTargetedSpendCard } from "./targeted-spend-support";
 import { hasPlayCostReductionMetadata, playPaymentAmount, supportsPlayCostReduction } from "./play-cost-support";
 import { supportsFieldLegend } from "./field-legend-support";
+import { hasLegendStealTrigger, supportsLegendStealTrigger } from "./legend-steal-support";
 import { supportsEndTurnCard } from "./end-turn-support";
 import { supportsOrderedAttackCard } from "./ordered-effects-support";
 import { supportsTriggerCard } from "./trigger-support";
@@ -34,6 +35,8 @@ export function supportsPlay(card: DeepReadonly<CardRevisionSnapshot> | undefine
     if (card && hasTargetedGearDefeatMetadata(card)) return supportsTargetedGearDefeatCard(card, context);
     if (card && hasTargetedDefeatMetadata(card)) return supportsTargetedDefeatCard(card, context);
     if (card && hasMinGigProgramMetadata(card)) return supportsMinGigProgramCard(card, context);
+    // Batch V40: the Go Solo Legend with a friendly-Legend steal trigger is admitted only by its exact pin.
+    if (card && hasLegendStealTrigger(card)) return supportsLegendStealTrigger(card, context);
     // Batch V36: Program top-of-deck searches are admitted only by their exact pins.
     if (card && hasProgramSearchEffect(card)) return supportsProgramSearch(card, context);
     // Batch V37: the optional Gig set is admitted only by its exact pin.

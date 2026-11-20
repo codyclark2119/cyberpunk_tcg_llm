@@ -5180,6 +5180,24 @@
                           "properties": {
                             "kind": {
                               "type": "string",
+                              "const": "STOLEN_GIG_PARITY_DRAW_OR_RIVAL_DISCARD"
+                            },
+                            "count": {
+                              "type": "number",
+                              "const": 1
+                            }
+                          },
+                          "required": [
+                            "kind",
+                            "count"
+                          ],
+                          "additionalProperties": false
+                        },
+                        {
+                          "type": "object",
+                          "properties": {
+                            "kind": {
+                              "type": "string",
                               "const": "READY_UNITS_UP_TO"
                             },
                             "relation": {
@@ -8306,6 +8324,24 @@
                         "properties": {
                           "kind": {
                             "type": "string",
+                            "const": "STOLEN_GIG_PARITY_DRAW_OR_RIVAL_DISCARD"
+                          },
+                          "count": {
+                            "type": "number",
+                            "const": 1
+                          }
+                        },
+                        "required": [
+                          "kind",
+                          "count"
+                        ],
+                        "additionalProperties": false
+                      },
+                      {
+                        "type": "object",
+                        "properties": {
+                          "kind": {
+                            "type": "string",
                             "const": "READY_UNITS_UP_TO"
                           },
                           "relation": {
@@ -11420,6 +11456,24 @@
                           "kind",
                           "count",
                           "then"
+                        ],
+                        "additionalProperties": false
+                      },
+                      {
+                        "type": "object",
+                        "properties": {
+                          "kind": {
+                            "type": "string",
+                            "const": "STOLEN_GIG_PARITY_DRAW_OR_RIVAL_DISCARD"
+                          },
+                          "count": {
+                            "type": "number",
+                            "const": 1
+                          }
+                        },
+                        "required": [
+                          "kind",
+                          "count"
                         ],
                         "additionalProperties": false
                       },
