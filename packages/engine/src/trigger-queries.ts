@@ -1,4 +1,5 @@
 import { handPrograms, programBottomDeckTargets } from "./program-discard";
+import { REVEAL_TYPES } from "./type-reveal-support";
 import { gigAdjustmentOptions } from "./gig-value";
 import { isFirstArasakaAttack } from "./first-attack-history";
 import { effectiveCardTypes } from "./characteristics";
@@ -129,6 +130,8 @@ export function triggerChoice(state: GameState, context: EngineContext): Pending
     else if (c.phase === "DISCARD" && current?.effect.kind === "DISCARD_PROGRAMS_THEN_BOTTOM_DECK") { kind = "DISCARD"; options = [...(c.discardedPrograms ? [] : [{ kind: "MODE" as const, mode: "DONE" as const }]), ...handPrograms(state, actorId, context).map(cardInstanceId => ({ kind: "CARD" as const, cardInstanceId }))]; }
     else if (c.phase === "DISCARD") { if (current) actorId = discardingPlayer(state, current); kind = "DISCARD"; options = getDiscardableCards(state, actorId).map(cardInstanceId => ({ kind: "CARD", cardInstanceId })); }
     else if (c.phase === "OPTIONAL") { kind = "OPTIONAL"; options = [{ kind: "CONFIRM", confirmed: true }, { kind: "CONFIRM", confirmed: false }]; }
+    // Batch V42: the card type to name.
+    else if (c.phase === "TARGET" && current?.effect.kind === "CHOOSE_TYPE_REVEAL_TOP_ADD_AND_READY_EDDIE") { kind = "MODE"; options = REVEAL_TYPES.map(mode => ({ kind: "MODE", mode })); }
     else if (c.phase === "TARGET") {
         kind = "TARGET";
         options = current?.effect.kind === "SEARCH_GEAR" || current?.effect.kind === "SEARCH_COST_MATCHING_GIGS"

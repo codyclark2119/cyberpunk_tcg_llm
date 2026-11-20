@@ -242,6 +242,8 @@ export const EventPayloadSchema = z.discriminatedUnion("kind", [
     z.strictObject({ kind: z.literal("CONDITION_EVALUATED"), effectId: z.string(), met: z.boolean() }),
     z.strictObject({ kind: z.literal("FIXER_PREPARED"), playerId: PlayerIdSchema }),
     z.strictObject({ kind: z.literal("CARD_REVEALED"), cardInstanceId: CardInstanceIdSchema }),
+    // Batch V42: the card type a player chose for an effect.
+    z.strictObject({ kind: z.literal("CARD_TYPE_CHOSEN"), effectId: z.string().min(1), playerId: PlayerIdSchema, cardType: z.enum(["UNIT", "GEAR", "PROGRAM"]) }),
     z.strictObject({ kind: z.literal("SEARCH_REMAINDER_BOTTOMED"), playerId: PlayerIdSchema, order: z.array(CardInstanceIdSchema), rngCounter: z.number().int().nonnegative() }),
     z.strictObject({ kind: z.literal("FIRST_PLAYER_ROLLED"), round: z.number().int().positive(), rolls: FirstPlayerRollPairSchema, tied: z.boolean() }),
     z.strictObject({ kind: z.literal("FIRST_PLAYER_DETERMINED"), playerId: PlayerIdSchema, rngCounter: z.number().int().nonnegative() }),

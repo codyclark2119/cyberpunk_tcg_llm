@@ -5272,6 +5272,24 @@
                                       "properties": {
                                         "kind": {
                                           "type": "string",
+                                          "const": "CHOOSE_TYPE_REVEAL_TOP_ADD_AND_READY_EDDIE"
+                                        },
+                                        "ready": {
+                                          "type": "number",
+                                          "const": 1
+                                        }
+                                      },
+                                      "required": [
+                                        "kind",
+                                        "ready"
+                                      ],
+                                      "additionalProperties": false
+                                    },
+                                    {
+                                      "type": "object",
+                                      "properties": {
+                                        "kind": {
+                                          "type": "string",
                                           "const": "READY_UNITS_UP_TO"
                                         },
                                         "relation": {
@@ -8434,6 +8452,24 @@
                                     "properties": {
                                       "kind": {
                                         "type": "string",
+                                        "const": "CHOOSE_TYPE_REVEAL_TOP_ADD_AND_READY_EDDIE"
+                                      },
+                                      "ready": {
+                                        "type": "number",
+                                        "const": 1
+                                      }
+                                    },
+                                    "required": [
+                                      "kind",
+                                      "ready"
+                                    ],
+                                    "additionalProperties": false
+                                  },
+                                  {
+                                    "type": "object",
+                                    "properties": {
+                                      "kind": {
+                                        "type": "string",
                                         "const": "READY_UNITS_UP_TO"
                                       },
                                       "relation": {
@@ -11584,6 +11620,24 @@
                                     "required": [
                                       "kind",
                                       "count"
+                                    ],
+                                    "additionalProperties": false
+                                  },
+                                  {
+                                    "type": "object",
+                                    "properties": {
+                                      "kind": {
+                                        "type": "string",
+                                        "const": "CHOOSE_TYPE_REVEAL_TOP_ADD_AND_READY_EDDIE"
+                                      },
+                                      "ready": {
+                                        "type": "number",
+                                        "const": 1
+                                      }
+                                    },
+                                    "required": [
+                                      "kind",
+                                      "ready"
                                     ],
                                     "additionalProperties": false
                                   },
@@ -18569,6 +18623,24 @@
                                       "properties": {
                                         "kind": {
                                           "type": "string",
+                                          "const": "CHOOSE_TYPE_REVEAL_TOP_ADD_AND_READY_EDDIE"
+                                        },
+                                        "ready": {
+                                          "type": "number",
+                                          "const": 1
+                                        }
+                                      },
+                                      "required": [
+                                        "kind",
+                                        "ready"
+                                      ],
+                                      "additionalProperties": false
+                                    },
+                                    {
+                                      "type": "object",
+                                      "properties": {
+                                        "kind": {
+                                          "type": "string",
                                           "const": "READY_UNITS_UP_TO"
                                         },
                                         "relation": {
@@ -21731,6 +21803,24 @@
                                     "properties": {
                                       "kind": {
                                         "type": "string",
+                                        "const": "CHOOSE_TYPE_REVEAL_TOP_ADD_AND_READY_EDDIE"
+                                      },
+                                      "ready": {
+                                        "type": "number",
+                                        "const": 1
+                                      }
+                                    },
+                                    "required": [
+                                      "kind",
+                                      "ready"
+                                    ],
+                                    "additionalProperties": false
+                                  },
+                                  {
+                                    "type": "object",
+                                    "properties": {
+                                      "kind": {
+                                        "type": "string",
                                         "const": "READY_UNITS_UP_TO"
                                       },
                                       "relation": {
@@ -24881,6 +24971,24 @@
                                     "required": [
                                       "kind",
                                       "count"
+                                    ],
+                                    "additionalProperties": false
+                                  },
+                                  {
+                                    "type": "object",
+                                    "properties": {
+                                      "kind": {
+                                        "type": "string",
+                                        "const": "CHOOSE_TYPE_REVEAL_TOP_ADD_AND_READY_EDDIE"
+                                      },
+                                      "ready": {
+                                        "type": "number",
+                                        "const": 1
+                                      }
+                                    },
+                                    "required": [
+                                      "kind",
+                                      "ready"
                                     ],
                                     "additionalProperties": false
                                   },
@@ -28513,6 +28621,39 @@
                             "required": [
                               "kind",
                               "cardInstanceId"
+                            ],
+                            "additionalProperties": false
+                          },
+                          {
+                            "type": "object",
+                            "properties": {
+                              "kind": {
+                                "type": "string",
+                                "const": "CARD_TYPE_CHOSEN"
+                              },
+                              "effectId": {
+                                "type": "string",
+                                "minLength": 1
+                              },
+                              "playerId": {
+                                "type": "string",
+                                "format": "uuid",
+                                "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+                              },
+                              "cardType": {
+                                "type": "string",
+                                "enum": [
+                                  "UNIT",
+                                  "GEAR",
+                                  "PROGRAM"
+                                ]
+                              }
+                            },
+                            "required": [
+                              "kind",
+                              "effectId",
+                              "playerId",
+                              "cardType"
                             ],
                             "additionalProperties": false
                           },

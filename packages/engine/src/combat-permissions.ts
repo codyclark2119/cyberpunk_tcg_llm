@@ -4,9 +4,11 @@ import { cardRevision, effectiveCardTypes } from "./characteristics";
 import { attackPreventionEnabled, supportsAttackPreventionUnit } from "./attack-prevention-support";
 import { restrictionsEnabled, supportsRestrictedPlay } from "./restriction-support";
 import { testCondition } from "./conditions";
+import { supportsTypeRevealUnit } from "./type-reveal-support";
 export function currentCombatRestrictions(state: GameState, id: CardInstanceId, context: EngineContext): readonly CombatRestriction[] {
     const c = state.objects.cards[id], r = cardRevision(state, id, context);
-    if (!restrictionsEnabled(context) || !c || c.face !== "UP" || c.zone.zone !== "BATTLEFIELD" || !supportsRestrictedPlay(r, context).ok) return [];
+    // Batch V42: Misty's printed "This Unit can't attack" is pinned with its own-turn end ability by the type-reveal gate.
+    if (!restrictionsEnabled(context) || !c || c.face !== "UP" || c.zone.zone !== "BATTLEFIELD" || !(supportsRestrictedPlay(r, context).ok || supportsTypeRevealUnit(r, context).ok)) return [];
     // Only conditional unblockability carries a condition; unconditional printed restrictions always apply.
     // Batch V10: the Program-play ban is current: it reads as CANNOT_ATTACK until the controller plays a Program this turn.
     return (r?.mechanics.restrictions ?? []).flatMap((x): CombatRestriction[] => x.kind === "CANNOT_ATTACK_UNLESS_PROGRAM_PLAYED_THIS_TURN"

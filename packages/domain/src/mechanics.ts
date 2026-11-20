@@ -201,6 +201,9 @@ export const EffectSchema = z.discriminatedUnion("kind", [
     z.strictObject({ kind: z.literal("STOLEN_GIG_PARITY_DRAW_OR_RIVAL_DISCARD"), count: z.literal(1) }),
     // Batch V41: "Reveal the top card of your deck and add it to your hand. This Unit gains power equal to that card's cost this turn."
     z.strictObject({ kind: z.literal("REVEAL_TOP_TO_HAND_GAIN_POWER_EQUAL_COST"), count: z.literal(1) }),
+    // Batch V42: "choose a card type. Then, reveal the top card of your deck. If it's the chosen type, add it to your hand and ready 1
+    // Eddie. Otherwise, trash it." The types are Unit, Gear and Program.
+    z.strictObject({ kind: z.literal("CHOOSE_TYPE_REVEAL_TOP_ADD_AND_READY_EDDIE"), ready: z.literal(1) }),
     // Batch V38: "At the end of your turn, ready up to 3 friendly Units."
     z.strictObject({ kind: z.literal("READY_UNITS_UP_TO"), relation: z.literal("FRIENDLY"), maximum: z.literal(3) }),
     // Batch V29: "If you control a value-pair of Gigs, ready up to 2 MERC Legends in your Legends area."

@@ -5310,6 +5310,24 @@
                           "properties": {
                             "kind": {
                               "type": "string",
+                              "const": "CHOOSE_TYPE_REVEAL_TOP_ADD_AND_READY_EDDIE"
+                            },
+                            "ready": {
+                              "type": "number",
+                              "const": 1
+                            }
+                          },
+                          "required": [
+                            "kind",
+                            "ready"
+                          ],
+                          "additionalProperties": false
+                        },
+                        {
+                          "type": "object",
+                          "properties": {
+                            "kind": {
+                              "type": "string",
                               "const": "READY_UNITS_UP_TO"
                             },
                             "relation": {
@@ -8472,6 +8490,24 @@
                         "properties": {
                           "kind": {
                             "type": "string",
+                            "const": "CHOOSE_TYPE_REVEAL_TOP_ADD_AND_READY_EDDIE"
+                          },
+                          "ready": {
+                            "type": "number",
+                            "const": 1
+                          }
+                        },
+                        "required": [
+                          "kind",
+                          "ready"
+                        ],
+                        "additionalProperties": false
+                      },
+                      {
+                        "type": "object",
+                        "properties": {
+                          "kind": {
+                            "type": "string",
                             "const": "READY_UNITS_UP_TO"
                           },
                           "relation": {
@@ -11622,6 +11658,24 @@
                         "required": [
                           "kind",
                           "count"
+                        ],
+                        "additionalProperties": false
+                      },
+                      {
+                        "type": "object",
+                        "properties": {
+                          "kind": {
+                            "type": "string",
+                            "const": "CHOOSE_TYPE_REVEAL_TOP_ADD_AND_READY_EDDIE"
+                          },
+                          "ready": {
+                            "type": "number",
+                            "const": 1
+                          }
+                        },
+                        "required": [
+                          "kind",
+                          "ready"
                         ],
                         "additionalProperties": false
                       },

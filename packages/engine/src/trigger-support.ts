@@ -1,4 +1,5 @@
 import { supportsAttackConditionPowerCard } from "./attack-condition-power-support";
+import { hasTypeRevealEffect, supportsTypeRevealUnit } from "./type-reveal-support";
 import { supportsTargetedDefeatCard } from "./targeted-defeat-support";
 import { supportsTargetedGearDefeatCard } from "./targeted-gear-defeat-support";
 import { supportsTargetedSpendCard } from "./targeted-spend-support";
@@ -32,6 +33,8 @@ export function supportsTriggerCard(card: DeepReadonly<CardRevisionSnapshot> | u
     if (hasLegendStealTrigger(card)) return supportsLegendStealTrigger(card, context);
     // Batch V41: the Go Solo Legend's {Attack} reveal for power and {Defeated} rival discard are admitted only by their exact pins.
     if (hasLegendRevealEffect(card)) return supportsLegendReveal(card, context);
+    // Batch V42: the can't-attack own-turn end type reveal is admitted only by its exact pin.
+    if (hasTypeRevealEffect(card)) return supportsTypeRevealUnit(card, context);
     // Batch V24: steal triggers and the "if it's equipped" condition are admitted only by their exact pins.
     if (hasStealTrigger(card)) return supportsStealTriggerUnit(card, context);
     // Batch V28: amounts counted from friendly Gig parity are admitted only by their exact pins.

@@ -1,4 +1,5 @@
 import { processDeparture } from "./card-movement";
+import { REVEAL_TYPES } from "./type-reveal-support";
 import { beginTargetedDefeat } from "./targeted-defeat";
 import { resolveSpendTarget } from "./targeted-spend";
 import { listSpendUnitTargets } from "./targeted-spend-queries";
@@ -227,6 +228,11 @@ export function advanceTriggers(m: TurnMutation): Result<null> {
         if (parity !== "ODD" || !getDiscardableCards(m.state, discardingPlayer(m.state, current)).length) return completed(m);
         c.phase = "DISCARD"; return offer(m);
     }
+    // Batch V42: "choose a card type. Then, reveal the top card of your deck." With an empty deck there is nothing to reveal or choose for.
+    if (e.kind === "CHOOSE_TYPE_REVEAL_TOP_ADD_AND_READY_EDDIE") {
+        if (!m.state.players[r.current.controllerId].zones.DECK.length) return completed(m);
+        c.phase = "TARGET"; return offer(m);
+    }
     // Batch V32: "You may discard 1 Program. If you do, bottom-deck a rival Unit." Offered only with enough own-hand Programs.
     if (e.kind === "DISCARD_PROGRAMS_THEN_BOTTOM_DECK") {
         if (handPrograms(m.state, r.current.controllerId, m.context).length < e.count) return completed(m);
@@ -285,6 +291,20 @@ export function advanceTriggers(m: TurnMutation): Result<null> {
     }
     return completed(m);
 }
+/** Batch V42: reveal the top card. The chosen type goes to hand and readies 1 Eddie (a lone spent Eddie is forced); any other card is trashed. */
+function revealChosenType(m: TurnMutation, cardType: typeof REVEAL_TYPES[number]): Result<null> {
+    const current = m.state.resolution.current!, c = m.state.resolution.triggerContinuation!, top = m.state.players[current.controllerId].zones.DECK[0];
+    m.emit({ kind: "CARD_TYPE_CHOSEN", effectId: current.id, playerId: current.controllerId, cardType });
+    if (!top) return completed(m);
+    m.emit({ kind: "CARD_REVEALED", cardInstanceId: top });
+    const met = cardRevision(m.state, top, m.context)?.type === cardType;
+    m.emit({ kind: "CONDITION_EVALUATED", effectId: current.id, met });
+    moveCardLocation(m, top, met ? "HAND" : "TRASH");
+    const slots = met ? readyableEddieSlots(m.state, current.controllerId) : [];
+    if (slots.length === 1) { const readied = readyEddie(m, current.controllerId, slots[0]); if (!readied.ok) return readied; }
+    if (slots.length < 2) return completed(m);
+    c.conditionMet = true; c.phase = "READY"; return offer(m);
+}
 /** Advance an admitted two-primitive ability to its second primitive, or finish it. */
 function nextPrimitiveOrCompleted(m: TurnMutation): Result<null> {
     const r = m.state.resolution, c = r.triggerContinuation!, current = r.current!;
@@ -307,6 +327,10 @@ export function continueTrigger(m: TurnMutation, index: number, forced = false):
         return advanceTriggers(m);
     }
     const current = r.current!;
+    if (c.phase === "READY" && current.effect.kind === "CHOOSE_TYPE_REVEAL_TOP_ADD_AND_READY_EDDIE") {
+        if (option.kind !== "EDDIE_SLOT" || !readyableEddieSlots(m.state, current.controllerId).includes(option.slot)) return failure("INVALID_EDDIE_READY", "Choose a currently eligible Eddie slot");
+        const readied = readyEddie(m, current.controllerId, option.slot); return readied.ok ? completed(m) : readied;
+    }
     if (c.phase === "READY") {
         if (current.effect.kind !== "READY_EDDIES" || option.kind !== "EDDIE_SLOT") return failure("INVALID_EDDIE_READY", "Choose a currently eligible Eddie slot");
         if (!readyableEddieSlots(m.state, current.controllerId).includes(option.slot) || c.selectedEddieSlots?.includes(option.slot)) return failure("INVALID_EDDIE_READY", "A spent Eddie can be selected only once");
@@ -347,6 +371,10 @@ export function continueTrigger(m: TurnMutation, index: number, forced = false):
         m.emit({ kind: option.confirmed ? "OPTIONAL_TRIGGER_ACCEPTED" : "OPTIONAL_TRIGGER_DECLINED", effectId: current.id, controllerId: current.controllerId });
         if (!option.confirmed) return completed(m);
         c.phase = "TARGET"; return offer(m);
+    }
+    if (c.phase === "TARGET" && current.effect.kind === "CHOOSE_TYPE_REVEAL_TOP_ADD_AND_READY_EDDIE") {
+        if (option.kind !== "MODE" || !(REVEAL_TYPES as readonly string[]).includes(option.mode)) return failure("INVALID_CARD_TYPE", "Choose Unit, Gear or Program");
+        return revealChosenType(m, option.mode as typeof REVEAL_TYPES[number]);
     }
     if (c.phase === "TARGET") {
         if (current.effect.kind === "POWER_UNTIL_END_OF_TURN") {
