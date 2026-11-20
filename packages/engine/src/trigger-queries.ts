@@ -18,6 +18,7 @@ import { hashCanonical, type GameState, type CardInstanceId, type PlayerId, type
 import type { EngineContext } from "./state";
 import { cardRevision } from "./characteristics";
 import { attachedGear } from "./attachments";
+import { freePlayTargets } from "./free-play";
 import { supportsEffectiveTriggerSource, triggersEnabled } from "./trigger-support";
 import { searchTargets } from "./search-state";
 import { keywordGrantTargets, trashedProgramTargets } from "./play-pin-effects";
@@ -158,6 +159,8 @@ export function triggerChoice(state: GameState, context: EngineContext): Pending
             ? [{ kind: "MODE", mode: "DONE" }, ...friendlyUnitReadyTargets(state, actorId, context).filter(id => !c.readiedUnits?.includes(id)).map(cardInstanceId => ({ kind: "CARD" as const, cardInstanceId }))]
             : current?.effect.kind === "READY_UNIT"
             ? (current.effect.target.kind === "ANOTHER_FRIENDLY_UNIT" ? stolenGigReadyTargets(state, current, context) : readyLegendTargets(state, actorId, context)).map(cardInstanceId => ({ kind: "CARD", cardInstanceId }))
+            : current?.effect.kind === "PLAY_UNIT_FREE"
+            ? freePlayTargets(state, context).map(cardInstanceId => ({ kind: "CARD", cardInstanceId }))
             : current?.effect.kind === "RETURN_TRASH_UNIT_TO_HAND"
             ? trashUnitTargets(state, current, context).map(cardInstanceId => ({ kind: "CARD", cardInstanceId }))
             : current?.effect.kind === "LOOK_AT_FRIENDLY_FACE_DOWN_LEGEND"

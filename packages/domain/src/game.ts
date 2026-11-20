@@ -77,9 +77,13 @@ export const TriggerOriginSchema = z.discriminatedUnion("kind", [
 ]);
 export type TriggerOrigin = DeepReadonly<z.infer<typeof TriggerOriginSchema>>;
 export const TriggerContinuationSchema = z.strictObject({
-    // Batch V47: a Gig an effect stole in this batch; its steal triggers join the batch (11.5.1.7).
-    effectSteal: z.strictObject({ subjectId: CardInstanceIdSchema, gigInstanceIds: z.array(GigInstanceIdSchema).length(1) }).optional(),
-    effectDefeats: z.array(z.strictObject({ targetId: CardInstanceIdSchema, defeatedBy: CardInstanceIdSchema })).length(1).optional(), origin: TriggerOriginSchema, ordinal: z.number().int().positive(), bindings: z.array(TriggerBindingSchema).min(1),
+    // Batch V47: each Gig an effect stole in this batch; its steal triggers join the batch (11.5.1.7). Batch V48: one entry per steal.
+    effectSteals: z.array(z.strictObject({ subjectId: CardInstanceIdSchema, gigInstanceIds: z.array(GigInstanceIdSchema).length(1) })).min(1).optional(),
+    // Batch V48: each Unit an effect played in this batch; its {Play} triggers join the batch. `qualifyingOrdinal` is the
+    // first-blue-play ordinal the play recorded, when it recorded one.
+    effectPlays: z.array(z.strictObject({ subjectId: CardInstanceIdSchema, qualifyingOrdinal: z.number().int().positive().optional() })).min(1).optional(),
+    // Batch V48: every effect defeat of this batch, in order (several sources may defeat inside one batch).
+    effectDefeats: z.array(z.strictObject({ targetId: CardInstanceIdSchema, defeatedBy: CardInstanceIdSchema })).min(1).optional(), origin: TriggerOriginSchema, ordinal: z.number().int().positive(), bindings: z.array(TriggerBindingSchema).min(1),
     selectedEddieSlots: z.array(z.number().int().nonnegative()).length(1).optional(), resolvedIds: z.array(HashSchema), phase: z.enum(["SELECT", "OPTIONAL", "TARGET", "AMOUNT", "DISCARD", "READY"]), trashedIds: z.array(CardInstanceIdSchema).min(1).max(3).optional(), conditionMet: z.literal(true).optional(), targetGigId: GigInstanceIdSchema.optional(),
     // Batch V29: the Legend already readied by a current "ready up to 2" choice.
     readiedLegends: z.array(CardInstanceIdSchema).length(1).optional(),

@@ -1,4 +1,5 @@
 import { supportsAttackConditionPowerCard } from "./attack-condition-power-support";
+import { isPlayedInBatch } from "./effect-play";
 import { triggerId } from "./trigger-queries";
 import { canonicalSerialize, failure, success, type CardInstanceId, type GameState, type TemporaryPowerModifier } from "@tcg/domain";
 import type { EngineContext } from "./state";
@@ -34,7 +35,7 @@ export function applyTemporaryPower(m: TurnMutation, targetId: CardInstanceId, f
         const binding = c?.bindings.find(b => b.sourceId === current.sourceId && b.abilityId === t?.abilityId && b.kind === "WHEN_PLAYED");
         if (current.effect.amount !== 2 || !t || !c || !source || !revision || !binding
             || !supportsFriendlyPlayPowerUnit(revision, m.context).ok || current.primitiveIndex !== undefined
-            || c.origin.kind !== "PLAY" || c.origin.subjectId !== source.id
+            || !isPlayedInBatch(c, source.id)
             || t.kind !== "WHEN_PLAYED" || t.subjectId !== source.id || binding.subjectId !== source.id
             || t.turn !== m.state.timing.turn || t.ordinal !== c.ordinal
             || current.controllerId !== source.controllerId || binding.controllerId !== current.controllerId

@@ -24,6 +24,7 @@ import type { EngineContext } from "./state";
 import { hasModalChoice, supportsModalProgram } from "./modal-program-support";
 import { hasSellTopEffect, supportsSellTopProgram } from "./program-sell-support";
 import { hasFightStealEffect, supportsFightStealProgram } from "./fight-steal-support";
+import { hasFreePlayEffect, supportsFreePlayCard } from "./free-play-support";
 import { paymentCandidates } from "./payment";
 import { testCondition } from "./conditions";
 export function playEnabled(context: EngineContext) { return turnSliceAllows(context.content.ruleset.gameplay?.turnSlice, "cardPlay") && context.content.ruleset.gameplay?.gigValueBounds === "DIE_FACES_V1"; }
@@ -39,6 +40,8 @@ export function supportsPlay(card: DeepReadonly<CardRevisionSnapshot> | undefine
     if (card && hasSellTopEffect(card)) return supportsSellTopProgram(card, context);
     // Batch V47: a next-fight steal is admitted only by its exact Program pin.
     if (card && hasFightStealEffect(card)) return supportsFightStealProgram(card, context);
+    // Batch V48: a free Unit play is admitted only by its exact pin.
+    if (card && hasFreePlayEffect(card)) return supportsFreePlayCard(card, context);
     if (card && hasPlayCostReductionMetadata(card)) return supportsPlayCostReduction(card, context);
     if (card && hasFriendlyPlayPowerMetadata(card)) return supportsFriendlyPlayPowerUnit(card, context);
     if (card && hasAttackConditionPowerMetadata(card)) return supportsAttackConditionPowerCard(card, context);

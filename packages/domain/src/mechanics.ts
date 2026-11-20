@@ -172,6 +172,10 @@ export const EffectSchema = z.discriminatedUnion("kind", [
         effect: z.union([z.strictObject({ kind: z.literal("DEFEAT_UNIT"), target: DefeatOpposingTargetSchema }), z.strictObject({ kind: z.literal("STEAL_GIG"), actor: z.literal("TRIGGER_SUBJECT"), count: z.literal(1) })]) }),
     // Batch V47: the trigger subject steals rival Gigs outside an attack (11.5.1.1.2: the effect names the actor).
     z.strictObject({ kind: z.literal("STEAL_GIG"), actor: z.literal("TRIGGER_SUBJECT"), count: z.literal(1) }),
+    // Batch V48: "Play another Unit with cost 9 or less from your trash for free. Then, bottom-deck this Unit." (11.11.4, 11.23.3):
+    // one public Unit in the controller's trash other than the trigger subject is played without paying; then the subject, if
+    // still in its owner's trash, is bottom-decked.
+    z.strictObject({ kind: z.literal("PLAY_UNIT_FREE"), from: z.literal("TRASH"), maxCost: z.literal(9), exclude: z.literal("SUBJECT"), then: z.literal("BOTTOM_DECK_SUBJECT") }),
     z.strictObject({ kind: z.literal("DECREASE_GIG_UP_TO"), target: z.strictObject({ kind: z.literal("GIGS"), relation: z.literal("ANY") }), maximum: z.literal(2) }),
     DiscardCardsEffectSchema,
     z.strictObject({ kind: z.literal("LOOK_AT_FRIENDLY_FACE_DOWN_LEGEND") }),

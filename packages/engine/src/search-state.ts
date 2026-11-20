@@ -1,4 +1,5 @@
 import { supportsCall } from "./effect-support";
+import { isPlayedInBatch } from "./effect-play";
 import { turnSliceAllows, canonicalSerialize, hashCanonical, failure, success, type GameState, type PendingChoice, type PlayerId } from "@tcg/domain";
 import type { EngineContext } from "./state";
 import { supportsAttackSearchUnit } from "./attack-search-support";
@@ -62,10 +63,12 @@ export function validateSearchState(state: GameState, context: EngineContext) {
 function validateAttackSearch(state: GameState, context: EngineContext) {
     const c = state.resolution.searchContinuation!, t = state.resolution.triggerContinuation!, current = state.resolution.current;
     const play = current?.effect.kind === "SEARCH_COST_MATCHING_GIGS";
-    if (!current || !isSearchEffect(current.effect) || !current.sourceId || current.primitiveIndex !== undefined || current.trigger?.kind !== (play ? "WHEN_PLAYED" : "WHEN_ATTACKING") || t.phase !== "TARGET" || t.origin.kind !== (play ? "PLAY" : "ATTACK") || !("subjectId" in t.origin) || current.trigger.subjectId !== t.origin.subjectId || current.sourceId !== t.origin.subjectId)
+    if (!current || !isSearchEffect(current.effect) || !current.sourceId || current.primitiveIndex !== undefined || current.trigger?.kind !== (play ? "WHEN_PLAYED" : "WHEN_ATTACKING") || t.phase !== "TARGET" || current.sourceId !== current.trigger.subjectId
+        // Batch V48: a {Play} search also runs for a Unit an effect played inside another batch.
+        || !(play ? isPlayedInBatch(t, current.trigger.subjectId) : t.origin.kind === "ATTACK" && current.trigger.subjectId === t.origin.subjectId))
         return failure("INVALID_SEARCH_STATE", "Trigger search requires its own current WHEN_ATTACKING or WHEN_PLAYED primitive");
     const actor = current.controllerId, source = state.objects.cards[current.sourceId], revision = context.content.cards.find(r => r.id === source?.cardId && r.revision === source?.revision);
-    if (!(play ? supportsGigSearchUnit(revision, context) : supportsAttackSearchUnit(revision, context)).ok || source?.zone.zone !== "BATTLEFIELD" || source.face !== "UP" || source.controllerId !== actor || state.timing.actingPlayer !== actor || actor !== state.timing.activePlayer || state.timing.step !== "TARGET_SELECTION" || canonicalSerialize(current.effect) !== canonicalSerialize(revision!.mechanics.abilities[0].effects[0]))
+    if (!(play ? supportsGigSearchUnit(revision, context) : supportsAttackSearchUnit(revision, context)).ok || source?.zone.zone !== "BATTLEFIELD" || source.face !== "UP" || source.controllerId !== actor || state.timing.actingPlayer !== actor || (actor !== state.timing.activePlayer && !(play && t.effectPlays?.some(p => p.subjectId === current.sourceId))) || state.timing.step !== "TARGET_SELECTION" || canonicalSerialize(current.effect) !== canonicalSerialize(revision!.mechanics.abilities[0].effects[0]))
         return failure("INVALID_SEARCH_SOURCE", "Pending attack search must match the attacking Unit's pinned ability");
     const targets = searchTargets(state, context);
     if (canonicalSerialize(c.looked) !== canonicalSerialize(state.players[actor].zones.DECK.slice(0, current.effect.count)) || new Set(c.selected).size !== c.selected.length || c.selected.length >= searchMaxTake(current.effect) || c.selected.some(id => !targets.includes(id)) || !targets.some(id => !c.selected.includes(id)))

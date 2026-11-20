@@ -21,7 +21,7 @@ export function effectStealTargets(state: GameState, context: EngineContext): Gi
 /** Moves the chosen Gig, records the stolen fact, and appends the steal triggers to this batch (11.5.1.7). */
 export function resolveEffectSteal(m: TurnMutation, gigId: GigInstanceId): Result<null> {
     const s = m.state, current = s.resolution.current!, c = s.resolution.triggerContinuation!, subjectId = current.trigger!.subjectId;
-    if (!effectStealTargets(s, m.context).includes(gigId) || c.effectSteal) return failure("INVALID_EFFECT_STEAL", "Choose a rival Gig the subject may steal");
+    if (!effectStealTargets(s, m.context).includes(gigId)) return failure("INVALID_EFFECT_STEAL", "Choose a rival Gig the subject may steal");
     const from = s.objects.gigs[gigId].controllerId;
     m.emit({ kind: "GIG_TARGET_SELECTED", effectId: current.id, gigInstanceId: gigId });
     const moved = transferGigs(m, [gigId], current.controllerId, () => {
@@ -33,7 +33,7 @@ export function resolveEffectSteal(m: TurnMutation, gigId: GigInstanceId): Resul
     if (!moved.ok || s.match.outcome) return moved;
     const stolen = { kind: "STEAL" as const, subjectId, gigInstanceIds: [gigId] }, bindings = discoverTriggers(s, stolen, m.context);
     if (!bindings.length) return success(null);
-    c.effectSteal = { subjectId, gigInstanceIds: [gigId] };
+    (c.effectSteals ??= []).push({ subjectId, gigInstanceIds: [gigId] });
     const sequence = s.match.eventSequence;
     for (const b of bindings) {
         c.bindings.push(TriggerBindingSchema.parse(b));

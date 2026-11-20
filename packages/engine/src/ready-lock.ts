@@ -63,7 +63,9 @@ export function validateReadyLocks(state: GameState, context: EngineContext) {
     for (const x of all) {
         const target = state.objects.cards[x.targetId], age = state.timing.turn - x.createdTurn, active = state.timing.activePlayer === x.lockingPlayerId;
         if (!state.players[x.lockingPlayerId] || !target || !isUnitSpendSubject(state, x.targetId, context) || target.controllerId === x.lockingPlayerId
-            || !(age === 0 && active || age === 1 && !active || age === 2 && active && (state.timing.step === "TURN_START" || state.match.outcome))
+            // Batch V48: a Unit an effect plays on the rival's turn creates it there; it still ends at the locking player's next turn start.
+            || !((age % 2 === 0) === active ? age === 0 && active || age === 1 && !active || age === 2 && active && (state.timing.step === "TURN_START" || state.match.outcome)
+                : age === 0 && !active || age === 1 && active && (state.timing.step === "TURN_START" || state.match.outcome))
             || !lockOrigin(state, x, context))
             return failure("INVALID_READY_LOCK", "A lock needs its resolved reviewed origin, a rival field Unit target, and must end at its controller's next turn start");
     }
