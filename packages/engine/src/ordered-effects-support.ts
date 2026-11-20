@@ -1,4 +1,5 @@
 import { supportsBlockerUsedUnit } from "./blocker-trigger-support";
+import { supportsLegendReveal } from "./legend-reveal-support";
 import { supportsStealTriggerUnit } from "./steal-trigger-support";
 import { supportsFirstAttackLegend } from "./first-attack-support";
 import { supportsTargetedSpendCard } from "./targeted-spend-support";
@@ -26,7 +27,7 @@ export function validateOrderedMetadata(state: GameState, context: EngineContext
     for (const c of Object.values(state.objects.cards)) {
         const r = context.content.cards.find(r => r.id === c.cardId && r.revision === c.revision);
         if (r && (r.execution?.scope === "ATTACK_ORDERED_EFFECTS_V1" || r.mechanics.abilities.some(a => a.conditions.some(c => c.kind === "STREET_CRED_GREATER_THAN_RIVAL") || a.effects.some(e => e.kind === "DISCARD_CARDS" || e.kind === "CONDITIONAL_DRAW" && e.condition.kind === "STREET_CRED_GREATER_THAN_RIVAL")))) {
-            const supported = supportsOrderedAttackCard(r, context); if (!supported.ok && !supportsFirstAttackLegend(r, context).ok && !supportsBlockerUsedUnit(r, context).ok && !supportsStealTriggerUnit(r, context).ok && !(r.mechanics.abilities.length > 1 && supportsTargetedDefeatCard(r, context).ok)) return supported;
+            const supported = supportsOrderedAttackCard(r, context); if (!supported.ok && !supportsFirstAttackLegend(r, context).ok && !supportsBlockerUsedUnit(r, context).ok && !supportsStealTriggerUnit(r, context).ok && !supportsLegendReveal(r, context).ok && !(r.mechanics.abilities.length > 1 && supportsTargetedDefeatCard(r, context).ok)) return supported;
         }
     }
     return success(null);

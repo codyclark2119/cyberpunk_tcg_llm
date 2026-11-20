@@ -196,6 +196,16 @@ export const EffectSchema = z.discriminatedUnion("kind", [
     // follows only after the discard (11.15: the owner bottom-decks the Unit and its Gear).
     // Batch V33: "You may discard 2 Programs. If you do, bottom-deck a rival unequipped Unit." (no attached Gear, 4.12).
     z.strictObject({ kind: z.literal("DISCARD_PROGRAMS_THEN_BOTTOM_DECK"), count: z.union([z.literal(1), z.literal(2)]), then: z.strictObject({ relation: z.literal("RIVAL"), unequipped: z.literal(true).optional() }) }),
+    // Batch V40: "if its value is even, draw 1. If its value is odd, a Rival discards 1." One effect: the stolen Gig's parity is read
+    // once, on resolution, so exactly one branch applies.
+    z.strictObject({ kind: z.literal("STOLEN_GIG_PARITY_DRAW_OR_RIVAL_DISCARD"), count: z.literal(1) }),
+    // Batch V41: "Reveal the top card of your deck and add it to your hand. This Unit gains power equal to that card's cost this turn."
+    z.strictObject({ kind: z.literal("REVEAL_TOP_TO_HAND_GAIN_POWER_EQUAL_COST"), count: z.literal(1) }),
+    // Batch V42: "choose a card type. Then, reveal the top card of your deck. If it's the chosen type, add it to your hand and ready 1
+    // Eddie. Otherwise, trash it." The types are Unit, Gear and Program.
+    z.strictObject({ kind: z.literal("CHOOSE_TYPE_REVEAL_TOP_ADD_AND_READY_EDDIE"), ready: z.literal(1) }),
+    // Batch V43: "A rival Unit must attack next turn if it can." The rival Unit is chosen on resolution.
+    z.strictObject({ kind: z.literal("FORCE_RIVAL_UNIT_ATTACK"), duration: z.literal("NEXT_TURN") }),
     // Batch V38: "At the end of your turn, ready up to 3 friendly Units."
     z.strictObject({ kind: z.literal("READY_UNITS_UP_TO"), relation: z.literal("FRIENDLY"), maximum: z.literal(3) }),
     // Batch V29: "If you control a value-pair of Gigs, ready up to 2 MERC Legends in your Legends area."
@@ -217,7 +227,8 @@ export const ActivationCostSchema = z.discriminatedUnion("kind", [
 export const AbilitySchema = z.strictObject({ id: z.string().min(1), trigger: TriggerSchema.optional(),
     inherited: z.literal("EQUIPPED_HOST").optional(),
     // Batch V26: STOLEN_GIG_IS_D6 limits a friendly-steal trigger to stolen d6 dice ("When a friendly Unit steals a d6").
-    guard: z.enum(["FIRST_BLUE_UNIT_OR_GEAR_PLAY_PER_TURN", "FIRST_FRIENDLY_ARASAKA_UNIT_ATTACK_PER_TURN", "STOLEN_GIG_IS_D6"]).optional(),
+    // Batch V40: STEALER_IS_LEGEND limits it to a stealing friendly Legend ("When a friendly Legend steals a Gig").
+    guard: z.enum(["FIRST_BLUE_UNIT_OR_GEAR_PLAY_PER_TURN", "FIRST_FRIENDLY_ARASAKA_UNIT_ATTACK_PER_TURN", "STOLEN_GIG_IS_D6", "STEALER_IS_LEGEND"]).optional(),
     activation: z.strictObject({ timing: z.literal("MAIN"), conditionTiming: z.literal("ACTIVATION_AND_RESOLUTION"), costs: z.array(ActivationCostSchema) }).optional(),
     conditions: z.array(ConditionSchema), cost: CostSchema, effects: z.array(EffectSchema) });
 export const ContinuousModifierSchema = z.discriminatedUnion("kind", [

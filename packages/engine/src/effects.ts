@@ -1,4 +1,5 @@
 import { beginTargetedSpend } from "./targeted-spend";
+import { resolveRevealTopGainPower } from "./legend-reveal";
 import { beginTargetedDefeat } from "./targeted-defeat";
 import { createFightPrevention } from "./fight-prevention";
 import { powerTargets } from "./react-queries";
@@ -65,6 +66,7 @@ export class HandlerRegistry {
         if (effect.kind === "DRAW") return this.primitives.DRAW(m, effect);
         if (effect.kind === "POWER_PER_FRIENDLY_GIG") return resolvePowerPerFriendlyGig(m);
         if (effect.kind === "DRAW_PER_FRIENDLY_GIG") return resolveDrawPerFriendlyGig(m);
+        if (effect.kind === "REVEAL_TOP_TO_HAND_GAIN_POWER_EQUAL_COST") return resolveRevealTopGainPower(m);
         if (effect.kind === "SEARCH_GEAR") return this.primitives.SEARCH_GEAR(m, effect);
         // Batch V37: the optional Gig set offers its targets and a decline; with no settable Gig it does nothing.
         if (effect.kind === "SET_GIG_TO_ANOTHER_GIG_VALUE") return gigSetTargets(m.state).length ? offerPlayChoice(m) : success(null);

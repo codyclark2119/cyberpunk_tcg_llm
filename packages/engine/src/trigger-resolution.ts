@@ -1,4 +1,6 @@
 import { processDeparture } from "./card-movement";
+import { applyMustAttack, mustAttackTargets } from "./must-attack";
+import { REVEAL_TYPES } from "./type-reveal-support";
 import { beginTargetedDefeat } from "./targeted-defeat";
 import { resolveSpendTarget } from "./targeted-spend";
 import { listSpendUnitTargets } from "./targeted-spend-queries";
@@ -31,7 +33,7 @@ import { changeGigValue, gigAdjustmentDelta } from "./gig-value";
 import { applyReadyLock } from "./ready-lock";
 import { swapGigs } from "./gig-transfer";
 import { triggersEnabled } from "./trigger-support";
-import { discardingPlayer, discoverTriggers, pendingTrigger, swapSidesAvailable, trashUnitTargets, triggerChoice, triggerGigTargets } from "./trigger-queries";
+import { discardingPlayer, discoverTriggers, pendingTrigger, stolenGigParity, swapSidesAvailable, trashUnitTargets, triggerChoice, triggerGigTargets } from "./trigger-queries";
 import { moveCardLocation } from "./card-movement";
 import { discardProgram, handPrograms, programBottomDeckTargets } from "./program-discard";
 import { bottomDeck } from "./bottom-deck";
@@ -215,6 +217,28 @@ export function advanceTriggers(m: TurnMutation): Result<null> {
         if (e.when) c.conditionMet = true;
         c.phase = "DISCARD"; return offer(m);
     }
+    // Batch V40: "if its value is even, draw 1. If its value is odd, a Rival discards 1." The stolen Gig's value is read once, here.
+    if (e.kind === "STOLEN_GIG_PARITY_DRAW_OR_RIVAL_DISCARD") {
+        const current = r.current, parity = stolenGigParity(m.state, current);
+        m.emit({ kind: "CONDITION_EVALUATED", effectId: current.id, met: parity === "EVEN" });
+        if (parity === "EVEN") {
+            const drawn = m.draw(current.controllerId, e.count); if (!drawn.ok) return drawn;
+            if (m.state.match.outcome) { m.emit({ kind: "EFFECT_RESOLVED", effectId: current.id }); return success(null); }
+            return completed(m);
+        }
+        if (parity !== "ODD" || !getDiscardableCards(m.state, discardingPlayer(m.state, current)).length) return completed(m);
+        c.phase = "DISCARD"; return offer(m);
+    }
+    // Batch V43: "A rival Unit must attack next turn if it can." With no rival field Unit nothing happens.
+    if (e.kind === "FORCE_RIVAL_UNIT_ATTACK") {
+        if (!mustAttackTargets(m.state, r.current.controllerId, m.context).length) return completed(m);
+        c.phase = "TARGET"; return offer(m);
+    }
+    // Batch V42: "choose a card type. Then, reveal the top card of your deck." With an empty deck there is nothing to reveal or choose for.
+    if (e.kind === "CHOOSE_TYPE_REVEAL_TOP_ADD_AND_READY_EDDIE") {
+        if (!m.state.players[r.current.controllerId].zones.DECK.length) return completed(m);
+        c.phase = "TARGET"; return offer(m);
+    }
     // Batch V32: "You may discard 1 Program. If you do, bottom-deck a rival Unit." Offered only with enough own-hand Programs.
     if (e.kind === "DISCARD_PROGRAMS_THEN_BOTTOM_DECK") {
         if (handPrograms(m.state, r.current.controllerId, m.context).length < e.count) return completed(m);
@@ -273,6 +297,20 @@ export function advanceTriggers(m: TurnMutation): Result<null> {
     }
     return completed(m);
 }
+/** Batch V42: reveal the top card. The chosen type goes to hand and readies 1 Eddie (a lone spent Eddie is forced); any other card is trashed. */
+function revealChosenType(m: TurnMutation, cardType: typeof REVEAL_TYPES[number]): Result<null> {
+    const current = m.state.resolution.current!, c = m.state.resolution.triggerContinuation!, top = m.state.players[current.controllerId].zones.DECK[0];
+    m.emit({ kind: "CARD_TYPE_CHOSEN", effectId: current.id, playerId: current.controllerId, cardType });
+    if (!top) return completed(m);
+    m.emit({ kind: "CARD_REVEALED", cardInstanceId: top });
+    const met = cardRevision(m.state, top, m.context)?.type === cardType;
+    m.emit({ kind: "CONDITION_EVALUATED", effectId: current.id, met });
+    moveCardLocation(m, top, met ? "HAND" : "TRASH");
+    const slots = met ? readyableEddieSlots(m.state, current.controllerId) : [];
+    if (slots.length === 1) { const readied = readyEddie(m, current.controllerId, slots[0]); if (!readied.ok) return readied; }
+    if (slots.length < 2) return completed(m);
+    c.conditionMet = true; c.phase = "READY"; return offer(m);
+}
 /** Advance an admitted two-primitive ability to its second primitive, or finish it. */
 function nextPrimitiveOrCompleted(m: TurnMutation): Result<null> {
     const r = m.state.resolution, c = r.triggerContinuation!, current = r.current!;
@@ -295,6 +333,10 @@ export function continueTrigger(m: TurnMutation, index: number, forced = false):
         return advanceTriggers(m);
     }
     const current = r.current!;
+    if (c.phase === "READY" && current.effect.kind === "CHOOSE_TYPE_REVEAL_TOP_ADD_AND_READY_EDDIE") {
+        if (option.kind !== "EDDIE_SLOT" || !readyableEddieSlots(m.state, current.controllerId).includes(option.slot)) return failure("INVALID_EDDIE_READY", "Choose a currently eligible Eddie slot");
+        const readied = readyEddie(m, current.controllerId, option.slot); return readied.ok ? completed(m) : readied;
+    }
     if (c.phase === "READY") {
         if (current.effect.kind !== "READY_EDDIES" || option.kind !== "EDDIE_SLOT") return failure("INVALID_EDDIE_READY", "Choose a currently eligible Eddie slot");
         if (!readyableEddieSlots(m.state, current.controllerId).includes(option.slot) || c.selectedEddieSlots?.includes(option.slot)) return failure("INVALID_EDDIE_READY", "A spent Eddie can be selected only once");
@@ -313,6 +355,11 @@ export function continueTrigger(m: TurnMutation, index: number, forced = false):
         c.phase = "TARGET"; return offer(m);
     }
     if (c.phase === "DISCARD") {
+        if (current.effect.kind === "STOLEN_GIG_PARITY_DRAW_OR_RIVAL_DISCARD") {
+            if (option.kind !== "CARD") return failure("INVALID_DISCARD", "Choose one current own-hand card");
+            const result = discardCard(m, { kind: "DISCARD_CARDS", player: "RIVAL", count: 1, selection: "CHOSEN_BY_AFFECTED_PLAYER" }, option.cardInstanceId, forced);
+            return result.ok ? completed(m) : result;
+        }
         if (current.effect.kind !== "DISCARD_CARDS" || option.kind !== "CARD") return failure("INVALID_DISCARD", "Choose one current own-hand card");
         const result = discardCard(m, current.effect, option.cardInstanceId, forced);
         if (!result.ok) return result;
@@ -330,6 +377,15 @@ export function continueTrigger(m: TurnMutation, index: number, forced = false):
         m.emit({ kind: option.confirmed ? "OPTIONAL_TRIGGER_ACCEPTED" : "OPTIONAL_TRIGGER_DECLINED", effectId: current.id, controllerId: current.controllerId });
         if (!option.confirmed) return completed(m);
         c.phase = "TARGET"; return offer(m);
+    }
+    if (c.phase === "TARGET" && current.effect.kind === "FORCE_RIVAL_UNIT_ATTACK") {
+        if (option.kind !== "CARD") return failure("INVALID_MUST_ATTACK", "Choose a current rival field Unit");
+        m.emit({ kind: "CARD_TARGET_SELECTED", effectId: current.id, sourceId: current.sourceId!, targetId: option.cardInstanceId, controllerId: current.controllerId, forced });
+        const bound = applyMustAttack(m, option.cardInstanceId); return bound.ok ? completed(m) : bound;
+    }
+    if (c.phase === "TARGET" && current.effect.kind === "CHOOSE_TYPE_REVEAL_TOP_ADD_AND_READY_EDDIE") {
+        if (option.kind !== "MODE" || !(REVEAL_TYPES as readonly string[]).includes(option.mode)) return failure("INVALID_CARD_TYPE", "Choose Unit, Gear or Program");
+        return revealChosenType(m, option.mode as typeof REVEAL_TYPES[number]);
     }
     if (c.phase === "TARGET") {
         if (current.effect.kind === "POWER_UNTIL_END_OF_TURN") {

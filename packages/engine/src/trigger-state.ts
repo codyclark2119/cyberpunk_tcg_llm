@@ -1,4 +1,6 @@
 import { isSearchEffect } from "./search-state";
+import { supportsMustAttackUnit } from "./must-attack-support";
+import { supportsTypeRevealUnit } from "./type-reveal-support";
 import { supportsGigSearchUnit } from "./gig-search-support";
 import { validateProgramDiscard } from "./program-discard";
 import { programPlayHistoryEnabled } from "./restriction-support";
@@ -26,7 +28,9 @@ import { keywordGrantTargets, validateTrashProgramPause } from "./play-pin-effec
 import { supportsPinnedPlayUnit } from "./play-pin-support";
 import { listSpendUnitTargets } from "./targeted-spend-queries";
 import { supportsEffectiveTriggerSource, supportsTriggerCard, triggersEnabled } from "./trigger-support";
-import { discardingPlayer, discoverTriggers, nextTriggerGroup, pendingTrigger, swapSidesAvailable, triggerChoice, triggerGigTargets, triggerId } from "./trigger-queries";
+import { supportsLegendStealTrigger } from "./legend-steal-support";
+import { supportsLegendReveal } from "./legend-reveal-support";
+import { discardingPlayer, discoverTriggers, nextTriggerGroup, pendingTrigger, stealerIsLegend, stolenGigParity, swapSidesAvailable, triggerChoice, triggerGigTargets, triggerId } from "./trigger-queries";
 import { discardedCostMatchesFriendlyGig } from "./discard";
 import { supportsTargetedDefeatCard } from "./targeted-defeat-support";
 
@@ -54,7 +58,9 @@ function validBinding(state: GameState, b: TriggerBinding, context: EngineContex
     if (origin.kind === "STEAL") return b.sourceId === b.subjectId && origin.gigInstanceIds.includes(b.gigInstanceId!) && supportsTriggerCard(r, context).ok
         && (b.kind === "WHEN_GIG_STOLEN" ? b.subjectId === origin.subjectId
             // Batch V26: a friendly field Unit observing a stolen d6.
-            : b.kind === "WHEN_FRIENDLY_UNIT_STEALS_GIG" && ability.guard === "STOLEN_GIG_IS_D6" && state.objects.gigs[b.gigInstanceId!]?.dieType === "D6" && subject.zone.zone === "BATTLEFIELD" && b.controllerId === state.objects.cards[origin.subjectId]?.controllerId);
+            : b.kind === "WHEN_FRIENDLY_UNIT_STEALS_GIG" && ability.guard === "STOLEN_GIG_IS_D6" && state.objects.gigs[b.gigInstanceId!]?.dieType === "D6" && subject.zone.zone === "BATTLEFIELD" && b.controllerId === state.objects.cards[origin.subjectId]?.controllerId
+            // Batch V40: a face-up friendly field or Legends-area source observing a stealing friendly Legend.
+            || b.kind === "WHEN_FRIENDLY_UNIT_STEALS_GIG" && ability.guard === "STEALER_IS_LEGEND" && stealerIsLegend(state, origin.subjectId, context) && ["BATTLEFIELD", "LEGENDS"].includes(subject.zone.zone) && b.controllerId === state.objects.cards[origin.subjectId]?.controllerId);
     if (origin.kind === "ATTACK") {
         if (b.kind === "WHEN_UNIT_ATTACKS") return b.sourceId === b.subjectId && source.face === "UP" && source.zone.zone === "LEGENDS" && supportsFirstAttackLegend(r, context).ok && state.objects.cards[origin.subjectId]?.controllerId === b.controllerId && isFirstArasakaAttack(state, origin.subjectId, context);
         return b.kind === "WHEN_ATTACKING" && b.subjectId === origin.subjectId;
@@ -123,7 +129,7 @@ export function validateTriggerState(state: GameState, context: EngineContext) {
     const rivalHasResolved = c.resolvedIds.some(id => !activeIds.includes(id));
     if ((r.current && r.current.controllerId !== state.timing.activePlayer || rivalHasResolved) && activeIds.some(id => !c.resolvedIds.includes(id))) return failure("INVALID_TRIGGER_PRIORITY", "Turn player's pending effects precede the rival's");
     if (c.phase === "SELECT" ? Boolean(r.current) || nextTriggerGroup(state).length < 2 : !r.current) return failure("INVALID_TRIGGER_PHASE", "Ordering is strategic only with multiple eligible effects; effect choices require a current effect");
-    if (c.phase !== "SELECT" && (!r.current || !["DEFEAT_UNIT", "READY_EDDIES", "DISCARD_CARDS", "DECREASE_GIG_UP_TO", "ADJUST_GIG_UP_TO", "OPTIONAL_DECREASE_FRIENDLY_GIG_THEN_DRAW_IF_MIN", "LOOK_AT_FRIENDLY_FACE_DOWN_LEGEND", "POWER_UNTIL_END_OF_TURN", "SPEND_UNIT", "READY_UNIT", "RETURN_TRASH_UNIT_TO_HAND", "SEARCH_GEAR", "SEARCH_COST_MATCHING_GIGS", "TRASH_THEN_RETURN_PROGRAM", "GRANT_KEYWORD_UNTIL_END_OF_TURN", "PREVENT_UNIT_READY", "SWAP_GIGS", "READY_LEGENDS_UP_TO", "READY_UNITS_UP_TO", "SPEND_UNITS_PER_VALUE_PAIR", "DISCARD_PROGRAMS_THEN_BOTTOM_DECK"].includes(r.current.effect.kind))) return failure("INVALID_TRIGGER_PHASE", "Only reviewed adjustment/look/discard/ready/power/spend/trash-return primitives pause for choices");
+    if (c.phase !== "SELECT" && (!r.current || !["DEFEAT_UNIT", "READY_EDDIES", "DISCARD_CARDS", "DECREASE_GIG_UP_TO", "ADJUST_GIG_UP_TO", "OPTIONAL_DECREASE_FRIENDLY_GIG_THEN_DRAW_IF_MIN", "LOOK_AT_FRIENDLY_FACE_DOWN_LEGEND", "POWER_UNTIL_END_OF_TURN", "SPEND_UNIT", "READY_UNIT", "RETURN_TRASH_UNIT_TO_HAND", "SEARCH_GEAR", "SEARCH_COST_MATCHING_GIGS", "TRASH_THEN_RETURN_PROGRAM", "GRANT_KEYWORD_UNTIL_END_OF_TURN", "PREVENT_UNIT_READY", "SWAP_GIGS", "READY_LEGENDS_UP_TO", "READY_UNITS_UP_TO", "SPEND_UNITS_PER_VALUE_PAIR", "DISCARD_PROGRAMS_THEN_BOTTOM_DECK", "STOLEN_GIG_PARITY_DRAW_OR_RIVAL_DISCARD", "CHOOSE_TYPE_REVEAL_TOP_ADD_AND_READY_EDDIE", "FORCE_RIVAL_UNIT_ATTACK"].includes(r.current.effect.kind))) return failure("INVALID_TRIGGER_PHASE", "Only reviewed adjustment/look/discard/ready/power/spend/trash-return primitives pause for choices");
     // Batch V19: the reviewed [Attack] Gear search pauses only for its own looked-at cards (search-state owns the details).
     if (isSearchEffect(r.current?.effect) !== Boolean(r.searchContinuation) || r.current?.effect.kind === "SEARCH_GEAR" && (c.phase !== "TARGET" || c.origin.kind !== "ATTACK" || r.current.trigger?.kind !== "WHEN_ATTACKING" || !supportsAttackSearchUnit(cardRevision(state, r.current.sourceId!, context), context).ok)) return failure("INVALID_SEARCH_CONTINUATION", "Only the reviewed attack search pauses for its looked-at cards");
     // Batch V35: the pinned {Play} cost-matching search pauses only in its own PLAY batch.
@@ -196,7 +202,17 @@ export function validateTriggerState(state: GameState, context: EngineContext) {
             || !supportsFriendlyPlayPowerUnit(cardRevision(state, source.id, context), context).ok)
             return failure("INVALID_POWER_CONTINUATION", "Only the reviewed friendly+2 PLAY trigger may pause for a Unit target");
     }
-    if ((c.phase === "READY" || r.current?.effect.kind === "READY_EDDIES") && (c.phase !== "READY" || r.current?.effect.kind !== "READY_EDDIES" || c.origin.kind !== "END_TURN")) return failure("INVALID_READY_CONTINUATION", "Ready choices require their pending end-turn ability");
+    // Batch V43: the {Play} must-attack obligation pauses only for its rival Unit, in its own PLAY batch.
+    if (r.current?.effect.kind === "FORCE_RIVAL_UNIT_ATTACK" && (c.phase !== "TARGET" || c.origin.kind !== "PLAY" || r.current.trigger?.kind !== "WHEN_PLAYED" || r.current.primitiveIndex !== undefined
+        || !supportsMustAttackUnit(cardRevision(state, r.current.sourceId!, context), context).ok))
+        return failure("INVALID_MUST_ATTACK_CONTINUATION", "Only the reviewed {Play} must-attack obligation pauses for a rival Unit");
+    // Batch V42: the own-turn end type reveal pauses to name a type (with a card to reveal), then, once a matching card went to hand,
+    // to pick which of 2 or more spent Eddies to ready.
+    const typeReveal = r.current?.effect.kind === "CHOOSE_TYPE_REVEAL_TOP_ADD_AND_READY_EDDIE";
+    if (typeReveal && (c.origin.kind !== "END_TURN" || r.current!.trigger?.kind !== "WHEN_OWN_TURN_ENDS" || r.current!.primitiveIndex !== undefined || !supportsTypeRevealUnit(cardRevision(state, r.current!.sourceId!, context), context).ok
+        || (c.phase === "TARGET" ? c.conditionMet !== undefined || !state.players[r.current!.controllerId].zones.DECK.length : c.phase !== "READY" || c.conditionMet !== true || readyableEddieSlots(state, r.current!.controllerId).length < 2)))
+        return failure("INVALID_TYPE_REVEAL_CONTINUATION", "The reviewed type reveal pauses only to name a type, then to ready one of several spent Eddies after a match");
+    if (!typeReveal && (c.phase === "READY" || r.current?.effect.kind === "READY_EDDIES") && (c.phase !== "READY" || r.current?.effect.kind !== "READY_EDDIES" || c.origin.kind !== "END_TURN")) return failure("INVALID_READY_CONTINUATION", "Ready choices require their pending end-turn ability");
     if (c.selectedEddieSlots && (c.phase !== "READY" || r.current?.effect.kind !== "READY_EDDIES" || r.current.effect.count !== 2 || c.selectedEddieSlots.some(slot => !readyableEddieSlots(state, r.current!.controllerId).includes(slot))))
         return failure("INVALID_READY_SELECTION", "Only a count2 ready choice may hold one still-spent public slot");
     if (c.phase === "READY" && r.current?.effect.kind === "READY_EDDIES") {
@@ -214,9 +230,19 @@ export function validateTriggerState(state: GameState, context: EngineContext) {
         const more = e.effect.kind === "DISCARD_CARDS" ? e.effect.more : undefined, first = c.discardedCardId ? state.objects.cards[c.discardedCardId] : undefined;
         const defeated = c.conditionMet === undefined && !when && Boolean(more) && c.origin.kind === "DEFEAT" && e.trigger?.kind === "WHEN_DEFEATED" && supportsTargetedDefeatCard(cardRevision(state, e.sourceId!, context), context).ok
             && (!c.discardedCardId || Boolean(first) && first!.zone.zone === "TRASH" && first!.ownerId === discardingPlayer(state, e) && discardedCostMatchesFriendlyGig(state, e.controllerId, first!.id, context));
-        if (c.phase !== "DISCARD" || e.effect.kind !== "DISCARD_CARDS" || e.primitiveIndex !== undefined || !(blocker || steal || defeated) || !(defeated || supportsTriggerCard(cardRevision(state, e.sourceId!, context), context).ok))
+        // Batch V41: the Go Solo Legend's plain {Defeated} rival discard.
+        const legend = c.conditionMet === undefined && !when && !more && c.origin.kind === "DEFEAT" && e.trigger?.kind === "WHEN_DEFEATED" && supportsLegendReveal(cardRevision(state, e.sourceId!, context), context).ok;
+        if (c.phase !== "DISCARD" || e.effect.kind !== "DISCARD_CARDS" || e.primitiveIndex !== undefined || !(blocker || steal || defeated || legend) || !(defeated || supportsTriggerCard(cardRevision(state, e.sourceId!, context), context).ok))
             return failure("INVALID_DISCARD_CONTINUATION", "Only the reviewed Blocker-used, steal-trigger and defeated rival discards pause");
     }
+    // Batch V40: the parity branch pauses only for the rival's discard, in its friendly-Legend STEAL batch, while the stolen Gig is odd.
+    else if (r.current?.effect.kind === "STOLEN_GIG_PARITY_DRAW_OR_RIVAL_DISCARD") {
+        const e = r.current;
+        if (c.phase !== "DISCARD" || c.conditionMet !== undefined || e.primitiveIndex !== undefined || c.origin.kind !== "STEAL" || e.trigger?.kind !== "WHEN_FRIENDLY_UNIT_STEALS_GIG" || stolenGigParity(state, e) !== "ODD"
+            || !supportsLegendStealTrigger(cardRevision(state, e.sourceId!, context), context).ok)
+            return failure("INVALID_DISCARD_CONTINUATION", "Only the reviewed friendly-Legend steal parity branch pauses for an odd Gig's rival discard");
+    }
+    else if (typeReveal) { /* Batch V42: validated above. */ }
     else if (c.phase === "DISCARD" && r.current?.effect.kind !== "DISCARD_PROGRAMS_THEN_BOTTOM_DECK" || r.current?.effect.kind === "DISCARD_CARDS" || c.conditionMet !== undefined) {
         const e = r.current;
         // No admitted primitive can change Gigs while paused here. Historical true and current

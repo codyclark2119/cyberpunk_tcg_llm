@@ -1,4 +1,5 @@
 import { validateTargetedDefeatState } from "./targeted-defeat-state";
+import { validateMustAttack } from "./must-attack";
 import { validateAttackConditionPowerMetadata } from "./attack-condition-power-support";
 import { validateTargetedSpendMetadata } from "./targeted-spend-support";
 import { validateTargetedDefeatMetadata } from "./targeted-defeat-support";
@@ -171,6 +172,8 @@ export function validateState(input: unknown, context: EngineContext): Result<Ga
     if (!restricted.ok) return restricted;
     const locked = validateReadyLocks(s, context);
     if (!locked.ok) return locked;
+    const forced = validateMustAttack(s, context);
+    if (!forced.ok) return forced;
     const prevention = validateFightPreventions(s, context);
     if (!prevention.ok) return prevention;
     const combat = validateCombatState(s, context);
