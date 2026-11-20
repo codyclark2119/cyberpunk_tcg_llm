@@ -6,8 +6,8 @@
     "manifest": {
       "schemaVersion": 1,
       "engine": {
-        "version": "0.4.23-steal-increase-v27",
-        "artifactHash": "b0aae9f9ac6f33488690fca1cf781291b1684c99d34f858d349523ee69a426f3"
+        "version": "0.4.27-defeat-discard-v31",
+        "artifactHash": "c2c2847b0d743b626770efa9c3e85fc1cc9cc9ae9c5e32e0c49b9ca05ba8e519"
       },
       "ruleset": {
         "id": "beta",
@@ -102,7 +102,7 @@
         }
       ]
     },
-    "manifestHash": "ecddd08510c4b7baecbbcf32c3e98ea786c76b374e11a8bb3ddc40579785812e",
+    "manifestHash": "14384ebbce15c810b2973bec786150e609349bbce532493c29bc259b24c582ec",
     "ruleset": {
       "id": "beta",
       "version": "turn-slice-1",
@@ -1288,9 +1288,9 @@
         "rulesetId": "beta",
         "rulesetVersion": "turn-slice-1",
         "rulesetHash": "09d828304bbf52612051c02a4d89172f5b9670ece545c5038330ed834dd222e0",
-        "contentManifestHash": "ecddd08510c4b7baecbbcf32c3e98ea786c76b374e11a8bb3ddc40579785812e",
-        "engineVersion": "0.4.23-steal-increase-v27",
-        "engineArtifactHash": "b0aae9f9ac6f33488690fca1cf781291b1684c99d34f858d349523ee69a426f3",
+        "contentManifestHash": "14384ebbce15c810b2973bec786150e609349bbce532493c29bc259b24c582ec",
+        "engineVersion": "0.4.27-defeat-discard-v31",
+        "engineArtifactHash": "c2c2847b0d743b626770efa9c3e85fc1cc9cc9ae9c5e32e0c49b9ca05ba8e519",
         "cards": [
           {
             "cardId": "dev-legend-blue",
@@ -3485,30 +3485,18 @@
           "gigInstanceId": "p0-D8"
         }
       },
-      "actionId": "9bfbc5ad9c272e47e2c8253fb3b03c05be999f43d48b5d941b4277cb6dc0db6c",
+      "actionId": "5c2ea51c33c22acd1d22b2a91f8aedf741aeb09eb4f125c533bedd9bd25dfdf4",
       "legalActions": [
         {
           "actorId": "00000000-0000-4000-8000-000000000001",
           "action": {
             "kind": "ROLL_GIG",
-            "gigInstanceId": "p0-D4"
+            "gigInstanceId": "p0-D10"
           },
-          "actionId": "3e805f42d8e4cd69630216448624eeb1004dd69a77e2c67ea29544bcd1375892",
+          "actionId": "52e204f323e6c88ff4d9f725ca5006ce2a74f0471a80c0b19fbe94aba6e9d17f",
           "descriptor": {
             "kind": "ROLL_GIG",
-            "label": "Roll D4"
-          }
-        },
-        {
-          "actorId": "00000000-0000-4000-8000-000000000001",
-          "action": {
-            "kind": "ROLL_GIG",
-            "gigInstanceId": "p0-D12"
-          },
-          "actionId": "4327a56b9065b9f9fa11748c5fda4956507afb4cfb85e95b420a51396be93250",
-          "descriptor": {
-            "kind": "ROLL_GIG",
-            "label": "Roll D12"
+            "label": "Roll D10"
           }
         },
         {
@@ -3517,7 +3505,7 @@
             "kind": "ROLL_GIG",
             "gigInstanceId": "p0-D8"
           },
-          "actionId": "9bfbc5ad9c272e47e2c8253fb3b03c05be999f43d48b5d941b4277cb6dc0db6c",
+          "actionId": "5c2ea51c33c22acd1d22b2a91f8aedf741aeb09eb4f125c533bedd9bd25dfdf4",
           "descriptor": {
             "kind": "ROLL_GIG",
             "label": "Roll D8"
@@ -3527,9 +3515,21 @@
           "actorId": "00000000-0000-4000-8000-000000000001",
           "action": {
             "kind": "ROLL_GIG",
+            "gigInstanceId": "p0-D12"
+          },
+          "actionId": "912cfd5e4e11d9621cb870782b9322e4491db9fa428cdd9b57139b885c27b918",
+          "descriptor": {
+            "kind": "ROLL_GIG",
+            "label": "Roll D12"
+          }
+        },
+        {
+          "actorId": "00000000-0000-4000-8000-000000000001",
+          "action": {
+            "kind": "ROLL_GIG",
             "gigInstanceId": "p0-D6"
           },
-          "actionId": "c0d2065f3957d9d0e8a681ad265977e5e9aafd837e8614447b73177ef6b67b54",
+          "actionId": "b1c73c38721da5b747a05c5cda0c667ddac5554952678ec97deb1163098a8282",
           "descriptor": {
             "kind": "ROLL_GIG",
             "label": "Roll D6"
@@ -3539,12 +3539,12 @@
           "actorId": "00000000-0000-4000-8000-000000000001",
           "action": {
             "kind": "ROLL_GIG",
-            "gigInstanceId": "p0-D10"
+            "gigInstanceId": "p0-D4"
           },
-          "actionId": "edac65b59247e164db2fa878564ab6da19e1cf92d90f7a74f21bf88919899c35",
+          "actionId": "cd71d6dd35752ec84a4e02e3c8d848859bc8284b9dd75251c231c81ad96b9c16",
           "descriptor": {
             "kind": "ROLL_GIG",
-            "label": "Roll D10"
+            "label": "Roll D4"
           }
         }
       ],
@@ -3899,8 +3899,8 @@
           }
         }
       ],
-      "stateHash": "5307cdee8bc64d52c1ed5e2a021b0fdea3b560389729218e25cb321551417070",
-      "positionHash": "dda3f346b4ef12eb7e44dd19adcb414ddbef3cf5c967123276c7dac2652fa81b",
+      "stateHash": "1c592dc967196cd52f8d09a52fa7d4d0ce7fba56395a27d51a9ee963780c3ad2",
+      "positionHash": "8ce8e0e59abdb9e9a4b76e42ef80dc31212489af858182344f53d367dc73db61",
       "observationHash": "c385c62d01bf4b1787d16808181b7c0b6114f71b855973575134fcf6700c8869",
       "step": "MAIN"
     },
@@ -3913,27 +3913,51 @@
           "cardInstanceId": "p0-c10"
         }
       },
-      "actionId": "85977af94e7044391a68199af89ca705a94c41fa72c87d22f437755a03d876a0",
+      "actionId": "7c15dcb8cfb95e8de6adaf531190caba8d7b17a1648bcf89049ab4943fea2c29",
       "legalActions": [
         {
           "actorId": "00000000-0000-4000-8000-000000000001",
           "action": {
-            "kind": "CALL_LEGEND",
-            "cardInstanceId": "p0-c2"
+            "kind": "SELL_CARD",
+            "cardInstanceId": "p0-c18"
           },
-          "actionId": "1de8cdeffbe3280e11ba4a04651e4011237fc299cf54ca2bc86abe72fde99d4f",
+          "actionId": "347e36059bb032bfbeb2544b271363100bd40ae0a7e75b1de8d5acd69a9b15ae",
+          "descriptor": {
+            "kind": "SELL_CARD",
+            "label": "Sell Slice Card 5"
+          }
+        },
+        {
+          "actorId": "00000000-0000-4000-8000-000000000001",
+          "action": {
+            "kind": "CALL_LEGEND",
+            "cardInstanceId": "p0-c0"
+          },
+          "actionId": "3d1c544215efa609b9d6f8720c8dac535f0a7a76b542230d48cfb5f1c0be23be",
           "descriptor": {
             "kind": "CALL_LEGEND",
-            "label": "Call face-down Legend 1"
+            "label": "Call face-down Legend 3"
           }
         },
         {
           "actorId": "00000000-0000-4000-8000-000000000001",
           "action": {
             "kind": "SELL_CARD",
-            "cardInstanceId": "p0-c11"
+            "cardInstanceId": "p0-c24"
           },
-          "actionId": "3b4ba642d213d04f64c7fdb9f11c6875ca9a45ce1fab00b4a11d97d4dbf659a3",
+          "actionId": "4098b852ed4aeeb9b273e773042c2fec63e0cdcab50b558a618537df0cbfedc6",
+          "descriptor": {
+            "kind": "SELL_CARD",
+            "label": "Sell Slice Card 7"
+          }
+        },
+        {
+          "actorId": "00000000-0000-4000-8000-000000000001",
+          "action": {
+            "kind": "SELL_CARD",
+            "cardInstanceId": "p0-c10"
+          },
+          "actionId": "7c15dcb8cfb95e8de6adaf531190caba8d7b17a1648bcf89049ab4943fea2c29",
           "descriptor": {
             "kind": "SELL_CARD",
             "label": "Sell Slice Card 2"
@@ -3945,7 +3969,7 @@
             "kind": "SELL_CARD",
             "cardInstanceId": "p0-c41"
           },
-          "actionId": "41ca48eb4906152c9b32df5633fd8d7108ef6dd8b61717d5e1b26d6a649cc19c",
+          "actionId": "7cb28b38aa237c5d0f94d5497188301da340cb37043ab430239b4bfe57117d62",
           "descriptor": {
             "kind": "SELL_CARD",
             "label": "Sell Slice Card 12"
@@ -3954,34 +3978,10 @@
         {
           "actorId": "00000000-0000-4000-8000-000000000001",
           "action": {
-            "kind": "CALL_LEGEND",
-            "cardInstanceId": "p0-c0"
-          },
-          "actionId": "6e409d2d07401d23ae3668975587bfecee5f622d450c03558107051761693f32",
-          "descriptor": {
-            "kind": "CALL_LEGEND",
-            "label": "Call face-down Legend 3"
-          }
-        },
-        {
-          "actorId": "00000000-0000-4000-8000-000000000001",
-          "action": {
             "kind": "SELL_CARD",
-            "cardInstanceId": "p0-c21"
+            "cardInstanceId": "p0-c11"
           },
-          "actionId": "782befcb539f6d54138fbd11a4d4dcaac5c1097813ec20026f23365b5e19ed93",
-          "descriptor": {
-            "kind": "SELL_CARD",
-            "label": "Sell Slice Card 6"
-          }
-        },
-        {
-          "actorId": "00000000-0000-4000-8000-000000000001",
-          "action": {
-            "kind": "SELL_CARD",
-            "cardInstanceId": "p0-c10"
-          },
-          "actionId": "85977af94e7044391a68199af89ca705a94c41fa72c87d22f437755a03d876a0",
+          "actionId": "9bf894c731eb4e1089deabd366b5a3dc18211e44ef7edaca03727c44c5153cd5",
           "descriptor": {
             "kind": "SELL_CARD",
             "label": "Sell Slice Card 2"
@@ -3990,21 +3990,9 @@
         {
           "actorId": "00000000-0000-4000-8000-000000000001",
           "action": {
-            "kind": "SELL_CARD",
-            "cardInstanceId": "p0-c18"
-          },
-          "actionId": "889636b9fa57858b7643c0f87b6cdfa4ae0e447258a7a18f953bd06385c803c3",
-          "descriptor": {
-            "kind": "SELL_CARD",
-            "label": "Sell Slice Card 5"
-          }
-        },
-        {
-          "actorId": "00000000-0000-4000-8000-000000000001",
-          "action": {
             "kind": "END_TURN"
           },
-          "actionId": "8bdf653d4cbac197f825ea89c668a83b8b64ae9afee5e5d1b6cf546fa43285ca",
+          "actionId": "9e7eafd7798cb4316d74b2b30d6439db7e0fddfce2b40ca9f64f9541ea512bfc",
           "descriptor": {
             "kind": "END_TURN",
             "label": "END_TURN"
@@ -4014,9 +4002,21 @@
           "actorId": "00000000-0000-4000-8000-000000000001",
           "action": {
             "kind": "CALL_LEGEND",
+            "cardInstanceId": "p0-c2"
+          },
+          "actionId": "a4fe9b95bcf4feb37774a50eefcb8d34328f3fc455c0e417fc2d366726df6bb7",
+          "descriptor": {
+            "kind": "CALL_LEGEND",
+            "label": "Call face-down Legend 1"
+          }
+        },
+        {
+          "actorId": "00000000-0000-4000-8000-000000000001",
+          "action": {
+            "kind": "CALL_LEGEND",
             "cardInstanceId": "p0-c1"
           },
-          "actionId": "e012a741d59b9cd7238d58f7c3945b53efed791eb121ca1a9eeb49ac649022c6",
+          "actionId": "a50feb09ff8103f2e40f1c1de7403c28d049f1151e718dd8e5f2cb331356cd43",
           "descriptor": {
             "kind": "CALL_LEGEND",
             "label": "Call face-down Legend 2"
@@ -4026,12 +4026,12 @@
           "actorId": "00000000-0000-4000-8000-000000000001",
           "action": {
             "kind": "SELL_CARD",
-            "cardInstanceId": "p0-c24"
+            "cardInstanceId": "p0-c21"
           },
-          "actionId": "e0db6665082a62d94c1dcbaa0400af9183ba8d889a7423ae1c3e6a63e9951413",
+          "actionId": "d1c6c4cedd4df9cbf44e1f45d1c6f4308b60be4f648f8001971033c7990b3f38",
           "descriptor": {
             "kind": "SELL_CARD",
-            "label": "Sell Slice Card 7"
+            "label": "Sell Slice Card 6"
           }
         }
       ],
@@ -4387,8 +4387,8 @@
           }
         }
       ],
-      "stateHash": "605db2ae613a25cf6aa02d6b7a43b56b809e45ae5f71bdea929ca1f4906011b2",
-      "positionHash": "839a7e3b133b94254d08994855f375a3db73e3316eaed6f234f903f3cc998ac1",
+      "stateHash": "10b283caf40a3e4464fcf1383384f71df6d5371c49426e204307d40a9c019133",
+      "positionHash": "3b9b3cfabb513805285eb7de42c909123a5f0e5b34b4c97ca95d981c37ccf413",
       "observationHash": "fc0a9a86ddd2d18302b3f63bc37bff546114dadc86abe29c87aeaf6f39607540",
       "step": "MAIN"
     },
@@ -4401,26 +4401,15 @@
           "cardInstanceId": "p0-c0"
         }
       },
-      "actionId": "6d4227e58a805262c3ddb57808e2ec808634013fe3f557ea9b8ebffe8544251b",
+      "actionId": "b7af9d2e07f335d8de60c82b5d116493eeb1fdd06cb7af779e6125048a64ed86",
       "legalActions": [
-        {
-          "actorId": "00000000-0000-4000-8000-000000000001",
-          "action": {
-            "kind": "END_TURN"
-          },
-          "actionId": "25fb5f30c451f8ef1df7e68744bb1ea5eecef4049ac753c749aff1dd9bc7fa2a",
-          "descriptor": {
-            "kind": "END_TURN",
-            "label": "END_TURN"
-          }
-        },
         {
           "actorId": "00000000-0000-4000-8000-000000000001",
           "action": {
             "kind": "CALL_LEGEND",
             "cardInstanceId": "p0-c1"
           },
-          "actionId": "6a89ba72f26d5bf335e3a5675ea09a3c41dd26255420be143f6b1f98472b4a91",
+          "actionId": "4d2890d3bda87d4b91911923795326436d2d1254f03bff451ed5ca7c6bf416e1",
           "descriptor": {
             "kind": "CALL_LEGEND",
             "label": "Call face-down Legend 2"
@@ -4432,7 +4421,7 @@
             "kind": "CALL_LEGEND",
             "cardInstanceId": "p0-c0"
           },
-          "actionId": "6d4227e58a805262c3ddb57808e2ec808634013fe3f557ea9b8ebffe8544251b",
+          "actionId": "b7af9d2e07f335d8de60c82b5d116493eeb1fdd06cb7af779e6125048a64ed86",
           "descriptor": {
             "kind": "CALL_LEGEND",
             "label": "Call face-down Legend 3"
@@ -4444,10 +4433,21 @@
             "kind": "CALL_LEGEND",
             "cardInstanceId": "p0-c2"
           },
-          "actionId": "d84ad08ad16c38b3320f4900b8929182fcb0ae78491d89e0ce4df52cc0aaf07a",
+          "actionId": "d424334de339ed40ccdb60d7c87a80c1d5077bf7c150e4816df25815f2ad8dd5",
           "descriptor": {
             "kind": "CALL_LEGEND",
             "label": "Call face-down Legend 1"
+          }
+        },
+        {
+          "actorId": "00000000-0000-4000-8000-000000000001",
+          "action": {
+            "kind": "END_TURN"
+          },
+          "actionId": "f666cd4282b52de9dc1c8b685eb98c1e4e5688efbb5e68ffd9595ef223267534",
+          "descriptor": {
+            "kind": "END_TURN",
+            "label": "END_TURN"
           }
         }
       ],
@@ -4783,8 +4783,8 @@
           }
         }
       ],
-      "stateHash": "b1f953f625d59df65baa859d1b3f56a3a939da4a0ebfebf2fa3bf067da728e7c",
-      "positionHash": "5ef03723fbbc6e4edba6b2403d0b87488764df6917c8ee8a79753fa452edb71c",
+      "stateHash": "afe78a6005ab203e1edb7ea3054ff290ba76ee0d122caf330f02ba26a8ee73d2",
+      "positionHash": "4d4ceb68146eb5ffe0aa7d221248f465288b2fca66b2e5544d9c7248df208909",
       "observationHash": "9bb424bd93744fb126e93dbb3f9b11dde8b12f59d0ff4c3569f310528f10ae72",
       "step": "PAYMENT_SELECTION"
     },
@@ -4800,7 +4800,7 @@
           ]
         }
       },
-      "actionId": "ff3b20609982eea2f7d93277cc324fbc41f1ce61e37670e293bf6c2b5ed3d1b2",
+      "actionId": "5048a4c70f57906f5398e32fda5ab214c95ba4fb416635f48ed24222082f7d7e",
       "legalActions": [
         {
           "actorId": "00000000-0000-4000-8000-000000000001",
@@ -4811,7 +4811,7 @@
               0
             ]
           },
-          "actionId": "d15d2026a834fb6a500e1eac3366b68d06c4203db08fe7c91b754cd1c63e6183",
+          "actionId": "116199e0f48178a00179092d9c686028b88542a15323e323ff354651650e9d7c",
           "descriptor": {
             "kind": "CHOOSE",
             "label": "Pay with legend 3"
@@ -4826,7 +4826,7 @@
               1
             ]
           },
-          "actionId": "ff3b20609982eea2f7d93277cc324fbc41f1ce61e37670e293bf6c2b5ed3d1b2",
+          "actionId": "5048a4c70f57906f5398e32fda5ab214c95ba4fb416635f48ed24222082f7d7e",
           "descriptor": {
             "kind": "CHOOSE",
             "label": "Pay with eddie 1"
@@ -5227,8 +5227,8 @@
           }
         }
       ],
-      "stateHash": "45ded5329e6313cded65c142c73c0578a9f29d7821984f5346049180451adf29",
-      "positionHash": "cb9082632cf45ad70ed8232b12959ce162e3bff6172acee7a461b28d84ca661a",
+      "stateHash": "e4a1e85d0f8c68f2e0060843f62caaabde18c50bd83ac0038da1c6bcb459451f",
+      "positionHash": "6b0678042181c05f52392fb8ddc6ec272b93cac9f2d72e56e87eff5125d52a62",
       "observationHash": "86356b33fa5b1ed43596b63af49739792918650512656339d83b6a23cc3fd945",
       "step": "MAIN"
     },
@@ -5240,14 +5240,14 @@
           "kind": "END_TURN"
         }
       },
-      "actionId": "8037b53298995894d92cf05c977840163302dba910a8020ce33656a2bcf15ee6",
+      "actionId": "9c009534c8690f00350f00e8456a3e566961cbac2233293dda0d90a8b907a0aa",
       "legalActions": [
         {
           "actorId": "00000000-0000-4000-8000-000000000001",
           "action": {
             "kind": "END_TURN"
           },
-          "actionId": "8037b53298995894d92cf05c977840163302dba910a8020ce33656a2bcf15ee6",
+          "actionId": "9c009534c8690f00350f00e8456a3e566961cbac2233293dda0d90a8b907a0aa",
           "descriptor": {
             "kind": "END_TURN",
             "label": "END_TURN"
@@ -5663,8 +5663,8 @@
           }
         }
       ],
-      "stateHash": "258b53e7ee4f8137373b719bec61ef2e1656ba0687eaf7505251148cc532bbd2",
-      "positionHash": "d9157e36bf7893edcdb1479a0ae098ad8c91fe6edd98a76d960ff0eb308ea741",
+      "stateHash": "b6181be50007c761a2ba30118b1ce2d6b517bc68c4f0415c2e118a14ac07ace5",
+      "positionHash": "8e3f669857f94159c5d9179310c220cecfd3aa3e45649334df6d8c0817c69cc6",
       "observationHash": "dd024744f160d71c656dffbaf3ffa1d294a3f48cce34853a0bd46e2f5a069c91",
       "step": "CHOOSE_GIG"
     },
@@ -5677,39 +5677,15 @@
           "gigInstanceId": "p1-D10"
         }
       },
-      "actionId": "66b6df2ded87b2d0de740249dac741392062055fb8e7d23da9b4ac75f5f29ace",
+      "actionId": "2e75f58d0732b82d940a6f8f3be29c4461e37da6871151c46d826c0af8d6ee13",
       "legalActions": [
-        {
-          "actorId": "00000000-0000-4000-8000-000000000004",
-          "action": {
-            "kind": "ROLL_GIG",
-            "gigInstanceId": "p1-D6"
-          },
-          "actionId": "109e9b2250b3ec86098da35ec14c7cd91116060fe1a41fc419aa3942a3bdcba0",
-          "descriptor": {
-            "kind": "ROLL_GIG",
-            "label": "Roll D6"
-          }
-        },
-        {
-          "actorId": "00000000-0000-4000-8000-000000000004",
-          "action": {
-            "kind": "ROLL_GIG",
-            "gigInstanceId": "p1-D12"
-          },
-          "actionId": "1278e0f62ad0b193b8fb2b01dce13af9707073983dee54da7ae141936d985a74",
-          "descriptor": {
-            "kind": "ROLL_GIG",
-            "label": "Roll D12"
-          }
-        },
         {
           "actorId": "00000000-0000-4000-8000-000000000004",
           "action": {
             "kind": "ROLL_GIG",
             "gigInstanceId": "p1-D8"
           },
-          "actionId": "21b271999f9ed1021dec09f6332ef09424d97ee7174879f745abc8e7e3d6fa35",
+          "actionId": "1c867ba0939fbea8a38a708c3073f54b77a243a8aca0ee74800f9d96115875c7",
           "descriptor": {
             "kind": "ROLL_GIG",
             "label": "Roll D8"
@@ -5721,7 +5697,7 @@
             "kind": "ROLL_GIG",
             "gigInstanceId": "p1-D10"
           },
-          "actionId": "66b6df2ded87b2d0de740249dac741392062055fb8e7d23da9b4ac75f5f29ace",
+          "actionId": "2e75f58d0732b82d940a6f8f3be29c4461e37da6871151c46d826c0af8d6ee13",
           "descriptor": {
             "kind": "ROLL_GIG",
             "label": "Roll D10"
@@ -5731,12 +5707,36 @@
           "actorId": "00000000-0000-4000-8000-000000000004",
           "action": {
             "kind": "ROLL_GIG",
+            "gigInstanceId": "p1-D6"
+          },
+          "actionId": "402e5e9016b74fe11d31459b766e5d82ea368810a18d6c495ac5002ccc334806",
+          "descriptor": {
+            "kind": "ROLL_GIG",
+            "label": "Roll D6"
+          }
+        },
+        {
+          "actorId": "00000000-0000-4000-8000-000000000004",
+          "action": {
+            "kind": "ROLL_GIG",
             "gigInstanceId": "p1-D4"
           },
-          "actionId": "ba0368769656d703a1f4aee68b5fc103caaa6d69e96b4ed25849c05e0c33af3a",
+          "actionId": "9a3fd9fac89859d2ac2d5e44bafd08746eb5be12efe510249f87ce1469cafa43",
           "descriptor": {
             "kind": "ROLL_GIG",
             "label": "Roll D4"
+          }
+        },
+        {
+          "actorId": "00000000-0000-4000-8000-000000000004",
+          "action": {
+            "kind": "ROLL_GIG",
+            "gigInstanceId": "p1-D12"
+          },
+          "actionId": "acbc66580d790615ccc755710173d8bc82a1bf62fa510ed0c2928fef3ebcde2a",
+          "descriptor": {
+            "kind": "ROLL_GIG",
+            "label": "Roll D12"
           }
         }
       ],
@@ -6107,8 +6107,8 @@
           }
         }
       ],
-      "stateHash": "5748ddc8233fab62eac1bdd05f497077e73e0a15b4d7f268935bad83829d9336",
-      "positionHash": "555a1209e24fdab27c072fed1420af5d20078f4170e35b1ef43dd1ea3554c94d",
+      "stateHash": "8291cd4d5ef85593629bbbef72b515713ee28d2d423cf4c9295b406423857b06",
+      "positionHash": "2709f0504e7b38df4f527dda497be3d09628234ff9e21f835d564e6016c28242",
       "observationHash": "601db074761b2887aa7970a7b94e2cc20291eb7f4afc52817a145c384b7f4c8e",
       "step": "MAIN"
     },
@@ -6120,7 +6120,7 @@
           "kind": "END_TURN"
         }
       },
-      "actionId": "81728efa2ab51f7bfcab66361d5f19fe2c14cdc549f1b82187a6f6e759266928",
+      "actionId": "455e867ef7d1e0f4fa29324be6f46ce81e83986ed17f65f0fb8a034a30ee64e6",
       "legalActions": [
         {
           "actorId": "00000000-0000-4000-8000-000000000004",
@@ -6128,7 +6128,7 @@
             "kind": "CALL_LEGEND",
             "cardInstanceId": "p1-c1"
           },
-          "actionId": "338fc269c44e8921392913355e0d4d2acaf760bfb6e4f6fba6a23323bfd0a16f",
+          "actionId": "1e7d2162ca68b44d404d624d24ad7098285de839d90c712d307a6568bba9ed1e",
           "descriptor": {
             "kind": "CALL_LEGEND",
             "label": "Call face-down Legend 1"
@@ -6137,46 +6137,10 @@
         {
           "actorId": "00000000-0000-4000-8000-000000000004",
           "action": {
-            "kind": "CALL_LEGEND",
-            "cardInstanceId": "p1-c0"
-          },
-          "actionId": "367e3d1a6d225220f801e379739d48a83a1227d27004d5f799dcd0cc0ab17dc8",
-          "descriptor": {
-            "kind": "CALL_LEGEND",
-            "label": "Call face-down Legend 3"
-          }
-        },
-        {
-          "actorId": "00000000-0000-4000-8000-000000000004",
-          "action": {
-            "kind": "CALL_LEGEND",
-            "cardInstanceId": "p1-c2"
-          },
-          "actionId": "39d4ea85f353aa908e77d610664f5745d835bbeb4d12ffb1d6a66fad28663303",
-          "descriptor": {
-            "kind": "CALL_LEGEND",
-            "label": "Call face-down Legend 2"
-          }
-        },
-        {
-          "actorId": "00000000-0000-4000-8000-000000000004",
-          "action": {
-            "kind": "SELL_CARD",
-            "cardInstanceId": "p1-c4"
-          },
-          "actionId": "51a1ed6864b5afa0c8281e2888640cb26f666b2943151056089542425cdec94d",
-          "descriptor": {
-            "kind": "SELL_CARD",
-            "label": "Sell Slice Card 0"
-          }
-        },
-        {
-          "actorId": "00000000-0000-4000-8000-000000000004",
-          "action": {
             "kind": "SELL_CARD",
             "cardInstanceId": "p1-c7"
           },
-          "actionId": "552ef91e819d38fd227bd6ff7265488a43117a70d3851d814bd2fd45c18d0247",
+          "actionId": "227106ae80caf8f4fb18b3e0eb1dc5b0efbacf7d1e356fa03beeca819e5e5de2",
           "descriptor": {
             "kind": "SELL_CARD",
             "label": "Sell Slice Card 1"
@@ -6187,7 +6151,7 @@
           "action": {
             "kind": "END_TURN"
           },
-          "actionId": "81728efa2ab51f7bfcab66361d5f19fe2c14cdc549f1b82187a6f6e759266928",
+          "actionId": "455e867ef7d1e0f4fa29324be6f46ce81e83986ed17f65f0fb8a034a30ee64e6",
           "descriptor": {
             "kind": "END_TURN",
             "label": "END_TURN"
@@ -6199,19 +6163,7 @@
             "kind": "SELL_CARD",
             "cardInstanceId": "p1-c25"
           },
-          "actionId": "a618c79966eb59ee66d10335309bfd06a0ac0b53c6e953d4f80e6ea0e011796c",
-          "descriptor": {
-            "kind": "SELL_CARD",
-            "label": "Sell Slice Card 7"
-          }
-        },
-        {
-          "actorId": "00000000-0000-4000-8000-000000000004",
-          "action": {
-            "kind": "SELL_CARD",
-            "cardInstanceId": "p1-c26"
-          },
-          "actionId": "d053010e66b3d02f18e735e006cbcc449ff2c1037d529df01e21d519a4e15ff8",
+          "actionId": "51699ccf3e01f00b903dd186b7b16dda3d5ee4aae9c32897d1e75ff84b276470",
           "descriptor": {
             "kind": "SELL_CARD",
             "label": "Sell Slice Card 7"
@@ -6223,7 +6175,7 @@
             "kind": "SELL_CARD",
             "cardInstanceId": "p1-c38"
           },
-          "actionId": "dc02c37de29db037323052cce606d502aa4475b425c31b2f21560ef21c8b8094",
+          "actionId": "7740d9998976bfe9f97f804473b8be7648acce32ddb2a5020eac863e3d86df87",
           "descriptor": {
             "kind": "SELL_CARD",
             "label": "Sell Slice Card 11"
@@ -6232,10 +6184,58 @@
         {
           "actorId": "00000000-0000-4000-8000-000000000004",
           "action": {
+            "kind": "CALL_LEGEND",
+            "cardInstanceId": "p1-c0"
+          },
+          "actionId": "8e60ab0b8064dc9f116d4a2d005d82f78ba324e1ab54b6594948f44728cc7901",
+          "descriptor": {
+            "kind": "CALL_LEGEND",
+            "label": "Call face-down Legend 3"
+          }
+        },
+        {
+          "actorId": "00000000-0000-4000-8000-000000000004",
+          "action": {
+            "kind": "SELL_CARD",
+            "cardInstanceId": "p1-c26"
+          },
+          "actionId": "9bec9ec239577fd6cf06772c8acf18ccc64fab317e86f0975dba9354554a07b6",
+          "descriptor": {
+            "kind": "SELL_CARD",
+            "label": "Sell Slice Card 7"
+          }
+        },
+        {
+          "actorId": "00000000-0000-4000-8000-000000000004",
+          "action": {
+            "kind": "SELL_CARD",
+            "cardInstanceId": "p1-c4"
+          },
+          "actionId": "aa739242cd1e397014de5e5317bc66fc2e17b04769e86d6715c19751cef724af",
+          "descriptor": {
+            "kind": "SELL_CARD",
+            "label": "Sell Slice Card 0"
+          }
+        },
+        {
+          "actorId": "00000000-0000-4000-8000-000000000004",
+          "action": {
+            "kind": "CALL_LEGEND",
+            "cardInstanceId": "p1-c2"
+          },
+          "actionId": "d4b019b958034c099e5558cf26558a62e4ad53b700d05f1f1b266cff10ad8985",
+          "descriptor": {
+            "kind": "CALL_LEGEND",
+            "label": "Call face-down Legend 2"
+          }
+        },
+        {
+          "actorId": "00000000-0000-4000-8000-000000000004",
+          "action": {
             "kind": "SELL_CARD",
             "cardInstanceId": "p1-c36"
           },
-          "actionId": "e7ab5efd42cae514fc451182e1ce26197ff85e5205f9824e2c0b65e74923ec0b",
+          "actionId": "ff5f92792a2a5ddb7ed6dec1600d20be72715528b3a6e6866bdcce60c7c4e588",
           "descriptor": {
             "kind": "SELL_CARD",
             "label": "Sell Slice Card 11"
@@ -6674,8 +6674,8 @@
           }
         }
       ],
-      "stateHash": "cce132cef5a6eb48d8c4776495778935c634fe31c966ccc20614214a8e4f4e93",
-      "positionHash": "00dd9f1e167f2579317b8a670123301c5cfb6258c7e281be4d36bce00a09024f",
+      "stateHash": "43949d4de13e89cee99f624d3a0c2539f34a2df89c79fba0763114a3357baadb",
+      "positionHash": "28f0b6ba6487685a7607aefaab746af07081dd2c4afe2f9362eb7264952a8a03",
       "observationHash": "c9dc660e56471cfd4aee31e69d0b0c93fb24d7e3f6efd6c1f9aa7ee716e24135",
       "step": "CHOOSE_GIG"
     }
@@ -6684,13 +6684,13 @@
     {
       "schemaVersion": 2,
       "positionId": "slice-gig-choice",
-      "engineVersion": "0.4.23-steal-increase-v27",
-      "engineArtifactHash": "b0aae9f9ac6f33488690fca1cf781291b1684c99d34f858d349523ee69a426f3",
+      "engineVersion": "0.4.27-defeat-discard-v31",
+      "engineArtifactHash": "c2c2847b0d743b626770efa9c3e85fc1cc9cc9ae9c5e32e0c49b9ca05ba8e519",
       "manifest": {
         "schemaVersion": 1,
         "engine": {
-          "version": "0.4.23-steal-increase-v27",
-          "artifactHash": "b0aae9f9ac6f33488690fca1cf781291b1684c99d34f858d349523ee69a426f3"
+          "version": "0.4.27-defeat-discard-v31",
+          "artifactHash": "c2c2847b0d743b626770efa9c3e85fc1cc9cc9ae9c5e32e0c49b9ca05ba8e519"
         },
         "ruleset": {
           "id": "beta",
@@ -6785,7 +6785,7 @@
           }
         ]
       },
-      "contentManifestHash": "ecddd08510c4b7baecbbcf32c3e98ea786c76b374e11a8bb3ddc40579785812e",
+      "contentManifestHash": "14384ebbce15c810b2973bec786150e609349bbce532493c29bc259b24c582ec",
       "state": {
         "schemaVersion": 2,
         "match": {
@@ -6795,9 +6795,9 @@
           "rulesetId": "beta",
           "rulesetVersion": "turn-slice-1",
           "rulesetHash": "09d828304bbf52612051c02a4d89172f5b9670ece545c5038330ed834dd222e0",
-          "contentManifestHash": "ecddd08510c4b7baecbbcf32c3e98ea786c76b374e11a8bb3ddc40579785812e",
-          "engineVersion": "0.4.23-steal-increase-v27",
-          "engineArtifactHash": "b0aae9f9ac6f33488690fca1cf781291b1684c99d34f858d349523ee69a426f3",
+          "contentManifestHash": "14384ebbce15c810b2973bec786150e609349bbce532493c29bc259b24c582ec",
+          "engineVersion": "0.4.27-defeat-discard-v31",
+          "engineArtifactHash": "c2c2847b0d743b626770efa9c3e85fc1cc9cc9ae9c5e32e0c49b9ca05ba8e519",
           "cards": [
             {
               "cardId": "dev-legend-blue",
@@ -8748,7 +8748,7 @@
           "counter": 86
         }
       },
-      "stateHash": "276cbdcb63d87dae0df86fc1f075476048f30d05d59665960f08807be3adbbf3",
+      "stateHash": "6414c7284cb7d78ec6cfebe9dc13f7390dee7c5bb418e11a6e0e441d93f45942",
       "observation": {
         "schemaVersion": 1,
         "viewerSeat": 0,
@@ -9081,24 +9081,12 @@
           "actorId": "00000000-0000-4000-8000-000000000001",
           "action": {
             "kind": "ROLL_GIG",
-            "gigInstanceId": "p0-D4"
+            "gigInstanceId": "p0-D10"
           },
-          "actionId": "3e805f42d8e4cd69630216448624eeb1004dd69a77e2c67ea29544bcd1375892",
+          "actionId": "52e204f323e6c88ff4d9f725ca5006ce2a74f0471a80c0b19fbe94aba6e9d17f",
           "descriptor": {
             "kind": "ROLL_GIG",
-            "label": "Roll D4"
-          }
-        },
-        {
-          "actorId": "00000000-0000-4000-8000-000000000001",
-          "action": {
-            "kind": "ROLL_GIG",
-            "gigInstanceId": "p0-D12"
-          },
-          "actionId": "4327a56b9065b9f9fa11748c5fda4956507afb4cfb85e95b420a51396be93250",
-          "descriptor": {
-            "kind": "ROLL_GIG",
-            "label": "Roll D12"
+            "label": "Roll D10"
           }
         },
         {
@@ -9107,7 +9095,7 @@
             "kind": "ROLL_GIG",
             "gigInstanceId": "p0-D8"
           },
-          "actionId": "9bfbc5ad9c272e47e2c8253fb3b03c05be999f43d48b5d941b4277cb6dc0db6c",
+          "actionId": "5c2ea51c33c22acd1d22b2a91f8aedf741aeb09eb4f125c533bedd9bd25dfdf4",
           "descriptor": {
             "kind": "ROLL_GIG",
             "label": "Roll D8"
@@ -9117,9 +9105,21 @@
           "actorId": "00000000-0000-4000-8000-000000000001",
           "action": {
             "kind": "ROLL_GIG",
+            "gigInstanceId": "p0-D12"
+          },
+          "actionId": "912cfd5e4e11d9621cb870782b9322e4491db9fa428cdd9b57139b885c27b918",
+          "descriptor": {
+            "kind": "ROLL_GIG",
+            "label": "Roll D12"
+          }
+        },
+        {
+          "actorId": "00000000-0000-4000-8000-000000000001",
+          "action": {
+            "kind": "ROLL_GIG",
             "gigInstanceId": "p0-D6"
           },
-          "actionId": "c0d2065f3957d9d0e8a681ad265977e5e9aafd837e8614447b73177ef6b67b54",
+          "actionId": "b1c73c38721da5b747a05c5cda0c667ddac5554952678ec97deb1163098a8282",
           "descriptor": {
             "kind": "ROLL_GIG",
             "label": "Roll D6"
@@ -9129,16 +9129,16 @@
           "actorId": "00000000-0000-4000-8000-000000000001",
           "action": {
             "kind": "ROLL_GIG",
-            "gigInstanceId": "p0-D10"
+            "gigInstanceId": "p0-D4"
           },
-          "actionId": "edac65b59247e164db2fa878564ab6da19e1cf92d90f7a74f21bf88919899c35",
+          "actionId": "cd71d6dd35752ec84a4e02e3c8d848859bc8284b9dd75251c231c81ad96b9c16",
           "descriptor": {
             "kind": "ROLL_GIG",
-            "label": "Roll D10"
+            "label": "Roll D4"
           }
         }
       ],
-      "positionHash": "5b95513e530d4d16fad4e0be86b457c0e8f332ba9c6906453279b3080cffb292",
+      "positionHash": "e444b45022b4004e7e8a9d4e40ad1ee332d351a8e6db989f1e86d8dd197dd8af",
       "provenance": {
         "generator": "manual-fixture",
         "revision": "1",
@@ -9148,13 +9148,13 @@
     {
       "schemaVersion": 2,
       "positionId": "slice-main-choice",
-      "engineVersion": "0.4.23-steal-increase-v27",
-      "engineArtifactHash": "b0aae9f9ac6f33488690fca1cf781291b1684c99d34f858d349523ee69a426f3",
+      "engineVersion": "0.4.27-defeat-discard-v31",
+      "engineArtifactHash": "c2c2847b0d743b626770efa9c3e85fc1cc9cc9ae9c5e32e0c49b9ca05ba8e519",
       "manifest": {
         "schemaVersion": 1,
         "engine": {
-          "version": "0.4.23-steal-increase-v27",
-          "artifactHash": "b0aae9f9ac6f33488690fca1cf781291b1684c99d34f858d349523ee69a426f3"
+          "version": "0.4.27-defeat-discard-v31",
+          "artifactHash": "c2c2847b0d743b626770efa9c3e85fc1cc9cc9ae9c5e32e0c49b9ca05ba8e519"
         },
         "ruleset": {
           "id": "beta",
@@ -9249,7 +9249,7 @@
           }
         ]
       },
-      "contentManifestHash": "ecddd08510c4b7baecbbcf32c3e98ea786c76b374e11a8bb3ddc40579785812e",
+      "contentManifestHash": "14384ebbce15c810b2973bec786150e609349bbce532493c29bc259b24c582ec",
       "state": {
         "schemaVersion": 2,
         "match": {
@@ -9259,9 +9259,9 @@
           "rulesetId": "beta",
           "rulesetVersion": "turn-slice-1",
           "rulesetHash": "09d828304bbf52612051c02a4d89172f5b9670ece545c5038330ed834dd222e0",
-          "contentManifestHash": "ecddd08510c4b7baecbbcf32c3e98ea786c76b374e11a8bb3ddc40579785812e",
-          "engineVersion": "0.4.23-steal-increase-v27",
-          "engineArtifactHash": "b0aae9f9ac6f33488690fca1cf781291b1684c99d34f858d349523ee69a426f3",
+          "contentManifestHash": "14384ebbce15c810b2973bec786150e609349bbce532493c29bc259b24c582ec",
+          "engineVersion": "0.4.27-defeat-discard-v31",
+          "engineArtifactHash": "c2c2847b0d743b626770efa9c3e85fc1cc9cc9ae9c5e32e0c49b9ca05ba8e519",
           "cards": [
             {
               "cardId": "dev-legend-blue",
@@ -11215,7 +11215,7 @@
           "counter": 87
         }
       },
-      "stateHash": "5307cdee8bc64d52c1ed5e2a021b0fdea3b560389729218e25cb321551417070",
+      "stateHash": "1c592dc967196cd52f8d09a52fa7d4d0ce7fba56395a27d51a9ee963780c3ad2",
       "observation": {
         "schemaVersion": 1,
         "viewerSeat": 0,
@@ -11549,22 +11549,46 @@
         {
           "actorId": "00000000-0000-4000-8000-000000000001",
           "action": {
-            "kind": "CALL_LEGEND",
-            "cardInstanceId": "p0-c2"
+            "kind": "SELL_CARD",
+            "cardInstanceId": "p0-c18"
           },
-          "actionId": "1de8cdeffbe3280e11ba4a04651e4011237fc299cf54ca2bc86abe72fde99d4f",
+          "actionId": "347e36059bb032bfbeb2544b271363100bd40ae0a7e75b1de8d5acd69a9b15ae",
+          "descriptor": {
+            "kind": "SELL_CARD",
+            "label": "Sell Slice Card 5"
+          }
+        },
+        {
+          "actorId": "00000000-0000-4000-8000-000000000001",
+          "action": {
+            "kind": "CALL_LEGEND",
+            "cardInstanceId": "p0-c0"
+          },
+          "actionId": "3d1c544215efa609b9d6f8720c8dac535f0a7a76b542230d48cfb5f1c0be23be",
           "descriptor": {
             "kind": "CALL_LEGEND",
-            "label": "Call face-down Legend 1"
+            "label": "Call face-down Legend 3"
           }
         },
         {
           "actorId": "00000000-0000-4000-8000-000000000001",
           "action": {
             "kind": "SELL_CARD",
-            "cardInstanceId": "p0-c11"
+            "cardInstanceId": "p0-c24"
           },
-          "actionId": "3b4ba642d213d04f64c7fdb9f11c6875ca9a45ce1fab00b4a11d97d4dbf659a3",
+          "actionId": "4098b852ed4aeeb9b273e773042c2fec63e0cdcab50b558a618537df0cbfedc6",
+          "descriptor": {
+            "kind": "SELL_CARD",
+            "label": "Sell Slice Card 7"
+          }
+        },
+        {
+          "actorId": "00000000-0000-4000-8000-000000000001",
+          "action": {
+            "kind": "SELL_CARD",
+            "cardInstanceId": "p0-c10"
+          },
+          "actionId": "7c15dcb8cfb95e8de6adaf531190caba8d7b17a1648bcf89049ab4943fea2c29",
           "descriptor": {
             "kind": "SELL_CARD",
             "label": "Sell Slice Card 2"
@@ -11576,7 +11600,7 @@
             "kind": "SELL_CARD",
             "cardInstanceId": "p0-c41"
           },
-          "actionId": "41ca48eb4906152c9b32df5633fd8d7108ef6dd8b61717d5e1b26d6a649cc19c",
+          "actionId": "7cb28b38aa237c5d0f94d5497188301da340cb37043ab430239b4bfe57117d62",
           "descriptor": {
             "kind": "SELL_CARD",
             "label": "Sell Slice Card 12"
@@ -11585,34 +11609,10 @@
         {
           "actorId": "00000000-0000-4000-8000-000000000001",
           "action": {
-            "kind": "CALL_LEGEND",
-            "cardInstanceId": "p0-c0"
-          },
-          "actionId": "6e409d2d07401d23ae3668975587bfecee5f622d450c03558107051761693f32",
-          "descriptor": {
-            "kind": "CALL_LEGEND",
-            "label": "Call face-down Legend 3"
-          }
-        },
-        {
-          "actorId": "00000000-0000-4000-8000-000000000001",
-          "action": {
             "kind": "SELL_CARD",
-            "cardInstanceId": "p0-c21"
+            "cardInstanceId": "p0-c11"
           },
-          "actionId": "782befcb539f6d54138fbd11a4d4dcaac5c1097813ec20026f23365b5e19ed93",
-          "descriptor": {
-            "kind": "SELL_CARD",
-            "label": "Sell Slice Card 6"
-          }
-        },
-        {
-          "actorId": "00000000-0000-4000-8000-000000000001",
-          "action": {
-            "kind": "SELL_CARD",
-            "cardInstanceId": "p0-c10"
-          },
-          "actionId": "85977af94e7044391a68199af89ca705a94c41fa72c87d22f437755a03d876a0",
+          "actionId": "9bf894c731eb4e1089deabd366b5a3dc18211e44ef7edaca03727c44c5153cd5",
           "descriptor": {
             "kind": "SELL_CARD",
             "label": "Sell Slice Card 2"
@@ -11621,21 +11621,9 @@
         {
           "actorId": "00000000-0000-4000-8000-000000000001",
           "action": {
-            "kind": "SELL_CARD",
-            "cardInstanceId": "p0-c18"
-          },
-          "actionId": "889636b9fa57858b7643c0f87b6cdfa4ae0e447258a7a18f953bd06385c803c3",
-          "descriptor": {
-            "kind": "SELL_CARD",
-            "label": "Sell Slice Card 5"
-          }
-        },
-        {
-          "actorId": "00000000-0000-4000-8000-000000000001",
-          "action": {
             "kind": "END_TURN"
           },
-          "actionId": "8bdf653d4cbac197f825ea89c668a83b8b64ae9afee5e5d1b6cf546fa43285ca",
+          "actionId": "9e7eafd7798cb4316d74b2b30d6439db7e0fddfce2b40ca9f64f9541ea512bfc",
           "descriptor": {
             "kind": "END_TURN",
             "label": "END_TURN"
@@ -11645,9 +11633,21 @@
           "actorId": "00000000-0000-4000-8000-000000000001",
           "action": {
             "kind": "CALL_LEGEND",
+            "cardInstanceId": "p0-c2"
+          },
+          "actionId": "a4fe9b95bcf4feb37774a50eefcb8d34328f3fc455c0e417fc2d366726df6bb7",
+          "descriptor": {
+            "kind": "CALL_LEGEND",
+            "label": "Call face-down Legend 1"
+          }
+        },
+        {
+          "actorId": "00000000-0000-4000-8000-000000000001",
+          "action": {
+            "kind": "CALL_LEGEND",
             "cardInstanceId": "p0-c1"
           },
-          "actionId": "e012a741d59b9cd7238d58f7c3945b53efed791eb121ca1a9eeb49ac649022c6",
+          "actionId": "a50feb09ff8103f2e40f1c1de7403c28d049f1151e718dd8e5f2cb331356cd43",
           "descriptor": {
             "kind": "CALL_LEGEND",
             "label": "Call face-down Legend 2"
@@ -11657,16 +11657,16 @@
           "actorId": "00000000-0000-4000-8000-000000000001",
           "action": {
             "kind": "SELL_CARD",
-            "cardInstanceId": "p0-c24"
+            "cardInstanceId": "p0-c21"
           },
-          "actionId": "e0db6665082a62d94c1dcbaa0400af9183ba8d889a7423ae1c3e6a63e9951413",
+          "actionId": "d1c6c4cedd4df9cbf44e1f45d1c6f4308b60be4f648f8001971033c7990b3f38",
           "descriptor": {
             "kind": "SELL_CARD",
-            "label": "Sell Slice Card 7"
+            "label": "Sell Slice Card 6"
           }
         }
       ],
-      "positionHash": "dda3f346b4ef12eb7e44dd19adcb414ddbef3cf5c967123276c7dac2652fa81b",
+      "positionHash": "8ce8e0e59abdb9e9a4b76e42ef80dc31212489af858182344f53d367dc73db61",
       "provenance": {
         "generator": "manual-fixture",
         "revision": "1",
@@ -11676,13 +11676,13 @@
     {
       "schemaVersion": 2,
       "positionId": "slice-payment-choice",
-      "engineVersion": "0.4.23-steal-increase-v27",
-      "engineArtifactHash": "b0aae9f9ac6f33488690fca1cf781291b1684c99d34f858d349523ee69a426f3",
+      "engineVersion": "0.4.27-defeat-discard-v31",
+      "engineArtifactHash": "c2c2847b0d743b626770efa9c3e85fc1cc9cc9ae9c5e32e0c49b9ca05ba8e519",
       "manifest": {
         "schemaVersion": 1,
         "engine": {
-          "version": "0.4.23-steal-increase-v27",
-          "artifactHash": "b0aae9f9ac6f33488690fca1cf781291b1684c99d34f858d349523ee69a426f3"
+          "version": "0.4.27-defeat-discard-v31",
+          "artifactHash": "c2c2847b0d743b626770efa9c3e85fc1cc9cc9ae9c5e32e0c49b9ca05ba8e519"
         },
         "ruleset": {
           "id": "beta",
@@ -11777,7 +11777,7 @@
           }
         ]
       },
-      "contentManifestHash": "ecddd08510c4b7baecbbcf32c3e98ea786c76b374e11a8bb3ddc40579785812e",
+      "contentManifestHash": "14384ebbce15c810b2973bec786150e609349bbce532493c29bc259b24c582ec",
       "state": {
         "schemaVersion": 2,
         "match": {
@@ -11787,9 +11787,9 @@
           "rulesetId": "beta",
           "rulesetVersion": "turn-slice-1",
           "rulesetHash": "09d828304bbf52612051c02a4d89172f5b9670ece545c5038330ed834dd222e0",
-          "contentManifestHash": "ecddd08510c4b7baecbbcf32c3e98ea786c76b374e11a8bb3ddc40579785812e",
-          "engineVersion": "0.4.23-steal-increase-v27",
-          "engineArtifactHash": "b0aae9f9ac6f33488690fca1cf781291b1684c99d34f858d349523ee69a426f3",
+          "contentManifestHash": "14384ebbce15c810b2973bec786150e609349bbce532493c29bc259b24c582ec",
+          "engineVersion": "0.4.27-defeat-discard-v31",
+          "engineArtifactHash": "c2c2847b0d743b626770efa9c3e85fc1cc9cc9ae9c5e32e0c49b9ca05ba8e519",
           "cards": [
             {
               "cardId": "dev-legend-blue",
@@ -13777,7 +13777,7 @@
           "counter": 87
         }
       },
-      "stateHash": "b1f953f625d59df65baa859d1b3f56a3a939da4a0ebfebf2fa3bf067da728e7c",
+      "stateHash": "afe78a6005ab203e1edb7ea3054ff290ba76ee0d122caf330f02ba26a8ee73d2",
       "observation": {
         "schemaVersion": 1,
         "viewerSeat": 0,
@@ -14119,7 +14119,7 @@
               0
             ]
           },
-          "actionId": "d15d2026a834fb6a500e1eac3366b68d06c4203db08fe7c91b754cd1c63e6183",
+          "actionId": "116199e0f48178a00179092d9c686028b88542a15323e323ff354651650e9d7c",
           "descriptor": {
             "kind": "CHOOSE",
             "label": "Pay with legend 3"
@@ -14134,14 +14134,14 @@
               1
             ]
           },
-          "actionId": "ff3b20609982eea2f7d93277cc324fbc41f1ce61e37670e293bf6c2b5ed3d1b2",
+          "actionId": "5048a4c70f57906f5398e32fda5ab214c95ba4fb416635f48ed24222082f7d7e",
           "descriptor": {
             "kind": "CHOOSE",
             "label": "Pay with eddie 1"
           }
         }
       ],
-      "positionHash": "5ef03723fbbc6e4edba6b2403d0b87488764df6917c8ee8a79753fa452edb71c",
+      "positionHash": "4d4ceb68146eb5ffe0aa7d221248f465288b2fca66b2e5544d9c7248df208909",
       "provenance": {
         "generator": "manual-fixture",
         "revision": "1",
@@ -14158,9 +14158,9 @@
       "rulesetId": "beta",
       "rulesetVersion": "turn-slice-1",
       "rulesetHash": "09d828304bbf52612051c02a4d89172f5b9670ece545c5038330ed834dd222e0",
-      "contentManifestHash": "ecddd08510c4b7baecbbcf32c3e98ea786c76b374e11a8bb3ddc40579785812e",
-      "engineVersion": "0.4.23-steal-increase-v27",
-      "engineArtifactHash": "b0aae9f9ac6f33488690fca1cf781291b1684c99d34f858d349523ee69a426f3",
+      "contentManifestHash": "14384ebbce15c810b2973bec786150e609349bbce532493c29bc259b24c582ec",
+      "engineVersion": "0.4.27-defeat-discard-v31",
+      "engineArtifactHash": "c2c2847b0d743b626770efa9c3e85fc1cc9cc9ae9c5e32e0c49b9ca05ba8e519",
       "cards": [
         {
           "cardId": "dev-legend-blue",
@@ -16118,5 +16118,5 @@
       "counter": 88
     }
   },
-  "finalStateHash": "cce132cef5a6eb48d8c4776495778935c634fe31c966ccc20614214a8e4f4e93"
+  "finalStateHash": "43949d4de13e89cee99f624d3a0c2539f34a2df89c79fba0763114a3357baadb"
 }
