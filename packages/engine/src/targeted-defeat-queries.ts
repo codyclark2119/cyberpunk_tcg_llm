@@ -7,6 +7,7 @@ import { targetedGearDefeatPolicyComplete } from "./targeted-gear-defeat-support
 import { targetedDefeatEnabled } from "./targeted-defeat-support";
 import { testCondition } from "./conditions";
 import { referencedCost } from "./cost-value";
+import { opposingDefeatTargets } from "./fight-outcome";
 /** Friendly means current control, and Fixer dice have no usable friendly value. */
 export function controlledGigValuesByDieType(state: GameState, actor: PlayerId, dieType: "D20") {
     return Object.values(state.objects.gigs).filter(g => g.controllerId === actor && g.location.zone === "GIGS" && g.dieType === dieType).flatMap(g => g.roll.kind === "ROLLED" ? [g.roll.currentValue] : []);
@@ -51,6 +52,8 @@ export function listDefeatableUnits(state: GameState, actor: PlayerId, target: D
 }
 /** "Defeat all other Units": the whole current eligible set minus the effect source, sorted; no target choice. */
 export function allOtherDefeatTargets(state: GameState, e: NonNullable<GameState["resolution"]["current"]>, context: EngineContext) {
+    // Batch V46: the opposing Unit of the fight that fired the effect; never a choice.
+    if (e.effect.kind === "DEFEAT_UNIT" && e.effect.target.kind === "OPPOSING_UNIT") return opposingDefeatTargets(state, e, id => targetedDefeatEnabled(context) && defeatSupport(state, id, context).ok && effectiveCardTypes(state, id, context).includes("UNIT"));
     if (e.effect.kind !== "DEFEAT_UNIT" || e.effect.target.kind !== "UNITS" || e.effect.target.all !== "OTHER_THAN_SOURCE") return null;
     return listDefeatTargets(state, e.controllerId, e.effect.target, context).filter(id => id !== e.sourceId);
 }

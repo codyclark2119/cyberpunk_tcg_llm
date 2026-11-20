@@ -32,6 +32,7 @@ import { supportsLegendStealTrigger } from "./legend-steal-support";
 import { supportsLegendReveal } from "./legend-reveal-support";
 import { discardingPlayer, discoverTriggers, nextTriggerGroup, pendingTrigger, stealerIsLegend, stolenGigParity, swapSidesAvailable, triggerChoice, triggerGigTargets, triggerId } from "./trigger-queries";
 import { discardedCostMatchesFriendlyGig } from "./discard";
+import { fightOutcomeBinding, validFightOutcomes } from "./fight-outcome";
 import { supportsTargetedDefeatCard } from "./targeted-defeat-support";
 
 /** Validate the historical comparison, not a new comparison using post-trigger power. */
@@ -42,9 +43,14 @@ export function validFightFact(state: GameState, f: FightResult) {
 function validBinding(state: GameState, b: TriggerBinding, context: EngineContext) {
     const c = state.resolution.triggerContinuation!, source = state.objects.cards[b.sourceId], subject = state.objects.cards[b.subjectId], r = cardRevision(state, b.sourceId, context);
     const ability = r?.mechanics.abilities.find(a => a.id === b.abilityId);
+    // Batch V46: a fired next-fight-outcome binding is exactly one outcome its DEFEAT origin's fight carries (checked there).
+    if (b.kind === "DELAYED_FIGHT_OUTCOME") return c.origin.kind === "DEFEAT" && Boolean(c.origin.fight?.outcomes.some(o => canonicalSerialize(fightOutcomeBinding(o)) === canonicalSerialize(b)));
+    if (b.opposingId !== undefined) return false;
     if (!source || !subject || !state.players[b.controllerId] || b.controllerId !== subject.controllerId || b.controllerId !== source.controllerId || !supportsEffectiveTriggerSource(r, context) || source.cardId !== b.source.cardId || source.revision !== b.source.revision || !ability || (b.delayedId ? ability.trigger !== "WHEN_ATTACKING" : ability.trigger !== b.kind) || (b.sourceId !== b.subjectId) !== (ability.inherited === "EQUIPPED_HOST")) return false;
     const origin = c.origin;
-    if (b.kind === "WHEN_DEFEATED" && c.effectDefeats) return c.effectDefeats.some(d => d.targetId === b.subjectId) && !["BATTLEFIELD", "LEGENDS"].includes(subject.zone.zone);
+    if (b.kind === "WHEN_DEFEATED" && c.effectDefeats?.some(d => d.targetId === b.subjectId)) return !["BATTLEFIELD", "LEGENDS"].includes(subject.zone.zone);
+    // Batch V46: an effect defeat inside a post-fight batch keeps the fight's own DEFEATED bindings valid.
+    if (b.kind === "WHEN_DEFEATED" && c.effectDefeats && !(origin.kind === "DEFEAT" && origin.fight)) return false;
     if (b.delayedId || b.kind === "DELAYED_END_TURN") {
         const d = origin.kind === "END_TURN" && origin.delayedEffects?.find(d => d.id === b.delayedId);
         return Boolean(d && supportsDelayedAttackGear(r, context).ok && canonicalSerialize(b) === canonicalSerialize(delayedBinding(d)));
@@ -108,6 +114,8 @@ export function validateTriggerState(state: GameState, context: EngineContext) {
         if (canonicalSerialize(discoverTriggers(state, c.origin, context).map(b => canonicalSerialize(b)).sort()) !== canonicalSerialize(c.bindings.map(b => canonicalSerialize(b)).sort()))
             return failure("INVALID_TRIGGER_BATCH", "Every steal trigger must be captured once per stolen Gig");
     }
+    // Batch V46: a post-fight batch carries the historical fight and exactly the registrations it fired; only then may it hold no defeat.
+    if (c.origin.kind === "DEFEAT" && (c.origin.fight ? c.origin.effectSource || !validFightFact(state, c.origin.fight.result) || !validFightOutcomes(state, c.origin.fight.result, c.origin.fight.outcomes, context) || c.origin.fight.outcomes.some(o => !c.bindings.some(b => canonicalSerialize(b) === canonicalSerialize(fightOutcomeBinding(o)))) : !c.origin.defeated.length)) return failure("INVALID_FIGHT_OUTCOME", "A post-fight batch needs its historical fight and exactly the next-fight-outcome effects it fired");
     if (c.origin.kind === "DEFEAT" && (new Set(c.origin.defeated.map(d => d.targetId)).size !== c.origin.defeated.length || c.origin.defeated.some(d => !state.objects.cards[d.defeatedBy] || !state.objects.cards[d.targetId] || ["BATTLEFIELD", "LEGENDS"].includes(state.objects.cards[d.targetId].zone.zone)))) return failure("INVALID_DEFEATED_TRIGGER", "Defeat declaration and movement must precede the pending batch");
     const effectDefeats = validateEffectDefeatFacts(state, context); if (!effectDefeats.ok) return effectDefeats;
     if (c.bindings.some(b => !validBinding(state, b, context))) return failure("INVALID_TRIGGER_SOURCE", "Immutable source, inherited subject, trigger-time controller and origin must match reviewed text");

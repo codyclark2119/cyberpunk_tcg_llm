@@ -2470,6 +2470,19 @@
                                               "relation"
                                             ],
                                             "additionalProperties": false
+                                          },
+                                          {
+                                            "type": "object",
+                                            "properties": {
+                                              "kind": {
+                                                "type": "string",
+                                                "const": "OPPOSING_UNIT"
+                                              }
+                                            },
+                                            "required": [
+                                              "kind"
+                                            ],
+                                            "additionalProperties": false
                                           }
                                         ]
                                       },
@@ -2667,6 +2680,52 @@
                                     },
                                     "required": [
                                       "kind",
+                                      "effect"
+                                    ],
+                                    "additionalProperties": false
+                                  },
+                                  {
+                                    "type": "object",
+                                    "properties": {
+                                      "kind": {
+                                        "type": "string",
+                                        "const": "REGISTER_NEXT_FIGHT_OUTCOME"
+                                      },
+                                      "on": {
+                                        "type": "string",
+                                        "const": "FRIENDLY_UNIT_LOSES"
+                                      },
+                                      "effect": {
+                                        "type": "object",
+                                        "properties": {
+                                          "kind": {
+                                            "type": "string",
+                                            "const": "DEFEAT_UNIT"
+                                          },
+                                          "target": {
+                                            "type": "object",
+                                            "properties": {
+                                              "kind": {
+                                                "type": "string",
+                                                "const": "OPPOSING_UNIT"
+                                              }
+                                            },
+                                            "required": [
+                                              "kind"
+                                            ],
+                                            "additionalProperties": false
+                                          }
+                                        },
+                                        "required": [
+                                          "kind",
+                                          "target"
+                                        ],
+                                        "additionalProperties": false
+                                      }
+                                    },
+                                    "required": [
+                                      "kind",
+                                      "on",
                                       "effect"
                                     ],
                                     "additionalProperties": false
@@ -7695,6 +7754,94 @@
                 "additionalProperties": false
               }
             },
+            "fightOutcomeEffects": {
+              "minItems": 1,
+              "type": "array",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "kind": {
+                    "type": "string",
+                    "const": "NEXT_FIGHT_OUTCOME"
+                  },
+                  "id": {
+                    "type": "string",
+                    "pattern": "^[a-f0-9]{64}$"
+                  },
+                  "sourceId": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 200,
+                    "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$"
+                  },
+                  "source": {
+                    "type": "object",
+                    "properties": {
+                      "cardId": {
+                        "type": "string",
+                        "minLength": 1,
+                        "maxLength": 200,
+                        "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$"
+                      },
+                      "revision": {
+                        "type": "integer",
+                        "exclusiveMinimum": 0,
+                        "maximum": 2147483647
+                      }
+                    },
+                    "required": [
+                      "cardId",
+                      "revision"
+                    ],
+                    "additionalProperties": false
+                  },
+                  "abilityId": {
+                    "type": "string",
+                    "minLength": 1
+                  },
+                  "controllerId": {
+                    "type": "string",
+                    "format": "uuid",
+                    "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+                  },
+                  "createdTurn": {
+                    "type": "integer",
+                    "exclusiveMinimum": 0,
+                    "maximum": 9007199254740991
+                  },
+                  "expires": {
+                    "type": "object",
+                    "properties": {
+                      "kind": {
+                        "type": "string",
+                        "const": "END_OF_TURN"
+                      },
+                      "turn": {
+                        "type": "integer",
+                        "exclusiveMinimum": 0,
+                        "maximum": 9007199254740991
+                      }
+                    },
+                    "required": [
+                      "kind",
+                      "turn"
+                    ],
+                    "additionalProperties": false
+                  }
+                },
+                "required": [
+                  "kind",
+                  "id",
+                  "sourceId",
+                  "source",
+                  "abilityId",
+                  "controllerId",
+                  "createdTurn",
+                  "expires"
+                ],
+                "additionalProperties": false
+              }
+            },
             "resolution": {
               "type": "object",
               "properties": {
@@ -8067,7 +8214,6 @@
                               "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$"
                             },
                             "defeated": {
-                              "minItems": 1,
                               "type": "array",
                               "items": {
                                 "type": "object",
@@ -8091,6 +8237,202 @@
                                 ],
                                 "additionalProperties": false
                               }
+                            },
+                            "fight": {
+                              "type": "object",
+                              "properties": {
+                                "result": {
+                                  "type": "object",
+                                  "properties": {
+                                    "kind": {
+                                      "type": "string",
+                                      "const": "FIGHT_RESULT"
+                                    },
+                                    "attackerId": {
+                                      "type": "string",
+                                      "minLength": 1,
+                                      "maxLength": 200,
+                                      "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$"
+                                    },
+                                    "defenderId": {
+                                      "type": "string",
+                                      "minLength": 1,
+                                      "maxLength": 200,
+                                      "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$"
+                                    },
+                                    "attackerPower": {
+                                      "type": "integer",
+                                      "minimum": -9007199254740991,
+                                      "maximum": 9007199254740991
+                                    },
+                                    "defenderPower": {
+                                      "type": "integer",
+                                      "minimum": -9007199254740991,
+                                      "maximum": 9007199254740991
+                                    },
+                                    "attackerComparisonPower": {
+                                      "type": "integer",
+                                      "minimum": 0,
+                                      "maximum": 9007199254740991
+                                    },
+                                    "defenderComparisonPower": {
+                                      "type": "integer",
+                                      "minimum": 0,
+                                      "maximum": 9007199254740991
+                                    },
+                                    "winnerId": {
+                                      "anyOf": [
+                                        {
+                                          "type": "string",
+                                          "minLength": 1,
+                                          "maxLength": 200,
+                                          "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$"
+                                        },
+                                        {
+                                          "type": "null"
+                                        }
+                                      ]
+                                    },
+                                    "loserIds": {
+                                      "type": "array",
+                                      "items": {
+                                        "type": "string",
+                                        "minLength": 1,
+                                        "maxLength": 200,
+                                        "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$"
+                                      }
+                                    }
+                                  },
+                                  "required": [
+                                    "kind",
+                                    "attackerId",
+                                    "defenderId",
+                                    "attackerPower",
+                                    "defenderPower",
+                                    "attackerComparisonPower",
+                                    "defenderComparisonPower",
+                                    "winnerId",
+                                    "loserIds"
+                                  ],
+                                  "additionalProperties": false
+                                },
+                                "outcomes": {
+                                  "minItems": 1,
+                                  "type": "array",
+                                  "items": {
+                                    "type": "object",
+                                    "properties": {
+                                      "effect": {
+                                        "type": "object",
+                                        "properties": {
+                                          "kind": {
+                                            "type": "string",
+                                            "const": "NEXT_FIGHT_OUTCOME"
+                                          },
+                                          "id": {
+                                            "type": "string",
+                                            "pattern": "^[a-f0-9]{64}$"
+                                          },
+                                          "sourceId": {
+                                            "type": "string",
+                                            "minLength": 1,
+                                            "maxLength": 200,
+                                            "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$"
+                                          },
+                                          "source": {
+                                            "type": "object",
+                                            "properties": {
+                                              "cardId": {
+                                                "type": "string",
+                                                "minLength": 1,
+                                                "maxLength": 200,
+                                                "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$"
+                                              },
+                                              "revision": {
+                                                "type": "integer",
+                                                "exclusiveMinimum": 0,
+                                                "maximum": 2147483647
+                                              }
+                                            },
+                                            "required": [
+                                              "cardId",
+                                              "revision"
+                                            ],
+                                            "additionalProperties": false
+                                          },
+                                          "abilityId": {
+                                            "type": "string",
+                                            "minLength": 1
+                                          },
+                                          "controllerId": {
+                                            "type": "string",
+                                            "format": "uuid",
+                                            "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+                                          },
+                                          "createdTurn": {
+                                            "type": "integer",
+                                            "exclusiveMinimum": 0,
+                                            "maximum": 9007199254740991
+                                          },
+                                          "expires": {
+                                            "type": "object",
+                                            "properties": {
+                                              "kind": {
+                                                "type": "string",
+                                                "const": "END_OF_TURN"
+                                              },
+                                              "turn": {
+                                                "type": "integer",
+                                                "exclusiveMinimum": 0,
+                                                "maximum": 9007199254740991
+                                              }
+                                            },
+                                            "required": [
+                                              "kind",
+                                              "turn"
+                                            ],
+                                            "additionalProperties": false
+                                          }
+                                        },
+                                        "required": [
+                                          "kind",
+                                          "id",
+                                          "sourceId",
+                                          "source",
+                                          "abilityId",
+                                          "controllerId",
+                                          "createdTurn",
+                                          "expires"
+                                        ],
+                                        "additionalProperties": false
+                                      },
+                                      "subjectId": {
+                                        "type": "string",
+                                        "minLength": 1,
+                                        "maxLength": 200,
+                                        "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$"
+                                      },
+                                      "opposingId": {
+                                        "type": "string",
+                                        "minLength": 1,
+                                        "maxLength": 200,
+                                        "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$"
+                                      }
+                                    },
+                                    "required": [
+                                      "effect",
+                                      "subjectId",
+                                      "opposingId"
+                                    ],
+                                    "additionalProperties": false
+                                  }
+                                }
+                              },
+                              "required": [
+                                "result",
+                                "outcomes"
+                              ],
+                              "additionalProperties": false
                             }
                           },
                           "required": [
@@ -8171,10 +8513,17 @@
                               "WHEN_UNIT_ATTACKS",
                               "WHEN_BLOCKER_USED",
                               "WHEN_GIG_STOLEN",
-                              "WHEN_FRIENDLY_UNIT_STEALS_GIG"
+                              "WHEN_FRIENDLY_UNIT_STEALS_GIG",
+                              "DELAYED_FIGHT_OUTCOME"
                             ]
                           },
                           "gigInstanceId": {
+                            "type": "string",
+                            "minLength": 1,
+                            "maxLength": 200,
+                            "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$"
+                          },
+                          "opposingId": {
                             "type": "string",
                             "minLength": 1,
                             "maxLength": 200,
@@ -8426,6 +8775,117 @@
                         "loserIds"
                       ],
                       "additionalProperties": false
+                    },
+                    "fightOutcomes": {
+                      "minItems": 1,
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "effect": {
+                            "type": "object",
+                            "properties": {
+                              "kind": {
+                                "type": "string",
+                                "const": "NEXT_FIGHT_OUTCOME"
+                              },
+                              "id": {
+                                "type": "string",
+                                "pattern": "^[a-f0-9]{64}$"
+                              },
+                              "sourceId": {
+                                "type": "string",
+                                "minLength": 1,
+                                "maxLength": 200,
+                                "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$"
+                              },
+                              "source": {
+                                "type": "object",
+                                "properties": {
+                                  "cardId": {
+                                    "type": "string",
+                                    "minLength": 1,
+                                    "maxLength": 200,
+                                    "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$"
+                                  },
+                                  "revision": {
+                                    "type": "integer",
+                                    "exclusiveMinimum": 0,
+                                    "maximum": 2147483647
+                                  }
+                                },
+                                "required": [
+                                  "cardId",
+                                  "revision"
+                                ],
+                                "additionalProperties": false
+                              },
+                              "abilityId": {
+                                "type": "string",
+                                "minLength": 1
+                              },
+                              "controllerId": {
+                                "type": "string",
+                                "format": "uuid",
+                                "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+                              },
+                              "createdTurn": {
+                                "type": "integer",
+                                "exclusiveMinimum": 0,
+                                "maximum": 9007199254740991
+                              },
+                              "expires": {
+                                "type": "object",
+                                "properties": {
+                                  "kind": {
+                                    "type": "string",
+                                    "const": "END_OF_TURN"
+                                  },
+                                  "turn": {
+                                    "type": "integer",
+                                    "exclusiveMinimum": 0,
+                                    "maximum": 9007199254740991
+                                  }
+                                },
+                                "required": [
+                                  "kind",
+                                  "turn"
+                                ],
+                                "additionalProperties": false
+                              }
+                            },
+                            "required": [
+                              "kind",
+                              "id",
+                              "sourceId",
+                              "source",
+                              "abilityId",
+                              "controllerId",
+                              "createdTurn",
+                              "expires"
+                            ],
+                            "additionalProperties": false
+                          },
+                          "subjectId": {
+                            "type": "string",
+                            "minLength": 1,
+                            "maxLength": 200,
+                            "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$"
+                          },
+                          "opposingId": {
+                            "type": "string",
+                            "minLength": 1,
+                            "maxLength": 200,
+                            "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$"
+                          }
+                        },
+                        "required": [
+                          "effect",
+                          "subjectId",
+                          "opposingId"
+                        ],
+                        "additionalProperties": false
+                      }
                     },
                     "appliedPrevention": {
                       "type": "object",
@@ -9405,6 +9865,19 @@
                                         "relation"
                                       ],
                                       "additionalProperties": false
+                                    },
+                                    {
+                                      "type": "object",
+                                      "properties": {
+                                        "kind": {
+                                          "type": "string",
+                                          "const": "OPPOSING_UNIT"
+                                        }
+                                      },
+                                      "required": [
+                                        "kind"
+                                      ],
+                                      "additionalProperties": false
                                     }
                                   ]
                                 },
@@ -9602,6 +10075,52 @@
                               },
                               "required": [
                                 "kind",
+                                "effect"
+                              ],
+                              "additionalProperties": false
+                            },
+                            {
+                              "type": "object",
+                              "properties": {
+                                "kind": {
+                                  "type": "string",
+                                  "const": "REGISTER_NEXT_FIGHT_OUTCOME"
+                                },
+                                "on": {
+                                  "type": "string",
+                                  "const": "FRIENDLY_UNIT_LOSES"
+                                },
+                                "effect": {
+                                  "type": "object",
+                                  "properties": {
+                                    "kind": {
+                                      "type": "string",
+                                      "const": "DEFEAT_UNIT"
+                                    },
+                                    "target": {
+                                      "type": "object",
+                                      "properties": {
+                                        "kind": {
+                                          "type": "string",
+                                          "const": "OPPOSING_UNIT"
+                                        }
+                                      },
+                                      "required": [
+                                        "kind"
+                                      ],
+                                      "additionalProperties": false
+                                    }
+                                  },
+                                  "required": [
+                                    "kind",
+                                    "target"
+                                  ],
+                                  "additionalProperties": false
+                                }
+                              },
+                              "required": [
+                                "kind",
+                                "on",
                                 "effect"
                               ],
                               "additionalProperties": false
@@ -12096,10 +12615,17 @@
                                 "WHEN_UNIT_ATTACKS",
                                 "WHEN_BLOCKER_USED",
                                 "WHEN_GIG_STOLEN",
-                                "WHEN_FRIENDLY_UNIT_STEALS_GIG"
+                                "WHEN_FRIENDLY_UNIT_STEALS_GIG",
+                                "DELAYED_FIGHT_OUTCOME"
                               ]
                             },
                             "gigInstanceId": {
+                              "type": "string",
+                              "minLength": 1,
+                              "maxLength": 200,
+                              "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$"
+                            },
+                            "opposingId": {
                               "type": "string",
                               "minLength": 1,
                               "maxLength": 200,
@@ -12691,6 +13217,19 @@
                                       "relation"
                                     ],
                                     "additionalProperties": false
+                                  },
+                                  {
+                                    "type": "object",
+                                    "properties": {
+                                      "kind": {
+                                        "type": "string",
+                                        "const": "OPPOSING_UNIT"
+                                      }
+                                    },
+                                    "required": [
+                                      "kind"
+                                    ],
+                                    "additionalProperties": false
                                   }
                                 ]
                               },
@@ -12888,6 +13427,52 @@
                             },
                             "required": [
                               "kind",
+                              "effect"
+                            ],
+                            "additionalProperties": false
+                          },
+                          {
+                            "type": "object",
+                            "properties": {
+                              "kind": {
+                                "type": "string",
+                                "const": "REGISTER_NEXT_FIGHT_OUTCOME"
+                              },
+                              "on": {
+                                "type": "string",
+                                "const": "FRIENDLY_UNIT_LOSES"
+                              },
+                              "effect": {
+                                "type": "object",
+                                "properties": {
+                                  "kind": {
+                                    "type": "string",
+                                    "const": "DEFEAT_UNIT"
+                                  },
+                                  "target": {
+                                    "type": "object",
+                                    "properties": {
+                                      "kind": {
+                                        "type": "string",
+                                        "const": "OPPOSING_UNIT"
+                                      }
+                                    },
+                                    "required": [
+                                      "kind"
+                                    ],
+                                    "additionalProperties": false
+                                  }
+                                },
+                                "required": [
+                                  "kind",
+                                  "target"
+                                ],
+                                "additionalProperties": false
+                              }
+                            },
+                            "required": [
+                              "kind",
+                              "on",
                               "effect"
                             ],
                             "additionalProperties": false
@@ -15382,10 +15967,17 @@
                               "WHEN_UNIT_ATTACKS",
                               "WHEN_BLOCKER_USED",
                               "WHEN_GIG_STOLEN",
-                              "WHEN_FRIENDLY_UNIT_STEALS_GIG"
+                              "WHEN_FRIENDLY_UNIT_STEALS_GIG",
+                              "DELAYED_FIGHT_OUTCOME"
                             ]
                           },
                           "gigInstanceId": {
+                            "type": "string",
+                            "minLength": 1,
+                            "maxLength": 200,
+                            "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$"
+                          },
+                          "opposingId": {
                             "type": "string",
                             "minLength": 1,
                             "maxLength": 200,
@@ -15973,6 +16565,19 @@
                                       "relation"
                                     ],
                                     "additionalProperties": false
+                                  },
+                                  {
+                                    "type": "object",
+                                    "properties": {
+                                      "kind": {
+                                        "type": "string",
+                                        "const": "OPPOSING_UNIT"
+                                      }
+                                    },
+                                    "required": [
+                                      "kind"
+                                    ],
+                                    "additionalProperties": false
                                   }
                                 ]
                               },
@@ -16170,6 +16775,52 @@
                             },
                             "required": [
                               "kind",
+                              "effect"
+                            ],
+                            "additionalProperties": false
+                          },
+                          {
+                            "type": "object",
+                            "properties": {
+                              "kind": {
+                                "type": "string",
+                                "const": "REGISTER_NEXT_FIGHT_OUTCOME"
+                              },
+                              "on": {
+                                "type": "string",
+                                "const": "FRIENDLY_UNIT_LOSES"
+                              },
+                              "effect": {
+                                "type": "object",
+                                "properties": {
+                                  "kind": {
+                                    "type": "string",
+                                    "const": "DEFEAT_UNIT"
+                                  },
+                                  "target": {
+                                    "type": "object",
+                                    "properties": {
+                                      "kind": {
+                                        "type": "string",
+                                        "const": "OPPOSING_UNIT"
+                                      }
+                                    },
+                                    "required": [
+                                      "kind"
+                                    ],
+                                    "additionalProperties": false
+                                  }
+                                },
+                                "required": [
+                                  "kind",
+                                  "target"
+                                ],
+                                "additionalProperties": false
+                              }
+                            },
+                            "required": [
+                              "kind",
+                              "on",
                               "effect"
                             ],
                             "additionalProperties": false
@@ -18664,10 +19315,17 @@
                               "WHEN_UNIT_ATTACKS",
                               "WHEN_BLOCKER_USED",
                               "WHEN_GIG_STOLEN",
-                              "WHEN_FRIENDLY_UNIT_STEALS_GIG"
+                              "WHEN_FRIENDLY_UNIT_STEALS_GIG",
+                              "DELAYED_FIGHT_OUTCOME"
                             ]
                           },
                           "gigInstanceId": {
+                            "type": "string",
+                            "minLength": 1,
+                            "maxLength": 200,
+                            "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$"
+                          },
+                          "opposingId": {
                             "type": "string",
                             "minLength": 1,
                             "maxLength": 200,
@@ -21554,6 +22212,19 @@
                                               "relation"
                                             ],
                                             "additionalProperties": false
+                                          },
+                                          {
+                                            "type": "object",
+                                            "properties": {
+                                              "kind": {
+                                                "type": "string",
+                                                "const": "OPPOSING_UNIT"
+                                              }
+                                            },
+                                            "required": [
+                                              "kind"
+                                            ],
+                                            "additionalProperties": false
                                           }
                                         ]
                                       },
@@ -21751,6 +22422,52 @@
                                     },
                                     "required": [
                                       "kind",
+                                      "effect"
+                                    ],
+                                    "additionalProperties": false
+                                  },
+                                  {
+                                    "type": "object",
+                                    "properties": {
+                                      "kind": {
+                                        "type": "string",
+                                        "const": "REGISTER_NEXT_FIGHT_OUTCOME"
+                                      },
+                                      "on": {
+                                        "type": "string",
+                                        "const": "FRIENDLY_UNIT_LOSES"
+                                      },
+                                      "effect": {
+                                        "type": "object",
+                                        "properties": {
+                                          "kind": {
+                                            "type": "string",
+                                            "const": "DEFEAT_UNIT"
+                                          },
+                                          "target": {
+                                            "type": "object",
+                                            "properties": {
+                                              "kind": {
+                                                "type": "string",
+                                                "const": "OPPOSING_UNIT"
+                                              }
+                                            },
+                                            "required": [
+                                              "kind"
+                                            ],
+                                            "additionalProperties": false
+                                          }
+                                        },
+                                        "required": [
+                                          "kind",
+                                          "target"
+                                        ],
+                                        "additionalProperties": false
+                                      }
+                                    },
+                                    "required": [
+                                      "kind",
+                                      "on",
                                       "effect"
                                     ],
                                     "additionalProperties": false

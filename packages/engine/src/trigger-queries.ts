@@ -5,6 +5,7 @@ import { gigAdjustmentOptions } from "./gig-value";
 import { isFirstArasakaAttack } from "./first-attack-history";
 import { effectiveCardTypes } from "./characteristics";
 import { delayedBinding } from "./delayed-effects";
+import { fightOutcomeBinding } from "./fight-outcome";
 import { readyableEddieSlots } from "./eddie-ready";
 import { testCondition } from "./conditions";
 import { getDiscardableCards } from "./discard";
@@ -40,7 +41,7 @@ export function discoverTriggers(state: GameState, origin: TriggerOrigin, contex
         return b.kind === "WHEN_OWN_TURN_ENDS" && b.controllerId === origin.playerId && a.conditions.every(c => testCondition(state, b.controllerId, c, context, b.subjectId));
     }))];
     if (origin.kind === "FIGHT") return origin.result.winnerId ? effectiveTriggeredAbilities(state, origin.result.winnerId, context).filter(b => b.kind === "WHEN_FIGHT_WON") : [];
-    if (origin.kind === "DEFEAT") return origin.defeated.flatMap(d => effectiveTriggeredAbilities(state, d.targetId, context).filter(b => b.kind === "WHEN_DEFEATED")); // Capture before movement; enqueue after.
+    if (origin.kind === "DEFEAT") return [...origin.defeated.flatMap(d => effectiveTriggeredAbilities(state, d.targetId, context).filter(b => b.kind === "WHEN_DEFEATED")), ...(origin.fight?.outcomes ?? []).map(fightOutcomeBinding)]; // Capture before movement; enqueue after.
     // Batch V17: "When this Unit uses [Blocker]" belongs to the blocking Unit only (9.11).
     if (origin.kind === "BLOCK") return effectiveTriggeredAbilities(state, origin.subjectId, context).filter(b => b.kind === "WHEN_BLOCKER_USED" && b.sourceId === b.subjectId);
     // Batch V24 (10.16.3, 11.5.1.7): "When this Unit steals a Gig" is pending once per stolen Gig, after all have moved.
@@ -82,7 +83,8 @@ export function triggerId(state: GameState, binding: TriggerBinding, ordinal: nu
 export function pendingTrigger(state: GameState, binding: TriggerBinding, ordinal: number, sequence: number, context: EngineContext, primitiveIndex: 0 | 1 = 0): PendingEffect {
     const a = context.content.cards.find(c => c.id === binding.source.cardId && c.revision === binding.source.revision)!.mechanics.abilities.find(a => a.id === binding.abilityId)!;
     const registered = a.effects[1];
-    const effect = binding.delayedId && registered?.kind === "REGISTER_END_TURN_EFFECT" ? registered.effect : a.effects[primitiveIndex];
+    // Batch V46: a fired next-fight-outcome binding resolves the registered effect, never the registration itself.
+    const effect = binding.kind === "DELAYED_FIGHT_OUTCOME" && a.effects[0]?.kind === "REGISTER_NEXT_FIGHT_OUTCOME" ? a.effects[0].effect : binding.delayedId && registered?.kind === "REGISTER_END_TURN_EFFECT" ? registered.effect : a.effects[primitiveIndex];
     const { sourceId, controllerId, ...trigger } = binding;
     return { id: triggerId(state, binding, ordinal), sourceId, controllerId, causedBySequence: sequence, effect, ...(primitiveIndex === 1 ? { primitiveIndex } : {}), trigger: { ...trigger, ordinal, turn: state.timing.turn } };
 }

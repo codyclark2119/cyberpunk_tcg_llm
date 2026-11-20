@@ -131,7 +131,9 @@ export const DefeatGearTargetSchema = z.strictObject({ kind: z.literal("GEAR"), 
     // Batch V34: "defeat a Gear" has no power bound; any controller's Gear qualifies (relation ANY).
     power: z.strictObject({ kind: z.literal("AT_MOST"), value: z.literal(2) }).optional() });
 export type DefeatGearTarget = z.infer<typeof DefeatGearTargetSchema>;
-export const DefeatTargetSchema = z.discriminatedUnion("kind", [DefeatUnitTargetSchema, DefeatGearTargetSchema]);
+// Batch V46: "the opposing rival Unit" of the fight that fired a next-fight-outcome effect; no target choice.
+export const DefeatOpposingTargetSchema = z.strictObject({ kind: z.literal("OPPOSING_UNIT") });
+export const DefeatTargetSchema = z.discriminatedUnion("kind", [DefeatUnitTargetSchema, DefeatGearTargetSchema, DefeatOpposingTargetSchema]);
 export type DefeatTarget = z.infer<typeof DefeatTargetSchema>;
 export const DefeatUnitEffectSchema = z.strictObject({ kind: z.literal("DEFEAT_UNIT"), target: DefeatTargetSchema,
     when: z.strictObject({ timing: z.literal("RESOLUTION"), condition: z.strictObject({ kind: z.literal("STREET_CRED_GREATER_THAN_RIVAL") }) }).optional(),
@@ -163,6 +165,10 @@ export const EffectSchema = z.discriminatedUnion("kind", [
     DefeatUnitEffectSchema,
     ReadyEddiesEffectSchema,
     RegisterEndTurnEffectSchema,
+    // Batch V46: "The next time a friendly Unit loses a fight this turn, defeat the opposing rival Unit." Registered when the
+    // Program resolves; it fires on that fight and its effect resolves after the fight ends (11.4.2.2.1).
+    z.strictObject({ kind: z.literal("REGISTER_NEXT_FIGHT_OUTCOME"), on: z.literal("FRIENDLY_UNIT_LOSES"),
+        effect: z.strictObject({ kind: z.literal("DEFEAT_UNIT"), target: DefeatOpposingTargetSchema }) }),
     z.strictObject({ kind: z.literal("DECREASE_GIG_UP_TO"), target: z.strictObject({ kind: z.literal("GIGS"), relation: z.literal("ANY") }), maximum: z.literal(2) }),
     DiscardCardsEffectSchema,
     z.strictObject({ kind: z.literal("LOOK_AT_FRIENDLY_FACE_DOWN_LEGEND") }),

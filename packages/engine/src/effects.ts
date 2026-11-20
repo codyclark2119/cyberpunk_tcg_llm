@@ -17,6 +17,7 @@ import { resolveBottomDeck } from "./bottom-deck";
 import { resolveDrawPerFriendlyGig, resolvePowerPerFriendlyGig } from "./gig-parity";
 import { gigSetTargets } from "./gig-value";
 import { resolveSellTopOfDeck } from "./program-sell";
+import { createFightOutcomeEffect } from "./fight-outcome";
 
 type Primitive<K extends Effect["kind"]> = Extract<Effect, { kind: K }>;
 /** Handwritten, typed primitive registry; metadata cannot install arbitrary handlers. */
@@ -61,6 +62,7 @@ export class HandlerRegistry {
         if (effect.kind === "DEFEAT_UNIT") return beginTargetedDefeat(m);
         if (effect.kind === "SPEND_ALL_UNITS") return spendAllRivalUnits(m);
         if (effect.kind === "CREATE_NEXT_RIVAL_FIGHT_PREVENTION") return createFightPrevention(m);
+        if (effect.kind === "REGISTER_NEXT_FIGHT_OUTCOME") return createFightOutcomeEffect(m); // Batch V46.
         if (effect.kind === "POWER_UNTIL_END_OF_TURN") return this.primitives.POWER_UNTIL_END_OF_TURN(m);
         if (effect.kind === "ADJUST_GIG_UP_TO") return this.primitives.ADJUST_GIG_UP_TO(m);
         if (effect.kind === "CONDITIONAL_DRAW") return this.primitives.CONDITIONAL_DRAW(m, effect);

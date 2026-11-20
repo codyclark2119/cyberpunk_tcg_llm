@@ -336,6 +336,37 @@
             "additionalProperties": false
           }
         },
+        "fightOutcomeEffects": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "string"
+              },
+              "sourceId": {
+                "type": "string"
+              },
+              "controllerSeat": {
+                "type": "integer",
+                "minimum": -9007199254740991,
+                "maximum": 9007199254740991
+              },
+              "createdTurn": {
+                "type": "integer",
+                "minimum": -9007199254740991,
+                "maximum": 9007199254740991
+              }
+            },
+            "required": [
+              "id",
+              "sourceId",
+              "controllerSeat",
+              "createdTurn"
+            ],
+            "additionalProperties": false
+          }
+        },
         "pendingTriggers": {
           "type": "array",
           "items": {
@@ -389,7 +420,8 @@
                   "WHEN_UNIT_ATTACKS",
                   "WHEN_BLOCKER_USED",
                   "WHEN_GIG_STOLEN",
-                  "WHEN_FRIENDLY_UNIT_STEALS_GIG"
+                  "WHEN_FRIENDLY_UNIT_STEALS_GIG",
+                  "DELAYED_FIGHT_OUTCOME"
                 ]
               }
             },

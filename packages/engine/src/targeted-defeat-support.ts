@@ -35,7 +35,10 @@ const TARGETED_DEFEAT_SHAPES = [
         effects: [{ kind: "DEFEAT_UNIT", target: { kind: "UNITS", relation: "RIVAL", power: { kind: "LESS_THAN_FRIENDLY_UNIT" } } }] },
     // Batch V18: Adam Smasher: Ender of Legends, a printed Go Solo Legend whose {Play} defeats a rival Unit (11.24.2, 11.29.1).
     { type: "LEGEND", colors: ["RED"], ram: { RED: 2 }, tags: ["Arasaka", "Merc"], cost: 9, sell: true, power: 9, keywords: ["GO_SOLO"],
-        effects: [{ kind: "DEFEAT_UNIT", target: { kind: "UNITS", relation: "RIVAL", power: { kind: "ANY" } } }] }
+        effects: [{ kind: "DEFEAT_UNIT", target: { kind: "UNITS", relation: "RIVAL", power: { kind: "ANY" } } }] },
+    // Batch V46: Safety Override. "{Quick} The next time a friendly Unit loses a fight this turn, defeat the opposing rival Unit."
+    { type: "PROGRAM", colors: ["YELLOW"], ram: { YELLOW: 3 }, tags: ["Quickhack"], cost: 2, sell: true, power: null, keywords: ["QUICK"],
+        effects: [{ kind: "REGISTER_NEXT_FIGHT_OUTCOME", on: "FRIENDLY_UNIT_LOSES", effect: { kind: "DEFEAT_UNIT", target: { kind: "OPPOSING_UNIT" } } }] }
 ].map(shape => canonicalSerialize({ modifiers: [], keywords: [], ...shape }));
 /** A multi-ability defeat card as pinned: every ability whole, in printed order; anything not listed is absent. */
 const ability = (a: { trigger: string; effects: unknown[] }) => ({ trigger: a.trigger, inherited: null, guard: null, activation: null, conditions: [], abilityCost: { kind: "NONE" }, effects: a.effects });
@@ -67,7 +70,7 @@ export function supportsTargetedDefeatCard(card: DeepReadonly<CardRevisionSnapsh
 // Owns TARGETED_DEFEAT_V1 and Unit-target defeat effects only. The Gear scope and Gear-target
 // effects are owned by validateTargetedGearDefeatMetadata, which validateState registers alongside
 // this one; a mixed card is claimed by both detectors and must satisfy both complete gates.
-export function hasTargetedDefeatMetadata(card: DeepReadonly<CardRevisionSnapshot>) { return card.execution?.scope === "TARGETED_DEFEAT_V1" || card.mechanics.abilities.some(a => a.effects.some(e => e.kind === "DEFEAT_UNIT" && e.target.kind === "UNITS" || e.kind === "SPEND_ALL_UNITS")); }
+export function hasTargetedDefeatMetadata(card: DeepReadonly<CardRevisionSnapshot>) { return card.execution?.scope === "TARGETED_DEFEAT_V1" || card.mechanics.abilities.some(a => a.effects.some(e => e.kind === "DEFEAT_UNIT" && e.target.kind !== "GEAR" || e.kind === "SPEND_ALL_UNITS" || e.kind === "REGISTER_NEXT_FIGHT_OUTCOME")); }
 export function validateTargetedDefeatMetadata(state: GameState, context: EngineContext) {
     for (const c of Object.values(state.objects.cards)) { const r = context.content.cards.find(r => r.id === c.cardId && r.revision === c.revision); if (r && hasTargetedDefeatMetadata(r)) { const v = supportsTargetedDefeatCard(r, context); if (!v.ok) return v; } }
     return success(null);

@@ -23,6 +23,7 @@ import { validatePrivateLookMetadata } from "./private-look-support";
 import { validateCapabilityMetadata } from "./capability-support";
 import { validateTriggerState } from "./trigger-state";
 import { validateFightPreventions } from "./fight-prevention";
+import { validateFightOutcomeEffects } from "./fight-outcome";
 import { validateActionReturn } from "./action-return";
 import { validateTemporaryPower } from "./temporary-power";
 import { validateKeywordGrants, validateStealRestrictions } from "./play-pin-effects";
@@ -180,6 +181,8 @@ export function validateState(input: unknown, context: EngineContext): Result<Ga
     if (!forced.ok) return forced;
     const prevention = validateFightPreventions(s, context);
     if (!prevention.ok) return prevention;
+    const outcomes = validateFightOutcomeEffects(s, context); // Batch V46.
+    if (!outcomes.ok) return outcomes;
     const combat = validateCombatState(s, context);
     if (!combat.ok) return combat;
     const slice = b.ruleset.gameplay?.turnSlice;

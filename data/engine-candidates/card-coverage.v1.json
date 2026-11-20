@@ -9,12 +9,12 @@
   },
   "totals": {
     "cards": 151,
-    "admitted": 94,
-    "notAdmitted": 57,
+    "admitted": 95,
+    "notAdmitted": 56,
     "notAdmittedOnlyCoveredFamilies": 0,
     "byAdmission": {
-      "NOT_ADMITTED": 57,
-      "SOURCE_MATCH": 94
+      "NOT_ADMITTED": 56,
+      "SOURCE_MATCH": 95
     }
   },
   "families": [
@@ -73,15 +73,6 @@
       "soleBlockerCount": 0
     },
     {
-      "family": "KEYWORD_QUICK",
-      "status": "PARTIAL",
-      "summary": "[Quick] timing: Programs and activated abilities usable in the react window.",
-      "notes": "Quick Programs are supported for Floor It, Reboot Optics and Detonate. Quick activated [Spend] abilities on Legends, Units and Gear are not offered in any react window yet.",
-      "cardCount": 12,
-      "notAdmittedCount": 9,
-      "soleBlockerCount": 0
-    },
-    {
       "family": "PLAY_BY_EFFECT",
       "status": "MISSING",
       "summary": "Play a card by an effect: from hand, trash or deck top, for free or for its cost, with after-play riders.",
@@ -100,6 +91,15 @@
       "soleBlockerCount": 0
     },
     {
+      "family": "KEYWORD_QUICK",
+      "status": "PARTIAL",
+      "summary": "[Quick] timing: Programs and activated abilities usable in the react window.",
+      "notes": "Quick Programs are supported for Floor It, Reboot Optics and Detonate. Quick activated [Spend] abilities on Legends, Units and Gear are not offered in any react window yet.",
+      "cardCount": 12,
+      "notAdmittedCount": 8,
+      "soleBlockerCount": 0
+    },
+    {
       "family": "SCALED_AMOUNT",
       "status": "PARTIAL",
       "summary": "Amounts computed from the board: 'for each', 'equal to'.",
@@ -114,15 +114,6 @@
       "summary": "Top-of-deck manipulation: search/look/reveal top N, trash from the top (Trash N), bottom-deck the rest.",
       "notes": "SEARCH_GEAR (count<=5, Gear with max cost, take<=2) only.",
       "cardCount": 15,
-      "notAdmittedCount": 7,
-      "soleBlockerCount": 0
-    },
-    {
-      "family": "DURATION_DELAYED",
-      "status": "PARTIAL",
-      "summary": "Lasting and delayed effects: 'until your next turn', 'next time ... this turn', 'at the end of this turn'.",
-      "notes": "",
-      "cardCount": 14,
       "notAdmittedCount": 7,
       "soleBlockerCount": 0
     },
@@ -150,6 +141,15 @@
       "summary": "Discard: self discard, a Rival discards, discard as a cost, discard a hand.",
       "notes": "DISCARD_CARDS supports only the controller discarding exactly 1.",
       "cardCount": 15,
+      "notAdmittedCount": 6,
+      "soleBlockerCount": 0
+    },
+    {
+      "family": "DURATION_DELAYED",
+      "status": "PARTIAL",
+      "summary": "Lasting and delayed effects: 'until your next turn', 'next time ... this turn', 'at the end of this turn'.",
+      "notes": "",
+      "cardCount": 14,
       "notAdmittedCount": 6,
       "soleBlockerCount": 0
     },
@@ -217,15 +217,6 @@
       "soleBlockerCount": 0
     },
     {
-      "family": "UNIT_DEFEAT",
-      "status": "PARTIAL",
-      "summary": "Defeat a Unit or Gear chosen with a filter.",
-      "notes": "Filters are fixed literals (power at most 5, power at most a friendly d20, Gear power at most 2).",
-      "cardCount": 18,
-      "notAdmittedCount": 5,
-      "soleBlockerCount": 0
-    },
-    {
       "family": "EDDIE_ECONOMY",
       "status": "PARTIAL",
       "summary": "Ready Eddies, sell cards from unusual zones, pay Eddies during resolution.",
@@ -271,11 +262,11 @@
       "soleBlockerCount": 0
     },
     {
-      "family": "TRIGGER_FIGHT_RESULT",
+      "family": "UNIT_DEFEAT",
       "status": "PARTIAL",
-      "summary": "Triggers on winning or losing a fight, or winning by a margin.",
-      "notes": "Trigger WHEN_FIGHT_WON (Satori). Losing a fight and win margins are missing.",
-      "cardCount": 5,
+      "summary": "Defeat a Unit or Gear chosen with a filter.",
+      "notes": "Filters are fixed literals (power at most 5, power at most a friendly d20, Gear power at most 2).",
+      "cardCount": 18,
       "notAdmittedCount": 4,
       "soleBlockerCount": 0
     },
@@ -321,6 +312,15 @@
       "summary": "Spend or ready Units and Legends by an effect, and 'can't ready' locks.",
       "notes": "SPEND_UNIT (rival, cost at most 4) only; readying Units or Legends is missing.",
       "cardCount": 15,
+      "notAdmittedCount": 3,
+      "soleBlockerCount": 0
+    },
+    {
+      "family": "TRIGGER_FIGHT_RESULT",
+      "status": "PARTIAL",
+      "summary": "Triggers on winning or losing a fight, or winning by a margin.",
+      "notes": "Trigger WHEN_FIGHT_WON (Satori). Losing a fight and win margins are missing.",
+      "cardCount": 5,
       "notAdmittedCount": 3,
       "soleBlockerCount": 0
     },
@@ -2656,20 +2656,15 @@
       "colors": [
         "YELLOW"
       ],
-      "admission": "NOT_ADMITTED",
-      "revision": null,
+      "admission": "SOURCE_MATCH",
+      "revision": 1,
       "families": [
         "DURATION_DELAYED",
         "KEYWORD_QUICK",
         "TRIGGER_FIGHT_RESULT",
         "UNIT_DEFEAT"
       ],
-      "blockingFamilies": [
-        "DURATION_DELAYED",
-        "KEYWORD_QUICK",
-        "TRIGGER_FIGHT_RESULT",
-        "UNIT_DEFEAT"
-      ],
+      "blockingFamilies": [],
       "note": null
     },
     {

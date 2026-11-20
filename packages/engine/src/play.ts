@@ -69,7 +69,6 @@ function beginEffects(m: TurnMutation): Result<null> {
     s.resolution.choice = null;
     if (c.kind === "PLAY" && r.type === "UNIT") return finishPlay(m, c.sourceId); // Spend is not an ON_PLAY trigger.
     m.phase("CARD_EFFECT");
-    const causedBySequence = s.match.eventSequence;
     s.resolution.stage = "DISCOVER_TRIGGERS";
     if (a.choose) {
         // Batch V44: "If <condition>, choose both instead" is checked as the Program resolves; otherwise its controller picks one mode.
