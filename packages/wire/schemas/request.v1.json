@@ -2001,7 +2001,10 @@
                                               },
                                               "relation": {
                                                 "type": "string",
-                                                "const": "RIVAL"
+                                                "enum": [
+                                                  "RIVAL",
+                                                  "ANY"
+                                                ]
                                               },
                                               "power": {
                                                 "type": "object",
@@ -2024,8 +2027,7 @@
                                             },
                                             "required": [
                                               "kind",
-                                              "relation",
-                                              "power"
+                                              "relation"
                                             ],
                                             "additionalProperties": false
                                           }
@@ -2055,6 +2057,37 @@
                                         "required": [
                                           "timing",
                                           "condition"
+                                        ],
+                                        "additionalProperties": false
+                                      },
+                                      "optional": {
+                                        "type": "boolean",
+                                        "const": true
+                                      },
+                                      "draw": {
+                                        "type": "object",
+                                        "properties": {
+                                          "condition": {
+                                            "type": "object",
+                                            "properties": {
+                                              "kind": {
+                                                "type": "string",
+                                                "const": "DEFEATED_COST_EQUALS_FRIENDLY_GIG_VALUE"
+                                              }
+                                            },
+                                            "required": [
+                                              "kind"
+                                            ],
+                                            "additionalProperties": false
+                                          },
+                                          "count": {
+                                            "type": "number",
+                                            "const": 1
+                                          }
+                                        },
+                                        "required": [
+                                          "condition",
+                                          "count"
                                         ],
                                         "additionalProperties": false
                                       }
@@ -8329,7 +8362,10 @@
                                         },
                                         "relation": {
                                           "type": "string",
-                                          "const": "RIVAL"
+                                          "enum": [
+                                            "RIVAL",
+                                            "ANY"
+                                          ]
                                         },
                                         "power": {
                                           "type": "object",
@@ -8352,8 +8388,7 @@
                                       },
                                       "required": [
                                         "kind",
-                                        "relation",
-                                        "power"
+                                        "relation"
                                       ],
                                       "additionalProperties": false
                                     }
@@ -8383,6 +8418,37 @@
                                   "required": [
                                     "timing",
                                     "condition"
+                                  ],
+                                  "additionalProperties": false
+                                },
+                                "optional": {
+                                  "type": "boolean",
+                                  "const": true
+                                },
+                                "draw": {
+                                  "type": "object",
+                                  "properties": {
+                                    "condition": {
+                                      "type": "object",
+                                      "properties": {
+                                        "kind": {
+                                          "type": "string",
+                                          "const": "DEFEATED_COST_EQUALS_FRIENDLY_GIG_VALUE"
+                                        }
+                                      },
+                                      "required": [
+                                        "kind"
+                                      ],
+                                      "additionalProperties": false
+                                    },
+                                    "count": {
+                                      "type": "number",
+                                      "const": 1
+                                    }
+                                  },
+                                  "required": [
+                                    "condition",
+                                    "count"
                                   ],
                                   "additionalProperties": false
                                 }
@@ -11309,7 +11375,10 @@
                                       },
                                       "relation": {
                                         "type": "string",
-                                        "const": "RIVAL"
+                                        "enum": [
+                                          "RIVAL",
+                                          "ANY"
+                                        ]
                                       },
                                       "power": {
                                         "type": "object",
@@ -11332,8 +11401,7 @@
                                     },
                                     "required": [
                                       "kind",
-                                      "relation",
-                                      "power"
+                                      "relation"
                                     ],
                                     "additionalProperties": false
                                   }
@@ -11363,6 +11431,37 @@
                                 "required": [
                                   "timing",
                                   "condition"
+                                ],
+                                "additionalProperties": false
+                              },
+                              "optional": {
+                                "type": "boolean",
+                                "const": true
+                              },
+                              "draw": {
+                                "type": "object",
+                                "properties": {
+                                  "condition": {
+                                    "type": "object",
+                                    "properties": {
+                                      "kind": {
+                                        "type": "string",
+                                        "const": "DEFEATED_COST_EQUALS_FRIENDLY_GIG_VALUE"
+                                      }
+                                    },
+                                    "required": [
+                                      "kind"
+                                    ],
+                                    "additionalProperties": false
+                                  },
+                                  "count": {
+                                    "type": "number",
+                                    "const": 1
+                                  }
+                                },
+                                "required": [
+                                  "condition",
+                                  "count"
                                 ],
                                 "additionalProperties": false
                               }
@@ -14285,7 +14384,10 @@
                                       },
                                       "relation": {
                                         "type": "string",
-                                        "const": "RIVAL"
+                                        "enum": [
+                                          "RIVAL",
+                                          "ANY"
+                                        ]
                                       },
                                       "power": {
                                         "type": "object",
@@ -14308,8 +14410,7 @@
                                     },
                                     "required": [
                                       "kind",
-                                      "relation",
-                                      "power"
+                                      "relation"
                                     ],
                                     "additionalProperties": false
                                   }
@@ -14339,6 +14440,37 @@
                                 "required": [
                                   "timing",
                                   "condition"
+                                ],
+                                "additionalProperties": false
+                              },
+                              "optional": {
+                                "type": "boolean",
+                                "const": true
+                              },
+                              "draw": {
+                                "type": "object",
+                                "properties": {
+                                  "condition": {
+                                    "type": "object",
+                                    "properties": {
+                                      "kind": {
+                                        "type": "string",
+                                        "const": "DEFEATED_COST_EQUALS_FRIENDLY_GIG_VALUE"
+                                      }
+                                    },
+                                    "required": [
+                                      "kind"
+                                    ],
+                                    "additionalProperties": false
+                                  },
+                                  "count": {
+                                    "type": "number",
+                                    "const": 1
+                                  }
+                                },
+                                "required": [
+                                  "condition",
+                                  "count"
                                 ],
                                 "additionalProperties": false
                               }
@@ -19128,7 +19260,10 @@
                                               },
                                               "relation": {
                                                 "type": "string",
-                                                "const": "RIVAL"
+                                                "enum": [
+                                                  "RIVAL",
+                                                  "ANY"
+                                                ]
                                               },
                                               "power": {
                                                 "type": "object",
@@ -19151,8 +19286,7 @@
                                             },
                                             "required": [
                                               "kind",
-                                              "relation",
-                                              "power"
+                                              "relation"
                                             ],
                                             "additionalProperties": false
                                           }
@@ -19182,6 +19316,37 @@
                                         "required": [
                                           "timing",
                                           "condition"
+                                        ],
+                                        "additionalProperties": false
+                                      },
+                                      "optional": {
+                                        "type": "boolean",
+                                        "const": true
+                                      },
+                                      "draw": {
+                                        "type": "object",
+                                        "properties": {
+                                          "condition": {
+                                            "type": "object",
+                                            "properties": {
+                                              "kind": {
+                                                "type": "string",
+                                                "const": "DEFEATED_COST_EQUALS_FRIENDLY_GIG_VALUE"
+                                              }
+                                            },
+                                            "required": [
+                                              "kind"
+                                            ],
+                                            "additionalProperties": false
+                                          },
+                                          "count": {
+                                            "type": "number",
+                                            "const": 1
+                                          }
+                                        },
+                                        "required": [
+                                          "condition",
+                                          "count"
                                         ],
                                         "additionalProperties": false
                                       }

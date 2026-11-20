@@ -120,13 +120,18 @@ export const DefeatUnitTargetSchema = z.strictObject({ kind: z.literal("UNITS"),
     each: z.literal("PLAYER_CHOOSES_OWN").optional() });
 export type DefeatUnitTarget = z.infer<typeof DefeatUnitTargetSchema>;
 // Preserve the Unit selectors and historical effect discriminator. Vocabulary is not execution admission.
-export const DefeatGearTargetSchema = z.strictObject({ kind: z.literal("GEAR"), relation: z.literal("RIVAL"),
-    power: z.strictObject({ kind: z.literal("AT_MOST"), value: z.literal(2) }) });
+export const DefeatGearTargetSchema = z.strictObject({ kind: z.literal("GEAR"), relation: z.enum(["RIVAL", "ANY"]),
+    // Batch V34: "defeat a Gear" has no power bound; any controller's Gear qualifies (relation ANY).
+    power: z.strictObject({ kind: z.literal("AT_MOST"), value: z.literal(2) }).optional() });
 export type DefeatGearTarget = z.infer<typeof DefeatGearTargetSchema>;
 export const DefeatTargetSchema = z.discriminatedUnion("kind", [DefeatUnitTargetSchema, DefeatGearTargetSchema]);
 export type DefeatTarget = z.infer<typeof DefeatTargetSchema>;
 export const DefeatUnitEffectSchema = z.strictObject({ kind: z.literal("DEFEAT_UNIT"), target: DefeatTargetSchema,
-    when: z.strictObject({ timing: z.literal("RESOLUTION"), condition: z.strictObject({ kind: z.literal("STREET_CRED_GREATER_THAN_RIVAL") }) }).optional() });
+    when: z.strictObject({ timing: z.literal("RESOLUTION"), condition: z.strictObject({ kind: z.literal("STREET_CRED_GREATER_THAN_RIVAL") }) }).optional(),
+    // Batch V34: "You may defeat a Gear": the controller may decline the target choice.
+    optional: z.literal(true).optional(),
+    // Batch V34: "If its cost equals the value of a friendly Gig, draw 1": checked after the defeated card has moved.
+    draw: z.strictObject({ condition: z.strictObject({ kind: z.literal("DEFEATED_COST_EQUALS_FRIENDLY_GIG_VALUE") }), count: z.literal(1) }).optional() });
 export const EffectSchema = z.discriminatedUnion("kind", [
     SpendUnitEffectSchema,
     // "Spend this Unit" (batch V8).

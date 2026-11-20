@@ -2,6 +2,7 @@ import { failure, success, type Result } from "@tcg/domain";
 import type { TurnMutation } from "./turn";
 import { testCondition } from "./conditions";
 import { defeatCards } from "./defeat";
+import { discardedCostMatchesFriendlyGig } from "./discard";
 import { defeatOrderChoice, unfinishedDefeatOrder } from "./combat-outcome-queries";
 import { completePlayEffect } from "./play";
 import { appendDefeatedTriggers, completed, prepareTriggerBatch } from "./trigger-resolution";
@@ -73,13 +74,29 @@ function advanceOwnerOrder(m: TurnMutation): Result<null> {
     if (!result.ok) return result;
     delete r.defeatContinuation; delete r.targetedDefeatContinuation; r.choice = null;
     m.state.timing.actingPlayer = current.controllerId;
-    if (r.triggerContinuation) { appendDefeatedTriggers(m, defeats, result.value); return completed(m); }
+    if (r.triggerContinuation) {
+        appendDefeatedTriggers(m, defeats, result.value);
+        // Batch V34: "If its cost equals the value of a friendly Gig, draw 1": the defeated card's printed cost, after it has moved.
+        if (current.effect.kind === "DEFEAT_UNIT" && current.effect.draw) {
+            const met = discardedCostMatchesFriendlyGig(m.state, current.controllerId, defeats[0].targetId, m.context);
+            m.emit({ kind: "CONDITION_EVALUATED", effectId: current.id, met });
+            if (met) { const drawn = m.draw(current.controllerId, current.effect.draw.count); if (!drawn.ok) return drawn; }
+            if (m.state.match.outcome) { m.emit({ kind: "EFFECT_RESOLVED", effectId: current.id }); return success(null); }
+        }
+        return completed(m);
+    }
     const batch = prepareTriggerBatch(m, { kind: "DEFEAT", effectSource: current.sourceId!, defeated: defeats }, result.value);
     if (batch) for (const e of batch.pending) m.emit({ kind: "EFFECT_PENDING", effectId: e.id, sourceId: e.sourceId! });
     return completePlayEffect(m, batch);
 }
 export function continueTargetedDefeat(m: TurnMutation, index: number, forced = false): Result<null> {
     const r = m.state.resolution, c = r.targetedDefeatContinuation!, current = r.current!, choice = r.choice!, option = choice.options[index];
+    // Batch V34: "You may defeat a Gear": declining defeats nothing, and nothing after it happens.
+    if (c.phase === "TARGET" && option?.kind === "CONFIRM" && !option.confirmed && current.effect.kind === "DEFEAT_UNIT" && current.effect.optional) {
+        m.emit({ kind: "OPTIONAL_TRIGGER_DECLINED", effectId: current.id, controllerId: current.controllerId });
+        delete r.targetedDefeatContinuation; r.choice = null; m.state.timing.actingPlayer = current.controllerId;
+        return finishWithoutDefeat(m);
+    }
     if (c.phase === "SECOND" && option?.kind === "CONFIRM" && !option.confirmed) { c.phase = "ORDER"; return advanceOwnerOrder(m); } // Declined: defeat only the first.
     if (option?.kind !== "CARD") return failure("INVALID_DEFEAT_TARGET", "Choose one enumerated Unit or owner-order card");
     if (c.phase === "EACH") {

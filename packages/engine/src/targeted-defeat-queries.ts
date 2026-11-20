@@ -23,8 +23,9 @@ function strongestFriendlyBound(state: GameState, actor: PlayerId, context: Engi
 function listDefeatableGear(state: GameState, actor: PlayerId, target: DefeatGearTarget, context: EngineContext) {
     if (!targetedGearDefeatPolicyComplete(context)) return [];
     return Object.values(state.objects.cards).filter(c => {
-        if (c.controllerId === actor || c.face !== "UP" || !["BATTLEFIELD", "LEGENDS"].includes(c.zone.zone)) return false;
+        if (target.relation === "RIVAL" && c.controllerId === actor || c.face !== "UP" || !["BATTLEFIELD", "LEGENDS"].includes(c.zone.zone)) return false;
         if (!gearDefeatSupport(state, c.id, context).ok) return false;
+        if (!target.power) return true; // Batch V34: "a Gear", any power.
         const power = effectivePower(state, c.id, context);
         return power !== null && referencedPower(power) <= target.power.value;
     }).map(c => c.id).sort();
@@ -86,5 +87,7 @@ export function eachDefeatChoice(state: GameState, context: EngineContext, playe
 export function targetedDefeatChoice(state: GameState, context: EngineContext): PendingChoice {
     const e = state.resolution.current!;
     if (e.effect.kind !== "DEFEAT_UNIT") throw new Error("Expected a targeted defeat effect");
-    return { id: hashCanonical({ protocol: "targeted-defeat@1", turn: state.timing.turn, sourceId: e.sourceId, effectId: e.id }), actorId: e.controllerId, kind: "TARGET", min: 1, max: 1, ordered: false, continuationId: "targeted-defeat@1", options: listDefeatTargets(state, e.controllerId, e.effect.target, context).map(cardInstanceId => ({ kind: "CARD", cardInstanceId })) };
+    const targets = listDefeatTargets(state, e.controllerId, e.effect.target, context).map(cardInstanceId => ({ kind: "CARD" as const, cardInstanceId }));
+    // Batch V34: an optional defeat with a target also offers the decline.
+    return { id: hashCanonical({ protocol: "targeted-defeat@1", turn: state.timing.turn, sourceId: e.sourceId, effectId: e.id }), actorId: e.controllerId, kind: "TARGET", min: 1, max: 1, ordered: false, continuationId: "targeted-defeat@1", options: e.effect.optional && targets.length ? [...targets, { kind: "CONFIRM", confirmed: false }] : targets };
 }

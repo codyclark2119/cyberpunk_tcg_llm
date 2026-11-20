@@ -43,11 +43,28 @@ export function reviewTargetedGearDefeatShape(card: DeepReadonly<CardRevisionSna
     return success(null);
 }
 
+/** A Gear-defeat Unit ability as pinned: anything not listed is absent. */
+const ability = (a: { trigger: string; effects: unknown[] }) => ({ trigger: a.trigger, inherited: null, guard: null, activation: null, conditions: [], abilityCost: { kind: "NONE" }, effects: a.effects });
+/** Batch V34+: printed Units whose {Play} defeats a Gear, each pinned whole. */
+const GEAR_DEFEAT_UNIT_SHAPES = [
+    // Batch V34: Heywood Ripperdoc. "{Play} You may defeat a Gear. If its cost equals the value of a friendly Gig, draw 1."
+    { colors: ["YELLOW"], ram: { YELLOW: 1 }, tags: ["Ripperdoc"], cost: 6, power: 8, abilities: [
+        ability({ trigger: "WHEN_PLAYED", effects: [{ kind: "DEFEAT_UNIT", target: { kind: "GEAR", relation: "ANY" }, optional: true, draw: { condition: { kind: "DEFEATED_COST_EQUALS_FRIENDLY_GIG_VALUE" }, count: 1 } }] })] }
+].map(shape => canonicalSerialize({ type: "UNIT", sell: false, keywords: [], equip: null, modifiers: [], restrictions: [], ...shape }));
+function reviewGearDefeatUnit(card: DeepReadonly<CardRevisionSnapshot>, context: EngineContext) {
+    const m = card.mechanics;
+    if (!targetedGearDefeatPolicyComplete(context) || !card.provenance.reviewed || card.execution?.scope !== "TARGETED_GEAR_DEFEAT_V1" || card.execution.status !== "SUPPORTED" || card.keywords.length || card.printedCost.kind !== "EDDIES"
+        || !GEAR_DEFEAT_UNIT_SHAPES.includes(canonicalSerialize({ type: card.type, sell: card.sellProfile.allowed, keywords: m.keywords, equip: m.equip ?? null, modifiers: m.modifiers, restrictions: m.restrictions ?? [],
+            colors: card.colors, ram: card.ram, tags: card.tags, cost: card.printedCost.amount, power: card.power ?? null,
+            abilities: m.abilities.map(a => ({ trigger: a.trigger ?? null, inherited: a.inherited ?? null, guard: a.guard ?? null, activation: a.activation ?? null, conditions: a.conditions, abilityCost: a.cost, effects: a.effects })) })))
+        return failure("UNSUPPORTED_TARGETED_GEAR_DEFEAT_SHAPE", "Complete reviewed printed Unit with an exact {Play} Gear defeat required");
+    return success(null);
+}
 /** Execution admission: the complete reviewed shape under its own explicit opt-in policy.
  * Separate from supportsTargetedDefeatCard so the two-card Unit gate keeps its keyword restrictions.
  */
 export function supportsTargetedGearDefeatCard(card: DeepReadonly<CardRevisionSnapshot> | undefined, context: EngineContext) {
-    return reviewTargetedGearDefeatShape(card, context);
+    return card?.type === "UNIT" ? reviewGearDefeatUnit(card, context) : reviewTargetedGearDefeatShape(card, context);
 }
 /** Registered in validateState beside validateTargetedDefeatMetadata; hidden sources are covered too. */
 export function validateTargetedGearDefeatMetadata(state: GameState, context: EngineContext) {
