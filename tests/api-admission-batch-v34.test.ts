@@ -1,7 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
-import { CardRevisionSnapshotSchema, GameStateSchema, hashCanonical, type CardInstanceId, type CardRevisionSnapshot, type GameState, type PlayerId } from "@tcg/domain";
+import { CardRevisionSnapshotSchema, GameStateSchema, hashCanonical, type CardRevisionSnapshot, type GameState, type PlayerId } from "@tcg/domain";
 import { createGameWithEvents, validateState } from "@tcg/engine";
 import { supportsTargetedGearDefeatCard } from "../packages/engine/src/targeted-gear-defeat-support";
 import { supportsTriggerCard } from "../packages/engine/src/trigger-support";
