@@ -3,7 +3,7 @@ import { beginTargetedDefeat } from "./targeted-defeat";
 import { resolveSpendTarget } from "./targeted-spend";
 import { listSpendUnitTargets } from "./targeted-spend-queries";
 import { isUnitSpendSubject, spendUnitForEffect } from "./unit-spend";
-import { readyCardForEffect, readyLegendTargets, stolenGigReadyTargets, taggedLegendReadyTargets } from "./ready-unit";
+import { friendlyUnitReadyTargets, readyCardForEffect, readyLegendTargets, stolenGigReadyTargets, taggedLegendReadyTargets } from "./ready-unit";
 import type { PendingEffect, DefeatInstruction } from "@tcg/domain";
 import { effectiveCardTypes } from "./characteristics";
 import { registerEndTurnEffect } from "./delayed-effects";
@@ -168,6 +168,11 @@ export function advanceTriggers(m: TurnMutation): Result<null> {
         const met = testCondition(m.state, r.current.controllerId, e.when.condition, m.context, r.current.sourceId ?? undefined);
         m.emit({ kind: "CONDITION_EVALUATED", effectId: r.current.id, met });
         if (!met || !taggedLegendReadyTargets(m.state, r.current.controllerId, e.tag, m.context).length) return completed(m);
+        c.phase = "TARGET"; return offer(m);
+    }
+    // Batch V38: "ready up to 3 friendly Units": each pick readies one Unit until 3 are chosen, none remain, or the controller is done.
+    if (e.kind === "READY_UNITS_UP_TO") {
+        if (!friendlyUnitReadyTargets(m.state, r.current.controllerId, m.context).length) return completed(m);
         c.phase = "TARGET"; return offer(m);
     }
     if (e.kind === "READY_UNIT") {
@@ -361,6 +366,16 @@ export function continueTrigger(m: TurnMutation, index: number, forced = false):
             const readied = [...(c.readiedLegends ?? []), option.cardInstanceId];
             if (readied.length >= current.effect.maximum || targets.length === 1) { delete c.readiedLegends; return completed(m); }
             c.readiedLegends = readied; return offer(m);
+        }
+        if (current.effect.kind === "READY_UNITS_UP_TO") {
+            if (option.kind === "MODE" && option.mode === "DONE") { delete c.readiedUnits; return completed(m); }
+            const targets = friendlyUnitReadyTargets(m.state, current.controllerId, m.context).filter(id => !c.readiedUnits?.includes(id));
+            if (option.kind !== "CARD" || !targets.includes(option.cardInstanceId)) return failure("INVALID_READY_TARGET", "Choose a current friendly Unit not already chosen, or finish");
+            m.emit({ kind: "CARD_TARGET_SELECTED", effectId: current.id, sourceId: current.sourceId!, targetId: option.cardInstanceId, controllerId: current.controllerId, forced });
+            readyCardForEffect(m, option.cardInstanceId);
+            const readied = [...(c.readiedUnits ?? []), option.cardInstanceId];
+            if (readied.length >= current.effect.maximum || targets.length === 1) { delete c.readiedUnits; return completed(m); }
+            c.readiedUnits = readied; return offer(m);
         }
         if (current.effect.kind === "READY_UNIT") {
             const targets = current.effect.target.kind === "ANOTHER_FRIENDLY_UNIT" ? stolenGigReadyTargets(m.state, current, m.context) : readyLegendTargets(m.state, current.controllerId, m.context);

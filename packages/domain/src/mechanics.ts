@@ -38,7 +38,9 @@ export const ConditionSchema = z.discriminatedUnion("kind", [
     // Batch V27: "if you control 2 or more Gigs with 8+ value".
     z.strictObject({ kind: z.literal("GIG_COUNT_WITH_VALUE_AT_LEAST"), minimum: z.literal(8), count: z.literal(2) }),
     // Batch V29: "If you control a value-pair of Gigs" (6.6: 2 dice with the same value in the same Gig area).
-    z.strictObject({ kind: z.literal("CONTROLS_VALUE_PAIR") })
+    z.strictObject({ kind: z.literal("CONTROLS_VALUE_PAIR") }),
+    // Batch V39: "If a Rival controls at least 2 more Gigs than you" (Gigs in each Gig area, counted live).
+    z.strictObject({ kind: z.literal("RIVAL_CONTROLS_MORE_GIGS"), minimum: z.literal(2) })
 ]);
 export const CombatRestrictionSchema = z.discriminatedUnion("kind", [
     z.strictObject({ kind: z.literal("CANNOT_ATTACK") }),
@@ -169,6 +171,10 @@ export const EffectSchema = z.discriminatedUnion("kind", [
     // Batch V35: "Search the top 4 cards of your deck. Reveal any number of cards with cost equal to any friendly Gig values and add
     // them to your hand. Bottom-deck the rest."
     z.strictObject({ kind: z.literal("SEARCH_COST_MATCHING_GIGS"), count: z.literal(4) }),
+    // Batch V36: "Search the top 3 cards of your deck. Add 1 to your hand. You may add 1 more for each friendly min Gig. Bottom-deck the rest."
+    z.strictObject({ kind: z.literal("SEARCH_TAKE_ONE_PLUS_PER_MIN_GIG"), count: z.literal(3) }),
+    // Batch V37: "You may set a Gig's value to the value of another Gig." (6.5: either player's Gigs, within the die's faces.)
+    z.strictObject({ kind: z.literal("SET_GIG_TO_ANOTHER_GIG_VALUE"), optional: z.literal(true) }),
     z.strictObject({ kind: z.literal("SEARCH_GEAR"), count: z.number().int().positive().max(5), maxCost: z.number().int().nonnegative().optional(), maxTake: z.number().int().positive().max(2) }),
     // Batch V20: "[Play] Trash 3. Add a Program from among them to your hand."
     z.strictObject({ kind: z.literal("TRASH_THEN_RETURN_PROGRAM"), count: z.literal(3) }),
@@ -190,6 +196,8 @@ export const EffectSchema = z.discriminatedUnion("kind", [
     // follows only after the discard (11.15: the owner bottom-decks the Unit and its Gear).
     // Batch V33: "You may discard 2 Programs. If you do, bottom-deck a rival unequipped Unit." (no attached Gear, 4.12).
     z.strictObject({ kind: z.literal("DISCARD_PROGRAMS_THEN_BOTTOM_DECK"), count: z.union([z.literal(1), z.literal(2)]), then: z.strictObject({ relation: z.literal("RIVAL"), unequipped: z.literal(true).optional() }) }),
+    // Batch V38: "At the end of your turn, ready up to 3 friendly Units."
+    z.strictObject({ kind: z.literal("READY_UNITS_UP_TO"), relation: z.literal("FRIENDLY"), maximum: z.literal(3) }),
     // Batch V29: "If you control a value-pair of Gigs, ready up to 2 MERC Legends in your Legends area."
     z.strictObject({ kind: z.literal("READY_LEGENDS_UP_TO"), tag: z.literal("Merc"), maximum: z.literal(2),
         when: z.strictObject({ timing: z.literal("RESOLUTION"), condition: z.strictObject({ kind: z.literal("CONTROLS_VALUE_PAIR") }) }) }),
@@ -216,7 +224,11 @@ export const ContinuousModifierSchema = z.discriminatedUnion("kind", [
     // Batch V30: "This Unit can attack rival Units the turn it's played" (11.3.1): while lagging, rival Units only.
     z.strictObject({ kind: z.literal("CAN_ATTACK_RIVAL_UNITS_WHILE_LAGGING") }),
     z.strictObject({ kind: z.literal("FRIENDLY_ARASAKA_ATTACKING_UNIT_POWER"), amount: z.literal(1) }),
+    // Batch V38: "Other friendly Units have +2 power while attacking." A field Unit's live contribution, never to itself.
+    z.strictObject({ kind: z.literal("OTHER_FRIENDLY_ATTACKING_UNIT_POWER"), amount: z.literal(2) }),
     z.strictObject({ kind: z.literal("GRANT_KEYWORD_TO_HOST"), keyword: z.literal("BLOCKER") }),
+    // Batch V39: "If a Rival controls at least 2 more Gigs than you, this Unit has [Adrenaline]": a Gear's live conditional grant.
+    z.strictObject({ kind: z.literal("GRANT_KEYWORD_TO_HOST_IF"), keyword: z.literal("ADRENALINE"), condition: z.strictObject({ kind: z.literal("RIVAL_CONTROLS_MORE_GIGS"), minimum: z.literal(2) }) }),
     // 2.6/11.3.1: prevents rival Units that entered the field this turn (lagging) from attacking.
     z.strictObject({ kind: z.literal("RIVAL_LAGGING_UNITS_CANNOT_ATTACK") }),
     z.strictObject({ kind: z.literal("GRANT_PRINTED_POWER_TO_HOST") }),

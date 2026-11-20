@@ -9,12 +9,12 @@
   },
   "totals": {
     "cards": 151,
-    "admitted": 84,
-    "notAdmitted": 67,
+    "admitted": 88,
+    "notAdmitted": 63,
     "notAdmittedOnlyCoveredFamilies": 0,
     "byAdmission": {
-      "NOT_ADMITTED": 67,
-      "SOURCE_MATCH": 84
+      "NOT_ADMITTED": 63,
+      "SOURCE_MATCH": 88
     }
   },
   "families": [
@@ -24,15 +24,6 @@
       "summary": "Draw cards, fixed or conditional.",
       "notes": "Routed. Variable counts need SCALED_AMOUNT; 'may draw' needs an optional prompt.",
       "cardCount": 38,
-      "notAdmittedCount": 21,
-      "soleBlockerCount": 0
-    },
-    {
-      "family": "CONDITION_GIG",
-      "status": "PARTIAL",
-      "summary": "Conditions and filters on Gig values: min/max, value-pairs, even/odd, 8+, die type, counts compared with a Rival.",
-      "notes": "Conditions only, each a fixed shape.",
-      "cardCount": 40,
       "notAdmittedCount": 20,
       "soleBlockerCount": 0
     },
@@ -46,6 +37,15 @@
       "soleBlockerCount": 0
     },
     {
+      "family": "CONDITION_GIG",
+      "status": "PARTIAL",
+      "summary": "Conditions and filters on Gig values: min/max, value-pairs, even/odd, 8+, die type, counts compared with a Rival.",
+      "notes": "Conditions only, each a fixed shape.",
+      "cardCount": 40,
+      "notAdmittedCount": 17,
+      "soleBlockerCount": 0
+    },
+    {
       "family": "SPEND_ABILITY",
       "status": "PARTIAL",
       "summary": "Activated abilities with a [Spend] cost (and optional Eddie cost) on Legends, Units or Gear.",
@@ -55,21 +55,21 @@
       "soleBlockerCount": 0
     },
     {
-      "family": "GEAR_EQUIP",
-      "status": "PARTIAL",
-      "summary": "Equip a Gear to a friendly Unit or face-up Legend; Gear power adds to its host.",
-      "notes": "Equip onto Units is supported for the admitted Gear. Gear on a Legend host in combat (a Go Solo Legend) is unsupported.",
-      "cardCount": 22,
-      "notAdmittedCount": 14,
-      "soleBlockerCount": 0
-    },
-    {
       "family": "TEMPORARY_BUFF",
       "status": "PARTIAL",
       "summary": "Power or keyword changes 'this turn' on a chosen Unit.",
       "notes": "Fixed amounts on RIVAL_UNIT, SOURCE_SUBJECT or FRIENDLY_UNIT. Keyword grants, all-Unit and filtered targets are missing.",
       "cardCount": 19,
       "notAdmittedCount": 14,
+      "soleBlockerCount": 0
+    },
+    {
+      "family": "GEAR_EQUIP",
+      "status": "PARTIAL",
+      "summary": "Equip a Gear to a friendly Unit or face-up Legend; Gear power adds to its host.",
+      "notes": "Equip onto Units is supported for the admitted Gear. Gear on a Legend host in combat (a Go Solo Legend) is unsupported.",
+      "cardCount": 22,
+      "notAdmittedCount": 13,
       "soleBlockerCount": 0
     },
     {
@@ -87,16 +87,7 @@
       "summary": "Top-of-deck manipulation: search/look/reveal top N, trash from the top (Trash N), bottom-deck the rest.",
       "notes": "SEARCH_GEAR (count<=5, Gear with max cost, take<=2) only.",
       "cardCount": 15,
-      "notAdmittedCount": 10,
-      "soleBlockerCount": 0
-    },
-    {
-      "family": "SCALED_AMOUNT",
-      "status": "PARTIAL",
-      "summary": "Amounts computed from the board: 'for each', 'equal to'.",
-      "notes": "Only Royce's per-equipped-Gear modifier counts anything.",
-      "cardCount": 18,
-      "notAdmittedCount": 10,
+      "notAdmittedCount": 9,
       "soleBlockerCount": 0
     },
     {
@@ -114,6 +105,15 @@
       "summary": "Play a card by an effect: from hand, trash or deck top, for free or for its cost, with after-play riders.",
       "notes": "",
       "cardCount": 9,
+      "notAdmittedCount": 9,
+      "soleBlockerCount": 0
+    },
+    {
+      "family": "SCALED_AMOUNT",
+      "status": "PARTIAL",
+      "summary": "Amounts computed from the board: 'for each', 'equal to'.",
+      "notes": "Only Royce's per-equipped-Gear modifier counts anything.",
+      "cardCount": 18,
       "notAdmittedCount": 9,
       "soleBlockerCount": 0
     },
@@ -159,15 +159,6 @@
       "summary": "Ready Eddies, sell cards from unusual zones, pay Eddies during resolution.",
       "notes": "READY_EDDIES (controller, 1 or 2) only.",
       "cardCount": 8,
-      "notAdmittedCount": 6,
-      "soleBlockerCount": 0
-    },
-    {
-      "family": "GIG_ADJUST",
-      "status": "PARTIAL",
-      "summary": "Increase, decrease, adjust or set Gig values.",
-      "notes": "Maxima are fixed literals; 'set to the value of another Gig' and 'adjust by exactly 1' are missing. MODIFY_GIG_VALUE is schema-only.",
-      "cardCount": 15,
       "notAdmittedCount": 6,
       "soleBlockerCount": 0
     },
@@ -226,6 +217,15 @@
       "soleBlockerCount": 0
     },
     {
+      "family": "GIG_ADJUST",
+      "status": "PARTIAL",
+      "summary": "Increase, decrease, adjust or set Gig values.",
+      "notes": "Maxima are fixed literals; 'set to the value of another Gig' and 'adjust by exactly 1' are missing. MODIFY_GIG_VALUE is schema-only.",
+      "cardCount": 15,
+      "notAdmittedCount": 5,
+      "soleBlockerCount": 0
+    },
+    {
       "family": "KEYWORD_BLOCKER",
       "status": "COVERED",
       "summary": "Printed [Blocker] on a Unit, or granted to a Gear's host.",
@@ -267,15 +267,6 @@
       "summary": "Fight-scoped rules: power while fighting, can't be defeated in a fight, wins all fights against, fight-outcome riders.",
       "notes": "Only Reboot Optics' next-fight prevention.",
       "cardCount": 5,
-      "notAdmittedCount": 4,
-      "soleBlockerCount": 0
-    },
-    {
-      "family": "SPEND_OR_READY",
-      "status": "PARTIAL",
-      "summary": "Spend or ready Units and Legends by an effect, and 'can't ready' locks.",
-      "notes": "SPEND_UNIT (rival, cost at most 4) only; readying Units or Legends is missing.",
-      "cardCount": 15,
       "notAdmittedCount": 4,
       "soleBlockerCount": 0
     },
@@ -334,6 +325,15 @@
       "soleBlockerCount": 0
     },
     {
+      "family": "SPEND_OR_READY",
+      "status": "PARTIAL",
+      "summary": "Spend or ready Units and Legends by an effect, and 'can't ready' locks.",
+      "notes": "SPEND_UNIT (rival, cost at most 4) only; readying Units or Legends is missing.",
+      "cardCount": 15,
+      "notAdmittedCount": 3,
+      "soleBlockerCount": 0
+    },
+    {
       "family": "TRIGGER_ATTACK",
       "status": "PARTIAL",
       "summary": "[Attack] abilities and 'when a Unit attacks' triggers.",
@@ -348,15 +348,6 @@
       "summary": "[Defeated] abilities.",
       "notes": "Trigger WHEN_DEFEATED, admitted only for Dexter: One Last Chance.",
       "cardCount": 7,
-      "notAdmittedCount": 3,
-      "soleBlockerCount": 0
-    },
-    {
-      "family": "TRIGGER_END_OF_TURN",
-      "status": "PARTIAL",
-      "summary": "'At the end of your turn' abilities.",
-      "notes": "Trigger WHEN_OWN_TURN_ENDS; only Eddie readying is routed.",
-      "cardCount": 9,
       "notAdmittedCount": 3,
       "soleBlockerCount": 0
     },
@@ -397,11 +388,11 @@
       "soleBlockerCount": 0
     },
     {
-      "family": "STATIC_MODIFIER",
+      "family": "TRIGGER_END_OF_TURN",
       "status": "PARTIAL",
-      "summary": "Continuous modifiers: auras, while-attacking power, conditional keywords.",
-      "notes": "Each admitted modifier is a bespoke shape.",
-      "cardCount": 4,
+      "summary": "'At the end of your turn' abilities.",
+      "notes": "Trigger WHEN_OWN_TURN_ENDS; only Eddie readying is routed.",
+      "cardCount": 9,
       "notAdmittedCount": 2,
       "soleBlockerCount": 0
     },
@@ -411,15 +402,6 @@
       "summary": "Hooks on rolling a Gig die: rerolls and triggers on rolled results.",
       "notes": "",
       "cardCount": 1,
-      "notAdmittedCount": 1,
-      "soleBlockerCount": 0
-    },
-    {
-      "family": "KEYWORD_ADRENALINE",
-      "status": "COVERED",
-      "summary": "[Adrenaline]: the Unit can attack the turn it is played.",
-      "notes": "Keyword ADRENALINE (Riding Nomad). Conditional or granted Adrenaline also needs STATIC_MODIFIER or TEMPORARY_BUFF.",
-      "cardCount": 4,
       "notAdmittedCount": 1,
       "soleBlockerCount": 0
     },
@@ -457,6 +439,24 @@
       "notes": "No start-of-turn trigger exists.",
       "cardCount": 1,
       "notAdmittedCount": 1,
+      "soleBlockerCount": 0
+    },
+    {
+      "family": "KEYWORD_ADRENALINE",
+      "status": "COVERED",
+      "summary": "[Adrenaline]: the Unit can attack the turn it is played.",
+      "notes": "Keyword ADRENALINE (Riding Nomad). Conditional or granted Adrenaline also needs STATIC_MODIFIER or TEMPORARY_BUFF.",
+      "cardCount": 4,
+      "notAdmittedCount": 0,
+      "soleBlockerCount": 0
+    },
+    {
+      "family": "STATIC_MODIFIER",
+      "status": "PARTIAL",
+      "summary": "Continuous modifiers: auras, while-attacking power, conditional keywords.",
+      "notes": "Each admitted modifier is a bespoke shape.",
+      "cardCount": 4,
+      "notAdmittedCount": 0,
       "soleBlockerCount": 0
     },
     {
@@ -528,19 +528,15 @@
       "colors": [
         "YELLOW"
       ],
-      "admission": "NOT_ADMITTED",
-      "revision": null,
+      "admission": "SOURCE_MATCH",
+      "revision": 1,
       "families": [
         "CONDITION_GIG",
         "GEAR_EQUIP",
         "KEYWORD_ADRENALINE",
         "STATIC_MODIFIER"
       ],
-      "blockingFamilies": [
-        "CONDITION_GIG",
-        "GEAR_EQUIP",
-        "STATIC_MODIFIER"
-      ],
+      "blockingFamilies": [],
       "note": null
     },
     {
@@ -2332,18 +2328,14 @@
       "colors": [
         "GREEN"
       ],
-      "admission": "NOT_ADMITTED",
-      "revision": null,
+      "admission": "SOURCE_MATCH",
+      "revision": 1,
       "families": [
         "CONDITION_GIG",
         "DRAW",
         "GIG_ADJUST"
       ],
-      "blockingFamilies": [
-        "CONDITION_GIG",
-        "DRAW",
-        "GIG_ADJUST"
-      ],
+      "blockingFamilies": [],
       "note": null
     },
     {
@@ -2794,18 +2786,14 @@
       "colors": [
         "GREEN"
       ],
-      "admission": "NOT_ADMITTED",
-      "revision": null,
+      "admission": "SOURCE_MATCH",
+      "revision": 1,
       "families": [
         "SPEND_OR_READY",
         "STATIC_MODIFIER",
         "TRIGGER_END_OF_TURN"
       ],
-      "blockingFamilies": [
-        "SPEND_OR_READY",
-        "STATIC_MODIFIER",
-        "TRIGGER_END_OF_TURN"
-      ],
+      "blockingFamilies": [],
       "note": null
     },
     {
@@ -3038,18 +3026,14 @@
       "colors": [
         "BLUE"
       ],
-      "admission": "NOT_ADMITTED",
-      "revision": null,
+      "admission": "SOURCE_MATCH",
+      "revision": 1,
       "families": [
         "CONDITION_GIG",
         "DECK_SEARCH_REVEAL",
         "SCALED_AMOUNT"
       ],
-      "blockingFamilies": [
-        "CONDITION_GIG",
-        "DECK_SEARCH_REVEAL",
-        "SCALED_AMOUNT"
-      ],
+      "blockingFamilies": [],
       "note": null
     },
     {

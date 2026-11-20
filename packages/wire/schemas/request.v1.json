@@ -1469,6 +1469,24 @@
                                       "kind"
                                     ],
                                     "additionalProperties": false
+                                  },
+                                  {
+                                    "type": "object",
+                                    "properties": {
+                                      "kind": {
+                                        "type": "string",
+                                        "const": "RIVAL_CONTROLS_MORE_GIGS"
+                                      },
+                                      "minimum": {
+                                        "type": "number",
+                                        "const": 2
+                                      }
+                                    },
+                                    "required": [
+                                      "kind",
+                                      "minimum"
+                                    ],
+                                    "additionalProperties": false
                                   }
                                 ]
                               }
@@ -2613,6 +2631,24 @@
                                                   "kind"
                                                 ],
                                                 "additionalProperties": false
+                                              },
+                                              {
+                                                "type": "object",
+                                                "properties": {
+                                                  "kind": {
+                                                    "type": "string",
+                                                    "const": "RIVAL_CONTROLS_MORE_GIGS"
+                                                  },
+                                                  "minimum": {
+                                                    "type": "number",
+                                                    "const": 2
+                                                  }
+                                                },
+                                                "required": [
+                                                  "kind",
+                                                  "minimum"
+                                                ],
+                                                "additionalProperties": false
                                               }
                                             ]
                                           }
@@ -3153,6 +3189,24 @@
                                               "kind"
                                             ],
                                             "additionalProperties": false
+                                          },
+                                          {
+                                            "type": "object",
+                                            "properties": {
+                                              "kind": {
+                                                "type": "string",
+                                                "const": "RIVAL_CONTROLS_MORE_GIGS"
+                                              },
+                                              "minimum": {
+                                                "type": "number",
+                                                "const": 2
+                                              }
+                                            },
+                                            "required": [
+                                              "kind",
+                                              "minimum"
+                                            ],
+                                            "additionalProperties": false
                                           }
                                         ]
                                       },
@@ -3185,6 +3239,42 @@
                                     "required": [
                                       "kind",
                                       "count"
+                                    ],
+                                    "additionalProperties": false
+                                  },
+                                  {
+                                    "type": "object",
+                                    "properties": {
+                                      "kind": {
+                                        "type": "string",
+                                        "const": "SEARCH_TAKE_ONE_PLUS_PER_MIN_GIG"
+                                      },
+                                      "count": {
+                                        "type": "number",
+                                        "const": 3
+                                      }
+                                    },
+                                    "required": [
+                                      "kind",
+                                      "count"
+                                    ],
+                                    "additionalProperties": false
+                                  },
+                                  {
+                                    "type": "object",
+                                    "properties": {
+                                      "kind": {
+                                        "type": "string",
+                                        "const": "SET_GIG_TO_ANOTHER_GIG_VALUE"
+                                      },
+                                      "optional": {
+                                        "type": "boolean",
+                                        "const": true
+                                      }
+                                    },
+                                    "required": [
+                                      "kind",
+                                      "optional"
                                     ],
                                     "additionalProperties": false
                                   },
@@ -3530,6 +3620,29 @@
                                       "kind",
                                       "count",
                                       "then"
+                                    ],
+                                    "additionalProperties": false
+                                  },
+                                  {
+                                    "type": "object",
+                                    "properties": {
+                                      "kind": {
+                                        "type": "string",
+                                        "const": "READY_UNITS_UP_TO"
+                                      },
+                                      "relation": {
+                                        "type": "string",
+                                        "const": "FRIENDLY"
+                                      },
+                                      "maximum": {
+                                        "type": "number",
+                                        "const": 3
+                                      }
+                                    },
+                                    "required": [
+                                      "kind",
+                                      "relation",
+                                      "maximum"
                                     ],
                                     "additionalProperties": false
                                   },
@@ -4474,6 +4587,24 @@
                               "properties": {
                                 "kind": {
                                   "type": "string",
+                                  "const": "OTHER_FRIENDLY_ATTACKING_UNIT_POWER"
+                                },
+                                "amount": {
+                                  "type": "number",
+                                  "const": 2
+                                }
+                              },
+                              "required": [
+                                "kind",
+                                "amount"
+                              ],
+                              "additionalProperties": false
+                            },
+                            {
+                              "type": "object",
+                              "properties": {
+                                "kind": {
+                                  "type": "string",
                                   "const": "GRANT_KEYWORD_TO_HOST"
                                 },
                                 "keyword": {
@@ -4484,6 +4615,43 @@
                               "required": [
                                 "kind",
                                 "keyword"
+                              ],
+                              "additionalProperties": false
+                            },
+                            {
+                              "type": "object",
+                              "properties": {
+                                "kind": {
+                                  "type": "string",
+                                  "const": "GRANT_KEYWORD_TO_HOST_IF"
+                                },
+                                "keyword": {
+                                  "type": "string",
+                                  "const": "ADRENALINE"
+                                },
+                                "condition": {
+                                  "type": "object",
+                                  "properties": {
+                                    "kind": {
+                                      "type": "string",
+                                      "const": "RIVAL_CONTROLS_MORE_GIGS"
+                                    },
+                                    "minimum": {
+                                      "type": "number",
+                                      "const": 2
+                                    }
+                                  },
+                                  "required": [
+                                    "kind",
+                                    "minimum"
+                                  ],
+                                  "additionalProperties": false
+                                }
+                              },
+                              "required": [
+                                "kind",
+                                "keyword",
+                                "condition"
                               ],
                               "additionalProperties": false
                             },
@@ -7281,6 +7449,17 @@
                         "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$"
                       }
                     },
+                    "readiedUnits": {
+                      "minItems": 1,
+                      "maxItems": 2,
+                      "type": "array",
+                      "items": {
+                        "type": "string",
+                        "minLength": 1,
+                        "maxLength": 200,
+                        "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$"
+                      }
+                    },
                     "spendsRemaining": {
                       "type": "integer",
                       "exclusiveMinimum": 0,
@@ -8992,6 +9171,24 @@
                                             "kind"
                                           ],
                                           "additionalProperties": false
+                                        },
+                                        {
+                                          "type": "object",
+                                          "properties": {
+                                            "kind": {
+                                              "type": "string",
+                                              "const": "RIVAL_CONTROLS_MORE_GIGS"
+                                            },
+                                            "minimum": {
+                                              "type": "number",
+                                              "const": 2
+                                            }
+                                          },
+                                          "required": [
+                                            "kind",
+                                            "minimum"
+                                          ],
+                                          "additionalProperties": false
                                         }
                                       ]
                                     }
@@ -9532,6 +9729,24 @@
                                         "kind"
                                       ],
                                       "additionalProperties": false
+                                    },
+                                    {
+                                      "type": "object",
+                                      "properties": {
+                                        "kind": {
+                                          "type": "string",
+                                          "const": "RIVAL_CONTROLS_MORE_GIGS"
+                                        },
+                                        "minimum": {
+                                          "type": "number",
+                                          "const": 2
+                                        }
+                                      },
+                                      "required": [
+                                        "kind",
+                                        "minimum"
+                                      ],
+                                      "additionalProperties": false
                                     }
                                   ]
                                 },
@@ -9564,6 +9779,42 @@
                               "required": [
                                 "kind",
                                 "count"
+                              ],
+                              "additionalProperties": false
+                            },
+                            {
+                              "type": "object",
+                              "properties": {
+                                "kind": {
+                                  "type": "string",
+                                  "const": "SEARCH_TAKE_ONE_PLUS_PER_MIN_GIG"
+                                },
+                                "count": {
+                                  "type": "number",
+                                  "const": 3
+                                }
+                              },
+                              "required": [
+                                "kind",
+                                "count"
+                              ],
+                              "additionalProperties": false
+                            },
+                            {
+                              "type": "object",
+                              "properties": {
+                                "kind": {
+                                  "type": "string",
+                                  "const": "SET_GIG_TO_ANOTHER_GIG_VALUE"
+                                },
+                                "optional": {
+                                  "type": "boolean",
+                                  "const": true
+                                }
+                              },
+                              "required": [
+                                "kind",
+                                "optional"
                               ],
                               "additionalProperties": false
                             },
@@ -9909,6 +10160,29 @@
                                 "kind",
                                 "count",
                                 "then"
+                              ],
+                              "additionalProperties": false
+                            },
+                            {
+                              "type": "object",
+                              "properties": {
+                                "kind": {
+                                  "type": "string",
+                                  "const": "READY_UNITS_UP_TO"
+                                },
+                                "relation": {
+                                  "type": "string",
+                                  "const": "FRIENDLY"
+                                },
+                                "maximum": {
+                                  "type": "number",
+                                  "const": 3
+                                }
+                              },
+                              "required": [
+                                "kind",
+                                "relation",
+                                "maximum"
                               ],
                               "additionalProperties": false
                             },
@@ -12023,6 +12297,24 @@
                                           "kind"
                                         ],
                                         "additionalProperties": false
+                                      },
+                                      {
+                                        "type": "object",
+                                        "properties": {
+                                          "kind": {
+                                            "type": "string",
+                                            "const": "RIVAL_CONTROLS_MORE_GIGS"
+                                          },
+                                          "minimum": {
+                                            "type": "number",
+                                            "const": 2
+                                          }
+                                        },
+                                        "required": [
+                                          "kind",
+                                          "minimum"
+                                        ],
+                                        "additionalProperties": false
                                       }
                                     ]
                                   }
@@ -12563,6 +12855,24 @@
                                       "kind"
                                     ],
                                     "additionalProperties": false
+                                  },
+                                  {
+                                    "type": "object",
+                                    "properties": {
+                                      "kind": {
+                                        "type": "string",
+                                        "const": "RIVAL_CONTROLS_MORE_GIGS"
+                                      },
+                                      "minimum": {
+                                        "type": "number",
+                                        "const": 2
+                                      }
+                                    },
+                                    "required": [
+                                      "kind",
+                                      "minimum"
+                                    ],
+                                    "additionalProperties": false
                                   }
                                 ]
                               },
@@ -12595,6 +12905,42 @@
                             "required": [
                               "kind",
                               "count"
+                            ],
+                            "additionalProperties": false
+                          },
+                          {
+                            "type": "object",
+                            "properties": {
+                              "kind": {
+                                "type": "string",
+                                "const": "SEARCH_TAKE_ONE_PLUS_PER_MIN_GIG"
+                              },
+                              "count": {
+                                "type": "number",
+                                "const": 3
+                              }
+                            },
+                            "required": [
+                              "kind",
+                              "count"
+                            ],
+                            "additionalProperties": false
+                          },
+                          {
+                            "type": "object",
+                            "properties": {
+                              "kind": {
+                                "type": "string",
+                                "const": "SET_GIG_TO_ANOTHER_GIG_VALUE"
+                              },
+                              "optional": {
+                                "type": "boolean",
+                                "const": true
+                              }
+                            },
+                            "required": [
+                              "kind",
+                              "optional"
                             ],
                             "additionalProperties": false
                           },
@@ -12940,6 +13286,29 @@
                               "kind",
                               "count",
                               "then"
+                            ],
+                            "additionalProperties": false
+                          },
+                          {
+                            "type": "object",
+                            "properties": {
+                              "kind": {
+                                "type": "string",
+                                "const": "READY_UNITS_UP_TO"
+                              },
+                              "relation": {
+                                "type": "string",
+                                "const": "FRIENDLY"
+                              },
+                              "maximum": {
+                                "type": "number",
+                                "const": 3
+                              }
+                            },
+                            "required": [
+                              "kind",
+                              "relation",
+                              "maximum"
                             ],
                             "additionalProperties": false
                           },
@@ -15050,6 +15419,24 @@
                                           "kind"
                                         ],
                                         "additionalProperties": false
+                                      },
+                                      {
+                                        "type": "object",
+                                        "properties": {
+                                          "kind": {
+                                            "type": "string",
+                                            "const": "RIVAL_CONTROLS_MORE_GIGS"
+                                          },
+                                          "minimum": {
+                                            "type": "number",
+                                            "const": 2
+                                          }
+                                        },
+                                        "required": [
+                                          "kind",
+                                          "minimum"
+                                        ],
+                                        "additionalProperties": false
                                       }
                                     ]
                                   }
@@ -15590,6 +15977,24 @@
                                       "kind"
                                     ],
                                     "additionalProperties": false
+                                  },
+                                  {
+                                    "type": "object",
+                                    "properties": {
+                                      "kind": {
+                                        "type": "string",
+                                        "const": "RIVAL_CONTROLS_MORE_GIGS"
+                                      },
+                                      "minimum": {
+                                        "type": "number",
+                                        "const": 2
+                                      }
+                                    },
+                                    "required": [
+                                      "kind",
+                                      "minimum"
+                                    ],
+                                    "additionalProperties": false
                                   }
                                 ]
                               },
@@ -15622,6 +16027,42 @@
                             "required": [
                               "kind",
                               "count"
+                            ],
+                            "additionalProperties": false
+                          },
+                          {
+                            "type": "object",
+                            "properties": {
+                              "kind": {
+                                "type": "string",
+                                "const": "SEARCH_TAKE_ONE_PLUS_PER_MIN_GIG"
+                              },
+                              "count": {
+                                "type": "number",
+                                "const": 3
+                              }
+                            },
+                            "required": [
+                              "kind",
+                              "count"
+                            ],
+                            "additionalProperties": false
+                          },
+                          {
+                            "type": "object",
+                            "properties": {
+                              "kind": {
+                                "type": "string",
+                                "const": "SET_GIG_TO_ANOTHER_GIG_VALUE"
+                              },
+                              "optional": {
+                                "type": "boolean",
+                                "const": true
+                              }
+                            },
+                            "required": [
+                              "kind",
+                              "optional"
                             ],
                             "additionalProperties": false
                           },
@@ -15967,6 +16408,29 @@
                               "kind",
                               "count",
                               "then"
+                            ],
+                            "additionalProperties": false
+                          },
+                          {
+                            "type": "object",
+                            "properties": {
+                              "kind": {
+                                "type": "string",
+                                "const": "READY_UNITS_UP_TO"
+                              },
+                              "relation": {
+                                "type": "string",
+                                "const": "FRIENDLY"
+                              },
+                              "maximum": {
+                                "type": "number",
+                                "const": 3
+                              }
+                            },
+                            "required": [
+                              "kind",
+                              "relation",
+                              "maximum"
                             ],
                             "additionalProperties": false
                           },
@@ -18800,6 +19264,24 @@
                                       "kind"
                                     ],
                                     "additionalProperties": false
+                                  },
+                                  {
+                                    "type": "object",
+                                    "properties": {
+                                      "kind": {
+                                        "type": "string",
+                                        "const": "RIVAL_CONTROLS_MORE_GIGS"
+                                      },
+                                      "minimum": {
+                                        "type": "number",
+                                        "const": 2
+                                      }
+                                    },
+                                    "required": [
+                                      "kind",
+                                      "minimum"
+                                    ],
+                                    "additionalProperties": false
                                   }
                                 ]
                               }
@@ -19944,6 +20426,24 @@
                                                   "kind"
                                                 ],
                                                 "additionalProperties": false
+                                              },
+                                              {
+                                                "type": "object",
+                                                "properties": {
+                                                  "kind": {
+                                                    "type": "string",
+                                                    "const": "RIVAL_CONTROLS_MORE_GIGS"
+                                                  },
+                                                  "minimum": {
+                                                    "type": "number",
+                                                    "const": 2
+                                                  }
+                                                },
+                                                "required": [
+                                                  "kind",
+                                                  "minimum"
+                                                ],
+                                                "additionalProperties": false
                                               }
                                             ]
                                           }
@@ -20484,6 +20984,24 @@
                                               "kind"
                                             ],
                                             "additionalProperties": false
+                                          },
+                                          {
+                                            "type": "object",
+                                            "properties": {
+                                              "kind": {
+                                                "type": "string",
+                                                "const": "RIVAL_CONTROLS_MORE_GIGS"
+                                              },
+                                              "minimum": {
+                                                "type": "number",
+                                                "const": 2
+                                              }
+                                            },
+                                            "required": [
+                                              "kind",
+                                              "minimum"
+                                            ],
+                                            "additionalProperties": false
                                           }
                                         ]
                                       },
@@ -20516,6 +21034,42 @@
                                     "required": [
                                       "kind",
                                       "count"
+                                    ],
+                                    "additionalProperties": false
+                                  },
+                                  {
+                                    "type": "object",
+                                    "properties": {
+                                      "kind": {
+                                        "type": "string",
+                                        "const": "SEARCH_TAKE_ONE_PLUS_PER_MIN_GIG"
+                                      },
+                                      "count": {
+                                        "type": "number",
+                                        "const": 3
+                                      }
+                                    },
+                                    "required": [
+                                      "kind",
+                                      "count"
+                                    ],
+                                    "additionalProperties": false
+                                  },
+                                  {
+                                    "type": "object",
+                                    "properties": {
+                                      "kind": {
+                                        "type": "string",
+                                        "const": "SET_GIG_TO_ANOTHER_GIG_VALUE"
+                                      },
+                                      "optional": {
+                                        "type": "boolean",
+                                        "const": true
+                                      }
+                                    },
+                                    "required": [
+                                      "kind",
+                                      "optional"
                                     ],
                                     "additionalProperties": false
                                   },
@@ -20861,6 +21415,29 @@
                                       "kind",
                                       "count",
                                       "then"
+                                    ],
+                                    "additionalProperties": false
+                                  },
+                                  {
+                                    "type": "object",
+                                    "properties": {
+                                      "kind": {
+                                        "type": "string",
+                                        "const": "READY_UNITS_UP_TO"
+                                      },
+                                      "relation": {
+                                        "type": "string",
+                                        "const": "FRIENDLY"
+                                      },
+                                      "maximum": {
+                                        "type": "number",
+                                        "const": 3
+                                      }
+                                    },
+                                    "required": [
+                                      "kind",
+                                      "relation",
+                                      "maximum"
                                     ],
                                     "additionalProperties": false
                                   },
@@ -21805,6 +22382,24 @@
                               "properties": {
                                 "kind": {
                                   "type": "string",
+                                  "const": "OTHER_FRIENDLY_ATTACKING_UNIT_POWER"
+                                },
+                                "amount": {
+                                  "type": "number",
+                                  "const": 2
+                                }
+                              },
+                              "required": [
+                                "kind",
+                                "amount"
+                              ],
+                              "additionalProperties": false
+                            },
+                            {
+                              "type": "object",
+                              "properties": {
+                                "kind": {
+                                  "type": "string",
                                   "const": "GRANT_KEYWORD_TO_HOST"
                                 },
                                 "keyword": {
@@ -21815,6 +22410,43 @@
                               "required": [
                                 "kind",
                                 "keyword"
+                              ],
+                              "additionalProperties": false
+                            },
+                            {
+                              "type": "object",
+                              "properties": {
+                                "kind": {
+                                  "type": "string",
+                                  "const": "GRANT_KEYWORD_TO_HOST_IF"
+                                },
+                                "keyword": {
+                                  "type": "string",
+                                  "const": "ADRENALINE"
+                                },
+                                "condition": {
+                                  "type": "object",
+                                  "properties": {
+                                    "kind": {
+                                      "type": "string",
+                                      "const": "RIVAL_CONTROLS_MORE_GIGS"
+                                    },
+                                    "minimum": {
+                                      "type": "number",
+                                      "const": 2
+                                    }
+                                  },
+                                  "required": [
+                                    "kind",
+                                    "minimum"
+                                  ],
+                                  "additionalProperties": false
+                                }
+                              },
+                              "required": [
+                                "kind",
+                                "keyword",
+                                "condition"
                               ],
                               "additionalProperties": false
                             },

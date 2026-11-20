@@ -22,6 +22,11 @@ export function stolenGigReadyTargets(state: GameState, current: PendingEffect, 
 export function taggedLegendReadyTargets(state: GameState, actor: PlayerId, tag: string, context: EngineContext): CardInstanceId[] {
     return readyLegendTargets(state, actor, context).filter(id => hasClassification(state, id, tag, context));
 }
+/** Batch V38: friendly face-up field Units, Go Solo Legends included (4.2.1). As with the other readies, readiness is not a
+ * selector filter. */
+export function friendlyUnitReadyTargets(state: GameState, actor: PlayerId, context: EngineContext): CardInstanceId[] {
+    return state.players[actor].zones.BATTLEFIELD.filter(id => { const c = state.objects.cards[id]; return c.controllerId === actor && c.face === "UP" && effectiveCardTypes(state, id, context).includes("UNIT"); }).sort();
+}
 export function readyCardForEffect(m: TurnMutation, id: CardInstanceId) {
     const c = m.state.objects.cards[id];
     if (!c || c.readiness !== "SPENT") return;

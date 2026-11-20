@@ -5,16 +5,16 @@ import { triggersEnabled } from "./trigger-support";
 import { actionReturnContext, finishAction } from "./action-return";
 import { applyTemporaryPower } from "./temporary-power";
 import { attachPlayedGear, moveCardLocation } from "./card-movement";
-import { EffectSchema, failure, success, type CardInstanceId, type PlayerId, type PaymentSource, type Result } from "@tcg/domain";
+import { EffectSchema, failure, success, type CardInstanceId, type GameState, type GigInstanceId, type PlayerId, type PaymentSource, type Result } from "@tcg/domain";
 import type { TurnMutation } from "./turn";
 import { revisionOf } from "./play-support";
 import { playChoice, playEffectId, adjustmentTargets } from "./play-state";
 import { forcedPaymentSources, paymentValue, validatePayment } from "./payment";
 import { playPaymentAmount } from "./play-cost-support";
-import { HandlerRegistry } from "./effects";
+import { HandlerRegistry, continueSearch } from "./effects";
 import { chooseTrashedUnit } from "./trash-return";
 import { chooseBottomDeck } from "./bottom-deck";
-import { changeGigValue, gigAdjustmentDelta } from "./gig-value";
+import { changeGigValue, gigAdjustmentDelta, gigSetSources, gigSetTargets } from "./gig-value";
 import { testCondition } from "./conditions";
 
 export function offerPlayChoice(m: TurnMutation) {
@@ -128,6 +128,11 @@ export function continuePlay(m: TurnMutation, index: number): Result<null> {
         m.emit({ kind: "CARD_PLAYED", cardInstanceId: c.sourceId });
         return finishPlay(m, c.sourceId);
     }
+    if (s.resolution.current?.effect.kind === "SEARCH_TAKE_ONE_PLUS_PER_MIN_GIG") {
+        const searched = continueSearch(m, index);
+        return !searched.ok || s.resolution.searchContinuation ? searched : completePlayEffect(m);
+    }
+    if (s.resolution.current?.effect.kind === "SET_GIG_TO_ANOTHER_GIG_VALUE") return continueGigSet(m, option);
     if (s.resolution.current?.effect.kind === "SPEND_UNIT") {
         if (option.kind !== "CARD") return failure("INVALID_SPEND_TARGET", "Choose an enumerated Unit");
         const spent = resolveSpendTarget(m, option.cardInstanceId);
@@ -172,6 +177,29 @@ export function continuePlay(m: TurnMutation, index: number): Result<null> {
     s.resolution.choice = null;
     s.resolution.current = s.resolution.pending.shift() ?? null;
     return resolveChain(m);
+}
+/** Batch V37: decline, or pick the Gig to set; then the other Gig whose value it takes (a lone source needs no choice). */
+function continueGigSet(m: TurnMutation, option: NonNullable<GameState["resolution"]["choice"]>["options"][number]): Result<null> {
+    const s = m.state, c = s.resolution.playContinuation!, current = s.resolution.current!;
+    if (!c.targetGigId) {
+        if (option.kind === "CONFIRM" && !option.confirmed) { m.emit({ kind: "OPTIONAL_TRIGGER_DECLINED", effectId: current.id, controllerId: c.actorId }); return completePlayEffect(m); }
+        if (option.kind !== "GIG" || !gigSetTargets(s).includes(option.gigInstanceId)) return failure("INVALID_GIG_TARGET", "Choose an enumerated Gig to set");
+        c.targetGigId = option.gigInstanceId;
+        m.emit({ kind: "GIG_TARGET_SELECTED", effectId: current.id, gigInstanceId: c.targetGigId });
+        const sources = gigSetSources(s, c.targetGigId);
+        return sources.length === 1 ? setGig(m, sources[0]) : offerPlayChoice(m);
+    }
+    if (option.kind !== "GIG" || !gigSetSources(s, c.targetGigId).includes(option.gigInstanceId)) return failure("INVALID_GIG_TARGET", "Choose an enumerated Gig whose value to take");
+    return setGig(m, option.gigInstanceId);
+}
+function setGig(m: TurnMutation, sourceGigId: GigInstanceId): Result<null> {
+    const s = m.state, c = s.resolution.playContinuation!, target = s.objects.gigs[c.targetGigId!], source = s.objects.gigs[sourceGigId];
+    if (target.roll.kind !== "ROLLED" || source.roll.kind !== "ROLLED") return failure("INVALID_GIG_TARGET", "Both Gigs must be rolled");
+    const changed = changeGigValue(s, target.id, source.roll.currentValue - target.roll.currentValue, m.context);
+    if (!changed.ok) return changed;
+    m.emit(changed.value);
+    delete c.targetGigId;
+    return completePlayEffect(m);
 }
 export function activateAbility(m: TurnMutation, actorId: PlayerId, sourceId: CardInstanceId, abilityId: string): Result<null> {
     const s = m.state, ability = revisionOf(s, sourceId, m.context)!.mechanics.abilities.find(a => a.id === abilityId)!;

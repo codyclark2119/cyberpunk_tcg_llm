@@ -3,6 +3,8 @@ import { hasTargetedDefeatMetadata, supportsTargetedDefeatCard } from "./targete
 import { hasTargetedGearDefeatMetadata, supportsTargetedGearDefeatCard } from "./targeted-gear-defeat-support";
 import { hasValueConditionMetadata, supportsValueConditionCard } from "./value-conditions-support";
 import { hasMinGigProgramMetadata, supportsMinGigProgramCard } from "./min-gig-program-support";
+import { hasProgramSearchEffect, supportsProgramSearch } from "./program-search-support";
+import { hasGigSetEffect, supportsGigSetProgram } from "./program-gig-set-support";
 import { hasFriendlyPlayPowerMetadata, supportsFriendlyPlayPowerUnit } from "./friendly-play-power-support";
 import { supportsTargetedSpendCard } from "./targeted-spend-support";
 import { hasPlayCostReductionMetadata, playPaymentAmount, supportsPlayCostReduction } from "./play-cost-support";
@@ -32,6 +34,10 @@ export function supportsPlay(card: DeepReadonly<CardRevisionSnapshot> | undefine
     if (card && hasTargetedGearDefeatMetadata(card)) return supportsTargetedGearDefeatCard(card, context);
     if (card && hasTargetedDefeatMetadata(card)) return supportsTargetedDefeatCard(card, context);
     if (card && hasMinGigProgramMetadata(card)) return supportsMinGigProgramCard(card, context);
+    // Batch V36: Program top-of-deck searches are admitted only by their exact pins.
+    if (card && hasProgramSearchEffect(card)) return supportsProgramSearch(card, context);
+    // Batch V37: the optional Gig set is admitted only by its exact pin.
+    if (card && hasGigSetEffect(card)) return supportsGigSetProgram(card, context);
     if (card && hasValueConditionMetadata(card)) return supportsValueConditionCard(card, context);
     if (card?.execution?.scope === "TARGETED_SPEND_V1") return supportsTargetedSpendCard(card, context);
     if (playEnabled(context) && card?.execution?.scope === "FIELD_LEGENDS_V1") return supportsFieldLegend(card, context);

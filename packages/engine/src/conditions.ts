@@ -53,6 +53,8 @@ export function testCondition(state: GameState, actor: PlayerId, condition: Cond
         case "GIG_VALUE": return values.includes(condition.value);
         case "GIG_VALUE_AT_LEAST": return values.some(value => value >= condition.minimum);
         case "GIG_COUNT_WITH_VALUE_AT_LEAST": return values.filter(value => value >= condition.minimum).length >= condition.count;
+        // Batch V39: some Rival's Gig area holds at least `minimum` more Gigs than the actor's.
+        case "RIVAL_CONTROLS_MORE_GIGS": return state.match.playerOrder.some(id => id !== actor && Object.values(state.objects.gigs).filter(g => g.controllerId === id && g.location.zone === "GIGS").length >= Object.values(state.objects.gigs).filter(g => g.controllerId === actor && g.location.zone === "GIGS").length + condition.minimum);
         case "CONTROLS_VALUE_PAIR": return new Set(values).size < values.length; // Batch V29, 6.6: two own Gigs share a value.
     }
 }

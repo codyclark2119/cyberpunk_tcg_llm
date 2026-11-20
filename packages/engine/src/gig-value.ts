@@ -31,3 +31,15 @@ export function gigAdjustmentDelta(effect: Extract<Effect, { kind: "ADJUST_GIG_U
     if (effect.direction === "DECREASE") return option.kind === "AMOUNT" && Number.isInteger(option.amount) && option.amount >= 0 && option.amount <= effect.maximum ? -option.amount : null;
     return option.kind === "MODE" ? option.mode === "KEEP" ? 0 : option.mode === "DECREASE_1" ? -1 : option.mode === "INCREASE_1" ? 1 : null : null;
 }
+/** Batch V37 "set a Gig's value to the value of another Gig": another rolled Gig in a Gig area whose value differs and is on the
+ * target's faces (6.5.1); setting a Gig to its own value changes nothing (6.4.3), so such a source is never offered. */
+export function gigSetSources(state: GameState, targetId: GigInstanceId) {
+    const target = state.objects.gigs[targetId];
+    if (target?.location.zone !== "GIGS" || target.roll.kind !== "ROLLED") return [];
+    const value = target.roll.currentValue, maximum = Number(target.dieType.slice(1));
+    return Object.values(state.objects.gigs).filter(g => g.id !== targetId && g.location.zone === "GIGS" && g.roll.kind === "ROLLED" && g.roll.currentValue !== value && g.roll.currentValue <= maximum).map(g => g.id).sort();
+}
+/** Any rolled Gig in a Gig area, either player's, that some other Gig could set. */
+export function gigSetTargets(state: GameState) {
+    return Object.values(state.objects.gigs).filter(g => gigSetSources(state, g.id).length).map(g => g.id).sort();
+}

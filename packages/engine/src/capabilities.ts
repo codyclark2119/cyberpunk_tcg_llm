@@ -4,6 +4,7 @@ import type { EngineContext } from "./state";
 import { cardRevision } from "./characteristics";
 import { attachedGear } from "./attachments";
 import { capabilitiesEnabled, supportsCapabilityGear } from "./capability-support";
+import { testCondition } from "./conditions";
 export type CapabilitySource = { sourceId: CardInstanceId; subjectId: CardInstanceId; controllerId: PlayerId; source: CardReference; origin: "PRINTED" | "EQUIPPED_HOST" | "EFFECT" };
 export type EffectiveCapability = { keyword: Keyword; sources: CapabilitySource[] };
 /** Printed keyword identity plus reviewed inherited sources. Legality separately checks type, area, readiness and restrictions.
@@ -22,7 +23,11 @@ export function effectiveCapabilities(state: GameState, id: CardInstanceId, cont
     if (capabilitiesEnabled(context) && host.face === "UP" && host.zone.playerId === host.controllerId && ((revision.type === "UNIT" && host.zone.zone === "BATTLEFIELD") || (revision.type === "LEGEND" && (host.zone.zone === "LEGENDS" || host.zone.zone === "BATTLEFIELD" && supportsFieldLegend(revision, context).ok))))
         for (const gear of attachedGear(state, id, context)) {
             if (gear.face !== "UP" || gear.controllerId !== host.controllerId || gear.zone.playerId !== host.zone.playerId || gear.zone.zone !== host.zone.zone || !supportsCapabilityGear(cardRevision(state, gear.id, context), context).ok) continue;
-            for (const modifier of cardRevision(state, gear.id, context)!.mechanics.modifiers) if (modifier.kind === "GRANT_KEYWORD_TO_HOST") add(modifier.keyword, gear.id, "EQUIPPED_HOST");
+            for (const modifier of cardRevision(state, gear.id, context)!.mechanics.modifiers) {
+                if (modifier.kind === "GRANT_KEYWORD_TO_HOST") add(modifier.keyword, gear.id, "EQUIPPED_HOST");
+                // Batch V39: the condition is read live from the host controller's view ("you"), whenever the keyword is consulted.
+                if (modifier.kind === "GRANT_KEYWORD_TO_HOST_IF" && testCondition(state, host.controllerId, modifier.condition, context)) add(modifier.keyword, gear.id, "EQUIPPED_HOST");
+            }
         }
     // Batch V20: a keyword granted "this turn" applies only while its target remains a face-up field Unit.
     if (host.face === "UP" && host.zone.zone === "BATTLEFIELD")

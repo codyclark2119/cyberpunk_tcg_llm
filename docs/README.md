@@ -77,6 +77,10 @@ were recorded in their pull requests (#4, #7, #8); later batches have documents 
 | V33 (2026-11-20) | Maman Brigitte: Spirit of Death | [{Play} may discard 2 Programs, then bottom-deck a rival unequipped Unit](api-admission-batch-v33.md); coverage 82/151 |
 | V34 (2026-11-20) | Heywood Ripperdoc | [{Play} may defeat any Gear, draw 1 on a cost/Gig match](api-admission-batch-v34.md); coverage 83/151 |
 | V35 (2026-11-20) | Hanako Arasaka: In a Gilded Cage | [{Play} search the top 4, take any costing a friendly Gig's value](api-admission-batch-v35.md); coverage 84/151 |
+| V36 (2026-11-20) | Three Mouths One Desire | [Program search: add 1, plus 1 more per friendly min Gig](api-admission-batch-v36.md); coverage 85/151 |
+| V37 (2026-11-20) | Peace Offering | [Program: optionally set a Gig to another Gig's value, then value-pair draw](api-admission-batch-v37.md); coverage 86/151 |
+| V38 (2026-11-20) | Saul Bright: Stormrider | [Other attacking friendly Units +2; end of turn ready up to 3 friendly Units](api-admission-batch-v38.md); coverage 87/151 |
+| V39 (2026-11-20) | Adrenaline Converter | [Gear: host has Adrenaline while a Rival controls 2 more Gigs](api-admission-batch-v39.md); coverage 88/151 |
 | V7 (2026-11-15) | Royce: Don't Call Me Simon, Wild in the Streets, Delamain: Rideshare AI | [shared defeat filter and exact pin table](api-admission-batch-v7.md); coverage 42/151 |
 | V6 (2026-09-22) | Trust No One | [contract and executable slice](api-admission-batch-v6.md), [baseline verification](api-admission-batch-v6-verification.md) |
 
