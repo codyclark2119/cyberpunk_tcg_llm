@@ -99,7 +99,11 @@ export const QualifyingAttackSummarySchema = z.strictObject({
     count: z.number().int().nonnegative(),
     first: z.strictObject({ attackerId: CardInstanceIdSchema, attacker: CardReferenceSchema }).nullable()
 }).refine(h => (h.count === 0) === (h.first === null), "Zero attacks have no first occurrence; positive counts require one");
+/** Batch V49: per player, the turn's first steal of a Gig with value less than the stealer's power, and the first such steal by a
+ * different Unit; together they decide "the first time another friendly Unit steals ..." for any observer. */
+export const BelowPowerStealSchema = z.strictObject({ stealerId: CardInstanceIdSchema, gigInstanceId: GigInstanceIdSchema });
 export const TurnHistorySchema = z.strictObject({
+    belowPowerSteals: z.record(PlayerIdSchema, z.array(BelowPowerStealSchema).min(1).max(2)).optional(),
     firstArasakaAttacks: z.record(PlayerIdSchema, QualifyingAttackSummarySchema).optional(), gigsStolenByUnit: z.record(CardInstanceIdSchema, z.number().int().positive()).optional(), turn: z.number().int().positive(), triggeredBatches: z.number().int().nonnegative(), blueUnitOrGearPlays: z.record(PlayerIdSchema, z.number().int().nonnegative()), programPlays: z.record(PlayerIdSchema, z.number().int().nonnegative()).optional() });
 export const PendingEffectSchema = z.strictObject({ id: z.string().min(1), controllerId: PlayerIdSchema, sourceId: CardInstanceIdSchema.nullable(), primitiveIndex: z.literal(1).optional(), effect: EffectSchema, trigger: TriggerBindingSchema.omit({ sourceId: true, controllerId: true }).extend({ turn: z.number().int().positive(), ordinal: z.number().int().positive() }).optional(), causedBySequence: z.number().int().nonnegative() });
 export const ActionReturnContextSchema = z.discriminatedUnion("kind", [z.strictObject({ kind: z.literal("MAIN") }), z.strictObject({ kind: z.literal("RIVAL_REACT") })]);
@@ -118,6 +122,10 @@ export const TemporaryPowerModifierSchema = z.discriminatedUnion("amount", [
 ).or(
     // Batch V41: "This Unit gains power equal to that card's cost this turn": the revealed card is named, so the amount is its printed cost.
     TemporaryPowerBaseSchema.extend({ amount: z.number().int().positive(), scaled: z.literal("REVEALED_CARD_COST"), revealedCardId: CardInstanceIdSchema, origin: z.strictObject({ effectId: HashSchema, abilityId: z.string().min(1), ordinal: z.number().int().positive() }) })
+).or(
+    // Batch V49: "A rival Unit loses power equal to this Unit's power this turn": the source's power at resolution; `sequence`
+    // keeps repeated activations in one turn apart.
+    TemporaryPowerBaseSchema.extend({ amount: z.number().int().negative(), scaled: z.literal("SOURCE_POWER"), origin: z.strictObject({ effectId: HashSchema, sequence: z.number().int().nonnegative() }) })
 );
 export type TemporaryPowerModifier = z.infer<typeof TemporaryPowerModifierSchema>;
 /** Batch V20: a keyword granted "this turn" by a resolved PLAY occurrence; it tracks the target only while it stays on the field. */

@@ -1,3 +1,4 @@
+import { belowPowerStealFires } from "./below-power-steal";
 import { handPrograms, programBottomDeckTargets } from "./program-discard";
 import { mustAttackTargets } from "./must-attack";
 import { REVEAL_TYPES } from "./type-reveal-support";
@@ -55,7 +56,9 @@ export function discoverTriggers(state: GameState, origin: TriggerOrigin, contex
         const guard = (b: TriggerBinding) => cardRevision(state, b.sourceId, context)!.mechanics.abilities.find(a => a.id === b.abilityId)!.guard;
         return [...origin.gigInstanceIds].sort().flatMap(gigInstanceId => [
             ...effectiveTriggeredAbilities(state, origin.subjectId, context).filter(b => b.kind === "WHEN_GIG_STOLEN" && b.sourceId === b.subjectId),
-            ...observers.filter(b => guard(b) === "STOLEN_GIG_IS_D6" && state.objects.gigs[gigInstanceId]?.dieType === "D6" || guard(b) === "STEALER_IS_LEGEND" && stealerIsLegend(state, origin.subjectId, context))
+            ...observers.filter(b => guard(b) === "STOLEN_GIG_IS_D6" && state.objects.gigs[gigInstanceId]?.dieType === "D6" || guard(b) === "STEALER_IS_LEGEND" && stealerIsLegend(state, origin.subjectId, context)
+                // Batch V49: a friendly field Unit observing the turn's first below-power steal by another friendly Unit.
+                || guard(b) === "FIRST_OTHER_FRIENDLY_STEAL_BELOW_POWER_PER_TURN" && state.objects.cards[b.sourceId].zone.zone === "BATTLEFIELD" && belowPowerStealFires(state, b.sourceId, origin.subjectId, gigInstanceId))
         ].map(b => ({ ...b, gigInstanceId })));
     }
     const own = effectiveTriggeredAbilities(state, origin.subjectId, context).filter(b => {

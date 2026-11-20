@@ -1,3 +1,4 @@
+import { belowPowerStealFires } from "./below-power-steal";
 import { isSearchEffect } from "./search-state";
 import { supportsFreePlayCard } from "./free-play-support";
 import { freePlayTargets } from "./free-play";
@@ -77,7 +78,9 @@ function validBinding(state: GameState, b: TriggerBinding, context: EngineContex
             // Batch V26: a friendly field Unit observing a stolen d6.
             : b.kind === "WHEN_FRIENDLY_UNIT_STEALS_GIG" && ability.guard === "STOLEN_GIG_IS_D6" && state.objects.gigs[b.gigInstanceId!]?.dieType === "D6" && subject.zone.zone === "BATTLEFIELD" && b.controllerId === state.objects.cards[steal.subjectId]?.controllerId
             // Batch V40: a face-up friendly field or Legends-area source observing a stealing friendly Legend.
-            || b.kind === "WHEN_FRIENDLY_UNIT_STEALS_GIG" && ability.guard === "STEALER_IS_LEGEND" && stealerIsLegend(state, steal.subjectId, context) && ["BATTLEFIELD", "LEGENDS"].includes(subject.zone.zone) && b.controllerId === state.objects.cards[steal.subjectId]?.controllerId);
+            || b.kind === "WHEN_FRIENDLY_UNIT_STEALS_GIG" && ability.guard === "STEALER_IS_LEGEND" && stealerIsLegend(state, steal.subjectId, context) && ["BATTLEFIELD", "LEGENDS"].includes(subject.zone.zone) && b.controllerId === state.objects.cards[steal.subjectId]?.controllerId
+            // Batch V49: a friendly field Unit observing the turn's first below-power steal by another friendly Unit.
+            || b.kind === "WHEN_FRIENDLY_UNIT_STEALS_GIG" && ability.guard === "FIRST_OTHER_FRIENDLY_STEAL_BELOW_POWER_PER_TURN" && belowPowerStealFires(state, b.sourceId, steal.subjectId, b.gigInstanceId!) && subject.zone.zone === "BATTLEFIELD" && b.controllerId === state.objects.cards[steal.subjectId]?.controllerId);
     if (origin.kind === "DEFEAT") return false;
     if (origin.kind === "ATTACK") {
         if (b.kind === "WHEN_UNIT_ATTACKS") return b.sourceId === b.subjectId && source.face === "UP" && source.zone.zone === "LEGENDS" && supportsFirstAttackLegend(r, context).ok && state.objects.cards[origin.subjectId]?.controllerId === b.controllerId && isFirstArasakaAttack(state, origin.subjectId, context);
@@ -255,7 +258,7 @@ export function validateTriggerState(state: GameState, context: EngineContext) {
     if (typeReveal && (c.origin.kind !== "END_TURN" || r.current!.trigger?.kind !== "WHEN_OWN_TURN_ENDS" || r.current!.primitiveIndex !== undefined || !supportsTypeRevealUnit(cardRevision(state, r.current!.sourceId!, context), context).ok
         || (c.phase === "TARGET" ? c.conditionMet !== undefined || !state.players[r.current!.controllerId].zones.DECK.length : c.phase !== "READY" || c.conditionMet !== true || readyableEddieSlots(state, r.current!.controllerId).length < 2)))
         return failure("INVALID_TYPE_REVEAL_CONTINUATION", "The reviewed type reveal pauses only to name a type, then to ready one of several spent Eddies after a match");
-    if (!typeReveal && (c.phase === "READY" || r.current?.effect.kind === "READY_EDDIES") && (c.phase !== "READY" || r.current?.effect.kind !== "READY_EDDIES" || c.origin.kind !== "END_TURN")) return failure("INVALID_READY_CONTINUATION", "Ready choices require their pending end-turn ability");
+    if (!typeReveal && (c.phase === "READY" || r.current?.effect.kind === "READY_EDDIES") && (c.phase !== "READY" || r.current?.effect.kind !== "READY_EDDIES" || c.origin.kind !== "END_TURN" && r.current.trigger?.kind !== "WHEN_FRIENDLY_UNIT_STEALS_GIG")) return failure("INVALID_READY_CONTINUATION", "Ready choices require their pending end-turn or (Batch V49) friendly-steal ability");
     if (c.selectedEddieSlots && (c.phase !== "READY" || r.current?.effect.kind !== "READY_EDDIES" || r.current.effect.count !== 2 || c.selectedEddieSlots.some(slot => !readyableEddieSlots(state, r.current!.controllerId).includes(slot))))
         return failure("INVALID_READY_SELECTION", "Only a count2 ready choice may hold one still-spent public slot");
     if (c.phase === "READY" && r.current?.effect.kind === "READY_EDDIES") {

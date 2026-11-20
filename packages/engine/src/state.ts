@@ -11,6 +11,7 @@ import { validateAttackPreventionMetadata } from "./attack-prevention-support";
 import { validatePlayCostReductionMetadata } from "./play-cost-support";
 import { validateFirstAttackMetadata } from "./first-attack-support";
 import { validateFirstAttackHistory } from "./first-attack-history";
+import { validateBelowPowerHistory } from "./below-power-steal";
 import { validateFieldLegendMetadata } from "./field-legend-support";
 import { validateDelayedMetadata } from "./delayed-effect-support";
 import { validateLegendEntryState } from "./legend-entry";
@@ -118,6 +119,7 @@ export function validateState(input: unknown, context: EngineContext): Result<Ga
     const costMetadata = validatePlayCostReductionMetadata(s, context); if (!costMetadata.ok) return costMetadata;
     const firstMetadata = validateFirstAttackMetadata(s, context); if (!firstMetadata.ok) return firstMetadata;
     const firstHistory = validateFirstAttackHistory(s, context); if (!firstHistory.ok) return firstHistory;
+    const belowPower = validateBelowPowerHistory(s, context); if (!belowPower.ok) return belowPower; // Batch V49.
     const fieldMetadata = validateFieldLegendMetadata(s, context); if (!fieldMetadata.ok) return fieldMetadata;
     const delayedMetadata = validateDelayedMetadata(s, context); if (!delayedMetadata.ok) return delayedMetadata;
     const delayedState = validateDelayedState(s, context); if (!delayedState.ok) return delayedState;

@@ -195,7 +195,7 @@ for (const defect of ["policy","status","scope","trigger","condition","missing-c
     const ctx = { content: createContentBundle(rules, context.content.cards.map(x => x.id === LOSING ? c : x), context.content.manifest.engine) }; assert.equal(supportsAttackConditionPowerCard(c,ctx).ok, false); assert.equal(supportsPlay(c,ctx).ok, false); assert.equal(createGameWithEvents(attackPowerInput("invalid"),ctx).ok, false);
 });
 for (const defect of ["duplicate","amount","target","source","origin-missing","origin-id","origin-ability","origin-ordinal","future-turn","hidden","unresolved"]) test("external temporary+5 rejects "+defect, () => {
-    const s = GameStateSchema.parse(trace.afterAttack); const m = s.temporaryModifiers![0]; assert.ok(m.amount === 5);
+    const s = GameStateSchema.parse(trace.afterAttack); const m = s.temporaryModifiers![0]; assert.ok(m.amount === 5 && !("scaled" in m));
     if (defect === "duplicate") s.temporaryModifiers!.push(structuredClone(m));
     if (defect === "target") m.targetId = trace.fieldLegend;
     if (defect === "source") m.sourceId = trace.fieldLegend;

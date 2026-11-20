@@ -11,6 +11,7 @@ import { defeatCards, defeatSupport } from "./defeat";
 import { transferGigs } from "./gig-transfer";
 import { defeatOrderChoice, defeatsFromFightResult, evaluateFight, gigStealChoice, stealableGigsFor, unfinishedDefeatOrder } from "./combat-outcome-queries";
 import { fightOutcomeBinding, fireFightOutcomes } from "./fight-outcome";
+import { belowPowerStealerPower, recordBelowPowerSteal } from "./below-power-steal";
 
 export function finishCombat(m: TurnMutation) {
     const c = m.state.timing.combat;
@@ -70,7 +71,7 @@ function advanceGigSteal(m: TurnMutation) {
         continuation.selected.push(g.id);
         m.emit({ kind: "GIG_STEAL_SELECTED", gigInstanceId: g.id, attackerId: c.attackerId, forced: true });
     }
-    const defendingPlayer = c.target.playerId;
+    const defendingPlayer = c.target.playerId, power = belowPowerStealerPower(m.state, c.attackerId, m.context);
     const transferred = transferGigs(m, continuation.selected, c.attackingPlayerId, () => {
         // 9.23.5 all moves precede each stolen fact / future 9.23.6 trigger discovery.
         for (const id of [...continuation.selected].sort()) {
@@ -84,6 +85,7 @@ function advanceGigSteal(m: TurnMutation) {
         }
     });
     if (!transferred.ok) return transferred;
+    recordBelowPowerSteal(m, c.attackerId, continuation.selected, power); // Batch V49.
     if (m.state.match.outcome) return success(null);
     // Batch V24 (11.5.1.7, 9.20.2): "When this Unit steals a Gig" becomes pending after the move, then resolves before the attack ends.
     const stolen = { kind: "STEAL" as const, subjectId: c.attackerId, gigInstanceIds: [...continuation.selected].sort() };

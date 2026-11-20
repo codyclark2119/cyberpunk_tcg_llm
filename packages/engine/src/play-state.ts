@@ -3,17 +3,25 @@ import { playPaymentAmount } from "./play-cost-support";
 import { gigAdjustmentOptions, gigSetSources, gigSetTargets } from "./gig-value";
 import { powerTargets } from "./react-queries";
 import { legalEquipHosts } from "./attachments";
-import { canonicalSerialize, hashCanonical, failure, success, type GameState, type PendingChoice } from "@tcg/domain";
+import { canonicalSerialize, hashCanonical, failure, success, type GameState, type PendingChoice, type PlayerId, type CardInstanceId } from "@tcg/domain";
 import type { EngineContext } from "./state";
 import { revisionOf, supportsPlay } from "./play-support";
 import { paymentCandidates, paymentSources, paymentValue, forcedPaymentSources } from "./payment";
 import { trashedUnitTargets, validateTrashReturn } from "./trash-return";
 import { currentBottomDeckTargets, validateBottomDeck } from "./bottom-deck";
 import { testCondition } from "./conditions";
+import { validateActivationState } from "./quick-activation";
 
 function playIdentity(state: GameState) {
     const c = state.resolution.playContinuation!;
-    return hashCanonical({ protocol: "noncombat-play@1", turn: state.timing.turn, actorSeat: state.players[c.actorId].seat, sourceId: c.sourceId, kind: c.kind, abilityId: c.abilityId ?? null });
+    return identity(state, c.actorId, c.sourceId, c.kind, c.abilityId);
+}
+function identity(state: GameState, actorId: PlayerId, sourceId: CardInstanceId, kind: "PLAY" | "ACTIVATE", abilityId: string | undefined) {
+    return hashCanonical({ protocol: "noncombat-play@1", turn: state.timing.turn, actorSeat: state.players[actorId].seat, sourceId, kind, abilityId: abilityId ?? null });
+}
+/** Batch V49: the effect id an activation's printed effect had this turn, for history that outlives the continuation. */
+export function activationEffectId(state: GameState, actorId: PlayerId, sourceId: CardInstanceId, abilityId: string, index: number) {
+    return hashCanonical({ continuation: identity(state, actorId, sourceId, "ACTIVATE", abilityId), index });
 }
 export function playEffectId(state: GameState, index = state.resolution.playContinuation!.effectIndex) { return hashCanonical({ continuation: playIdentity(state), index }); }
 /** Afterparty says 'a Gig', without a friendly restriction: either player's controlled rolled Gig. */
@@ -64,6 +72,7 @@ export function validatePlayState(state: GameState, context: EngineContext) {
     const c = state.resolution.playContinuation, current = state.resolution.current;
     const resolving = Object.values(state.objects.cards).filter(c => c.zone.zone === "RESOLVING_PROGRAM");
     if (!c) return resolving.length || (state.timing.step === "AMOUNT_SELECTION" && !state.resolution.triggerContinuation) ? failure("INVALID_PLAY_CONTINUATION", "Resolving Programs and amount choices require a continuation") : success(null);
+    if (c.kind === "ACTIVATE") return validateActivationState(state, context); // Batch V49.
     const source = state.objects.cards[c.sourceId], revision = revisionOf(state, c.sourceId, context), ability = revision?.mechanics.abilities[0];
     if (!supportsPlay(revision, context).ok || !source || c.kind !== "PLAY" || c.actorId !== (state.resolution.targetedDefeatContinuation?.phase === "ORDER" || state.resolution.targetedDefeatContinuation?.phase === "EACH" ? state.timing.activePlayer : state.timing.actingPlayer) || source.controllerId !== c.actorId || source.zone.playerId !== c.actorId || source.face !== "UP" || (revision?.type === "GEAR" ? undefined : ability?.id) !== c.abilityId || state.setup || (state.timing.combat.stage !== "NONE" && (state.timing.combat.stage !== "RIVAL_REACT" || revision?.type !== "PROGRAM" || !revision.mechanics.keywords.includes("QUICK"))) || state.match.outcome || (state.resolution.searchContinuation && current?.effect.kind !== "SEARCH_TAKE_ONE_PLUS_PER_MIN_GIG") || state.resolution.callContinuation || state.resolution.discovered.length || state.resolution.stage !== "CHOICE")
         return failure("INVALID_PLAY_CONTINUATION", "Play source, scope, actor or exclusive decision state invalid");

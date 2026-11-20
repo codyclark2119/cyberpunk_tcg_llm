@@ -11,6 +11,7 @@ import { revisionOf } from "./play-support";
 import { playChoice, playEffectId, adjustmentTargets } from "./play-state";
 import { forcedPaymentSources, paymentValue, validatePayment } from "./payment";
 import { playPaymentAmount } from "./play-cost-support";
+import { activationPaymentAmount } from "./quick-activation-support";
 import { HandlerRegistry, continueSearch } from "./effects";
 import { chooseTrashedUnit } from "./trash-return";
 import { chooseBottomDeck } from "./bottom-deck";
@@ -63,8 +64,13 @@ export function completePlayEffect(m: TurnMutation, aftermath?: PreparedTriggerB
     r.choice = null; c.effectIndex++; r.current = r.pending.shift() ?? null;
     return r.current ? resolveChain(m) : finishPlay(m, c.sourceId, aftermath);
 }
+/** The resolving ability: an activation names its own (Batch V49: not necessarily the first printed one). */
+function playAbility(m: TurnMutation) {
+    const c = m.state.resolution.playContinuation!, abilities = revisionOf(m.state, c.sourceId, m.context)!.mechanics.abilities;
+    return c.kind === "ACTIVATE" ? abilities.find(a => a.id === c.abilityId)! : abilities[0];
+}
 function beginEffects(m: TurnMutation): Result<null> {
-    const s = m.state, c = s.resolution.playContinuation!, r = revisionOf(s, c.sourceId, m.context)!, a = r.mechanics.abilities[0];
+    const s = m.state, c = s.resolution.playContinuation!, r = revisionOf(s, c.sourceId, m.context)!, a = playAbility(m);
     c.phase = "EFFECT";
     s.resolution.choice = null;
     if (c.kind === "PLAY" && r.type === "UNIT") return finishPlay(m, c.sourceId); // Spend is not an ON_PLAY trigger.
@@ -80,7 +86,7 @@ function beginEffects(m: TurnMutation): Result<null> {
 }
 /** The listed printed effects become pending in printed order, each keeping its printed index, and resolve as a chain. */
 function pendEffects(m: TurnMutation, indexes: number[]): Result<null> {
-    const s = m.state, c = s.resolution.playContinuation!, a = revisionOf(s, c.sourceId, m.context)!.mechanics.abilities[0], causedBySequence = s.match.eventSequence;
+    const s = m.state, c = s.resolution.playContinuation!, a = playAbility(m), causedBySequence = s.match.eventSequence;
     c.effectIndex = indexes[0];
     s.resolution.pending = indexes.map(index => ({ id: playEffectId(s, index), sourceId: c.sourceId, controllerId: c.actorId, causedBySequence, effect: EffectSchema.parse(a.effects[index]) }));
     for (const effect of s.resolution.pending) m.emit({ kind: "EFFECT_PENDING", effectId: effect.id, sourceId: c.sourceId });
@@ -89,7 +95,8 @@ function pendEffects(m: TurnMutation, indexes: number[]): Result<null> {
 }
 function completePayment(m: TurnMutation, sources: PaymentSource[]): Result<null> {
     const s = m.state, c = s.resolution.playContinuation!, r = revisionOf(s, c.sourceId, m.context)!;
-    const payment = validatePayment(s, c.actorId, m.context, sources, { kind: "EDDIES", amount: playPaymentAmount(s, c.actorId, c.sourceId, m.context)! });
+    const amount = c.kind === "ACTIVATE" ? activationPaymentAmount(playAbility(m)) : playPaymentAmount(s, c.actorId, c.sourceId, m.context)!;
+    const payment = validatePayment(s, c.actorId, m.context, sources, { kind: "EDDIES", amount });
     return payment.ok ? payValidated(m, payment.value) : payment;
 }
 
@@ -110,6 +117,7 @@ function payValidated(m: TurnMutation, sources: PaymentSource[]): Result<null> {
     c.selectedSources = sources; c.remainingCost = 0;
     for (const p of sources) s.objects.cards[p.cardInstanceId].readiness = "SPENT";
     m.emit({ kind: "PAYMENT_MADE", sources });
+    if (c.kind === "ACTIVATE") return beginEffects(m); // Batch V49: a paid activation's effect follows its costs.
     if (r.type === "GEAR") {
         c.phase = "EQUIP";
         s.objects.cards[c.sourceId].readiness = "READY";
@@ -225,6 +233,14 @@ export function activateAbility(m: TurnMutation, actorId: PlayerId, sourceId: Ca
     s.objects.cards[sourceId].readiness = "SPENT";
     m.emit({ kind: "CARD_SPENT", cardInstanceId: sourceId });
     m.emit({ kind: "ABILITY_ACTIVATED", sourceInstanceId: sourceId, abilityId });
+    const amount = activationPaymentAmount(ability);
+    if (amount) {
+        // Batch V49 (11.30.2): a paid Quick activation, in MAIN or the React Step; it returns to whichever decision it was taken from.
+        s.resolution.returnTo = actionReturnContext(s);
+        s.resolution.playContinuation = { kind: "ACTIVATE", sourceId, actorId, abilityId, phase: "PAYMENT", remainingCost: amount, selectedSources: [], effectIndex: 0 };
+        const forced = forcedPaymentSources(s, actorId, m.context, amount, []);
+        return forced ? completePayment(m, forced) : offerPlayChoice(m);
+    }
     s.resolution.returnTo = { kind: "MAIN" };
     s.resolution.playContinuation = { kind: "ACTIVATE", sourceId, actorId, abilityId, phase: "EFFECT", remainingCost: 0, selectedSources: [], effectIndex: 0 };
     // 11.15.3.1: distinct activation and resolution checks, even though no reaction window intervenes here.

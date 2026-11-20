@@ -1,4 +1,5 @@
 import { failure, success, type GameState, type GigInstanceId, type Result } from "@tcg/domain";
+import { belowPowerStealerPower, recordBelowPowerSteal } from "./below-power-steal";
 import type { EngineContext } from "./state";
 import type { TurnMutation } from "./turn";
 import { effectiveCardTypes, effectivePower } from "./characteristics";
@@ -22,7 +23,7 @@ export function effectStealTargets(state: GameState, context: EngineContext): Gi
 export function resolveEffectSteal(m: TurnMutation, gigId: GigInstanceId): Result<null> {
     const s = m.state, current = s.resolution.current!, c = s.resolution.triggerContinuation!, subjectId = current.trigger!.subjectId;
     if (!effectStealTargets(s, m.context).includes(gigId)) return failure("INVALID_EFFECT_STEAL", "Choose a rival Gig the subject may steal");
-    const from = s.objects.gigs[gigId].controllerId;
+    const from = s.objects.gigs[gigId].controllerId, power = belowPowerStealerPower(s, subjectId, m.context);
     m.emit({ kind: "GIG_TARGET_SELECTED", effectId: current.id, gigInstanceId: gigId });
     const moved = transferGigs(m, [gigId], current.controllerId, () => {
         const g = s.objects.gigs[gigId];
@@ -30,7 +31,9 @@ export function resolveEffectSteal(m: TurnMutation, gigId: GigInstanceId): Resul
         m.emit({ kind: "GIG_STOLEN", gigInstanceId: gigId, fromPlayer: from, toPlayer: current.controllerId, currentValue: g.roll.currentValue, attackerId: subjectId });
         if (endTurnEnabled(m.context)) { const steals = s.turnHistory!.gigsStolenByUnit ??= {}; steals[subjectId] = (steals[subjectId] ?? 0) + 1; }
     });
-    if (!moved.ok || s.match.outcome) return moved;
+    if (!moved.ok) return moved;
+    recordBelowPowerSteal(m, subjectId, [gigId], power); // Batch V49.
+    if (s.match.outcome) return moved;
     const stolen = { kind: "STEAL" as const, subjectId, gigInstanceIds: [gigId] }, bindings = discoverTriggers(s, stolen, m.context);
     if (!bindings.length) return success(null);
     (c.effectSteals ??= []).push({ subjectId, gigInstanceIds: [gigId] });

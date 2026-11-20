@@ -181,7 +181,8 @@ export const EffectSchema = z.discriminatedUnion("kind", [
     z.strictObject({ kind: z.literal("LOOK_AT_FRIENDLY_FACE_DOWN_LEGEND") }),
     z.strictObject({ kind: z.literal("OPTIONAL_DECREASE_FRIENDLY_GIG_THEN_DRAW_IF_MIN"), maximum: z.literal(2), draw: z.literal(1) }),
     z.strictObject({ kind: z.literal("CREATE_NEXT_RIVAL_FIGHT_PREVENTION") }),
-    z.strictObject({ kind: z.literal("POWER_UNTIL_END_OF_TURN"), target: z.strictObject({ kind: z.enum(["RIVAL_UNIT", "SOURCE_SUBJECT", "FRIENDLY_UNIT"]) }), amount: z.number().int() }),
+    // Batch V49: `scale: "SOURCE_POWER"` multiplies the amount by the source's power at resolution ("loses power equal to this Unit's power").
+    z.strictObject({ kind: z.literal("POWER_UNTIL_END_OF_TURN"), target: z.strictObject({ kind: z.enum(["RIVAL_UNIT", "SOURCE_SUBJECT", "FRIENDLY_UNIT"]) }), amount: z.number().int(), scale: z.literal("SOURCE_POWER").optional() }),
     // Batch V27: STOLEN_GIG is "increase it", the Gig a steal trigger names.
     z.strictObject({ kind: z.literal("ADJUST_GIG_UP_TO"), target: z.union([z.strictObject({ kind: z.literal("GIGS"), relation: z.literal("ANY") }), z.strictObject({ kind: z.literal("STOLEN_GIG") })]), maximum: z.union([z.literal(1), z.literal(3), z.literal(4), z.literal(5), z.literal(6)]), direction: z.enum(["INCREASE", "DECREASE"]).optional() }),
     z.strictObject({ kind: z.literal("CONDITIONAL_DRAW"), timing: z.literal("RESOLUTION"), condition: ConditionSchema, count: z.number().int().positive() }),
@@ -248,8 +249,11 @@ export const AbilitySchema = z.strictObject({ id: z.string().min(1), trigger: Tr
     inherited: z.literal("EQUIPPED_HOST").optional(),
     // Batch V26: STOLEN_GIG_IS_D6 limits a friendly-steal trigger to stolen d6 dice ("When a friendly Unit steals a d6").
     // Batch V40: STEALER_IS_LEGEND limits it to a stealing friendly Legend ("When a friendly Legend steals a Gig").
-    guard: z.enum(["FIRST_BLUE_UNIT_OR_GEAR_PLAY_PER_TURN", "FIRST_FRIENDLY_ARASAKA_UNIT_ATTACK_PER_TURN", "STOLEN_GIG_IS_D6", "STEALER_IS_LEGEND"]).optional(),
-    activation: z.strictObject({ timing: z.literal("MAIN"), conditionTiming: z.literal("ACTIVATION_AND_RESOLUTION"), costs: z.array(ActivationCostSchema) }).optional(),
+    // Batch V49: FIRST_OTHER_FRIENDLY_STEAL_BELOW_POWER_PER_TURN is "The first time another friendly Unit steals a Gig with value less
+    // than its power each turn".
+    guard: z.enum(["FIRST_BLUE_UNIT_OR_GEAR_PLAY_PER_TURN", "FIRST_FRIENDLY_ARASAKA_UNIT_ATTACK_PER_TURN", "STOLEN_GIG_IS_D6", "STEALER_IS_LEGEND", "FIRST_OTHER_FRIENDLY_STEAL_BELOW_POWER_PER_TURN"]).optional(),
+    // Batch V49: QUICK is "[Quick] cost: effect" (11.30.2): also activatable as a reaction to a rival Unit's attack.
+    activation: z.strictObject({ timing: z.enum(["MAIN", "QUICK"]), conditionTiming: z.literal("ACTIVATION_AND_RESOLUTION"), costs: z.array(ActivationCostSchema) }).optional(),
     // Batch V44: "Choose one effect. If <condition>, choose both instead." The effects are the modes in printed order; the
     // condition is checked as the Program resolves, and while it holds every mode resolves in order.
     choose: z.strictObject({ count: z.literal(1), allInstead: ConditionSchema }).optional(),

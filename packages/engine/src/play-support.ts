@@ -26,6 +26,7 @@ import { hasSellTopEffect, supportsSellTopProgram } from "./program-sell-support
 import { hasFightStealEffect, supportsFightStealProgram } from "./fight-steal-support";
 import { hasFreePlayEffect, supportsFreePlayCard } from "./free-play-support";
 import { paymentCandidates } from "./payment";
+import { activationPaymentAmount, hasQuickActivation, supportsQuickActivationCard } from "./quick-activation-support";
 import { testCondition } from "./conditions";
 export function playEnabled(context: EngineContext) { return turnSliceAllows(context.content.ruleset.gameplay?.turnSlice, "cardPlay") && context.content.ruleset.gameplay?.gigValueBounds === "DIE_FACES_V1"; }
 export function revisionOf(state: GameState, id: CardInstanceId, context: EngineContext) {
@@ -42,6 +43,8 @@ export function supportsPlay(card: DeepReadonly<CardRevisionSnapshot> | undefine
     if (card && hasFightStealEffect(card)) return supportsFightStealProgram(card, context);
     // Batch V48: a free Unit play is admitted only by its exact pin.
     if (card && hasFreePlayEffect(card)) return supportsFreePlayCard(card, context);
+    // Batch V49: a Quick or paid activation is admitted only by its exact Unit pin.
+    if (card && hasQuickActivation(card)) return supportsQuickActivationCard(card, context);
     if (card && hasPlayCostReductionMetadata(card)) return supportsPlayCostReduction(card, context);
     if (card && hasFriendlyPlayPowerMetadata(card)) return supportsFriendlyPlayPowerUnit(card, context);
     if (card && hasAttackConditionPowerMetadata(card)) return supportsAttackConditionPowerCard(card, context);
@@ -100,5 +103,8 @@ export function canPlay(state: GameState, actor: PlayerId, id: CardInstanceId, c
 }
 export function canActivate(state: GameState, actor: PlayerId, id: CardInstanceId, abilityId: string, context: EngineContext) {
     const c = state.objects.cards[id], r = revisionOf(state, id, context), a = r?.mechanics.abilities.find(a => a.id === abilityId);
-    return Boolean(main(state, actor) && supportsPlay(r, context).ok && r?.type === "UNIT" && c?.zone.zone === "BATTLEFIELD" && c.zone.playerId === actor && c.controllerId === actor && c.face === "UP" && c.readiness === "READY" && !c.statuses.includes("LAG") && a?.activation && a.conditions.every(condition => testCondition(state, actor, condition)));
+    // Batch V49 (11.30.2): a Quick activation is also offered in its controller's React Step; its Eddie cost must be payable (8.14.1: no Lag).
+    const amount = activationPaymentAmount(a);
+    return Boolean((main(state, actor) || a?.activation?.timing === "QUICK" && isReactDecision(state, actor, context)) && supportsPlay(r, context).ok && r?.type === "UNIT" && c?.zone.zone === "BATTLEFIELD" && c.zone.playerId === actor && c.controllerId === actor && c.face === "UP" && c.readiness === "READY" && !c.statuses.includes("LAG") && a?.activation && a.conditions.every(condition => testCondition(state, actor, condition))
+        && (!amount || paymentCandidates(state, actor, context, amount, []).length));
 }

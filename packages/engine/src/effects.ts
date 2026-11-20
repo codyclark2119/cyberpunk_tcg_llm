@@ -36,7 +36,7 @@ export class HandlerRegistry {
             return met ? applyTemporaryPower(m, current.trigger.subjectId) : success(null);
         }
         const targets = powerTargets(m.state, m.state.timing.actingPlayer, m.context);
-        return targets.length > 1 ? offerPlayChoice(m) : targets.length === 1 ? applyTemporaryPower(m, targets[0]) : success(null);
+        return targets.length > 1 ? offerPlayChoice(m) : targets.length === 1 ? applyTemporaryPower(m, targets[0], true) : success(null);
     },
     ADJUST_GIG_UP_TO: (m: TurnMutation): Result<null> => adjustmentTargets(m.state).length ? offerPlayChoice(m) : success(null),
     CONDITIONAL_DRAW: (m: TurnMutation, effect: Primitive<"CONDITIONAL_DRAW">): Result<null> => {
