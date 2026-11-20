@@ -11,10 +11,11 @@ import { supportsProgramDiscardUnit } from "./program-discard-support";
 export function handPrograms(state: GameState, player: PlayerId, context: EngineContext): CardInstanceId[] {
     return getDiscardableCards(state, player).filter(id => cardRevision(state, id, context)?.type === "PROGRAM");
 }
-/** "If you do, bottom-deck a rival Unit": public rival Units on the field (11.15). */
+/** "If you do, bottom-deck a rival Unit": public rival Units on the field (11.15); "unequipped" (V33) excludes any Unit with Gear attached. */
 export function programBottomDeckTargets(state: GameState, current: PendingEffect, context: EngineContext): CardInstanceId[] {
     if (current.effect.kind !== "DISCARD_PROGRAMS_THEN_BOTTOM_DECK") return [];
-    return bottomDeckTargets(state, current.controllerId, { relation: current.effect.then.relation }, context);
+    const unequipped = current.effect.then.unequipped;
+    return bottomDeckTargets(state, current.controllerId, { relation: current.effect.then.relation }, context).filter(id => !unequipped || !state.objects.cards[id].attachments.length);
 }
 /** The controller discards one chosen own-hand Program; trash is public. */
 export function discardProgram(m: TurnMutation, current: PendingEffect, cardInstanceId: CardInstanceId, forced: boolean): Result<null> {

@@ -3446,8 +3446,16 @@
                                         "const": "DISCARD_PROGRAMS_THEN_BOTTOM_DECK"
                                       },
                                       "count": {
-                                        "type": "number",
-                                        "const": 1
+                                        "anyOf": [
+                                          {
+                                            "type": "number",
+                                            "const": 1
+                                          },
+                                          {
+                                            "type": "number",
+                                            "const": 2
+                                          }
+                                        ]
                                       },
                                       "then": {
                                         "type": "object",
@@ -3455,6 +3463,10 @@
                                           "relation": {
                                             "type": "string",
                                             "const": "RIVAL"
+                                          },
+                                          "unequipped": {
+                                            "type": "boolean",
+                                            "const": true
                                           }
                                         },
                                         "required": [
@@ -9762,8 +9774,16 @@
                                   "const": "DISCARD_PROGRAMS_THEN_BOTTOM_DECK"
                                 },
                                 "count": {
-                                  "type": "number",
-                                  "const": 1
+                                  "anyOf": [
+                                    {
+                                      "type": "number",
+                                      "const": 1
+                                    },
+                                    {
+                                      "type": "number",
+                                      "const": 2
+                                    }
+                                  ]
                                 },
                                 "then": {
                                   "type": "object",
@@ -9771,6 +9791,10 @@
                                     "relation": {
                                       "type": "string",
                                       "const": "RIVAL"
+                                    },
+                                    "unequipped": {
+                                      "type": "boolean",
+                                      "const": true
                                     }
                                   },
                                   "required": [
@@ -12730,8 +12754,16 @@
                                 "const": "DISCARD_PROGRAMS_THEN_BOTTOM_DECK"
                               },
                               "count": {
-                                "type": "number",
-                                "const": 1
+                                "anyOf": [
+                                  {
+                                    "type": "number",
+                                    "const": 1
+                                  },
+                                  {
+                                    "type": "number",
+                                    "const": 2
+                                  }
+                                ]
                               },
                               "then": {
                                 "type": "object",
@@ -12739,6 +12771,10 @@
                                   "relation": {
                                     "type": "string",
                                     "const": "RIVAL"
+                                  },
+                                  "unequipped": {
+                                    "type": "boolean",
+                                    "const": true
                                   }
                                 },
                                 "required": [
@@ -15694,8 +15730,16 @@
                                 "const": "DISCARD_PROGRAMS_THEN_BOTTOM_DECK"
                               },
                               "count": {
-                                "type": "number",
-                                "const": 1
+                                "anyOf": [
+                                  {
+                                    "type": "number",
+                                    "const": 1
+                                  },
+                                  {
+                                    "type": "number",
+                                    "const": 2
+                                  }
+                                ]
                               },
                               "then": {
                                 "type": "object",
@@ -15703,6 +15747,10 @@
                                   "relation": {
                                     "type": "string",
                                     "const": "RIVAL"
+                                  },
+                                  "unequipped": {
+                                    "type": "boolean",
+                                    "const": true
                                   }
                                 },
                                 "required": [
@@ -20525,8 +20573,16 @@
                                         "const": "DISCARD_PROGRAMS_THEN_BOTTOM_DECK"
                                       },
                                       "count": {
-                                        "type": "number",
-                                        "const": 1
+                                        "anyOf": [
+                                          {
+                                            "type": "number",
+                                            "const": 1
+                                          },
+                                          {
+                                            "type": "number",
+                                            "const": 2
+                                          }
+                                        ]
                                       },
                                       "then": {
                                         "type": "object",
@@ -20534,6 +20590,10 @@
                                           "relation": {
                                             "type": "string",
                                             "const": "RIVAL"
+                                          },
+                                          "unequipped": {
+                                            "type": "boolean",
+                                            "const": true
                                           }
                                         },
                                         "required": [

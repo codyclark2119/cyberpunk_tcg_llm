@@ -180,7 +180,8 @@ export const EffectSchema = z.discriminatedUnion("kind", [
     z.strictObject({ kind: z.literal("SPEND_UNITS_PER_VALUE_PAIR"), target: z.strictObject({ kind: z.literal("UNITS"), relation: z.literal("RIVAL") }) }),
     // Batch V32: "You may discard 1 Program. If you do, bottom-deck a rival Unit." Own-hand Programs only; the bottom-deck
     // follows only after the discard (11.15: the owner bottom-decks the Unit and its Gear).
-    z.strictObject({ kind: z.literal("DISCARD_PROGRAMS_THEN_BOTTOM_DECK"), count: z.literal(1), then: z.strictObject({ relation: z.literal("RIVAL") }) }),
+    // Batch V33: "You may discard 2 Programs. If you do, bottom-deck a rival unequipped Unit." (no attached Gear, 4.12).
+    z.strictObject({ kind: z.literal("DISCARD_PROGRAMS_THEN_BOTTOM_DECK"), count: z.union([z.literal(1), z.literal(2)]), then: z.strictObject({ relation: z.literal("RIVAL"), unequipped: z.literal(true).optional() }) }),
     // Batch V29: "If you control a value-pair of Gigs, ready up to 2 MERC Legends in your Legends area."
     z.strictObject({ kind: z.literal("READY_LEGENDS_UP_TO"), tag: z.literal("Merc"), maximum: z.literal(2),
         when: z.strictObject({ timing: z.literal("RESOLUTION"), condition: z.strictObject({ kind: z.literal("CONTROLS_VALUE_PAIR") }) }) }),

@@ -9,12 +9,12 @@
   },
   "totals": {
     "cards": 151,
-    "admitted": 81,
-    "notAdmitted": 70,
+    "admitted": 82,
+    "notAdmitted": 69,
     "notAdmittedOnlyCoveredFamilies": 0,
     "byAdmission": {
-      "NOT_ADMITTED": 70,
-      "SOURCE_MATCH": 81
+      "NOT_ADMITTED": 69,
+      "SOURCE_MATCH": 82
     }
   },
   "families": [
@@ -42,7 +42,7 @@
       "summary": "Generic target filters and board conditions: classification, cost, power, ready/spent, equipped, face-up, named, lowest power.",
       "notes": "Documented as unsupported: generic condition/filter language. Each admitted filter is a literal.",
       "cardCount": 34,
-      "notAdmittedCount": 20,
+      "notAdmittedCount": 19,
       "soleBlockerCount": 0
     },
     {
@@ -100,15 +100,6 @@
       "soleBlockerCount": 0
     },
     {
-      "family": "DISCARD",
-      "status": "PARTIAL",
-      "summary": "Discard: self discard, a Rival discards, discard as a cost, discard a hand.",
-      "notes": "DISCARD_CARDS supports only the controller discarding exactly 1.",
-      "cardCount": 15,
-      "notAdmittedCount": 9,
-      "soleBlockerCount": 0
-    },
-    {
       "family": "KEYWORD_QUICK",
       "status": "PARTIAL",
       "summary": "[Quick] timing: Programs and activated abilities usable in the react window.",
@@ -127,12 +118,12 @@
       "soleBlockerCount": 0
     },
     {
-      "family": "TRIGGER_PLAY",
+      "family": "DISCARD",
       "status": "PARTIAL",
-      "summary": "[Play] abilities and Program bodies resolving when played.",
-      "notes": "Trigger WHEN_PLAYED.",
-      "cardCount": 27,
-      "notAdmittedCount": 9,
+      "summary": "Discard: self discard, a Rival discards, discard as a cost, discard a hand.",
+      "notes": "DISCARD_CARDS supports only the controller discarding exactly 1.",
+      "cardCount": 15,
+      "notAdmittedCount": 8,
       "soleBlockerCount": 0
     },
     {
@@ -150,6 +141,15 @@
       "summary": "'Choose one effect' (and 'choose both instead' upgrades).",
       "notes": "PendingChoice MODE exists for setup, search and Gig steps, but no ability carries modes.",
       "cardCount": 8,
+      "notAdmittedCount": 8,
+      "soleBlockerCount": 0
+    },
+    {
+      "family": "TRIGGER_PLAY",
+      "status": "PARTIAL",
+      "summary": "[Play] abilities and Program bodies resolving when played.",
+      "notes": "Trigger WHEN_PLAYED.",
+      "cardCount": 27,
       "notAdmittedCount": 8,
       "soleBlockerCount": 0
     },
@@ -217,15 +217,6 @@
       "soleBlockerCount": 0
     },
     {
-      "family": "UNIT_ZONE_MOVE",
-      "status": "MISSING",
-      "summary": "Move a Unit off the field other than defeat: bottom-deck it or return it to hand.",
-      "notes": "MOVE_CARD is schema-only with no handler.",
-      "cardCount": 10,
-      "notAdmittedCount": 6,
-      "soleBlockerCount": 0
-    },
-    {
       "family": "COST_MODIFIER",
       "status": "MISSING",
       "summary": "Play-cost reductions, alternative costs, ability-cost and Go Solo cost changes.",
@@ -258,6 +249,15 @@
       "summary": "Gig control outside the ordinary attack steal: swap, extra steal, steal fewer, steal prevention.",
       "notes": "Documented as unsupported (control transfer / steal).",
       "cardCount": 8,
+      "notAdmittedCount": 5,
+      "soleBlockerCount": 0
+    },
+    {
+      "family": "UNIT_ZONE_MOVE",
+      "status": "MISSING",
+      "summary": "Move a Unit off the field other than defeat: bottom-deck it or return it to hand.",
+      "notes": "MOVE_CARD is schema-only with no handler.",
+      "cardCount": 10,
       "notAdmittedCount": 5,
       "soleBlockerCount": 0
     },
@@ -1807,20 +1807,15 @@
       "colors": [
         "BLUE"
       ],
-      "admission": "NOT_ADMITTED",
-      "revision": null,
+      "admission": "SOURCE_MATCH",
+      "revision": 1,
       "families": [
         "CONDITION_BOARD",
         "DISCARD",
         "TRIGGER_PLAY",
         "UNIT_ZONE_MOVE"
       ],
-      "blockingFamilies": [
-        "CONDITION_BOARD",
-        "DISCARD",
-        "TRIGGER_PLAY",
-        "UNIT_ZONE_MOVE"
-      ],
+      "blockingFamilies": [],
       "note": null
     },
     {

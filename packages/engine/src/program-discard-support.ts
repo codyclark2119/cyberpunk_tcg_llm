@@ -7,7 +7,10 @@ const PLACIDE_EFFECT = { kind: "DISCARD_PROGRAMS_THEN_BOTTOM_DECK", count: 1, th
 const PROGRAM_DISCARD_SHAPES = [
     // Batch V32: Placide: Voodoo Sentinel. "{Play} {Attack} You may discard 1 Program. If you do, bottom-deck a rival Unit."
     { colors: ["BLUE"], ram: { BLUE: 2 }, tags: ["Ganger", "Netrunner", "Voodoo Boys"], cost: 8, power: 10, abilities: [
-        ability({ trigger: "WHEN_PLAYED", effects: [PLACIDE_EFFECT] }), ability({ trigger: "WHEN_ATTACKING", effects: [PLACIDE_EFFECT] })] }
+        ability({ trigger: "WHEN_PLAYED", effects: [PLACIDE_EFFECT] }), ability({ trigger: "WHEN_ATTACKING", effects: [PLACIDE_EFFECT] })] },
+    // Batch V33: Maman Brigitte: Spirit of Death. "{Play} You may discard 2 Programs. If you do, bottom-deck a rival unequipped Unit."
+    { colors: ["BLUE"], ram: { BLUE: 4 }, tags: ["Mystic", "Netrunner", "Voodoo Boys"], cost: 5, power: 3, abilities: [
+        ability({ trigger: "WHEN_PLAYED", effects: [{ kind: "DISCARD_PROGRAMS_THEN_BOTTOM_DECK", count: 2, then: { relation: "RIVAL", unequipped: true } }] })] }
 ].map(shape => canonicalSerialize({ type: "UNIT", sell: false, keywords: [], equip: null, modifiers: [], restrictions: [], ...shape }));
 export function hasProgramDiscardEffect(card: DeepReadonly<CardRevisionSnapshot> | undefined) {
     return Boolean(card?.mechanics.abilities.some(a => a.effects.some(e => e.kind === "DISCARD_PROGRAMS_THEN_BOTTOM_DECK")));
