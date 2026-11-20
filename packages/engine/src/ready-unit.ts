@@ -1,4 +1,5 @@
-import type { CardInstanceId, GameState, PlayerId } from "@tcg/domain";
+import type { CardInstanceId, GameState, PendingEffect, PlayerId } from "@tcg/domain";
+import { effectiveCardTypes, effectivePower } from "./characteristics";
 import type { EngineContext } from "./state";
 import type { TurnMutation } from "./turn";
 import { readyLockIds } from "./ready-lock";
@@ -6,6 +7,14 @@ import { readyLockIds } from "./ready-lock";
  * a selector filter: an already-ready Legend is a legal choice that changes nothing. */
 export function readyLegendTargets(state: GameState, actor: PlayerId, _context: EngineContext): CardInstanceId[] {
     return state.players[actor].zones.LEGENDS.filter(id => { const c = state.objects.cards[id]; return c.controllerId === actor && c.face === "UP"; }).sort();
+}
+/** Batch V25: another friendly face-up field Unit whose current power equals the current value of the Gig the steal
+ * trigger names. As with the Legend ready, readiness is not a selector filter. */
+export function stolenGigReadyTargets(state: GameState, current: PendingEffect, context: EngineContext): CardInstanceId[] {
+    const gig = current.trigger?.gigInstanceId ? state.objects.gigs[current.trigger.gigInstanceId] : undefined, subjectId = current.trigger?.subjectId;
+    if (!gig || gig.roll.kind !== "ROLLED") return [];
+    const value = gig.roll.currentValue;
+    return state.players[current.controllerId].zones.BATTLEFIELD.filter(id => { const c = state.objects.cards[id]; return id !== subjectId && c.controllerId === current.controllerId && c.face === "UP" && effectiveCardTypes(state, id, context).includes("UNIT") && effectivePower(state, id, context) === value; }).sort();
 }
 /** Effect-caused ready. Readying a ready card is not a transition and emits nothing. */
 export function readyCardForEffect(m: TurnMutation, id: CardInstanceId) {

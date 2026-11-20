@@ -65,6 +65,10 @@ were recorded in their pull requests (#4, #7, #8); later batches have documents 
 | V21 (2026-11-19) | Chrome Fang, Westbrook Netrunner | [Play steal restrictions until your next turn](api-admission-batch-v21.md); coverage 69/151 |
 | V22 (2026-11-19) | Pacifica Netrunner, Memory Relapse | [Ready locks until your next turn](api-admission-batch-v22.md); coverage 71/151 |
 | V23 (2026-11-19) | MaxTac AV | [Optional Gig swap](api-admission-batch-v23.md); coverage 72/151 |
+| V24 (2026-11-19) | Maelstrom Goons | [Steal triggers: equipped rival discard](api-admission-batch-v24.md); coverage 73/151 |
+| V25 (2026-11-19) | Wraith Marauders | [Steal trigger: ready a Unit matching the stolen Gig](api-admission-batch-v25.md); coverage 74/151 |
+| V26 (2026-11-19) | 6th Street Recruits | [Friendly d6 steal: increase a Gig by up to 6](api-admission-batch-v26.md); coverage 75/151 |
+| V27 (2026-11-19) | V: Roamer of the Badlands | [Steal trigger: increase the stolen Gig; end-of-turn draw](api-admission-batch-v27.md); coverage 76/151 |
 | V7 (2026-11-15) | Royce: Don't Call Me Simon, Wild in the Streets, Delamain: Rideshare AI | [shared defeat filter and exact pin table](api-admission-batch-v7.md); coverage 42/151 |
 | V6 (2026-09-22) | Trust No One | [contract and executable slice](api-admission-batch-v6.md), [baseline verification](api-admission-batch-v6-verification.md) |
 

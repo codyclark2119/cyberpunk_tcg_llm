@@ -1,4 +1,5 @@
 import { supportsBlockerUsedUnit } from "./blocker-trigger-support";
+import { supportsStealTriggerUnit } from "./steal-trigger-support";
 import { supportsFirstAttackLegend } from "./first-attack-support";
 import { supportsTargetedSpendCard } from "./targeted-spend-support";
 import { turnSliceAllows, canonicalSerialize, failure, success, type CardRevisionSnapshot, type DeepReadonly, type GameState } from "@tcg/domain";
@@ -19,12 +20,12 @@ export function supportsOrderedTriggerSource(card: DeepReadonly<CardRevisionSnap
     // Batch V8: the Unit PLAY spend (source, then a rival Unit) is the only other two-primitive trigger.
     return supportsOrderedAttackCard(card, context).ok || supportsFirstAttackLegend(card, context).ok || (card?.type === "UNIT" && supportsTargetedSpendCard(card, context).ok);
 }
-/** Inspect hidden content too (Batch V17: the Blocker-used rival discard has its own exact gate): old execution scopes cannot silently ignore the new metadata. */
+/** Inspect hidden content too (Batch V17: the Blocker-used rival discard, and Batch V24: the steal-trigger rival discard, have their own exact gates): old execution scopes cannot silently ignore the new metadata. */
 export function validateOrderedMetadata(state: GameState, context: EngineContext) {
     for (const c of Object.values(state.objects.cards)) {
         const r = context.content.cards.find(r => r.id === c.cardId && r.revision === c.revision);
         if (r && (r.execution?.scope === "ATTACK_ORDERED_EFFECTS_V1" || r.mechanics.abilities.some(a => a.conditions.some(c => c.kind === "STREET_CRED_GREATER_THAN_RIVAL") || a.effects.some(e => e.kind === "DISCARD_CARDS" || e.kind === "CONDITIONAL_DRAW" && e.condition.kind === "STREET_CRED_GREATER_THAN_RIVAL")))) {
-            const supported = supportsOrderedAttackCard(r, context); if (!supported.ok && !supportsFirstAttackLegend(r, context).ok && !supportsBlockerUsedUnit(r, context).ok) return supported;
+            const supported = supportsOrderedAttackCard(r, context); if (!supported.ok && !supportsFirstAttackLegend(r, context).ok && !supportsBlockerUsedUnit(r, context).ok && !supportsStealTriggerUnit(r, context).ok) return supported;
         }
     }
     return success(null);

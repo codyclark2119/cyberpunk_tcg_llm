@@ -5,7 +5,7 @@ export const GameAreaSchema = z.enum(["DECK", "HAND", "BATTLEFIELD", "TRASH", "E
 export const ZoneSchema = z.enum([...GameAreaSchema.options, "RESOLVING_PROGRAM"]);
 export const ZoneRefSchema = z.strictObject({ playerId: PlayerIdSchema, zone: ZoneSchema });
 export const KeywordSchema = z.enum(["GO_SOLO", "QUICK", "BLOCKER", "ADRENALINE"]);
-export const TriggerSchema = z.enum(["WHEN_SOLD", "WHEN_CALLED", "WHEN_PLAYED", "WHEN_ATTACKING", "WHEN_DEFEATED", "WHEN_FIGHT_WON", "WHEN_CARD_PLAYED", "WHEN_OWN_TURN_ENDS", "WHEN_UNIT_ATTACKS", "WHEN_BLOCKER_USED"]);
+export const TriggerSchema = z.enum(["WHEN_SOLD", "WHEN_CALLED", "WHEN_PLAYED", "WHEN_ATTACKING", "WHEN_DEFEATED", "WHEN_FIGHT_WON", "WHEN_CARD_PLAYED", "WHEN_OWN_TURN_ENDS", "WHEN_UNIT_ATTACKS", "WHEN_BLOCKER_USED", "WHEN_GIG_STOLEN", "WHEN_FRIENDLY_UNIT_STEALS_GIG"]);
 export const EquipTargetSchema = z.strictObject({ kind: z.literal("FRIENDLY_UNIT_OR_FACE_UP_LEGEND") });
 export const TargetRelationshipSchema = z.enum(["CONTROLLED", "RIVAL", "ANY"]);
 export const TargetSelectorSchema = z.discriminatedUnion("kind", [
@@ -32,7 +32,11 @@ export const ConditionSchema = z.discriminatedUnion("kind", [
     z.strictObject({ kind: z.literal("STREET_CRED"), minimum: z.number().int().nonnegative() }),
     z.strictObject({ kind: z.literal("GIG_VALUE"), value: z.number().int() }),
     // The trigger subject is on the field and currently spent (batch V8).
-    z.strictObject({ kind: z.literal("SUBJECT_IS_SPENT") })
+    z.strictObject({ kind: z.literal("SUBJECT_IS_SPENT") }),
+    // Batch V24: the trigger subject is on the field with at least one attached Gear ("if it's equipped").
+    z.strictObject({ kind: z.literal("SUBJECT_IS_EQUIPPED") }),
+    // Batch V27: "if you control 2 or more Gigs with 8+ value".
+    z.strictObject({ kind: z.literal("GIG_COUNT_WITH_VALUE_AT_LEAST"), minimum: z.literal(8), count: z.literal(2) })
 ]);
 export const CombatRestrictionSchema = z.discriminatedUnion("kind", [
     z.strictObject({ kind: z.literal("CANNOT_ATTACK") }),
@@ -122,7 +126,9 @@ export const EffectSchema = z.discriminatedUnion("kind", [
     // "Spend this Unit" (batch V8).
     z.strictObject({ kind: z.literal("SPEND_SOURCE") }),
     // "Ready this Unit" / "ready a friendly face-up Legend" (batch V8).
-    z.strictObject({ kind: z.literal("READY_UNIT"), target: z.discriminatedUnion("kind", [z.strictObject({ kind: z.literal("SOURCE") }), z.strictObject({ kind: z.literal("FRIENDLY_FACE_UP_LEGEND") })]) }),
+    z.strictObject({ kind: z.literal("READY_UNIT"), target: z.discriminatedUnion("kind", [z.strictObject({ kind: z.literal("SOURCE") }), z.strictObject({ kind: z.literal("FRIENDLY_FACE_UP_LEGEND") }),
+        // Batch V25: "ready another friendly Unit with power equal to the Gig's value" (the Gig the steal trigger names).
+        z.strictObject({ kind: z.literal("ANOTHER_FRIENDLY_UNIT"), power: z.literal("EQUALS_STOLEN_GIG_VALUE") })]) }),
     // "Spend all rival Units" (batch V9).
     z.strictObject({ kind: z.literal("SPEND_ALL_UNITS"), relation: z.literal("RIVAL") }),
     // "Return this Unit to its owner's hand" (batch V9); 4.12: equipped Gear moves with it.
@@ -145,7 +151,8 @@ export const EffectSchema = z.discriminatedUnion("kind", [
     z.strictObject({ kind: z.literal("OPTIONAL_DECREASE_FRIENDLY_GIG_THEN_DRAW_IF_MIN"), maximum: z.literal(2), draw: z.literal(1) }),
     z.strictObject({ kind: z.literal("CREATE_NEXT_RIVAL_FIGHT_PREVENTION") }),
     z.strictObject({ kind: z.literal("POWER_UNTIL_END_OF_TURN"), target: z.strictObject({ kind: z.enum(["RIVAL_UNIT", "SOURCE_SUBJECT", "FRIENDLY_UNIT"]) }), amount: z.number().int() }),
-    z.strictObject({ kind: z.literal("ADJUST_GIG_UP_TO"), target: z.strictObject({ kind: z.literal("GIGS"), relation: z.literal("ANY") }), maximum: z.union([z.literal(1), z.literal(3), z.literal(4)]), direction: z.enum(["INCREASE", "DECREASE"]).optional() }),
+    // Batch V27: STOLEN_GIG is "increase it", the Gig a steal trigger names.
+    z.strictObject({ kind: z.literal("ADJUST_GIG_UP_TO"), target: z.union([z.strictObject({ kind: z.literal("GIGS"), relation: z.literal("ANY") }), z.strictObject({ kind: z.literal("STOLEN_GIG") })]), maximum: z.union([z.literal(1), z.literal(3), z.literal(4), z.literal(5), z.literal(6)]), direction: z.enum(["INCREASE", "DECREASE"]).optional() }),
     z.strictObject({ kind: z.literal("CONDITIONAL_DRAW"), timing: z.literal("RESOLUTION"), condition: ConditionSchema, count: z.number().int().positive() }),
     // Batch V19: an absent maxCost is "a Gear" with no cost limit.
     z.strictObject({ kind: z.literal("SEARCH_GEAR"), count: z.number().int().positive().max(5), maxCost: z.number().int().nonnegative().optional(), maxTake: z.number().int().positive().max(2) }),
@@ -174,7 +181,8 @@ export const ActivationCostSchema = z.discriminatedUnion("kind", [
 ]);
 export const AbilitySchema = z.strictObject({ id: z.string().min(1), trigger: TriggerSchema.optional(),
     inherited: z.literal("EQUIPPED_HOST").optional(),
-    guard: z.enum(["FIRST_BLUE_UNIT_OR_GEAR_PLAY_PER_TURN", "FIRST_FRIENDLY_ARASAKA_UNIT_ATTACK_PER_TURN"]).optional(),
+    // Batch V26: STOLEN_GIG_IS_D6 limits a friendly-steal trigger to stolen d6 dice ("When a friendly Unit steals a d6").
+    guard: z.enum(["FIRST_BLUE_UNIT_OR_GEAR_PLAY_PER_TURN", "FIRST_FRIENDLY_ARASAKA_UNIT_ATTACK_PER_TURN", "STOLEN_GIG_IS_D6"]).optional(),
     activation: z.strictObject({ timing: z.literal("MAIN"), conditionTiming: z.literal("ACTIVATION_AND_RESOLUTION"), costs: z.array(ActivationCostSchema) }).optional(),
     conditions: z.array(ConditionSchema), cost: CostSchema, effects: z.array(EffectSchema) });
 export const ContinuousModifierSchema = z.discriminatedUnion("kind", [

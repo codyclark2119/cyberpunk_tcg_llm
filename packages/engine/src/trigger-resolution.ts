@@ -3,7 +3,7 @@ import { beginTargetedDefeat } from "./targeted-defeat";
 import { resolveSpendTarget } from "./targeted-spend";
 import { listSpendUnitTargets } from "./targeted-spend-queries";
 import { isUnitSpendSubject, spendUnitForEffect } from "./unit-spend";
-import { readyCardForEffect, readyLegendTargets } from "./ready-unit";
+import { readyCardForEffect, readyLegendTargets, stolenGigReadyTargets } from "./ready-unit";
 import type { PendingEffect, DefeatInstruction } from "@tcg/domain";
 import { effectiveCardTypes } from "./characteristics";
 import { registerEndTurnEffect } from "./delayed-effects";
@@ -53,12 +53,14 @@ function resume(m: TurnMutation, origin: TriggerOrigin): Result<null> {
     if (origin.kind === "BLOCK" && "target" in combat && combat.target) { m.state.timing.combat = { ...combat, stage: "RIVAL_REACT" }; return finishAttackEffects(m); }
     if (origin.kind === "FIGHT") return completeFightResult(m, origin.result);
     if (origin.kind === "DEFEAT") return origin.effectSource ? finishAction(m) : finishCombat(m);
+    // Batch V24 (9.20.2): after the steal triggers resolve, the Steal Step and the attack end.
+    if (origin.kind === "STEAL") return finishCombat(m);
     return failure("INVALID_TRIGGER_RETURN", "Trigger batch must return to its original reviewed stage");
 }
 export type PreparedTriggerBatch = { origin: TriggerOrigin; ordinal: number; bindings: TriggerBinding[]; pending: PendingEffect[] };
 /** Creation of pending work is separate from resolution, so a Program can finish before it starts. */
 export function prepareTriggerBatch(m: TurnMutation, origin: TriggerOrigin, captured?: readonly TriggerBinding[]): PreparedTriggerBatch | null {
-    const bindings = [...(captured ?? discoverTriggers(m.state, origin, m.context))].sort((a, b) => a.sourceId < b.sourceId ? -1 : a.sourceId > b.sourceId ? 1 : a.abilityId < b.abilityId ? -1 : 1);
+    const bindings = [...(captured ?? discoverTriggers(m.state, origin, m.context))].sort((a, b) => a.sourceId < b.sourceId ? -1 : a.sourceId > b.sourceId ? 1 : a.abilityId < b.abilityId ? -1 : a.abilityId > b.abilityId ? 1 : (a.gigInstanceId ?? "") < (b.gigInstanceId ?? "") ? -1 : 1);
     if (!bindings.length) return null;
     const ordinal = ++m.state.turnHistory!.triggeredBatches, sequence = m.state.match.eventSequence;
     const pending = bindings.map(b => PendingEffectSchema.parse(pendingTrigger(m.state, b, ordinal, sequence, m.context)));
@@ -157,6 +159,8 @@ export function advanceTriggers(m: TurnMutation): Result<null> {
         if (a.conditions.length) m.emit({ kind: "CONDITION_EVALUATED", effectId: current.id, met });
         if (!met) return completed(m);
         if (e.target.kind === "SOURCE") { const s = m.state.objects.cards[current.trigger!.subjectId]; if ((s?.zone.zone === "BATTLEFIELD" || s?.zone.zone === "LEGENDS") && s.face === "UP") readyCardForEffect(m, s.id); return completed(m); }
+        // Batch V25: with no Unit of matching power, the ready does nothing.
+        if (e.target.kind === "ANOTHER_FRIENDLY_UNIT") { if (!stolenGigReadyTargets(m.state, current, m.context).length) return completed(m); c.phase = "TARGET"; return offer(m); }
         if (!readyLegendTargets(m.state, current.controllerId, m.context).length) return completed(m);
         c.phase = "TARGET"; return offer(m);
     }
@@ -293,7 +297,8 @@ export function continueTrigger(m: TurnMutation, index: number, forced = false):
             return spent.ok ? completed(m) : spent;
         }
         if (current.effect.kind === "READY_UNIT") {
-            if (option.kind !== "CARD" || !readyLegendTargets(m.state, current.controllerId, m.context).includes(option.cardInstanceId)) return failure("INVALID_READY_TARGET", "Choose a current friendly face-up Legend");
+            const targets = current.effect.target.kind === "ANOTHER_FRIENDLY_UNIT" ? stolenGigReadyTargets(m.state, current, m.context) : readyLegendTargets(m.state, current.controllerId, m.context);
+            if (option.kind !== "CARD" || !targets.includes(option.cardInstanceId)) return failure("INVALID_READY_TARGET", "Choose a current eligible friendly Legend or Unit");
             m.emit({ kind: "CARD_TARGET_SELECTED", effectId: current.id, sourceId: current.sourceId!, targetId: option.cardInstanceId, controllerId: current.controllerId, forced });
             readyCardForEffect(m, option.cardInstanceId);
             return completed(m);

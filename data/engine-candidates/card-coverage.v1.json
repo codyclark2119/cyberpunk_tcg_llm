@@ -9,12 +9,12 @@
   },
   "totals": {
     "cards": 151,
-    "admitted": 72,
-    "notAdmitted": 79,
+    "admitted": 76,
+    "notAdmitted": 75,
     "notAdmittedOnlyCoveredFamilies": 0,
     "byAdmission": {
-      "NOT_ADMITTED": 79,
-      "SOURCE_MATCH": 72
+      "NOT_ADMITTED": 75,
+      "SOURCE_MATCH": 76
     }
   },
   "families": [
@@ -24,7 +24,7 @@
       "summary": "Conditions and filters on Gig values: min/max, value-pairs, even/odd, 8+, die type, counts compared with a Rival.",
       "notes": "Conditions only, each a fixed shape.",
       "cardCount": 40,
-      "notAdmittedCount": 29,
+      "notAdmittedCount": 26,
       "soleBlockerCount": 0
     },
     {
@@ -33,7 +33,7 @@
       "summary": "Draw cards, fixed or conditional.",
       "notes": "Routed. Variable counts need SCALED_AMOUNT; 'may draw' needs an optional prompt.",
       "cardCount": 38,
-      "notAdmittedCount": 24,
+      "notAdmittedCount": 23,
       "soleBlockerCount": 0
     },
     {
@@ -42,7 +42,7 @@
       "summary": "Generic target filters and board conditions: classification, cost, power, ready/spent, equipped, face-up, named, lowest power.",
       "notes": "Documented as unsupported: generic condition/filter language. Each admitted filter is a literal.",
       "cardCount": 34,
-      "notAdmittedCount": 23,
+      "notAdmittedCount": 21,
       "soleBlockerCount": 0
     },
     {
@@ -70,15 +70,6 @@
       "notes": "Equip onto Units is supported for the admitted Gear. Gear on a Legend host in combat (a Go Solo Legend) is unsupported.",
       "cardCount": 22,
       "notAdmittedCount": 14,
-      "soleBlockerCount": 0
-    },
-    {
-      "family": "DISCARD",
-      "status": "PARTIAL",
-      "summary": "Discard: self discard, a Rival discards, discard as a cost, discard a hand.",
-      "notes": "DISCARD_CARDS supports only the controller discarding exactly 1.",
-      "cardCount": 15,
-      "notAdmittedCount": 12,
       "soleBlockerCount": 0
     },
     {
@@ -118,6 +109,15 @@
       "soleBlockerCount": 0
     },
     {
+      "family": "DISCARD",
+      "status": "PARTIAL",
+      "summary": "Discard: self discard, a Rival discards, discard as a cost, discard a hand.",
+      "notes": "DISCARD_CARDS supports only the controller discarding exactly 1.",
+      "cardCount": 15,
+      "notAdmittedCount": 11,
+      "soleBlockerCount": 0
+    },
+    {
       "family": "KEYWORD_QUICK",
       "status": "PARTIAL",
       "summary": "[Quick] timing: Programs and activated abilities usable in the react window.",
@@ -145,39 +145,12 @@
       "soleBlockerCount": 0
     },
     {
-      "family": "GIG_ADJUST",
-      "status": "PARTIAL",
-      "summary": "Increase, decrease, adjust or set Gig values.",
-      "notes": "Maxima are fixed literals; 'set to the value of another Gig' and 'adjust by exactly 1' are missing. MODIFY_GIG_VALUE is schema-only.",
-      "cardCount": 15,
-      "notAdmittedCount": 8,
-      "soleBlockerCount": 0
-    },
-    {
       "family": "MODAL_CHOICE",
       "status": "MISSING",
       "summary": "'Choose one effect' (and 'choose both instead' upgrades).",
       "notes": "PendingChoice MODE exists for setup, search and Gig steps, but no ability carries modes.",
       "cardCount": 8,
       "notAdmittedCount": 8,
-      "soleBlockerCount": 0
-    },
-    {
-      "family": "TRIGGER_STEAL",
-      "status": "MISSING",
-      "summary": "Triggers when a Unit or Legend steals a Gig.",
-      "notes": "Only the history condition SUBJECT_STOLE_GIG_THIS_TURN exists (Delamain Cab); there is no steal trigger.",
-      "cardCount": 8,
-      "notAdmittedCount": 8,
-      "soleBlockerCount": 0
-    },
-    {
-      "family": "SPEND_OR_READY",
-      "status": "PARTIAL",
-      "summary": "Spend or ready Units and Legends by an effect, and 'can't ready' locks.",
-      "notes": "SPEND_UNIT (rival, cost at most 4) only; readying Units or Legends is missing.",
-      "cardCount": 15,
-      "notAdmittedCount": 7,
       "soleBlockerCount": 0
     },
     {
@@ -217,11 +190,29 @@
       "soleBlockerCount": 0
     },
     {
+      "family": "GIG_ADJUST",
+      "status": "PARTIAL",
+      "summary": "Increase, decrease, adjust or set Gig values.",
+      "notes": "Maxima are fixed literals; 'set to the value of another Gig' and 'adjust by exactly 1' are missing. MODIFY_GIG_VALUE is schema-only.",
+      "cardCount": 15,
+      "notAdmittedCount": 6,
+      "soleBlockerCount": 0
+    },
+    {
       "family": "GO_SOLO",
       "status": "PARTIAL",
       "summary": "[Go Solo]: play a Legend as a ready Unit that can attack this turn and is removed when it leaves the field.",
       "notes": "Supported only for Go Solo Legends with no other text or with Blocker (V: Corporate Exile, Goro: Hands Unclean). Go Solo Legends with Play/Attack/Defeated triggers, Go Solo cost changes and Gear on Legend hosts in combat are not.",
       "cardCount": 10,
+      "notAdmittedCount": 6,
+      "soleBlockerCount": 0
+    },
+    {
+      "family": "SPEND_OR_READY",
+      "status": "PARTIAL",
+      "summary": "Spend or ready Units and Legends by an effect, and 'can't ready' locks.",
+      "notes": "SPEND_UNIT (rival, cost at most 4) only; readying Units or Legends is missing.",
+      "cardCount": 15,
       "notAdmittedCount": 6,
       "soleBlockerCount": 0
     },
@@ -316,20 +307,20 @@
       "soleBlockerCount": 0
     },
     {
-      "family": "TRIGGER_END_OF_TURN",
-      "status": "PARTIAL",
-      "summary": "'At the end of your turn' abilities.",
-      "notes": "Trigger WHEN_OWN_TURN_ENDS; only Eddie readying is routed.",
-      "cardCount": 9,
-      "notAdmittedCount": 4,
-      "soleBlockerCount": 0
-    },
-    {
       "family": "TRIGGER_FIGHT_RESULT",
       "status": "PARTIAL",
       "summary": "Triggers on winning or losing a fight, or winning by a margin.",
       "notes": "Trigger WHEN_FIGHT_WON (Satori). Losing a fight and win margins are missing.",
       "cardCount": 5,
+      "notAdmittedCount": 4,
+      "soleBlockerCount": 0
+    },
+    {
+      "family": "TRIGGER_STEAL",
+      "status": "MISSING",
+      "summary": "Triggers when a Unit or Legend steals a Gig.",
+      "notes": "Only the history condition SUBJECT_STOLE_GIG_THIS_TURN exists (Delamain Cab); there is no steal trigger.",
+      "cardCount": 8,
       "notAdmittedCount": 4,
       "soleBlockerCount": 0
     },
@@ -357,6 +348,15 @@
       "summary": "'If X would ..., instead ...' replacement effects.",
       "notes": "",
       "cardCount": 3,
+      "notAdmittedCount": 3,
+      "soleBlockerCount": 0
+    },
+    {
+      "family": "TRIGGER_END_OF_TURN",
+      "status": "PARTIAL",
+      "summary": "'At the end of your turn' abilities.",
+      "notes": "Trigger WHEN_OWN_TURN_ENDS; only Eddie readying is routed.",
+      "cardCount": 9,
       "notAdmittedCount": 3,
       "soleBlockerCount": 0
     },
@@ -477,18 +477,14 @@
       "colors": [
         "RED"
       ],
-      "admission": "NOT_ADMITTED",
-      "revision": null,
+      "admission": "SOURCE_MATCH",
+      "revision": 1,
       "families": [
         "CONDITION_GIG",
         "GIG_ADJUST",
         "TRIGGER_STEAL"
       ],
-      "blockingFamilies": [
-        "CONDITION_GIG",
-        "GIG_ADJUST",
-        "TRIGGER_STEAL"
-      ],
+      "blockingFamilies": [],
       "note": null
     },
     {
@@ -1788,18 +1784,14 @@
       "colors": [
         "YELLOW"
       ],
-      "admission": "NOT_ADMITTED",
-      "revision": null,
+      "admission": "SOURCE_MATCH",
+      "revision": 1,
       "families": [
         "CONDITION_BOARD",
         "DISCARD",
         "TRIGGER_STEAL"
       ],
-      "blockingFamilies": [
-        "CONDITION_BOARD",
-        "DISCARD",
-        "TRIGGER_STEAL"
-      ],
+      "blockingFamilies": [],
       "note": null
     },
     {
@@ -3220,8 +3212,8 @@
       "colors": [
         "RED"
       ],
-      "admission": "NOT_ADMITTED",
-      "revision": null,
+      "admission": "SOURCE_MATCH",
+      "revision": 1,
       "families": [
         "CONDITION_GIG",
         "DRAW",
@@ -3229,13 +3221,7 @@
         "TRIGGER_END_OF_TURN",
         "TRIGGER_STEAL"
       ],
-      "blockingFamilies": [
-        "CONDITION_GIG",
-        "DRAW",
-        "GIG_ADJUST",
-        "TRIGGER_END_OF_TURN",
-        "TRIGGER_STEAL"
-      ],
+      "blockingFamilies": [],
       "note": null
     },
     {
@@ -3449,20 +3435,15 @@
       "colors": [
         "GREEN"
       ],
-      "admission": "NOT_ADMITTED",
-      "revision": null,
+      "admission": "SOURCE_MATCH",
+      "revision": 1,
       "families": [
         "CONDITION_BOARD",
         "CONDITION_GIG",
         "SPEND_OR_READY",
         "TRIGGER_STEAL"
       ],
-      "blockingFamilies": [
-        "CONDITION_BOARD",
-        "CONDITION_GIG",
-        "SPEND_OR_READY",
-        "TRIGGER_STEAL"
-      ],
+      "blockingFamilies": [],
       "note": null
     },
     {

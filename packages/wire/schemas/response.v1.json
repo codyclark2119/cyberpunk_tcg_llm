@@ -2110,6 +2110,37 @@
                                   "properties": {
                                     "kind": {
                                       "type": "string",
+                                      "const": "STEAL"
+                                    },
+                                    "subjectId": {
+                                      "type": "string",
+                                      "minLength": 1,
+                                      "maxLength": 200,
+                                      "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$"
+                                    },
+                                    "gigInstanceIds": {
+                                      "minItems": 1,
+                                      "type": "array",
+                                      "items": {
+                                        "type": "string",
+                                        "minLength": 1,
+                                        "maxLength": 200,
+                                        "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$"
+                                      }
+                                    }
+                                  },
+                                  "required": [
+                                    "kind",
+                                    "subjectId",
+                                    "gigInstanceIds"
+                                  ],
+                                  "additionalProperties": false
+                                },
+                                {
+                                  "type": "object",
+                                  "properties": {
+                                    "kind": {
+                                      "type": "string",
                                       "const": "DEFEAT"
                                     },
                                     "effectSource": {
@@ -2221,8 +2252,16 @@
                                       "WHEN_CARD_PLAYED",
                                       "WHEN_OWN_TURN_ENDS",
                                       "WHEN_UNIT_ATTACKS",
-                                      "WHEN_BLOCKER_USED"
+                                      "WHEN_BLOCKER_USED",
+                                      "WHEN_GIG_STOLEN",
+                                      "WHEN_FRIENDLY_UNIT_STEALS_GIG"
                                     ]
+                                  },
+                                  "gigInstanceId": {
+                                    "type": "string",
+                                    "minLength": 1,
+                                    "maxLength": 200,
+                                    "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$"
                                   }
                                 },
                                 "required": [
@@ -2976,6 +3015,24 @@
                                               },
                                               "required": [
                                                 "kind"
+                                              ],
+                                              "additionalProperties": false
+                                            },
+                                            {
+                                              "type": "object",
+                                              "properties": {
+                                                "kind": {
+                                                  "type": "string",
+                                                  "const": "ANOTHER_FRIENDLY_UNIT"
+                                                },
+                                                "power": {
+                                                  "type": "string",
+                                                  "const": "EQUALS_STOLEN_GIG_VALUE"
+                                                }
+                                              },
+                                              "required": [
+                                                "kind",
+                                                "power"
                                               ],
                                               "additionalProperties": false
                                             }
@@ -3856,6 +3913,42 @@
                                                     "kind"
                                                   ],
                                                   "additionalProperties": false
+                                                },
+                                                {
+                                                  "type": "object",
+                                                  "properties": {
+                                                    "kind": {
+                                                      "type": "string",
+                                                      "const": "SUBJECT_IS_EQUIPPED"
+                                                    }
+                                                  },
+                                                  "required": [
+                                                    "kind"
+                                                  ],
+                                                  "additionalProperties": false
+                                                },
+                                                {
+                                                  "type": "object",
+                                                  "properties": {
+                                                    "kind": {
+                                                      "type": "string",
+                                                      "const": "GIG_COUNT_WITH_VALUE_AT_LEAST"
+                                                    },
+                                                    "minimum": {
+                                                      "type": "number",
+                                                      "const": 8
+                                                    },
+                                                    "count": {
+                                                      "type": "number",
+                                                      "const": 2
+                                                    }
+                                                  },
+                                                  "required": [
+                                                    "kind",
+                                                    "minimum",
+                                                    "count"
+                                                  ],
+                                                  "additionalProperties": false
                                                 }
                                               ]
                                             }
@@ -3969,22 +4062,39 @@
                                           "const": "ADJUST_GIG_UP_TO"
                                         },
                                         "target": {
-                                          "type": "object",
-                                          "properties": {
-                                            "kind": {
-                                              "type": "string",
-                                              "const": "GIGS"
+                                          "anyOf": [
+                                            {
+                                              "type": "object",
+                                              "properties": {
+                                                "kind": {
+                                                  "type": "string",
+                                                  "const": "GIGS"
+                                                },
+                                                "relation": {
+                                                  "type": "string",
+                                                  "const": "ANY"
+                                                }
+                                              },
+                                              "required": [
+                                                "kind",
+                                                "relation"
+                                              ],
+                                              "additionalProperties": false
                                             },
-                                            "relation": {
-                                              "type": "string",
-                                              "const": "ANY"
+                                            {
+                                              "type": "object",
+                                              "properties": {
+                                                "kind": {
+                                                  "type": "string",
+                                                  "const": "STOLEN_GIG"
+                                                }
+                                              },
+                                              "required": [
+                                                "kind"
+                                              ],
+                                              "additionalProperties": false
                                             }
-                                          },
-                                          "required": [
-                                            "kind",
-                                            "relation"
-                                          ],
-                                          "additionalProperties": false
+                                          ]
                                         },
                                         "maximum": {
                                           "anyOf": [
@@ -3999,6 +4109,14 @@
                                             {
                                               "type": "number",
                                               "const": 4
+                                            },
+                                            {
+                                              "type": "number",
+                                              "const": 5
+                                            },
+                                            {
+                                              "type": "number",
+                                              "const": 6
                                             }
                                           ]
                                         },
@@ -4293,6 +4411,42 @@
                                               },
                                               "required": [
                                                 "kind"
+                                              ],
+                                              "additionalProperties": false
+                                            },
+                                            {
+                                              "type": "object",
+                                              "properties": {
+                                                "kind": {
+                                                  "type": "string",
+                                                  "const": "SUBJECT_IS_EQUIPPED"
+                                                }
+                                              },
+                                              "required": [
+                                                "kind"
+                                              ],
+                                              "additionalProperties": false
+                                            },
+                                            {
+                                              "type": "object",
+                                              "properties": {
+                                                "kind": {
+                                                  "type": "string",
+                                                  "const": "GIG_COUNT_WITH_VALUE_AT_LEAST"
+                                                },
+                                                "minimum": {
+                                                  "type": "number",
+                                                  "const": 8
+                                                },
+                                                "count": {
+                                                  "type": "number",
+                                                  "const": 2
+                                                }
+                                              },
+                                              "required": [
+                                                "kind",
+                                                "minimum",
+                                                "count"
                                               ],
                                               "additionalProperties": false
                                             }
@@ -5409,8 +5563,16 @@
                                         "WHEN_CARD_PLAYED",
                                         "WHEN_OWN_TURN_ENDS",
                                         "WHEN_UNIT_ATTACKS",
-                                        "WHEN_BLOCKER_USED"
+                                        "WHEN_BLOCKER_USED",
+                                        "WHEN_GIG_STOLEN",
+                                        "WHEN_FRIENDLY_UNIT_STEALS_GIG"
                                       ]
+                                    },
+                                    "gigInstanceId": {
+                                      "type": "string",
+                                      "minLength": 1,
+                                      "maxLength": 200,
+                                      "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$"
                                     },
                                     "turn": {
                                       "type": "integer",
@@ -5577,6 +5739,24 @@
                                               "kind"
                                             ],
                                             "additionalProperties": false
+                                          },
+                                          {
+                                            "type": "object",
+                                            "properties": {
+                                              "kind": {
+                                                "type": "string",
+                                                "const": "ANOTHER_FRIENDLY_UNIT"
+                                              },
+                                              "power": {
+                                                "type": "string",
+                                                "const": "EQUALS_STOLEN_GIG_VALUE"
+                                              }
+                                            },
+                                            "required": [
+                                              "kind",
+                                              "power"
+                                            ],
+                                            "additionalProperties": false
                                           }
                                         ]
                                       }
@@ -6455,6 +6635,42 @@
                                                   "kind"
                                                 ],
                                                 "additionalProperties": false
+                                              },
+                                              {
+                                                "type": "object",
+                                                "properties": {
+                                                  "kind": {
+                                                    "type": "string",
+                                                    "const": "SUBJECT_IS_EQUIPPED"
+                                                  }
+                                                },
+                                                "required": [
+                                                  "kind"
+                                                ],
+                                                "additionalProperties": false
+                                              },
+                                              {
+                                                "type": "object",
+                                                "properties": {
+                                                  "kind": {
+                                                    "type": "string",
+                                                    "const": "GIG_COUNT_WITH_VALUE_AT_LEAST"
+                                                  },
+                                                  "minimum": {
+                                                    "type": "number",
+                                                    "const": 8
+                                                  },
+                                                  "count": {
+                                                    "type": "number",
+                                                    "const": 2
+                                                  }
+                                                },
+                                                "required": [
+                                                  "kind",
+                                                  "minimum",
+                                                  "count"
+                                                ],
+                                                "additionalProperties": false
                                               }
                                             ]
                                           }
@@ -6568,22 +6784,39 @@
                                         "const": "ADJUST_GIG_UP_TO"
                                       },
                                       "target": {
-                                        "type": "object",
-                                        "properties": {
-                                          "kind": {
-                                            "type": "string",
-                                            "const": "GIGS"
+                                        "anyOf": [
+                                          {
+                                            "type": "object",
+                                            "properties": {
+                                              "kind": {
+                                                "type": "string",
+                                                "const": "GIGS"
+                                              },
+                                              "relation": {
+                                                "type": "string",
+                                                "const": "ANY"
+                                              }
+                                            },
+                                            "required": [
+                                              "kind",
+                                              "relation"
+                                            ],
+                                            "additionalProperties": false
                                           },
-                                          "relation": {
-                                            "type": "string",
-                                            "const": "ANY"
+                                          {
+                                            "type": "object",
+                                            "properties": {
+                                              "kind": {
+                                                "type": "string",
+                                                "const": "STOLEN_GIG"
+                                              }
+                                            },
+                                            "required": [
+                                              "kind"
+                                            ],
+                                            "additionalProperties": false
                                           }
-                                        },
-                                        "required": [
-                                          "kind",
-                                          "relation"
-                                        ],
-                                        "additionalProperties": false
+                                        ]
                                       },
                                       "maximum": {
                                         "anyOf": [
@@ -6598,6 +6831,14 @@
                                           {
                                             "type": "number",
                                             "const": 4
+                                          },
+                                          {
+                                            "type": "number",
+                                            "const": 5
+                                          },
+                                          {
+                                            "type": "number",
+                                            "const": 6
                                           }
                                         ]
                                       },
@@ -6892,6 +7133,42 @@
                                             },
                                             "required": [
                                               "kind"
+                                            ],
+                                            "additionalProperties": false
+                                          },
+                                          {
+                                            "type": "object",
+                                            "properties": {
+                                              "kind": {
+                                                "type": "string",
+                                                "const": "SUBJECT_IS_EQUIPPED"
+                                              }
+                                            },
+                                            "required": [
+                                              "kind"
+                                            ],
+                                            "additionalProperties": false
+                                          },
+                                          {
+                                            "type": "object",
+                                            "properties": {
+                                              "kind": {
+                                                "type": "string",
+                                                "const": "GIG_COUNT_WITH_VALUE_AT_LEAST"
+                                              },
+                                              "minimum": {
+                                                "type": "number",
+                                                "const": 8
+                                              },
+                                              "count": {
+                                                "type": "number",
+                                                "const": 2
+                                              }
+                                            },
+                                            "required": [
+                                              "kind",
+                                              "minimum",
+                                              "count"
                                             ],
                                             "additionalProperties": false
                                           }
@@ -8008,8 +8285,16 @@
                                       "WHEN_CARD_PLAYED",
                                       "WHEN_OWN_TURN_ENDS",
                                       "WHEN_UNIT_ATTACKS",
-                                      "WHEN_BLOCKER_USED"
+                                      "WHEN_BLOCKER_USED",
+                                      "WHEN_GIG_STOLEN",
+                                      "WHEN_FRIENDLY_UNIT_STEALS_GIG"
                                     ]
+                                  },
+                                  "gigInstanceId": {
+                                    "type": "string",
+                                    "minLength": 1,
+                                    "maxLength": 200,
+                                    "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$"
                                   },
                                   "turn": {
                                     "type": "integer",
@@ -8172,6 +8457,24 @@
                                               "kind"
                                             ],
                                             "additionalProperties": false
+                                          },
+                                          {
+                                            "type": "object",
+                                            "properties": {
+                                              "kind": {
+                                                "type": "string",
+                                                "const": "ANOTHER_FRIENDLY_UNIT"
+                                              },
+                                              "power": {
+                                                "type": "string",
+                                                "const": "EQUALS_STOLEN_GIG_VALUE"
+                                              }
+                                            },
+                                            "required": [
+                                              "kind",
+                                              "power"
+                                            ],
+                                            "additionalProperties": false
                                           }
                                         ]
                                       }
@@ -9050,6 +9353,42 @@
                                                   "kind"
                                                 ],
                                                 "additionalProperties": false
+                                              },
+                                              {
+                                                "type": "object",
+                                                "properties": {
+                                                  "kind": {
+                                                    "type": "string",
+                                                    "const": "SUBJECT_IS_EQUIPPED"
+                                                  }
+                                                },
+                                                "required": [
+                                                  "kind"
+                                                ],
+                                                "additionalProperties": false
+                                              },
+                                              {
+                                                "type": "object",
+                                                "properties": {
+                                                  "kind": {
+                                                    "type": "string",
+                                                    "const": "GIG_COUNT_WITH_VALUE_AT_LEAST"
+                                                  },
+                                                  "minimum": {
+                                                    "type": "number",
+                                                    "const": 8
+                                                  },
+                                                  "count": {
+                                                    "type": "number",
+                                                    "const": 2
+                                                  }
+                                                },
+                                                "required": [
+                                                  "kind",
+                                                  "minimum",
+                                                  "count"
+                                                ],
+                                                "additionalProperties": false
                                               }
                                             ]
                                           }
@@ -9163,22 +9502,39 @@
                                         "const": "ADJUST_GIG_UP_TO"
                                       },
                                       "target": {
-                                        "type": "object",
-                                        "properties": {
-                                          "kind": {
-                                            "type": "string",
-                                            "const": "GIGS"
+                                        "anyOf": [
+                                          {
+                                            "type": "object",
+                                            "properties": {
+                                              "kind": {
+                                                "type": "string",
+                                                "const": "GIGS"
+                                              },
+                                              "relation": {
+                                                "type": "string",
+                                                "const": "ANY"
+                                              }
+                                            },
+                                            "required": [
+                                              "kind",
+                                              "relation"
+                                            ],
+                                            "additionalProperties": false
                                           },
-                                          "relation": {
-                                            "type": "string",
-                                            "const": "ANY"
+                                          {
+                                            "type": "object",
+                                            "properties": {
+                                              "kind": {
+                                                "type": "string",
+                                                "const": "STOLEN_GIG"
+                                              }
+                                            },
+                                            "required": [
+                                              "kind"
+                                            ],
+                                            "additionalProperties": false
                                           }
-                                        },
-                                        "required": [
-                                          "kind",
-                                          "relation"
-                                        ],
-                                        "additionalProperties": false
+                                        ]
                                       },
                                       "maximum": {
                                         "anyOf": [
@@ -9193,6 +9549,14 @@
                                           {
                                             "type": "number",
                                             "const": 4
+                                          },
+                                          {
+                                            "type": "number",
+                                            "const": 5
+                                          },
+                                          {
+                                            "type": "number",
+                                            "const": 6
                                           }
                                         ]
                                       },
@@ -9487,6 +9851,42 @@
                                             },
                                             "required": [
                                               "kind"
+                                            ],
+                                            "additionalProperties": false
+                                          },
+                                          {
+                                            "type": "object",
+                                            "properties": {
+                                              "kind": {
+                                                "type": "string",
+                                                "const": "SUBJECT_IS_EQUIPPED"
+                                              }
+                                            },
+                                            "required": [
+                                              "kind"
+                                            ],
+                                            "additionalProperties": false
+                                          },
+                                          {
+                                            "type": "object",
+                                            "properties": {
+                                              "kind": {
+                                                "type": "string",
+                                                "const": "GIG_COUNT_WITH_VALUE_AT_LEAST"
+                                              },
+                                              "minimum": {
+                                                "type": "number",
+                                                "const": 8
+                                              },
+                                              "count": {
+                                                "type": "number",
+                                                "const": 2
+                                              }
+                                            },
+                                            "required": [
+                                              "kind",
+                                              "minimum",
+                                              "count"
                                             ],
                                             "additionalProperties": false
                                           }
@@ -10603,8 +11003,16 @@
                                       "WHEN_CARD_PLAYED",
                                       "WHEN_OWN_TURN_ENDS",
                                       "WHEN_UNIT_ATTACKS",
-                                      "WHEN_BLOCKER_USED"
+                                      "WHEN_BLOCKER_USED",
+                                      "WHEN_GIG_STOLEN",
+                                      "WHEN_FRIENDLY_UNIT_STEALS_GIG"
                                     ]
+                                  },
+                                  "gigInstanceId": {
+                                    "type": "string",
+                                    "minLength": 1,
+                                    "maxLength": 200,
+                                    "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$"
                                   },
                                   "turn": {
                                     "type": "integer",
@@ -13453,6 +13861,37 @@
                                   "properties": {
                                     "kind": {
                                       "type": "string",
+                                      "const": "STEAL"
+                                    },
+                                    "subjectId": {
+                                      "type": "string",
+                                      "minLength": 1,
+                                      "maxLength": 200,
+                                      "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$"
+                                    },
+                                    "gigInstanceIds": {
+                                      "minItems": 1,
+                                      "type": "array",
+                                      "items": {
+                                        "type": "string",
+                                        "minLength": 1,
+                                        "maxLength": 200,
+                                        "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$"
+                                      }
+                                    }
+                                  },
+                                  "required": [
+                                    "kind",
+                                    "subjectId",
+                                    "gigInstanceIds"
+                                  ],
+                                  "additionalProperties": false
+                                },
+                                {
+                                  "type": "object",
+                                  "properties": {
+                                    "kind": {
+                                      "type": "string",
                                       "const": "DEFEAT"
                                     },
                                     "effectSource": {
@@ -13564,8 +14003,16 @@
                                       "WHEN_CARD_PLAYED",
                                       "WHEN_OWN_TURN_ENDS",
                                       "WHEN_UNIT_ATTACKS",
-                                      "WHEN_BLOCKER_USED"
+                                      "WHEN_BLOCKER_USED",
+                                      "WHEN_GIG_STOLEN",
+                                      "WHEN_FRIENDLY_UNIT_STEALS_GIG"
                                     ]
+                                  },
+                                  "gigInstanceId": {
+                                    "type": "string",
+                                    "minLength": 1,
+                                    "maxLength": 200,
+                                    "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$"
                                   }
                                 },
                                 "required": [
@@ -14319,6 +14766,24 @@
                                               },
                                               "required": [
                                                 "kind"
+                                              ],
+                                              "additionalProperties": false
+                                            },
+                                            {
+                                              "type": "object",
+                                              "properties": {
+                                                "kind": {
+                                                  "type": "string",
+                                                  "const": "ANOTHER_FRIENDLY_UNIT"
+                                                },
+                                                "power": {
+                                                  "type": "string",
+                                                  "const": "EQUALS_STOLEN_GIG_VALUE"
+                                                }
+                                              },
+                                              "required": [
+                                                "kind",
+                                                "power"
                                               ],
                                               "additionalProperties": false
                                             }
@@ -15199,6 +15664,42 @@
                                                     "kind"
                                                   ],
                                                   "additionalProperties": false
+                                                },
+                                                {
+                                                  "type": "object",
+                                                  "properties": {
+                                                    "kind": {
+                                                      "type": "string",
+                                                      "const": "SUBJECT_IS_EQUIPPED"
+                                                    }
+                                                  },
+                                                  "required": [
+                                                    "kind"
+                                                  ],
+                                                  "additionalProperties": false
+                                                },
+                                                {
+                                                  "type": "object",
+                                                  "properties": {
+                                                    "kind": {
+                                                      "type": "string",
+                                                      "const": "GIG_COUNT_WITH_VALUE_AT_LEAST"
+                                                    },
+                                                    "minimum": {
+                                                      "type": "number",
+                                                      "const": 8
+                                                    },
+                                                    "count": {
+                                                      "type": "number",
+                                                      "const": 2
+                                                    }
+                                                  },
+                                                  "required": [
+                                                    "kind",
+                                                    "minimum",
+                                                    "count"
+                                                  ],
+                                                  "additionalProperties": false
                                                 }
                                               ]
                                             }
@@ -15312,22 +15813,39 @@
                                           "const": "ADJUST_GIG_UP_TO"
                                         },
                                         "target": {
-                                          "type": "object",
-                                          "properties": {
-                                            "kind": {
-                                              "type": "string",
-                                              "const": "GIGS"
+                                          "anyOf": [
+                                            {
+                                              "type": "object",
+                                              "properties": {
+                                                "kind": {
+                                                  "type": "string",
+                                                  "const": "GIGS"
+                                                },
+                                                "relation": {
+                                                  "type": "string",
+                                                  "const": "ANY"
+                                                }
+                                              },
+                                              "required": [
+                                                "kind",
+                                                "relation"
+                                              ],
+                                              "additionalProperties": false
                                             },
-                                            "relation": {
-                                              "type": "string",
-                                              "const": "ANY"
+                                            {
+                                              "type": "object",
+                                              "properties": {
+                                                "kind": {
+                                                  "type": "string",
+                                                  "const": "STOLEN_GIG"
+                                                }
+                                              },
+                                              "required": [
+                                                "kind"
+                                              ],
+                                              "additionalProperties": false
                                             }
-                                          },
-                                          "required": [
-                                            "kind",
-                                            "relation"
-                                          ],
-                                          "additionalProperties": false
+                                          ]
                                         },
                                         "maximum": {
                                           "anyOf": [
@@ -15342,6 +15860,14 @@
                                             {
                                               "type": "number",
                                               "const": 4
+                                            },
+                                            {
+                                              "type": "number",
+                                              "const": 5
+                                            },
+                                            {
+                                              "type": "number",
+                                              "const": 6
                                             }
                                           ]
                                         },
@@ -15636,6 +16162,42 @@
                                               },
                                               "required": [
                                                 "kind"
+                                              ],
+                                              "additionalProperties": false
+                                            },
+                                            {
+                                              "type": "object",
+                                              "properties": {
+                                                "kind": {
+                                                  "type": "string",
+                                                  "const": "SUBJECT_IS_EQUIPPED"
+                                                }
+                                              },
+                                              "required": [
+                                                "kind"
+                                              ],
+                                              "additionalProperties": false
+                                            },
+                                            {
+                                              "type": "object",
+                                              "properties": {
+                                                "kind": {
+                                                  "type": "string",
+                                                  "const": "GIG_COUNT_WITH_VALUE_AT_LEAST"
+                                                },
+                                                "minimum": {
+                                                  "type": "number",
+                                                  "const": 8
+                                                },
+                                                "count": {
+                                                  "type": "number",
+                                                  "const": 2
+                                                }
+                                              },
+                                              "required": [
+                                                "kind",
+                                                "minimum",
+                                                "count"
                                               ],
                                               "additionalProperties": false
                                             }
@@ -16752,8 +17314,16 @@
                                         "WHEN_CARD_PLAYED",
                                         "WHEN_OWN_TURN_ENDS",
                                         "WHEN_UNIT_ATTACKS",
-                                        "WHEN_BLOCKER_USED"
+                                        "WHEN_BLOCKER_USED",
+                                        "WHEN_GIG_STOLEN",
+                                        "WHEN_FRIENDLY_UNIT_STEALS_GIG"
                                       ]
+                                    },
+                                    "gigInstanceId": {
+                                      "type": "string",
+                                      "minLength": 1,
+                                      "maxLength": 200,
+                                      "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$"
                                     },
                                     "turn": {
                                       "type": "integer",
@@ -16920,6 +17490,24 @@
                                               "kind"
                                             ],
                                             "additionalProperties": false
+                                          },
+                                          {
+                                            "type": "object",
+                                            "properties": {
+                                              "kind": {
+                                                "type": "string",
+                                                "const": "ANOTHER_FRIENDLY_UNIT"
+                                              },
+                                              "power": {
+                                                "type": "string",
+                                                "const": "EQUALS_STOLEN_GIG_VALUE"
+                                              }
+                                            },
+                                            "required": [
+                                              "kind",
+                                              "power"
+                                            ],
+                                            "additionalProperties": false
                                           }
                                         ]
                                       }
@@ -17798,6 +18386,42 @@
                                                   "kind"
                                                 ],
                                                 "additionalProperties": false
+                                              },
+                                              {
+                                                "type": "object",
+                                                "properties": {
+                                                  "kind": {
+                                                    "type": "string",
+                                                    "const": "SUBJECT_IS_EQUIPPED"
+                                                  }
+                                                },
+                                                "required": [
+                                                  "kind"
+                                                ],
+                                                "additionalProperties": false
+                                              },
+                                              {
+                                                "type": "object",
+                                                "properties": {
+                                                  "kind": {
+                                                    "type": "string",
+                                                    "const": "GIG_COUNT_WITH_VALUE_AT_LEAST"
+                                                  },
+                                                  "minimum": {
+                                                    "type": "number",
+                                                    "const": 8
+                                                  },
+                                                  "count": {
+                                                    "type": "number",
+                                                    "const": 2
+                                                  }
+                                                },
+                                                "required": [
+                                                  "kind",
+                                                  "minimum",
+                                                  "count"
+                                                ],
+                                                "additionalProperties": false
                                               }
                                             ]
                                           }
@@ -17911,22 +18535,39 @@
                                         "const": "ADJUST_GIG_UP_TO"
                                       },
                                       "target": {
-                                        "type": "object",
-                                        "properties": {
-                                          "kind": {
-                                            "type": "string",
-                                            "const": "GIGS"
+                                        "anyOf": [
+                                          {
+                                            "type": "object",
+                                            "properties": {
+                                              "kind": {
+                                                "type": "string",
+                                                "const": "GIGS"
+                                              },
+                                              "relation": {
+                                                "type": "string",
+                                                "const": "ANY"
+                                              }
+                                            },
+                                            "required": [
+                                              "kind",
+                                              "relation"
+                                            ],
+                                            "additionalProperties": false
                                           },
-                                          "relation": {
-                                            "type": "string",
-                                            "const": "ANY"
+                                          {
+                                            "type": "object",
+                                            "properties": {
+                                              "kind": {
+                                                "type": "string",
+                                                "const": "STOLEN_GIG"
+                                              }
+                                            },
+                                            "required": [
+                                              "kind"
+                                            ],
+                                            "additionalProperties": false
                                           }
-                                        },
-                                        "required": [
-                                          "kind",
-                                          "relation"
-                                        ],
-                                        "additionalProperties": false
+                                        ]
                                       },
                                       "maximum": {
                                         "anyOf": [
@@ -17941,6 +18582,14 @@
                                           {
                                             "type": "number",
                                             "const": 4
+                                          },
+                                          {
+                                            "type": "number",
+                                            "const": 5
+                                          },
+                                          {
+                                            "type": "number",
+                                            "const": 6
                                           }
                                         ]
                                       },
@@ -18235,6 +18884,42 @@
                                             },
                                             "required": [
                                               "kind"
+                                            ],
+                                            "additionalProperties": false
+                                          },
+                                          {
+                                            "type": "object",
+                                            "properties": {
+                                              "kind": {
+                                                "type": "string",
+                                                "const": "SUBJECT_IS_EQUIPPED"
+                                              }
+                                            },
+                                            "required": [
+                                              "kind"
+                                            ],
+                                            "additionalProperties": false
+                                          },
+                                          {
+                                            "type": "object",
+                                            "properties": {
+                                              "kind": {
+                                                "type": "string",
+                                                "const": "GIG_COUNT_WITH_VALUE_AT_LEAST"
+                                              },
+                                              "minimum": {
+                                                "type": "number",
+                                                "const": 8
+                                              },
+                                              "count": {
+                                                "type": "number",
+                                                "const": 2
+                                              }
+                                            },
+                                            "required": [
+                                              "kind",
+                                              "minimum",
+                                              "count"
                                             ],
                                             "additionalProperties": false
                                           }
@@ -19351,8 +20036,16 @@
                                       "WHEN_CARD_PLAYED",
                                       "WHEN_OWN_TURN_ENDS",
                                       "WHEN_UNIT_ATTACKS",
-                                      "WHEN_BLOCKER_USED"
+                                      "WHEN_BLOCKER_USED",
+                                      "WHEN_GIG_STOLEN",
+                                      "WHEN_FRIENDLY_UNIT_STEALS_GIG"
                                     ]
+                                  },
+                                  "gigInstanceId": {
+                                    "type": "string",
+                                    "minLength": 1,
+                                    "maxLength": 200,
+                                    "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$"
                                   },
                                   "turn": {
                                     "type": "integer",
@@ -19515,6 +20208,24 @@
                                               "kind"
                                             ],
                                             "additionalProperties": false
+                                          },
+                                          {
+                                            "type": "object",
+                                            "properties": {
+                                              "kind": {
+                                                "type": "string",
+                                                "const": "ANOTHER_FRIENDLY_UNIT"
+                                              },
+                                              "power": {
+                                                "type": "string",
+                                                "const": "EQUALS_STOLEN_GIG_VALUE"
+                                              }
+                                            },
+                                            "required": [
+                                              "kind",
+                                              "power"
+                                            ],
+                                            "additionalProperties": false
                                           }
                                         ]
                                       }
@@ -20393,6 +21104,42 @@
                                                   "kind"
                                                 ],
                                                 "additionalProperties": false
+                                              },
+                                              {
+                                                "type": "object",
+                                                "properties": {
+                                                  "kind": {
+                                                    "type": "string",
+                                                    "const": "SUBJECT_IS_EQUIPPED"
+                                                  }
+                                                },
+                                                "required": [
+                                                  "kind"
+                                                ],
+                                                "additionalProperties": false
+                                              },
+                                              {
+                                                "type": "object",
+                                                "properties": {
+                                                  "kind": {
+                                                    "type": "string",
+                                                    "const": "GIG_COUNT_WITH_VALUE_AT_LEAST"
+                                                  },
+                                                  "minimum": {
+                                                    "type": "number",
+                                                    "const": 8
+                                                  },
+                                                  "count": {
+                                                    "type": "number",
+                                                    "const": 2
+                                                  }
+                                                },
+                                                "required": [
+                                                  "kind",
+                                                  "minimum",
+                                                  "count"
+                                                ],
+                                                "additionalProperties": false
                                               }
                                             ]
                                           }
@@ -20506,22 +21253,39 @@
                                         "const": "ADJUST_GIG_UP_TO"
                                       },
                                       "target": {
-                                        "type": "object",
-                                        "properties": {
-                                          "kind": {
-                                            "type": "string",
-                                            "const": "GIGS"
+                                        "anyOf": [
+                                          {
+                                            "type": "object",
+                                            "properties": {
+                                              "kind": {
+                                                "type": "string",
+                                                "const": "GIGS"
+                                              },
+                                              "relation": {
+                                                "type": "string",
+                                                "const": "ANY"
+                                              }
+                                            },
+                                            "required": [
+                                              "kind",
+                                              "relation"
+                                            ],
+                                            "additionalProperties": false
                                           },
-                                          "relation": {
-                                            "type": "string",
-                                            "const": "ANY"
+                                          {
+                                            "type": "object",
+                                            "properties": {
+                                              "kind": {
+                                                "type": "string",
+                                                "const": "STOLEN_GIG"
+                                              }
+                                            },
+                                            "required": [
+                                              "kind"
+                                            ],
+                                            "additionalProperties": false
                                           }
-                                        },
-                                        "required": [
-                                          "kind",
-                                          "relation"
-                                        ],
-                                        "additionalProperties": false
+                                        ]
                                       },
                                       "maximum": {
                                         "anyOf": [
@@ -20536,6 +21300,14 @@
                                           {
                                             "type": "number",
                                             "const": 4
+                                          },
+                                          {
+                                            "type": "number",
+                                            "const": 5
+                                          },
+                                          {
+                                            "type": "number",
+                                            "const": 6
                                           }
                                         ]
                                       },
@@ -20830,6 +21602,42 @@
                                             },
                                             "required": [
                                               "kind"
+                                            ],
+                                            "additionalProperties": false
+                                          },
+                                          {
+                                            "type": "object",
+                                            "properties": {
+                                              "kind": {
+                                                "type": "string",
+                                                "const": "SUBJECT_IS_EQUIPPED"
+                                              }
+                                            },
+                                            "required": [
+                                              "kind"
+                                            ],
+                                            "additionalProperties": false
+                                          },
+                                          {
+                                            "type": "object",
+                                            "properties": {
+                                              "kind": {
+                                                "type": "string",
+                                                "const": "GIG_COUNT_WITH_VALUE_AT_LEAST"
+                                              },
+                                              "minimum": {
+                                                "type": "number",
+                                                "const": 8
+                                              },
+                                              "count": {
+                                                "type": "number",
+                                                "const": 2
+                                              }
+                                            },
+                                            "required": [
+                                              "kind",
+                                              "minimum",
+                                              "count"
                                             ],
                                             "additionalProperties": false
                                           }
@@ -21946,8 +22754,16 @@
                                       "WHEN_CARD_PLAYED",
                                       "WHEN_OWN_TURN_ENDS",
                                       "WHEN_UNIT_ATTACKS",
-                                      "WHEN_BLOCKER_USED"
+                                      "WHEN_BLOCKER_USED",
+                                      "WHEN_GIG_STOLEN",
+                                      "WHEN_FRIENDLY_UNIT_STEALS_GIG"
                                     ]
+                                  },
+                                  "gigInstanceId": {
+                                    "type": "string",
+                                    "minLength": 1,
+                                    "maxLength": 200,
+                                    "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$"
                                   },
                                   "turn": {
                                     "type": "integer",
@@ -25778,7 +26594,9 @@
                               "WHEN_CARD_PLAYED",
                               "WHEN_OWN_TURN_ENDS",
                               "WHEN_UNIT_ATTACKS",
-                              "WHEN_BLOCKER_USED"
+                              "WHEN_BLOCKER_USED",
+                              "WHEN_GIG_STOLEN",
+                              "WHEN_FRIENDLY_UNIT_STEALS_GIG"
                             ]
                           }
                         },
@@ -27236,7 +28054,9 @@
                                   "WHEN_CARD_PLAYED",
                                   "WHEN_OWN_TURN_ENDS",
                                   "WHEN_UNIT_ATTACKS",
-                                  "WHEN_BLOCKER_USED"
+                                  "WHEN_BLOCKER_USED",
+                                  "WHEN_GIG_STOLEN",
+                                  "WHEN_FRIENDLY_UNIT_STEALS_GIG"
                                 ]
                               }
                             },

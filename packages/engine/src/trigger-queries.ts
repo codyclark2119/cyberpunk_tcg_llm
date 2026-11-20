@@ -8,7 +8,7 @@ import { getDiscardableCards } from "./discard";
 import { privateLookTargets } from "./private-knowledge";
 import { friendlyPowerTargets } from "./friendly-play-power-queries";
 import { listSpendUnitTargets } from "./targeted-spend-queries";
-import { readyLegendTargets } from "./ready-unit";
+import { readyLegendTargets, stolenGigReadyTargets } from "./ready-unit";
 import { hashCanonical, type GameState, type CardInstanceId, type PlayerId, type TriggerBinding, type TriggerOrigin, type PendingChoice, type PendingEffect } from "@tcg/domain";
 import type { EngineContext } from "./state";
 import { cardRevision } from "./characteristics";
@@ -26,7 +26,7 @@ export function effectiveTriggeredAbilities(state: GameState, subjectId: CardIns
         const r = cardRevision(state, source.id, context);
         if (!supportsEffectiveTriggerSource(r, context) || !r) return [];
         return r.mechanics.abilities.flatMap(a => {
-            if (!a.trigger || (source.id !== subjectId) !== (a.inherited === "EQUIPPED_HOST") || !(a.trigger === "WHEN_FIGHT_WON" || a.trigger === "WHEN_DEFEATED" || a.trigger === "WHEN_PLAYED" || a.trigger === "WHEN_ATTACKING" || a.trigger === "WHEN_CARD_PLAYED" || a.trigger === "WHEN_OWN_TURN_ENDS" || a.trigger === "WHEN_UNIT_ATTACKS" || a.trigger === "WHEN_BLOCKER_USED")) return [];
+            if (!a.trigger || (source.id !== subjectId) !== (a.inherited === "EQUIPPED_HOST") || !(a.trigger === "WHEN_FIGHT_WON" || a.trigger === "WHEN_DEFEATED" || a.trigger === "WHEN_PLAYED" || a.trigger === "WHEN_ATTACKING" || a.trigger === "WHEN_CARD_PLAYED" || a.trigger === "WHEN_OWN_TURN_ENDS" || a.trigger === "WHEN_UNIT_ATTACKS" || a.trigger === "WHEN_BLOCKER_USED" || a.trigger === "WHEN_GIG_STOLEN" || a.trigger === "WHEN_FRIENDLY_UNIT_STEALS_GIG")) return [];
             return [{ sourceId: source.id, subjectId, controllerId: subject.controllerId, source: { cardId: r.id, revision: r.revision }, abilityId: a.id, kind: a.trigger }];
         });
     }).sort((a, b) => a.sourceId < b.sourceId ? -1 : a.sourceId > b.sourceId ? 1 : a.abilityId < b.abilityId ? -1 : a.abilityId > b.abilityId ? 1 : 0);
@@ -40,6 +40,16 @@ export function discoverTriggers(state: GameState, origin: TriggerOrigin, contex
     if (origin.kind === "DEFEAT") return origin.defeated.flatMap(d => effectiveTriggeredAbilities(state, d.targetId, context).filter(b => b.kind === "WHEN_DEFEATED")); // Capture before movement; enqueue after.
     // Batch V17: "When this Unit uses [Blocker]" belongs to the blocking Unit only (9.11).
     if (origin.kind === "BLOCK") return effectiveTriggeredAbilities(state, origin.subjectId, context).filter(b => b.kind === "WHEN_BLOCKER_USED" && b.sourceId === b.subjectId);
+    // Batch V24 (10.16.3, 11.5.1.7): "When this Unit steals a Gig" is pending once per stolen Gig, after all have moved.
+    // Batch V26: "When a friendly Unit steals a d6" belongs to each friendly field source, the stealing Unit included.
+    if (origin.kind === "STEAL") {
+        const actor = state.objects.cards[origin.subjectId]?.controllerId, unit = Boolean(actor) && effectiveCardTypes(state, origin.subjectId, context).includes("UNIT");
+        const observers = actor && unit ? state.players[actor].zones.BATTLEFIELD.flatMap(id => effectiveTriggeredAbilities(state, id, context).filter(b => b.kind === "WHEN_FRIENDLY_UNIT_STEALS_GIG" && b.sourceId === b.subjectId)) : [];
+        return [...origin.gigInstanceIds].sort().flatMap(gigInstanceId => [
+            ...effectiveTriggeredAbilities(state, origin.subjectId, context).filter(b => b.kind === "WHEN_GIG_STOLEN" && b.sourceId === b.subjectId),
+            ...observers.filter(b => cardRevision(state, b.sourceId, context)!.mechanics.abilities.find(a => a.id === b.abilityId)!.guard === "STOLEN_GIG_IS_D6" && state.objects.gigs[gigInstanceId]?.dieType === "D6")
+        ].map(b => ({ ...b, gigInstanceId })));
+    }
     const own = effectiveTriggeredAbilities(state, origin.subjectId, context).filter(b => {
         if (b.kind !== (origin.kind === "PLAY" ? "WHEN_PLAYED" : "WHEN_ATTACKING")) return false;
         // Losing His Way FAQ0c5b038a: becoming face-up after declaration does not create a trigger.
@@ -57,7 +67,7 @@ export function discoverTriggers(state: GameState, origin: TriggerOrigin, contex
 }
 export function triggerId(state: GameState, binding: TriggerBinding, ordinal: number) {
     if (binding.delayedId) return binding.delayedId;
-    return hashCanonical({ protocol: "reviewed-trigger@1", turn: state.timing.turn, ordinal, sourceId: binding.sourceId, subjectId: binding.subjectId, source: binding.source, abilityId: binding.abilityId, kind: binding.kind, controllerSeat: state.players[binding.controllerId].seat });
+    return hashCanonical({ protocol: "reviewed-trigger@1", turn: state.timing.turn, ordinal, sourceId: binding.sourceId, subjectId: binding.subjectId, source: binding.source, abilityId: binding.abilityId, kind: binding.kind, controllerSeat: state.players[binding.controllerId].seat, ...(binding.gigInstanceId ? { gigInstanceId: binding.gigInstanceId } : {}) });
 }
 export function pendingTrigger(state: GameState, binding: TriggerBinding, ordinal: number, sequence: number, context: EngineContext, primitiveIndex: 0 | 1 = 0): PendingEffect {
     const a = context.content.cards.find(c => c.id === binding.source.cardId && c.revision === binding.source.revision)!.mechanics.abilities.find(a => a.id === binding.abilityId)!;
@@ -78,6 +88,11 @@ export function swapSidesAvailable(state: GameState, controllerId: PlayerId) {
 }
 export function triggerGigTargets(state: GameState) {
     const current = state.resolution.current!, chosen = state.resolution.triggerContinuation?.targetGigId;
+    // Batch V27: "increase it" offers only the rolled Gig the steal trigger names, while it is in a Gig area.
+    if (current.effect.kind === "ADJUST_GIG_UP_TO" && current.effect.target.kind === "STOLEN_GIG") {
+        const g = current.trigger?.gigInstanceId ? state.objects.gigs[current.trigger.gigInstanceId] : undefined;
+        return g && g.location.zone === "GIGS" && g.roll.kind === "ROLLED" ? [g.id] : [];
+    }
     // Batch V23: a swap chooses the friendly Gig first, then the rival Gig.
     const side = current.effect.kind === "SWAP_GIGS" ? (chosen ? "RIVAL" : "FRIENDLY") : current.effect.kind === "OPTIONAL_DECREASE_FRIENDLY_GIG_THEN_DRAW_IF_MIN" ? "FRIENDLY" : "ANY";
     return Object.values(state.objects.gigs).filter(g => g.location.zone === "GIGS" && g.roll.kind === "ROLLED" && (side === "ANY" || (g.controllerId === current.controllerId) === (side === "FRIENDLY"))).map(g => g.id).sort();
@@ -110,7 +125,7 @@ export function triggerChoice(state: GameState, context: EngineContext): Pending
             : current?.effect.kind === "SPEND_UNIT" || current?.effect.kind === "PREVENT_UNIT_READY"
             ? listSpendUnitTargets(state, actorId, current.effect.target, context).map(cardInstanceId => ({ kind: "CARD", cardInstanceId }))
             : current?.effect.kind === "READY_UNIT"
-            ? readyLegendTargets(state, actorId, context).map(cardInstanceId => ({ kind: "CARD", cardInstanceId }))
+            ? (current.effect.target.kind === "ANOTHER_FRIENDLY_UNIT" ? stolenGigReadyTargets(state, current, context) : readyLegendTargets(state, actorId, context)).map(cardInstanceId => ({ kind: "CARD", cardInstanceId }))
             : current?.effect.kind === "RETURN_TRASH_UNIT_TO_HAND"
             ? trashUnitTargets(state, current, context).map(cardInstanceId => ({ kind: "CARD", cardInstanceId }))
             : current?.effect.kind === "LOOK_AT_FRIENDLY_FACE_DOWN_LEGEND"

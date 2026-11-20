@@ -14,10 +14,10 @@ export function supportsValueConditionCard(card: DeepReadonly<CardRevisionSnapsh
         return failure("UNSUPPORTED_VALUE_CONDITIONS", "Entire reviewed Industrial/Field Operator metadata and ordered effects required");
     return success(null);
 }
-// Batch V17: a Blocker-used Gig increase is pinned by the trigger gate instead. Batch V22: Memory Relapse's even-Street-Cred draw is pinned
+// Batch V17: a Blocker-used Gig increase (and Batch V26/V27: friendly-steal and own-steal Gig increases) is pinned by the trigger gate instead. Batch V22: Memory Relapse's even-Street-Cred draw is pinned
 // by the targeted-spend gate.
 export function hasValueConditionMetadata(card: DeepReadonly<CardRevisionSnapshot>) {
-    return card.execution?.scope === "VALUE_CONDITIONS_V1" || card.execution?.scope !== "TARGETED_SPEND_V1" && card.mechanics.abilities.some(a => a.conditions.some(c => c.kind === "STREET_CRED_IS_EVEN") || a.trigger !== "WHEN_BLOCKER_USED" && a.effects.some(e => e.kind === "ADJUST_GIG_UP_TO" && e.direction !== "DECREASE" && (e.maximum !== 1 || e.direction !== undefined) || e.kind === "CONDITIONAL_DRAW" && e.condition.kind === "STREET_CRED_IS_EVEN" || e.kind === "DISCARD_CARDS" && e.when?.condition.kind === "STREET_CRED_IS_EVEN"));
+    return card.execution?.scope === "VALUE_CONDITIONS_V1" || card.execution?.scope !== "TARGETED_SPEND_V1" && card.mechanics.abilities.some(a => a.conditions.some(c => c.kind === "STREET_CRED_IS_EVEN") || a.trigger !== "WHEN_BLOCKER_USED" && a.trigger !== "WHEN_FRIENDLY_UNIT_STEALS_GIG" && a.trigger !== "WHEN_GIG_STOLEN" && a.effects.some(e => e.kind === "ADJUST_GIG_UP_TO" && e.direction !== "DECREASE" && (e.maximum !== 1 || e.direction !== undefined) || e.kind === "CONDITIONAL_DRAW" && e.condition.kind === "STREET_CRED_IS_EVEN" || e.kind === "DISCARD_CARDS" && e.when?.condition.kind === "STREET_CRED_IS_EVEN"));
 }
 /** Hidden/unused physical sources also fail closed; no old-scope silent omission. */
 export function validateValueConditionMetadata(state: GameState, context: EngineContext) {
