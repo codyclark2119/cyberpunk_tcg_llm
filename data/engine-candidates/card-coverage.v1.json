@@ -9,30 +9,30 @@
   },
   "totals": {
     "cards": 151,
-    "admitted": 93,
-    "notAdmitted": 58,
+    "admitted": 94,
+    "notAdmitted": 57,
     "notAdmittedOnlyCoveredFamilies": 0,
     "byAdmission": {
-      "NOT_ADMITTED": 58,
-      "SOURCE_MATCH": 93
+      "NOT_ADMITTED": 57,
+      "SOURCE_MATCH": 94
     }
   },
   "families": [
-    {
-      "family": "DRAW",
-      "status": "PARTIAL",
-      "summary": "Draw cards, fixed or conditional.",
-      "notes": "Routed. Variable counts need SCALED_AMOUNT; 'may draw' needs an optional prompt.",
-      "cardCount": 38,
-      "notAdmittedCount": 19,
-      "soleBlockerCount": 0
-    },
     {
       "family": "CONDITION_BOARD",
       "status": "PARTIAL",
       "summary": "Generic target filters and board conditions: classification, cost, power, ready/spent, equipped, face-up, named, lowest power.",
       "notes": "Documented as unsupported: generic condition/filter language. Each admitted filter is a literal.",
       "cardCount": 34,
+      "notAdmittedCount": 18,
+      "soleBlockerCount": 0
+    },
+    {
+      "family": "DRAW",
+      "status": "PARTIAL",
+      "summary": "Draw cards, fixed or conditional.",
+      "notes": "Routed. Variable counts need SCALED_AMOUNT; 'may draw' needs an optional prompt.",
+      "cardCount": 38,
       "notAdmittedCount": 18,
       "soleBlockerCount": 0
     },
@@ -51,7 +51,7 @@
       "summary": "Conditions and filters on Gig values: min/max, value-pairs, even/odd, 8+, die type, counts compared with a Rival.",
       "notes": "Conditions only, each a fixed shape.",
       "cardCount": 40,
-      "notAdmittedCount": 15,
+      "notAdmittedCount": 14,
       "soleBlockerCount": 0
     },
     {
@@ -181,15 +181,6 @@
       "soleBlockerCount": 0
     },
     {
-      "family": "EDDIE_ECONOMY",
-      "status": "PARTIAL",
-      "summary": "Ready Eddies, sell cards from unusual zones, pay Eddies during resolution.",
-      "notes": "READY_EDDIES (controller, 1 or 2) only.",
-      "cardCount": 8,
-      "notAdmittedCount": 5,
-      "soleBlockerCount": 0
-    },
-    {
       "family": "FREE_CALL",
       "status": "MISSING",
       "summary": "Call a Legend by an effect or for free outside the normal Call.",
@@ -232,6 +223,15 @@
       "notes": "Filters are fixed literals (power at most 5, power at most a friendly d20, Gear power at most 2).",
       "cardCount": 18,
       "notAdmittedCount": 5,
+      "soleBlockerCount": 0
+    },
+    {
+      "family": "EDDIE_ECONOMY",
+      "status": "PARTIAL",
+      "summary": "Ready Eddies, sell cards from unusual zones, pay Eddies during resolution.",
+      "notes": "READY_EDDIES (controller, 1 or 2) only.",
+      "cardCount": 8,
+      "notAdmittedCount": 4,
       "soleBlockerCount": 0
     },
     {
@@ -723,18 +723,14 @@
       "colors": [
         "YELLOW"
       ],
-      "admission": "NOT_ADMITTED",
-      "revision": null,
+      "admission": "SOURCE_MATCH",
+      "revision": 1,
       "families": [
         "CONDITION_GIG",
         "DRAW",
         "EDDIE_ECONOMY"
       ],
-      "blockingFamilies": [
-        "CONDITION_GIG",
-        "DRAW",
-        "EDDIE_ECONOMY"
-      ],
+      "blockingFamilies": [],
       "note": null
     },
     {

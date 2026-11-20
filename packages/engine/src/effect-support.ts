@@ -5,8 +5,10 @@ import { supportsTriggerCard } from "./trigger-support";
 import { turnSliceAllows, failure, success, type CardRevisionSnapshot, type DeepReadonly } from "@tcg/domain";
 import type { EngineContext } from "./state";
 import { hasModalChoice } from "./modal-program-support";
+import { hasSellTopEffect } from "./program-sell-support";
 export function supportsCall(card: DeepReadonly<CardRevisionSnapshot> | undefined, context: EngineContext) {
     if (hasModalChoice(card)) return failure("UNSUPPORTED_MODAL_CHOICE", "A modal ability is admitted only by its exact Program pin"); // Batch V44.
+    if (hasSellTopEffect(card)) return failure("UNSUPPORTED_EFFECT_SELL", "An effect sell is admitted only by its exact Program pin"); // Batch V45.
     if (card?.execution?.scope === "ATTACKING_AURA_V1") return supportsAttackingAuraLegend(card, context);
     if (card?.execution?.scope === "FIRST_ATTACK_HISTORY_V1") return supportsFirstAttackLegend(card, context);
     if (card?.execution?.scope === "FIELD_LEGENDS_V1") return supportsFieldLegend(card, context);

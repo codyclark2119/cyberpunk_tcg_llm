@@ -86,6 +86,7 @@ were recorded in their pull requests (#4, #7, #8); later batches have documents 
 | V42 (2026-11-20) | Misty Olszewski: Mender of Broken Spirits | [Unit that can't attack; at its turn's end, name a type and reveal the top card: a match goes to hand and readies 1 Eddie, anything else is trashed](api-admission-batch-v42.md); coverage 91/151 |
 | V43 (2026-11-20) | Mox Inciters | [Blocker Unit: {Play} a chosen rival Unit must attack next turn if it can](api-admission-batch-v43.md); coverage 92/151 |
 | V44 (2026-11-20) | Pyramid Song | [Modal Program: choose -5 power to a rival Unit or bottom-deck a rival Unit with power 0; both with a friendly min d4](api-admission-batch-v44.md); coverage 93/151 |
+| V45 (2026-11-20) | Bootleg Black Sapphire Show | [Program: sell the top card of your deck by effect; draw 2 with an even and an odd friendly Gig](api-admission-batch-v45.md); coverage 94/151 |
 | V7 (2026-11-15) | Royce: Don't Call Me Simon, Wild in the Streets, Delamain: Rideshare AI | [shared defeat filter and exact pin table](api-admission-batch-v7.md); coverage 42/151 |
 | V6 (2026-09-22) | Trust No One | [contract and executable slice](api-admission-batch-v6.md), [baseline verification](api-admission-batch-v6-verification.md) |
 

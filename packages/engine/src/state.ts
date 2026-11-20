@@ -36,6 +36,7 @@ import { validateOvertimeState } from "./overtime";
 import { validateDemoState } from "./demo-state";
 import { validateSetupState } from "./setup-state";
 import { paymentSources, paymentValue, paymentCandidates } from "./payment";
+import { effectSellAdmitted } from "./program-sell-support";
 import { z } from "zod";
 import { DeckFormatSchema, GameStateSchema, ContentBundleSchema, ReplayStateHashSchema, PositionHashSchema, hashCanonical, canonicalSerialize, failure, success, type Result, type GameState, type ContentBundle, type DeepReadonly, CardInstanceIdSchema } from "@tcg/domain";
 export type EngineContext = {
@@ -82,8 +83,11 @@ export function validateState(input: unknown, context: EngineContext): Result<Ga
         const content = b.cards.find(p => p.id === c.cardId && p.revision === c.revision);
         if (id !== c.id || !ids.includes(c.ownerId) || !ids.includes(c.controllerId) || !content)
             return failure("INVALID_CARD", "Card identity, owner, controller or content pin is invalid");
-        if (c.zone.zone === "EDDIES" && (c.face !== "DOWN" || content.type === "LEGEND" || !content.sellProfile.allowed))
+        // Batch V45 (11.12.2.1): an effect-sold Eddie needs no Sell tag; it carries EFFECT_SOLD, which exists only in the Eddies area.
+        if (c.zone.zone === "EDDIES" && (c.face !== "DOWN" || content.type === "LEGEND" || !content.sellProfile.allowed && !c.statuses.includes("EFFECT_SOLD")))
             return failure("INVALID_EDDIE", "Eddies must be face-down sellable card instances");
+        if (c.statuses.includes("EFFECT_SOLD") && (c.zone.zone !== "EDDIES" || c.statuses.filter(x => x === "EFFECT_SOLD").length !== 1 || !effectSellAdmitted(context)))
+            return failure("INVALID_EDDIE", "An effect-sold mark belongs once to an Eddie under a reviewed effect-sell Program");
         if (c.zone.zone === "LEGENDS" && content.type !== "LEGEND" && !(gearEnabled(context) && content.type === "GEAR"))
             return failure("INVALID_LEGEND", "Only Legends belong in the Legend zone");
         if (c.statuses.includes("LAG") && (!effectiveCardTypes(s, c.id, context).includes("UNIT") || c.zone.zone !== "BATTLEFIELD")) return failure("INVALID_LAG", "Lag belongs only to Units in the field");

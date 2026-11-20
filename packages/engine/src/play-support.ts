@@ -22,6 +22,7 @@ import { supportsGear, legalEquipHosts } from "./attachments";
 import { turnSliceAllows, canonicalSerialize, failure, success, type CardRevisionSnapshot, type DeepReadonly, type GameState, type CardInstanceId, type PlayerId } from "@tcg/domain";
 import type { EngineContext } from "./state";
 import { hasModalChoice, supportsModalProgram } from "./modal-program-support";
+import { hasSellTopEffect, supportsSellTopProgram } from "./program-sell-support";
 import { paymentCandidates } from "./payment";
 import { testCondition } from "./conditions";
 export function playEnabled(context: EngineContext) { return turnSliceAllows(context.content.ruleset.gameplay?.turnSlice, "cardPlay") && context.content.ruleset.gameplay?.gigValueBounds === "DIE_FACES_V1"; }
@@ -33,6 +34,8 @@ export function revisionOf(state: GameState, id: CardInstanceId, context: Engine
 export function supportsPlay(card: DeepReadonly<CardRevisionSnapshot> | undefined, context: EngineContext) {
     // Batch V44: a modal ability ("Choose one effect ... choose both instead") is admitted only by its exact Program pin.
     if (card && hasModalChoice(card)) return supportsModalProgram(card, context);
+    // Batch V45: an effect sell ("Sell the top card of your deck") is admitted only by its exact Program pin.
+    if (card && hasSellTopEffect(card)) return supportsSellTopProgram(card, context);
     if (card && hasPlayCostReductionMetadata(card)) return supportsPlayCostReduction(card, context);
     if (card && hasFriendlyPlayPowerMetadata(card)) return supportsFriendlyPlayPowerUnit(card, context);
     if (card && hasAttackConditionPowerMetadata(card)) return supportsAttackConditionPowerCard(card, context);

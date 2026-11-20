@@ -12,7 +12,7 @@ export const DieTypeSchema = z.enum(["D4", "D6", "D8", "D10", "D12", "D20"]);
 export const CardInstanceStateSchema = CardReferenceSchema.extend({
     id: CardInstanceIdSchema, ownerId: PlayerIdSchema, controllerId: PlayerIdSchema, zone: ZoneRefSchema,
     face: z.enum(["UP", "DOWN"]), readiness: z.enum(["READY", "SPENT"]), damage: z.number().int().nonnegative(),
-    counters: z.record(z.string(), z.number().int()), statuses: z.array(z.enum(["GO_SOLO", "CANNOT_SELL", "LAG"])), attachments: z.array(CardInstanceIdSchema)
+    counters: z.record(z.string(), z.number().int()), statuses: z.array(z.enum(["GO_SOLO", "CANNOT_SELL", "LAG", "EFFECT_SOLD"])), attachments: z.array(CardInstanceIdSchema)
 });
 export const GigInstanceStateSchema = z.strictObject({
     id: GigInstanceIdSchema, ownerId: PlayerIdSchema, controllerId: PlayerIdSchema,

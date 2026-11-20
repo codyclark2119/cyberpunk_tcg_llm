@@ -876,7 +876,8 @@
                                   "enum": [
                                     "GO_SOLO",
                                     "CANNOT_SELL",
-                                    "LAG"
+                                    "LAG",
+                                    "EFFECT_SOLD"
                                   ]
                                 }
                               },
@@ -4423,6 +4424,19 @@
                                                     "dieType"
                                                   ],
                                                   "additionalProperties": false
+                                                },
+                                                {
+                                                  "type": "object",
+                                                  "properties": {
+                                                    "kind": {
+                                                      "type": "string",
+                                                      "const": "FRIENDLY_GIGS_EVEN_AND_ODD"
+                                                    }
+                                                  },
+                                                  "required": [
+                                                    "kind"
+                                                  ],
+                                                  "additionalProperties": false
                                                 }
                                               ]
                                             }
@@ -4999,6 +5013,19 @@
                                                 "dieType"
                                               ],
                                               "additionalProperties": false
+                                            },
+                                            {
+                                              "type": "object",
+                                              "properties": {
+                                                "kind": {
+                                                  "type": "string",
+                                                  "const": "FRIENDLY_GIGS_EVEN_AND_ODD"
+                                                }
+                                              },
+                                              "required": [
+                                                "kind"
+                                              ],
+                                              "additionalProperties": false
                                             }
                                           ]
                                         },
@@ -5572,6 +5599,24 @@
                                           "type": "integer",
                                           "exclusiveMinimum": 0,
                                           "maximum": 9007199254740991
+                                        }
+                                      },
+                                      "required": [
+                                        "kind",
+                                        "count"
+                                      ],
+                                      "additionalProperties": false
+                                    },
+                                    {
+                                      "type": "object",
+                                      "properties": {
+                                        "kind": {
+                                          "type": "string",
+                                          "const": "SELL_TOP_OF_DECK"
+                                        },
+                                        "count": {
+                                          "type": "number",
+                                          "const": 1
                                         }
                                       },
                                       "required": [
@@ -7665,6 +7710,19 @@
                                                   "dieType"
                                                 ],
                                                 "additionalProperties": false
+                                              },
+                                              {
+                                                "type": "object",
+                                                "properties": {
+                                                  "kind": {
+                                                    "type": "string",
+                                                    "const": "FRIENDLY_GIGS_EVEN_AND_ODD"
+                                                  }
+                                                },
+                                                "required": [
+                                                  "kind"
+                                                ],
+                                                "additionalProperties": false
                                               }
                                             ]
                                           }
@@ -8241,6 +8299,19 @@
                                               "dieType"
                                             ],
                                             "additionalProperties": false
+                                          },
+                                          {
+                                            "type": "object",
+                                            "properties": {
+                                              "kind": {
+                                                "type": "string",
+                                                "const": "FRIENDLY_GIGS_EVEN_AND_ODD"
+                                              }
+                                            },
+                                            "required": [
+                                              "kind"
+                                            ],
+                                            "additionalProperties": false
                                           }
                                         ]
                                       },
@@ -8814,6 +8885,24 @@
                                         "type": "integer",
                                         "exclusiveMinimum": 0,
                                         "maximum": 9007199254740991
+                                      }
+                                    },
+                                    "required": [
+                                      "kind",
+                                      "count"
+                                    ],
+                                    "additionalProperties": false
+                                  },
+                                  {
+                                    "type": "object",
+                                    "properties": {
+                                      "kind": {
+                                        "type": "string",
+                                        "const": "SELL_TOP_OF_DECK"
+                                      },
+                                      "count": {
+                                        "type": "number",
+                                        "const": 1
                                       }
                                     },
                                     "required": [
@@ -10903,6 +10992,19 @@
                                                   "dieType"
                                                 ],
                                                 "additionalProperties": false
+                                              },
+                                              {
+                                                "type": "object",
+                                                "properties": {
+                                                  "kind": {
+                                                    "type": "string",
+                                                    "const": "FRIENDLY_GIGS_EVEN_AND_ODD"
+                                                  }
+                                                },
+                                                "required": [
+                                                  "kind"
+                                                ],
+                                                "additionalProperties": false
                                               }
                                             ]
                                           }
@@ -11479,6 +11581,19 @@
                                               "dieType"
                                             ],
                                             "additionalProperties": false
+                                          },
+                                          {
+                                            "type": "object",
+                                            "properties": {
+                                              "kind": {
+                                                "type": "string",
+                                                "const": "FRIENDLY_GIGS_EVEN_AND_ODD"
+                                              }
+                                            },
+                                            "required": [
+                                              "kind"
+                                            ],
+                                            "additionalProperties": false
                                           }
                                         ]
                                       },
@@ -12052,6 +12167,24 @@
                                         "type": "integer",
                                         "exclusiveMinimum": 0,
                                         "maximum": 9007199254740991
+                                      }
+                                    },
+                                    "required": [
+                                      "kind",
+                                      "count"
+                                    ],
+                                    "additionalProperties": false
+                                  },
+                                  {
+                                    "type": "object",
+                                    "properties": {
+                                      "kind": {
+                                        "type": "string",
+                                        "const": "SELL_TOP_OF_DECK"
+                                      },
+                                      "count": {
+                                        "type": "number",
+                                        "const": 1
                                       }
                                     },
                                     "required": [
@@ -14553,7 +14686,8 @@
                                   "enum": [
                                     "GO_SOLO",
                                     "CANNOT_SELL",
-                                    "LAG"
+                                    "LAG",
+                                    "EFFECT_SOLD"
                                   ]
                                 }
                               },
@@ -18100,6 +18234,19 @@
                                                     "dieType"
                                                   ],
                                                   "additionalProperties": false
+                                                },
+                                                {
+                                                  "type": "object",
+                                                  "properties": {
+                                                    "kind": {
+                                                      "type": "string",
+                                                      "const": "FRIENDLY_GIGS_EVEN_AND_ODD"
+                                                    }
+                                                  },
+                                                  "required": [
+                                                    "kind"
+                                                  ],
+                                                  "additionalProperties": false
                                                 }
                                               ]
                                             }
@@ -18676,6 +18823,19 @@
                                                 "dieType"
                                               ],
                                               "additionalProperties": false
+                                            },
+                                            {
+                                              "type": "object",
+                                              "properties": {
+                                                "kind": {
+                                                  "type": "string",
+                                                  "const": "FRIENDLY_GIGS_EVEN_AND_ODD"
+                                                }
+                                              },
+                                              "required": [
+                                                "kind"
+                                              ],
+                                              "additionalProperties": false
                                             }
                                           ]
                                         },
@@ -19249,6 +19409,24 @@
                                           "type": "integer",
                                           "exclusiveMinimum": 0,
                                           "maximum": 9007199254740991
+                                        }
+                                      },
+                                      "required": [
+                                        "kind",
+                                        "count"
+                                      ],
+                                      "additionalProperties": false
+                                    },
+                                    {
+                                      "type": "object",
+                                      "properties": {
+                                        "kind": {
+                                          "type": "string",
+                                          "const": "SELL_TOP_OF_DECK"
+                                        },
+                                        "count": {
+                                          "type": "number",
+                                          "const": 1
                                         }
                                       },
                                       "required": [
@@ -21342,6 +21520,19 @@
                                                   "dieType"
                                                 ],
                                                 "additionalProperties": false
+                                              },
+                                              {
+                                                "type": "object",
+                                                "properties": {
+                                                  "kind": {
+                                                    "type": "string",
+                                                    "const": "FRIENDLY_GIGS_EVEN_AND_ODD"
+                                                  }
+                                                },
+                                                "required": [
+                                                  "kind"
+                                                ],
+                                                "additionalProperties": false
                                               }
                                             ]
                                           }
@@ -21918,6 +22109,19 @@
                                               "dieType"
                                             ],
                                             "additionalProperties": false
+                                          },
+                                          {
+                                            "type": "object",
+                                            "properties": {
+                                              "kind": {
+                                                "type": "string",
+                                                "const": "FRIENDLY_GIGS_EVEN_AND_ODD"
+                                              }
+                                            },
+                                            "required": [
+                                              "kind"
+                                            ],
+                                            "additionalProperties": false
                                           }
                                         ]
                                       },
@@ -22491,6 +22695,24 @@
                                         "type": "integer",
                                         "exclusiveMinimum": 0,
                                         "maximum": 9007199254740991
+                                      }
+                                    },
+                                    "required": [
+                                      "kind",
+                                      "count"
+                                    ],
+                                    "additionalProperties": false
+                                  },
+                                  {
+                                    "type": "object",
+                                    "properties": {
+                                      "kind": {
+                                        "type": "string",
+                                        "const": "SELL_TOP_OF_DECK"
+                                      },
+                                      "count": {
+                                        "type": "number",
+                                        "const": 1
                                       }
                                     },
                                     "required": [
@@ -24580,6 +24802,19 @@
                                                   "dieType"
                                                 ],
                                                 "additionalProperties": false
+                                              },
+                                              {
+                                                "type": "object",
+                                                "properties": {
+                                                  "kind": {
+                                                    "type": "string",
+                                                    "const": "FRIENDLY_GIGS_EVEN_AND_ODD"
+                                                  }
+                                                },
+                                                "required": [
+                                                  "kind"
+                                                ],
+                                                "additionalProperties": false
                                               }
                                             ]
                                           }
@@ -25156,6 +25391,19 @@
                                               "dieType"
                                             ],
                                             "additionalProperties": false
+                                          },
+                                          {
+                                            "type": "object",
+                                            "properties": {
+                                              "kind": {
+                                                "type": "string",
+                                                "const": "FRIENDLY_GIGS_EVEN_AND_ODD"
+                                              }
+                                            },
+                                            "required": [
+                                              "kind"
+                                            ],
+                                            "additionalProperties": false
                                           }
                                         ]
                                       },
@@ -25729,6 +25977,24 @@
                                         "type": "integer",
                                         "exclusiveMinimum": 0,
                                         "maximum": 9007199254740991
+                                      }
+                                    },
+                                    "required": [
+                                      "kind",
+                                      "count"
+                                    ],
+                                    "additionalProperties": false
+                                  },
+                                  {
+                                    "type": "object",
+                                    "properties": {
+                                      "kind": {
+                                        "type": "string",
+                                        "const": "SELL_TOP_OF_DECK"
+                                      },
+                                      "count": {
+                                        "type": "number",
+                                        "const": 1
                                       }
                                     },
                                     "required": [

@@ -42,7 +42,9 @@ export const ConditionSchema = z.discriminatedUnion("kind", [
     // Batch V39: "If a Rival controls at least 2 more Gigs than you" (Gigs in each Gig area, counted live).
     z.strictObject({ kind: z.literal("RIVAL_CONTROLS_MORE_GIGS"), minimum: z.literal(2) }),
     // Batch V44: "If a friendly d4 is a min Gig" (6.3.1: a rolled own d4 at 1 in the Gig area).
-    z.strictObject({ kind: z.literal("FRIENDLY_GIG_IS_MIN"), dieType: z.literal("D4") })
+    z.strictObject({ kind: z.literal("FRIENDLY_GIG_IS_MIN"), dieType: z.literal("D4") }),
+    // Batch V45: "If you control a Gig with an even value and a Gig with an odd value" (two friendly rolled Gigs).
+    z.strictObject({ kind: z.literal("FRIENDLY_GIGS_EVEN_AND_ODD") })
 ]);
 export const CombatRestrictionSchema = z.discriminatedUnion("kind", [
     z.strictObject({ kind: z.literal("CANNOT_ATTACK") }),
@@ -215,6 +217,8 @@ export const EffectSchema = z.discriminatedUnion("kind", [
     z.strictObject({ kind: z.literal("READY_LEGENDS_UP_TO"), tag: z.literal("Merc"), maximum: z.literal(2),
         when: z.strictObject({ timing: z.literal("RESOLUTION"), condition: z.strictObject({ kind: z.literal("CONTROLS_VALUE_PAIR") }) }) }),
     z.strictObject({ kind: z.literal("DRAW"), count: z.number().int().positive() }),
+    // Batch V45 (11.12.2.1, 11.12.2.2): "Sell the top card of your deck." No Sell tag is needed; it counts as the turn's sell.
+    z.strictObject({ kind: z.literal("SELL_TOP_OF_DECK"), count: z.literal(1) }),
     z.strictObject({ kind: z.literal("DAMAGE"), target: TargetSelectorSchema, amount: z.number().int().nonnegative() }),
     z.strictObject({ kind: z.literal("MOVE_CARD"), target: TargetSelectorSchema, destination: ZoneSchema }),
     z.strictObject({ kind: z.literal("MODIFY_POWER"), target: TargetSelectorSchema, amount: z.number().int() }),

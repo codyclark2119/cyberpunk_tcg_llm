@@ -57,6 +57,8 @@ export function testCondition(state: GameState, actor: PlayerId, condition: Cond
         case "RIVAL_CONTROLS_MORE_GIGS": return state.match.playerOrder.some(id => id !== actor && Object.values(state.objects.gigs).filter(g => g.controllerId === id && g.location.zone === "GIGS").length >= Object.values(state.objects.gigs).filter(g => g.controllerId === actor && g.location.zone === "GIGS").length + condition.minimum);
         case "CONTROLS_VALUE_PAIR": return new Set(values).size < values.length; // Batch V29, 6.6: two own Gigs share a value.
         // Batch V44, 6.3.1: a min Gig is a die at 1; only the actor's own rolled d4 in its Gig area counts.
+        // Batch V45: one friendly rolled Gig with an even value and another with an odd value.
+        case "FRIENDLY_GIGS_EVEN_AND_ODD": return values.some(v => v % 2 === 0) && values.some(v => v % 2 !== 0);
         case "FRIENDLY_GIG_IS_MIN": return gigs.some(g => g.dieType === condition.dieType && g.roll.kind === "ROLLED" && g.roll.currentValue === 1);
     }
 }
