@@ -1,5 +1,6 @@
 import { turnSliceAllows, canonicalSerialize, failure, success, type CardRevisionSnapshot, type DeepReadonly, type GameState } from "@tcg/domain";
 import type { EngineContext } from "./state";
+import { hasModalChoice } from "./modal-program-support";
 import { supportsTargetedDefeatCard } from "./targeted-defeat-support";
 import { hasLegendStealTrigger, supportsLegendStealTrigger } from "./legend-steal-support";
 import { hasLegendRevealEffect, supportsLegendReveal } from "./legend-reveal-support";
@@ -12,6 +13,7 @@ const reviewedShapes = [
 ];
 export function supportsFieldLegend(card: DeepReadonly<CardRevisionSnapshot> | undefined, context: EngineContext) {
     const m = card?.mechanics, policy = context.content.ruleset.gameplay?.turnSlice;
+    if (hasModalChoice(card)) return failure("UNSUPPORTED_MODAL_CHOICE", "A modal ability is admitted only by its exact Program pin"); // Batch V44.
     // Batch V18: a Go Solo Legend with a {Play} ability is admitted only through its exact targeted-defeat pin.
     if (card?.type === "LEGEND" && card.execution?.scope === "TARGETED_DEFEAT_V1") {
         if (!fieldLegendsEnabled(context) || !turnSliceAllows(policy, "gear") || !turnSliceAllows(policy, "combat") || !turnSliceAllows(policy, "react") || canonicalSerialize(card.mechanics.keywords) !== canonicalSerialize(["GO_SOLO"]))

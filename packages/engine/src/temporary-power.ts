@@ -12,6 +12,7 @@ import { friendlyPowerTargets } from "./friendly-play-power-queries";
 import { supportsFriendlyPlayPowerUnit, validateFriendlyPlayPowerMetadata } from "./friendly-play-power-support";
 import { supportsGigParityUnit } from "./gig-parity-support";
 import { supportsLegendReveal } from "./legend-reveal-support";
+import { supportsModalProgram } from "./modal-program-support";
 
 export function compareTemporaryPower(a: TemporaryPowerModifier, b: TemporaryPowerModifier) {
     if (a.sourceId !== b.sourceId) return a.sourceId < b.sourceId ? -1 : 1;
@@ -44,6 +45,12 @@ export function applyTemporaryPower(m: TurnMutation, targetId: CardInstanceId, f
         if (!friendlyPowerTargets(m.state, current.controllerId, m.context).includes(targetId))
             return failure("INVALID_POWER_TARGET", "Choose a currently eligible friendly field Unit");
         modifier = { ...base, amount: 2, origin: { effectId: current.id, abilityId: t.abilityId, ordinal: t.ordinal } };
+    } else if (current.effect.amount === -5) {
+        // Batch V44: the modal Program's "-5 power this turn", applied while it resolves.
+        const c = m.state.resolution.playContinuation;
+        if (!c || c.sourceId !== current.sourceId || m.state.objects.cards[current.sourceId]?.zone.zone !== "RESOLVING_PROGRAM" || !supportsModalProgram(cardRevision(m.state, current.sourceId, m.context), m.context).ok
+            || !powerTargets(m.state, current.controllerId, m.context).includes(targetId)) return failure("INVALID_POWER_TARGET", "Choose a currently eligible rival Unit for the reviewed resolving Program");
+        modifier = { ...base, amount: -5, origin: { effectId: current.id } };
     } else {
         if (current.effect.amount !== -1 || !powerTargets(m.state, current.controllerId, m.context).includes(targetId)) return failure("INVALID_POWER_TARGET", "Choose a currently eligible rival Unit");
         modifier = { ...base, amount: -1 };
@@ -121,7 +128,7 @@ export function validateTemporaryPower(state: GameState, context: EngineContext)
                 return failure("INVALID_TEMPORARY_POWER", "Friendly+2 requires a resolved current-turn PLAY occurrence and a public friendly target");
             continue;
         }
-        if (x.expires.turn !== state.timing.turn || !source || !supportsReactPlay(r, context).ok || r?.type !== "PROGRAM" || !["TRASH", "RESOLVING_PROGRAM"].includes(source.zone.zone) || !target || !(combatResolutionEnabled(context) ? ["BATTLEFIELD", "TRASH", "REMOVED"] : ["BATTLEFIELD"]).includes(target.zone.zone) || !(effectiveCardTypes(state, x.targetId, context).includes("UNIT") || removedFieldLegend)) return failure("INVALID_TEMPORARY_POWER", "Modifier must reference a played reviewed Program, current public Unit under the reviewed zone lifecycle and current turn");
+        if (x.expires.turn !== state.timing.turn || !source || !(x.amount === -5 ? supportsModalProgram(r, context) : supportsReactPlay(r, context)).ok || r?.type !== "PROGRAM" || !["TRASH", "RESOLVING_PROGRAM"].includes(source.zone.zone) || !target || !(combatResolutionEnabled(context) ? ["BATTLEFIELD", "TRASH", "REMOVED"] : ["BATTLEFIELD"]).includes(target.zone.zone) || !(effectiveCardTypes(state, x.targetId, context).includes("UNIT") || removedFieldLegend)) return failure("INVALID_TEMPORARY_POWER", "Modifier must reference a played reviewed Program, current public Unit under the reviewed zone lifecycle and current turn");
     }
     return success(null);
 }

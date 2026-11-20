@@ -15,7 +15,9 @@ import { cardRevision, effectivePower } from "./characteristics";
 export function bottomDeckTargets(state: GameState, actor: PlayerId, target: BottomDeckTarget, context: EngineContext): CardInstanceId[] {
     const candidates = Object.values(state.objects.cards).filter(c => isUnitSpendSubject(state, c.id, context)
         && (target.relation === "RIVAL" ? c.controllerId !== actor : c.controllerId === actor)
-        && (target.readiness === undefined || c.readiness === target.readiness)).map(c => c.id).sort();
+        && (target.readiness === undefined || c.readiness === target.readiness)
+        // Batch V44: "with power 0" reads the referenced power, so a negative value counts as 0 (2.10.1).
+        && (target.power === undefined || (effectivePower(state, c.id, context) ?? 1) <= 0)).map(c => c.id).sort();
     if (!target.lowestPower) return candidates;
     const powers = candidates.map(id => [id, effectivePower(state, id, context)] as const).filter((p): p is readonly [CardInstanceId, number] => p[1] !== null);
     const lowest = Math.min(...powers.map(p => p[1]));

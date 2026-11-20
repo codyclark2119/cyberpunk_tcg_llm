@@ -25,9 +25,12 @@ import { hasPinnedPlayEffect, supportsPinnedPlayUnit } from "./play-pin-support"
 import { hasFriendlyPlayPowerMetadata, supportsFriendlyPlayPowerUnit } from "./friendly-play-power-support";
 import { turnSliceAllows, canonicalSerialize, failure, success, type CardRevisionSnapshot, type DeepReadonly } from "@tcg/domain";
 import type { EngineContext } from "./state";
+import { hasModalChoice } from "./modal-program-support";
 export function triggersEnabled(context: EngineContext) { return turnSliceAllows(context.content.ruleset.gameplay?.turnSlice, "combatTriggers"); }
 /** Complete shapes, not card-name matching. The bundle must still pin explicitly reviewed immutable revisions. */
 export function supportsTriggerCard(card: DeepReadonly<CardRevisionSnapshot> | undefined, context: EngineContext) {
+    // Batch V44: modal abilities are read only by the modal Program gate.
+    if (hasModalChoice(card)) return failure("UNSUPPORTED_MODAL_CHOICE", "A modal ability is admitted only by its exact Program pin");
     if (card && hasFriendlyPlayPowerMetadata(card)) return supportsFriendlyPlayPowerUnit(card, context);
     // Batch V43: the {Play} must-attack obligation (on a Blocker Unit) is admitted only by its exact pin.
     if (hasMustAttackEffect(card)) return supportsMustAttackUnit(card, context);

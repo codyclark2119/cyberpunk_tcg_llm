@@ -24,7 +24,7 @@ export function offerPlayChoice(m: TurnMutation) {
     // Only new directional effects adopt forced target/zero-magnitude resolution; preserve old replay protocols.
     if (effect?.kind === "ADJUST_GIG_UP_TO" && effect.direction !== undefined && choice.options.length === 1) return continuePlay(m, 0);
     m.state.resolution.stage = "CHOICE";
-    const step = choice.kind === "PAYMENT" ? "PAYMENT_SELECTION" : choice.kind === "TARGET" ? "TARGET_SELECTION" : "AMOUNT_SELECTION";
+    const step = choice.kind === "PAYMENT" ? "PAYMENT_SELECTION" : choice.kind === "TARGET" || choice.kind === "MODE" ? "TARGET_SELECTION" : "AMOUNT_SELECTION";
     m.state.timing.step = step;
     m.state.timing.window = step;
     m.emit({ kind: "PHASE_CHANGED", step });
@@ -71,7 +71,19 @@ function beginEffects(m: TurnMutation): Result<null> {
     m.phase("CARD_EFFECT");
     const causedBySequence = s.match.eventSequence;
     s.resolution.stage = "DISCOVER_TRIGGERS";
-    s.resolution.pending = a.effects.map((effect, index) => ({ id: playEffectId(s, index), sourceId: c.sourceId, controllerId: c.actorId, causedBySequence, effect: EffectSchema.parse(effect) }));
+    if (a.choose) {
+        // Batch V44: "If <condition>, choose both instead" is checked as the Program resolves; otherwise its controller picks one mode.
+        const all = testCondition(s, c.actorId, a.choose.allInstead, m.context, c.sourceId);
+        m.emit({ kind: "CONDITION_EVALUATED", effectId: playEffectId(s, 0), met: all });
+        if (!all) { c.phase = "MODE"; return offerPlayChoice(m); }
+    }
+    return pendEffects(m, a.effects.map((_, index) => index));
+}
+/** The listed printed effects become pending in printed order, each keeping its printed index, and resolve as a chain. */
+function pendEffects(m: TurnMutation, indexes: number[]): Result<null> {
+    const s = m.state, c = s.resolution.playContinuation!, a = revisionOf(s, c.sourceId, m.context)!.mechanics.abilities[0], causedBySequence = s.match.eventSequence;
+    c.effectIndex = indexes[0];
+    s.resolution.pending = indexes.map(index => ({ id: playEffectId(s, index), sourceId: c.sourceId, controllerId: c.actorId, causedBySequence, effect: EffectSchema.parse(a.effects[index]) }));
     for (const effect of s.resolution.pending) m.emit({ kind: "EFFECT_PENDING", effectId: effect.id, sourceId: c.sourceId });
     s.resolution.current = s.resolution.pending.shift() ?? null;
     return resolveChain(m);
@@ -119,6 +131,14 @@ export function continuePlay(m: TurnMutation, index: number): Result<null> {
         if (forced) return completePayment(m, [...sources, ...forced]);
         c.selectedSources = sources; c.remainingCost = remaining;
         return offerPlayChoice(m);
+    }
+    if (c.phase === "MODE") {
+        // Batch V44: one printed mode, named by its effect kind; only it becomes pending.
+        const effects = revisionOf(s, c.sourceId, m.context)!.mechanics.abilities[0].effects, index = option.kind === "MODE" ? effects.findIndex(e => e.kind === option.mode) : -1;
+        if (index < 0) return failure("INVALID_MODE", "Choose one enumerated printed mode");
+        c.phase = "EFFECT"; c.chosenEffect = index; s.resolution.choice = null;
+        m.emit({ kind: "EFFECT_MODE_CHOSEN", sourceId: c.sourceId, playerId: c.actorId, effectIndex: index });
+        return pendEffects(m, [index]);
     }
     if (c.phase === "EQUIP") {
         if (option.kind !== "CARD") return failure("INVALID_EQUIP_TARGET", "Choose an enumerated host");

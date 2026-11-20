@@ -40,7 +40,9 @@ export const ConditionSchema = z.discriminatedUnion("kind", [
     // Batch V29: "If you control a value-pair of Gigs" (6.6: 2 dice with the same value in the same Gig area).
     z.strictObject({ kind: z.literal("CONTROLS_VALUE_PAIR") }),
     // Batch V39: "If a Rival controls at least 2 more Gigs than you" (Gigs in each Gig area, counted live).
-    z.strictObject({ kind: z.literal("RIVAL_CONTROLS_MORE_GIGS"), minimum: z.literal(2) })
+    z.strictObject({ kind: z.literal("RIVAL_CONTROLS_MORE_GIGS"), minimum: z.literal(2) }),
+    // Batch V44: "If a friendly d4 is a min Gig" (6.3.1: a rolled own d4 at 1 in the Gig area).
+    z.strictObject({ kind: z.literal("FRIENDLY_GIG_IS_MIN"), dieType: z.literal("D4") })
 ]);
 export const CombatRestrictionSchema = z.discriminatedUnion("kind", [
     z.strictObject({ kind: z.literal("CANNOT_ATTACK") }),
@@ -97,7 +99,8 @@ export type SpendUnitTarget = z.infer<typeof SpendUnitTargetSchema>;
 // Batch V22: "Spend a rival Unit. It can't ready until your next turn." locks the chosen Unit too.
 export const SpendUnitEffectSchema = z.strictObject({ kind: z.literal("SPEND_UNIT"), target: SpendUnitTargetSchema, preventReady: z.literal("UNTIL_YOUR_NEXT_TURN").optional() });
 // Batch V15: field Units to bottom-deck, by relation, optional readiness and "lowest-power" (every tied minimum).
-export const BottomDeckTargetSchema = z.strictObject({ relation: z.enum(["RIVAL", "CONTROLLED"]), readiness: z.enum(["READY", "SPENT"]).optional(), lowestPower: z.literal(true).optional() });
+// Batch V44: "with power 0", the referenced power (2.10.1: a negative value counts as 0).
+export const BottomDeckTargetSchema = z.strictObject({ relation: z.enum(["RIVAL", "CONTROLLED"]), readiness: z.enum(["READY", "SPENT"]).optional(), lowestPower: z.literal(true).optional(), power: z.literal(0).optional() });
 export type BottomDeckTarget = z.infer<typeof BottomDeckTargetSchema>;
 // Shared Unit-defeat filter (plan section 6, scope 3b). The grammar admits nothing by itself:
 // every card using it is pinned literally by its execution gate (exact per-card check).
@@ -230,6 +233,9 @@ export const AbilitySchema = z.strictObject({ id: z.string().min(1), trigger: Tr
     // Batch V40: STEALER_IS_LEGEND limits it to a stealing friendly Legend ("When a friendly Legend steals a Gig").
     guard: z.enum(["FIRST_BLUE_UNIT_OR_GEAR_PLAY_PER_TURN", "FIRST_FRIENDLY_ARASAKA_UNIT_ATTACK_PER_TURN", "STOLEN_GIG_IS_D6", "STEALER_IS_LEGEND"]).optional(),
     activation: z.strictObject({ timing: z.literal("MAIN"), conditionTiming: z.literal("ACTIVATION_AND_RESOLUTION"), costs: z.array(ActivationCostSchema) }).optional(),
+    // Batch V44: "Choose one effect. If <condition>, choose both instead." The effects are the modes in printed order; the
+    // condition is checked as the Program resolves, and while it holds every mode resolves in order.
+    choose: z.strictObject({ count: z.literal(1), allInstead: ConditionSchema }).optional(),
     conditions: z.array(ConditionSchema), cost: CostSchema, effects: z.array(EffectSchema) });
 export const ContinuousModifierSchema = z.discriminatedUnion("kind", [
     // Batch V30: "This Unit can attack rival Units the turn it's played" (11.3.1): while lagging, rival Units only.

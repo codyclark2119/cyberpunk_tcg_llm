@@ -1591,6 +1591,72 @@
                           "origin"
                         ],
                         "additionalProperties": false
+                      },
+                      {
+                        "type": "object",
+                        "properties": {
+                          "kind": {
+                            "type": "string",
+                            "const": "POWER"
+                          },
+                          "sourceId": {
+                            "type": "string",
+                            "minLength": 1,
+                            "maxLength": 200,
+                            "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$"
+                          },
+                          "targetId": {
+                            "type": "string",
+                            "minLength": 1,
+                            "maxLength": 200,
+                            "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$"
+                          },
+                          "expires": {
+                            "type": "object",
+                            "properties": {
+                              "kind": {
+                                "type": "string",
+                                "const": "END_OF_TURN"
+                              },
+                              "turn": {
+                                "type": "integer",
+                                "exclusiveMinimum": 0,
+                                "maximum": 9007199254740991
+                              }
+                            },
+                            "required": [
+                              "kind",
+                              "turn"
+                            ],
+                            "additionalProperties": false
+                          },
+                          "amount": {
+                            "type": "number",
+                            "const": -5
+                          },
+                          "origin": {
+                            "type": "object",
+                            "properties": {
+                              "effectId": {
+                                "type": "string",
+                                "pattern": "^[a-f0-9]{64}$"
+                              }
+                            },
+                            "required": [
+                              "effectId"
+                            ],
+                            "additionalProperties": false
+                          }
+                        },
+                        "required": [
+                          "kind",
+                          "sourceId",
+                          "targetId",
+                          "expires",
+                          "amount",
+                          "origin"
+                        ],
+                        "additionalProperties": false
                       }
                     ]
                   },
@@ -3069,7 +3135,8 @@
                   "enum": [
                     "PAYMENT",
                     "EFFECT",
-                    "EQUIP"
+                    "EQUIP",
+                    "MODE"
                   ]
                 },
                 "remainingCost": {
@@ -3130,6 +3197,11 @@
                   "minLength": 1,
                   "maxLength": 200,
                   "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$"
+                },
+                "chosenEffect": {
+                  "type": "integer",
+                  "minimum": 0,
+                  "maximum": 9007199254740991
                 }
               },
               "required": [
@@ -3485,6 +3557,10 @@
                                 "lowestPower": {
                                   "type": "boolean",
                                   "const": true
+                                },
+                                "power": {
+                                  "type": "number",
+                                  "const": 0
                                 }
                               },
                               "required": [
@@ -3512,6 +3588,10 @@
                                 "lowestPower": {
                                   "type": "boolean",
                                   "const": true
+                                },
+                                "power": {
+                                  "type": "number",
+                                  "const": 0
                                 }
                               },
                               "required": [
@@ -4363,6 +4443,24 @@
                                         "minimum"
                                       ],
                                       "additionalProperties": false
+                                    },
+                                    {
+                                      "type": "object",
+                                      "properties": {
+                                        "kind": {
+                                          "type": "string",
+                                          "const": "FRIENDLY_GIG_IS_MIN"
+                                        },
+                                        "dieType": {
+                                          "type": "string",
+                                          "const": "D4"
+                                        }
+                                      },
+                                      "required": [
+                                        "kind",
+                                        "dieType"
+                                      ],
+                                      "additionalProperties": false
                                     }
                                   ]
                                 }
@@ -4919,6 +5017,24 @@
                                   "required": [
                                     "kind",
                                     "minimum"
+                                  ],
+                                  "additionalProperties": false
+                                },
+                                {
+                                  "type": "object",
+                                  "properties": {
+                                    "kind": {
+                                      "type": "string",
+                                      "const": "FRIENDLY_GIG_IS_MIN"
+                                    },
+                                    "dieType": {
+                                      "type": "string",
+                                      "const": "D4"
+                                    }
+                                  },
+                                  "required": [
+                                    "kind",
+                                    "dieType"
                                   ],
                                   "additionalProperties": false
                                 }
@@ -6683,6 +6799,10 @@
                               "lowestPower": {
                                 "type": "boolean",
                                 "const": true
+                              },
+                              "power": {
+                                "type": "number",
+                                "const": 0
                               }
                             },
                             "required": [
@@ -6710,6 +6830,10 @@
                               "lowestPower": {
                                 "type": "boolean",
                                 "const": true
+                              },
+                              "power": {
+                                "type": "number",
+                                "const": 0
                               }
                             },
                             "required": [
@@ -7561,6 +7685,24 @@
                                       "minimum"
                                     ],
                                     "additionalProperties": false
+                                  },
+                                  {
+                                    "type": "object",
+                                    "properties": {
+                                      "kind": {
+                                        "type": "string",
+                                        "const": "FRIENDLY_GIG_IS_MIN"
+                                      },
+                                      "dieType": {
+                                        "type": "string",
+                                        "const": "D4"
+                                      }
+                                    },
+                                    "required": [
+                                      "kind",
+                                      "dieType"
+                                    ],
+                                    "additionalProperties": false
                                   }
                                 ]
                               }
@@ -8117,6 +8259,24 @@
                                 "required": [
                                   "kind",
                                   "minimum"
+                                ],
+                                "additionalProperties": false
+                              },
+                              {
+                                "type": "object",
+                                "properties": {
+                                  "kind": {
+                                    "type": "string",
+                                    "const": "FRIENDLY_GIG_IS_MIN"
+                                  },
+                                  "dieType": {
+                                    "type": "string",
+                                    "const": "D4"
+                                  }
+                                },
+                                "required": [
+                                  "kind",
+                                  "dieType"
                                 ],
                                 "additionalProperties": false
                               }
@@ -9877,6 +10037,10 @@
                               "lowestPower": {
                                 "type": "boolean",
                                 "const": true
+                              },
+                              "power": {
+                                "type": "number",
+                                "const": 0
                               }
                             },
                             "required": [
@@ -9904,6 +10068,10 @@
                               "lowestPower": {
                                 "type": "boolean",
                                 "const": true
+                              },
+                              "power": {
+                                "type": "number",
+                                "const": 0
                               }
                             },
                             "required": [
@@ -10755,6 +10923,24 @@
                                       "minimum"
                                     ],
                                     "additionalProperties": false
+                                  },
+                                  {
+                                    "type": "object",
+                                    "properties": {
+                                      "kind": {
+                                        "type": "string",
+                                        "const": "FRIENDLY_GIG_IS_MIN"
+                                      },
+                                      "dieType": {
+                                        "type": "string",
+                                        "const": "D4"
+                                      }
+                                    },
+                                    "required": [
+                                      "kind",
+                                      "dieType"
+                                    ],
+                                    "additionalProperties": false
                                   }
                                 ]
                               }
@@ -11311,6 +11497,24 @@
                                 "required": [
                                   "kind",
                                   "minimum"
+                                ],
+                                "additionalProperties": false
+                              },
+                              {
+                                "type": "object",
+                                "properties": {
+                                  "kind": {
+                                    "type": "string",
+                                    "const": "FRIENDLY_GIG_IS_MIN"
+                                  },
+                                  "dieType": {
+                                    "type": "string",
+                                    "const": "D4"
+                                  }
+                                },
+                                "required": [
+                                  "kind",
+                                  "dieType"
                                 ],
                                 "additionalProperties": false
                               }
@@ -13999,6 +14203,72 @@
                               "effectId",
                               "abilityId",
                               "ordinal"
+                            ],
+                            "additionalProperties": false
+                          }
+                        },
+                        "required": [
+                          "kind",
+                          "sourceId",
+                          "targetId",
+                          "expires",
+                          "amount",
+                          "origin"
+                        ],
+                        "additionalProperties": false
+                      },
+                      {
+                        "type": "object",
+                        "properties": {
+                          "kind": {
+                            "type": "string",
+                            "const": "POWER"
+                          },
+                          "sourceId": {
+                            "type": "string",
+                            "minLength": 1,
+                            "maxLength": 200,
+                            "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$"
+                          },
+                          "targetId": {
+                            "type": "string",
+                            "minLength": 1,
+                            "maxLength": 200,
+                            "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$"
+                          },
+                          "expires": {
+                            "type": "object",
+                            "properties": {
+                              "kind": {
+                                "type": "string",
+                                "const": "END_OF_TURN"
+                              },
+                              "turn": {
+                                "type": "integer",
+                                "exclusiveMinimum": 0,
+                                "maximum": 9007199254740991
+                              }
+                            },
+                            "required": [
+                              "kind",
+                              "turn"
+                            ],
+                            "additionalProperties": false
+                          },
+                          "amount": {
+                            "type": "number",
+                            "const": -5
+                          },
+                          "origin": {
+                            "type": "object",
+                            "properties": {
+                              "effectId": {
+                                "type": "string",
+                                "pattern": "^[a-f0-9]{64}$"
+                              }
+                            },
+                            "required": [
+                              "effectId"
                             ],
                             "additionalProperties": false
                           }

@@ -1553,6 +1553,72 @@
                                       "origin"
                                     ],
                                     "additionalProperties": false
+                                  },
+                                  {
+                                    "type": "object",
+                                    "properties": {
+                                      "kind": {
+                                        "type": "string",
+                                        "const": "POWER"
+                                      },
+                                      "sourceId": {
+                                        "type": "string",
+                                        "minLength": 1,
+                                        "maxLength": 200,
+                                        "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$"
+                                      },
+                                      "targetId": {
+                                        "type": "string",
+                                        "minLength": 1,
+                                        "maxLength": 200,
+                                        "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$"
+                                      },
+                                      "expires": {
+                                        "type": "object",
+                                        "properties": {
+                                          "kind": {
+                                            "type": "string",
+                                            "const": "END_OF_TURN"
+                                          },
+                                          "turn": {
+                                            "type": "integer",
+                                            "exclusiveMinimum": 0,
+                                            "maximum": 9007199254740991
+                                          }
+                                        },
+                                        "required": [
+                                          "kind",
+                                          "turn"
+                                        ],
+                                        "additionalProperties": false
+                                      },
+                                      "amount": {
+                                        "type": "number",
+                                        "const": -5
+                                      },
+                                      "origin": {
+                                        "type": "object",
+                                        "properties": {
+                                          "effectId": {
+                                            "type": "string",
+                                            "pattern": "^[a-f0-9]{64}$"
+                                          }
+                                        },
+                                        "required": [
+                                          "effectId"
+                                        ],
+                                        "additionalProperties": false
+                                      }
+                                    },
+                                    "required": [
+                                      "kind",
+                                      "sourceId",
+                                      "targetId",
+                                      "expires",
+                                      "amount",
+                                      "origin"
+                                    ],
+                                    "additionalProperties": false
                                   }
                                 ]
                               },
@@ -3031,7 +3097,8 @@
                               "enum": [
                                 "PAYMENT",
                                 "EFFECT",
-                                "EQUIP"
+                                "EQUIP",
+                                "MODE"
                               ]
                             },
                             "remainingCost": {
@@ -3092,6 +3159,11 @@
                               "minLength": 1,
                               "maxLength": 200,
                               "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$"
+                            },
+                            "chosenEffect": {
+                              "type": "integer",
+                              "minimum": 0,
+                              "maximum": 9007199254740991
                             }
                           },
                           "required": [
@@ -3447,6 +3519,10 @@
                                             "lowestPower": {
                                               "type": "boolean",
                                               "const": true
+                                            },
+                                            "power": {
+                                              "type": "number",
+                                              "const": 0
                                             }
                                           },
                                           "required": [
@@ -3474,6 +3550,10 @@
                                             "lowestPower": {
                                               "type": "boolean",
                                               "const": true
+                                            },
+                                            "power": {
+                                              "type": "number",
+                                              "const": 0
                                             }
                                           },
                                           "required": [
@@ -4325,6 +4405,24 @@
                                                     "minimum"
                                                   ],
                                                   "additionalProperties": false
+                                                },
+                                                {
+                                                  "type": "object",
+                                                  "properties": {
+                                                    "kind": {
+                                                      "type": "string",
+                                                      "const": "FRIENDLY_GIG_IS_MIN"
+                                                    },
+                                                    "dieType": {
+                                                      "type": "string",
+                                                      "const": "D4"
+                                                    }
+                                                  },
+                                                  "required": [
+                                                    "kind",
+                                                    "dieType"
+                                                  ],
+                                                  "additionalProperties": false
                                                 }
                                               ]
                                             }
@@ -4881,6 +4979,24 @@
                                               "required": [
                                                 "kind",
                                                 "minimum"
+                                              ],
+                                              "additionalProperties": false
+                                            },
+                                            {
+                                              "type": "object",
+                                              "properties": {
+                                                "kind": {
+                                                  "type": "string",
+                                                  "const": "FRIENDLY_GIG_IS_MIN"
+                                                },
+                                                "dieType": {
+                                                  "type": "string",
+                                                  "const": "D4"
+                                                }
+                                              },
+                                              "required": [
+                                                "kind",
+                                                "dieType"
                                               ],
                                               "additionalProperties": false
                                             }
@@ -6645,6 +6761,10 @@
                                           "lowestPower": {
                                             "type": "boolean",
                                             "const": true
+                                          },
+                                          "power": {
+                                            "type": "number",
+                                            "const": 0
                                           }
                                         },
                                         "required": [
@@ -6672,6 +6792,10 @@
                                           "lowestPower": {
                                             "type": "boolean",
                                             "const": true
+                                          },
+                                          "power": {
+                                            "type": "number",
+                                            "const": 0
                                           }
                                         },
                                         "required": [
@@ -7523,6 +7647,24 @@
                                                   "minimum"
                                                 ],
                                                 "additionalProperties": false
+                                              },
+                                              {
+                                                "type": "object",
+                                                "properties": {
+                                                  "kind": {
+                                                    "type": "string",
+                                                    "const": "FRIENDLY_GIG_IS_MIN"
+                                                  },
+                                                  "dieType": {
+                                                    "type": "string",
+                                                    "const": "D4"
+                                                  }
+                                                },
+                                                "required": [
+                                                  "kind",
+                                                  "dieType"
+                                                ],
+                                                "additionalProperties": false
                                               }
                                             ]
                                           }
@@ -8079,6 +8221,24 @@
                                             "required": [
                                               "kind",
                                               "minimum"
+                                            ],
+                                            "additionalProperties": false
+                                          },
+                                          {
+                                            "type": "object",
+                                            "properties": {
+                                              "kind": {
+                                                "type": "string",
+                                                "const": "FRIENDLY_GIG_IS_MIN"
+                                              },
+                                              "dieType": {
+                                                "type": "string",
+                                                "const": "D4"
+                                              }
+                                            },
+                                            "required": [
+                                              "kind",
+                                              "dieType"
                                             ],
                                             "additionalProperties": false
                                           }
@@ -9839,6 +9999,10 @@
                                           "lowestPower": {
                                             "type": "boolean",
                                             "const": true
+                                          },
+                                          "power": {
+                                            "type": "number",
+                                            "const": 0
                                           }
                                         },
                                         "required": [
@@ -9866,6 +10030,10 @@
                                           "lowestPower": {
                                             "type": "boolean",
                                             "const": true
+                                          },
+                                          "power": {
+                                            "type": "number",
+                                            "const": 0
                                           }
                                         },
                                         "required": [
@@ -10717,6 +10885,24 @@
                                                   "minimum"
                                                 ],
                                                 "additionalProperties": false
+                                              },
+                                              {
+                                                "type": "object",
+                                                "properties": {
+                                                  "kind": {
+                                                    "type": "string",
+                                                    "const": "FRIENDLY_GIG_IS_MIN"
+                                                  },
+                                                  "dieType": {
+                                                    "type": "string",
+                                                    "const": "D4"
+                                                  }
+                                                },
+                                                "required": [
+                                                  "kind",
+                                                  "dieType"
+                                                ],
+                                                "additionalProperties": false
                                               }
                                             ]
                                           }
@@ -11273,6 +11459,24 @@
                                             "required": [
                                               "kind",
                                               "minimum"
+                                            ],
+                                            "additionalProperties": false
+                                          },
+                                          {
+                                            "type": "object",
+                                            "properties": {
+                                              "kind": {
+                                                "type": "string",
+                                                "const": "FRIENDLY_GIG_IS_MIN"
+                                              },
+                                              "dieType": {
+                                                "type": "string",
+                                                "const": "D4"
+                                              }
+                                            },
+                                            "required": [
+                                              "kind",
+                                              "dieType"
                                             ],
                                             "additionalProperties": false
                                           }
@@ -15026,6 +15230,72 @@
                                       "origin"
                                     ],
                                     "additionalProperties": false
+                                  },
+                                  {
+                                    "type": "object",
+                                    "properties": {
+                                      "kind": {
+                                        "type": "string",
+                                        "const": "POWER"
+                                      },
+                                      "sourceId": {
+                                        "type": "string",
+                                        "minLength": 1,
+                                        "maxLength": 200,
+                                        "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$"
+                                      },
+                                      "targetId": {
+                                        "type": "string",
+                                        "minLength": 1,
+                                        "maxLength": 200,
+                                        "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$"
+                                      },
+                                      "expires": {
+                                        "type": "object",
+                                        "properties": {
+                                          "kind": {
+                                            "type": "string",
+                                            "const": "END_OF_TURN"
+                                          },
+                                          "turn": {
+                                            "type": "integer",
+                                            "exclusiveMinimum": 0,
+                                            "maximum": 9007199254740991
+                                          }
+                                        },
+                                        "required": [
+                                          "kind",
+                                          "turn"
+                                        ],
+                                        "additionalProperties": false
+                                      },
+                                      "amount": {
+                                        "type": "number",
+                                        "const": -5
+                                      },
+                                      "origin": {
+                                        "type": "object",
+                                        "properties": {
+                                          "effectId": {
+                                            "type": "string",
+                                            "pattern": "^[a-f0-9]{64}$"
+                                          }
+                                        },
+                                        "required": [
+                                          "effectId"
+                                        ],
+                                        "additionalProperties": false
+                                      }
+                                    },
+                                    "required": [
+                                      "kind",
+                                      "sourceId",
+                                      "targetId",
+                                      "expires",
+                                      "amount",
+                                      "origin"
+                                    ],
+                                    "additionalProperties": false
                                   }
                                 ]
                               },
@@ -16504,7 +16774,8 @@
                               "enum": [
                                 "PAYMENT",
                                 "EFFECT",
-                                "EQUIP"
+                                "EQUIP",
+                                "MODE"
                               ]
                             },
                             "remainingCost": {
@@ -16565,6 +16836,11 @@
                               "minLength": 1,
                               "maxLength": 200,
                               "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$"
+                            },
+                            "chosenEffect": {
+                              "type": "integer",
+                              "minimum": 0,
+                              "maximum": 9007199254740991
                             }
                           },
                           "required": [
@@ -16920,6 +17196,10 @@
                                             "lowestPower": {
                                               "type": "boolean",
                                               "const": true
+                                            },
+                                            "power": {
+                                              "type": "number",
+                                              "const": 0
                                             }
                                           },
                                           "required": [
@@ -16947,6 +17227,10 @@
                                             "lowestPower": {
                                               "type": "boolean",
                                               "const": true
+                                            },
+                                            "power": {
+                                              "type": "number",
+                                              "const": 0
                                             }
                                           },
                                           "required": [
@@ -17798,6 +18082,24 @@
                                                     "minimum"
                                                   ],
                                                   "additionalProperties": false
+                                                },
+                                                {
+                                                  "type": "object",
+                                                  "properties": {
+                                                    "kind": {
+                                                      "type": "string",
+                                                      "const": "FRIENDLY_GIG_IS_MIN"
+                                                    },
+                                                    "dieType": {
+                                                      "type": "string",
+                                                      "const": "D4"
+                                                    }
+                                                  },
+                                                  "required": [
+                                                    "kind",
+                                                    "dieType"
+                                                  ],
+                                                  "additionalProperties": false
                                                 }
                                               ]
                                             }
@@ -18354,6 +18656,24 @@
                                               "required": [
                                                 "kind",
                                                 "minimum"
+                                              ],
+                                              "additionalProperties": false
+                                            },
+                                            {
+                                              "type": "object",
+                                              "properties": {
+                                                "kind": {
+                                                  "type": "string",
+                                                  "const": "FRIENDLY_GIG_IS_MIN"
+                                                },
+                                                "dieType": {
+                                                  "type": "string",
+                                                  "const": "D4"
+                                                }
+                                              },
+                                              "required": [
+                                                "kind",
+                                                "dieType"
                                               ],
                                               "additionalProperties": false
                                             }
@@ -20118,6 +20438,10 @@
                                           "lowestPower": {
                                             "type": "boolean",
                                             "const": true
+                                          },
+                                          "power": {
+                                            "type": "number",
+                                            "const": 0
                                           }
                                         },
                                         "required": [
@@ -20145,6 +20469,10 @@
                                           "lowestPower": {
                                             "type": "boolean",
                                             "const": true
+                                          },
+                                          "power": {
+                                            "type": "number",
+                                            "const": 0
                                           }
                                         },
                                         "required": [
@@ -20996,6 +21324,24 @@
                                                   "minimum"
                                                 ],
                                                 "additionalProperties": false
+                                              },
+                                              {
+                                                "type": "object",
+                                                "properties": {
+                                                  "kind": {
+                                                    "type": "string",
+                                                    "const": "FRIENDLY_GIG_IS_MIN"
+                                                  },
+                                                  "dieType": {
+                                                    "type": "string",
+                                                    "const": "D4"
+                                                  }
+                                                },
+                                                "required": [
+                                                  "kind",
+                                                  "dieType"
+                                                ],
+                                                "additionalProperties": false
                                               }
                                             ]
                                           }
@@ -21552,6 +21898,24 @@
                                             "required": [
                                               "kind",
                                               "minimum"
+                                            ],
+                                            "additionalProperties": false
+                                          },
+                                          {
+                                            "type": "object",
+                                            "properties": {
+                                              "kind": {
+                                                "type": "string",
+                                                "const": "FRIENDLY_GIG_IS_MIN"
+                                              },
+                                              "dieType": {
+                                                "type": "string",
+                                                "const": "D4"
+                                              }
+                                            },
+                                            "required": [
+                                              "kind",
+                                              "dieType"
                                             ],
                                             "additionalProperties": false
                                           }
@@ -23312,6 +23676,10 @@
                                           "lowestPower": {
                                             "type": "boolean",
                                             "const": true
+                                          },
+                                          "power": {
+                                            "type": "number",
+                                            "const": 0
                                           }
                                         },
                                         "required": [
@@ -23339,6 +23707,10 @@
                                           "lowestPower": {
                                             "type": "boolean",
                                             "const": true
+                                          },
+                                          "power": {
+                                            "type": "number",
+                                            "const": 0
                                           }
                                         },
                                         "required": [
@@ -24190,6 +24562,24 @@
                                                   "minimum"
                                                 ],
                                                 "additionalProperties": false
+                                              },
+                                              {
+                                                "type": "object",
+                                                "properties": {
+                                                  "kind": {
+                                                    "type": "string",
+                                                    "const": "FRIENDLY_GIG_IS_MIN"
+                                                  },
+                                                  "dieType": {
+                                                    "type": "string",
+                                                    "const": "D4"
+                                                  }
+                                                },
+                                                "required": [
+                                                  "kind",
+                                                  "dieType"
+                                                ],
+                                                "additionalProperties": false
                                               }
                                             ]
                                           }
@@ -24746,6 +25136,24 @@
                                             "required": [
                                               "kind",
                                               "minimum"
+                                            ],
+                                            "additionalProperties": false
+                                          },
+                                          {
+                                            "type": "object",
+                                            "properties": {
+                                              "kind": {
+                                                "type": "string",
+                                                "const": "FRIENDLY_GIG_IS_MIN"
+                                              },
+                                              "dieType": {
+                                                "type": "string",
+                                                "const": "D4"
+                                              }
+                                            },
+                                            "required": [
+                                              "kind",
+                                              "dieType"
                                             ],
                                             "additionalProperties": false
                                           }
@@ -27491,6 +27899,72 @@
                                               "origin"
                                             ],
                                             "additionalProperties": false
+                                          },
+                                          {
+                                            "type": "object",
+                                            "properties": {
+                                              "kind": {
+                                                "type": "string",
+                                                "const": "POWER"
+                                              },
+                                              "sourceId": {
+                                                "type": "string",
+                                                "minLength": 1,
+                                                "maxLength": 200,
+                                                "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$"
+                                              },
+                                              "targetId": {
+                                                "type": "string",
+                                                "minLength": 1,
+                                                "maxLength": 200,
+                                                "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$"
+                                              },
+                                              "expires": {
+                                                "type": "object",
+                                                "properties": {
+                                                  "kind": {
+                                                    "type": "string",
+                                                    "const": "END_OF_TURN"
+                                                  },
+                                                  "turn": {
+                                                    "type": "integer",
+                                                    "exclusiveMinimum": 0,
+                                                    "maximum": 9007199254740991
+                                                  }
+                                                },
+                                                "required": [
+                                                  "kind",
+                                                  "turn"
+                                                ],
+                                                "additionalProperties": false
+                                              },
+                                              "amount": {
+                                                "type": "number",
+                                                "const": -5
+                                              },
+                                              "origin": {
+                                                "type": "object",
+                                                "properties": {
+                                                  "effectId": {
+                                                    "type": "string",
+                                                    "pattern": "^[a-f0-9]{64}$"
+                                                  }
+                                                },
+                                                "required": [
+                                                  "effectId"
+                                                ],
+                                                "additionalProperties": false
+                                              }
+                                            },
+                                            "required": [
+                                              "kind",
+                                              "sourceId",
+                                              "targetId",
+                                              "expires",
+                                              "amount",
+                                              "origin"
+                                            ],
+                                            "additionalProperties": false
                                           }
                                         ]
                                       },
@@ -29010,6 +29484,38 @@
                               "effectId",
                               "playerId",
                               "cardType"
+                            ],
+                            "additionalProperties": false
+                          },
+                          {
+                            "type": "object",
+                            "properties": {
+                              "kind": {
+                                "type": "string",
+                                "const": "EFFECT_MODE_CHOSEN"
+                              },
+                              "sourceId": {
+                                "type": "string",
+                                "minLength": 1,
+                                "maxLength": 200,
+                                "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$"
+                              },
+                              "playerId": {
+                                "type": "string",
+                                "format": "uuid",
+                                "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+                              },
+                              "effectIndex": {
+                                "type": "integer",
+                                "minimum": 0,
+                                "maximum": 9007199254740991
+                              }
+                            },
+                            "required": [
+                              "kind",
+                              "sourceId",
+                              "playerId",
+                              "effectIndex"
                             ],
                             "additionalProperties": false
                           },
@@ -30818,6 +31324,72 @@
                                       "origin"
                                     ],
                                     "additionalProperties": false
+                                  },
+                                  {
+                                    "type": "object",
+                                    "properties": {
+                                      "kind": {
+                                        "type": "string",
+                                        "const": "POWER"
+                                      },
+                                      "sourceId": {
+                                        "type": "string",
+                                        "minLength": 1,
+                                        "maxLength": 200,
+                                        "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$"
+                                      },
+                                      "targetId": {
+                                        "type": "string",
+                                        "minLength": 1,
+                                        "maxLength": 200,
+                                        "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$"
+                                      },
+                                      "expires": {
+                                        "type": "object",
+                                        "properties": {
+                                          "kind": {
+                                            "type": "string",
+                                            "const": "END_OF_TURN"
+                                          },
+                                          "turn": {
+                                            "type": "integer",
+                                            "exclusiveMinimum": 0,
+                                            "maximum": 9007199254740991
+                                          }
+                                        },
+                                        "required": [
+                                          "kind",
+                                          "turn"
+                                        ],
+                                        "additionalProperties": false
+                                      },
+                                      "amount": {
+                                        "type": "number",
+                                        "const": -5
+                                      },
+                                      "origin": {
+                                        "type": "object",
+                                        "properties": {
+                                          "effectId": {
+                                            "type": "string",
+                                            "pattern": "^[a-f0-9]{64}$"
+                                          }
+                                        },
+                                        "required": [
+                                          "effectId"
+                                        ],
+                                        "additionalProperties": false
+                                      }
+                                    },
+                                    "required": [
+                                      "kind",
+                                      "sourceId",
+                                      "targetId",
+                                      "expires",
+                                      "amount",
+                                      "origin"
+                                    ],
+                                    "additionalProperties": false
                                   }
                                 ]
                               },
@@ -32478,6 +33050,72 @@
                                               "effectId",
                                               "abilityId",
                                               "ordinal"
+                                            ],
+                                            "additionalProperties": false
+                                          }
+                                        },
+                                        "required": [
+                                          "kind",
+                                          "sourceId",
+                                          "targetId",
+                                          "expires",
+                                          "amount",
+                                          "origin"
+                                        ],
+                                        "additionalProperties": false
+                                      },
+                                      {
+                                        "type": "object",
+                                        "properties": {
+                                          "kind": {
+                                            "type": "string",
+                                            "const": "POWER"
+                                          },
+                                          "sourceId": {
+                                            "type": "string",
+                                            "minLength": 1,
+                                            "maxLength": 200,
+                                            "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$"
+                                          },
+                                          "targetId": {
+                                            "type": "string",
+                                            "minLength": 1,
+                                            "maxLength": 200,
+                                            "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$"
+                                          },
+                                          "expires": {
+                                            "type": "object",
+                                            "properties": {
+                                              "kind": {
+                                                "type": "string",
+                                                "const": "END_OF_TURN"
+                                              },
+                                              "turn": {
+                                                "type": "integer",
+                                                "exclusiveMinimum": 0,
+                                                "maximum": 9007199254740991
+                                              }
+                                            },
+                                            "required": [
+                                              "kind",
+                                              "turn"
+                                            ],
+                                            "additionalProperties": false
+                                          },
+                                          "amount": {
+                                            "type": "number",
+                                            "const": -5
+                                          },
+                                          "origin": {
+                                            "type": "object",
+                                            "properties": {
+                                              "effectId": {
+                                                "type": "string",
+                                                "pattern": "^[a-f0-9]{64}$"
+                                              }
+                                            },
+                                            "required": [
+                                              "effectId"
                                             ],
                                             "additionalProperties": false
                                           }
