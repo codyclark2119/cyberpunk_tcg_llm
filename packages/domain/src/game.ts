@@ -12,7 +12,7 @@ export const DieTypeSchema = z.enum(["D4", "D6", "D8", "D10", "D12", "D20"]);
 export const CardInstanceStateSchema = CardReferenceSchema.extend({
     id: CardInstanceIdSchema, ownerId: PlayerIdSchema, controllerId: PlayerIdSchema, zone: ZoneRefSchema,
     face: z.enum(["UP", "DOWN"]), readiness: z.enum(["READY", "SPENT"]), damage: z.number().int().nonnegative(),
-    counters: z.record(z.string(), z.number().int()), statuses: z.array(z.enum(["GO_SOLO", "CANNOT_SELL", "LAG"])), attachments: z.array(CardInstanceIdSchema)
+    counters: z.record(z.string(), z.number().int()), statuses: z.array(z.enum(["GO_SOLO", "CANNOT_SELL", "LAG", "EFFECT_SOLD"])), attachments: z.array(CardInstanceIdSchema)
 });
 export const GigInstanceStateSchema = z.strictObject({
     id: GigInstanceIdSchema, ownerId: PlayerIdSchema, controllerId: PlayerIdSchema,
@@ -50,10 +50,19 @@ export const DelayedEffectSchema = z.strictObject({
     abilityId: z.string().min(1), createdTurn: z.number().int().positive(), originOrdinal: z.number().int().positive(), originEffectId: HashSchema
 });
 export type DelayedEffect = DeepReadonly<z.infer<typeof DelayedEffectSchema>>;
+/** Batch V46: a registered "the next time a friendly Unit <fight outcome> this turn" effect of a resolved Program. */
+export const FightOutcomeEffectSchema = z.strictObject({ kind: z.literal("NEXT_FIGHT_OUTCOME"), id: HashSchema, sourceId: CardInstanceIdSchema, source: CardReferenceSchema,
+    abilityId: z.string().min(1), controllerId: PlayerIdSchema, createdTurn: z.number().int().positive(), expires: z.strictObject({ kind: z.literal("END_OF_TURN"), turn: z.number().int().positive() }) });
+export type FightOutcomeEffect = DeepReadonly<z.infer<typeof FightOutcomeEffectSchema>>;
+/** A fired registration: the friendly Unit whose fight outcome matched, and the opposing Unit of that fight. */
+export const FightOutcomeSchema = z.strictObject({ effect: FightOutcomeEffectSchema, subjectId: CardInstanceIdSchema, opposingId: CardInstanceIdSchema });
+export type FightOutcome = DeepReadonly<z.infer<typeof FightOutcomeSchema>>;
 export const TriggerBindingSchema = z.strictObject({ sourceId: CardInstanceIdSchema, subjectId: CardInstanceIdSchema, controllerId: PlayerIdSchema,
-    source: CardReferenceSchema, abilityId: z.string().min(1), delayedId: HashSchema.optional(), kind: z.enum(["DELAYED_END_TURN", "WHEN_FIGHT_WON", "WHEN_DEFEATED", "WHEN_PLAYED", "WHEN_ATTACKING", "WHEN_CARD_PLAYED", "WHEN_OWN_TURN_ENDS", "WHEN_UNIT_ATTACKS", "WHEN_BLOCKER_USED", "WHEN_GIG_STOLEN", "WHEN_FRIENDLY_UNIT_STEALS_GIG"]),
+    source: CardReferenceSchema, abilityId: z.string().min(1), delayedId: HashSchema.optional(), kind: z.enum(["DELAYED_END_TURN", "WHEN_FIGHT_WON", "WHEN_DEFEATED", "WHEN_PLAYED", "WHEN_ATTACKING", "WHEN_CARD_PLAYED", "WHEN_OWN_TURN_ENDS", "WHEN_UNIT_ATTACKS", "WHEN_BLOCKER_USED", "WHEN_GIG_STOLEN", "WHEN_FRIENDLY_UNIT_STEALS_GIG", "WHEN_UNIT_DEFEATED", "DELAYED_FIGHT_OUTCOME"]),
     // Batch V24 (10.16.3): a steal trigger is pending once per stolen Gig, so its binding names that Gig.
-    gigInstanceId: GigInstanceIdSchema.optional() });
+    gigInstanceId: GigInstanceIdSchema.optional(),
+    // Batch V46: a fired next-fight-outcome binding names the opposing Unit of its fight.
+    opposingId: CardInstanceIdSchema.optional() });
 export type TriggerBinding = DeepReadonly<z.infer<typeof TriggerBindingSchema>>;
 export const TriggerOriginSchema = z.discriminatedUnion("kind", [
     z.strictObject({ kind: z.literal("END_TURN"), playerId: PlayerIdSchema, turn: z.number().int().positive(), delayedEffects: z.array(DelayedEffectSchema).min(1).optional() }),
@@ -61,10 +70,20 @@ export const TriggerOriginSchema = z.discriminatedUnion("kind", [
     z.strictObject({ kind: z.literal("FIGHT"), result: FightResultSchema }),
     // Batch V24 (11.5.1.7): steal triggers become pending after every stolen Gig has moved.
     z.strictObject({ kind: z.literal("STEAL"), subjectId: CardInstanceIdSchema, gigInstanceIds: z.array(GigInstanceIdSchema).min(1) }),
-    z.strictObject({ kind: z.literal("DEFEAT"), effectSource: CardInstanceIdSchema.optional(), defeated: z.array(z.strictObject({ targetId: CardInstanceIdSchema, defeatedBy: CardInstanceIdSchema })).min(1) })
+    // Batch V46: after a fight, fired next-fight-outcome effects join the fight's DEFEATED triggers (11.4.2.2.1, 11.4.3); with
+    // no defeat the batch holds them alone, so `defeated` is empty only with `fight`.
+    z.strictObject({ kind: z.literal("DEFEAT"), effectSource: CardInstanceIdSchema.optional(), defeated: z.array(z.strictObject({ targetId: CardInstanceIdSchema, defeatedBy: CardInstanceIdSchema })),
+        fight: z.strictObject({ result: FightResultSchema, outcomes: z.array(FightOutcomeSchema).min(1) }).optional() })
 ]);
 export type TriggerOrigin = DeepReadonly<z.infer<typeof TriggerOriginSchema>>;
-export const TriggerContinuationSchema = z.strictObject({ effectDefeats: z.array(z.strictObject({ targetId: CardInstanceIdSchema, defeatedBy: CardInstanceIdSchema })).length(1).optional(), origin: TriggerOriginSchema, ordinal: z.number().int().positive(), bindings: z.array(TriggerBindingSchema).min(1),
+export const TriggerContinuationSchema = z.strictObject({
+    // Batch V47: each Gig an effect stole in this batch; its steal triggers join the batch (11.5.1.7). Batch V48: one entry per steal.
+    effectSteals: z.array(z.strictObject({ subjectId: CardInstanceIdSchema, gigInstanceIds: z.array(GigInstanceIdSchema).length(1) })).min(1).optional(),
+    // Batch V48: each Unit an effect played in this batch; its {Play} triggers join the batch. `qualifyingOrdinal` is the
+    // first-blue-play ordinal the play recorded, when it recorded one.
+    effectPlays: z.array(z.strictObject({ subjectId: CardInstanceIdSchema, qualifyingOrdinal: z.number().int().positive().optional() })).min(1).optional(),
+    // Batch V48: every effect defeat of this batch, in order (several sources may defeat inside one batch).
+    effectDefeats: z.array(z.strictObject({ targetId: CardInstanceIdSchema, defeatedBy: CardInstanceIdSchema })).min(1).optional(), origin: TriggerOriginSchema, ordinal: z.number().int().positive(), bindings: z.array(TriggerBindingSchema).min(1),
     selectedEddieSlots: z.array(z.number().int().nonnegative()).length(1).optional(), resolvedIds: z.array(HashSchema), phase: z.enum(["SELECT", "OPTIONAL", "TARGET", "AMOUNT", "DISCARD", "READY"]), trashedIds: z.array(CardInstanceIdSchema).min(1).max(3).optional(), conditionMet: z.literal(true).optional(), targetGigId: GigInstanceIdSchema.optional(),
     // Batch V29: the Legend already readied by a current "ready up to 2" choice.
     readiedLegends: z.array(CardInstanceIdSchema).length(1).optional(),
@@ -80,7 +99,13 @@ export const QualifyingAttackSummarySchema = z.strictObject({
     count: z.number().int().nonnegative(),
     first: z.strictObject({ attackerId: CardInstanceIdSchema, attacker: CardReferenceSchema }).nullable()
 }).refine(h => (h.count === 0) === (h.first === null), "Zero attacks have no first occurrence; positive counts require one");
+/** Batch V49: per player, the turn's first steal of a Gig with value less than the stealer's power, and the first such steal by a
+ * different Unit; together they decide "the first time another friendly Unit steals ..." for any observer. */
+export const BelowPowerStealSchema = z.strictObject({ stealerId: CardInstanceIdSchema, gigInstanceId: GigInstanceIdSchema });
 export const TurnHistorySchema = z.strictObject({
+    belowPowerSteals: z.record(PlayerIdSchema, z.array(BelowPowerStealSchema).min(1).max(2)).optional(),
+    // Batch V50: the turn's first defeated ARASAKA Unit (either player's), and the Units a free play let attack rival Units this turn.
+    firstArasakaDefeat: CardInstanceIdSchema.optional(), rivalUnitAttackGrants: z.array(CardInstanceIdSchema).min(1).optional(),
     firstArasakaAttacks: z.record(PlayerIdSchema, QualifyingAttackSummarySchema).optional(), gigsStolenByUnit: z.record(CardInstanceIdSchema, z.number().int().positive()).optional(), turn: z.number().int().positive(), triggeredBatches: z.number().int().nonnegative(), blueUnitOrGearPlays: z.record(PlayerIdSchema, z.number().int().nonnegative()), programPlays: z.record(PlayerIdSchema, z.number().int().nonnegative()).optional() });
 export const PendingEffectSchema = z.strictObject({ id: z.string().min(1), controllerId: PlayerIdSchema, sourceId: CardInstanceIdSchema.nullable(), primitiveIndex: z.literal(1).optional(), effect: EffectSchema, trigger: TriggerBindingSchema.omit({ sourceId: true, controllerId: true }).extend({ turn: z.number().int().positive(), ordinal: z.number().int().positive() }).optional(), causedBySequence: z.number().int().nonnegative() });
 export const ActionReturnContextSchema = z.discriminatedUnion("kind", [z.strictObject({ kind: z.literal("MAIN") }), z.strictObject({ kind: z.literal("RIVAL_REACT") })]);
@@ -90,13 +115,19 @@ const TemporaryPowerBaseSchema = z.strictObject({ kind: z.literal("POWER"), sour
 export const TemporaryPowerModifierSchema = z.discriminatedUnion("amount", [
     TemporaryPowerBaseSchema.extend({ amount: z.literal(-1) }),
     TemporaryPowerBaseSchema.extend({ amount: z.literal(2), origin: z.strictObject({ effectId: HashSchema, abilityId: z.string().min(1), ordinal: z.number().int().positive() }) }),
-    TemporaryPowerBaseSchema.extend({ amount: z.literal(5), origin: z.strictObject({ effectId: HashSchema, abilityId: z.string().min(1), ordinal: z.number().int().positive() }) })
+    TemporaryPowerBaseSchema.extend({ amount: z.literal(5), origin: z.strictObject({ effectId: HashSchema, abilityId: z.string().min(1), ordinal: z.number().int().positive() }) }),
+    // Batch V44: a resolving Program's "-5 power this turn"; the primitive's effect id keeps each play apart.
+    TemporaryPowerBaseSchema.extend({ amount: z.literal(-5), origin: z.strictObject({ effectId: HashSchema }) })
 ]).or(
     // Batch V28: "+2 power this turn for each friendly Gig with an even value", counted once at resolution; `scaled` keeps it apart from the fixed +2.
     TemporaryPowerBaseSchema.extend({ amount: z.number().int().positive().multipleOf(2), scaled: z.literal("FRIENDLY_EVEN_GIGS"), origin: z.strictObject({ effectId: HashSchema, abilityId: z.string().min(1), ordinal: z.number().int().positive() }) })
 ).or(
     // Batch V41: "This Unit gains power equal to that card's cost this turn": the revealed card is named, so the amount is its printed cost.
     TemporaryPowerBaseSchema.extend({ amount: z.number().int().positive(), scaled: z.literal("REVEALED_CARD_COST"), revealedCardId: CardInstanceIdSchema, origin: z.strictObject({ effectId: HashSchema, abilityId: z.string().min(1), ordinal: z.number().int().positive() }) })
+).or(
+    // Batch V49: "A rival Unit loses power equal to this Unit's power this turn": the source's power at resolution; `sequence`
+    // keeps repeated activations in one turn apart.
+    TemporaryPowerBaseSchema.extend({ amount: z.number().int().negative(), scaled: z.literal("SOURCE_POWER"), origin: z.strictObject({ effectId: HashSchema, sequence: z.number().int().nonnegative() }) })
 );
 export type TemporaryPowerModifier = z.infer<typeof TemporaryPowerModifierSchema>;
 /** Batch V20: a keyword granted "this turn" by a resolved PLAY occurrence; it tracks the target only while it stays on the field. */
@@ -129,13 +160,15 @@ export const ResolutionStateSchema = z.strictObject({
     triggerContinuation: TriggerContinuationSchema.optional(),
     returnTo: ActionReturnContextSchema.optional(),
     gigStealContinuation: z.strictObject({ selected: z.array(GigInstanceIdSchema), remaining: z.number().int().positive() }).optional(),
-    defeatContinuation: z.strictObject({ fightResult: FightResultSchema.optional(), appliedPrevention: FightPreventionSchema.optional(), appliedPreventions: z.array(FightPreventionSchema).min(2).optional(), defeats: z.array(DefeatInstructionSchema).min(1), orders: z.array(z.strictObject({ targetId: CardInstanceIdSchema, cardIds: z.array(CardInstanceIdSchema) })) }).optional(),
+    defeatContinuation: z.strictObject({ fightResult: FightResultSchema.optional(), fightOutcomes: z.array(FightOutcomeSchema).min(1).optional(), appliedPrevention: FightPreventionSchema.optional(), appliedPreventions: z.array(FightPreventionSchema).min(2).optional(), defeats: z.array(DefeatInstructionSchema).min(1), orders: z.array(z.strictObject({ targetId: CardInstanceIdSchema, cardIds: z.array(CardInstanceIdSchema) })) }).optional(),
     legendEntryContinuation: z.strictObject({ mode: z.enum(["GO_SOLO", "PLAY"]), actorId: PlayerIdSchema, sourceId: CardInstanceIdSchema, remainingCost: z.number().int().positive(), selectedSources: z.array(PaymentSourceSchema) }).optional(),
-    playContinuation: z.strictObject({ kind: z.enum(["PLAY", "ACTIVATE"]), actorId: PlayerIdSchema, sourceId: CardInstanceIdSchema, abilityId: z.string().min(1).optional(), phase: z.enum(["PAYMENT", "EFFECT", "EQUIP"]), remainingCost: z.number().int().nonnegative(), selectedSources: z.array(PaymentSourceSchema), effectIndex: z.number().int().nonnegative(), targetGigId: GigInstanceIdSchema.optional(),
+    playContinuation: z.strictObject({ kind: z.enum(["PLAY", "ACTIVATE"]), actorId: PlayerIdSchema, sourceId: CardInstanceIdSchema, abilityId: z.string().min(1).optional(), phase: z.enum(["PAYMENT", "EFFECT", "EQUIP", "MODE"]), remainingCost: z.number().int().nonnegative(), selectedSources: z.array(PaymentSourceSchema), effectIndex: z.number().int().nonnegative(), targetGigId: GigInstanceIdSchema.optional(),
         // Batch V14: the cards the current Program primitive trashed from the deck, in trash order.
         trashedIds: z.array(CardInstanceIdSchema).min(1).max(3).optional(),
         // Batch V15: the Unit the first clause bottom-decked, while its "if you do" clause awaits a choice.
-        bottomDecked: CardInstanceIdSchema.optional() }).optional(),
+        bottomDecked: CardInstanceIdSchema.optional(),
+        // Batch V44: the one printed mode a modal Program's controller chose; absent while every mode resolves.
+        chosenEffect: z.number().int().nonnegative().optional() }).optional(),
     searchContinuation: z.strictObject({ looked: z.array(CardInstanceIdSchema), selected: z.array(CardInstanceIdSchema) }).optional(),
     callContinuation: z.strictObject({ actorId: PlayerIdSchema, legendId: CardInstanceIdSchema, remainingCost: z.number().int().nonnegative(), selectedSources: z.array(PaymentSourceSchema) }).optional(),
     current: PendingEffectSchema.nullable(), pending: z.array(PendingEffectSchema), discovered: z.array(PendingEffectSchema), choice: PendingChoiceSchema.nullable()
@@ -169,6 +202,7 @@ export const GameStateSchema = z.strictObject({
     gigStealRestrictions: z.array(GigStealRestrictionSchema).min(1).optional(),
     readyLocks: z.array(ReadyLockSchema).min(1).optional(),
     mustAttack: z.array(MustAttackSchema).min(1).optional(),
+    fightOutcomeEffects: z.array(FightOutcomeEffectSchema).min(1).optional(),
     resolution: ResolutionStateSchema, rng: RngStateSchema
 });
 export type DeepReadonly<T> = T extends string | number | boolean | null | undefined ? T : T extends object ? {
@@ -206,6 +240,9 @@ export const EventPayloadSchema = z.discriminatedUnion("kind", [
     z.strictObject({ kind: z.literal("FIGHT_PREVENTION_CONSUMED"), effectId: HashSchema, sourceId: CardInstanceIdSchema, controllerId: PlayerIdSchema, attackerId: CardInstanceIdSchema, defenderId: CardInstanceIdSchema }),
     z.strictObject({ kind: z.literal("FIGHT_DEFEAT_PREVENTED"), effectId: HashSchema, sourceId: CardInstanceIdSchema, cardInstanceId: CardInstanceIdSchema, defeatedBy: CardInstanceIdSchema }),
     z.strictObject({ kind: z.literal("FIGHT_PREVENTION_EXPIRED"), effectId: HashSchema, sourceId: CardInstanceIdSchema, reason: z.literal("TURN_END") }),
+    z.strictObject({ kind: z.literal("FIGHT_OUTCOME_EFFECT_CREATED"), effect: FightOutcomeEffectSchema }),
+    z.strictObject({ kind: z.literal("FIGHT_OUTCOME_EFFECT_FIRED"), effectId: HashSchema, subjectId: CardInstanceIdSchema, opposingId: CardInstanceIdSchema }),
+    z.strictObject({ kind: z.literal("FIGHT_OUTCOME_EFFECT_EXPIRED"), effectId: HashSchema, reason: z.literal("TURN_END") }),
     z.strictObject({ kind: z.literal("FIGHT_STARTED"), attackerId: CardInstanceIdSchema, defenderId: CardInstanceIdSchema }),
     FightResultSchema,
     z.strictObject({ kind: z.literal("DEFEAT_TARGET_SELECTED"), effectId: z.string().min(1), sourceId: CardInstanceIdSchema, targetId: CardInstanceIdSchema, controllerId: PlayerIdSchema, forced: z.boolean() }),
@@ -252,6 +289,8 @@ export const EventPayloadSchema = z.discriminatedUnion("kind", [
     z.strictObject({ kind: z.literal("CARD_REVEALED"), cardInstanceId: CardInstanceIdSchema }),
     // Batch V42: the card type a player chose for an effect.
     z.strictObject({ kind: z.literal("CARD_TYPE_CHOSEN"), effectId: z.string().min(1), playerId: PlayerIdSchema, cardType: z.enum(["UNIT", "GEAR", "PROGRAM"]) }),
+    // Batch V44: the printed mode (0-based, in printed order) a modal Program's controller chose.
+    z.strictObject({ kind: z.literal("EFFECT_MODE_CHOSEN"), sourceId: CardInstanceIdSchema, playerId: PlayerIdSchema, effectIndex: z.number().int().nonnegative() }),
     z.strictObject({ kind: z.literal("SEARCH_REMAINDER_BOTTOMED"), playerId: PlayerIdSchema, order: z.array(CardInstanceIdSchema), rngCounter: z.number().int().nonnegative() }),
     z.strictObject({ kind: z.literal("FIRST_PLAYER_ROLLED"), round: z.number().int().positive(), rolls: FirstPlayerRollPairSchema, tied: z.boolean() }),
     z.strictObject({ kind: z.literal("FIRST_PLAYER_DETERMINED"), playerId: PlayerIdSchema, rngCounter: z.number().int().nonnegative() }),

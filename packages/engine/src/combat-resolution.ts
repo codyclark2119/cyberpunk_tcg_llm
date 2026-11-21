@@ -10,6 +10,8 @@ import { RulesView } from "./view";
 import { defeatCards, defeatSupport } from "./defeat";
 import { transferGigs } from "./gig-transfer";
 import { defeatOrderChoice, defeatsFromFightResult, evaluateFight, gigStealChoice, stealableGigsFor, unfinishedDefeatOrder } from "./combat-outcome-queries";
+import { fightOutcomeBinding, fireFightOutcomes } from "./fight-outcome";
+import { belowPowerStealerPower, recordBelowPowerSteal } from "./below-power-steal";
 
 export function finishCombat(m: TurnMutation) {
     const c = m.state.timing.combat;
@@ -41,8 +43,11 @@ function advanceDefeats(m: TurnMutation) {
         m.emit({ kind: "DEFEAT_TRASH_ORDER_SELECTED", targetId: order.targetId, cardInstanceId: option.cardInstanceId, ownerId: choice.actorId, forced: true });
     }
     m.state.resolution.choice = null;
-    const result = defeatCards(m, continuation.defeats, continuation.orders);
-    return result.ok ? (triggersEnabled(m.context) ? beginTriggers(m, { kind: "DEFEAT", defeated: continuation.defeats }, result.value) : finishCombat(m)) : result;
+    const result = defeatCards(m, continuation.defeats, continuation.orders), outcomes = continuation.fightOutcomes;
+    if (!result.ok) return result;
+    // Batch V46: fired next-fight-outcome effects resolve after the fight ends, together with its DEFEATED triggers.
+    if (outcomes && continuation.fightResult) return beginTriggers(m, { kind: "DEFEAT", defeated: continuation.defeats, fight: { result: continuation.fightResult, outcomes } }, [...result.value, ...outcomes.map(fightOutcomeBinding)]);
+    return triggersEnabled(m.context) ? beginTriggers(m, { kind: "DEFEAT", defeated: continuation.defeats }, result.value) : finishCombat(m);
 }
 export function continueDefeatOrder(m: TurnMutation, index: number) {
     const choice = m.state.resolution.choice, option = choice?.options[index], order = unfinishedDefeatOrder(m.state);
@@ -66,7 +71,7 @@ function advanceGigSteal(m: TurnMutation) {
         continuation.selected.push(g.id);
         m.emit({ kind: "GIG_STEAL_SELECTED", gigInstanceId: g.id, attackerId: c.attackerId, forced: true });
     }
-    const defendingPlayer = c.target.playerId;
+    const defendingPlayer = c.target.playerId, power = belowPowerStealerPower(m.state, c.attackerId, m.context);
     const transferred = transferGigs(m, continuation.selected, c.attackingPlayerId, () => {
         // 9.23.5 all moves precede each stolen fact / future 9.23.6 trigger discovery.
         for (const id of [...continuation.selected].sort()) {
@@ -80,6 +85,7 @@ function advanceGigSteal(m: TurnMutation) {
         }
     });
     if (!transferred.ok) return transferred;
+    recordBelowPowerSteal(m, c.attackerId, continuation.selected, power); // Batch V49.
     if (m.state.match.outcome) return success(null);
     // Batch V24 (11.5.1.7, 9.20.2): "When this Unit steals a Gig" becomes pending after the move, then resolves before the attack ends.
     const stolen = { kind: "STEAL" as const, subjectId: c.attackerId, gigInstanceIds: [...continuation.selected].sort() };
@@ -123,7 +129,9 @@ export function resolveCombat(m: TurnMutation) {
 /** Resume after the reviewed fight-result trigger window, without recomputing who won. */
 export function completeFightResult(m: TurnMutation, result: FightResult) {
     const outcome = applyFightPreventions(m, defeatsFromFightResult(m.state, m.context, result));
-    if (!outcome.defeats.length) return finishCombat(m);
-    m.state.resolution.defeatContinuation = { ...outcome, ...(triggersEnabled(m.context) ? { fightResult: FightResultSchema.parse(result) } : {}), orders: outcome.defeats.map(d => ({ targetId: d.targetId, cardIds: [] })) };
+    // Batch V46 (11.4.2.2.1): next-fight-outcome effects fire on this fight; they resolve once the fight has ended.
+    const fired = triggersEnabled(m.context) ? fireFightOutcomes(m, result) : [];
+    if (!outcome.defeats.length) return fired.length ? beginTriggers(m, { kind: "DEFEAT", defeated: [], fight: { result: FightResultSchema.parse(result), outcomes: fired } }, fired.map(fightOutcomeBinding)) : finishCombat(m);
+    m.state.resolution.defeatContinuation = { ...outcome, ...(triggersEnabled(m.context) ? { fightResult: FightResultSchema.parse(result) } : {}), ...(fired.length ? { fightOutcomes: fired } : {}), orders: outcome.defeats.map(d => ({ targetId: d.targetId, cardIds: [] })) };
     return advanceDefeats(m);
 }

@@ -1,3 +1,4 @@
+import { hasQuickActivation, supportsQuickActivationCard } from "./quick-activation-support";
 import { turnSliceAllows, canonicalSerialize, failure, success, type CardRevisionSnapshot, type DeepReadonly, type GameState } from "@tcg/domain";
 import type { EngineContext } from "./state";
 export function delayedEffectsEnabled(context: EngineContext) {
@@ -17,6 +18,8 @@ export function supportsDelayedAttackGear(card: DeepReadonly<CardRevisionSnapsho
 export function validateDelayedMetadata(state: GameState, context: EngineContext) {
     for (const c of Object.values(state.objects.cards)) {
         const r = context.content.cards.find(r => r.id === c.cardId && r.revision === c.revision);
+        // Batch V49: Rogue's "ready 2 Eddies" steal trigger is pinned by the Quick-activation gate.
+        if (r && hasQuickActivation(r)) { const valid = supportsQuickActivationCard(r, context); if (!valid.ok) return valid; continue; }
         if (r && (r.execution?.scope === "GEAR_DELAYED_ATTACK_V1" || r.mechanics.abilities.some(a => a.conditions.some(c => c.kind === "SUBJECT_IS_UNIT_NAMED") || a.effects.some(e => e.kind === "DECREASE_GIG_UP_TO" || e.kind === "REGISTER_END_TURN_EFFECT" || e.kind === "READY_EDDIES" && (e.count === 2 || e.when) || e.kind === "CONDITIONAL_DRAW" && e.condition.kind === "SUBJECT_IS_UNIT_NAMED" || e.kind === "DISCARD_CARDS" && e.when?.condition.kind === "SUBJECT_IS_UNIT_NAMED")))) {
             const valid = supportsDelayedAttackGear(r, context); if (!valid.ok) return valid;
         }

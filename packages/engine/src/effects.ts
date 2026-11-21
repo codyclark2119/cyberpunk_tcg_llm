@@ -16,6 +16,8 @@ import { resolveTrashThenReturn } from "./trash-return";
 import { resolveBottomDeck } from "./bottom-deck";
 import { resolveDrawPerFriendlyGig, resolvePowerPerFriendlyGig } from "./gig-parity";
 import { gigSetTargets } from "./gig-value";
+import { resolveSellTopOfDeck } from "./program-sell";
+import { createFightOutcomeEffect } from "./fight-outcome";
 
 type Primitive<K extends Effect["kind"]> = Extract<Effect, { kind: K }>;
 /** Handwritten, typed primitive registry; metadata cannot install arbitrary handlers. */
@@ -34,7 +36,7 @@ export class HandlerRegistry {
             return met ? applyTemporaryPower(m, current.trigger.subjectId) : success(null);
         }
         const targets = powerTargets(m.state, m.state.timing.actingPlayer, m.context);
-        return targets.length > 1 ? offerPlayChoice(m) : targets.length === 1 ? applyTemporaryPower(m, targets[0]) : success(null);
+        return targets.length > 1 ? offerPlayChoice(m) : targets.length === 1 ? applyTemporaryPower(m, targets[0], true) : success(null);
     },
     ADJUST_GIG_UP_TO: (m: TurnMutation): Result<null> => adjustmentTargets(m.state).length ? offerPlayChoice(m) : success(null),
     CONDITIONAL_DRAW: (m: TurnMutation, effect: Primitive<"CONDITIONAL_DRAW">): Result<null> => {
@@ -60,6 +62,7 @@ export class HandlerRegistry {
         if (effect.kind === "DEFEAT_UNIT") return beginTargetedDefeat(m);
         if (effect.kind === "SPEND_ALL_UNITS") return spendAllRivalUnits(m);
         if (effect.kind === "CREATE_NEXT_RIVAL_FIGHT_PREVENTION") return createFightPrevention(m);
+        if (effect.kind === "REGISTER_NEXT_FIGHT_OUTCOME") return createFightOutcomeEffect(m); // Batch V46.
         if (effect.kind === "POWER_UNTIL_END_OF_TURN") return this.primitives.POWER_UNTIL_END_OF_TURN(m);
         if (effect.kind === "ADJUST_GIG_UP_TO") return this.primitives.ADJUST_GIG_UP_TO(m);
         if (effect.kind === "CONDITIONAL_DRAW") return this.primitives.CONDITIONAL_DRAW(m, effect);
@@ -73,6 +76,7 @@ export class HandlerRegistry {
         if (effect.kind === "SEARCH_TAKE_ONE_PLUS_PER_MIN_GIG") return this.primitives.SEARCH_TAKE_ONE_PLUS_PER_MIN_GIG(m, effect);
         if (effect.kind === "TRASH_THEN_RETURN_UNIT") return resolveTrashThenReturn(m, effect, offerPlayChoice);
         if (effect.kind === "BOTTOM_DECK_UNIT") return resolveBottomDeck(m, offerPlayChoice);
+        if (effect.kind === "SELL_TOP_OF_DECK") return resolveSellTopOfDeck(m); // Batch V45.
         return failure("UNSUPPORTED_CALL_EFFECT", "No registered typed CALL primitive");
     }
 }

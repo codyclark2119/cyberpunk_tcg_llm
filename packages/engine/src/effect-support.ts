@@ -4,7 +4,17 @@ import { supportsFieldLegend } from "./field-legend-support";
 import { supportsTriggerCard } from "./trigger-support";
 import { turnSliceAllows, failure, success, type CardRevisionSnapshot, type DeepReadonly } from "@tcg/domain";
 import type { EngineContext } from "./state";
+import { hasModalChoice } from "./modal-program-support";
+import { hasSellTopEffect } from "./program-sell-support";
+import { hasFightStealEffect } from "./fight-steal-support";
+import { hasFreePlayEffect } from "./free-play-support";
+import { hasQuickActivation } from "./quick-activation-support";
 export function supportsCall(card: DeepReadonly<CardRevisionSnapshot> | undefined, context: EngineContext) {
+    if (hasModalChoice(card)) return failure("UNSUPPORTED_MODAL_CHOICE", "A modal ability is admitted only by its exact Program pin"); // Batch V44.
+    if (hasSellTopEffect(card)) return failure("UNSUPPORTED_EFFECT_SELL", "An effect sell is admitted only by its exact Program pin"); // Batch V45.
+    if (hasFightStealEffect(card)) return failure("UNSUPPORTED_FIGHT_STEAL", "A next-fight steal is admitted only by its exact Program pin"); // Batch V47.
+    if (hasFreePlayEffect(card)) return failure("UNSUPPORTED_FREE_PLAY", "A free Unit play is admitted only by its exact pin"); // Batch V48.
+    if (hasQuickActivation(card)) return failure("UNSUPPORTED_QUICK_ACTIVATION", "A Quick activation is admitted only by its exact Unit pin"); // Batch V49.
     if (card?.execution?.scope === "ATTACKING_AURA_V1") return supportsAttackingAuraLegend(card, context);
     if (card?.execution?.scope === "FIRST_ATTACK_HISTORY_V1") return supportsFirstAttackLegend(card, context);
     if (card?.execution?.scope === "FIELD_LEGENDS_V1") return supportsFieldLegend(card, context);

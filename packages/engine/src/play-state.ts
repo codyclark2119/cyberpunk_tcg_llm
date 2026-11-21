@@ -3,16 +3,25 @@ import { playPaymentAmount } from "./play-cost-support";
 import { gigAdjustmentOptions, gigSetSources, gigSetTargets } from "./gig-value";
 import { powerTargets } from "./react-queries";
 import { legalEquipHosts } from "./attachments";
-import { canonicalSerialize, hashCanonical, failure, success, type GameState, type PendingChoice } from "@tcg/domain";
+import { canonicalSerialize, hashCanonical, failure, success, type GameState, type PendingChoice, type PlayerId, type CardInstanceId } from "@tcg/domain";
 import type { EngineContext } from "./state";
 import { revisionOf, supportsPlay } from "./play-support";
 import { paymentCandidates, paymentSources, paymentValue, forcedPaymentSources } from "./payment";
 import { trashedUnitTargets, validateTrashReturn } from "./trash-return";
 import { currentBottomDeckTargets, validateBottomDeck } from "./bottom-deck";
+import { testCondition } from "./conditions";
+import { validateActivationState } from "./quick-activation";
 
 function playIdentity(state: GameState) {
     const c = state.resolution.playContinuation!;
-    return hashCanonical({ protocol: "noncombat-play@1", turn: state.timing.turn, actorSeat: state.players[c.actorId].seat, sourceId: c.sourceId, kind: c.kind, abilityId: c.abilityId ?? null });
+    return identity(state, c.actorId, c.sourceId, c.kind, c.abilityId);
+}
+function identity(state: GameState, actorId: PlayerId, sourceId: CardInstanceId, kind: "PLAY" | "ACTIVATE", abilityId: string | undefined) {
+    return hashCanonical({ protocol: "noncombat-play@1", turn: state.timing.turn, actorSeat: state.players[actorId].seat, sourceId, kind, abilityId: abilityId ?? null });
+}
+/** Batch V49: the effect id an activation's printed effect had this turn, for history that outlives the continuation. */
+export function activationEffectId(state: GameState, actorId: PlayerId, sourceId: CardInstanceId, abilityId: string, index: number) {
+    return hashCanonical({ continuation: identity(state, actorId, sourceId, "ACTIVATE", abilityId), index });
 }
 export function playEffectId(state: GameState, index = state.resolution.playContinuation!.effectIndex) { return hashCanonical({ continuation: playIdentity(state), index }); }
 /** Afterparty says 'a Gig', without a friendly restriction: either player's controlled rolled Gig. */
@@ -25,6 +34,10 @@ export function playChoice(state: GameState, context: EngineContext): PendingCho
     if (c.phase === "PAYMENT") {
         kind = "PAYMENT";
         options = paymentCandidates(state, c.actorId, context, c.remainingCost, c.selectedSources).map(source => ({ kind: "PAYMENT", source }));
+    } else if (c.phase === "MODE") {
+        // Batch V44: each printed mode, named by its effect kind, in printed order.
+        kind = "MODE";
+        options = revisionOf(state, c.sourceId, context)!.mechanics.abilities[0].effects.map(e => ({ kind: "MODE", mode: e.kind }));
     } else if (c.phase === "EQUIP") {
         kind = "TARGET";
         options = legalEquipHosts(state, c.sourceId, context).map(cardInstanceId => ({ kind: "CARD", cardInstanceId }));
@@ -59,6 +72,7 @@ export function validatePlayState(state: GameState, context: EngineContext) {
     const c = state.resolution.playContinuation, current = state.resolution.current;
     const resolving = Object.values(state.objects.cards).filter(c => c.zone.zone === "RESOLVING_PROGRAM");
     if (!c) return resolving.length || (state.timing.step === "AMOUNT_SELECTION" && !state.resolution.triggerContinuation) ? failure("INVALID_PLAY_CONTINUATION", "Resolving Programs and amount choices require a continuation") : success(null);
+    if (c.kind === "ACTIVATE") return validateActivationState(state, context); // Batch V49.
     const source = state.objects.cards[c.sourceId], revision = revisionOf(state, c.sourceId, context), ability = revision?.mechanics.abilities[0];
     if (!supportsPlay(revision, context).ok || !source || c.kind !== "PLAY" || c.actorId !== (state.resolution.targetedDefeatContinuation?.phase === "ORDER" || state.resolution.targetedDefeatContinuation?.phase === "EACH" ? state.timing.activePlayer : state.timing.actingPlayer) || source.controllerId !== c.actorId || source.zone.playerId !== c.actorId || source.face !== "UP" || (revision?.type === "GEAR" ? undefined : ability?.id) !== c.abilityId || state.setup || (state.timing.combat.stage !== "NONE" && (state.timing.combat.stage !== "RIVAL_REACT" || revision?.type !== "PROGRAM" || !revision.mechanics.keywords.includes("QUICK"))) || state.match.outcome || (state.resolution.searchContinuation && current?.effect.kind !== "SEARCH_TAKE_ONE_PLUS_PER_MIN_GIG") || state.resolution.callContinuation || state.resolution.discovered.length || state.resolution.stage !== "CHOICE")
         return failure("INVALID_PLAY_CONTINUATION", "Play source, scope, actor or exclusive decision state invalid");
@@ -72,11 +86,21 @@ export function validatePlayState(state: GameState, context: EngineContext) {
     } else if (c.phase === "EQUIP") {
         if (revision!.type !== "GEAR" || source.readiness !== "READY" || source.zone.zone !== "HAND" || c.remainingCost !== 0 || c.effectIndex !== 0 || c.abilityId || c.targetGigId || current || state.resolution.pending.length || resolving.length || state.timing.step !== "TARGET_SELECTION" || !legalEquipHosts(state, c.sourceId, context).length)
             return failure("INVALID_EQUIP_CONTINUATION", "Paid Gear, source area, current host set and target decision must agree");
+    } else if (c.phase === "MODE") {
+        // Batch V44: the mode choice holds no primitive; it exists only while the "both instead" condition is unmet.
+        if (revision!.type !== "PROGRAM" || source.zone.zone !== "RESOLVING_PROGRAM" || resolving.length !== 1 || c.remainingCost !== 0 || !ability?.choose || c.effectIndex !== 0 || c.chosenEffect !== undefined || c.targetGigId || c.bottomDecked || c.trashedIds
+            || current || state.resolution.pending.length || state.timing.step !== "TARGET_SELECTION" || testCondition(state, c.actorId, ability.choose.allInstead, context, c.sourceId))
+            return failure("INVALID_MODE", "A modal Program's mode choice needs its resolving source and an unmet both-instead condition");
     } else {
-        if (revision!.type !== "PROGRAM" || source.zone.zone !== "RESOLVING_PROGRAM" || resolving.length !== 1 || c.remainingCost !== 0 || !ability || c.effectIndex >= ability.effects.length || (c.effectIndex !== 0 && current?.effect.kind !== "DEFEAT_UNIT") || (current?.effect.kind !== "SPEND_UNIT" && current?.effect.kind !== "DEFEAT_UNIT" && current?.effect.kind !== "ADJUST_GIG_UP_TO" && current?.effect.kind !== "POWER_UNTIL_END_OF_TURN" && current?.effect.kind !== "TRASH_THEN_RETURN_UNIT" && current?.effect.kind !== "BOTTOM_DECK_UNIT" && current?.effect.kind !== "SEARCH_TAKE_ONE_PLUS_PER_MIN_GIG" && current?.effect.kind !== "SET_GIG_TO_ANOTHER_GIG_VALUE") || current.id !== playEffectId(state, c.effectIndex) || current.sourceId !== c.sourceId || current.controllerId !== c.actorId || canonicalSerialize(current.effect) !== canonicalSerialize(ability.effects[c.effectIndex]) || state.resolution.pending.length !== ability.effects.length - 1 - c.effectIndex)
+        // Batch V44: a modal Program resolves only its chosen mode, or every mode while the condition holds; the printed index is kept.
+        const order = ability?.choose ? (c.chosenEffect === undefined ? ability.effects.map((_, i) => i) : [c.chosenEffect]) : ability?.effects.map((_, i) => i) ?? [], position = order.indexOf(c.effectIndex);
+        if (ability?.choose && (c.chosenEffect === undefined) !== testCondition(state, c.actorId, ability.choose.allInstead, context, c.sourceId)) return failure("INVALID_MODE", "Every mode resolves exactly while the both-instead condition holds");
+        if (!ability?.choose && c.chosenEffect !== undefined) return failure("INVALID_MODE", "Only a modal Program has a chosen mode");
+        if (revision!.type !== "PROGRAM" || source.zone.zone !== "RESOLVING_PROGRAM" || resolving.length !== 1 || c.remainingCost !== 0 || !ability || position < 0 || (position !== 0 && !ability.choose && current?.effect.kind !== "DEFEAT_UNIT") || (current?.effect.kind !== "SPEND_UNIT" && current?.effect.kind !== "DEFEAT_UNIT" && current?.effect.kind !== "ADJUST_GIG_UP_TO" && current?.effect.kind !== "POWER_UNTIL_END_OF_TURN" && current?.effect.kind !== "TRASH_THEN_RETURN_UNIT" && current?.effect.kind !== "BOTTOM_DECK_UNIT" && current?.effect.kind !== "SEARCH_TAKE_ONE_PLUS_PER_MIN_GIG" && current?.effect.kind !== "SET_GIG_TO_ANOTHER_GIG_VALUE") || current.id !== playEffectId(state, c.effectIndex) || current.sourceId !== c.sourceId || current.controllerId !== c.actorId || canonicalSerialize(current.effect) !== canonicalSerialize(ability.effects[c.effectIndex]) || state.resolution.pending.length !== order.length - 1 - position)
             return failure("INVALID_PROGRAM_EFFECT", "Resolving Program and current primitive must match its pinned ordered ability");
         for (const [index, effect] of state.resolution.pending.entries()) {
-            if (effect.id !== playEffectId(state, c.effectIndex + index + 1) || effect.sourceId !== c.sourceId || effect.controllerId !== c.actorId || effect.causedBySequence !== current.causedBySequence || canonicalSerialize(effect.effect) !== canonicalSerialize(ability!.effects[c.effectIndex + index + 1])) return failure("INVALID_PROGRAM_EFFECT", "Remaining primitive chain differs from the pinned ability");
+            const printed = order[position + index + 1];
+            if (effect.id !== playEffectId(state, printed) || effect.sourceId !== c.sourceId || effect.controllerId !== c.actorId || effect.causedBySequence !== current.causedBySequence || canonicalSerialize(effect.effect) !== canonicalSerialize(ability!.effects[printed])) return failure("INVALID_PROGRAM_EFFECT", "Remaining primitive chain differs from the pinned ability");
         }
         if (current.effect.kind === "SPEND_UNIT") {
             if (c.targetGigId || state.timing.step !== "TARGET_SELECTION" || listSpendUnitTargets(state, c.actorId, current.effect.target, context).length < 2 || state.resolution.targetedDefeatContinuation || state.resolution.defeatContinuation || state.resolution.gigStealContinuation || state.resolution.triggerContinuation || state.resolution.legendEntryContinuation)
@@ -101,6 +125,7 @@ export function validatePlayState(state: GameState, context: EngineContext) {
             if (!targets.length || (c.targetGigId && !targets.includes(c.targetGigId)) || state.timing.step !== (c.targetGigId ? "AMOUNT_SELECTION" : "TARGET_SELECTION")) return failure("INVALID_GIG_TARGET", "Gig target and decision step must remain eligible");
         }
     }
+    if (c.chosenEffect !== undefined && c.phase !== "EFFECT") return failure("INVALID_MODE", "A chosen mode belongs only to a resolving modal Program");
     if (c.trashedIds && current?.effect.kind !== "TRASH_THEN_RETURN_UNIT") return failure("INVALID_TRASH_RETURN", "Trashed cards belong only to the current trash-return primitive");
     if (c.bottomDecked && current?.effect.kind !== "BOTTOM_DECK_UNIT") return failure("INVALID_BOTTOM_DECK", "A bottom-decked Unit belongs only to the current bottom-deck primitive");
     if (c.phase !== "PAYMENT") {

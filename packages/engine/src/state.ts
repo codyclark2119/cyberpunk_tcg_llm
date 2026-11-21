@@ -1,3 +1,4 @@
+import { validateArasakaDefeatHistory } from "./arasaka-defeat";
 import { validateTargetedDefeatState } from "./targeted-defeat-state";
 import { validateMustAttack } from "./must-attack";
 import { validateAttackConditionPowerMetadata } from "./attack-condition-power-support";
@@ -11,6 +12,7 @@ import { validateAttackPreventionMetadata } from "./attack-prevention-support";
 import { validatePlayCostReductionMetadata } from "./play-cost-support";
 import { validateFirstAttackMetadata } from "./first-attack-support";
 import { validateFirstAttackHistory } from "./first-attack-history";
+import { validateBelowPowerHistory } from "./below-power-steal";
 import { validateFieldLegendMetadata } from "./field-legend-support";
 import { validateDelayedMetadata } from "./delayed-effect-support";
 import { validateLegendEntryState } from "./legend-entry";
@@ -23,6 +25,7 @@ import { validatePrivateLookMetadata } from "./private-look-support";
 import { validateCapabilityMetadata } from "./capability-support";
 import { validateTriggerState } from "./trigger-state";
 import { validateFightPreventions } from "./fight-prevention";
+import { validateFightOutcomeEffects } from "./fight-outcome";
 import { validateActionReturn } from "./action-return";
 import { validateTemporaryPower } from "./temporary-power";
 import { validateKeywordGrants, validateStealRestrictions } from "./play-pin-effects";
@@ -36,6 +39,7 @@ import { validateOvertimeState } from "./overtime";
 import { validateDemoState } from "./demo-state";
 import { validateSetupState } from "./setup-state";
 import { paymentSources, paymentValue, paymentCandidates } from "./payment";
+import { effectSellAdmitted } from "./program-sell-support";
 import { z } from "zod";
 import { DeckFormatSchema, GameStateSchema, ContentBundleSchema, ReplayStateHashSchema, PositionHashSchema, hashCanonical, canonicalSerialize, failure, success, type Result, type GameState, type ContentBundle, type DeepReadonly, CardInstanceIdSchema } from "@tcg/domain";
 export type EngineContext = {
@@ -82,8 +86,11 @@ export function validateState(input: unknown, context: EngineContext): Result<Ga
         const content = b.cards.find(p => p.id === c.cardId && p.revision === c.revision);
         if (id !== c.id || !ids.includes(c.ownerId) || !ids.includes(c.controllerId) || !content)
             return failure("INVALID_CARD", "Card identity, owner, controller or content pin is invalid");
-        if (c.zone.zone === "EDDIES" && (c.face !== "DOWN" || content.type === "LEGEND" || !content.sellProfile.allowed))
+        // Batch V45 (11.12.2.1): an effect-sold Eddie needs no Sell tag; it carries EFFECT_SOLD, which exists only in the Eddies area.
+        if (c.zone.zone === "EDDIES" && (c.face !== "DOWN" || content.type === "LEGEND" || !content.sellProfile.allowed && !c.statuses.includes("EFFECT_SOLD")))
             return failure("INVALID_EDDIE", "Eddies must be face-down sellable card instances");
+        if (c.statuses.includes("EFFECT_SOLD") && (c.zone.zone !== "EDDIES" || c.statuses.filter(x => x === "EFFECT_SOLD").length !== 1 || !effectSellAdmitted(context)))
+            return failure("INVALID_EDDIE", "An effect-sold mark belongs once to an Eddie under a reviewed effect-sell Program");
         if (c.zone.zone === "LEGENDS" && content.type !== "LEGEND" && !(gearEnabled(context) && content.type === "GEAR"))
             return failure("INVALID_LEGEND", "Only Legends belong in the Legend zone");
         if (c.statuses.includes("LAG") && (!effectiveCardTypes(s, c.id, context).includes("UNIT") || c.zone.zone !== "BATTLEFIELD")) return failure("INVALID_LAG", "Lag belongs only to Units in the field");
@@ -113,6 +120,8 @@ export function validateState(input: unknown, context: EngineContext): Result<Ga
     const costMetadata = validatePlayCostReductionMetadata(s, context); if (!costMetadata.ok) return costMetadata;
     const firstMetadata = validateFirstAttackMetadata(s, context); if (!firstMetadata.ok) return firstMetadata;
     const firstHistory = validateFirstAttackHistory(s, context); if (!firstHistory.ok) return firstHistory;
+    const belowPower = validateBelowPowerHistory(s, context); if (!belowPower.ok) return belowPower; // Batch V49.
+    const arasakaDefeat = validateArasakaDefeatHistory(s, context); if (!arasakaDefeat.ok) return arasakaDefeat; // Batch V50.
     const fieldMetadata = validateFieldLegendMetadata(s, context); if (!fieldMetadata.ok) return fieldMetadata;
     const delayedMetadata = validateDelayedMetadata(s, context); if (!delayedMetadata.ok) return delayedMetadata;
     const delayedState = validateDelayedState(s, context); if (!delayedState.ok) return delayedState;
@@ -176,6 +185,8 @@ export function validateState(input: unknown, context: EngineContext): Result<Ga
     if (!forced.ok) return forced;
     const prevention = validateFightPreventions(s, context);
     if (!prevention.ok) return prevention;
+    const outcomes = validateFightOutcomeEffects(s, context); // Batch V46.
+    if (!outcomes.ok) return outcomes;
     const combat = validateCombatState(s, context);
     if (!combat.ok) return combat;
     const slice = b.ruleset.gameplay?.turnSlice;

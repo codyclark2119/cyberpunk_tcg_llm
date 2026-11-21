@@ -1,3 +1,4 @@
+import { belowPowerStealFires } from "./below-power-steal";
 import { handPrograms, programBottomDeckTargets } from "./program-discard";
 import { mustAttackTargets } from "./must-attack";
 import { REVEAL_TYPES } from "./type-reveal-support";
@@ -5,6 +6,8 @@ import { gigAdjustmentOptions } from "./gig-value";
 import { isFirstArasakaAttack } from "./first-attack-history";
 import { effectiveCardTypes } from "./characteristics";
 import { delayedBinding } from "./delayed-effects";
+import { fightOutcomeBinding } from "./fight-outcome";
+import { effectStealTargets } from "./fight-steal";
 import { readyableEddieSlots } from "./eddie-ready";
 import { testCondition } from "./conditions";
 import { getDiscardableCards } from "./discard";
@@ -16,6 +19,7 @@ import { hashCanonical, type GameState, type CardInstanceId, type PlayerId, type
 import type { EngineContext } from "./state";
 import { cardRevision } from "./characteristics";
 import { attachedGear } from "./attachments";
+import { freePlayTargets } from "./free-play";
 import { supportsEffectiveTriggerSource, triggersEnabled } from "./trigger-support";
 import { searchTargets } from "./search-state";
 import { keywordGrantTargets, trashedProgramTargets } from "./play-pin-effects";
@@ -29,7 +33,7 @@ export function effectiveTriggeredAbilities(state: GameState, subjectId: CardIns
         const r = cardRevision(state, source.id, context);
         if (!supportsEffectiveTriggerSource(r, context) || !r) return [];
         return r.mechanics.abilities.flatMap(a => {
-            if (!a.trigger || (source.id !== subjectId) !== (a.inherited === "EQUIPPED_HOST") || !(a.trigger === "WHEN_FIGHT_WON" || a.trigger === "WHEN_DEFEATED" || a.trigger === "WHEN_PLAYED" || a.trigger === "WHEN_ATTACKING" || a.trigger === "WHEN_CARD_PLAYED" || a.trigger === "WHEN_OWN_TURN_ENDS" || a.trigger === "WHEN_UNIT_ATTACKS" || a.trigger === "WHEN_BLOCKER_USED" || a.trigger === "WHEN_GIG_STOLEN" || a.trigger === "WHEN_FRIENDLY_UNIT_STEALS_GIG")) return [];
+            if (!a.trigger || (source.id !== subjectId) !== (a.inherited === "EQUIPPED_HOST") || !(a.trigger === "WHEN_FIGHT_WON" || a.trigger === "WHEN_DEFEATED" || a.trigger === "WHEN_PLAYED" || a.trigger === "WHEN_ATTACKING" || a.trigger === "WHEN_CARD_PLAYED" || a.trigger === "WHEN_OWN_TURN_ENDS" || a.trigger === "WHEN_UNIT_ATTACKS" || a.trigger === "WHEN_BLOCKER_USED" || a.trigger === "WHEN_GIG_STOLEN" || a.trigger === "WHEN_FRIENDLY_UNIT_STEALS_GIG" || a.trigger === "WHEN_UNIT_DEFEATED")) return [];
             return [{ sourceId: source.id, subjectId, controllerId: subject.controllerId, source: { cardId: r.id, revision: r.revision }, abilityId: a.id, kind: a.trigger }];
         });
     }).sort((a, b) => a.sourceId < b.sourceId ? -1 : a.sourceId > b.sourceId ? 1 : a.abilityId < b.abilityId ? -1 : a.abilityId > b.abilityId ? 1 : 0);
@@ -40,7 +44,9 @@ export function discoverTriggers(state: GameState, origin: TriggerOrigin, contex
         return b.kind === "WHEN_OWN_TURN_ENDS" && b.controllerId === origin.playerId && a.conditions.every(c => testCondition(state, b.controllerId, c, context, b.subjectId));
     }))];
     if (origin.kind === "FIGHT") return origin.result.winnerId ? effectiveTriggeredAbilities(state, origin.result.winnerId, context).filter(b => b.kind === "WHEN_FIGHT_WON") : [];
-    if (origin.kind === "DEFEAT") return origin.defeated.flatMap(d => effectiveTriggeredAbilities(state, d.targetId, context).filter(b => b.kind === "WHEN_DEFEATED")); // Capture before movement; enqueue after.
+    if (origin.kind === "DEFEAT") return [...origin.defeated.flatMap(d => effectiveTriggeredAbilities(state, d.targetId, context).filter(b => b.kind === "WHEN_DEFEATED")), ...(origin.fight?.outcomes ?? []).map(fightOutcomeBinding),
+        // Batch V50: "The first time an ARASAKA Unit is defeated each turn": each field observer of either player, the defeated included.
+        ...(origin.defeated.some(d => d.targetId === state.turnHistory?.firstArasakaDefeat) ? state.match.playerOrder.flatMap(p => [...state.players[p].zones.BATTLEFIELD].sort()).flatMap(id => effectiveTriggeredAbilities(state, id, context).filter(b => b.kind === "WHEN_UNIT_DEFEATED" && b.sourceId === b.subjectId)) : [])]; // Capture before movement; enqueue after.
     // Batch V17: "When this Unit uses [Blocker]" belongs to the blocking Unit only (9.11).
     if (origin.kind === "BLOCK") return effectiveTriggeredAbilities(state, origin.subjectId, context).filter(b => b.kind === "WHEN_BLOCKER_USED" && b.sourceId === b.subjectId);
     // Batch V24 (10.16.3, 11.5.1.7): "When this Unit steals a Gig" is pending once per stolen Gig, after all have moved.
@@ -52,7 +58,9 @@ export function discoverTriggers(state: GameState, origin: TriggerOrigin, contex
         const guard = (b: TriggerBinding) => cardRevision(state, b.sourceId, context)!.mechanics.abilities.find(a => a.id === b.abilityId)!.guard;
         return [...origin.gigInstanceIds].sort().flatMap(gigInstanceId => [
             ...effectiveTriggeredAbilities(state, origin.subjectId, context).filter(b => b.kind === "WHEN_GIG_STOLEN" && b.sourceId === b.subjectId),
-            ...observers.filter(b => guard(b) === "STOLEN_GIG_IS_D6" && state.objects.gigs[gigInstanceId]?.dieType === "D6" || guard(b) === "STEALER_IS_LEGEND" && stealerIsLegend(state, origin.subjectId, context))
+            ...observers.filter(b => guard(b) === "STOLEN_GIG_IS_D6" && state.objects.gigs[gigInstanceId]?.dieType === "D6" || guard(b) === "STEALER_IS_LEGEND" && stealerIsLegend(state, origin.subjectId, context)
+                // Batch V49: a friendly field Unit observing the turn's first below-power steal by another friendly Unit.
+                || guard(b) === "FIRST_OTHER_FRIENDLY_STEAL_BELOW_POWER_PER_TURN" && state.objects.cards[b.sourceId].zone.zone === "BATTLEFIELD" && belowPowerStealFires(state, b.sourceId, origin.subjectId, gigInstanceId))
         ].map(b => ({ ...b, gigInstanceId })));
     }
     const own = effectiveTriggeredAbilities(state, origin.subjectId, context).filter(b => {
@@ -82,7 +90,8 @@ export function triggerId(state: GameState, binding: TriggerBinding, ordinal: nu
 export function pendingTrigger(state: GameState, binding: TriggerBinding, ordinal: number, sequence: number, context: EngineContext, primitiveIndex: 0 | 1 = 0): PendingEffect {
     const a = context.content.cards.find(c => c.id === binding.source.cardId && c.revision === binding.source.revision)!.mechanics.abilities.find(a => a.id === binding.abilityId)!;
     const registered = a.effects[1];
-    const effect = binding.delayedId && registered?.kind === "REGISTER_END_TURN_EFFECT" ? registered.effect : a.effects[primitiveIndex];
+    // Batch V46: a fired next-fight-outcome binding resolves the registered effect, never the registration itself.
+    const effect = binding.kind === "DELAYED_FIGHT_OUTCOME" && a.effects[0]?.kind === "REGISTER_NEXT_FIGHT_OUTCOME" ? a.effects[0].effect : binding.delayedId && registered?.kind === "REGISTER_END_TURN_EFFECT" ? registered.effect : a.effects[primitiveIndex];
     const { sourceId, controllerId, ...trigger } = binding;
     return { id: triggerId(state, binding, ordinal), sourceId, controllerId, causedBySequence: sequence, effect, ...(primitiveIndex === 1 ? { primitiveIndex } : {}), trigger: { ...trigger, ordinal, turn: state.timing.turn } };
 }
@@ -96,8 +105,10 @@ export function swapSidesAvailable(state: GameState, controllerId: PlayerId) {
     const gigs = Object.values(state.objects.gigs).filter(g => g.location.zone === "GIGS" && g.roll.kind === "ROLLED");
     return gigs.some(g => g.controllerId === controllerId) && gigs.some(g => g.controllerId !== controllerId);
 }
-export function triggerGigTargets(state: GameState) {
+export function triggerGigTargets(state: GameState, context?: EngineContext) {
     const current = state.resolution.current!, chosen = state.resolution.triggerContinuation?.targetGigId;
+    // Batch V47: an effect steal offers the rival Gigs its subject may steal.
+    if (current.effect.kind === "STEAL_GIG") return context ? effectStealTargets(state, context) : [];
     // Batch V27: "increase it" offers only the rolled Gig the steal trigger names, while it is in a Gig area.
     if (current.effect.kind === "ADJUST_GIG_UP_TO" && current.effect.target.kind === "STOLEN_GIG") {
         const g = current.trigger?.gigInstanceId ? state.objects.gigs[current.trigger.gigInstanceId] : undefined;
@@ -153,13 +164,15 @@ export function triggerChoice(state: GameState, context: EngineContext): Pending
             ? [{ kind: "MODE", mode: "DONE" }, ...friendlyUnitReadyTargets(state, actorId, context).filter(id => !c.readiedUnits?.includes(id)).map(cardInstanceId => ({ kind: "CARD" as const, cardInstanceId }))]
             : current?.effect.kind === "READY_UNIT"
             ? (current.effect.target.kind === "ANOTHER_FRIENDLY_UNIT" ? stolenGigReadyTargets(state, current, context) : readyLegendTargets(state, actorId, context)).map(cardInstanceId => ({ kind: "CARD", cardInstanceId }))
+            : current?.effect.kind === "PLAY_UNIT_FREE"
+            ? [...(current.effect.optional ? [{ kind: "CONFIRM" as const, confirmed: false }] : []), ...freePlayTargets(state, context).map(cardInstanceId => ({ kind: "CARD" as const, cardInstanceId }))]
             : current?.effect.kind === "RETURN_TRASH_UNIT_TO_HAND"
             ? trashUnitTargets(state, current, context).map(cardInstanceId => ({ kind: "CARD", cardInstanceId }))
             : current?.effect.kind === "LOOK_AT_FRIENDLY_FACE_DOWN_LEGEND"
             ? privateLookTargets(state, actorId, context).map(slot => ({ kind: "LEGEND_SLOT", slot }))
             : current?.effect.kind === "POWER_UNTIL_END_OF_TURN" && current.effect.target.kind === "FRIENDLY_UNIT"
                 ? friendlyPowerTargets(state, actorId, context).map(cardInstanceId => ({ kind: "CARD", cardInstanceId }))
-                : triggerGigTargets(state).map(gigInstanceId => ({ kind: "GIG", gigInstanceId }));
+                : triggerGigTargets(state, context).map(gigInstanceId => ({ kind: "GIG", gigInstanceId }));
     }
     else {
         kind = "AMOUNT"; const g = state.objects.gigs[c.targetGigId!], value = g.roll.kind === "ROLLED" ? g.roll.currentValue : 0;

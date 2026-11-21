@@ -11,6 +11,7 @@ import { revisionOf } from "./play-support";
 import { playChoice, playEffectId, adjustmentTargets } from "./play-state";
 import { forcedPaymentSources, paymentValue, validatePayment } from "./payment";
 import { playPaymentAmount } from "./play-cost-support";
+import { activationPaymentAmount } from "./quick-activation-support";
 import { HandlerRegistry, continueSearch } from "./effects";
 import { chooseTrashedUnit } from "./trash-return";
 import { chooseBottomDeck } from "./bottom-deck";
@@ -24,7 +25,7 @@ export function offerPlayChoice(m: TurnMutation) {
     // Only new directional effects adopt forced target/zero-magnitude resolution; preserve old replay protocols.
     if (effect?.kind === "ADJUST_GIG_UP_TO" && effect.direction !== undefined && choice.options.length === 1) return continuePlay(m, 0);
     m.state.resolution.stage = "CHOICE";
-    const step = choice.kind === "PAYMENT" ? "PAYMENT_SELECTION" : choice.kind === "TARGET" ? "TARGET_SELECTION" : "AMOUNT_SELECTION";
+    const step = choice.kind === "PAYMENT" ? "PAYMENT_SELECTION" : choice.kind === "TARGET" || choice.kind === "MODE" ? "TARGET_SELECTION" : "AMOUNT_SELECTION";
     m.state.timing.step = step;
     m.state.timing.window = step;
     m.emit({ kind: "PHASE_CHANGED", step });
@@ -63,22 +64,39 @@ export function completePlayEffect(m: TurnMutation, aftermath?: PreparedTriggerB
     r.choice = null; c.effectIndex++; r.current = r.pending.shift() ?? null;
     return r.current ? resolveChain(m) : finishPlay(m, c.sourceId, aftermath);
 }
+/** The resolving ability: an activation names its own (Batch V49: not necessarily the first printed one). */
+function playAbility(m: TurnMutation) {
+    const c = m.state.resolution.playContinuation!, abilities = revisionOf(m.state, c.sourceId, m.context)!.mechanics.abilities;
+    return c.kind === "ACTIVATE" ? abilities.find(a => a.id === c.abilityId)! : abilities[0];
+}
 function beginEffects(m: TurnMutation): Result<null> {
-    const s = m.state, c = s.resolution.playContinuation!, r = revisionOf(s, c.sourceId, m.context)!, a = r.mechanics.abilities[0];
+    const s = m.state, c = s.resolution.playContinuation!, r = revisionOf(s, c.sourceId, m.context)!, a = playAbility(m);
     c.phase = "EFFECT";
     s.resolution.choice = null;
     if (c.kind === "PLAY" && r.type === "UNIT") return finishPlay(m, c.sourceId); // Spend is not an ON_PLAY trigger.
     m.phase("CARD_EFFECT");
-    const causedBySequence = s.match.eventSequence;
     s.resolution.stage = "DISCOVER_TRIGGERS";
-    s.resolution.pending = a.effects.map((effect, index) => ({ id: playEffectId(s, index), sourceId: c.sourceId, controllerId: c.actorId, causedBySequence, effect: EffectSchema.parse(effect) }));
+    if (a.choose) {
+        // Batch V44: "If <condition>, choose both instead" is checked as the Program resolves; otherwise its controller picks one mode.
+        const all = testCondition(s, c.actorId, a.choose.allInstead, m.context, c.sourceId);
+        m.emit({ kind: "CONDITION_EVALUATED", effectId: playEffectId(s, 0), met: all });
+        if (!all) { c.phase = "MODE"; return offerPlayChoice(m); }
+    }
+    return pendEffects(m, a.effects.map((_, index) => index));
+}
+/** The listed printed effects become pending in printed order, each keeping its printed index, and resolve as a chain. */
+function pendEffects(m: TurnMutation, indexes: number[]): Result<null> {
+    const s = m.state, c = s.resolution.playContinuation!, a = playAbility(m), causedBySequence = s.match.eventSequence;
+    c.effectIndex = indexes[0];
+    s.resolution.pending = indexes.map(index => ({ id: playEffectId(s, index), sourceId: c.sourceId, controllerId: c.actorId, causedBySequence, effect: EffectSchema.parse(a.effects[index]) }));
     for (const effect of s.resolution.pending) m.emit({ kind: "EFFECT_PENDING", effectId: effect.id, sourceId: c.sourceId });
     s.resolution.current = s.resolution.pending.shift() ?? null;
     return resolveChain(m);
 }
 function completePayment(m: TurnMutation, sources: PaymentSource[]): Result<null> {
     const s = m.state, c = s.resolution.playContinuation!, r = revisionOf(s, c.sourceId, m.context)!;
-    const payment = validatePayment(s, c.actorId, m.context, sources, { kind: "EDDIES", amount: playPaymentAmount(s, c.actorId, c.sourceId, m.context)! });
+    const amount = c.kind === "ACTIVATE" ? activationPaymentAmount(playAbility(m)) : playPaymentAmount(s, c.actorId, c.sourceId, m.context)!;
+    const payment = validatePayment(s, c.actorId, m.context, sources, { kind: "EDDIES", amount });
     return payment.ok ? payValidated(m, payment.value) : payment;
 }
 
@@ -99,6 +117,7 @@ function payValidated(m: TurnMutation, sources: PaymentSource[]): Result<null> {
     c.selectedSources = sources; c.remainingCost = 0;
     for (const p of sources) s.objects.cards[p.cardInstanceId].readiness = "SPENT";
     m.emit({ kind: "PAYMENT_MADE", sources });
+    if (c.kind === "ACTIVATE") return beginEffects(m); // Batch V49: a paid activation's effect follows its costs.
     if (r.type === "GEAR") {
         c.phase = "EQUIP";
         s.objects.cards[c.sourceId].readiness = "READY";
@@ -119,6 +138,14 @@ export function continuePlay(m: TurnMutation, index: number): Result<null> {
         if (forced) return completePayment(m, [...sources, ...forced]);
         c.selectedSources = sources; c.remainingCost = remaining;
         return offerPlayChoice(m);
+    }
+    if (c.phase === "MODE") {
+        // Batch V44: one printed mode, named by its effect kind; only it becomes pending.
+        const effects = revisionOf(s, c.sourceId, m.context)!.mechanics.abilities[0].effects, index = option.kind === "MODE" ? effects.findIndex(e => e.kind === option.mode) : -1;
+        if (index < 0) return failure("INVALID_MODE", "Choose one enumerated printed mode");
+        c.phase = "EFFECT"; c.chosenEffect = index; s.resolution.choice = null;
+        m.emit({ kind: "EFFECT_MODE_CHOSEN", sourceId: c.sourceId, playerId: c.actorId, effectIndex: index });
+        return pendEffects(m, [index]);
     }
     if (c.phase === "EQUIP") {
         if (option.kind !== "CARD") return failure("INVALID_EQUIP_TARGET", "Choose an enumerated host");
@@ -206,6 +233,14 @@ export function activateAbility(m: TurnMutation, actorId: PlayerId, sourceId: Ca
     s.objects.cards[sourceId].readiness = "SPENT";
     m.emit({ kind: "CARD_SPENT", cardInstanceId: sourceId });
     m.emit({ kind: "ABILITY_ACTIVATED", sourceInstanceId: sourceId, abilityId });
+    const amount = activationPaymentAmount(ability);
+    if (amount) {
+        // Batch V49 (11.30.2): a paid Quick activation, in MAIN or the React Step; it returns to whichever decision it was taken from.
+        s.resolution.returnTo = actionReturnContext(s);
+        s.resolution.playContinuation = { kind: "ACTIVATE", sourceId, actorId, abilityId, phase: "PAYMENT", remainingCost: amount, selectedSources: [], effectIndex: 0 };
+        const forced = forcedPaymentSources(s, actorId, m.context, amount, []);
+        return forced ? completePayment(m, forced) : offerPlayChoice(m);
+    }
     s.resolution.returnTo = { kind: "MAIN" };
     s.resolution.playContinuation = { kind: "ACTIVATE", sourceId, actorId, abilityId, phase: "EFFECT", remainingCost: 0, selectedSources: [], effectIndex: 0 };
     // 11.15.3.1: distinct activation and resolution checks, even though no reaction window intervenes here.

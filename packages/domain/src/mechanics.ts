@@ -5,7 +5,7 @@ export const GameAreaSchema = z.enum(["DECK", "HAND", "BATTLEFIELD", "TRASH", "E
 export const ZoneSchema = z.enum([...GameAreaSchema.options, "RESOLVING_PROGRAM"]);
 export const ZoneRefSchema = z.strictObject({ playerId: PlayerIdSchema, zone: ZoneSchema });
 export const KeywordSchema = z.enum(["GO_SOLO", "QUICK", "BLOCKER", "ADRENALINE"]);
-export const TriggerSchema = z.enum(["WHEN_SOLD", "WHEN_CALLED", "WHEN_PLAYED", "WHEN_ATTACKING", "WHEN_DEFEATED", "WHEN_FIGHT_WON", "WHEN_CARD_PLAYED", "WHEN_OWN_TURN_ENDS", "WHEN_UNIT_ATTACKS", "WHEN_BLOCKER_USED", "WHEN_GIG_STOLEN", "WHEN_FRIENDLY_UNIT_STEALS_GIG"]);
+export const TriggerSchema = z.enum(["WHEN_SOLD", "WHEN_CALLED", "WHEN_PLAYED", "WHEN_ATTACKING", "WHEN_DEFEATED", "WHEN_FIGHT_WON", "WHEN_CARD_PLAYED", "WHEN_OWN_TURN_ENDS", "WHEN_UNIT_ATTACKS", "WHEN_BLOCKER_USED", "WHEN_GIG_STOLEN", "WHEN_FRIENDLY_UNIT_STEALS_GIG", "WHEN_UNIT_DEFEATED"]);
 export const EquipTargetSchema = z.strictObject({ kind: z.literal("FRIENDLY_UNIT_OR_FACE_UP_LEGEND") });
 export const TargetRelationshipSchema = z.enum(["CONTROLLED", "RIVAL", "ANY"]);
 export const TargetSelectorSchema = z.discriminatedUnion("kind", [
@@ -40,7 +40,11 @@ export const ConditionSchema = z.discriminatedUnion("kind", [
     // Batch V29: "If you control a value-pair of Gigs" (6.6: 2 dice with the same value in the same Gig area).
     z.strictObject({ kind: z.literal("CONTROLS_VALUE_PAIR") }),
     // Batch V39: "If a Rival controls at least 2 more Gigs than you" (Gigs in each Gig area, counted live).
-    z.strictObject({ kind: z.literal("RIVAL_CONTROLS_MORE_GIGS"), minimum: z.literal(2) })
+    z.strictObject({ kind: z.literal("RIVAL_CONTROLS_MORE_GIGS"), minimum: z.literal(2) }),
+    // Batch V44: "If a friendly d4 is a min Gig" (6.3.1: a rolled own d4 at 1 in the Gig area).
+    z.strictObject({ kind: z.literal("FRIENDLY_GIG_IS_MIN"), dieType: z.literal("D4") }),
+    // Batch V45: "If you control a Gig with an even value and a Gig with an odd value" (two friendly rolled Gigs).
+    z.strictObject({ kind: z.literal("FRIENDLY_GIGS_EVEN_AND_ODD") })
 ]);
 export const CombatRestrictionSchema = z.discriminatedUnion("kind", [
     z.strictObject({ kind: z.literal("CANNOT_ATTACK") }),
@@ -97,7 +101,8 @@ export type SpendUnitTarget = z.infer<typeof SpendUnitTargetSchema>;
 // Batch V22: "Spend a rival Unit. It can't ready until your next turn." locks the chosen Unit too.
 export const SpendUnitEffectSchema = z.strictObject({ kind: z.literal("SPEND_UNIT"), target: SpendUnitTargetSchema, preventReady: z.literal("UNTIL_YOUR_NEXT_TURN").optional() });
 // Batch V15: field Units to bottom-deck, by relation, optional readiness and "lowest-power" (every tied minimum).
-export const BottomDeckTargetSchema = z.strictObject({ relation: z.enum(["RIVAL", "CONTROLLED"]), readiness: z.enum(["READY", "SPENT"]).optional(), lowestPower: z.literal(true).optional() });
+// Batch V44: "with power 0", the referenced power (2.10.1: a negative value counts as 0).
+export const BottomDeckTargetSchema = z.strictObject({ relation: z.enum(["RIVAL", "CONTROLLED"]), readiness: z.enum(["READY", "SPENT"]).optional(), lowestPower: z.literal(true).optional(), power: z.literal(0).optional() });
 export type BottomDeckTarget = z.infer<typeof BottomDeckTargetSchema>;
 // Shared Unit-defeat filter (plan section 6, scope 3b). The grammar admits nothing by itself:
 // every card using it is pinned literally by its execution gate (exact per-card check).
@@ -126,7 +131,9 @@ export const DefeatGearTargetSchema = z.strictObject({ kind: z.literal("GEAR"), 
     // Batch V34: "defeat a Gear" has no power bound; any controller's Gear qualifies (relation ANY).
     power: z.strictObject({ kind: z.literal("AT_MOST"), value: z.literal(2) }).optional() });
 export type DefeatGearTarget = z.infer<typeof DefeatGearTargetSchema>;
-export const DefeatTargetSchema = z.discriminatedUnion("kind", [DefeatUnitTargetSchema, DefeatGearTargetSchema]);
+// Batch V46: "the opposing rival Unit" of the fight that fired a next-fight-outcome effect; no target choice.
+export const DefeatOpposingTargetSchema = z.strictObject({ kind: z.literal("OPPOSING_UNIT") });
+export const DefeatTargetSchema = z.discriminatedUnion("kind", [DefeatUnitTargetSchema, DefeatGearTargetSchema, DefeatOpposingTargetSchema]);
 export type DefeatTarget = z.infer<typeof DefeatTargetSchema>;
 export const DefeatUnitEffectSchema = z.strictObject({ kind: z.literal("DEFEAT_UNIT"), target: DefeatTargetSchema,
     when: z.strictObject({ timing: z.literal("RESOLUTION"), condition: z.strictObject({ kind: z.literal("STREET_CRED_GREATER_THAN_RIVAL") }) }).optional(),
@@ -158,12 +165,26 @@ export const EffectSchema = z.discriminatedUnion("kind", [
     DefeatUnitEffectSchema,
     ReadyEddiesEffectSchema,
     RegisterEndTurnEffectSchema,
+    // Batch V46: "The next time a friendly Unit loses a fight this turn, defeat the opposing rival Unit." Registered when the
+    // Program resolves; it fires on that fight and its effect resolves after the fight ends (11.4.2.2.1).
+    // Batch V47: "The next time a friendly Unit wins a fight by 3+ power this turn, it also steals a Gig."
+    z.strictObject({ kind: z.literal("REGISTER_NEXT_FIGHT_OUTCOME"), on: z.enum(["FRIENDLY_UNIT_LOSES", "FRIENDLY_UNIT_WINS_BY_3"]),
+        effect: z.union([z.strictObject({ kind: z.literal("DEFEAT_UNIT"), target: DefeatOpposingTargetSchema }), z.strictObject({ kind: z.literal("STEAL_GIG"), actor: z.literal("TRIGGER_SUBJECT"), count: z.literal(1) })]) }),
+    // Batch V47: the trigger subject steals rival Gigs outside an attack (11.5.1.1.2: the effect names the actor).
+    z.strictObject({ kind: z.literal("STEAL_GIG"), actor: z.literal("TRIGGER_SUBJECT"), count: z.literal(1) }),
+    // Batch V48: "Play another Unit with cost 9 or less from your trash for free. Then, bottom-deck this Unit." (11.11.4, 11.23.3):
+    // one public Unit in the controller's trash other than the trigger subject is played without paying; then the subject, if
+    // still in its owner's trash, is bottom-decked.
+    // Batch V50: "You may play a Unit with cost 4 or less from your hand or trash for free. It can attack rival Units this turn."
+    z.strictObject({ kind: z.literal("PLAY_UNIT_FREE"), from: z.enum(["TRASH", "HAND_OR_TRASH"]), maxCost: z.union([z.literal(9), z.literal(4)]), exclude: z.literal("SUBJECT").optional(), then: z.literal("BOTTOM_DECK_SUBJECT").optional(),
+        optional: z.literal(true).optional(), grant: z.literal("ATTACK_RIVAL_UNITS_THIS_TURN").optional() }),
     z.strictObject({ kind: z.literal("DECREASE_GIG_UP_TO"), target: z.strictObject({ kind: z.literal("GIGS"), relation: z.literal("ANY") }), maximum: z.literal(2) }),
     DiscardCardsEffectSchema,
     z.strictObject({ kind: z.literal("LOOK_AT_FRIENDLY_FACE_DOWN_LEGEND") }),
     z.strictObject({ kind: z.literal("OPTIONAL_DECREASE_FRIENDLY_GIG_THEN_DRAW_IF_MIN"), maximum: z.literal(2), draw: z.literal(1) }),
     z.strictObject({ kind: z.literal("CREATE_NEXT_RIVAL_FIGHT_PREVENTION") }),
-    z.strictObject({ kind: z.literal("POWER_UNTIL_END_OF_TURN"), target: z.strictObject({ kind: z.enum(["RIVAL_UNIT", "SOURCE_SUBJECT", "FRIENDLY_UNIT"]) }), amount: z.number().int() }),
+    // Batch V49: `scale: "SOURCE_POWER"` multiplies the amount by the source's power at resolution ("loses power equal to this Unit's power").
+    z.strictObject({ kind: z.literal("POWER_UNTIL_END_OF_TURN"), target: z.strictObject({ kind: z.enum(["RIVAL_UNIT", "SOURCE_SUBJECT", "FRIENDLY_UNIT"]) }), amount: z.number().int(), scale: z.literal("SOURCE_POWER").optional() }),
     // Batch V27: STOLEN_GIG is "increase it", the Gig a steal trigger names.
     z.strictObject({ kind: z.literal("ADJUST_GIG_UP_TO"), target: z.union([z.strictObject({ kind: z.literal("GIGS"), relation: z.literal("ANY") }), z.strictObject({ kind: z.literal("STOLEN_GIG") })]), maximum: z.union([z.literal(1), z.literal(3), z.literal(4), z.literal(5), z.literal(6)]), direction: z.enum(["INCREASE", "DECREASE"]).optional() }),
     z.strictObject({ kind: z.literal("CONDITIONAL_DRAW"), timing: z.literal("RESOLUTION"), condition: ConditionSchema, count: z.number().int().positive() }),
@@ -212,6 +233,8 @@ export const EffectSchema = z.discriminatedUnion("kind", [
     z.strictObject({ kind: z.literal("READY_LEGENDS_UP_TO"), tag: z.literal("Merc"), maximum: z.literal(2),
         when: z.strictObject({ timing: z.literal("RESOLUTION"), condition: z.strictObject({ kind: z.literal("CONTROLS_VALUE_PAIR") }) }) }),
     z.strictObject({ kind: z.literal("DRAW"), count: z.number().int().positive() }),
+    // Batch V45 (11.12.2.1, 11.12.2.2): "Sell the top card of your deck." No Sell tag is needed; it counts as the turn's sell.
+    z.strictObject({ kind: z.literal("SELL_TOP_OF_DECK"), count: z.literal(1) }),
     z.strictObject({ kind: z.literal("DAMAGE"), target: TargetSelectorSchema, amount: z.number().int().nonnegative() }),
     z.strictObject({ kind: z.literal("MOVE_CARD"), target: TargetSelectorSchema, destination: ZoneSchema }),
     z.strictObject({ kind: z.literal("MODIFY_POWER"), target: TargetSelectorSchema, amount: z.number().int() }),
@@ -228,8 +251,15 @@ export const AbilitySchema = z.strictObject({ id: z.string().min(1), trigger: Tr
     inherited: z.literal("EQUIPPED_HOST").optional(),
     // Batch V26: STOLEN_GIG_IS_D6 limits a friendly-steal trigger to stolen d6 dice ("When a friendly Unit steals a d6").
     // Batch V40: STEALER_IS_LEGEND limits it to a stealing friendly Legend ("When a friendly Legend steals a Gig").
-    guard: z.enum(["FIRST_BLUE_UNIT_OR_GEAR_PLAY_PER_TURN", "FIRST_FRIENDLY_ARASAKA_UNIT_ATTACK_PER_TURN", "STOLEN_GIG_IS_D6", "STEALER_IS_LEGEND"]).optional(),
-    activation: z.strictObject({ timing: z.literal("MAIN"), conditionTiming: z.literal("ACTIVATION_AND_RESOLUTION"), costs: z.array(ActivationCostSchema) }).optional(),
+    // Batch V49: FIRST_OTHER_FRIENDLY_STEAL_BELOW_POWER_PER_TURN is "The first time another friendly Unit steals a Gig with value less
+    // than its power each turn".
+    guard: z.enum(["FIRST_BLUE_UNIT_OR_GEAR_PLAY_PER_TURN", "FIRST_FRIENDLY_ARASAKA_UNIT_ATTACK_PER_TURN", "STOLEN_GIG_IS_D6", "STEALER_IS_LEGEND", "FIRST_OTHER_FRIENDLY_STEAL_BELOW_POWER_PER_TURN", "FIRST_ARASAKA_UNIT_DEFEAT_PER_TURN"]).optional(),
+    // Batch V50: FIRST_ARASAKA_UNIT_DEFEAT_PER_TURN with WHEN_UNIT_DEFEATED is "The first time an ARASAKA Unit is defeated each turn".
+    // Batch V49: QUICK is "[Quick] cost: effect" (11.30.2): also activatable as a reaction to a rival Unit's attack.
+    activation: z.strictObject({ timing: z.enum(["MAIN", "QUICK"]), conditionTiming: z.literal("ACTIVATION_AND_RESOLUTION"), costs: z.array(ActivationCostSchema) }).optional(),
+    // Batch V44: "Choose one effect. If <condition>, choose both instead." The effects are the modes in printed order; the
+    // condition is checked as the Program resolves, and while it holds every mode resolves in order.
+    choose: z.strictObject({ count: z.literal(1), allInstead: ConditionSchema }).optional(),
     conditions: z.array(ConditionSchema), cost: CostSchema, effects: z.array(EffectSchema) });
 export const ContinuousModifierSchema = z.discriminatedUnion("kind", [
     // Batch V30: "This Unit can attack rival Units the turn it's played" (11.3.1): while lagging, rival Units only.

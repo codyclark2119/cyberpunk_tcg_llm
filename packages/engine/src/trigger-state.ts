@@ -1,4 +1,8 @@
+import { belowPowerStealFires } from "./below-power-steal";
 import { isSearchEffect } from "./search-state";
+import { supportsFreePlayCard } from "./free-play-support";
+import { freePlayTargets } from "./free-play";
+import { isPlayedInBatch } from "./effect-play";
 import { supportsMustAttackUnit } from "./must-attack-support";
 import { supportsTypeRevealUnit } from "./type-reveal-support";
 import { supportsGigSearchUnit } from "./gig-search-support";
@@ -32,6 +36,8 @@ import { supportsLegendStealTrigger } from "./legend-steal-support";
 import { supportsLegendReveal } from "./legend-reveal-support";
 import { discardingPlayer, discoverTriggers, nextTriggerGroup, pendingTrigger, stealerIsLegend, stolenGigParity, swapSidesAvailable, triggerChoice, triggerGigTargets, triggerId } from "./trigger-queries";
 import { discardedCostMatchesFriendlyGig } from "./discard";
+import { fightOutcomeBinding, registration, validFightOutcomes } from "./fight-outcome";
+import { effectStealTargets } from "./fight-steal";
 import { supportsTargetedDefeatCard } from "./targeted-defeat-support";
 
 /** Validate the historical comparison, not a new comparison using post-trigger power. */
@@ -42,25 +48,47 @@ export function validFightFact(state: GameState, f: FightResult) {
 function validBinding(state: GameState, b: TriggerBinding, context: EngineContext) {
     const c = state.resolution.triggerContinuation!, source = state.objects.cards[b.sourceId], subject = state.objects.cards[b.subjectId], r = cardRevision(state, b.sourceId, context);
     const ability = r?.mechanics.abilities.find(a => a.id === b.abilityId);
+    // Batch V46: a fired next-fight-outcome binding is exactly one outcome its DEFEAT origin's fight carries (checked there).
+    if (b.kind === "DELAYED_FIGHT_OUTCOME") return c.origin.kind === "DEFEAT" && Boolean(c.origin.fight?.outcomes.some(o => canonicalSerialize(fightOutcomeBinding(o)) === canonicalSerialize(b)));
+    if (b.opposingId !== undefined) return false;
     if (!source || !subject || !state.players[b.controllerId] || b.controllerId !== subject.controllerId || b.controllerId !== source.controllerId || !supportsEffectiveTriggerSource(r, context) || source.cardId !== b.source.cardId || source.revision !== b.source.revision || !ability || (b.delayedId ? ability.trigger !== "WHEN_ATTACKING" : ability.trigger !== b.kind) || (b.sourceId !== b.subjectId) !== (ability.inherited === "EQUIPPED_HOST")) return false;
     const origin = c.origin;
-    if (b.kind === "WHEN_DEFEATED" && c.effectDefeats) return c.effectDefeats.some(d => d.targetId === b.subjectId) && !["BATTLEFIELD", "LEGENDS"].includes(subject.zone.zone);
+    // Batch V50: an observer of the turn's first ARASAKA Unit defeat, defeated by this batch's origin or an effect in it. The observer
+    // is on the field, or was defeated with it (bindings are captured before movement).
+    if (b.kind === "WHEN_UNIT_DEFEATED") {
+        const first = state.turnHistory?.firstArasakaDefeat, defeated = [...(origin.kind === "DEFEAT" ? origin.defeated : []), ...(c.effectDefeats ?? [])].map(d => d.targetId);
+        return ability.guard === "FIRST_ARASAKA_UNIT_DEFEAT_PER_TURN" && b.sourceId === b.subjectId && b.gigInstanceId === undefined && supportsFreePlayCard(r, context).ok && first !== undefined && defeated.includes(first)
+            && (source.zone.zone === "BATTLEFIELD" && source.face === "UP" || defeated.includes(source.id) && !["BATTLEFIELD", "LEGENDS"].includes(source.zone.zone));
+    }
+    // Batch V48: a Unit an effect played in this batch brings its {Play} bindings, and the first-blue-play observer of that play.
+    if (b.kind === "WHEN_PLAYED" && c.effectPlays?.some(p => p.subjectId === b.subjectId)) return true;
+    if (b.kind === "WHEN_CARD_PLAYED" && c.effectPlays?.some(p => p.qualifyingOrdinal === 1 && state.objects.cards[p.subjectId]?.ownerId === b.controllerId))
+        return ability.guard === "FIRST_BLUE_UNIT_OR_GEAR_PLAY_PER_TURN" && r?.type === "LEGEND" && b.sourceId === b.subjectId;
+    if (b.kind === "WHEN_DEFEATED" && c.effectDefeats?.some(d => d.targetId === b.subjectId)) return !["BATTLEFIELD", "LEGENDS"].includes(subject.zone.zone);
+    // Batch V46: an effect defeat inside a post-fight batch keeps the fight's own DEFEATED bindings valid.
+    // Batch V48: so does any later effect defeat inside a DEFEAT batch; the origin's own defeats are checked below.
+    if (b.kind === "WHEN_DEFEATED" && c.effectDefeats && origin.kind !== "DEFEAT") return false;
     if (b.delayedId || b.kind === "DELAYED_END_TURN") {
         const d = origin.kind === "END_TURN" && origin.delayedEffects?.find(d => d.id === b.delayedId);
         return Boolean(d && supportsDelayedAttackGear(r, context).ok && canonicalSerialize(b) === canonicalSerialize(delayedBinding(d)));
     }
     if (origin.kind === "END_TURN") return b.kind === "WHEN_OWN_TURN_ENDS" && (b.sourceId === b.subjectId || r?.type === "GEAR" && ability.inherited === "EQUIPPED_HOST" && supportsEndTurnCard(r, context).ok) && b.controllerId === origin.playerId && ability.conditions.every(c => testCondition(state, b.controllerId, c, context, b.subjectId));
     if (origin.kind === "FIGHT") return b.kind === "WHEN_FIGHT_WON" && b.subjectId === origin.result.winnerId && validFightFact(state, origin.result);
-    if (origin.kind === "DEFEAT") return b.kind === "WHEN_DEFEATED" && origin.defeated.some(d => d.targetId === b.subjectId) && !["BATTLEFIELD", "LEGENDS"].includes(subject.zone.zone);
+    if (origin.kind === "DEFEAT" && (b.gigInstanceId === undefined || !origin.fight)) return b.kind === "WHEN_DEFEATED" && origin.defeated.some(d => d.targetId === b.subjectId) && !["BATTLEFIELD", "LEGENDS"].includes(subject.zone.zone);
     if (origin.kind === "BLOCK") return b.kind === "WHEN_BLOCKER_USED" && b.sourceId === b.subjectId && b.subjectId === origin.subjectId && supportsTriggerCard(r, context).ok;
     // Batch V24: a steal trigger binding names one Gig its subject stole in this Steal Step; no other binding names a Gig.
-    if ((origin.kind === "STEAL") !== (b.gigInstanceId !== undefined)) return false;
-    if (origin.kind === "STEAL") return b.sourceId === b.subjectId && origin.gigInstanceIds.includes(b.gigInstanceId!) && supportsTriggerCard(r, context).ok
-        && (b.kind === "WHEN_GIG_STOLEN" ? b.subjectId === origin.subjectId
+    // Batch V47: an effect steal in a post-fight batch appends its steal bindings exactly as a Steal Step would.
+    const steal = origin.kind === "STEAL" ? origin : b.gigInstanceId !== undefined && origin.kind === "DEFEAT" && origin.fight ? c.effectSteals?.find(e => e.gigInstanceIds.includes(b.gigInstanceId!)) : undefined;
+    if (Boolean(steal) !== (b.gigInstanceId !== undefined)) return false;
+    if (steal) return b.sourceId === b.subjectId && steal.gigInstanceIds.includes(b.gigInstanceId!) && supportsTriggerCard(r, context).ok
+        && (b.kind === "WHEN_GIG_STOLEN" ? b.subjectId === steal.subjectId
             // Batch V26: a friendly field Unit observing a stolen d6.
-            : b.kind === "WHEN_FRIENDLY_UNIT_STEALS_GIG" && ability.guard === "STOLEN_GIG_IS_D6" && state.objects.gigs[b.gigInstanceId!]?.dieType === "D6" && subject.zone.zone === "BATTLEFIELD" && b.controllerId === state.objects.cards[origin.subjectId]?.controllerId
+            : b.kind === "WHEN_FRIENDLY_UNIT_STEALS_GIG" && ability.guard === "STOLEN_GIG_IS_D6" && state.objects.gigs[b.gigInstanceId!]?.dieType === "D6" && subject.zone.zone === "BATTLEFIELD" && b.controllerId === state.objects.cards[steal.subjectId]?.controllerId
             // Batch V40: a face-up friendly field or Legends-area source observing a stealing friendly Legend.
-            || b.kind === "WHEN_FRIENDLY_UNIT_STEALS_GIG" && ability.guard === "STEALER_IS_LEGEND" && stealerIsLegend(state, origin.subjectId, context) && ["BATTLEFIELD", "LEGENDS"].includes(subject.zone.zone) && b.controllerId === state.objects.cards[origin.subjectId]?.controllerId);
+            || b.kind === "WHEN_FRIENDLY_UNIT_STEALS_GIG" && ability.guard === "STEALER_IS_LEGEND" && stealerIsLegend(state, steal.subjectId, context) && ["BATTLEFIELD", "LEGENDS"].includes(subject.zone.zone) && b.controllerId === state.objects.cards[steal.subjectId]?.controllerId
+            // Batch V49: a friendly field Unit observing the turn's first below-power steal by another friendly Unit.
+            || b.kind === "WHEN_FRIENDLY_UNIT_STEALS_GIG" && ability.guard === "FIRST_OTHER_FRIENDLY_STEAL_BELOW_POWER_PER_TURN" && belowPowerStealFires(state, b.sourceId, steal.subjectId, b.gigInstanceId!) && subject.zone.zone === "BATTLEFIELD" && b.controllerId === state.objects.cards[steal.subjectId]?.controllerId);
+    if (origin.kind === "DEFEAT") return false;
     if (origin.kind === "ATTACK") {
         if (b.kind === "WHEN_UNIT_ATTACKS") return b.sourceId === b.subjectId && source.face === "UP" && source.zone.zone === "LEGENDS" && supportsFirstAttackLegend(r, context).ok && state.objects.cards[origin.subjectId]?.controllerId === b.controllerId && isFirstArasakaAttack(state, origin.subjectId, context);
         return b.kind === "WHEN_ATTACKING" && b.subjectId === origin.subjectId;
@@ -108,7 +136,27 @@ export function validateTriggerState(state: GameState, context: EngineContext) {
         if (canonicalSerialize(discoverTriggers(state, c.origin, context).map(b => canonicalSerialize(b)).sort()) !== canonicalSerialize(c.bindings.map(b => canonicalSerialize(b)).sort()))
             return failure("INVALID_TRIGGER_BATCH", "Every steal trigger must be captured once per stolen Gig");
     }
+    // Batch V46: a post-fight batch carries the historical fight and exactly the registrations it fired; only then may it hold no defeat.
+    if (c.origin.kind === "DEFEAT" && (c.origin.fight ? c.origin.effectSource || !validFightFact(state, c.origin.fight.result) || !validFightOutcomes(state, c.origin.fight.result, c.origin.fight.outcomes, context) || c.origin.fight.outcomes.some(o => !c.bindings.some(b => canonicalSerialize(b) === canonicalSerialize(fightOutcomeBinding(o)))) : !c.origin.defeated.length)) return failure("INVALID_FIGHT_OUTCOME", "A post-fight batch needs its historical fight and exactly the next-fight-outcome effects it fired");
     if (c.origin.kind === "DEFEAT" && (new Set(c.origin.defeated.map(d => d.targetId)).size !== c.origin.defeated.length || c.origin.defeated.some(d => !state.objects.cards[d.defeatedBy] || !state.objects.cards[d.targetId] || ["BATTLEFIELD", "LEGENDS"].includes(state.objects.cards[d.targetId].zone.zone)))) return failure("INVALID_DEFEATED_TRIGGER", "Defeat declaration and movement must precede the pending batch");
+    // Batch V47: an effect steal names the subject of a fired steal registration and one Gig it now controls; every steal
+    // binding of that Gig is captured once, as in a Steal Step.
+    if (c.effectSteals) {
+        const steals = c.effectSteals, gigIds = steals.map(e => e.gigInstanceIds[0]), origin = c.origin;
+        if (origin.kind !== "DEFEAT" || new Set(gigIds).size !== gigIds.length || steals.length > (origin.fight?.outcomes.filter(o => registration(state, o.effect, context)?.effect.kind === "STEAL_GIG").length ?? 0)
+            || steals.some(e => { const subject = state.objects.cards[e.subjectId], g = state.objects.gigs[e.gigInstanceIds[0]];
+                return !origin.fight?.outcomes.some(o => o.subjectId === e.subjectId && registration(state, o.effect, context)?.effect.kind === "STEAL_GIG") || !subject || !g || g.controllerId !== subject.controllerId || g.location.zone !== "GIGS" || g.roll.kind !== "ROLLED"; })
+            || canonicalSerialize(steals.flatMap(e => discoverTriggers(state, { kind: "STEAL", subjectId: e.subjectId, gigInstanceIds: [...e.gigInstanceIds] }, context)).map(b => canonicalSerialize(b)).sort()) !== canonicalSerialize(c.bindings.filter(b => b.gigInstanceId !== undefined).map(b => canonicalSerialize(b)).sort()))
+            return failure("INVALID_EFFECT_STEAL", "Each effect steal needs its fired registration, a distinct Gig its subject's controller now controls and every steal binding once");
+    }
+    // Batch V48: each effect play names a distinct Unit, played by an admitted free-play ability of this batch; a recorded
+    // first-blue-play ordinal is within its controller's count.
+    if (c.effectPlays) {
+        const ids = c.effectPlays.map(p => p.subjectId), plays = c.bindings.filter(b => cardRevision(state, b.sourceId, context)?.mechanics.abilities.find(a => a.id === b.abilityId)?.effects.some(e => e.kind === "PLAY_UNIT_FREE") && supportsFreePlayCard(cardRevision(state, b.sourceId, context), context).ok);
+        if (new Set(ids).size !== ids.length || ids.length > plays.length || ids.some(id => cardRevision(state, id, context)?.type !== "UNIT")
+            || c.effectPlays.some(p => p.qualifyingOrdinal !== undefined && (!cardRevision(state, p.subjectId, context)?.colors.includes("BLUE") || p.qualifyingOrdinal > (history?.blueUnitOrGearPlays[state.objects.cards[p.subjectId].ownerId] ?? 0))))
+            return failure("INVALID_EFFECT_PLAY", "Each effect play needs a distinct Unit and an admitted free-play ability in this batch");
+    }
     const effectDefeats = validateEffectDefeatFacts(state, context); if (!effectDefeats.ok) return effectDefeats;
     if (c.bindings.some(b => !validBinding(state, b, context))) return failure("INVALID_TRIGGER_SOURCE", "Immutable source, inherited subject, trigger-time controller and origin must match reviewed text");
     if (c.origin.kind === "ATTACK" && (firstAttackHistoryEnabled(context) || attackConditionPowerEnabled(context))) {
@@ -129,39 +177,45 @@ export function validateTriggerState(state: GameState, context: EngineContext) {
     const rivalHasResolved = c.resolvedIds.some(id => !activeIds.includes(id));
     if ((r.current && r.current.controllerId !== state.timing.activePlayer || rivalHasResolved) && activeIds.some(id => !c.resolvedIds.includes(id))) return failure("INVALID_TRIGGER_PRIORITY", "Turn player's pending effects precede the rival's");
     if (c.phase === "SELECT" ? Boolean(r.current) || nextTriggerGroup(state).length < 2 : !r.current) return failure("INVALID_TRIGGER_PHASE", "Ordering is strategic only with multiple eligible effects; effect choices require a current effect");
-    if (c.phase !== "SELECT" && (!r.current || !["DEFEAT_UNIT", "READY_EDDIES", "DISCARD_CARDS", "DECREASE_GIG_UP_TO", "ADJUST_GIG_UP_TO", "OPTIONAL_DECREASE_FRIENDLY_GIG_THEN_DRAW_IF_MIN", "LOOK_AT_FRIENDLY_FACE_DOWN_LEGEND", "POWER_UNTIL_END_OF_TURN", "SPEND_UNIT", "READY_UNIT", "RETURN_TRASH_UNIT_TO_HAND", "SEARCH_GEAR", "SEARCH_COST_MATCHING_GIGS", "TRASH_THEN_RETURN_PROGRAM", "GRANT_KEYWORD_UNTIL_END_OF_TURN", "PREVENT_UNIT_READY", "SWAP_GIGS", "READY_LEGENDS_UP_TO", "READY_UNITS_UP_TO", "SPEND_UNITS_PER_VALUE_PAIR", "DISCARD_PROGRAMS_THEN_BOTTOM_DECK", "STOLEN_GIG_PARITY_DRAW_OR_RIVAL_DISCARD", "CHOOSE_TYPE_REVEAL_TOP_ADD_AND_READY_EDDIE", "FORCE_RIVAL_UNIT_ATTACK"].includes(r.current.effect.kind))) return failure("INVALID_TRIGGER_PHASE", "Only reviewed adjustment/look/discard/ready/power/spend/trash-return primitives pause for choices");
+    if (c.phase !== "SELECT" && (!r.current || !["DEFEAT_UNIT", "READY_EDDIES", "DISCARD_CARDS", "DECREASE_GIG_UP_TO", "ADJUST_GIG_UP_TO", "OPTIONAL_DECREASE_FRIENDLY_GIG_THEN_DRAW_IF_MIN", "LOOK_AT_FRIENDLY_FACE_DOWN_LEGEND", "POWER_UNTIL_END_OF_TURN", "SPEND_UNIT", "READY_UNIT", "RETURN_TRASH_UNIT_TO_HAND", "PLAY_UNIT_FREE", "SEARCH_GEAR", "SEARCH_COST_MATCHING_GIGS", "TRASH_THEN_RETURN_PROGRAM", "GRANT_KEYWORD_UNTIL_END_OF_TURN", "PREVENT_UNIT_READY", "SWAP_GIGS", "READY_LEGENDS_UP_TO", "READY_UNITS_UP_TO", "SPEND_UNITS_PER_VALUE_PAIR", "DISCARD_PROGRAMS_THEN_BOTTOM_DECK", "STOLEN_GIG_PARITY_DRAW_OR_RIVAL_DISCARD", "CHOOSE_TYPE_REVEAL_TOP_ADD_AND_READY_EDDIE", "FORCE_RIVAL_UNIT_ATTACK", "STEAL_GIG"].includes(r.current.effect.kind))) return failure("INVALID_TRIGGER_PHASE", "Only reviewed adjustment/look/discard/ready/power/spend/trash-return primitives pause for choices");
+    // Batch V47: an effect steal pauses only for a Gig choice between at least two rival Gigs its fired subject may steal.
+    if (r.current?.effect.kind === "STEAL_GIG" && (c.phase !== "TARGET" || r.current.trigger?.kind !== "DELAYED_FIGHT_OUTCOME" || effectStealTargets(state, context).length < 2)) return failure("INVALID_EFFECT_STEAL", "An effect steal pauses only to choose among two or more stealable rival Gigs");
     // Batch V19: the reviewed [Attack] Gear search pauses only for its own looked-at cards (search-state owns the details).
     if (isSearchEffect(r.current?.effect) !== Boolean(r.searchContinuation) || r.current?.effect.kind === "SEARCH_GEAR" && (c.phase !== "TARGET" || c.origin.kind !== "ATTACK" || r.current.trigger?.kind !== "WHEN_ATTACKING" || !supportsAttackSearchUnit(cardRevision(state, r.current.sourceId!, context), context).ok)) return failure("INVALID_SEARCH_CONTINUATION", "Only the reviewed attack search pauses for its looked-at cards");
     // Batch V35: the pinned {Play} cost-matching search pauses only in its own PLAY batch.
-    if (r.current?.effect.kind === "SEARCH_COST_MATCHING_GIGS" && (c.phase !== "TARGET" || c.origin.kind !== "PLAY" || r.current.trigger?.kind !== "WHEN_PLAYED" || !supportsGigSearchUnit(cardRevision(state, r.current.sourceId!, context), context).ok)) return failure("INVALID_SEARCH_CONTINUATION", "Only the reviewed {Play} cost-matching search pauses for its looked-at cards");
+    if (r.current?.effect.kind === "SEARCH_COST_MATCHING_GIGS" && (c.phase !== "TARGET" || !isPlayedInBatch(c, r.current.trigger?.subjectId) || r.current.trigger?.kind !== "WHEN_PLAYED" || !supportsGigSearchUnit(cardRevision(state, r.current.sourceId!, context), context).ok)) return failure("INVALID_SEARCH_CONTINUATION", "Only the reviewed {Play} cost-matching search pauses for its looked-at cards");
     // Batch V20: the pinned {Play} trash-3 Program pick and Adrenaline grant pause only for their own strategic targets.
     const trashed = validateTrashProgramPause(state, context); if (!trashed.ok) return trashed;
     if (r.current?.effect.kind === "GRANT_KEYWORD_UNTIL_END_OF_TURN") {
         const source = r.current.sourceId ? state.objects.cards[r.current.sourceId] : undefined;
-        if (c.phase !== "TARGET" || c.origin.kind !== "PLAY" || r.current.trigger?.kind !== "WHEN_PLAYED" || r.current.primitiveIndex !== undefined || !source || source.face !== "UP" || source.zone.zone !== "BATTLEFIELD"
-            || c.origin.subjectId !== source.id || r.current.trigger.subjectId !== source.id || !supportsPinnedPlayUnit(cardRevision(state, source.id, context), context).ok || keywordGrantTargets(state, r.current, context).length < 2)
+        if (c.phase !== "TARGET" || !isPlayedInBatch(c, r.current.trigger?.subjectId) || r.current.trigger?.kind !== "WHEN_PLAYED" || r.current.primitiveIndex !== undefined || !source || source.face !== "UP" || source.zone.zone !== "BATTLEFIELD"
+            || r.current.trigger.subjectId !== source.id || !supportsPinnedPlayUnit(cardRevision(state, source.id, context), context).ok || keywordGrantTargets(state, r.current, context).length < 2)
             return failure("INVALID_KEYWORD_GRANT_CONTINUATION", "Only the reviewed {Play} Adrenaline grant pauses, for 2+ eligible friendly Units");
     }
     // Batch V22: the pinned {Play} ready lock pauses only after its condition held, for 2+ current rival Units.
     if (r.current?.effect.kind === "PREVENT_UNIT_READY") {
         const e = r.current.effect, source = r.current.sourceId ? state.objects.cards[r.current.sourceId] : undefined;
-        if (c.phase !== "TARGET" || c.origin.kind !== "PLAY" || r.current.trigger?.kind !== "WHEN_PLAYED" || r.current.primitiveIndex !== undefined || !source
-            || c.origin.subjectId !== source.id || r.current.trigger.subjectId !== source.id || !supportsPinnedPlayUnit(cardRevision(state, source.id, context), context).ok
+        if (c.phase !== "TARGET" || !isPlayedInBatch(c, r.current.trigger?.subjectId) || r.current.trigger?.kind !== "WHEN_PLAYED" || r.current.primitiveIndex !== undefined || !source
+            || r.current.trigger.subjectId !== source.id || !supportsPinnedPlayUnit(cardRevision(state, source.id, context), context).ok
             || e.when && !testCondition(state, r.current.controllerId, e.when.condition, context, source.id) || listSpendUnitTargets(state, r.current.controllerId, e.target, context).length < 2)
             return failure("INVALID_READY_LOCK_CONTINUATION", "Only the reviewed {Play} ready lock pauses, after its condition, for 2+ rival Units");
     }
     // Batch V13: the reviewed Unit DEFEATED trash return pauses only for its own target.
+    // Batch V48: a free play pauses only for a strategic choice among 2+ trash Units, inside its {Defeated} trigger.
+    // Batch V50: the optional {Play} free play pauses whenever it has a Unit to play, since declining is always a choice.
+    if (r.current?.effect.kind === "PLAY_UNIT_FREE" && (c.phase !== "TARGET" || r.current.trigger?.kind !== (r.current.effect.optional ? "WHEN_PLAYED" : "WHEN_DEFEATED") || r.current.primitiveIndex !== undefined || !supportsFreePlayCard(cardRevision(state, r.current.sourceId!, context), context).ok || freePlayTargets(state, context).length < (r.current.effect.optional ? 1 : 2)))
+        return failure("INVALID_FREE_PLAY_CONTINUATION", "Only a reviewed free play may pause, for a real choice among its Units");
     if (r.current?.effect.kind === "RETURN_TRASH_UNIT_TO_HAND" && (c.phase !== "TARGET" || c.origin.kind !== "DEFEAT" || r.current.trigger?.kind !== "WHEN_DEFEATED" || r.current.primitiveIndex !== undefined || !supportsTriggerCard(cardRevision(state, r.current.sourceId!, context), context).ok)) return failure("INVALID_TRASH_RETURN_CONTINUATION", "Only the reviewed DEFEATED trash return may pause for a trash Unit");
     // Batch V8: the Unit PLAY rival spend pauses only as its ordered second primitive; the
     // Legend ready pauses only in its own-turn end batch.
-    if (r.current?.effect.kind === "SPEND_UNIT" && (c.phase !== "TARGET" || c.origin.kind !== "PLAY" || r.current.trigger?.kind !== "WHEN_PLAYED" || r.current.primitiveIndex !== 1)) return failure("INVALID_SPEND_CONTINUATION", "Only the reviewed ordered PLAY spend may pause for a rival Unit");
+    if (r.current?.effect.kind === "SPEND_UNIT" && (c.phase !== "TARGET" || !isPlayedInBatch(c, r.current.trigger?.subjectId) || r.current.trigger?.kind !== "WHEN_PLAYED" || r.current.primitiveIndex !== 1)) return failure("INVALID_SPEND_CONTINUATION", "Only the reviewed ordered PLAY spend may pause for a rival Unit");
     // Batch V29: the value-pair Legend ready pauses only in its own attack batch, while its condition holds, holding at most one
     // already-readied Legend, with another eligible Legend still to choose.
     if (c.readiedLegends && r.current?.effect.kind !== "READY_LEGENDS_UP_TO") return failure("INVALID_READY_SELECTION", "Readied Legends belong only to the current tagged Legend ready");
     if (r.current?.effect.kind === "READY_LEGENDS_UP_TO") {
         const e = r.current.effect, source = r.current.sourceId ? state.objects.cards[r.current.sourceId] : undefined, all = taggedLegendReadyTargets(state, r.current.controllerId, e.tag, context);
         if (c.phase !== "TARGET" || c.origin.kind !== "ATTACK" || r.current.trigger?.kind !== "WHEN_ATTACKING" || r.current.primitiveIndex !== undefined || !source
-            || c.origin.subjectId !== source.id || r.current.trigger.subjectId !== source.id || !supportsTriggerCard(cardRevision(state, source.id, context), context).ok
+            || r.current.trigger.subjectId !== source.id || !supportsTriggerCard(cardRevision(state, source.id, context), context).ok
             || !testCondition(state, r.current.controllerId, e.when.condition, context, source.id)
             || (c.readiedLegends ?? []).some(id => !all.includes(id)) || (c.readiedLegends?.length ?? 0) >= e.maximum || !all.some(id => !c.readiedLegends?.includes(id)))
             return failure("INVALID_READY_LEGENDS_CONTINUATION", "Only the reviewed value-pair Legend ready pauses, with an eligible Legend left to choose");
@@ -181,8 +235,8 @@ export function validateTriggerState(state: GameState, context: EngineContext) {
     if (c.spendsRemaining !== undefined && r.current?.effect.kind !== "SPEND_UNITS_PER_VALUE_PAIR") return failure("INVALID_SPEND_COUNT", "Remaining spends belong only to the current per-value-pair spend");
     if (r.current?.effect.kind === "SPEND_UNITS_PER_VALUE_PAIR") {
         const source = r.current.sourceId ? state.objects.cards[r.current.sourceId] : undefined;
-        if (c.phase !== "TARGET" || c.origin.kind !== "PLAY" || r.current.trigger?.kind !== "WHEN_PLAYED" || r.current.primitiveIndex !== undefined || !source
-            || c.origin.subjectId !== source.id || r.current.trigger.subjectId !== source.id || !supportsTriggerCard(cardRevision(state, source.id, context), context).ok
+        if (c.phase !== "TARGET" || !isPlayedInBatch(c, r.current.trigger?.subjectId) || r.current.trigger?.kind !== "WHEN_PLAYED" || r.current.primitiveIndex !== undefined || !source
+            || r.current.trigger.subjectId !== source.id || !supportsTriggerCard(cardRevision(state, source.id, context), context).ok
             || !c.spendsRemaining || c.spendsRemaining > friendlyValuePairCount(state, r.current.controllerId) || listSpendUnitTargets(state, r.current.controllerId, r.current.effect.target, context).length < 2)
             return failure("INVALID_SPEND_CONTINUATION", "Only the reviewed per-value-pair PLAY spend pauses, with spends left, for 2+ rival Units");
     }
@@ -196,14 +250,14 @@ export function validateTriggerState(state: GameState, context: EngineContext) {
     if (r.current?.effect.kind === "POWER_UNTIL_END_OF_TURN") {
         const source = r.current.sourceId && state.objects.cards[r.current.sourceId];
         if (c.phase !== "TARGET" || r.current.effect.target.kind !== "FRIENDLY_UNIT" || r.current.effect.amount !== 2
-            || c.origin.kind !== "PLAY" || r.current.trigger?.kind !== "WHEN_PLAYED"
+            || !isPlayedInBatch(c, r.current.trigger?.subjectId) || r.current.trigger?.kind !== "WHEN_PLAYED"
             || !source || source.face !== "UP" || source.zone.zone !== "BATTLEFIELD"
-            || c.origin.subjectId !== source.id || r.current.trigger.subjectId !== source.id
+            || r.current.trigger.subjectId !== source.id
             || !supportsFriendlyPlayPowerUnit(cardRevision(state, source.id, context), context).ok)
             return failure("INVALID_POWER_CONTINUATION", "Only the reviewed friendly+2 PLAY trigger may pause for a Unit target");
     }
     // Batch V43: the {Play} must-attack obligation pauses only for its rival Unit, in its own PLAY batch.
-    if (r.current?.effect.kind === "FORCE_RIVAL_UNIT_ATTACK" && (c.phase !== "TARGET" || c.origin.kind !== "PLAY" || r.current.trigger?.kind !== "WHEN_PLAYED" || r.current.primitiveIndex !== undefined
+    if (r.current?.effect.kind === "FORCE_RIVAL_UNIT_ATTACK" && (c.phase !== "TARGET" || !isPlayedInBatch(c, r.current.trigger?.subjectId) || r.current.trigger?.kind !== "WHEN_PLAYED" || r.current.primitiveIndex !== undefined
         || !supportsMustAttackUnit(cardRevision(state, r.current.sourceId!, context), context).ok))
         return failure("INVALID_MUST_ATTACK_CONTINUATION", "Only the reviewed {Play} must-attack obligation pauses for a rival Unit");
     // Batch V42: the own-turn end type reveal pauses to name a type (with a card to reveal), then, once a matching card went to hand,
@@ -212,7 +266,7 @@ export function validateTriggerState(state: GameState, context: EngineContext) {
     if (typeReveal && (c.origin.kind !== "END_TURN" || r.current!.trigger?.kind !== "WHEN_OWN_TURN_ENDS" || r.current!.primitiveIndex !== undefined || !supportsTypeRevealUnit(cardRevision(state, r.current!.sourceId!, context), context).ok
         || (c.phase === "TARGET" ? c.conditionMet !== undefined || !state.players[r.current!.controllerId].zones.DECK.length : c.phase !== "READY" || c.conditionMet !== true || readyableEddieSlots(state, r.current!.controllerId).length < 2)))
         return failure("INVALID_TYPE_REVEAL_CONTINUATION", "The reviewed type reveal pauses only to name a type, then to ready one of several spent Eddies after a match");
-    if (!typeReveal && (c.phase === "READY" || r.current?.effect.kind === "READY_EDDIES") && (c.phase !== "READY" || r.current?.effect.kind !== "READY_EDDIES" || c.origin.kind !== "END_TURN")) return failure("INVALID_READY_CONTINUATION", "Ready choices require their pending end-turn ability");
+    if (!typeReveal && (c.phase === "READY" || r.current?.effect.kind === "READY_EDDIES") && (c.phase !== "READY" || r.current?.effect.kind !== "READY_EDDIES" || c.origin.kind !== "END_TURN" && r.current.trigger?.kind !== "WHEN_FRIENDLY_UNIT_STEALS_GIG")) return failure("INVALID_READY_CONTINUATION", "Ready choices require their pending end-turn or (Batch V49) friendly-steal ability");
     if (c.selectedEddieSlots && (c.phase !== "READY" || r.current?.effect.kind !== "READY_EDDIES" || r.current.effect.count !== 2 || c.selectedEddieSlots.some(slot => !readyableEddieSlots(state, r.current!.controllerId).includes(slot))))
         return failure("INVALID_READY_SELECTION", "Only a count2 ready choice may hold one still-spent public slot");
     if (c.phase === "READY" && r.current?.effect.kind === "READY_EDDIES") {
@@ -254,8 +308,8 @@ export function validateTriggerState(state: GameState, context: EngineContext) {
     // Batch V23: the pinned {Play} swap pauses to accept, then for its friendly Gig, then (holding that Gig) for the rival Gig.
     if (r.current?.effect.kind === "SWAP_GIGS") {
         const source = r.current.sourceId ? state.objects.cards[r.current.sourceId] : undefined, held = c.targetGigId ? state.objects.gigs[c.targetGigId] : undefined;
-        if (!(c.phase === "OPTIONAL" || c.phase === "TARGET") || c.origin.kind !== "PLAY" || r.current.trigger?.kind !== "WHEN_PLAYED" || r.current.primitiveIndex !== undefined || !source
-            || c.origin.subjectId !== source.id || r.current.trigger.subjectId !== source.id || !supportsPinnedPlayUnit(cardRevision(state, source.id, context), context).ok
+        if (!(c.phase === "OPTIONAL" || c.phase === "TARGET") || !isPlayedInBatch(c, r.current.trigger?.subjectId) || r.current.trigger?.kind !== "WHEN_PLAYED" || r.current.primitiveIndex !== undefined || !source
+            || r.current.trigger.subjectId !== source.id || !supportsPinnedPlayUnit(cardRevision(state, source.id, context), context).ok
             || !swapSidesAvailable(state, r.current.controllerId) || c.targetGigId && (c.phase !== "TARGET" || !held || held.controllerId !== r.current.controllerId || held.location.zone !== "GIGS" || held.roll.kind !== "ROLLED"))
             return failure("INVALID_GIG_SWAP_CONTINUATION", "Only the reviewed {Play} swap pauses, holding at most its chosen friendly Gig");
     }

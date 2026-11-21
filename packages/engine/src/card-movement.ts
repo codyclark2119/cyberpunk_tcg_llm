@@ -30,6 +30,7 @@ export function moveCardLocation(m: TurnMutation, id: CardInstanceId, zone: "BAT
     if (zone === "HAND") card.face = "DOWN";
     else card.face = "UP";
     if (zone !== "BATTLEFIELD") card.statuses = card.statuses.filter(status => status !== "LAG" && status !== "GO_SOLO");
+    card.statuses = card.statuses.filter(status => status !== "EFFECT_SOLD"); // Batch V45: the mark lives only in the Eddies area.
     m.emit({ kind: "CARD_MOVED", cardInstanceId: id, from, to: card.zone });
 }
 /** 4.12: one semantic transition. No external state is returned until host and Gear share FIELD. */

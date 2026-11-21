@@ -1,13 +1,14 @@
 import { processDeparture } from "./card-movement";
+import { isPlayedInBatch } from "./effect-play";
 import { applyMustAttack, mustAttackTargets } from "./must-attack";
 import { REVEAL_TYPES } from "./type-reveal-support";
 import { beginTargetedDefeat } from "./targeted-defeat";
+import { effectStealTargets, resolveEffectSteal } from "./fight-steal";
 import { resolveSpendTarget } from "./targeted-spend";
 import { listSpendUnitTargets } from "./targeted-spend-queries";
 import { isUnitSpendSubject, spendUnitForEffect } from "./unit-spend";
 import { friendlyUnitReadyTargets, readyCardForEffect, readyLegendTargets, stolenGigReadyTargets, taggedLegendReadyTargets } from "./ready-unit";
-import type { PendingEffect, DefeatInstruction } from "@tcg/domain";
-import { effectiveCardTypes } from "./characteristics";
+import type { PendingEffect, DefeatInstruction, GigInstanceId } from "@tcg/domain";
 import { registerEndTurnEffect } from "./delayed-effects";
 import { delayedSubjectTypes } from "./delayed-effects";
 import { supportsDelayedAttackGear } from "./delayed-effect-support";
@@ -37,13 +38,10 @@ import { discardingPlayer, discoverTriggers, pendingTrigger, stolenGigParity, sw
 import { moveCardLocation } from "./card-movement";
 import { discardProgram, handPrograms, programBottomDeckTargets } from "./program-discard";
 import { bottomDeck } from "./bottom-deck";
+import { bottomDeckSubject, freePlayTargets, recordQualifyingPlay, resolveFreePlay } from "./free-play";
 
 export function recordPlayedCard(m: TurnMutation, sourceId: CardInstanceId) {
-    const c = m.state.objects.cards[sourceId], r = cardRevision(m.state, sourceId, m.context)!;
-    if (r.colors.includes("BLUE") && effectiveCardTypes(m.state, sourceId, m.context).some(t => t === "UNIT" || t === "GEAR")) {
-        const ordinal = ++m.state.turnHistory!.blueUnitOrGearPlays[c.controllerId];
-        m.emit({ kind: "QUALIFYING_PLAY_RECORDED", playerId: c.controllerId, cardInstanceId: sourceId, ordinal });
-    }
+    recordQualifyingPlay(m, sourceId);
     return beginTriggers(m, { kind: "PLAY", subjectId: sourceId });
 }
 function resume(m: TurnMutation, origin: TriggerOrigin): Result<null> {
@@ -87,7 +85,7 @@ export function beginTriggers(m: TurnMutation, origin: TriggerOrigin, captured?:
 /** 10.14: append newly pending DEFEATED bindings to this batch; finish its current ability first. */
 export function appendDefeatedTriggers(m: TurnMutation, defeats: readonly DefeatInstruction[], captured: readonly TriggerBinding[]) {
     const c = m.state.resolution.triggerContinuation!;
-    c.effectDefeats = [...defeats];
+    c.effectDefeats = [...(c.effectDefeats ?? []), ...defeats];
     const sequence = m.state.match.eventSequence;
     for (const b of captured) {
         c.bindings.push(TriggerBindingSchema.parse(b));
@@ -103,6 +101,13 @@ function offer(m: TurnMutation): Result<null> {
     m.state.timing.step = step; m.state.timing.window = step;
     m.emit({ kind: "PHASE_CHANGED", step });
     return success(null);
+}
+/** Batch V47: a steal that ends the game keeps the resolved fact, as a swap does. */
+function finishEffectSteal(m: TurnMutation, gigId: GigInstanceId): Result<null> {
+    const effectId = m.state.resolution.current!.id, stolen = resolveEffectSteal(m, gigId);
+    if (!stolen.ok) return stolen;
+    if (m.state.match.outcome) { m.emit({ kind: "EFFECT_RESOLVED", effectId }); return success(null); }
+    return completed(m);
 }
 export function completed(m: TurnMutation): Result<null> {
     const current = m.state.resolution.current!, c = m.state.resolution.triggerContinuation!;
@@ -140,7 +145,7 @@ export function advanceTriggers(m: TurnMutation): Result<null> {
     const e = r.current.effect;
     if (e.kind === "POWER_UNTIL_END_OF_TURN" && e.target.kind === "FRIENDLY_UNIT") {
         if (e.amount !== 2 || !r.current.sourceId || r.current.trigger?.kind !== "WHEN_PLAYED"
-            || c.origin.kind !== "PLAY" || !supportsFriendlyPlayPowerUnit(cardRevision(m.state, r.current.sourceId, m.context), m.context).ok)
+            || !isPlayedInBatch(c, r.current.trigger?.subjectId) || !supportsFriendlyPlayPowerUnit(cardRevision(m.state, r.current.sourceId, m.context), m.context).ok)
             return failure("INVALID_POWER_SOURCE", "Friendly power requires its reviewed PLAY trigger");
         if (!friendlyPowerTargets(m.state, r.current.controllerId, m.context).length) return completed(m);
         c.phase = "TARGET"; return offer(m);
@@ -200,6 +205,11 @@ export function advanceTriggers(m: TurnMutation): Result<null> {
     if (e.kind === "RETURN_TRASH_UNIT_TO_HAND") {
         if (!trashUnitTargets(m.state, r.current, m.context).length) return completed(m);
         c.phase = "TARGET"; return offer(m);
+    }
+    // Batch V48: "Play another Unit with cost 9 or less from your trash for free. Then, bottom-deck this Unit."
+    if (e.kind === "PLAY_UNIT_FREE") {
+        if (freePlayTargets(m.state, m.context).length) { c.phase = "TARGET"; return offer(m); } // Batch V50: an optional play always offers its decline.
+        const done = bottomDeckSubject(m); return done.ok ? completed(m) : done;
     }
     if (e.kind === "REGISTER_END_TURN_EFFECT") { const result = registerEndTurnEffect(m); return result.ok ? completed(m) : result; }
     if (e.kind === "READY_EDDIES") {
@@ -269,6 +279,13 @@ export function advanceTriggers(m: TurnMutation): Result<null> {
         const current = r.current;
         if (e.when) { const met = testCondition(m.state, current.controllerId, e.when.condition, m.context, current.sourceId); m.emit({ kind: "CONDITION_EVALUATED", effectId: current.id, met }); if (!met) return completed(m); }
         if (!listSpendUnitTargets(m.state, current.controllerId, e.target, m.context).length) return completed(m);
+        c.phase = "TARGET"; return offer(m);
+    }
+    // Batch V47: "it also steals a Gig": one rival Gig is forced; several are the controller's choice; none does nothing.
+    if (e.kind === "STEAL_GIG") {
+        const targets = effectStealTargets(m.state, m.context);
+        if (targets.length === 1) return finishEffectSteal(m, targets[0]);
+        if (!targets.length) return completed(m);
         c.phase = "TARGET"; return offer(m);
     }
     // Batch V23: "[Play] You may swap a friendly Gig with a rival Gig." Offered only when both sides have a Gig to swap (6.7).
@@ -446,6 +463,12 @@ export function continueTrigger(m: TurnMutation, index: number, forced = false):
             moveCardLocation(m, option.cardInstanceId, "HAND");
             return completed(m);
         }
+        if (current.effect.kind === "PLAY_UNIT_FREE") {
+            if (option.kind === "CONFIRM" && !option.confirmed && current.effect.optional) { m.emit({ kind: "OPTIONAL_TRIGGER_DECLINED", effectId: current.id, controllerId: current.controllerId }); return completed(m); }
+            if (option.kind !== "CARD") return failure("INVALID_FREE_PLAY", "Choose an eligible Unit");
+            const played = resolveFreePlay(m, option.cardInstanceId, forced); if (!played.ok) return played;
+            const done = bottomDeckSubject(m); return done.ok ? completed(m) : done;
+        }
         if (current.effect.kind === "TRASH_THEN_RETURN_PROGRAM") {
             if (option.kind !== "CARD") return failure("INVALID_TRASH_TARGET", "Choose a Program among the trashed cards");
             const chosen = chooseTrashedProgram(m, option.cardInstanceId); return chosen.ok ? completed(m) : chosen;
@@ -474,6 +497,7 @@ export function continueTrigger(m: TurnMutation, index: number, forced = false):
             const learned = grantLegendKnowledge(m, current.controllerId, option.slot);
             return learned.ok ? completed(m) : learned;
         }
+        if (current.effect.kind === "STEAL_GIG") return option.kind === "GIG" ? finishEffectSteal(m, option.gigInstanceId) : failure("INVALID_EFFECT_STEAL", "Choose a rival Gig");
         if (option.kind !== "GIG" || !triggerGigTargets(m.state).includes(option.gigInstanceId)) return failure("INVALID_TRIGGER_TARGET", "Choose a currently valid Gig");
         if (current.effect.kind === "SWAP_GIGS") {
             m.emit({ kind: "GIG_TARGET_SELECTED", effectId: current.id, gigInstanceId: option.gigInstanceId });

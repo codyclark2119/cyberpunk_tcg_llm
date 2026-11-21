@@ -1,3 +1,4 @@
+import { recordArasakaDefeat } from "./arasaka-defeat";
 import { effectiveCardTypes } from "./characteristics";
 import { discoverTriggers } from "./trigger-queries";
 import { triggersEnabled, supportsTriggerCard } from "./trigger-support";
@@ -50,6 +51,7 @@ export function defeatCards(m: TurnMutation, defeats: readonly DefeatInstruction
         if (!m.state.objects.cards[d.defeatedBy] || !order || order.length !== batch.length || new Set(order).size !== batch.length || order.some(id => !batch.includes(id)))
             return failure("INVALID_DEFEAT_ORDER", "Exact owner order and existing defeat source required");
     }
+    if (triggersEnabled(m.context)) recordArasakaDefeat(m, defeats.map(d => d.targetId)); // Batch V50: before discovery and movement.
     const triggered = triggersEnabled(m.context) ? discoverTriggers(m.state, { kind: "DEFEAT", defeated: [...defeats] }, m.context) : [];
     for (const d of defeats) m.emit({ kind: "CARD_DEFEATED", cardInstanceId: d.targetId, defeatedBy: d.defeatedBy });
     for (const d of defeats) {

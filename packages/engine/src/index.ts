@@ -23,6 +23,7 @@ import { isReactDecision, reactEnabled } from "./react-support";
 import { declareBlocker, passReact } from "./rival-reactions";
 import { startAttack, continueAttack } from "./combat";
 import { canPlay, canActivate } from "./play-support";
+import { activationPaymentAmount } from "./quick-activation-support";
 import { startPlay, continuePlay, activateAbility } from "./play";
 import { changeGigValue } from "./gig-value";
 import { continueSearch } from "./effects";
@@ -53,9 +54,13 @@ function hasEnumerableResolution(state: GameState, context: EngineContext) {
 function chooseEachOption(actor: PlayerId, choice: NonNullable<GameState["resolution"]["choice"]>, actions: GameAction[]) {
     choice.options.forEach((_, index) => actions.push({ actorId: actor, action: { kind: "CHOOSE", choiceId: choice.id, optionIndices: [index] } }));
 }
-function pushReactActions(view: RulesView, actor: PlayerId, actions: GameAction[]) {
+function pushReactActions(state: GameState, context: EngineContext, view: RulesView, actor: PlayerId, actions: GameAction[]) {
     for (const c of view.faceDownLegends(actor)) if (view.canCallLegend(actor, c.id)) actions.push({ actorId: actor, action: { kind: "CALL_LEGEND", cardInstanceId: c.id } });
     for (const cardInstanceId of view.listQuickCards(actor)) actions.push({ actorId: actor, action: { kind: "PLAY_CARD", cardInstanceId } });
+    // Batch V49 (11.30.2): a field Unit's Quick activation, in card id then printed order.
+    for (const id of [...state.players[actor].zones.BATTLEFIELD].sort())
+        for (const ability of view.getRevision(id)?.mechanics.abilities ?? [])
+            if (ability.activation?.timing === "QUICK" && canActivate(state, actor, id, ability.id, context)) actions.push({ actorId: actor, action: { kind: "ACTIVATE_ABILITY", sourceInstanceId: id, abilityId: ability.id } });
     for (const cardInstanceId of view.listBlockers(actor)) actions.push({ actorId: actor, action: { kind: "DECLARE_BLOCKER", cardInstanceId } });
     actions.push({ actorId: actor, action: { kind: "PASS_REACT" } });
 }
@@ -95,7 +100,7 @@ function enumerateActions(state: GameState, actor: PlayerId, context: EngineCont
         chooseEachOption(actor, choice, actions);
     }
     else if (isReactDecision(state, actor, context))
-        pushReactActions(view, actor, actions);
+        pushReactActions(state, context, view, actor, actions);
     else if (state.timing.window === "MAIN")
         pushMainActions(state, actor, context, view, actions);
     return success(actions);
@@ -107,7 +112,11 @@ function describeAction(a: GameAction, state: GameState, actor: PlayerId, view: 
         case "DECLARE_ATTACK": return `Attack with ${view.getRevision(a.action.cardInstanceId)?.displayName}`;
         case "GO_SOLO": return `Go Solo with ${view.getRevision(a.action.cardInstanceId)?.displayName}`;
         case "PLAY_CARD": return `Play ${view.getRevision(a.action.cardInstanceId)?.displayName}`;
-        case "ACTIVATE_ABILITY": return `Activate ${view.getRevision(a.action.sourceInstanceId)?.displayName}: Spend to draw 2`;
+        case "ACTIVATE_ABILITY": {
+            const r = view.getRevision(a.action.sourceInstanceId), ability = r?.mechanics.abilities.find(x => x.id === (a.action.kind === "ACTIVATE_ABILITY" ? a.action.abilityId : ""));
+            // Batch V49: the paid Quick activation; Kerry's label is unchanged.
+            return ability?.activation?.timing === "QUICK" ? `Activate ${r?.displayName}: Pay ${activationPaymentAmount(ability)} and spend to make a rival Unit lose this Unit's power` : `Activate ${r?.displayName}: Spend to draw 2`;
+        }
         case "SELL_CARD": return `Sell ${view.getRevision(a.action.cardInstanceId)?.displayName}`;
         case "CALL_LEGEND": return `Call face-down Legend ${state.players[actor].zones.LEGENDS.indexOf(a.action.cardInstanceId) + 1}`;
         case "ROLL_GIG": return `Roll ${view.getGig(a.action.gigInstanceId).dieType}`;

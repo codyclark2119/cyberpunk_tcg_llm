@@ -1,4 +1,5 @@
 import { canonicalSerialize, failure, success, type CardInstanceId, type GameState, type GigInstanceState, type GigStealRestriction, type PendingEffect, type PlayerId, type Result, type TemporaryKeywordGrant } from "@tcg/domain";
+import { isPlayedInBatch } from "./effect-play";
 import type { EngineContext } from "./state";
 import type { TurnMutation } from "./turn";
 import { cardRevision, effectiveCardTypes, effectivePower } from "./characteristics";
@@ -43,7 +44,7 @@ export function validateTrashProgramPause(state: GameState, context: EngineConte
     const r = state.resolution, c = r.triggerContinuation, current = r.current, ids = c?.trashedIds ?? [];
     if (current?.effect.kind !== "TRASH_THEN_RETURN_PROGRAM") return c?.trashedIds ? failure("INVALID_TRASH_RETURN", "Trashed cards belong only to the current trash-return primitive") : success(null);
     const source = current.sourceId ? state.objects.cards[current.sourceId] : undefined, trash = state.players[current.controllerId].zones.TRASH;
-    if (!c || c.phase !== "TARGET" || c.origin.kind !== "PLAY" || current.trigger?.kind !== "WHEN_PLAYED" || current.primitiveIndex !== undefined || !source || c.origin.subjectId !== source.id
+    if (!c || c.phase !== "TARGET" || !isPlayedInBatch(c, source?.id) || current.trigger?.kind !== "WHEN_PLAYED" || current.primitiveIndex !== undefined || !source || current.trigger.subjectId !== source.id
         || !supportsPinnedPlayUnit(cardRevision(state, source.id, context), context).ok || !ids.length || ids.length > current.effect.count
         || (ids.length < current.effect.count && state.players[current.controllerId].zones.DECK.length) || canonicalSerialize(trash.slice(-ids.length)) !== canonicalSerialize(ids)
         || ids.some(id => state.objects.cards[id].ownerId !== current.controllerId) || trashedProgramTargets(state, context).length < 2 || state.timing.step !== "TARGET_SELECTION")
@@ -152,7 +153,9 @@ export function validateStealRestrictions(state: GameState, context: EngineConte
         const source = state.objects.cards[x.sourceId], r = cardRevision(state, x.sourceId, context), a = r?.mechanics.abilities.find(a => a.id === x.origin.abilityId), effect = a?.effects[0];
         const age = turn - x.createdTurn, active = state.timing.activePlayer === x.protectedPlayerId;
         if (!source || !r || !a || !state.players[x.protectedPlayerId] || !supportsPinnedPlayUnit(r, context).ok || a.trigger !== "WHEN_PLAYED" || effect?.kind !== "RESTRICT_RIVAL_GIG_STEAL" || effect.actor !== x.actor || effect.forbidden !== x.forbidden
-            || !(age === 0 && active || age === 1 && !active || age === 2 && active && (state.timing.step === "TURN_START" || state.match.outcome))
+            // Batch V48: a Unit an effect plays on the rival's turn creates it there; it still ends at its controller's next turn start.
+            || !((age % 2 === 0) === active ? age === 0 && active || age === 1 && !active || age === 2 && active && (state.timing.step === "TURN_START" || state.match.outcome)
+                : age === 0 && !active || age === 1 && active && (state.timing.step === "TURN_START" || state.match.outcome))
             || x.origin.effectId !== triggerId({ ...state, timing: { ...state.timing, turn: x.createdTurn } }, { sourceId: source.id, subjectId: source.id, source: { cardId: r.id, revision: r.revision }, controllerId: x.protectedPlayerId, abilityId: a.id, kind: "WHEN_PLAYED" }, x.origin.ordinal)
             || age === 0 && (x.origin.ordinal > (state.turnHistory?.triggeredBatches ?? 0) || continuation?.ordinal === x.origin.ordinal && !continuation.resolvedIds.includes(x.origin.effectId)))
             return failure("INVALID_STEAL_RESTRICTION", "A restriction needs its resolved PLAY occurrence and must end at its controller's next turn start");

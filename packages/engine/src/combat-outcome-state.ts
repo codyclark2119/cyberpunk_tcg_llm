@@ -1,3 +1,4 @@
+import { validFightOutcomes } from "./fight-outcome";
 import { validFightFact } from "./trigger-state";
 import { triggersEnabled } from "./trigger-support";
 import { appliedFightPreventions, preventFightDefeats } from "./fight-prevention";
@@ -33,6 +34,8 @@ export function validateCombatOutcome(state: GameState, context: EngineContext) 
             if (effectivePower(state, id, context) === null) return failure("INVALID_FIGHT_POWER", "Numeric power required");
         }
         if (continuation.fightResult && (!triggersEnabled(context) || !validFightFact(state, continuation.fightResult))) return failure("INVALID_FIGHT_FACT", "Historical fight result must be coherent and in the reviewed scope");
+        // Batch V46: next-fight-outcome effects this fight fired wait here for the owner order, then join the post-fight batch.
+        if (continuation.fightOutcomes && (!continuation.fightResult || !validFightOutcomes(state, continuation.fightResult, continuation.fightOutcomes, context))) return failure("INVALID_FIGHT_OUTCOME", "Fired effects need their historical fight and must be exactly what it fired");
         const raw = continuation.fightResult ? defeatsFromFightResult(state, context, continuation.fightResult) : evaluateFight(state, context).defeats, expected = preventFightDefeats(state, raw, appliedFightPreventions(state));
         if (appliedFightPreventions(state).length && canonicalSerialize(raw) === canonicalSerialize(expected)) return failure("INVALID_APPLIED_PREVENTION", "Consumed proof is retained only for an actually prevented defeat during owner ordering");
         if (canonicalSerialize(continuation.defeats) !== canonicalSerialize(expected) || canonicalSerialize(continuation.orders.map(o => o.targetId)) !== canonicalSerialize(expected.map(d => d.targetId))) return failure("INVALID_DEFEAT_CONTINUATION", "Defeats and orders must match the current authoritative fight result");

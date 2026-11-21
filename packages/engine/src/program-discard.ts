@@ -1,4 +1,5 @@
 import { failure, success, type CardInstanceId, type GameState, type PendingEffect, type PlayerId, type Result } from "@tcg/domain";
+import { isPlayedInBatch } from "./effect-play";
 import type { EngineContext } from "./state";
 import type { TurnMutation } from "./turn";
 import { cardRevision } from "./characteristics";
@@ -29,8 +30,8 @@ export function discardProgram(m: TurnMutation, current: PendingEffect, cardInst
  * Program discarded and held as proof, for 2+ rival Units to bottom-deck. */
 export function validateProgramDiscard(state: GameState, context: EngineContext): Result<null> {
     const r = state.resolution, c = r.triggerContinuation!, e = r.current!, effect = e.effect, held = c.discardedPrograms ?? [];
-    const source = e.sourceId ? state.objects.cards[e.sourceId] : undefined, subject = "subjectId" in c.origin ? c.origin.subjectId : undefined;
-    const origin = c.origin.kind === "PLAY" && e.trigger?.kind === "WHEN_PLAYED" || c.origin.kind === "ATTACK" && e.trigger?.kind === "WHEN_ATTACKING";
+    const source = e.sourceId ? state.objects.cards[e.sourceId] : undefined, subject = e.trigger?.kind === "WHEN_PLAYED" && isPlayedInBatch(c, e.trigger.subjectId) ? e.trigger.subjectId : "subjectId" in c.origin ? c.origin.subjectId : undefined;
+    const origin = isPlayedInBatch(c, e.trigger?.subjectId) && e.trigger?.kind === "WHEN_PLAYED" || c.origin.kind === "ATTACK" && e.trigger?.kind === "WHEN_ATTACKING";
     if (effect.kind !== "DISCARD_PROGRAMS_THEN_BOTTOM_DECK" || !origin || e.primitiveIndex !== undefined || !source || subject !== source.id || e.trigger?.subjectId !== source.id
         || !supportsProgramDiscardUnit(cardRevision(state, source.id, context), context).ok || new Set(held).size !== held.length
         || held.some(id => { const x = state.objects.cards[id]; return !x || x.zone.zone !== "TRASH" || x.ownerId !== e.controllerId || cardRevision(state, id, context)?.type !== "PROGRAM"; })

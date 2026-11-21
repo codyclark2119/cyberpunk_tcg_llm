@@ -174,8 +174,8 @@ for (const card of targetedCards) for (const defect of ["policy","scope","status
     if(defect === "unreviewed")changed.provenance.reviewed=false;
     if(defect === "extra-effect")a.effects.push({kind:"DRAW",count:1});
     if(defect === "missing-effect")a.effects=[];
-    if(defect === "relationship" && a.effects[0].kind === "DEFEAT_UNIT")a.effects[0].target.relation=changed.type === "UNIT"?"ANY":"RIVAL";
-    if(defect === "filter" && a.effects[0].kind === "DEFEAT_UNIT")a.effects[0].target.power=changed.type === "UNIT"?{kind:"CONTROLLED_GIG_VALUE",dieType:"D20"}:{kind:"AT_MOST",value:5};
+    if(defect === "relationship" && a.effects[0].kind === "DEFEAT_UNIT" && a.effects[0].target.kind !== "OPPOSING_UNIT")a.effects[0].target.relation=changed.type === "UNIT"?"ANY":"RIVAL";
+    if(defect === "filter" && a.effects[0].kind === "DEFEAT_UNIT" && a.effects[0].target.kind !== "OPPOSING_UNIT")a.effects[0].target.power=changed.type === "UNIT"?{kind:"CONTROLLED_GIG_VALUE",dieType:"D20"}:{kind:"AT_MOST",value:5};
     if(defect === "condition" && a.effects[0].kind === "DEFEAT_UNIT"){ if(changed.type === "UNIT")delete a.effects[0].when; else a.effects[0].when={timing:"RESOLUTION",condition:{kind:"STREET_CRED_GREATER_THAN_RIVAL"}}; }
     if(defect === "trigger")a.trigger="WHEN_ATTACKING";
     if(defect === "activation")a.activation={timing:"MAIN",conditionTiming:"ACTIVATION_AND_RESOLUTION",costs:[{kind:"SPEND_SOURCE"}]};

@@ -9,12 +9,12 @@
   },
   "totals": {
     "cards": 151,
-    "admitted": 92,
-    "notAdmitted": 59,
+    "admitted": 99,
+    "notAdmitted": 52,
     "notAdmittedOnlyCoveredFamilies": 0,
     "byAdmission": {
-      "NOT_ADMITTED": 59,
-      "SOURCE_MATCH": 92
+      "NOT_ADMITTED": 52,
+      "SOURCE_MATCH": 99
     }
   },
   "families": [
@@ -24,7 +24,7 @@
       "summary": "Generic target filters and board conditions: classification, cost, power, ready/spent, equipped, face-up, named, lowest power.",
       "notes": "Documented as unsupported: generic condition/filter language. Each admitted filter is a literal.",
       "cardCount": 34,
-      "notAdmittedCount": 19,
+      "notAdmittedCount": 17,
       "soleBlockerCount": 0
     },
     {
@@ -33,16 +33,7 @@
       "summary": "Draw cards, fixed or conditional.",
       "notes": "Routed. Variable counts need SCALED_AMOUNT; 'may draw' needs an optional prompt.",
       "cardCount": 38,
-      "notAdmittedCount": 19,
-      "soleBlockerCount": 0
-    },
-    {
-      "family": "CONDITION_GIG",
-      "status": "PARTIAL",
-      "summary": "Conditions and filters on Gig values: min/max, value-pairs, even/odd, 8+, die type, counts compared with a Rival.",
-      "notes": "Conditions only, each a fixed shape.",
-      "cardCount": 40,
-      "notAdmittedCount": 16,
+      "notAdmittedCount": 17,
       "soleBlockerCount": 0
     },
     {
@@ -51,7 +42,16 @@
       "summary": "Activated abilities with a [Spend] cost (and optional Eddie cost) on Legends, Units or Gear.",
       "notes": "Admitted only for Kerry: The Last Rockerboy (a Unit). Face-up Legend [Spend] abilities and Gear [Spend] abilities are not.",
       "cardCount": 17,
-      "notAdmittedCount": 16,
+      "notAdmittedCount": 15,
+      "soleBlockerCount": 0
+    },
+    {
+      "family": "CONDITION_GIG",
+      "status": "PARTIAL",
+      "summary": "Conditions and filters on Gig values: min/max, value-pairs, even/odd, 8+, die type, counts compared with a Rival.",
+      "notes": "Conditions only, each a fixed shape.",
+      "cardCount": 40,
+      "notAdmittedCount": 13,
       "soleBlockerCount": 0
     },
     {
@@ -60,7 +60,7 @@
       "summary": "Equip a Gear to a friendly Unit or face-up Legend; Gear power adds to its host.",
       "notes": "Equip onto Units is supported for the admitted Gear. Gear on a Legend host in combat (a Go Solo Legend) is unsupported.",
       "cardCount": 22,
-      "notAdmittedCount": 13,
+      "notAdmittedCount": 12,
       "soleBlockerCount": 0
     },
     {
@@ -69,25 +69,7 @@
       "summary": "Power or keyword changes 'this turn' on a chosen Unit.",
       "notes": "Fixed amounts on RIVAL_UNIT, SOURCE_SUBJECT or FRIENDLY_UNIT. Keyword grants, all-Unit and filtered targets are missing.",
       "cardCount": 19,
-      "notAdmittedCount": 13,
-      "soleBlockerCount": 0
-    },
-    {
-      "family": "KEYWORD_QUICK",
-      "status": "PARTIAL",
-      "summary": "[Quick] timing: Programs and activated abilities usable in the react window.",
-      "notes": "Quick Programs are supported for Floor It, Reboot Optics and Detonate. Quick activated [Spend] abilities on Legends, Units and Gear are not offered in any react window yet.",
-      "cardCount": 12,
-      "notAdmittedCount": 9,
-      "soleBlockerCount": 0
-    },
-    {
-      "family": "PLAY_BY_EFFECT",
-      "status": "MISSING",
-      "summary": "Play a card by an effect: from hand, trash or deck top, for free or for its cost, with after-play riders.",
-      "notes": "",
-      "cardCount": 9,
-      "notAdmittedCount": 9,
+      "notAdmittedCount": 11,
       "soleBlockerCount": 0
     },
     {
@@ -96,25 +78,7 @@
       "summary": "Who may attack what and when: can't attack, may attack ready/spent Units, must attack, can't be blocked.",
       "notes": "Restrictions on the card itself are supported; permissions granted by effects, forced attacks and off-turn timing are not.",
       "cardCount": 16,
-      "notAdmittedCount": 8,
-      "soleBlockerCount": 0
-    },
-    {
-      "family": "MODAL_CHOICE",
-      "status": "MISSING",
-      "summary": "'Choose one effect' (and 'choose both instead' upgrades).",
-      "notes": "PendingChoice MODE exists for setup, search and Gig steps, but no ability carries modes.",
-      "cardCount": 8,
-      "notAdmittedCount": 8,
-      "soleBlockerCount": 0
-    },
-    {
-      "family": "SCALED_AMOUNT",
-      "status": "PARTIAL",
-      "summary": "Amounts computed from the board: 'for each', 'equal to'.",
-      "notes": "Only Royce's per-equipped-Gear modifier counts anything.",
-      "cardCount": 18,
-      "notAdmittedCount": 8,
+      "notAdmittedCount": 7,
       "soleBlockerCount": 0
     },
     {
@@ -127,20 +91,38 @@
       "soleBlockerCount": 0
     },
     {
-      "family": "DURATION_DELAYED",
+      "family": "KEYWORD_QUICK",
       "status": "PARTIAL",
-      "summary": "Lasting and delayed effects: 'until your next turn', 'next time ... this turn', 'at the end of this turn'.",
-      "notes": "",
-      "cardCount": 14,
+      "summary": "[Quick] timing: Programs and activated abilities usable in the react window.",
+      "notes": "Quick Programs are supported for Floor It, Reboot Optics and Detonate. Quick activated [Spend] abilities on Legends, Units and Gear are not offered in any react window yet.",
+      "cardCount": 12,
       "notAdmittedCount": 7,
       "soleBlockerCount": 0
     },
     {
-      "family": "TURN_HISTORY",
+      "family": "MODAL_CHOICE",
+      "status": "MISSING",
+      "summary": "'Choose one effect' (and 'choose both instead' upgrades).",
+      "notes": "PendingChoice MODE exists for setup, search and Gig steps, but no ability carries modes.",
+      "cardCount": 8,
+      "notAdmittedCount": 7,
+      "soleBlockerCount": 0
+    },
+    {
+      "family": "PLAY_BY_EFFECT",
+      "status": "MISSING",
+      "summary": "Play a card by an effect: from hand, trash or deck top, for free or for its cost, with after-play riders.",
+      "notes": "",
+      "cardCount": 9,
+      "notAdmittedCount": 7,
+      "soleBlockerCount": 0
+    },
+    {
+      "family": "SCALED_AMOUNT",
       "status": "PARTIAL",
-      "summary": "'First time each turn', 'this turn you played', 'if it stole or fought this turn'.",
-      "notes": "Guards FIRST_BLUE_UNIT_OR_GEAR_PLAY_PER_TURN and FIRST_FRIENDLY_ARASAKA_UNIT_ATTACK_PER_TURN.",
-      "cardCount": 11,
+      "summary": "Amounts computed from the board: 'for each', 'equal to'.",
+      "notes": "Only Royce's per-equipped-Gear modifier counts anything.",
+      "cardCount": 18,
       "notAdmittedCount": 7,
       "soleBlockerCount": 0
     },
@@ -181,11 +163,11 @@
       "soleBlockerCount": 0
     },
     {
-      "family": "EDDIE_ECONOMY",
+      "family": "DURATION_DELAYED",
       "status": "PARTIAL",
-      "summary": "Ready Eddies, sell cards from unusual zones, pay Eddies during resolution.",
-      "notes": "READY_EDDIES (controller, 1 or 2) only.",
-      "cardCount": 8,
+      "summary": "Lasting and delayed effects: 'until your next turn', 'next time ... this turn', 'at the end of this turn'.",
+      "notes": "",
+      "cardCount": 14,
       "notAdmittedCount": 5,
       "soleBlockerCount": 0
     },
@@ -208,38 +190,11 @@
       "soleBlockerCount": 0
     },
     {
-      "family": "STEAL_CONTROL",
-      "status": "MISSING",
-      "summary": "Gig control outside the ordinary attack steal: swap, extra steal, steal fewer, steal prevention.",
-      "notes": "Documented as unsupported (control transfer / steal).",
-      "cardCount": 8,
-      "notAdmittedCount": 5,
-      "soleBlockerCount": 0
-    },
-    {
-      "family": "TRIGGER_PLAY",
+      "family": "TURN_HISTORY",
       "status": "PARTIAL",
-      "summary": "[Play] abilities and Program bodies resolving when played.",
-      "notes": "Trigger WHEN_PLAYED.",
-      "cardCount": 27,
-      "notAdmittedCount": 5,
-      "soleBlockerCount": 0
-    },
-    {
-      "family": "UNIT_DEFEAT",
-      "status": "PARTIAL",
-      "summary": "Defeat a Unit or Gear chosen with a filter.",
-      "notes": "Filters are fixed literals (power at most 5, power at most a friendly d20, Gear power at most 2).",
-      "cardCount": 18,
-      "notAdmittedCount": 5,
-      "soleBlockerCount": 0
-    },
-    {
-      "family": "UNIT_ZONE_MOVE",
-      "status": "MISSING",
-      "summary": "Move a Unit off the field other than defeat: bottom-deck it or return it to hand.",
-      "notes": "MOVE_CARD is schema-only with no handler.",
-      "cardCount": 10,
+      "summary": "'First time each turn', 'this turn you played', 'if it stole or fought this turn'.",
+      "notes": "Guards FIRST_BLUE_UNIT_OR_GEAR_PLAY_PER_TURN and FIRST_FRIENDLY_ARASAKA_UNIT_ATTACK_PER_TURN.",
+      "cardCount": 11,
       "notAdmittedCount": 5,
       "soleBlockerCount": 0
     },
@@ -271,6 +226,15 @@
       "soleBlockerCount": 0
     },
     {
+      "family": "STEAL_CONTROL",
+      "status": "MISSING",
+      "summary": "Gig control outside the ordinary attack steal: swap, extra steal, steal fewer, steal prevention.",
+      "notes": "Documented as unsupported (control transfer / steal).",
+      "cardCount": 8,
+      "notAdmittedCount": 4,
+      "soleBlockerCount": 0
+    },
+    {
       "family": "TRASH_RECURSION",
       "status": "MISSING",
       "summary": "Return a card from the trash (or from cards just trashed) to hand.",
@@ -280,11 +244,20 @@
       "soleBlockerCount": 0
     },
     {
-      "family": "TRIGGER_FIGHT_RESULT",
+      "family": "TRIGGER_PLAY",
       "status": "PARTIAL",
-      "summary": "Triggers on winning or losing a fight, or winning by a margin.",
-      "notes": "Trigger WHEN_FIGHT_WON (Satori). Losing a fight and win margins are missing.",
-      "cardCount": 5,
+      "summary": "[Play] abilities and Program bodies resolving when played.",
+      "notes": "Trigger WHEN_PLAYED.",
+      "cardCount": 27,
+      "notAdmittedCount": 4,
+      "soleBlockerCount": 0
+    },
+    {
+      "family": "UNIT_DEFEAT",
+      "status": "PARTIAL",
+      "summary": "Defeat a Unit or Gear chosen with a filter.",
+      "notes": "Filters are fixed literals (power at most 5, power at most a friendly d20, Gear power at most 2).",
+      "cardCount": 18,
       "notAdmittedCount": 4,
       "soleBlockerCount": 0
     },
@@ -294,6 +267,15 @@
       "summary": "Conditions on Street Cred.",
       "notes": "Nearly complete as conditions; gating an effect mode on them is not.",
       "cardCount": 13,
+      "notAdmittedCount": 3,
+      "soleBlockerCount": 0
+    },
+    {
+      "family": "EDDIE_ECONOMY",
+      "status": "PARTIAL",
+      "summary": "Ready Eddies, sell cards from unusual zones, pay Eddies during resolution.",
+      "notes": "READY_EDDIES (controller, 1 or 2) only.",
+      "cardCount": 8,
       "notAdmittedCount": 3,
       "soleBlockerCount": 0
     },
@@ -325,20 +307,11 @@
       "soleBlockerCount": 0
     },
     {
-      "family": "TRIGGER_OTHER_EVENT",
+      "family": "UNIT_ZONE_MOVE",
       "status": "MISSING",
-      "summary": "Other event triggers: another friendly Unit defeated, a Rival adjusting or swapping friendly Gigs.",
-      "notes": "",
-      "cardCount": 3,
-      "notAdmittedCount": 3,
-      "soleBlockerCount": 0
-    },
-    {
-      "family": "TRIGGER_STEAL",
-      "status": "MISSING",
-      "summary": "Triggers when a Unit or Legend steals a Gig.",
-      "notes": "Only the history condition SUBJECT_STOLE_GIG_THIS_TURN exists (Delamain Cab); there is no steal trigger.",
-      "cardCount": 8,
+      "summary": "Move a Unit off the field other than defeat: bottom-deck it or return it to hand.",
+      "notes": "MOVE_CARD is schema-only with no handler.",
+      "cardCount": 10,
       "notAdmittedCount": 3,
       "soleBlockerCount": 0
     },
@@ -379,11 +352,29 @@
       "soleBlockerCount": 0
     },
     {
-      "family": "TRIGGER_DEFEATED",
+      "family": "TRIGGER_FIGHT_RESULT",
       "status": "PARTIAL",
-      "summary": "[Defeated] abilities.",
-      "notes": "Trigger WHEN_DEFEATED, admitted only for Dexter: One Last Chance.",
-      "cardCount": 7,
+      "summary": "Triggers on winning or losing a fight, or winning by a margin.",
+      "notes": "Trigger WHEN_FIGHT_WON (Satori). Losing a fight and win margins are missing.",
+      "cardCount": 5,
+      "notAdmittedCount": 2,
+      "soleBlockerCount": 0
+    },
+    {
+      "family": "TRIGGER_OTHER_EVENT",
+      "status": "MISSING",
+      "summary": "Other event triggers: another friendly Unit defeated, a Rival adjusting or swapping friendly Gigs.",
+      "notes": "",
+      "cardCount": 3,
+      "notAdmittedCount": 2,
+      "soleBlockerCount": 0
+    },
+    {
+      "family": "TRIGGER_STEAL",
+      "status": "MISSING",
+      "summary": "Triggers when a Unit or Legend steals a Gig.",
+      "notes": "Only the history condition SUBJECT_STOLE_GIG_THIS_TURN exists (Delamain Cab); there is no steal trigger.",
+      "cardCount": 8,
       "notAdmittedCount": 2,
       "soleBlockerCount": 0
     },
@@ -420,6 +411,15 @@
       "summary": "'When you play a <filter> card' triggers.",
       "notes": "Trigger WHEN_CARD_PLAYED with guard FIRST_BLUE_UNIT_OR_GEAR_PLAY_PER_TURN (Jackie: Pour One Out).",
       "cardCount": 2,
+      "notAdmittedCount": 1,
+      "soleBlockerCount": 0
+    },
+    {
+      "family": "TRIGGER_DEFEATED",
+      "status": "PARTIAL",
+      "summary": "[Defeated] abilities.",
+      "notes": "Trigger WHEN_DEFEATED, admitted only for Dexter: One Last Chance.",
+      "cardCount": 7,
       "notAdmittedCount": 1,
       "soleBlockerCount": 0
     },
@@ -644,18 +644,14 @@
       "colors": [
         "RED"
       ],
-      "admission": "NOT_ADMITTED",
-      "revision": null,
+      "admission": "SOURCE_MATCH",
+      "revision": 1,
       "families": [
         "DURATION_DELAYED",
         "STEAL_CONTROL",
         "TRIGGER_FIGHT_RESULT"
       ],
-      "blockingFamilies": [
-        "DURATION_DELAYED",
-        "STEAL_CONTROL",
-        "TRIGGER_FIGHT_RESULT"
-      ],
+      "blockingFamilies": [],
       "note": null
     },
     {
@@ -723,18 +719,14 @@
       "colors": [
         "YELLOW"
       ],
-      "admission": "NOT_ADMITTED",
-      "revision": null,
+      "admission": "SOURCE_MATCH",
+      "revision": 1,
       "families": [
         "CONDITION_GIG",
         "DRAW",
         "EDDIE_ECONOMY"
       ],
-      "blockingFamilies": [
-        "CONDITION_GIG",
-        "DRAW",
-        "EDDIE_ECONOMY"
-      ],
+      "blockingFamilies": [],
       "note": null
     },
     {
@@ -2387,8 +2379,8 @@
       "colors": [
         "BLUE"
       ],
-      "admission": "NOT_ADMITTED",
-      "revision": null,
+      "admission": "SOURCE_MATCH",
+      "revision": 1,
       "families": [
         "CONDITION_BOARD",
         "CONDITION_GIG",
@@ -2396,13 +2388,7 @@
         "TEMPORARY_BUFF",
         "UNIT_ZONE_MOVE"
       ],
-      "blockingFamilies": [
-        "CONDITION_BOARD",
-        "CONDITION_GIG",
-        "MODAL_CHOICE",
-        "TEMPORARY_BUFF",
-        "UNIT_ZONE_MOVE"
-      ],
+      "blockingFamilies": [],
       "note": null
     },
     {
@@ -2570,8 +2556,8 @@
       "colors": [
         "BLUE"
       ],
-      "admission": "NOT_ADMITTED",
-      "revision": null,
+      "admission": "SOURCE_MATCH",
+      "revision": 1,
       "families": [
         "CONDITION_GIG",
         "EDDIE_ECONOMY",
@@ -2582,16 +2568,7 @@
         "TRIGGER_STEAL",
         "TURN_HISTORY"
       ],
-      "blockingFamilies": [
-        "CONDITION_GIG",
-        "EDDIE_ECONOMY",
-        "KEYWORD_QUICK",
-        "SCALED_AMOUNT",
-        "SPEND_ABILITY",
-        "TEMPORARY_BUFF",
-        "TRIGGER_STEAL",
-        "TURN_HISTORY"
-      ],
+      "blockingFamilies": [],
       "note": null
     },
     {
@@ -2666,20 +2643,15 @@
       "colors": [
         "YELLOW"
       ],
-      "admission": "NOT_ADMITTED",
-      "revision": null,
+      "admission": "SOURCE_MATCH",
+      "revision": 1,
       "families": [
         "DURATION_DELAYED",
         "KEYWORD_QUICK",
         "TRIGGER_FIGHT_RESULT",
         "UNIT_DEFEAT"
       ],
-      "blockingFamilies": [
-        "DURATION_DELAYED",
-        "KEYWORD_QUICK",
-        "TRIGGER_FIGHT_RESULT",
-        "UNIT_DEFEAT"
-      ],
+      "blockingFamilies": [],
       "note": null
     },
     {
@@ -2980,20 +2952,15 @@
       "colors": [
         "YELLOW"
       ],
-      "admission": "NOT_ADMITTED",
-      "revision": null,
+      "admission": "SOURCE_MATCH",
+      "revision": 1,
       "families": [
         "GEAR_EQUIP",
         "PLAY_BY_EFFECT",
         "TRIGGER_DEFEATED",
         "UNIT_ZONE_MOVE"
       ],
-      "blockingFamilies": [
-        "GEAR_EQUIP",
-        "PLAY_BY_EFFECT",
-        "TRIGGER_DEFEATED",
-        "UNIT_ZONE_MOVE"
-      ],
+      "blockingFamilies": [],
       "note": "No equip reminder text; 'this Unit' on a Gear. See rules questions Q1 and Q2."
     },
     {
@@ -3391,8 +3358,8 @@
       "colors": [
         "RED"
       ],
-      "admission": "NOT_ADMITTED",
-      "revision": null,
+      "admission": "SOURCE_MATCH",
+      "revision": 1,
       "families": [
         "ATTACK_PERMISSION",
         "CONDITION_BOARD",
@@ -3402,15 +3369,7 @@
         "TRIGGER_PLAY",
         "TURN_HISTORY"
       ],
-      "blockingFamilies": [
-        "ATTACK_PERMISSION",
-        "CONDITION_BOARD",
-        "DRAW",
-        "PLAY_BY_EFFECT",
-        "TRIGGER_OTHER_EVENT",
-        "TRIGGER_PLAY",
-        "TURN_HISTORY"
-      ],
+      "blockingFamilies": [],
       "note": null
     },
     {
