@@ -10,6 +10,9 @@ import { powerTargets } from "./react-queries";
 import { friendlyFieldUnits } from "./fight-power-grant";
 import { changeGigValue, gigSetSources } from "./gig-value";
 import { listSpendUnitTargets } from "./targeted-spend-queries";
+import { mustAttackTargets } from "./must-attack";
+import { activationPaymentAmount } from "./quick-activation-support";
+import { forcedPaymentSources, paymentValue } from "./payment";
 
 function rolledGigs(state: GameState, player: PlayerId, friendly: boolean) {
     return Object.values(state.objects.gigs).filter(g => g.location.zone === "GIGS" && g.roll.kind === "ROLLED" && (g.controllerId === player) === friendly).map(g => g.id).sort();
@@ -63,16 +66,23 @@ export function validateLegendActivationState(state: GameState, context: EngineC
     const called = ability?.trigger === "WHEN_CALLED" && Boolean(ability.choose), spend = ability?.activation?.timing === "MAIN" && !ability.trigger;
     const window = called ? r.returnTo?.kind === "MAIN" && state.timing.combat.stage === "NONE" && c.actorId === state.timing.activePlayer || r.returnTo?.kind === "RIVAL_REACT" && state.timing.combat.stage === "RIVAL_REACT" && c.actorId !== state.timing.combat.attackingPlayerId
         : r.returnTo?.kind === "MAIN" && state.timing.combat.stage === "NONE" && c.actorId === state.timing.activePlayer;
-    if (!supportsLegendSpendCard(revision, context).ok || !source || !ability || !(called || spend) || !window || c.remainingCost !== 0 || c.selectedSources.length || c.actorId !== state.timing.actingPlayer
+    const amount = activationPaymentAmount(ability);
+    if (!supportsLegendSpendCard(revision, context).ok || !source || !ability || !(called || spend) || !window || called && amount || c.actorId !== state.timing.actingPlayer
+        || new Set(c.selectedSources.map(p => p.cardInstanceId)).size !== c.selectedSources.length || c.selectedSources.reduce((n, p) => n + paymentValue(state, context, p), 0) + c.remainingCost !== amount
+        || c.selectedSources.some(p => { const paid = state.objects.cards[p.cardInstanceId]; return !paid || p.cardInstanceId === source?.id || paid.controllerId !== c.actorId || paid.zone.playerId !== c.actorId || paid.readiness !== "SPENT"; })
         || source.controllerId !== c.actorId || source.zone.playerId !== c.actorId || source.zone.zone !== "LEGENDS" || source.face !== "UP" || spend && source.readiness !== "SPENT"
         || state.setup || state.match.outcome || r.stage !== "CHOICE" || r.searchContinuation || r.callContinuation || r.triggerContinuation || r.legendEntryContinuation || r.targetedDefeatContinuation || r.defeatContinuation || r.gigStealContinuation || r.discovered.length
         || c.trashedIds || c.bottomDecked || Object.values(state.objects.cards).some(x => x.zone.zone === "RESOLVING_PROGRAM"))
         return failure("INVALID_LEGEND_ACTIVATION", "A paused Legend ability needs its face-up Legend (spent for {Spend}), its window and no other work");
-    if (c.phase === "MODE") {
+    if (c.phase === "PAYMENT") {
+        // Batch V63: a paid {Spend} pauses for its Eddie payment after the Legend is spent (it cannot pay for itself).
+        if (!spend || state.timing.step !== "PAYMENT_SELECTION" || c.remainingCost <= 0 || current || r.pending.length || c.effectIndex !== 0 || c.targetGigId || c.chosenEffect !== undefined || forcedPaymentSources(state, c.actorId, context, c.remainingCost, c.selectedSources))
+            return failure("INVALID_PLAY_PAYMENT", "A Legend's paid {Spend} pauses only for a strategic Eddie payment");
+    } else if (c.phase === "MODE") {
         if (!called || current || r.pending.length || c.chosenEffect !== undefined || c.effectIndex !== 0 || c.targetGigId || state.timing.step !== "TARGET_SELECTION") return failure("INVALID_LEGEND_ACTIVATION", "Only a Called Legend pauses for its mode");
     } else {
         const index = called ? c.chosenEffect : 0;
-        if (c.phase !== "EFFECT" || index === undefined || c.effectIndex !== index || called !== (c.chosenEffect !== undefined) || !current || current.id !== activationEffectId(state, c.actorId, c.sourceId, ability.id, index) || current.sourceId !== c.sourceId || current.controllerId !== c.actorId || current.trigger || current.primitiveIndex !== undefined
+        if (c.phase !== "EFFECT" || c.remainingCost !== 0 || index === undefined || c.effectIndex !== index || called !== (c.chosenEffect !== undefined) || !current || current.id !== activationEffectId(state, c.actorId, c.sourceId, ability.id, index) || current.sourceId !== c.sourceId || current.controllerId !== c.actorId || current.trigger || current.primitiveIndex !== undefined
             || canonicalSerialize(current.effect) !== canonicalSerialize(ability.effects[index]) || r.pending.length)
             return failure("INVALID_LEGEND_ACTIVATION", "A paused Legend effect must be its current printed or chosen effect");
         const e = current.effect;
@@ -83,6 +93,8 @@ export function validateLegendActivationState(state: GameState, context: EngineC
             if (c.targetGigId || state.timing.step !== "TARGET_SELECTION" || playPowerTargets(state, c.actorId, context).length < 2) return failure("INVALID_LEGEND_ACTIVATION", "A power mode pauses only for a strategic Unit choice");
         } else if (e.kind === "FIGHT_DEFEAT_IMMUNITY_THIS_TURN") {
             if (c.targetGigId || state.timing.step !== "TARGET_SELECTION" || friendlyFieldUnits(state, c.actorId, context).length < 2) return failure("INVALID_LEGEND_ACTIVATION", "An immunity mode pauses only for a strategic friendly-Unit choice");
+        } else if (e.kind === "FORCE_RIVAL_UNIT_ATTACK") {
+            if (c.targetGigId || state.timing.step !== "TARGET_SELECTION" || mustAttackTargets(state, c.actorId, context).length < 2) return failure("INVALID_LEGEND_ACTIVATION", "A must-attack pauses only for a strategic rival-Unit choice");
         } else if (e.kind === "SPEND_UNIT") {
             if (c.targetGigId || state.timing.step !== "TARGET_SELECTION" || listSpendUnitTargets(state, c.actorId, e.target, context).length < 2) return failure("INVALID_LEGEND_ACTIVATION", "A spend mode pauses only for a strategic rival-Unit choice");
         } else if (e.kind === "SET_GIG_TO_ANOTHER_PLAYERS_GIG_VALUE") {

@@ -170,7 +170,8 @@ export const ReadyLockSchema = z.strictObject({ kind: z.literal("READY_LOCK"), t
 export type ReadyLock = z.infer<typeof ReadyLockSchema>;
 // Batch V43: "A rival Unit must attack next turn if it can": the obligation of one resolved PLAY occurrence on one rival Unit.
 export const MustAttackSchema = z.strictObject({ kind: z.literal("MUST_ATTACK"), targetId: CardInstanceIdSchema, sourceId: CardInstanceIdSchema, forcingPlayerId: PlayerIdSchema, createdTurn: z.number().int().positive(),
-    origin: z.strictObject({ effectId: HashSchema, abilityId: z.string().min(1), ordinal: z.number().int().positive() }) });
+    // Batch V63: a Legend's {Spend} activation creates it too; its activation effect id names the occurrence.
+    origin: z.union([z.strictObject({ effectId: HashSchema, abilityId: z.string().min(1), ordinal: z.number().int().positive() }), z.strictObject({ effectId: HashSchema, abilityId: z.string().min(1), activated: z.literal(true) })]) });
 export type MustAttack = z.infer<typeof MustAttackSchema>;
 export const FightPreventionSchema = z.strictObject({
     kind: z.literal("PREVENT_NEXT_RIVAL_FIGHT_DEFEAT"), id: HashSchema, sourceId: CardInstanceIdSchema, controllerId: PlayerIdSchema,

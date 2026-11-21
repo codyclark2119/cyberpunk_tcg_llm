@@ -1,3 +1,4 @@
+import { supportsLegendSpendCard } from "./legend-spend-support";
 import { supportsFightWinUnit } from "./fight-win-support";
 import { supportsQuickActivationCard } from "./quick-activation-support";
 import { supportsFieldLegend } from "./field-legend-support";
@@ -50,7 +51,7 @@ export function validateEndTurnMetadata(state: GameState, context: EngineContext
         if (r && (r.execution?.scope === "END_TURN_HISTORY_V1" || r.mechanics.abilities.some(a => a.trigger === "WHEN_OWN_TURN_ENDS" || a.conditions.some(c => c.kind === "SUBJECT_STOLE_GIG_THIS_TURN" || c.kind === "SUBJECT_IS_SPENT") || a.effects.some(e => e.kind === "READY_EDDIES" || e.kind === "READY_UNIT" && e.target.kind !== "ANOTHER_FRIENDLY_UNIT" || e.kind === "RETURN_TO_HAND" || e.kind === "CONDITIONAL_DRAW" && e.condition.kind === "SUBJECT_STOLE_GIG_THIS_TURN" || e.kind === "DISCARD_CARDS" && e.when?.condition.kind === "SUBJECT_STOLE_GIG_THIS_TURN")))) {
             // Batch V27: V: Roamer's own-turn end draw is pinned with its steal trigger by the steal-trigger gate.
             // Batch V38: Saul Bright's own-turn end ready is pinned with its aura by the attacking-ready gate.
-            const supported = supportsEndTurnCard(r, context); if (!supported.ok && !supportsStealTriggerUnit(r, context).ok && !supportsAttackingReadyUnit(r, context).ok && !supportsTypeRevealUnit(r, context).ok && !supportsQuickActivationCard(r, context).ok && !supportsFightWinUnit(r, context).ok) return supported; // Batch V49: Rogue's steal ready. Batch V52: Johnny's first-win ready.
+            const supported = supportsEndTurnCard(r, context); if (!supported.ok && !supportsStealTriggerUnit(r, context).ok && !supportsAttackingReadyUnit(r, context).ok && !supportsTypeRevealUnit(r, context).ok && !supportsQuickActivationCard(r, context).ok && !supportsFightWinUnit(r, context).ok && !supportsLegendSpendCard(r, context).ok) return supported; // Batch V49: Rogue's steal ready. Batch V52: Johnny's first-win ready. Batch V63: Evelyn's steal ready.
         }
     }
     const history = state.turnHistory?.gigsStolenByUnit;

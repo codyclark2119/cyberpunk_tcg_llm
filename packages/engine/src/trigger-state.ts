@@ -35,7 +35,7 @@ import { listSpendUnitTargets } from "./targeted-spend-queries";
 import { supportsEffectiveTriggerSource, supportsTriggerCard, triggersEnabled } from "./trigger-support";
 import { supportsLegendStealTrigger } from "./legend-steal-support";
 import { supportsLegendReveal } from "./legend-reveal-support";
-import { discardingPlayer, discoverTriggers, nextTriggerGroup, pendingTrigger, stealerIsLegend, stolenGigParity, swapSidesAvailable, triggerChoice, triggerGigTargets, triggerId } from "./trigger-queries";
+import { discardingPlayer, discoverTriggers, nextTriggerGroup, pendingTrigger, stealerIsLegend, stealerIsCorpoOrGangerUnit, stolenGigParity, swapSidesAvailable, triggerChoice, triggerGigTargets, triggerId } from "./trigger-queries";
 import { discardedCostMatchesFriendlyGig } from "./discard";
 import { fightOutcomeBinding, registration, validFightOutcomes } from "./fight-outcome";
 import { effectStealTargets } from "./fight-steal";
@@ -97,7 +97,9 @@ function validBinding(state: GameState, b: TriggerBinding, context: EngineContex
             // Batch V40: a face-up friendly field or Legends-area source observing a stealing friendly Legend.
             || b.kind === "WHEN_FRIENDLY_UNIT_STEALS_GIG" && ability.guard === "STEALER_IS_LEGEND" && stealerIsLegend(state, steal.subjectId, context) && ["BATTLEFIELD", "LEGENDS"].includes(subject.zone.zone) && b.controllerId === state.objects.cards[steal.subjectId]?.controllerId
             // Batch V49: a friendly field Unit observing the turn's first below-power steal by another friendly Unit.
-            || b.kind === "WHEN_FRIENDLY_UNIT_STEALS_GIG" && ability.guard === "FIRST_OTHER_FRIENDLY_STEAL_BELOW_POWER_PER_TURN" && belowPowerStealFires(state, b.sourceId, steal.subjectId, b.gigInstanceId!) && subject.zone.zone === "BATTLEFIELD" && b.controllerId === state.objects.cards[steal.subjectId]?.controllerId);
+            || b.kind === "WHEN_FRIENDLY_UNIT_STEALS_GIG" && ability.guard === "FIRST_OTHER_FRIENDLY_STEAL_BELOW_POWER_PER_TURN" && belowPowerStealFires(state, b.sourceId, steal.subjectId, b.gigInstanceId!) && subject.zone.zone === "BATTLEFIELD" && b.controllerId === state.objects.cards[steal.subjectId]?.controllerId
+            // Batch V63: a face-up friendly Legend observing a CORPO or GANGER Unit's steal, once, on its first stolen Gig.
+            || b.kind === "WHEN_FRIENDLY_UNIT_STEALS_GIG" && ability.guard === "FRIENDLY_CORPO_OR_GANGER_UNIT_STEALS" && b.gigInstanceId === [...steal.gigInstanceIds].sort()[0] && stealerIsCorpoOrGangerUnit(state, steal.subjectId, context) && subject.zone.zone === "LEGENDS" && b.controllerId === state.objects.cards[steal.subjectId]?.controllerId);
     if (origin.kind === "DEFEAT") return false;
     if (origin.kind === "ATTACK") {
         if (b.kind === "WHEN_UNIT_ATTACKS") return b.sourceId === b.subjectId && source.face === "UP" && source.zone.zone === "LEGENDS" && supportsFirstAttackLegend(r, context).ok && state.objects.cards[origin.subjectId]?.controllerId === b.controllerId && isFirstArasakaAttack(state, origin.subjectId, context);

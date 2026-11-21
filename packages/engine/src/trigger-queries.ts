@@ -61,7 +61,9 @@ export function discoverTriggers(state: GameState, origin: TriggerOrigin, contex
             ...effectiveTriggeredAbilities(state, origin.subjectId, context).filter(b => b.kind === "WHEN_GIG_STOLEN" && b.sourceId === b.subjectId),
             ...observers.filter(b => guard(b) === "STOLEN_GIG_IS_D6" && state.objects.gigs[gigInstanceId]?.dieType === "D6" || guard(b) === "STEALER_IS_LEGEND" && stealerIsLegend(state, origin.subjectId, context)
                 // Batch V49: a friendly field Unit observing the turn's first below-power steal by another friendly Unit.
-                || guard(b) === "FIRST_OTHER_FRIENDLY_STEAL_BELOW_POWER_PER_TURN" && state.objects.cards[b.sourceId].zone.zone === "BATTLEFIELD" && belowPowerStealFires(state, b.sourceId, origin.subjectId, gigInstanceId))
+                || guard(b) === "FIRST_OTHER_FRIENDLY_STEAL_BELOW_POWER_PER_TURN" && state.objects.cards[b.sourceId].zone.zone === "BATTLEFIELD" && belowPowerStealFires(state, b.sourceId, origin.subjectId, gigInstanceId)
+                // Batch V63: "steals 1 or more Gigs" is one occurrence per steal, bound to its first stolen Gig.
+                || guard(b) === "FRIENDLY_CORPO_OR_GANGER_UNIT_STEALS" && gigInstanceId === [...origin.gigInstanceIds].sort()[0] && stealerIsCorpoOrGangerUnit(state, origin.subjectId, context))
         ].map(b => ({ ...b, gigInstanceId })));
     }
     const own = effectiveTriggeredAbilities(state, origin.subjectId, context).filter(b => {
@@ -80,6 +82,11 @@ export function discoverTriggers(state: GameState, origin: TriggerOrigin, contex
     return [...own, ...state.players[played.controllerId].zones.LEGENDS.flatMap(id => effectiveTriggeredAbilities(state, id, context).filter(b => b.kind === "WHEN_CARD_PLAYED"))];
 }
 /** Batch V40: a stealing Legend is a printed Legend on the field (a Go Solo Legend), never a Legend-area card. */
+/** Batch V63: the stealing card is a CORPO or GANGER Unit (a field Legend counts as a Unit there). */
+export function stealerIsCorpoOrGangerUnit(state: GameState, subjectId: CardInstanceId, context: EngineContext) {
+    const c = state.objects.cards[subjectId], r = cardRevision(state, subjectId, context);
+    return Boolean(c && c.zone.zone === "BATTLEFIELD" && effectiveCardTypes(state, subjectId, context).includes("UNIT") && r && (r.tags.includes("Corpo") || r.tags.includes("Ganger")));
+}
 export function stealerIsLegend(state: GameState, subjectId: CardInstanceId, context: EngineContext) {
     const c = state.objects.cards[subjectId];
     return Boolean(c && c.zone.zone === "BATTLEFIELD" && cardRevision(state, subjectId, context)?.type === "LEGEND");

@@ -32,15 +32,22 @@ const LEGEND_SPEND_SHAPES = [
     // value as another player's Gig."
     { colors: ["GREEN"], ram: { GREEN: 2 }, tags: ["Fixer", "Ganger", "Valentino"], sell: true,
         abilities: [{ ...CALL_CHOOSE_ONE, effects: [{ kind: "SPEND_UNIT", target: { kind: "UNITS", relation: "RIVAL" } }, { kind: "DRAW", count: 1 }] },
-            { ...SPEND, effects: [{ kind: "SET_GIG_TO_ANOTHER_PLAYERS_GIG_VALUE" }] }] }
+            { ...SPEND, effects: [{ kind: "SET_GIG_TO_ANOTHER_PLAYERS_GIG_VALUE" }] }] },
+    // Batch V63: Evelyn Parker: Beautiful Enigma. "When a friendly CORPO or GANGER Unit steals 1 or more Gigs, ready 1 Eddie.
+    // 1 €$, {Spend} A rival Unit must attack next turn if it can."
+    { colors: ["BLUE"], ram: { BLUE: 2 }, tags: ["Doll"], sell: true,
+        abilities: [{ trigger: "WHEN_FRIENDLY_UNIT_STEALS_GIG", inherited: null, guard: "FRIENDLY_CORPO_OR_GANGER_UNIT_STEALS", activation: null, conditions: [], abilityCost: { kind: "NONE" }, choose: null,
+            effects: [{ kind: "READY_EDDIES", player: "CONTROLLER", count: 1 }] },
+            { ...SPEND, activation: { timing: "MAIN", conditionTiming: "ACTIVATION_AND_RESOLUTION", costs: [{ kind: "PAYMENT_COST", cost: { kind: "EDDIES", amount: 1 } }, { kind: "SPEND_SOURCE" }] },
+                effects: [{ kind: "FORCE_RIVAL_UNIT_ATTACK", duration: "NEXT_TURN" }] }] }
 ].map(shape => canonicalSerialize({ type: "LEGEND", power: null, cost: "DASH", keywords: [], equip: null, modifiers: [], restrictions: [], ...shape }));
 /** Any Legend activation, start-of-turn trigger, value-pair draw or mandatory swap routes here first. */
 export function hasLegendSpendMetadata(card: DeepReadonly<CardRevisionSnapshot> | undefined) {
-    return Boolean(card?.mechanics.abilities.some(a => card.type === "LEGEND" && (a.activation || a.choose) || a.trigger === "WHEN_OWN_TURN_STARTS" || a.effects.some(e => e.kind === "DRAW_PER_FRIENDLY_VALUE_PAIR" || e.kind === "FIGHT_DEFEAT_IMMUNITY_THIS_TURN" || e.kind === "SET_GIG_TO_ANOTHER_PLAYERS_GIG_VALUE" || e.kind === "SWAP_GIGS" && !e.optional)));
+    return Boolean(card?.mechanics.abilities.some(a => card.type === "LEGEND" && (a.activation || a.choose) || a.guard === "FRIENDLY_CORPO_OR_GANGER_UNIT_STEALS" || a.trigger === "WHEN_OWN_TURN_STARTS" || a.effects.some(e => e.kind === "DRAW_PER_FRIENDLY_VALUE_PAIR" || e.kind === "FIGHT_DEFEAT_IMMUNITY_THIS_TURN" || e.kind === "SET_GIG_TO_ANOTHER_PLAYERS_GIG_VALUE" || e.kind === "SWAP_GIGS" && !e.optional)));
 }
 export function supportsLegendSpendCard(card: DeepReadonly<CardRevisionSnapshot> | undefined, context: EngineContext) {
     const g = context.content.ruleset.gameplay, m = card?.mechanics;
-    if (!turnSliceAllows(g?.turnSlice, "cardPlay") || !turnSliceAllows(g?.turnSlice, "callEffects") || !turnSliceAllows(g?.turnSlice, "react") || g?.gigValueBounds !== "DIE_FACES_V1" || !card?.provenance.reviewed || card.execution?.scope !== "VALUE_CONDITIONS_V1" || card.execution.status !== "SUPPORTED"
+    if (!turnSliceAllows(g?.turnSlice, "cardPlay") || !turnSliceAllows(g?.turnSlice, "callEffects") || !turnSliceAllows(g?.turnSlice, "react") || !turnSliceAllows(g?.turnSlice, "combatTriggers") || g?.gigValueBounds !== "DIE_FACES_V1" || !card?.provenance.reviewed || card.execution?.scope !== "VALUE_CONDITIONS_V1" || card.execution.status !== "SUPPORTED"
         || card.keywords.length || !m || !LEGEND_SPEND_SHAPES.includes(canonicalSerialize({ type: card.type, power: card.power ?? null, cost: card.printedCost.kind === "DASH" ? "DASH" : card.printedCost, keywords: m.keywords, equip: m.equip ?? null, modifiers: m.modifiers, restrictions: m.restrictions ?? [],
             colors: card.colors, ram: card.ram, tags: card.tags, sell: card.sellProfile.allowed,
             abilities: m.abilities.map(a => ({ trigger: a.trigger ?? null, inherited: a.inherited ?? null, guard: a.guard ?? null, activation: a.activation ?? null, conditions: a.conditions, abilityCost: a.cost, choose: a.choose ?? null, effects: a.effects })) })))

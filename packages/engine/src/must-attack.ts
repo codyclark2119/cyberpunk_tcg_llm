@@ -1,3 +1,6 @@
+import { legendContinuationAbility } from "./legend-spend";
+import { supportsLegendSpendCard } from "./legend-spend-support";
+import { activationEffectId } from "./play-state";
 import { canonicalSerialize, failure, success, type CardInstanceId, type GameState, type MustAttack, type PlayerId, type Result } from "@tcg/domain";
 import type { EngineContext } from "./state";
 import type { TurnMutation } from "./turn";
@@ -14,13 +17,15 @@ export function mustAttackTargets(state: GameState, controller: PlayerId, contex
     return Object.values(state.objects.cards).filter(c => c.controllerId !== controller && isUnitSpendSubject(state, c.id, context)).map(c => c.id).sort();
 }
 function compare(a: MustAttack, b: MustAttack) { return a.origin.effectId < b.origin.effectId ? -1 : a.origin.effectId > b.origin.effectId ? 1 : 0; }
-export function applyMustAttack(m: TurnMutation, targetId: CardInstanceId): Result<null> {
-    const s = m.state, current = s.resolution.current, t = current?.trigger;
-    if (current?.effect.kind !== "FORCE_RIVAL_UNIT_ATTACK" || !current.sourceId || !t || t.kind !== "WHEN_PLAYED" || !mustAttackTargets(s, current.controllerId, m.context).includes(targetId))
-        return failure("INVALID_MUST_ATTACK", "A current reviewed {Play} obligation and a rival field Unit are required");
+export function applyMustAttack(m: TurnMutation, targetId: CardInstanceId, forced = false): Result<null> {
+    const s = m.state, current = s.resolution.current, t = current?.trigger, activation = legendContinuationAbility(s, m.context);
+    if (current?.effect.kind !== "FORCE_RIVAL_UNIT_ATTACK" || !current.sourceId || !(t ? t.kind === "WHEN_PLAYED" : activation?.activation) || !mustAttackTargets(s, current.controllerId, m.context).includes(targetId))
+        return failure("INVALID_MUST_ATTACK", "A current reviewed {Play} or Legend {Spend} obligation and a rival field Unit are required");
     if (s.mustAttack?.some(x => x.origin.effectId === current.id)) return failure("DUPLICATE_MUST_ATTACK", "A resolved obligation cannot be applied twice");
+    // Batch V63: a Legend's {Spend} names its target as it resolves.
+    if (!t) m.emit({ kind: "CARD_TARGET_SELECTED", effectId: current.id, sourceId: current.sourceId, targetId, controllerId: current.controllerId, forced });
     const obligation: MustAttack = { kind: "MUST_ATTACK", targetId, sourceId: current.sourceId, forcingPlayerId: current.controllerId, createdTurn: s.timing.turn,
-        origin: { effectId: current.id, abilityId: t.abilityId, ordinal: t.ordinal } };
+        origin: t ? { effectId: current.id, abilityId: t.abilityId, ordinal: t.ordinal } : { effectId: current.id, abilityId: activation!.id, activated: true } };
     (s.mustAttack ??= []).push(obligation);
     s.mustAttack.sort(compare);
     m.emit({ kind: "MUST_ATTACK_CREATED", obligation });
@@ -43,9 +48,13 @@ export function unmetMustAttack(state: GameState, actor: PlayerId, context: Engi
 }
 function origin(state: GameState, x: MustAttack, context: EngineContext) {
     const r = cardRevision(state, x.sourceId, context), a = r?.mechanics.abilities.find(a => a.id === x.origin.abilityId), source = state.objects.cards[x.sourceId], continuation = state.resolution.triggerContinuation;
+    // Batch V63: a pinned Legend's resolved {Spend} activation.
+    if ("activated" in x.origin) return Boolean(r && a?.activation && source && supportsLegendSpendCard(r, context).ok && a.effects[0]?.kind === "FORCE_RIVAL_UNIT_ATTACK" && source.controllerId === x.forcingPlayerId && source.zone.zone === "LEGENDS" && source.face === "UP"
+        && x.origin.effectId === activationEffectId({ ...state, timing: { ...state.timing, turn: x.createdTurn } }, x.forcingPlayerId, source.id, a.id, 0) && state.resolution.current?.id !== x.origin.effectId);
     if (!r || !a || !source || !supportsMustAttackUnit(r, context).ok || a.trigger !== "WHEN_PLAYED" || a.effects[0]?.kind !== "FORCE_RIVAL_UNIT_ATTACK") return false;
-    if (x.origin.effectId !== triggerId({ ...state, timing: { ...state.timing, turn: x.createdTurn } }, { sourceId: source.id, subjectId: source.id, source: { cardId: r.id, revision: r.revision }, controllerId: x.forcingPlayerId, abilityId: a.id, kind: "WHEN_PLAYED" }, x.origin.ordinal)) return false;
-    return x.createdTurn !== state.timing.turn || x.origin.ordinal <= (state.turnHistory?.triggeredBatches ?? 0) && !(continuation?.ordinal === x.origin.ordinal && !continuation.resolvedIds.includes(x.origin.effectId) && state.resolution.current?.id !== x.origin.effectId);
+    if (x.origin.effectId !== triggerId({ ...state, timing: { ...state.timing, turn: x.createdTurn } }, { sourceId: source.id, subjectId: source.id, source: { cardId: r.id, revision: r.revision }, controllerId: x.forcingPlayerId, abilityId: a.id, kind: "WHEN_PLAYED" }, "ordinal" in x.origin ? x.origin.ordinal : 0)) return false;
+    const o = x.origin as Extract<MustAttack["origin"], { ordinal: number }>;
+    return x.createdTurn !== state.timing.turn || o.ordinal <= (state.turnHistory?.triggeredBatches ?? 0) && !(continuation?.ordinal === o.ordinal && !continuation.resolvedIds.includes(o.effectId) && state.resolution.current?.id !== o.effectId);
 }
 /** An obligation lives from its resolution through the rival's turn, and into the forcing player's next turn only before 8.6.2.1
  * or in a game that ended there; its target stays a rival face-up field Unit. */

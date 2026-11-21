@@ -1,3 +1,4 @@
+import { hasLegendSpendMetadata } from "./legend-spend-support";
 import { turnSliceAllows, canonicalSerialize, failure, success, type Ability, type CardRevisionSnapshot, type DeepReadonly } from "@tcg/domain";
 import type { EngineContext } from "./state";
 /** Batch V49+: Units with a paid "[Quick] cost: effect" activation (11.30) or a below-power first-steal trigger, each pinned whole. */
@@ -14,6 +15,7 @@ const QUICK_ACTIVATION_SHAPES = [
 ].map(shape => canonicalSerialize({ keywords: [], restrictions: [], equip: null, modifiers: [], ...shape }));
 /** Any Quick activation, paid activation, source-power scale or below-power steal guard routes here first. */
 export function hasQuickActivation(card: DeepReadonly<CardRevisionSnapshot> | undefined) {
+    if (hasLegendSpendMetadata(card)) return false; // Batch V63: a Legend's paid {Spend} ability is pinned by the Legend gate.
     return Boolean(card?.mechanics.abilities.some(a => a.activation?.timing === "QUICK" || a.activation?.costs.some(c => c.kind === "PAYMENT_COST") || a.guard === "FIRST_OTHER_FRIENDLY_STEAL_BELOW_POWER_PER_TURN" || a.effects.some(e => e.kind === "POWER_UNTIL_END_OF_TURN" && e.scale)));
 }
 export function supportsQuickActivationCard(card: DeepReadonly<CardRevisionSnapshot> | undefined, context: EngineContext) {

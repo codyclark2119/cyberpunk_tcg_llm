@@ -1,3 +1,4 @@
+import { applyMustAttack, mustAttackTargets } from "./must-attack";
 import { applyFightDefeatImmunity } from "./fight-immunity";
 import { advanceCrossSet, advanceMandatorySwap, isLegendCallPower, mandatorySwapAvailable, playPowerTargets } from "./legend-spend";
 import { applyFightPowerGrant, friendlyFieldUnits } from "./fight-power-grant";
@@ -67,6 +68,10 @@ export class HandlerRegistry {
     }
     };
     resolve(m: TurnMutation, effect: Effect): Result<null> {
+        if (effect.kind === "FORCE_RIVAL_UNIT_ATTACK") { // Batch V63: a Legend's {Spend}; a lone rival Unit is forced and none does nothing.
+            const targets = mustAttackTargets(m.state, m.state.resolution.current!.controllerId, m.context);
+            return targets.length > 1 ? offerPlayChoice(m) : targets.length === 1 ? applyMustAttack(m, targets[0], true) : success(null);
+        }
         if (effect.kind === "SET_GIG_TO_ANOTHER_PLAYERS_GIG_VALUE") { // Batch V62: mandatory; with no settable pair it does nothing.
             const advanced = advanceCrossSet(m, undefined, undefined);
             return !advanced.ok ? advanced : advanced.value === "CHOICE" ? offerPlayChoice(m) : success(null);

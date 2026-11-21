@@ -1,3 +1,4 @@
+import { applyMustAttack } from "./must-attack";
 import { applyFightDefeatImmunity } from "./fight-immunity";
 import { advanceCrossSet, advanceMandatorySwap, crossSetSources, crossSetTargets, swapChoiceGigs } from "./legend-spend";
 import { swapGigs } from "./gig-transfer";
@@ -183,6 +184,12 @@ export function continuePlay(m: TurnMutation, index: number): Result<null> {
         const moved = chooseBottomDeck(m, option.cardInstanceId, offerPlayChoice);
         // An "if you do" clause may pause on its own choice before the primitive completes.
         return !moved.ok ? moved : s.resolution.choice ? success(null) : completePlayEffect(m);
+    }
+    if (s.resolution.current?.effect.kind === "FORCE_RIVAL_UNIT_ATTACK") { // Batch V63.
+        if (option.kind !== "CARD") return failure("INVALID_MUST_ATTACK", "Choose an enumerated rival Unit");
+        s.resolution.choice = null;
+        const applied = applyMustAttack(m, option.cardInstanceId, false);
+        return applied.ok ? completePlayEffect(m) : applied;
     }
     if (s.resolution.current?.effect.kind === "SET_GIG_TO_ANOTHER_PLAYERS_GIG_VALUE") { // Batch V62.
         const valid = c.targetGigId ? crossSetSources(s, c.targetGigId) : crossSetTargets(s);

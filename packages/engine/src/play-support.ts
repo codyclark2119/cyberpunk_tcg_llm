@@ -39,6 +39,8 @@ export function revisionOf(state: GameState, id: CardInstanceId, context: Engine
 }
 /** Admission certifies only reviewed semantic shapes, never catalog legality or arbitrary metadata. */
 export function supportsPlay(card: DeepReadonly<CardRevisionSnapshot> | undefined, context: EngineContext) {
+    // Batch V59: a Legend {Spend} ability or start-of-turn trigger is never played; its Legend pin admits it.
+    if (card && hasLegendSpendMetadata(card)) return failure("UNSUPPORTED_LEGEND_SPEND", "A Legend {Spend} ability is admitted only by its exact Legend pin");
     // Batch V44: a modal ability ("Choose one effect ... choose both instead") is admitted only by its exact Program pin.
     if (card && hasModalChoice(card)) return supportsModalProgram(card, context);
     // Batch V45: an effect sell ("Sell the top card of your deck") is admitted only by its exact Program pin.
@@ -51,8 +53,6 @@ export function supportsPlay(card: DeepReadonly<CardRevisionSnapshot> | undefine
     if (card && hasQuickActivation(card)) return supportsQuickActivationCard(card, context);
     // Batch V57: a steal reduction is admitted only by its exact Quick Program pin.
     if (card && hasStealReduction(card)) return supportsStealReductionProgram(card, context);
-    // Batch V59: a Legend {Spend} ability or start-of-turn trigger is never played; its Legend pin admits it.
-    if (card && hasLegendSpendMetadata(card)) return failure("UNSUPPORTED_LEGEND_SPEND", "A Legend {Spend} ability is admitted only by its exact Legend pin");
     // Batch V58: a while-fighting power grant is admitted only by its exact Quick Program pin.
     if (card && hasFightPowerGrant(card)) return supportsFightPowerProgram(card, context);
     // Batch V52: a fight-win override or first-win ready is admitted only by its exact Unit pin.
@@ -113,6 +113,10 @@ export function canPlay(state: GameState, actor: PlayerId, id: CardInstanceId, c
     const c = state.objects.cards[id], r = revisionOf(state, id, context);
     return Boolean((main(state, actor) || (isReactDecision(state, actor, context) && r?.type === "PROGRAM" && r.mechanics.keywords.includes("QUICK"))) && c?.zone.zone === "HAND" && c.zone.playerId === actor && c.controllerId === actor && supportsPlay(r, context).ok && (r?.type !== "GEAR" || legalEquipHosts(state, id, context).length > 0) && r?.printedCost.kind === "EDDIES" && (playPaymentAmount(state, actor, id, context) === 0 || paymentCandidates(state, actor, context, playPaymentAmount(state, actor, id, context)!, []).length));
 }
+/** Batch V63: a Legend spends itself for its {Spend} ability, so it cannot also pay that ability's Eddie cost. */
+function spentCopy(state: GameState, id: CardInstanceId): GameState {
+    return { ...state, objects: { ...state.objects, cards: { ...state.objects.cards, [id]: { ...state.objects.cards[id], readiness: "SPENT" } } } };
+}
 export function canActivate(state: GameState, actor: PlayerId, id: CardInstanceId, abilityId: string, context: EngineContext) {
     const c = state.objects.cards[id], r = revisionOf(state, id, context), a = r?.mechanics.abilities.find(a => a.id === abilityId);
     // Batch V49 (11.30.2): a Quick activation is also offered in its controller's React Step; its Eddie cost must be payable (8.14.1: no Lag).
@@ -120,5 +124,5 @@ export function canActivate(state: GameState, actor: PlayerId, id: CardInstanceI
     // Batch V59: a face-up Legend's {Spend} ability is used from the Legends area (Legends never Lag).
     const legend = r?.type === "LEGEND" && c?.zone.zone === "LEGENDS" && supportsLegendSpendCard(r, context).ok;
     return Boolean((main(state, actor) || a?.activation?.timing === "QUICK" && isReactDecision(state, actor, context)) && (legend || supportsPlay(r, context).ok && r?.type === "UNIT" && c?.zone.zone === "BATTLEFIELD") && c.zone.playerId === actor && c.controllerId === actor && c.face === "UP" && c.readiness === "READY" && !c.statuses.includes("LAG") && a?.activation && a.conditions.every(condition => testCondition(state, actor, condition))
-        && (!amount || paymentCandidates(state, actor, context, amount, []).length));
+        && (!amount || paymentCandidates(legend ? spentCopy(state, id) : state, actor, context, amount, []).length));
 }

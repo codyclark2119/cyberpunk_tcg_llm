@@ -9,12 +9,12 @@
   },
   "totals": {
     "cards": 151,
-    "admitted": 112,
-    "notAdmitted": 39,
+    "admitted": 113,
+    "notAdmitted": 38,
     "notAdmittedOnlyCoveredFamilies": 0,
     "byAdmission": {
-      "NOT_ADMITTED": 39,
-      "SOURCE_MATCH": 112
+      "NOT_ADMITTED": 38,
+      "SOURCE_MATCH": 113
     }
   },
   "families": [
@@ -24,7 +24,7 @@
       "summary": "Generic target filters and board conditions: classification, cost, power, ready/spent, equipped, face-up, named, lowest power.",
       "notes": "Documented as unsupported: generic condition/filter language. Each admitted filter is a literal.",
       "cardCount": 34,
-      "notAdmittedCount": 13,
+      "notAdmittedCount": 12,
       "soleBlockerCount": 0
     },
     {
@@ -60,16 +60,7 @@
       "summary": "Activated abilities with a [Spend] cost (and optional Eddie cost) on Legends, Units or Gear.",
       "notes": "Admitted only for Kerry: The Last Rockerboy (a Unit). Face-up Legend [Spend] abilities and Gear [Spend] abilities are not.",
       "cardCount": 17,
-      "notAdmittedCount": 10,
-      "soleBlockerCount": 0
-    },
-    {
-      "family": "ATTACK_PERMISSION",
-      "status": "PARTIAL",
-      "summary": "Who may attack what and when: can't attack, may attack ready/spent Units, must attack, can't be blocked.",
-      "notes": "Restrictions on the card itself are supported; permissions granted by effects, forced attacks and off-turn timing are not.",
-      "cardCount": 16,
-      "notAdmittedCount": 7,
+      "notAdmittedCount": 9,
       "soleBlockerCount": 0
     },
     {
@@ -100,6 +91,15 @@
       "soleBlockerCount": 0
     },
     {
+      "family": "ATTACK_PERMISSION",
+      "status": "PARTIAL",
+      "summary": "Who may attack what and when: can't attack, may attack ready/spent Units, must attack, can't be blocked.",
+      "notes": "Restrictions on the card itself are supported; permissions granted by effects, forced attacks and off-turn timing are not.",
+      "cardCount": 16,
+      "notAdmittedCount": 6,
+      "soleBlockerCount": 0
+    },
+    {
       "family": "DISCARD",
       "status": "PARTIAL",
       "summary": "Discard: self discard, a Rival discards, discard as a cost, discard a hand.",
@@ -115,15 +115,6 @@
       "notes": "Documented as unsupported; needs every spending path (attack, Blocker, [Spend] costs, effects) to emit one event.",
       "cardCount": 6,
       "notAdmittedCount": 6,
-      "soleBlockerCount": 0
-    },
-    {
-      "family": "DURATION_DELAYED",
-      "status": "PARTIAL",
-      "summary": "Lasting and delayed effects: 'until your next turn', 'next time ... this turn', 'at the end of this turn'.",
-      "notes": "",
-      "cardCount": 14,
-      "notAdmittedCount": 5,
       "soleBlockerCount": 0
     },
     {
@@ -154,6 +145,15 @@
       "soleBlockerCount": 0
     },
     {
+      "family": "DURATION_DELAYED",
+      "status": "PARTIAL",
+      "summary": "Lasting and delayed effects: 'until your next turn', 'next time ... this turn', 'at the end of this turn'.",
+      "notes": "",
+      "cardCount": 14,
+      "notAdmittedCount": 4,
+      "soleBlockerCount": 0
+    },
+    {
       "family": "TRASH_RECURSION",
       "status": "MISSING",
       "summary": "Return a card from the trash (or from cards just trashed) to hand.",
@@ -168,15 +168,6 @@
       "summary": "Play-cost reductions, alternative costs, ability-cost and Go Solo cost changes.",
       "notes": "",
       "cardCount": 10,
-      "notAdmittedCount": 3,
-      "soleBlockerCount": 0
-    },
-    {
-      "family": "EDDIE_ECONOMY",
-      "status": "PARTIAL",
-      "summary": "Ready Eddies, sell cards from unusual zones, pay Eddies during resolution.",
-      "notes": "READY_EDDIES (controller, 1 or 2) only.",
-      "cardCount": 8,
       "notAdmittedCount": 3,
       "soleBlockerCount": 0
     },
@@ -231,6 +222,15 @@
       "summary": "Conditions on Street Cred.",
       "notes": "Nearly complete as conditions; gating an effect mode on them is not.",
       "cardCount": 13,
+      "notAdmittedCount": 2,
+      "soleBlockerCount": 0
+    },
+    {
+      "family": "EDDIE_ECONOMY",
+      "status": "PARTIAL",
+      "summary": "Ready Eddies, sell cards from unusual zones, pay Eddies during resolution.",
+      "notes": "READY_EDDIES (controller, 1 or 2) only.",
+      "cardCount": 8,
       "notAdmittedCount": 2,
       "soleBlockerCount": 0
     },
@@ -303,15 +303,6 @@
       "summary": "Other event triggers: another friendly Unit defeated, a Rival adjusting or swapping friendly Gigs.",
       "notes": "",
       "cardCount": 3,
-      "notAdmittedCount": 2,
-      "soleBlockerCount": 0
-    },
-    {
-      "family": "TRIGGER_STEAL",
-      "status": "MISSING",
-      "summary": "Triggers when a Unit or Legend steals a Gig.",
-      "notes": "Only the history condition SUBJECT_STOLE_GIG_THIS_TURN exists (Delamain Cab); there is no steal trigger.",
-      "cardCount": 8,
       "notAdmittedCount": 2,
       "soleBlockerCount": 0
     },
@@ -420,6 +411,15 @@
       "summary": "'At the end of your turn' abilities.",
       "notes": "Trigger WHEN_OWN_TURN_ENDS; only Eddie readying is routed.",
       "cardCount": 9,
+      "notAdmittedCount": 1,
+      "soleBlockerCount": 0
+    },
+    {
+      "family": "TRIGGER_STEAL",
+      "status": "MISSING",
+      "summary": "Triggers when a Unit or Legend steals a Gig.",
+      "notes": "Only the history condition SUBJECT_STOLE_GIG_THIS_TURN exists (Delamain Cab); there is no steal trigger.",
+      "cardCount": 8,
       "notAdmittedCount": 1,
       "soleBlockerCount": 0
     },
@@ -1090,8 +1090,8 @@
       "colors": [
         "BLUE"
       ],
-      "admission": "NOT_ADMITTED",
-      "revision": null,
+      "admission": "SOURCE_MATCH",
+      "revision": 1,
       "families": [
         "ATTACK_PERMISSION",
         "CONDITION_BOARD",
@@ -1100,14 +1100,7 @@
         "SPEND_ABILITY",
         "TRIGGER_STEAL"
       ],
-      "blockingFamilies": [
-        "ATTACK_PERMISSION",
-        "CONDITION_BOARD",
-        "DURATION_DELAYED",
-        "EDDIE_ECONOMY",
-        "SPEND_ABILITY",
-        "TRIGGER_STEAL"
-      ],
+      "blockingFamilies": [],
       "note": null
     },
     {
