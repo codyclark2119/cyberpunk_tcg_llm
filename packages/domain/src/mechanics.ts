@@ -40,7 +40,8 @@ export const ConditionSchema = z.discriminatedUnion("kind", [
     // Batch V29: "If you control a value-pair of Gigs" (6.6: 2 dice with the same value in the same Gig area).
     z.strictObject({ kind: z.literal("CONTROLS_VALUE_PAIR") }),
     // Batch V39: "If a Rival controls at least 2 more Gigs than you" (Gigs in each Gig area, counted live).
-    z.strictObject({ kind: z.literal("RIVAL_CONTROLS_MORE_GIGS"), minimum: z.literal(2) }),
+    // Batch V64: "If a Rival controls more Gigs than you" is minimum 1.
+    z.strictObject({ kind: z.literal("RIVAL_CONTROLS_MORE_GIGS"), minimum: z.union([z.literal(1), z.literal(2)]) }),
     // Batch V44: "If a friendly d4 is a min Gig" (6.3.1: a rolled own d4 at 1 in the Gig area).
     z.strictObject({ kind: z.literal("FRIENDLY_GIG_IS_MIN"), dieType: z.literal("D4") }),
     // Batch V45: "If you control a Gig with an even value and a Gig with an odd value" (two friendly rolled Gigs).
@@ -283,6 +284,9 @@ export const AbilitySchema = z.strictObject({ id: z.string().min(1), trigger: Tr
 export const ContinuousModifierSchema = z.discriminatedUnion("kind", [
     // Batch V30: "This Unit can attack rival Units the turn it's played" (11.3.1): while lagging, rival Units only.
     z.strictObject({ kind: z.literal("CAN_ATTACK_RIVAL_UNITS_WHILE_LAGGING") }),
+    // Batch V64: "If a Rival controls more Gigs than you, this Unit can attack their Gig area the turn it's played" (11.3.1): while
+    // lagging, the Gig area only, and only while the condition holds.
+    z.strictObject({ kind: z.literal("CAN_ATTACK_GIG_AREA_WHILE_LAGGING_IF"), condition: z.strictObject({ kind: z.literal("RIVAL_CONTROLS_MORE_GIGS"), minimum: z.literal(1) }) }),
     // Batch V52: "This Unit wins all fights against CORPO Units" (11.4.1.4).
     z.strictObject({ kind: z.literal("WINS_FIGHTS_AGAINST_CLASSIFICATION"), classification: z.literal("Corpo") }),
     z.strictObject({ kind: z.literal("FRIENDLY_ARASAKA_ATTACKING_UNIT_POWER"), amount: z.literal(1) }),

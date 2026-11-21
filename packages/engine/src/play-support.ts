@@ -1,3 +1,4 @@
+import { hasAttackPermissionMetadata, supportsAttackPermissionUnit } from "./attack-permission-support";
 import { hasLegendSpendMetadata, supportsLegendSpendCard } from "./legend-spend-support";
 import { hasFightPowerGrant, supportsFightPowerProgram } from "./fight-power-grant-support";
 import { hasStealReduction, supportsStealReductionProgram } from "./steal-reduction-support";
@@ -43,6 +44,8 @@ export function supportsPlay(card: DeepReadonly<CardRevisionSnapshot> | undefine
     if (card && hasLegendSpendMetadata(card)) return failure("UNSUPPORTED_LEGEND_SPEND", "A Legend {Spend} ability is admitted only by its exact Legend pin");
     // Batch V44: a modal ability ("Choose one effect ... choose both instead") is admitted only by its exact Program pin.
     if (card && hasModalChoice(card)) return supportsModalProgram(card, context);
+    // Batch V64: a conditional attack permission is admitted only by its exact Unit pin.
+    if (card && hasAttackPermissionMetadata(card)) return supportsAttackPermissionUnit(card, context);
     // Batch V45: an effect sell ("Sell the top card of your deck") is admitted only by its exact Program pin.
     if (card && hasSellTopEffect(card)) return supportsSellTopProgram(card, context);
     // Batch V47: a next-fight steal is admitted only by its exact Program pin.
