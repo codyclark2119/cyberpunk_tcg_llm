@@ -97,6 +97,7 @@ were recorded in their pull requests (#4, #7, #8); later batches have documents 
 | V53 (2026-11-20) | Viktor Vektor: Drop Your Illusions | [Unit: your first CYBERWARE Gear each turn costs 3 less, the first cost reduction given to other cards](api-admission-batch-v53.md); coverage 102/151 |
 | V54 (2026-11-20) | Towerfall | [Program: choose one, or both with less Street Cred; -5 power to all rival Units, bottom-deck all rival power-0 Units](api-admission-batch-v54.md); coverage 103/151 |
 | V55 (2026-11-20) | Gilded Matón | [Unit: {Play} may defeat a friendly Gear, then a rival Unit with cost 3 or less, the first "if you do" second defeat](api-admission-batch-v55.md); coverage 104/151 |
+| V56 (2026-11-20) | Riot Shield | [Gear: host {Blocker}; Rivals pay +2 €$ to use {Go Solo}, the first cost change for another player](api-admission-batch-v56.md); coverage 105/151 |
 | V7 (2026-11-15) | Royce: Don't Call Me Simon, Wild in the Streets, Delamain: Rideshare AI | [shared defeat filter and exact pin table](api-admission-batch-v7.md); coverage 42/151 |
 | V6 (2026-09-22) | Trust No One | [contract and executable slice](api-admission-batch-v6.md), [baseline verification](api-admission-batch-v6-verification.md) |
 

@@ -33,7 +33,7 @@ export function applicablePowerModifiers(state: GameState, id: CardInstanceId, c
         for (const g of gear) result.push({ sourceId: g.id, subjectId: id, kind: "GRANT_PRINTED_POWER_TO_HOST", amount: cardRevision(state, g.id, context)?.power ?? 0 });
     for (const modifier of revision.mechanics.modifiers) {
         if (modifier.kind === "FRIENDLY_ARASAKA_ATTACKING_UNIT_POWER" && supportsAttackingAuraLegend(revision, context).ok) continue;
-        if ((modifier.kind === "GRANT_KEYWORD_TO_HOST" || modifier.kind === "GRANT_KEYWORD_TO_HOST_IF") && supportsCapabilityGear(revision, context).ok) continue;
+        if ((modifier.kind === "GRANT_KEYWORD_TO_HOST" || modifier.kind === "GRANT_KEYWORD_TO_HOST_IF" || modifier.kind === "RIVAL_GO_SOLO_COST_INCREASE") && supportsCapabilityGear(revision, context).ok) continue;
         if (modifier.kind === "RIVAL_LAGGING_UNITS_CANNOT_ATTACK" && supportsAttackPreventionUnit(revision, context).ok) continue;
         if (modifier.kind === "GRANT_PRINTED_POWER_TO_HOST" && revision.type === "GEAR" && gearEnabled(context)) continue;
         if ((modifier.kind === "SELF_PLAY_COST_REDUCTION" || modifier.kind === "FIRST_GEAR_PLAY_COST_REDUCTION") && supportsPlayCostReduction(revision, context).ok) continue; // Payment only, never power.

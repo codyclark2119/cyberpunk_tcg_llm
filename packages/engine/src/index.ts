@@ -72,7 +72,7 @@ function pushMainActions(state: GameState, actor: PlayerId, context: EngineConte
         return;
     for (const card of Object.values(state.objects.cards)) {
         if (view.isAttackEligible(actor, card.id)) actions.push({ actorId: actor, action: { kind: "DECLARE_ATTACK", cardInstanceId: card.id } });
-        if (canEnterField(state, actor, card.id, context)) actions.push({ actorId: actor, action: { kind: "GO_SOLO", cardInstanceId: card.id } });
+        if (canEnterField(state, actor, card.id, context, "GO_SOLO")) actions.push({ actorId: actor, action: { kind: "GO_SOLO", cardInstanceId: card.id } });
         if (canEnterField(state, actor, card.id, context) || canPlay(state, actor, card.id, context)) actions.push({ actorId: actor, action: { kind: "PLAY_CARD", cardInstanceId: card.id } });
         for (const ability of view.getRevision(card.id)?.mechanics.abilities ?? [])
             if (canActivate(state, actor, card.id, ability.id, context)) actions.push({ actorId: actor, action: { kind: "ACTIVATE_ABILITY", sourceInstanceId: card.id, abilityId: ability.id } });

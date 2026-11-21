@@ -275,6 +275,8 @@ export const ContinuousModifierSchema = z.discriminatedUnion("kind", [
     // Batch V38: "Other friendly Units have +2 power while attacking." A field Unit's live contribution, never to itself.
     z.strictObject({ kind: z.literal("OTHER_FRIENDLY_ATTACKING_UNIT_POWER"), amount: z.literal(2) }),
     z.strictObject({ kind: z.literal("GRANT_KEYWORD_TO_HOST"), keyword: z.literal("BLOCKER") }),
+    // Batch V56: "Rivals must pay +2 €$ to use {Go Solo}."
+    z.strictObject({ kind: z.literal("RIVAL_GO_SOLO_COST_INCREASE"), amount: z.literal(2) }),
     // Batch V39: "If a Rival controls at least 2 more Gigs than you, this Unit has [Adrenaline]": a Gear's live conditional grant.
     z.strictObject({ kind: z.literal("GRANT_KEYWORD_TO_HOST_IF"), keyword: z.literal("ADRENALINE"), condition: z.strictObject({ kind: z.literal("RIVAL_CONTROLS_MORE_GIGS"), minimum: z.literal(2) }) }),
     // 2.6/11.3.1: prevents rival Units that entered the field this turn (lagging) from attacking.

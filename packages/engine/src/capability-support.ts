@@ -8,12 +8,29 @@ const CONDITIONAL_KEYWORD_GEAR_SHAPES = [
     { colors: ["YELLOW"], ram: { YELLOW: 4 }, tags: ["Cyberware", "Medtech"], cost: 2, power: 3,
         modifiers: [{ kind: "GRANT_PRINTED_POWER_TO_HOST" }, { kind: "GRANT_KEYWORD_TO_HOST_IF", keyword: "ADRENALINE", condition: { kind: "RIVAL_CONTROLS_MORE_GIGS", minimum: 2 } }] }
 ].map(shape => canonicalSerialize({ type: "GEAR", sell: true, keywords: [], abilities: [], restrictions: [], equip: { kind: "FRIENDLY_UNIT_OR_FACE_UP_LEGEND" }, ...shape }));
+/** Batch V56+: Blocker Gears that also tax a Rival's {Go Solo}, each pinned whole. */
+const GO_SOLO_TAX_GEAR_SHAPES = [
+    // Batch V56: Riot Shield. "(Equip to a friendly Unit or face-up Legend.) {Blocker} Rivals must pay +2 €$ to use {Go Solo}."
+    { colors: ["GREEN"], ram: { GREEN: 2 }, tags: ["Weapon"], cost: 2, power: 1,
+        modifiers: [{ kind: "GRANT_PRINTED_POWER_TO_HOST" }, { kind: "GRANT_KEYWORD_TO_HOST", keyword: "BLOCKER" }, { kind: "RIVAL_GO_SOLO_COST_INCREASE", amount: 2 }] }
+].map(shape => canonicalSerialize({ type: "GEAR", sell: true, keywords: [], abilities: [], restrictions: [], equip: { kind: "FRIENDLY_UNIT_OR_FACE_UP_LEGEND" }, ...shape }));
+export function hasGoSoloTax(card: DeepReadonly<CardRevisionSnapshot> | undefined) {
+    return Boolean(card?.mechanics.modifiers.some(m => m.kind === "RIVAL_GO_SOLO_COST_INCREASE"));
+}
 export function hasConditionalKeywordGrant(card: DeepReadonly<CardRevisionSnapshot> | undefined) {
     return Boolean(card?.mechanics.modifiers.some(m => m.kind === "GRANT_KEYWORD_TO_HOST_IF"));
 }
 /** One complete reviewed Gear shape; this is not blanket admission of inherited keywords. */
 export function supportsCapabilityGear(card: DeepReadonly<CardRevisionSnapshot> | undefined, context: EngineContext) {
     const policy = context.content.ruleset.gameplay?.turnSlice;
+    if (hasGoSoloTax(card)) {
+        const m = card!.mechanics;
+        if (!capabilitiesEnabled(context) || !turnSliceAllows(policy, "gear") || !turnSliceAllows(policy, "react") || !turnSliceAllows(policy, "fieldLegends") || !card!.provenance.reviewed || card!.execution?.scope !== "GEAR_CAPABILITIES_V1" || card!.execution.status !== "SUPPORTED" || card!.printedCost.kind !== "EDDIES" || card!.keywords.length
+            || !GO_SOLO_TAX_GEAR_SHAPES.includes(canonicalSerialize({ type: card!.type, sell: card!.sellProfile.allowed, keywords: m.keywords, abilities: m.abilities, restrictions: m.restrictions ?? [], equip: m.equip ?? null,
+                colors: card!.colors, ram: card!.ram, tags: card!.tags, cost: card!.printedCost.amount, power: card!.power ?? null, modifiers: m.modifiers })))
+            return failure("UNSUPPORTED_CAPABILITY_GEAR", "Complete reviewed Gear with an exact Blocker grant and Go Solo tax required");
+        return success(null);
+    }
     if (hasConditionalKeywordGrant(card)) {
         const m = card!.mechanics;
         if (!capabilitiesEnabled(context) || !turnSliceAllows(policy, "gear") || !turnSliceAllows(policy, "adrenaline") || !card!.provenance.reviewed || card!.execution?.scope !== "GEAR_CAPABILITIES_V1" || card!.execution.status !== "SUPPORTED" || card!.printedCost.kind !== "EDDIES" || card!.keywords.length
@@ -33,7 +50,7 @@ export function supportsCapabilityGear(card: DeepReadonly<CardRevisionSnapshot> 
 export function validateCapabilityMetadata(state: GameState, context: EngineContext) {
     for (const c of Object.values(state.objects.cards)) {
         const r = context.content.cards.find(r => r.id === c.cardId && r.revision === c.revision);
-        if (r && (r.execution?.scope === "GEAR_CAPABILITIES_V1" || r.mechanics.modifiers.some(m => m.kind === "GRANT_KEYWORD_TO_HOST" || m.kind === "GRANT_KEYWORD_TO_HOST_IF"))) {
+        if (r && (r.execution?.scope === "GEAR_CAPABILITIES_V1" || r.mechanics.modifiers.some(m => m.kind === "GRANT_KEYWORD_TO_HOST" || m.kind === "GRANT_KEYWORD_TO_HOST_IF" || m.kind === "RIVAL_GO_SOLO_COST_INCREASE"))) {
             const supported = supportsCapabilityGear(r, context); if (!supported.ok) return supported;
         }
     }
