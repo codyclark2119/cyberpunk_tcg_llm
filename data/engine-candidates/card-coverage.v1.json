@@ -9,12 +9,12 @@
   },
   "totals": {
     "cards": 151,
-    "admitted": 99,
-    "notAdmitted": 52,
+    "admitted": 100,
+    "notAdmitted": 51,
     "notAdmittedOnlyCoveredFamilies": 0,
     "byAdmission": {
-      "NOT_ADMITTED": 52,
-      "SOURCE_MATCH": 99
+      "NOT_ADMITTED": 51,
+      "SOURCE_MATCH": 100
     }
   },
   "families": [
@@ -253,15 +253,6 @@
       "soleBlockerCount": 0
     },
     {
-      "family": "UNIT_DEFEAT",
-      "status": "PARTIAL",
-      "summary": "Defeat a Unit or Gear chosen with a filter.",
-      "notes": "Filters are fixed literals (power at most 5, power at most a friendly d20, Gear power at most 2).",
-      "cardCount": 18,
-      "notAdmittedCount": 4,
-      "soleBlockerCount": 0
-    },
-    {
       "family": "CONDITION_STREET_CRED",
       "status": "PARTIAL",
       "summary": "Conditions on Street Cred.",
@@ -307,6 +298,15 @@
       "soleBlockerCount": 0
     },
     {
+      "family": "UNIT_DEFEAT",
+      "status": "PARTIAL",
+      "summary": "Defeat a Unit or Gear chosen with a filter.",
+      "notes": "Filters are fixed literals (power at most 5, power at most a friendly d20, Gear power at most 2).",
+      "cardCount": 18,
+      "notAdmittedCount": 3,
+      "soleBlockerCount": 0
+    },
+    {
       "family": "UNIT_ZONE_MOVE",
       "status": "MISSING",
       "summary": "Move a Unit off the field other than defeat: bottom-deck it or return it to hand.",
@@ -348,15 +348,6 @@
       "summary": "[Attack] abilities and 'when a Unit attacks' triggers.",
       "notes": "Triggers WHEN_ATTACKING and WHEN_UNIT_ATTACKS.",
       "cardCount": 14,
-      "notAdmittedCount": 2,
-      "soleBlockerCount": 0
-    },
-    {
-      "family": "TRIGGER_FIGHT_RESULT",
-      "status": "PARTIAL",
-      "summary": "Triggers on winning or losing a fight, or winning by a margin.",
-      "notes": "Trigger WHEN_FIGHT_WON (Satori). Losing a fight and win margins are missing.",
-      "cardCount": 5,
       "notAdmittedCount": 2,
       "soleBlockerCount": 0
     },
@@ -429,6 +420,15 @@
       "summary": "'At the end of your turn' abilities.",
       "notes": "Trigger WHEN_OWN_TURN_ENDS; only Eddie readying is routed.",
       "cardCount": 9,
+      "notAdmittedCount": 1,
+      "soleBlockerCount": 0
+    },
+    {
+      "family": "TRIGGER_FIGHT_RESULT",
+      "status": "PARTIAL",
+      "summary": "Triggers on winning or losing a fight, or winning by a margin.",
+      "notes": "Trigger WHEN_FIGHT_WON (Satori). Losing a fight and win margins are missing.",
+      "cardCount": 5,
       "notAdmittedCount": 1,
       "soleBlockerCount": 0
     },
@@ -1767,16 +1767,13 @@
       "colors": [
         "GREEN"
       ],
-      "admission": "NOT_ADMITTED",
-      "revision": null,
+      "admission": "SOURCE_MATCH",
+      "revision": 1,
       "families": [
         "TRIGGER_FIGHT_RESULT",
         "UNIT_DEFEAT"
       ],
-      "blockingFamilies": [
-        "TRIGGER_FIGHT_RESULT",
-        "UNIT_DEFEAT"
-      ],
+      "blockingFamilies": [],
       "note": null
     },
     {

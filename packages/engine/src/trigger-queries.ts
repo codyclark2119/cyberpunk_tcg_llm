@@ -33,7 +33,7 @@ export function effectiveTriggeredAbilities(state: GameState, subjectId: CardIns
         const r = cardRevision(state, source.id, context);
         if (!supportsEffectiveTriggerSource(r, context) || !r) return [];
         return r.mechanics.abilities.flatMap(a => {
-            if (!a.trigger || (source.id !== subjectId) !== (a.inherited === "EQUIPPED_HOST") || !(a.trigger === "WHEN_FIGHT_WON" || a.trigger === "WHEN_DEFEATED" || a.trigger === "WHEN_PLAYED" || a.trigger === "WHEN_ATTACKING" || a.trigger === "WHEN_CARD_PLAYED" || a.trigger === "WHEN_OWN_TURN_ENDS" || a.trigger === "WHEN_UNIT_ATTACKS" || a.trigger === "WHEN_BLOCKER_USED" || a.trigger === "WHEN_GIG_STOLEN" || a.trigger === "WHEN_FRIENDLY_UNIT_STEALS_GIG" || a.trigger === "WHEN_UNIT_DEFEATED")) return [];
+            if (!a.trigger || (source.id !== subjectId) !== (a.inherited === "EQUIPPED_HOST") || !(a.trigger === "WHEN_FIGHT_WON" || a.trigger === "WHEN_DEFEATED" || a.trigger === "WHEN_PLAYED" || a.trigger === "WHEN_ATTACKING" || a.trigger === "WHEN_CARD_PLAYED" || a.trigger === "WHEN_OWN_TURN_ENDS" || a.trigger === "WHEN_UNIT_ATTACKS" || a.trigger === "WHEN_BLOCKER_USED" || a.trigger === "WHEN_GIG_STOLEN" || a.trigger === "WHEN_FRIENDLY_UNIT_STEALS_GIG" || a.trigger === "WHEN_UNIT_DEFEATED" || a.trigger === "WHEN_FIGHT_LOST")) return [];
             return [{ sourceId: source.id, subjectId, controllerId: subject.controllerId, source: { cardId: r.id, revision: r.revision }, abilityId: a.id, kind: a.trigger }];
         });
     }).sort((a, b) => a.sourceId < b.sourceId ? -1 : a.sourceId > b.sourceId ? 1 : a.abilityId < b.abilityId ? -1 : a.abilityId > b.abilityId ? 1 : 0);

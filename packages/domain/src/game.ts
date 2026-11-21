@@ -58,7 +58,7 @@ export type FightOutcomeEffect = DeepReadonly<z.infer<typeof FightOutcomeEffectS
 export const FightOutcomeSchema = z.strictObject({ effect: FightOutcomeEffectSchema, subjectId: CardInstanceIdSchema, opposingId: CardInstanceIdSchema });
 export type FightOutcome = DeepReadonly<z.infer<typeof FightOutcomeSchema>>;
 export const TriggerBindingSchema = z.strictObject({ sourceId: CardInstanceIdSchema, subjectId: CardInstanceIdSchema, controllerId: PlayerIdSchema,
-    source: CardReferenceSchema, abilityId: z.string().min(1), delayedId: HashSchema.optional(), kind: z.enum(["DELAYED_END_TURN", "WHEN_FIGHT_WON", "WHEN_DEFEATED", "WHEN_PLAYED", "WHEN_ATTACKING", "WHEN_CARD_PLAYED", "WHEN_OWN_TURN_ENDS", "WHEN_UNIT_ATTACKS", "WHEN_BLOCKER_USED", "WHEN_GIG_STOLEN", "WHEN_FRIENDLY_UNIT_STEALS_GIG", "WHEN_UNIT_DEFEATED", "DELAYED_FIGHT_OUTCOME"]),
+    source: CardReferenceSchema, abilityId: z.string().min(1), delayedId: HashSchema.optional(), kind: z.enum(["DELAYED_END_TURN", "WHEN_FIGHT_WON", "WHEN_DEFEATED", "WHEN_PLAYED", "WHEN_ATTACKING", "WHEN_CARD_PLAYED", "WHEN_OWN_TURN_ENDS", "WHEN_UNIT_ATTACKS", "WHEN_BLOCKER_USED", "WHEN_GIG_STOLEN", "WHEN_FRIENDLY_UNIT_STEALS_GIG", "WHEN_UNIT_DEFEATED", "WHEN_FIGHT_LOST", "DELAYED_FIGHT_OUTCOME"]),
     // Batch V24 (10.16.3): a steal trigger is pending once per stolen Gig, so its binding names that Gig.
     gigInstanceId: GigInstanceIdSchema.optional(),
     // Batch V46: a fired next-fight-outcome binding names the opposing Unit of its fight.
@@ -73,7 +73,8 @@ export const TriggerOriginSchema = z.discriminatedUnion("kind", [
     // Batch V46: after a fight, fired next-fight-outcome effects join the fight's DEFEATED triggers (11.4.2.2.1, 11.4.3); with
     // no defeat the batch holds them alone, so `defeated` is empty only with `fight`.
     z.strictObject({ kind: z.literal("DEFEAT"), effectSource: CardInstanceIdSchema.optional(), defeated: z.array(z.strictObject({ targetId: CardInstanceIdSchema, defeatedBy: CardInstanceIdSchema })),
-        fight: z.strictObject({ result: FightResultSchema, outcomes: z.array(FightOutcomeSchema).min(1) }).optional() })
+        // Batch V51: a post-fight batch may carry only printed "loses a fight" triggers, so its fired outcomes may be empty.
+        fight: z.strictObject({ result: FightResultSchema, outcomes: z.array(FightOutcomeSchema) }).optional() })
 ]);
 export type TriggerOrigin = DeepReadonly<z.infer<typeof TriggerOriginSchema>>;
 export const TriggerContinuationSchema = z.strictObject({

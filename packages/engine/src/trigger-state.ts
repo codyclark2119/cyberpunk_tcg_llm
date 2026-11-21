@@ -50,6 +50,12 @@ function validBinding(state: GameState, b: TriggerBinding, context: EngineContex
     const ability = r?.mechanics.abilities.find(a => a.id === b.abilityId);
     // Batch V46: a fired next-fight-outcome binding is exactly one outcome its DEFEAT origin's fight carries (checked there).
     if (b.kind === "DELAYED_FIGHT_OUTCOME") return c.origin.kind === "DEFEAT" && Boolean(c.origin.fight?.outcomes.some(o => canonicalSerialize(fightOutcomeBinding(o)) === canonicalSerialize(b)));
+    // Batch V51: a losing Unit's own "loses a fight" binding names the fight's opposing Unit.
+    if (b.kind === "WHEN_FIGHT_LOST") {
+        const f = c.origin.kind === "DEFEAT" ? c.origin.fight?.result : undefined, a = r?.mechanics.abilities.find(a => a.id === b.abilityId);
+        return Boolean(f && source && subject && a?.trigger === "WHEN_FIGHT_LOST" && b.sourceId === b.subjectId && f.loserIds.includes(b.subjectId) && b.opposingId === (b.subjectId === f.attackerId ? f.defenderId : f.attackerId)
+            && b.controllerId === source.controllerId && source.cardId === b.source.cardId && source.revision === b.source.revision && b.gigInstanceId === undefined && !b.delayedId && supportsTargetedDefeatCard(r, context).ok);
+    }
     if (b.opposingId !== undefined) return false;
     if (!source || !subject || !state.players[b.controllerId] || b.controllerId !== subject.controllerId || b.controllerId !== source.controllerId || !supportsEffectiveTriggerSource(r, context) || source.cardId !== b.source.cardId || source.revision !== b.source.revision || !ability || (b.delayedId ? ability.trigger !== "WHEN_ATTACKING" : ability.trigger !== b.kind) || (b.sourceId !== b.subjectId) !== (ability.inherited === "EQUIPPED_HOST")) return false;
     const origin = c.origin;
@@ -137,7 +143,7 @@ export function validateTriggerState(state: GameState, context: EngineContext) {
             return failure("INVALID_TRIGGER_BATCH", "Every steal trigger must be captured once per stolen Gig");
     }
     // Batch V46: a post-fight batch carries the historical fight and exactly the registrations it fired; only then may it hold no defeat.
-    if (c.origin.kind === "DEFEAT" && (c.origin.fight ? c.origin.effectSource || !validFightFact(state, c.origin.fight.result) || !validFightOutcomes(state, c.origin.fight.result, c.origin.fight.outcomes, context) || c.origin.fight.outcomes.some(o => !c.bindings.some(b => canonicalSerialize(b) === canonicalSerialize(fightOutcomeBinding(o)))) : !c.origin.defeated.length)) return failure("INVALID_FIGHT_OUTCOME", "A post-fight batch needs its historical fight and exactly the next-fight-outcome effects it fired");
+    if (c.origin.kind === "DEFEAT" && (c.origin.fight ? c.origin.effectSource || !validFightFact(state, c.origin.fight.result) || !validFightOutcomes(state, c.origin.fight.result, c.origin.fight.outcomes, context) || c.origin.fight.outcomes.some(o => !c.bindings.some(b => canonicalSerialize(b) === canonicalSerialize(fightOutcomeBinding(o)))) || !c.origin.fight.outcomes.length && !c.bindings.some(b => b.kind === "WHEN_FIGHT_LOST") : !c.origin.defeated.length)) return failure("INVALID_FIGHT_OUTCOME", "A post-fight batch needs its historical fight and exactly the next-fight-outcome effects it fired");
     if (c.origin.kind === "DEFEAT" && (new Set(c.origin.defeated.map(d => d.targetId)).size !== c.origin.defeated.length || c.origin.defeated.some(d => !state.objects.cards[d.defeatedBy] || !state.objects.cards[d.targetId] || ["BATTLEFIELD", "LEGENDS"].includes(state.objects.cards[d.targetId].zone.zone)))) return failure("INVALID_DEFEATED_TRIGGER", "Defeat declaration and movement must precede the pending batch");
     // Batch V47: an effect steal names the subject of a fired steal registration and one Gig it now controls; every steal
     // binding of that Gig is captured once, as in a Steal Step.

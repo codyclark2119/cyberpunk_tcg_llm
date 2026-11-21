@@ -1,3 +1,4 @@
+import { effectiveTriggeredAbilities } from "./trigger-queries";
 import { canonicalSerialize, failure, hashCanonical, success, type CardInstanceId, type FightOutcome, type FightOutcomeEffect, type FightResult, type GameState, type PlayerId, type TriggerBinding } from "@tcg/domain";
 import type { EngineContext } from "./state";
 import type { TurnMutation } from "./turn";
@@ -54,6 +55,13 @@ export function fireFightOutcomes(m: TurnMutation, result: FightResult): FightOu
     if (remaining.length) m.state.fightOutcomeEffects = remaining; else delete m.state.fightOutcomeEffects;
     return fired;
 }
+/** Batch V51: "When this Unit loses a fight": each losing Unit's own printed binding, captured before it moves, naming the opposing
+ * Unit. It resolves in the post-fight batch with the fight's DEFEATED triggers (11.4.2.3, 11.4.3), as a fired outcome does. */
+export function fightLostBindings(state: GameState, result: FightResult, context: EngineContext): TriggerBinding[] {
+    if (!triggersEnabled(context)) return [];
+    return [...result.loserIds].sort().flatMap(id => effectiveTriggeredAbilities(state, id, context).filter(b => b.kind === "WHEN_FIGHT_LOST" && b.sourceId === b.subjectId)
+        .map(b => ({ ...b, opposingId: id === result.attackerId ? result.defenderId : result.attackerId })));
+}
 export function fightOutcomeBinding(o: FightOutcome): TriggerBinding {
     return { sourceId: o.effect.sourceId, subjectId: o.subjectId, controllerId: o.effect.controllerId, source: o.effect.source, abilityId: o.effect.abilityId, kind: "DELAYED_FIGHT_OUTCOME", delayedId: o.effect.id, opposingId: o.opposingId };
 }
@@ -76,6 +84,6 @@ export function expireFightOutcomeEffects(m: TurnMutation) {
 }
 /** Batch V46: "defeat the opposing rival Unit": the fight's opposing Unit, while it is still a face-up rival field Unit. */
 export function opposingDefeatTargets(state: GameState, e: NonNullable<GameState["resolution"]["current"]>, eligible: (id: CardInstanceId) => boolean) {
-    const id = e.trigger?.kind === "DELAYED_FIGHT_OUTCOME" ? e.trigger.opposingId : undefined, c = id ? state.objects.cards[id] : undefined;
+    const id = e.trigger?.kind === "DELAYED_FIGHT_OUTCOME" || e.trigger?.kind === "WHEN_FIGHT_LOST" ? e.trigger.opposingId : undefined, c = id ? state.objects.cards[id] : undefined;
     return id && c && c.face === "UP" && c.zone.zone === "BATTLEFIELD" && c.controllerId !== e.controllerId && eligible(id) ? [id] : [];
 }

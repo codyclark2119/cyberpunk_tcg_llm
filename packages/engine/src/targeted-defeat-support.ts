@@ -47,13 +47,17 @@ const WHOLE_DEFEAT_SHAPES = [
     // card's cost equals the value of a friendly Gig, that Rival discards 1 more."
     { type: "UNIT", colors: ["YELLOW"], ram: { YELLOW: 2 }, tags: ["Ganger", "Maelstrom"], cost: 5, sell: false, power: 5, abilities: [
         ability({ trigger: "WHEN_PLAYED", effects: [{ kind: "DEFEAT_UNIT", target: { kind: "UNITS", relation: "RIVAL", power: { kind: "ANY" }, cost: { kind: "AT_MOST", value: 2 } } }] }),
-        ability({ trigger: "WHEN_DEFEATED", effects: [{ kind: "DISCARD_CARDS", player: "RIVAL", count: 1, selection: "CHOSEN_BY_AFFECTED_PLAYER", more: { condition: { kind: "DISCARDED_COST_EQUALS_FRIENDLY_GIG_VALUE" }, count: 1 } }] })] }
+        ability({ trigger: "WHEN_DEFEATED", effects: [{ kind: "DISCARD_CARDS", player: "RIVAL", count: 1, selection: "CHOSEN_BY_AFFECTED_PLAYER", more: { condition: { kind: "DISCARDED_COST_EQUALS_FRIENDLY_GIG_VALUE" }, count: 1 } }] })] },
+    // Batch V51: Maelstrom Zealots. "When this Unit loses a fight, defeat the opposing rival Unit." (power 0)
+    { type: "UNIT", colors: ["GREEN"], ram: { GREEN: 1 }, tags: ["Ganger", "Maelstrom"], cost: 4, sell: false, power: 0, abilities: [
+        ability({ trigger: "WHEN_FIGHT_LOST", effects: [{ kind: "DEFEAT_UNIT", target: { kind: "OPPOSING_UNIT" } }] })] }
 ].map(shape => canonicalSerialize({ keywords: [], modifiers: [], equip: null, restrictions: [], ...shape }));
 /** Complete per-card shapes; no source-name dispatch or arbitrary filter/defeat admission. */
 export function supportsTargetedDefeatCard(card: DeepReadonly<CardRevisionSnapshot> | undefined, context: EngineContext) {
     const m = card?.mechanics, a = m?.abilities[0], p = context.content.ruleset.gameplay?.turnSlice;
     // Batch V31: a defeat card with more than one ability is admitted only by its whole pinned ability list.
-    if (card && m && m.abilities.length > 1) {
+    // Batch V51: so is a printed "loses a fight" defeat.
+    if (card && m && (m.abilities.length > 1 || m.abilities.some(a => a.trigger === "WHEN_FIGHT_LOST"))) {
         if (!targetedDefeatEnabled(context) || !combatResolutionEnabled(context) || !turnSliceAllows(p, "cardPlay") || !turnSliceAllows(p, "combatTriggers") || context.content.ruleset.gameplay?.gigValueBounds !== "DIE_FACES_V1" || !card.provenance.reviewed || card.execution?.scope !== "TARGETED_DEFEAT_V1" || card.execution.status !== "SUPPORTED" || card.printedCost.kind !== "EDDIES" || card.keywords.length
             || !WHOLE_DEFEAT_SHAPES.includes(canonicalSerialize({ type: card.type, colors: card.colors, ram: card.ram, tags: card.tags, cost: card.printedCost.amount, sell: card.sellProfile.allowed, power: card.power ?? null, keywords: m.keywords, modifiers: m.modifiers, equip: m.equip ?? null, restrictions: m.restrictions ?? [],
                 abilities: m.abilities.map(a => ({ trigger: a.trigger ?? null, inherited: a.inherited ?? null, guard: a.guard ?? null, activation: a.activation ?? null, conditions: a.conditions, abilityCost: a.cost, effects: a.effects })) })))

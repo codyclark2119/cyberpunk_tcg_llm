@@ -36,7 +36,8 @@ function validGearReactOrigin(state: GameState, controllerId: PlayerId, context:
 function validDefeatOrigin(state: GameState, effect: CurrentEffect, revision: ReturnType<typeof cardRevision> | null, context: EngineContext) {
     const r = state.resolution, c = state.timing.combat;
     // Batch V46: the post-fight batch of the paused attack, whichever player controls the fired effect.
-    if (effect.trigger?.kind === "DELAYED_FIGHT_OUTCOME") return c.stage === "TRIGGER_RESOLUTION" && r.triggerContinuation?.origin.kind === "DEFEAT" && Boolean(r.triggerContinuation.origin.fight);
+    // Batch V51: so does a printed "loses a fight" defeat.
+    if (effect.trigger?.kind === "DELAYED_FIGHT_OUTCOME" || effect.trigger?.kind === "WHEN_FIGHT_LOST") return c.stage === "TRIGGER_RESOLUTION" && r.triggerContinuation?.origin.kind === "DEFEAT" && Boolean(r.triggerContinuation.origin.fight);
     // Batch V48: the {Play} defeat of a Unit an effect played inside this batch, whichever player controls it and whenever.
     if (effect.trigger?.kind === "WHEN_PLAYED" && r.triggerContinuation?.effectPlays?.some(p => p.subjectId === effect.trigger!.subjectId)) return true;
     if (effect.controllerId === state.timing.activePlayer && c.stage === "NONE") return true;
@@ -83,7 +84,7 @@ export function validateTargetedDefeatState(state: GameState, context: EngineCon
     if (!targetedDefeatEnabled(context) || !e || e.effect.kind !== "DEFEAT_UNIT" || !source || !(supportsTargetedDefeatCard(revision || undefined, context).ok || supportsTargetedGearDefeatCard(revision || undefined, context).ok) || source.controllerId !== e.controllerId || !validDefeatOrigin(state, e, revision, context) || state.setup || state.match.outcome || r.stage !== "CHOICE" || !r.choice || r.callContinuation || r.searchContinuation || r.legendEntryContinuation || r.gigStealContinuation || r.discovered.length || canonicalSerialize(e.effect) !== canonicalSerialize(revision!.mechanics.abilities[0].effects[revision!.type === "PROGRAM" ? r.playContinuation?.effectIndex ?? -1 : 0]))
         return failure("INVALID_TARGETED_DEFEAT", "Exact current reviewed source/effect and exclusive noncombat decision required");
     // Batch V46: a fired next-fight-outcome defeat resolves in its post-fight batch, away from its trashed Program.
-    if (e.trigger?.kind === "DELAYED_FIGHT_OUTCOME" ? r.playContinuation || !r.triggerContinuation || r.triggerContinuation.phase !== "TARGET" : revision!.type === "PROGRAM" ? !r.playContinuation || r.playContinuation.phase !== "EFFECT" || r.triggerContinuation || e.trigger || source.zone.zone !== "RESOLVING_PROGRAM" : r.playContinuation || !r.triggerContinuation || !isPlayedInBatch(r.triggerContinuation, source.id) || r.triggerContinuation.phase !== "TARGET" || e.trigger?.kind !== "WHEN_PLAYED" || source.zone.zone !== "BATTLEFIELD")
+    if (e.trigger?.kind === "DELAYED_FIGHT_OUTCOME" || e.trigger?.kind === "WHEN_FIGHT_LOST" ? r.playContinuation || !r.triggerContinuation || r.triggerContinuation.phase !== "TARGET" : revision!.type === "PROGRAM" ? !r.playContinuation || r.playContinuation.phase !== "EFFECT" || r.triggerContinuation || e.trigger || source.zone.zone !== "RESOLVING_PROGRAM" : r.playContinuation || !r.triggerContinuation || !isPlayedInBatch(r.triggerContinuation, source.id) || r.triggerContinuation.phase !== "TARGET" || e.trigger?.kind !== "WHEN_PLAYED" || source.zone.zone !== "BATTLEFIELD")
         return failure("INVALID_TARGETED_DEFEAT_SOURCE", "Program and Unit PLAY retain their own original continuations");
     if (e.effect.when && !testCondition(state, e.controllerId, e.effect.when.condition, context, e.sourceId)) return failure("INVALID_DEFEAT_CONDITION", "A false condition cannot retain a target or owner-order choice");
     if (c.phase === "TARGET") {
@@ -126,12 +127,13 @@ export function validateEffectDefeatFacts(state: GameState, context: EngineConte
     if (!targetedDefeatEnabled(context)) return failure("INVALID_EFFECT_DEFEAT_FACT", "Bounded source and declared post-movement target identities required");
     for (const [sourceId, defeats, isOrigin] of all) {
         const source = state.objects.cards[sourceId], revision = source && cardRevision(state, source.id, context);
-        const fired = !isOrigin && origin.kind === "DEFEAT" && origin.fight ? c.bindings.find(b => b.kind === "DELAYED_FIGHT_OUTCOME" && b.sourceId === sourceId && defeats.some(d => d.targetId === b.opposingId)) : undefined;
+        const fired = !isOrigin && origin.kind === "DEFEAT" && origin.fight ? c.bindings.find(b => (b.kind === "DELAYED_FIGHT_OUTCOME" || b.kind === "WHEN_FIGHT_LOST") && b.sourceId === sourceId && defeats.some(d => d.targetId === b.opposingId)) : undefined;
+        const lost = fired?.kind === "WHEN_FIGHT_LOST"; // Batch V51: the losing Unit itself, wherever the fight left it.
         const played = !isOrigin && !fired && Boolean(c.effectPlays?.some(p => p.subjectId === sourceId));
         const ownPlay = !isOrigin && !fired && !played && origin.kind === "PLAY" && origin.subjectId === sourceId;
         if (!source || !(isOrigin || fired || played || ownPlay) || !(supportsTargetedDefeatCard(revision || undefined, context).ok || supportsTargetedGearDefeatCard(revision || undefined, context).ok)
             || (defeats.length !== 1 && !revision?.mechanics.abilities[0].effects.some(e => e.kind === "DEFEAT_UNIT" && e.target.kind === "UNITS" && (revision.type === "UNIT" && e.target.all === "OTHER_THAN_SOURCE" || revision.type === "PROGRAM" && (e.target.each || e.target.second && defeats.length === 2))))
-            || (isOrigin || fired ? revision!.type !== "PROGRAM" || source.zone.zone !== "TRASH" : revision!.type !== "UNIT" || (ownPlay && source.zone.zone !== "BATTLEFIELD"))
+            || (lost ? revision!.type !== "UNIT" : isOrigin || fired ? revision!.type !== "PROGRAM" || source.zone.zone !== "TRASH" : revision!.type !== "UNIT" || (ownPlay && source.zone.zone !== "BATTLEFIELD"))
             || (!fired && !played && !validAftermathOrigin(state, source.controllerId, revision, context))
             || defeats.some(d => d.defeatedBy !== source.id || !state.objects.cards[d.targetId] || !["TRASH", "REMOVED"].includes(state.objects.cards[d.targetId].zone.zone)))
             return failure("INVALID_EFFECT_DEFEAT_FACT", "Bounded source and declared post-movement target identities required");
