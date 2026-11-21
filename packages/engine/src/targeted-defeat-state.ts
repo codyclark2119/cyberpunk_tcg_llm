@@ -6,7 +6,7 @@ import { targetedDefeatEnabled, supportsTargetedDefeatCard } from "./targeted-de
 import { testCondition } from "./conditions";
 import { defeatBatch } from "./defeat";
 import { defeatOrderChoice } from "./combat-outcome-queries";
-import { allOtherDefeatTargets, eachDefeatChoice, eachDefeatPlayers, listDefeatTargets, ownDefeatTargets, secondDefeatChoice, secondDefeatTargets, targetedDefeatChoice } from "./targeted-defeat-queries";
+import { allOtherDefeatTargets, eachDefeatChoice, eachDefeatPlayers, listDefeatTargets, ownDefeatTargets, secondDefeatChoice, secondDefeatTargets, targetedDefeatChoice, thenDefeatChoice, thenDefeatTargets } from "./targeted-defeat-queries";
 import { supportsTargetedGearDefeatCard } from "./targeted-gear-defeat-support";
 import { reactEnabled } from "./react-support";
 import { attackSourceValid, listAttackTargets } from "./combat-queries";
@@ -68,8 +68,9 @@ function eachProgress(state: GameState, e: CurrentEffect, defeats: readonly Defe
     return i === defeats.length ? null : undefined;
 }
 /** The declared defeat set for each reviewed Unit-target form, checked against the current state. */
-function validDefeatSet(state: GameState, e: CurrentEffect, defeats: readonly DefeatInstruction[], context: EngineContext) {
+function validDefeatSet(state: GameState, e: CurrentEffect, defeats: readonly DefeatInstruction[], context: EngineContext, then = false) {
     if (e.effect.kind !== "DEFEAT_UNIT") return false;
+    if (then) return defeats.length === 1 && thenDefeatTargets(state, e, context).includes(defeats[0].targetId); // Batch V55.
     const ids = defeats.map(x => x.targetId), all = allOtherDefeatTargets(state, e, context), target = e.effect.target;
     if (all) return all.length > 0 && canonicalSerialize(ids) === canonicalSerialize(all);
     if (target.kind === "UNITS" && target.each) return ids.length > 0 && eachProgress(state, e, defeats, context) === null;
@@ -87,7 +88,12 @@ export function validateTargetedDefeatState(state: GameState, context: EngineCon
     if (e.trigger?.kind === "DELAYED_FIGHT_OUTCOME" || e.trigger?.kind === "WHEN_FIGHT_LOST" ? r.playContinuation || !r.triggerContinuation || r.triggerContinuation.phase !== "TARGET" : revision!.type === "PROGRAM" ? !r.playContinuation || r.playContinuation.phase !== "EFFECT" || r.triggerContinuation || e.trigger || source.zone.zone !== "RESOLVING_PROGRAM" : r.playContinuation || !r.triggerContinuation || !isPlayedInBatch(r.triggerContinuation, source.id) || r.triggerContinuation.phase !== "TARGET" || e.trigger?.kind !== "WHEN_PLAYED" || source.zone.zone !== "BATTLEFIELD")
         return failure("INVALID_TARGETED_DEFEAT_SOURCE", "Program and Unit PLAY retain their own original continuations");
     if (e.effect.when && !testCondition(state, e.controllerId, e.effect.when.condition, context, e.sourceId)) return failure("INVALID_DEFEAT_CONDITION", "A false condition cannot retain a target or owner-order choice");
-    if (c.phase === "TARGET") {
+    // Batch V55: the "if you do" clause exists only after its first defeat: a Gear this source defeated in this batch.
+    if (c.then && (!e.effect.then || !(c.phase === "THEN" || c.phase === "ORDER") || !r.triggerContinuation?.effectDefeats?.some(d => d.defeatedBy === source.id && ["TRASH", "REMOVED"].includes(state.objects.cards[d.targetId]?.zone.zone) && cardRevision(state, d.targetId, context)?.type === "GEAR"))
+        || c.phase === "THEN" && !c.then) return failure("INVALID_DEFEAT_TARGET", "The second clause needs its source's completed first defeat");
+    if (c.phase === "THEN") {
+        if (r.defeatContinuation || state.timing.step !== "TARGET_SELECTION" || thenDefeatTargets(state, e, context).length < 2 || canonicalSerialize(thenDefeatChoice(state, context)) !== canonicalSerialize(r.choice)) return failure("INVALID_DEFEAT_TARGET", "Only exact current strategic targets may pause");
+    } else if (c.phase === "TARGET") {
         const expected = targetedDefeatChoice(state, context);
         if (r.defeatContinuation || state.timing.step !== "TARGET_SELECTION" || expected.options.length < 2 || canonicalSerialize(expected) !== canonicalSerialize(r.choice)) return failure("INVALID_DEFEAT_TARGET", "Only exact current strategic targets may pause");
     } else if (c.phase === "SECOND" || c.phase === "EACH") {
@@ -105,7 +111,7 @@ export function validateTargetedDefeatState(state: GameState, context: EngineCon
     } else {
         const d = r.defeatContinuation;
         // The declared set must match its reviewed form against the current state (all, each, optional second, single).
-        if (!d || d.fightResult || d.appliedPrevention || d.appliedPreventions || !validDefeatSet(state, e, d.defeats, context) || d.orders.length !== d.defeats.length || d.defeats.some((x, i) => x.defeatedBy !== source.id || d.orders[i].targetId !== x.targetId)) return failure("INVALID_EFFECT_DEFEAT", "Exact still-eligible selected Unit(s) and effect source required; no fight/prevention metadata");
+        if (!d || d.fightResult || d.appliedPrevention || d.appliedPreventions || !validDefeatSet(state, e, d.defeats, context, Boolean(c.then)) || d.orders.length !== d.defeats.length || d.defeats.some((x, i) => x.defeatedBy !== source.id || d.orders[i].targetId !== x.targetId)) return failure("INVALID_EFFECT_DEFEAT", "Exact still-eligible selected Unit(s) and effect source required; no fight/prevention metadata");
         // Orders finish in sequence: complete orders, then the one paused order, then untouched orders.
         const current = d.orders.findIndex(o => o.cardIds.length < defeatBatch(state, o.targetId).length);
         if (current < 0 || d.orders.some((o, i) => { const batch = defeatBatch(state, o.targetId); return new Set(o.cardIds).size !== o.cardIds.length || o.cardIds.some(id => !batch.includes(id)) || (i < current ? o.cardIds.length !== batch.length : i > current ? o.cardIds.length !== 0 : batch.length - o.cardIds.length < 2); }) || state.timing.step !== "DEFEAT_ORDER_SELECTION" || canonicalSerialize(defeatOrderChoice(state)) !== canonicalSerialize(r.choice)) return failure("INVALID_DEFEAT_ORDER", "Exact owner prefix and strategic shared Trash-order choice required");
@@ -132,7 +138,9 @@ export function validateEffectDefeatFacts(state: GameState, context: EngineConte
         const played = !isOrigin && !fired && Boolean(c.effectPlays?.some(p => p.subjectId === sourceId));
         const ownPlay = !isOrigin && !fired && !played && origin.kind === "PLAY" && origin.subjectId === sourceId;
         if (!source || !(isOrigin || fired || played || ownPlay) || !(supportsTargetedDefeatCard(revision || undefined, context).ok || supportsTargetedGearDefeatCard(revision || undefined, context).ok)
-            || (defeats.length !== 1 && !revision?.mechanics.abilities[0].effects.some(e => e.kind === "DEFEAT_UNIT" && e.target.kind === "UNITS" && (revision.type === "UNIT" && e.target.all === "OTHER_THAN_SOURCE" || revision.type === "PROGRAM" && (e.target.each || e.target.second && defeats.length === 2))))
+            || (defeats.length !== 1 && !revision?.mechanics.abilities[0].effects.some(e => e.kind === "DEFEAT_UNIT" && (e.target.kind === "UNITS" && (revision.type === "UNIT" && e.target.all === "OTHER_THAN_SOURCE" || revision.type === "PROGRAM" && (e.target.each || e.target.second && defeats.length === 2))
+                // Batch V55: a {Play} Gear defeat and its "if you do" Unit defeat.
+                || revision.type === "UNIT" && e.then && defeats.length === 2)))
             || (lost ? revision!.type !== "UNIT" : isOrigin || fired ? revision!.type !== "PROGRAM" || source.zone.zone !== "TRASH" : revision!.type !== "UNIT" || (ownPlay && source.zone.zone !== "BATTLEFIELD"))
             || (!fired && !played && !validAftermathOrigin(state, source.controllerId, revision, context))
             || defeats.some(d => d.defeatedBy !== source.id || !state.objects.cards[d.targetId] || !["TRASH", "REMOVED"].includes(state.objects.cards[d.targetId].zone.zone)))

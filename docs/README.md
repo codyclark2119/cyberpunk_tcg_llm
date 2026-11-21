@@ -96,6 +96,7 @@ were recorded in their pull requests (#4, #7, #8); later batches have documents 
 | V52 (2026-11-20) | Johnny Silverhand: Never Stop Fighting | [Unit: readies on its first fight win each turn and wins all fights against CORPO Units, the first effect-decided fight winner](api-admission-batch-v52.md); coverage 101/151 |
 | V53 (2026-11-20) | Viktor Vektor: Drop Your Illusions | [Unit: your first CYBERWARE Gear each turn costs 3 less, the first cost reduction given to other cards](api-admission-batch-v53.md); coverage 102/151 |
 | V54 (2026-11-20) | Towerfall | [Program: choose one, or both with less Street Cred; -5 power to all rival Units, bottom-deck all rival power-0 Units](api-admission-batch-v54.md); coverage 103/151 |
+| V55 (2026-11-20) | Gilded Matón | [Unit: {Play} may defeat a friendly Gear, then a rival Unit with cost 3 or less, the first "if you do" second defeat](api-admission-batch-v55.md); coverage 104/151 |
 | V7 (2026-11-15) | Royce: Don't Call Me Simon, Wild in the Streets, Delamain: Rideshare AI | [shared defeat filter and exact pin table](api-admission-batch-v7.md); coverage 42/151 |
 | V6 (2026-09-22) | Trust No One | [contract and executable slice](api-admission-batch-v6.md), [baseline verification](api-admission-batch-v6-verification.md) |
 

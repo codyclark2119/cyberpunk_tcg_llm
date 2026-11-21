@@ -115,7 +115,8 @@ export const DefeatUnitTargetSchema = z.strictObject({ kind: z.literal("UNITS"),
     // Only Units whose current readiness is SPENT are eligible.
     readiness: z.literal("SPENT").optional(),
     // "with cost 2 or less" (batch V31): the Unit's referenced cost, alongside the power bound.
-    cost: z.strictObject({ kind: z.literal("AT_MOST"), value: z.literal(2) }).optional(),
+    // Batch V55: "with cost 3 or less".
+    cost: z.strictObject({ kind: z.literal("AT_MOST"), value: z.union([z.literal(2), z.literal(3)]) }).optional(),
     // "If <condition>, defeat ... with power N or less instead": replaces the AT_MOST bound while the condition holds.
     instead: z.strictObject({ condition: z.strictObject({ kind: z.literal("STREET_CRED_GREATER_THAN_RIVAL") }), power: DefeatPowerAtMostSchema }).optional(),
     // "Defeat all other Units" (batch V10): every eligible Unit except the effect source, with no target choice.
@@ -128,7 +129,8 @@ export const DefeatUnitTargetSchema = z.strictObject({ kind: z.literal("UNITS"),
     each: z.literal("PLAYER_CHOOSES_OWN").optional() });
 export type DefeatUnitTarget = z.infer<typeof DefeatUnitTargetSchema>;
 // Preserve the Unit selectors and historical effect discriminator. Vocabulary is not execution admission.
-export const DefeatGearTargetSchema = z.strictObject({ kind: z.literal("GEAR"), relation: z.enum(["RIVAL", "ANY"]),
+// Batch V55: "defeat a friendly Gear" (relation FRIENDLY).
+export const DefeatGearTargetSchema = z.strictObject({ kind: z.literal("GEAR"), relation: z.enum(["RIVAL", "ANY", "FRIENDLY"]),
     // Batch V34: "defeat a Gear" has no power bound; any controller's Gear qualifies (relation ANY).
     power: z.strictObject({ kind: z.literal("AT_MOST"), value: z.literal(2) }).optional() });
 export type DefeatGearTarget = z.infer<typeof DefeatGearTargetSchema>;
@@ -141,7 +143,9 @@ export const DefeatUnitEffectSchema = z.strictObject({ kind: z.literal("DEFEAT_U
     // Batch V34: "You may defeat a Gear": the controller may decline the target choice.
     optional: z.literal(true).optional(),
     // Batch V34: "If its cost equals the value of a friendly Gig, draw 1": checked after the defeated card has moved.
-    draw: z.strictObject({ condition: z.strictObject({ kind: z.literal("DEFEATED_COST_EQUALS_FRIENDLY_GIG_VALUE") }), count: z.literal(1) }).optional() });
+    draw: z.strictObject({ condition: z.strictObject({ kind: z.literal("DEFEATED_COST_EQUALS_FRIENDLY_GIG_VALUE") }), count: z.literal(1) }).optional(),
+    // Batch V55: "If you do, defeat a rival Unit with cost 3 or less": a second defeat once the first has happened.
+    then: DefeatUnitTargetSchema.optional() });
 export const EffectSchema = z.discriminatedUnion("kind", [
     SpendUnitEffectSchema,
     // "Spend this Unit" (batch V8).

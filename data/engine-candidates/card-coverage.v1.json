@@ -9,12 +9,12 @@
   },
   "totals": {
     "cards": 151,
-    "admitted": 103,
-    "notAdmitted": 48,
+    "admitted": 104,
+    "notAdmitted": 47,
     "notAdmittedOnlyCoveredFamilies": 0,
     "byAdmission": {
-      "NOT_ADMITTED": 48,
-      "SOURCE_MATCH": 103
+      "NOT_ADMITTED": 47,
+      "SOURCE_MATCH": 104
     }
   },
   "families": [
@@ -226,15 +226,6 @@
       "soleBlockerCount": 0
     },
     {
-      "family": "TRIGGER_PLAY",
-      "status": "PARTIAL",
-      "summary": "[Play] abilities and Program bodies resolving when played.",
-      "notes": "Trigger WHEN_PLAYED.",
-      "cardCount": 27,
-      "notAdmittedCount": 4,
-      "soleBlockerCount": 0
-    },
-    {
       "family": "EDDIE_ECONOMY",
       "status": "PARTIAL",
       "summary": "Ready Eddies, sell cards from unusual zones, pay Eddies during resolution.",
@@ -253,20 +244,20 @@
       "soleBlockerCount": 0
     },
     {
-      "family": "GEAR_MOVE_OR_SACRIFICE",
+      "family": "REPLACEMENT_EFFECT",
       "status": "MISSING",
-      "summary": "Move Gear between hosts, or defeat a friendly Gear as a cost or choice.",
+      "summary": "'If X would ..., instead ...' replacement effects.",
       "notes": "",
       "cardCount": 3,
       "notAdmittedCount": 3,
       "soleBlockerCount": 0
     },
     {
-      "family": "REPLACEMENT_EFFECT",
-      "status": "MISSING",
-      "summary": "'If X would ..., instead ...' replacement effects.",
-      "notes": "",
-      "cardCount": 3,
+      "family": "TRIGGER_PLAY",
+      "status": "PARTIAL",
+      "summary": "[Play] abilities and Program bodies resolving when played.",
+      "notes": "Trigger WHEN_PLAYED.",
+      "cardCount": 27,
       "notAdmittedCount": 3,
       "soleBlockerCount": 0
     },
@@ -280,20 +271,20 @@
       "soleBlockerCount": 0
     },
     {
-      "family": "UNIT_DEFEAT",
-      "status": "PARTIAL",
-      "summary": "Defeat a Unit or Gear chosen with a filter.",
-      "notes": "Filters are fixed literals (power at most 5, power at most a friendly d20, Gear power at most 2).",
-      "cardCount": 18,
-      "notAdmittedCount": 3,
-      "soleBlockerCount": 0
-    },
-    {
       "family": "CONDITION_STREET_CRED",
       "status": "PARTIAL",
       "summary": "Conditions on Street Cred.",
       "notes": "Nearly complete as conditions; gating an effect mode on them is not.",
       "cardCount": 13,
+      "notAdmittedCount": 2,
+      "soleBlockerCount": 0
+    },
+    {
+      "family": "GEAR_MOVE_OR_SACRIFICE",
+      "status": "MISSING",
+      "summary": "Move Gear between hosts, or defeat a friendly Gear as a cost or choice.",
+      "notes": "",
+      "cardCount": 3,
       "notAdmittedCount": 2,
       "soleBlockerCount": 0
     },
@@ -348,6 +339,15 @@
       "summary": "Triggers when a Unit or Legend steals a Gig.",
       "notes": "Only the history condition SUBJECT_STOLE_GIG_THIS_TURN exists (Delamain Cab); there is no steal trigger.",
       "cardCount": 8,
+      "notAdmittedCount": 2,
+      "soleBlockerCount": 0
+    },
+    {
+      "family": "UNIT_DEFEAT",
+      "status": "PARTIAL",
+      "summary": "Defeat a Unit or Gear chosen with a filter.",
+      "notes": "Filters are fixed literals (power at most 5, power at most a friendly d20, Gear power at most 2).",
+      "cardCount": 18,
       "notAdmittedCount": 2,
       "soleBlockerCount": 0
     },
@@ -1197,18 +1197,14 @@
       "colors": [
         "YELLOW"
       ],
-      "admission": "NOT_ADMITTED",
-      "revision": null,
+      "admission": "SOURCE_MATCH",
+      "revision": 1,
       "families": [
         "GEAR_MOVE_OR_SACRIFICE",
         "TRIGGER_PLAY",
         "UNIT_DEFEAT"
       ],
-      "blockingFamilies": [
-        "GEAR_MOVE_OR_SACRIFICE",
-        "TRIGGER_PLAY",
-        "UNIT_DEFEAT"
-      ],
+      "blockingFamilies": [],
       "note": null
     },
     {

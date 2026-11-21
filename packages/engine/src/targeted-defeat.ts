@@ -6,7 +6,7 @@ import { discardedCostMatchesFriendlyGig } from "./discard";
 import { defeatOrderChoice, unfinishedDefeatOrder } from "./combat-outcome-queries";
 import { completePlayEffect } from "./play";
 import { appendDefeatedTriggers, completed, prepareTriggerBatch } from "./trigger-resolution";
-import { allOtherDefeatTargets, eachDefeatChoice, eachDefeatPlayers, ownDefeatTargets, secondDefeatChoice, secondDefeatTargets, targetedDefeatChoice } from "./targeted-defeat-queries";
+import { allOtherDefeatTargets, eachDefeatChoice, eachDefeatPlayers, ownDefeatTargets, secondDefeatChoice, secondDefeatTargets, targetedDefeatChoice, thenDefeatChoice, thenDefeatTargets } from "./targeted-defeat-queries";
 function finishWithoutDefeat(m: TurnMutation) { return m.state.resolution.triggerContinuation ? completed(m) : completePlayEffect(m); }
 export function beginTargetedDefeat(m: TurnMutation): Result<null> {
     const r = m.state.resolution, current = r.current!;
@@ -69,8 +69,8 @@ function advanceOwnerOrder(m: TurnMutation): Result<null> {
         r.defeatContinuation!.orders.find(o => o.targetId === order.targetId)!.cardIds.push(option.cardInstanceId);
         m.emit({ kind: "DEFEAT_TRASH_ORDER_SELECTED", targetId: order.targetId, cardInstanceId: option.cardInstanceId, ownerId: choice.actorId, forced: true });
     }
-    const current = r.current!, defeats = r.defeatContinuation!.defeats;
-    const result = defeatCards(m, defeats, r.defeatContinuation!.orders, current.effect.kind === "DEFEAT_UNIT" && current.effect.target.kind === "GEAR");
+    const current = r.current!, defeats = r.defeatContinuation!.defeats, wasThen = Boolean(r.targetedDefeatContinuation?.then);
+    const result = defeatCards(m, defeats, r.defeatContinuation!.orders, !wasThen && current.effect.kind === "DEFEAT_UNIT" && current.effect.target.kind === "GEAR");
     if (!result.ok) return result;
     delete r.defeatContinuation; delete r.targetedDefeatContinuation; r.choice = null;
     m.state.timing.actingPlayer = current.controllerId;
@@ -83,11 +83,20 @@ function advanceOwnerOrder(m: TurnMutation): Result<null> {
             if (met) { const drawn = m.draw(current.controllerId, current.effect.draw.count); if (!drawn.ok) return drawn; }
             if (m.state.match.outcome) { m.emit({ kind: "EFFECT_RESOLVED", effectId: current.id }); return success(null); }
         }
+        // Batch V55: "If you do, defeat a rival Unit ...": the first defeat happened, so the second clause applies now.
+        if (current.effect.kind === "DEFEAT_UNIT" && current.effect.then && !wasThen && !m.state.match.outcome) return beginThenDefeat(m);
         return completed(m);
     }
     const batch = prepareTriggerBatch(m, { kind: "DEFEAT", effectSource: current.sourceId!, defeated: defeats }, result.value);
     if (batch) for (const e of batch.pending) m.emit({ kind: "EFFECT_PENDING", effectId: e.id, sourceId: e.sourceId! });
     return completePlayEffect(m, batch);
+}
+function beginThenDefeat(m: TurnMutation): Result<null> {
+    const r = m.state.resolution, current = r.current!, targets = thenDefeatTargets(m.state, current, m.context);
+    if (!targets.length) return completed(m);
+    r.targetedDefeatContinuation = { phase: "THEN", then: true };
+    if (targets.length === 1) { r.choice = thenDefeatChoice(m.state, m.context); return continueTargetedDefeat(m, 0, true); }
+    return pauseForTarget(m, thenDefeatChoice(m.state, m.context));
 }
 export function continueTargetedDefeat(m: TurnMutation, index: number, forced = false): Result<null> {
     const r = m.state.resolution, c = r.targetedDefeatContinuation!, current = r.current!, choice = r.choice!, option = choice.options[index];
@@ -105,6 +114,13 @@ export function continueTargetedDefeat(m: TurnMutation, index: number, forced = 
         const d = r.defeatContinuation ??= { defeats: [], orders: [] };
         d.defeats.push({ targetId: option.cardInstanceId, defeatedBy: current.sourceId! }); d.orders.push({ targetId: option.cardInstanceId, cardIds: [] });
         return advanceEach(m);
+    }
+    if (c.phase === "THEN") {
+        if (!thenDefeatTargets(m.state, current, m.context).includes(option.cardInstanceId)) return failure("INVALID_DEFEAT_TARGET", "Target must remain eligible");
+        m.emit({ kind: "DEFEAT_TARGET_SELECTED", effectId: current.id, sourceId: current.sourceId!, targetId: option.cardInstanceId, controllerId: current.controllerId, forced });
+        r.defeatContinuation = { defeats: [{ targetId: option.cardInstanceId, defeatedBy: current.sourceId! }], orders: [{ targetId: option.cardInstanceId, cardIds: [] }] };
+        c.phase = "ORDER";
+        return advanceOwnerOrder(m);
     }
     if (c.phase === "SECOND") {
         const firstId = r.defeatContinuation!.defeats[0].targetId;
