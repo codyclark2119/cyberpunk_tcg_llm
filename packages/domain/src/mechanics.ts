@@ -287,6 +287,8 @@ export const ContinuousModifierSchema = z.discriminatedUnion("kind", [
     // Batch V64: "If a Rival controls more Gigs than you, this Unit can attack their Gig area the turn it's played" (11.3.1): while
     // lagging, the Gig area only, and only while the condition holds.
     z.strictObject({ kind: z.literal("CAN_ATTACK_GIG_AREA_WHILE_LAGGING_IF"), condition: z.strictObject({ kind: z.literal("RIVAL_CONTROLS_MORE_GIGS"), minimum: z.literal(1) }) }),
+    // Batch V65: "If you have more Street Cred than a Rival, this Unit can attack ready Units with {Blocker}" (9.3.2.1 widened).
+    z.strictObject({ kind: z.literal("CAN_ATTACK_READY_BLOCKERS_IF"), condition: z.strictObject({ kind: z.literal("STREET_CRED_GREATER_THAN_RIVAL") }) }),
     // Batch V52: "This Unit wins all fights against CORPO Units" (11.4.1.4).
     z.strictObject({ kind: z.literal("WINS_FIGHTS_AGAINST_CLASSIFICATION"), classification: z.literal("Corpo") }),
     z.strictObject({ kind: z.literal("FRIENDLY_ARASAKA_ATTACKING_UNIT_POWER"), amount: z.literal(1) }),

@@ -4,7 +4,7 @@ import { CardRevisionSnapshotSchema, RulesetSchema, canonicalSerialize, createCo
 import { batchV6Context } from "./api-admission-batch-v6-fixture";
 import { attackPowerContext } from "./attack-condition-power-fixture";
 import { demoStarterContext } from "./demo-starter-fixture";
-import { batchV64Context } from "./api-admission-batch-v64-fixture";
+import { batchV65Context } from "./api-admission-batch-v65-fixture";
 
 // Every reviewed executable revision of a real catalog card, under one ruleset with every
 // reviewed turn-slice gate on. The admission chains (batchV6Context: V2-V6 and the linear
@@ -20,7 +20,7 @@ export function catalogSlugs(): Set<string> {
 }
 
 export function reviewedUnionContext() {
-    const demo = demoStarterContext().content, sources = [batchV6Context(demo.manifest.engine).content, attackPowerContext().content, batchV64Context().content, demo];
+    const demo = demoStarterContext().content, sources = [batchV6Context(demo.manifest.engine).content, attackPowerContext().content, batchV65Context().content, demo];
     const real = catalogSlugs(), cards = new Map<string, CardRevisionSnapshot>();
     for (const card of sources.flatMap(s => s.cards)) {
         if (card.schemaVersion !== 2 || !card.provenance.reviewed || card.execution?.status !== "SUPPORTED" || !real.has(card.id)) continue;

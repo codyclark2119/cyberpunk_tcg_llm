@@ -106,6 +106,7 @@ were recorded in their pull requests (#4, #7, #8); later batches have documents 
 | V62 (2026-11-21) | Padre: Man of the Cross | [Legend: {Call} choose one (spend a rival Unit, or Draw 1); {Spend} set a Gig to another player's Gig value](api-admission-batch-v62.md); coverage 112/151 |
 | V63 (2026-11-21) | Evelyn Parker: Beautiful Enigma | [Legend: ready 1 Eddie when a friendly CORPO or GANGER Unit steals; 1 €$, {Spend} a rival Unit must attack next turn](api-admission-batch-v63.md); coverage 113/151 |
 | V64 (2026-11-21) | Nadia: Fighting Through Grief | [Unit: can attack a Rival's Gig area the turn it's played if that Rival controls more Gigs](api-admission-batch-v64.md); coverage 114/151 |
+| V65 (2026-11-21) | Valentino Guerrera | [Unit: can attack ready Blockers while its controller has more Street Cred than a Rival; an attacked Blocker cannot block itself](api-admission-batch-v65.md); coverage 115/151 |
 | V7 (2026-11-15) | Royce: Don't Call Me Simon, Wild in the Streets, Delamain: Rideshare AI | [shared defeat filter and exact pin table](api-admission-batch-v7.md); coverage 42/151 |
 | V6 (2026-09-22) | Trust No One | [contract and executable slice](api-admission-batch-v6.md), [baseline verification](api-admission-batch-v6-verification.md) |
 
