@@ -72,6 +72,7 @@ function validBinding(state: GameState, b: TriggerBinding, context: EngineContex
     // Batch V69: a "when spent" binding names a card this batch's origin or an effect in it spent. It is captured as the card is spent,
     // so its source is the spent card or a Gear on it, unless the source has since left the field.
     if (b.kind === "WHEN_SPENT") return [...(origin.kind === "SPEND" ? origin.spentIds : []), ...(c.effectSpends ?? [])].includes(b.subjectId) && b.gigInstanceId === undefined && !b.delayedId && supportsSpendTriggerCard(r, context).ok
+        && (ability.guard !== "FIRST_SPEND_PER_TURN" || Boolean(state.turnHistory?.firstSpends?.includes(b.subjectId)))
         && (b.sourceId === b.subjectId || attachedGear(state, b.subjectId, context).some(g => g.id === b.sourceId) || !["BATTLEFIELD", "LEGENDS"].includes(source.zone.zone));
     // Batch V50: an observer of the turn's first ARASAKA Unit defeat, defeated by this batch's origin or an effect in it. The observer
     // is on the field, or was defeated with it (bindings are captured before movement).
@@ -135,6 +136,8 @@ export function validateTriggerState(state: GameState, context: EngineContext) {
             return b.kind !== "WHEN_SPENT" || !source || !state.objects.cards[b.subjectId] || source.cardId !== b.source.cardId || source.revision !== b.source.revision || a?.trigger !== "WHEN_SPENT" || (b.sourceId !== b.subjectId) !== (a.inherited === "EQUIPPED_HOST")
                 || b.gigInstanceId !== undefined || b.delayedId !== undefined || b.opposingId !== undefined || !supportsSpendTriggerCard(rev, context).ok; })))
         return failure("INVALID_SPEND_QUEUE", "Queued spend bindings belong to an unfinished action outside any batch");
+    if (history?.firstSpends && (new Set(history.firstSpends).size !== history.firstSpends.length || history.firstSpends.some(id => !state.objects.cards[id])))
+        return failure("INVALID_TURN_HISTORY", "First spends name distinct cards");
     if (history && (programPlayHistoryEnabled(context) ? !history.programPlays || canonicalSerialize(Object.keys(history.programPlays).sort()) !== canonicalSerialize([...state.match.playerOrder].sort()) : history.programPlays)) return failure("INVALID_TURN_HISTORY", "Program-play counters exist exactly for each player under the reviewed policy");
     if (!c) return all.some(e => e.trigger || e.primitiveIndex !== undefined) || state.timing.combat.stage === "TRIGGER_RESOLUTION" || ["EDDIE_READY_SELECTION", "DISCARD_SELECTION", "TRIGGER_ORDER_SELECTION", "OPTIONAL_TRIGGER_SELECTION"].includes(state.timing.step ?? "") ? failure("ORPHAN_TRIGGER", "Pending trigger metadata requires its continuation") : success(null);
     if (!enabled || state.setup || state.match.outcome || r.returnTo || r.legendEntryContinuation || r.playContinuation || r.callContinuation || (r.searchContinuation && !isSearchEffect(r.current?.effect) && r.current?.effect.kind !== "SEARCH_TOP_MAY_TRASH") || r.gigStealContinuation || (r.defeatContinuation && !r.targetedDefeatContinuation) || r.discovered.length || r.stage !== "CHOICE" || !r.choice || c.ordinal !== history?.triggeredBatches || Object.values(state.objects.cards).some(c => c.zone.zone === "RESOLVING_PROGRAM")) return failure("INVALID_TRIGGER_CONTINUATION", "Exclusive player-choice trigger batch required");
@@ -354,6 +357,13 @@ export function validateTriggerState(state: GameState, context: EngineContext) {
         if (c.phase !== "DISCARD" || c.conditionMet !== undefined || e.primitiveIndex !== undefined || c.discardedCardId || c.origin.kind !== "ATTACK" || e.trigger?.kind !== "WHEN_ATTACKING"
             || !supportsFreeCallUnit(cardRevision(state, e.sourceId!, context), context).ok || getDiscardableCards(state, e.controllerId).length < 2)
             return failure("INVALID_DISCARD_CONTINUATION", "Only the reviewed {Attack} own discard pauses, for a choice among 2 or more hand cards");
+    }
+    // Batch V72: Rita's first-spend own discard pauses after its draw, for the controller's choice among 2 or more hand cards.
+    else if (r.current?.effect.kind === "DISCARD_CARDS" && r.current.effect.drawFirst) {
+        const e = r.current;
+        if (c.phase !== "DISCARD" || c.conditionMet !== undefined || e.primitiveIndex !== undefined || c.discardedCardId || e.trigger?.kind !== "WHEN_SPENT"
+            || !supportsSpendTriggerCard(cardRevision(state, e.sourceId!, context), context).ok || getDiscardableCards(state, e.controllerId).length < 2)
+            return failure("INVALID_DISCARD_CONTINUATION", "Only the reviewed first-spend own discard pauses, for a choice among 2 or more hand cards");
     }
     else if (c.phase === "DISCARD" && r.current?.effect.kind !== "DISCARD_PROGRAMS_THEN_BOTTOM_DECK" || r.current?.effect.kind === "DISCARD_CARDS" || c.conditionMet !== undefined) {
         const e = r.current;

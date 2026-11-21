@@ -9,12 +9,12 @@
   },
   "totals": {
     "cards": 151,
-    "admitted": 121,
-    "notAdmitted": 30,
+    "admitted": 122,
+    "notAdmitted": 29,
     "notAdmittedOnlyCoveredFamilies": 0,
     "byAdmission": {
-      "NOT_ADMITTED": 30,
-      "SOURCE_MATCH": 121
+      "NOT_ADMITTED": 29,
+      "SOURCE_MATCH": 122
     }
   },
   "families": [
@@ -51,7 +51,7 @@
       "summary": "Draw cards, fixed or conditional.",
       "notes": "Routed. Variable counts need SCALED_AMOUNT; 'may draw' needs an optional prompt.",
       "cardCount": 38,
-      "notAdmittedCount": 8,
+      "notAdmittedCount": 7,
       "soleBlockerCount": 0
     },
     {
@@ -91,15 +91,6 @@
       "soleBlockerCount": 0
     },
     {
-      "family": "DISCARD",
-      "status": "PARTIAL",
-      "summary": "Discard: self discard, a Rival discards, discard as a cost, discard a hand.",
-      "notes": "DISCARD_CARDS supports only the controller discarding exactly 1.",
-      "cardCount": 15,
-      "notAdmittedCount": 5,
-      "soleBlockerCount": 0
-    },
-    {
       "family": "KEYWORD_QUICK",
       "status": "PARTIAL",
       "summary": "[Quick] timing: Programs and activated abilities usable in the react window.",
@@ -114,6 +105,15 @@
       "summary": "Who may attack what and when: can't attack, may attack ready/spent Units, must attack, can't be blocked.",
       "notes": "Restrictions on the card itself are supported; permissions granted by effects, forced attacks and off-turn timing are not.",
       "cardCount": 16,
+      "notAdmittedCount": 4,
+      "soleBlockerCount": 0
+    },
+    {
+      "family": "DISCARD",
+      "status": "PARTIAL",
+      "summary": "Discard: self discard, a Rival discards, discard as a cost, discard a hand.",
+      "notes": "DISCARD_CARDS supports only the controller discarding exactly 1.",
+      "cardCount": 15,
       "notAdmittedCount": 4,
       "soleBlockerCount": 0
     },
@@ -172,29 +172,11 @@
       "soleBlockerCount": 0
     },
     {
-      "family": "KEYWORD_BLOCKER",
-      "status": "COVERED",
-      "summary": "Printed [Blocker] on a Unit, or granted to a Gear's host.",
-      "notes": "Keyword BLOCKER. Temporary grants by an effect are TEMPORARY_BUFF.",
-      "cardCount": 11,
-      "notAdmittedCount": 3,
-      "soleBlockerCount": 0
-    },
-    {
       "family": "REPLACEMENT_EFFECT",
       "status": "MISSING",
       "summary": "'If X would ..., instead ...' replacement effects.",
       "notes": "",
       "cardCount": 3,
-      "notAdmittedCount": 3,
-      "soleBlockerCount": 0
-    },
-    {
-      "family": "TRIGGER_WHEN_SPENT",
-      "status": "MISSING",
-      "summary": "WHEN_SPENT: 'when this Unit or Legend is spent' (includes Zetatech Faceplate).",
-      "notes": "Documented as unsupported; needs every spending path (attack, Blocker, [Spend] costs, effects) to emit one event.",
-      "cardCount": 6,
       "notAdmittedCount": 3,
       "soleBlockerCount": 0
     },
@@ -213,6 +195,15 @@
       "summary": "Move Gear between hosts, or defeat a friendly Gear as a cost or choice.",
       "notes": "",
       "cardCount": 3,
+      "notAdmittedCount": 2,
+      "soleBlockerCount": 0
+    },
+    {
+      "family": "KEYWORD_BLOCKER",
+      "status": "COVERED",
+      "summary": "Printed [Blocker] on a Unit, or granted to a Gear's host.",
+      "notes": "Keyword BLOCKER. Temporary grants by an effect are TEMPORARY_BUFF.",
+      "cardCount": 11,
       "notAdmittedCount": 2,
       "soleBlockerCount": 0
     },
@@ -271,11 +262,11 @@
       "soleBlockerCount": 0
     },
     {
-      "family": "TURN_HISTORY",
-      "status": "PARTIAL",
-      "summary": "'First time each turn', 'this turn you played', 'if it stole or fought this turn'.",
-      "notes": "Guards FIRST_BLUE_UNIT_OR_GEAR_PLAY_PER_TURN and FIRST_FRIENDLY_ARASAKA_UNIT_ATTACK_PER_TURN.",
-      "cardCount": 11,
+      "family": "TRIGGER_WHEN_SPENT",
+      "status": "MISSING",
+      "summary": "WHEN_SPENT: 'when this Unit or Legend is spent' (includes Zetatech Faceplate).",
+      "notes": "Documented as unsupported; needs every spending path (attack, Blocker, [Spend] costs, effects) to emit one event.",
+      "cardCount": 6,
       "notAdmittedCount": 2,
       "soleBlockerCount": 0
     },
@@ -402,6 +393,15 @@
       "summary": "'At the end of your turn' abilities.",
       "notes": "Trigger WHEN_OWN_TURN_ENDS; only Eddie readying is routed.",
       "cardCount": 9,
+      "notAdmittedCount": 1,
+      "soleBlockerCount": 0
+    },
+    {
+      "family": "TURN_HISTORY",
+      "status": "PARTIAL",
+      "summary": "'First time each turn', 'this turn you played', 'if it stole or fought this turn'.",
+      "notes": "Guards FIRST_BLUE_UNIT_OR_GEAR_PLAY_PER_TURN and FIRST_FRIENDLY_ARASAKA_UNIT_ATTACK_PER_TURN.",
+      "cardCount": 11,
       "notAdmittedCount": 1,
       "soleBlockerCount": 0
     },
@@ -2398,8 +2398,8 @@
       "colors": [
         "BLUE"
       ],
-      "admission": "NOT_ADMITTED",
-      "revision": null,
+      "admission": "SOURCE_MATCH",
+      "revision": 1,
       "families": [
         "DISCARD",
         "DRAW",
@@ -2407,12 +2407,7 @@
         "TRIGGER_WHEN_SPENT",
         "TURN_HISTORY"
       ],
-      "blockingFamilies": [
-        "DISCARD",
-        "DRAW",
-        "TRIGGER_WHEN_SPENT",
-        "TURN_HISTORY"
-      ],
+      "blockingFamilies": [],
       "note": null
     },
     {

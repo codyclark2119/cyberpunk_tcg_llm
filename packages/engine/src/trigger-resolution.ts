@@ -238,6 +238,11 @@ export function advanceTriggers(m: TurnMutation): Result<null> {
         return advanceReady(m);
     }
     if (e.kind === "DISCARD_CARDS") {
+        // Batch V72: "draw 1, then discard 1" draws before the discard is chosen.
+        if (e.drawFirst) {
+            const drawn = m.draw(r.current.controllerId, e.drawFirst); if (!drawn.ok) return drawn;
+            if (m.state.match.outcome) { m.emit({ kind: "EFFECT_RESOLVED", effectId: r.current.id }); return success(null); }
+        }
         // Evaluated only after the preceding primitive has actually changed authoritative state.
         const met = !e.when || testCondition(m.state, r.current.controllerId, e.when.condition, m.context, r.current.sourceId);
         if (e.when) m.emit({ kind: "CONDITION_EVALUATED", effectId: r.current.id, met });

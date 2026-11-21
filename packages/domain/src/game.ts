@@ -121,7 +121,9 @@ export const TurnHistorySchema = z.strictObject({
     firstArasakaDefeat: CardInstanceIdSchema.optional(), rivalUnitAttackGrants: z.array(CardInstanceIdSchema).min(1).optional(),
     firstArasakaAttacks: z.record(PlayerIdSchema, QualifyingAttackSummarySchema).optional(), gigsStolenByUnit: z.record(CardInstanceIdSchema, z.number().int().positive()).optional(),
     // Batch V69: "when spent" bindings pending from a spend outside any trigger batch, until the action's next batch or its end.
-    spendTriggers: z.array(TriggerBindingSchema).min(1).optional(), turn: z.number().int().positive(), triggeredBatches: z.number().int().nonnegative(), blueUnitOrGearPlays: z.record(PlayerIdSchema, z.number().int().nonnegative()), programPlays: z.record(PlayerIdSchema, z.number().int().nonnegative()).optional() });
+    spendTriggers: z.array(TriggerBindingSchema).min(1).optional(),
+    // Batch V72: cards with a "the first time this Unit is spent each turn" trigger already spent this turn.
+    firstSpends: z.array(CardInstanceIdSchema).min(1).optional(), turn: z.number().int().positive(), triggeredBatches: z.number().int().nonnegative(), blueUnitOrGearPlays: z.record(PlayerIdSchema, z.number().int().nonnegative()), programPlays: z.record(PlayerIdSchema, z.number().int().nonnegative()).optional() });
 export const PendingEffectSchema = z.strictObject({ id: z.string().min(1), controllerId: PlayerIdSchema, sourceId: CardInstanceIdSchema.nullable(), primitiveIndex: z.literal(1).optional(), effect: EffectSchema, trigger: TriggerBindingSchema.omit({ sourceId: true, controllerId: true }).extend({ turn: z.number().int().positive(), ordinal: z.number().int().positive() }).optional(), causedBySequence: z.number().int().nonnegative() });
 export const ActionReturnContextSchema = z.discriminatedUnion("kind", [z.strictObject({ kind: z.literal("MAIN") }), z.strictObject({ kind: z.literal("RIVAL_REACT") })]);
 export type ActionReturnContext = z.infer<typeof ActionReturnContextSchema>;

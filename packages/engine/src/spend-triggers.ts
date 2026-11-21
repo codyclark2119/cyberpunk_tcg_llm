@@ -2,6 +2,7 @@ import { PendingEffectSchema, TriggerBindingSchema, type CardInstanceId, type Ga
 import type { EngineContext } from "./state";
 import type { TurnMutation } from "./turn";
 import { effectiveTriggeredAbilities, pendingTrigger } from "./trigger-queries";
+import { cardRevision } from "./characteristics";
 
 /** Batch V69 (3.7, 10.16.1): a card "is spent" when a ready card is turned spent, for any reason (attacking, using {Blocker},
  * paying a cost or a {Spend} cost, an effect). A card that enters spent was never turned, so it never triggers. These are the
@@ -12,8 +13,16 @@ export function spendBindings(state: GameState, id: CardInstanceId, context: Eng
 /** Call right after a ready card is turned spent. Inside a trigger batch its bindings join that batch at once; otherwise they wait
  * for the action's next batch, or for its end (a SPEND batch). Bindings are captured now, so a later departure keeps them pending. */
 export function noteSpent(m: TurnMutation, id: CardInstanceId) {
-    const bindings = spendBindings(m.state, id, m.context);
+    let bindings = spendBindings(m.state, id, m.context);
     if (!bindings.length) return;
+    // Batch V72: "The first time this Unit is spent each turn" binds only on the card's first spend this turn.
+    const first = (b: TriggerBinding) => cardRevision(m.state, b.sourceId, m.context)?.mechanics.abilities.find(a => a.id === b.abilityId)?.guard === "FIRST_SPEND_PER_TURN";
+    if (bindings.some(first)) {
+        const h = m.state.turnHistory!;
+        if ((h.firstSpends ?? []).includes(id)) bindings = bindings.filter(b => !first(b));
+        else h.firstSpends = [...(h.firstSpends ?? []), id];
+        if (!bindings.length) return;
+    }
     const c = m.state.resolution.triggerContinuation;
     if (c) {
         c.effectSpends = [...(c.effectSpends ?? []), id];

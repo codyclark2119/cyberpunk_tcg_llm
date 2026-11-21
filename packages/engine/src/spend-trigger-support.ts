@@ -18,7 +18,10 @@ const SPEND_TRIGGER_SHAPES = [
     { type: "GEAR", sell: true, power: 2, equip: { kind: "FRIENDLY_UNIT_OR_FACE_UP_LEGEND" }, modifiers: [{ kind: "GRANT_PRINTED_POWER_TO_HOST" }],
         colors: ["YELLOW"], ram: { YELLOW: 2 }, tags: ["Cyberware", "Zetatech"], cost: 2,
         abilities: [ability({ trigger: "WHEN_SPENT", inherited: "EQUIPPED_HOST", effects: [{ kind: "ADJUST_GIG_UP_TO", target: { kind: "GIGS", relation: "ANY" }, maximum: 1,
-            then: { kind: "DRAW_IF_DISTINCT_FRIENDLY_GIG_VALUES", minimum: 3, count: 1 } }] })] }
+            then: { kind: "DRAW_IF_DISTINCT_FRIENDLY_GIG_VALUES", minimum: 3, count: 1 } }] })] },
+    // Batch V72: Rita Wheeler: No Stupid Questions. "{Blocker} The first time this Unit is spent each turn, draw 1, then discard 1."
+    { type: "UNIT", sell: false, power: 4, equip: null, modifiers: [], keywords: ["BLOCKER"], colors: ["BLUE"], ram: { BLUE: 2 }, tags: ["Ganger", "Mox"], cost: 4,
+        abilities: [ability({ trigger: "WHEN_SPENT", guard: "FIRST_SPEND_PER_TURN", effects: [{ kind: "DISCARD_CARDS", player: "CONTROLLER", count: 1, selection: "CHOSEN_BY_AFFECTED_PLAYER", drawFirst: 1 }] })] }
 ].map(shape => canonicalSerialize({ keywords: [], restrictions: [], ...shape }));
 /** Any "when spent" trigger routes here first, so no other gate can admit what it does not read. */
 export function hasSpendTrigger(card: DeepReadonly<CardRevisionSnapshot> | undefined) {

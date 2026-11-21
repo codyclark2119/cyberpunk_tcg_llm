@@ -91,7 +91,9 @@ export const DiscardCardsEffectSchema = z.strictObject({
     // Batch V31: "If the card's cost equals the value of a friendly Gig, that Rival discards 1 more."
     more: z.strictObject({ condition: z.strictObject({ kind: z.literal("DISCARDED_COST_EQUALS_FRIENDLY_GIG_VALUE") }), count: z.literal(1) }).optional(),
     // Batch V66: "Discard 1. If you do, draw 1 for each friendly face-up Legend."
-    thenDraw: z.literal("PER_FRIENDLY_FACE_UP_LEGEND").optional()
+    thenDraw: z.literal("PER_FRIENDLY_FACE_UP_LEGEND").optional(),
+    // Batch V72: "draw 1, then discard 1": the draw comes first.
+    drawFirst: z.literal(1).optional()
 });
 export type DiscardCardsEffect = z.infer<typeof DiscardCardsEffectSchema>;
 export const ReadyEddiesEffectSchema = z.strictObject({ kind: z.literal("READY_EDDIES"), player: z.literal("CONTROLLER"), count: z.union([z.literal(1), z.literal(2)]),
@@ -280,7 +282,7 @@ export const AbilitySchema = z.strictObject({ id: z.string().min(1), trigger: Tr
     // Batch V40: STEALER_IS_LEGEND limits it to a stealing friendly Legend ("When a friendly Legend steals a Gig").
     // Batch V49: FIRST_OTHER_FRIENDLY_STEAL_BELOW_POWER_PER_TURN is "The first time another friendly Unit steals a Gig with value less
     // than its power each turn".
-    guard: z.enum(["FIRST_BLUE_UNIT_OR_GEAR_PLAY_PER_TURN", "FIRST_FRIENDLY_ARASAKA_UNIT_ATTACK_PER_TURN", "STOLEN_GIG_IS_D6", "STEALER_IS_LEGEND", "FIRST_OTHER_FRIENDLY_STEAL_BELOW_POWER_PER_TURN", "FIRST_ARASAKA_UNIT_DEFEAT_PER_TURN", "FIRST_FIGHT_WIN_PER_TURN", "FRIENDLY_CORPO_OR_GANGER_UNIT_STEALS", "FIRST_HOST_STEAL_PER_TURN"]).optional(),
+    guard: z.enum(["FIRST_BLUE_UNIT_OR_GEAR_PLAY_PER_TURN", "FIRST_FRIENDLY_ARASAKA_UNIT_ATTACK_PER_TURN", "STOLEN_GIG_IS_D6", "STEALER_IS_LEGEND", "FIRST_OTHER_FRIENDLY_STEAL_BELOW_POWER_PER_TURN", "FIRST_ARASAKA_UNIT_DEFEAT_PER_TURN", "FIRST_FIGHT_WIN_PER_TURN", "FRIENDLY_CORPO_OR_GANGER_UNIT_STEALS", "FIRST_HOST_STEAL_PER_TURN", "FIRST_SPEND_PER_TURN"]).optional(),
     // Batch V63: FRIENDLY_CORPO_OR_GANGER_UNIT_STEALS is "When a friendly CORPO or GANGER Unit steals 1 or more Gigs": once per steal, not per Gig.
     // Batch V50: FIRST_ARASAKA_UNIT_DEFEAT_PER_TURN with WHEN_UNIT_DEFEATED is "The first time an ARASAKA Unit is defeated each turn".
     // Batch V49: QUICK is "[Quick] cost: effect" (11.30.2): also activatable as a reaction to a rival Unit's attack.
