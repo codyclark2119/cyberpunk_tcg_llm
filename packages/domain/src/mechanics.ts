@@ -196,7 +196,7 @@ export const EffectSchema = z.discriminatedUnion("kind", [
         draw: z.strictObject({ classifications: z.tuple([z.literal("AI"), z.literal("Drone"), z.literal("Vehicle")]), count: z.literal(1) }) }),
     z.strictObject({ kind: z.literal("POWER_UNTIL_END_OF_TURN"), target: z.strictObject({ kind: z.enum(["RIVAL_UNIT", "SOURCE_SUBJECT", "FRIENDLY_UNIT", "ALL_RIVAL_UNITS"]) }), amount: z.number().int(), scale: z.literal("SOURCE_POWER").optional() }),
     // Batch V27: STOLEN_GIG is "increase it", the Gig a steal trigger names.
-    z.strictObject({ kind: z.literal("ADJUST_GIG_UP_TO"), target: z.union([z.strictObject({ kind: z.literal("GIGS"), relation: z.literal("ANY") }), z.strictObject({ kind: z.literal("STOLEN_GIG") })]), maximum: z.union([z.literal(1), z.literal(3), z.literal(4), z.literal(5), z.literal(6)]), direction: z.enum(["INCREASE", "DECREASE"]).optional() }),
+    z.strictObject({ kind: z.literal("ADJUST_GIG_UP_TO"), target: z.union([z.strictObject({ kind: z.literal("GIGS"), relation: z.literal("ANY") }), z.strictObject({ kind: z.literal("STOLEN_GIG") })]), maximum: z.union([z.literal(1), z.literal(2), z.literal(3), z.literal(4), z.literal(5), z.literal(6)]), direction: z.enum(["INCREASE", "DECREASE"]).optional() }),
     z.strictObject({ kind: z.literal("CONDITIONAL_DRAW"), timing: z.literal("RESOLUTION"), condition: ConditionSchema, count: z.number().int().positive() }),
     // Batch V19: an absent maxCost is "a Gear" with no cost limit.
     // Batch V35: "Search the top 4 cards of your deck. Reveal any number of cards with cost equal to any friendly Gig values and add
@@ -272,7 +272,8 @@ export const AbilitySchema = z.strictObject({ id: z.string().min(1), trigger: Tr
     activation: z.strictObject({ timing: z.enum(["MAIN", "QUICK"]), conditionTiming: z.literal("ACTIVATION_AND_RESOLUTION"), costs: z.array(ActivationCostSchema) }).optional(),
     // Batch V44: "Choose one effect. If <condition>, choose both instead." The effects are the modes in printed order; the
     // condition is checked as the Program resolves, and while it holds every mode resolves in order.
-    choose: z.strictObject({ count: z.literal(1), allInstead: ConditionSchema }).optional(),
+    // Batch V60: a Legend's "{Call} Choose one effect." has no "choose both instead" condition.
+    choose: z.strictObject({ count: z.literal(1), allInstead: ConditionSchema.optional() }).optional(),
     conditions: z.array(ConditionSchema), cost: CostSchema, effects: z.array(EffectSchema) });
 export const ContinuousModifierSchema = z.discriminatedUnion("kind", [
     // Batch V30: "This Unit can attack rival Units the turn it's played" (11.3.1): while lagging, rival Units only.

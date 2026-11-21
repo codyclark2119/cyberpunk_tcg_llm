@@ -83,6 +83,7 @@ function beginEffects(m: TurnMutation): Result<null> {
     s.resolution.stage = "DISCOVER_TRIGGERS";
     if (a.choose) {
         // Batch V44: "If <condition>, choose both instead" is checked as the Program resolves; otherwise its controller picks one mode.
+        if (!a.choose.allInstead) return failure("INVALID_MODE", "A Program's modal ability names its both-instead condition"); // Batch V60: Legends start in MODE.
         const all = testCondition(s, c.actorId, a.choose.allInstead, m.context, c.sourceId);
         m.emit({ kind: "CONDITION_EVALUATED", effectId: playEffectId(s, 0), met: all });
         if (!all) { c.phase = "MODE"; return offerPlayChoice(m); }
@@ -146,7 +147,7 @@ export function continuePlay(m: TurnMutation, index: number): Result<null> {
     }
     if (c.phase === "MODE") {
         // Batch V44: one printed mode, named by its effect kind; only it becomes pending.
-        const effects = revisionOf(s, c.sourceId, m.context)!.mechanics.abilities[0].effects, index = option.kind === "MODE" ? effects.findIndex(e => e.kind === option.mode) : -1;
+        const effects = playAbility(m).effects, index = option.kind === "MODE" ? effects.findIndex(e => e.kind === option.mode) : -1;
         if (index < 0) return failure("INVALID_MODE", "Choose one enumerated printed mode");
         c.phase = "EFFECT"; c.chosenEffect = index; s.resolution.choice = null;
         m.emit({ kind: "EFFECT_MODE_CHOSEN", sourceId: c.sourceId, playerId: c.actorId, effectIndex: index });

@@ -129,6 +129,9 @@ export const TemporaryPowerModifierSchema = z.discriminatedUnion("amount", [
     // Batch V28: "+2 power this turn for each friendly Gig with an even value", counted once at resolution; `scaled` keeps it apart from the fixed +2.
     TemporaryPowerBaseSchema.extend({ amount: z.number().int().positive().multipleOf(2), scaled: z.literal("FRIENDLY_EVEN_GIGS"), origin: z.strictObject({ effectId: HashSchema, abilityId: z.string().min(1), ordinal: z.number().int().positive() }) })
 ).or(
+    // Batch V60: a Called Legend's chosen "Give a rival Unit -2 power this turn" or "Give a friendly Unit +2 power this turn".
+    TemporaryPowerBaseSchema.extend({ amount: z.union([z.literal(-2), z.literal(2)]), scaled: z.literal("LEGEND_CALL"), origin: z.strictObject({ effectId: HashSchema }) })
+).or(
     // Batch V41: "This Unit gains power equal to that card's cost this turn": the revealed card is named, so the amount is its printed cost.
     TemporaryPowerBaseSchema.extend({ amount: z.number().int().positive(), scaled: z.literal("REVEALED_CARD_COST"), revealedCardId: CardInstanceIdSchema, origin: z.strictObject({ effectId: HashSchema, abilityId: z.string().min(1), ordinal: z.number().int().positive() }) })
 ).or(

@@ -1,4 +1,4 @@
-import { advanceMandatorySwap, mandatorySwapAvailable } from "./legend-spend";
+import { advanceMandatorySwap, isLegendCallPower, mandatorySwapAvailable, playPowerTargets } from "./legend-spend";
 import { applyFightPowerGrant, friendlyFieldUnits } from "./fight-power-grant";
 import { applyStealReduction } from "./steal-reduction";
 import { beginTargetedSpend } from "./targeted-spend";
@@ -28,7 +28,7 @@ export class HandlerRegistry {
     readonly primitives = {
     POWER_UNTIL_END_OF_TURN: (m: TurnMutation): Result<null> => {
         const current = m.state.resolution.current!;
-        if (current.effect.kind === "POWER_UNTIL_END_OF_TURN" && current.effect.target.kind === "FRIENDLY_UNIT")
+        if (current.effect.kind === "POWER_UNTIL_END_OF_TURN" && current.effect.target.kind === "FRIENDLY_UNIT" && !isLegendCallPower(m.state, m.context))
             return failure("INVALID_POWER_CONTINUATION", "Friendly PLAY power targets are resolved by the trigger scheduler, never a Program continuation");
         if (current.effect.kind === "POWER_UNTIL_END_OF_TURN" && current.effect.target.kind === "SOURCE_SUBJECT") {
             const source = current.sourceId && m.context.content.cards.find(c => c.id === m.state.objects.cards[current.sourceId!].cardId && c.revision === m.state.objects.cards[current.sourceId!].revision);
@@ -38,7 +38,7 @@ export class HandlerRegistry {
             m.emit({ kind: "CONDITION_EVALUATED", effectId: current.id, met });
             return met ? applyTemporaryPower(m, current.trigger.subjectId) : success(null);
         }
-        const targets = powerTargets(m.state, m.state.timing.actingPlayer, m.context);
+        const targets = playPowerTargets(m.state, m.state.timing.actingPlayer, m.context); // Batch V60: a Called Legend's friendly Unit.
         // Batch V54: "all rival Units": each Unit there as the effect resolves, with no choice.
         if (current.effect.kind === "POWER_UNTIL_END_OF_TURN" && current.effect.target.kind === "ALL_RIVAL_UNITS") {
             for (const id of targets) { const applied = applyTemporaryPower(m, id, true); if (!applied.ok) return applied; }

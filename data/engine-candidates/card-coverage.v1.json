@@ -9,39 +9,30 @@
   },
   "totals": {
     "cards": 151,
-    "admitted": 108,
-    "notAdmitted": 43,
+    "admitted": 110,
+    "notAdmitted": 41,
     "notAdmittedOnlyCoveredFamilies": 0,
     "byAdmission": {
-      "NOT_ADMITTED": 43,
-      "SOURCE_MATCH": 108
+      "NOT_ADMITTED": 41,
+      "SOURCE_MATCH": 110
     }
   },
   "families": [
-    {
-      "family": "DRAW",
-      "status": "PARTIAL",
-      "summary": "Draw cards, fixed or conditional.",
-      "notes": "Routed. Variable counts need SCALED_AMOUNT; 'may draw' needs an optional prompt.",
-      "cardCount": 38,
-      "notAdmittedCount": 15,
-      "soleBlockerCount": 0
-    },
-    {
-      "family": "SPEND_ABILITY",
-      "status": "PARTIAL",
-      "summary": "Activated abilities with a [Spend] cost (and optional Eddie cost) on Legends, Units or Gear.",
-      "notes": "Admitted only for Kerry: The Last Rockerboy (a Unit). Face-up Legend [Spend] abilities and Gear [Spend] abilities are not.",
-      "cardCount": 17,
-      "notAdmittedCount": 14,
-      "soleBlockerCount": 0
-    },
     {
       "family": "CONDITION_BOARD",
       "status": "PARTIAL",
       "summary": "Generic target filters and board conditions: classification, cost, power, ready/spent, equipped, face-up, named, lowest power.",
       "notes": "Documented as unsupported: generic condition/filter language. Each admitted filter is a literal.",
       "cardCount": 34,
+      "notAdmittedCount": 13,
+      "soleBlockerCount": 0
+    },
+    {
+      "family": "DRAW",
+      "status": "PARTIAL",
+      "summary": "Draw cards, fixed or conditional.",
+      "notes": "Routed. Variable counts need SCALED_AMOUNT; 'may draw' needs an optional prompt.",
+      "cardCount": 38,
       "notAdmittedCount": 13,
       "soleBlockerCount": 0
     },
@@ -55,21 +46,21 @@
       "soleBlockerCount": 0
     },
     {
+      "family": "SPEND_ABILITY",
+      "status": "PARTIAL",
+      "summary": "Activated abilities with a [Spend] cost (and optional Eddie cost) on Legends, Units or Gear.",
+      "notes": "Admitted only for Kerry: The Last Rockerboy (a Unit). Face-up Legend [Spend] abilities and Gear [Spend] abilities are not.",
+      "cardCount": 17,
+      "notAdmittedCount": 12,
+      "soleBlockerCount": 0
+    },
+    {
       "family": "GEAR_EQUIP",
       "status": "PARTIAL",
       "summary": "Equip a Gear to a friendly Unit or face-up Legend; Gear power adds to its host.",
       "notes": "Equip onto Units is supported for the admitted Gear. Gear on a Legend host in combat (a Go Solo Legend) is unsupported.",
       "cardCount": 22,
       "notAdmittedCount": 11,
-      "soleBlockerCount": 0
-    },
-    {
-      "family": "TEMPORARY_BUFF",
-      "status": "PARTIAL",
-      "summary": "Power or keyword changes 'this turn' on a chosen Unit.",
-      "notes": "Fixed amounts on RIVAL_UNIT, SOURCE_SUBJECT or FRIENDLY_UNIT. Keyword grants, all-Unit and filtered targets are missing.",
-      "cardCount": 19,
-      "notAdmittedCount": 9,
       "soleBlockerCount": 0
     },
     {
@@ -100,29 +91,20 @@
       "soleBlockerCount": 0
     },
     {
+      "family": "TEMPORARY_BUFF",
+      "status": "PARTIAL",
+      "summary": "Power or keyword changes 'this turn' on a chosen Unit.",
+      "notes": "Fixed amounts on RIVAL_UNIT, SOURCE_SUBJECT or FRIENDLY_UNIT. Keyword grants, all-Unit and filtered targets are missing.",
+      "cardCount": 19,
+      "notAdmittedCount": 7,
+      "soleBlockerCount": 0
+    },
+    {
       "family": "DISCARD",
       "status": "PARTIAL",
       "summary": "Discard: self discard, a Rival discards, discard as a cost, discard a hand.",
       "notes": "DISCARD_CARDS supports only the controller discarding exactly 1.",
       "cardCount": 15,
-      "notAdmittedCount": 6,
-      "soleBlockerCount": 0
-    },
-    {
-      "family": "MODAL_CHOICE",
-      "status": "MISSING",
-      "summary": "'Choose one effect' (and 'choose both instead' upgrades).",
-      "notes": "PendingChoice MODE exists for setup, search and Gig steps, but no ability carries modes.",
-      "cardCount": 8,
-      "notAdmittedCount": 6,
-      "soleBlockerCount": 0
-    },
-    {
-      "family": "TRIGGER_CALL",
-      "status": "PARTIAL",
-      "summary": "[Call] abilities of a Legend.",
-      "notes": "Trigger WHEN_CALLED; only Viktor's search is routed. Every other Call body needs its effects routed too.",
-      "cardCount": 7,
       "notAdmittedCount": 6,
       "soleBlockerCount": 0
     },
@@ -154,15 +136,6 @@
       "soleBlockerCount": 0
     },
     {
-      "family": "GIG_ADJUST",
-      "status": "PARTIAL",
-      "summary": "Increase, decrease, adjust or set Gig values.",
-      "notes": "Maxima are fixed literals; 'set to the value of another Gig' and 'adjust by exactly 1' are missing. MODIFY_GIG_VALUE is schema-only.",
-      "cardCount": 15,
-      "notAdmittedCount": 5,
-      "soleBlockerCount": 0
-    },
-    {
       "family": "KEYWORD_QUICK",
       "status": "PARTIAL",
       "summary": "[Quick] timing: Programs and activated abilities usable in the react window.",
@@ -181,10 +154,28 @@
       "soleBlockerCount": 0
     },
     {
+      "family": "MODAL_CHOICE",
+      "status": "MISSING",
+      "summary": "'Choose one effect' (and 'choose both instead' upgrades).",
+      "notes": "PendingChoice MODE exists for setup, search and Gig steps, but no ability carries modes.",
+      "cardCount": 8,
+      "notAdmittedCount": 4,
+      "soleBlockerCount": 0
+    },
+    {
       "family": "TRASH_RECURSION",
       "status": "MISSING",
       "summary": "Return a card from the trash (or from cards just trashed) to hand.",
       "notes": "",
+      "cardCount": 7,
+      "notAdmittedCount": 4,
+      "soleBlockerCount": 0
+    },
+    {
+      "family": "TRIGGER_CALL",
+      "status": "PARTIAL",
+      "summary": "[Call] abilities of a Legend.",
+      "notes": "Trigger WHEN_CALLED; only Viktor's search is routed. Every other Call body needs its effects routed too.",
       "cardCount": 7,
       "notAdmittedCount": 4,
       "soleBlockerCount": 0
@@ -204,6 +195,15 @@
       "summary": "Ready Eddies, sell cards from unusual zones, pay Eddies during resolution.",
       "notes": "READY_EDDIES (controller, 1 or 2) only.",
       "cardCount": 8,
+      "notAdmittedCount": 3,
+      "soleBlockerCount": 0
+    },
+    {
+      "family": "GIG_ADJUST",
+      "status": "PARTIAL",
+      "summary": "Increase, decrease, adjust or set Gig values.",
+      "notes": "Maxima are fixed literals; 'set to the value of another Gig' and 'adjust by exactly 1' are missing. MODIFY_GIG_VALUE is schema-only.",
+      "cardCount": 15,
       "notAdmittedCount": 3,
       "soleBlockerCount": 0
     },
@@ -943,8 +943,8 @@
       "colors": [
         "RED"
       ],
-      "admission": "NOT_ADMITTED",
-      "revision": null,
+      "admission": "SOURCE_MATCH",
+      "revision": 1,
       "families": [
         "DRAW",
         "GIG_ADJUST",
@@ -953,14 +953,7 @@
         "TEMPORARY_BUFF",
         "TRIGGER_CALL"
       ],
-      "blockingFamilies": [
-        "DRAW",
-        "GIG_ADJUST",
-        "MODAL_CHOICE",
-        "SPEND_ABILITY",
-        "TEMPORARY_BUFF",
-        "TRIGGER_CALL"
-      ],
+      "blockingFamilies": [],
       "note": null
     },
     {
@@ -3193,8 +3186,8 @@
       "colors": [
         "BLUE"
       ],
-      "admission": "NOT_ADMITTED",
-      "revision": null,
+      "admission": "SOURCE_MATCH",
+      "revision": 1,
       "families": [
         "DRAW",
         "GIG_ADJUST",
@@ -3203,14 +3196,7 @@
         "TEMPORARY_BUFF",
         "TRIGGER_CALL"
       ],
-      "blockingFamilies": [
-        "DRAW",
-        "GIG_ADJUST",
-        "MODAL_CHOICE",
-        "SPEND_ABILITY",
-        "TEMPORARY_BUFF",
-        "TRIGGER_CALL"
-      ],
+      "blockingFamilies": [],
       "note": null
     },
     {

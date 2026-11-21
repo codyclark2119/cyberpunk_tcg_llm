@@ -1,3 +1,5 @@
+import { isLegendCallPower, playPowerTargets } from "./legend-spend";
+import { supportsLegendSpendCard } from "./legend-spend-support";
 import { supportsAttackConditionPowerCard } from "./attack-condition-power-support";
 import { isPlayedInBatch } from "./effect-play";
 import { triggerId } from "./trigger-queries";
@@ -34,7 +36,13 @@ export function applyTemporaryPower(m: TurnMutation, targetId: CardInstanceId, f
     if (current?.effect.kind !== "POWER_UNTIL_END_OF_TURN" || !current.sourceId) return failure("INVALID_POWER_TARGET", "Current power effect source required");
     const base = { kind: "POWER" as const, sourceId: current.sourceId, targetId, expires: { kind: "END_OF_TURN" as const, turn: m.state.timing.turn } };
     let modifier: TemporaryPowerModifier;
-    if (current.effect.target.kind === "SOURCE_SUBJECT") {
+    if (isLegendCallPower(m.state, m.context)) {
+        // Batch V60: a Called Legend's chosen "-2 to a rival Unit" or "+2 to a friendly Unit" mode.
+        const amount = current.effect.amount;
+        if (amount !== -2 && amount !== 2 || current.effect.target.kind !== (amount === 2 ? "FRIENDLY_UNIT" : "RIVAL_UNIT") || !playPowerTargets(m.state, current.controllerId, m.context).includes(targetId))
+            return failure("INVALID_POWER_TARGET", "Choose a currently eligible Unit for the Called Legend's mode");
+        modifier = { ...base, amount, scaled: "LEGEND_CALL", origin: { effectId: current.id } };
+    } else if (current.effect.target.kind === "SOURCE_SUBJECT") {
         const t = current.trigger, c = m.state.resolution.triggerContinuation, subject = m.state.objects.cards[targetId];
         if (current.effect.amount !== 5 || !t || t.kind !== "WHEN_ATTACKING" || t.subjectId !== targetId || current.sourceId !== targetId || !c || c.origin.kind !== "ATTACK" || c.origin.subjectId !== targetId || !subject || subject.face !== "UP" || subject.zone.zone !== "BATTLEFIELD" || !supportsAttackConditionPowerCard(cardRevision(m.state, targetId, m.context), m.context).ok) return failure("INVALID_POWER_SOURCE", "Reviewed self ATTACK source, subject and occurrence required");
         modifier = { ...base, amount: 5, origin: { effectId: current.id, abilityId: t.abilityId, ordinal: t.ordinal } };
@@ -81,7 +89,7 @@ export function applyTemporaryPower(m: TurnMutation, targetId: CardInstanceId, f
         modifier = { ...base, amount: -1 };
     }
     if (m.state.temporaryModifiers?.some(x => compareTemporaryPower(x, modifier) === 0)) return failure("DUPLICATE_POWER_OCCURRENCE", "A resolved power occurrence cannot be applied twice");
-    if (modifier.amount === 2) m.emit({ kind: "CARD_TARGET_SELECTED", effectId: current.id, sourceId: current.sourceId, targetId, controllerId: current.controllerId, forced });
+    if (modifier.amount === 2 || "scaled" in modifier && modifier.scaled === "LEGEND_CALL") m.emit({ kind: "CARD_TARGET_SELECTED", effectId: current.id, sourceId: current.sourceId, targetId, controllerId: current.controllerId, forced });
     (m.state.temporaryModifiers ??= []).push(modifier);
     m.state.temporaryModifiers.sort(compareTemporaryPower);
     m.emit({ kind: "POWER_MODIFIER_APPLIED", modifier });
@@ -118,6 +126,16 @@ export function validateTemporaryPower(state: GameState, context: EngineContext)
                 || origin.effectId !== triggerId(state, { sourceId: source.id, subjectId: source.id, source: { cardId: r.id, revision: r.revision }, controllerId: source.controllerId, abilityId: a.id, kind: "WHEN_ATTACKING" }, origin.ordinal)
                 || continuation?.ordinal === origin.ordinal && !continuation.resolvedIds.includes(origin.effectId))
                 return failure("INVALID_TEMPORARY_POWER", "Revealed-cost power needs its reviewed public Legend, the revealed card's cost and a resolved current-turn ATTACK occurrence");
+            continue;
+        }
+        // Batch V60: a Called Legend's chosen power mode, on a public Unit of the mode's relation, this turn.
+        if ("scaled" in x && x.scaled === "LEGEND_CALL") {
+            const a = r?.mechanics.abilities.find(a => a.trigger === "WHEN_CALLED" && a.choose), index = a ? a.effects.findIndex(e => e.kind === "POWER_UNTIL_END_OF_TURN") : -1, effect = a?.effects[index];
+            if (!source || !target || !r || !a || !supportsLegendSpendCard(r, context).ok || effect?.kind !== "POWER_UNTIL_END_OF_TURN" || effect.amount !== x.amount || source.face !== "UP" || source.zone.zone !== "LEGENDS"
+                || target.face !== "UP" || !["BATTLEFIELD", "TRASH", "REMOVED"].includes(target.zone.zone) || !(effectiveCardTypes(state, x.targetId, context).includes("UNIT") || removedFieldLegend(state, x.targetId, context))
+                || (target.controllerId === source.controllerId) !== (effect.target.kind === "FRIENDLY_UNIT") || x.expires.turn !== state.timing.turn
+                || x.origin.effectId !== activationEffectId(state, source.controllerId, source.id, a.id, index) || state.resolution.current?.id === x.origin.effectId)
+                return failure("INVALID_TEMPORARY_POWER", "A Called Legend's power needs its reviewed face-up Legend, a public Unit of the mode's relation and its resolved current-turn mode");
             continue;
         }
         // Batch V49: "A rival Unit loses power equal to this Unit's power this turn", from the pinned Quick activation's resolved effect.

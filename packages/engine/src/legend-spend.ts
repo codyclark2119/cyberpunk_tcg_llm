@@ -1,10 +1,13 @@
-import { canonicalSerialize, failure, hashCanonical, success, type GameState, type GigInstanceId, type PlayerId, type Result } from "@tcg/domain";
+import { canonicalSerialize, failure, hashCanonical, success, type CardInstanceId, type GameState, type GigInstanceId, type PlayerId, type Result } from "@tcg/domain";
 import type { EngineContext } from "./state";
 import type { TurnMutation } from "./turn";
 import { cardRevision } from "./characteristics";
 import { friendlyValuePairs, supportsLegendSpendCard } from "./legend-spend-support";
 import { swapGigs } from "./gig-transfer";
 import { activationEffectId, playChoice } from "./play-state";
+import { offerPlayChoice } from "./play";
+import { powerTargets } from "./react-queries";
+import { friendlyFieldUnits } from "./fight-power-grant";
 
 function rolledGigs(state: GameState, player: PlayerId, friendly: boolean) {
     return Object.values(state.objects.gigs).filter(g => g.location.zone === "GIGS" && g.roll.kind === "ROLLED" && (g.controllerId === player) === friendly).map(g => g.id).sort();
@@ -50,18 +53,57 @@ export function resolveStartTurnLegends(m: TurnMutation): Result<null> {
 export function legendStartTurnEnabled(context: EngineContext) {
     return context.content.cards.some(r => r.mechanics.abilities.some(a => a.trigger === "WHEN_OWN_TURN_STARTS") && supportsLegendSpendCard(r, context).ok);
 }
-/** Batch V59: a Legend's {Spend} activation pauses only for a strategic swap Gig choice (2 or more on the side being chosen). */
+/** Batch V59, V60: a pinned Legend's continuation pauses only for its Call mode, a strategic power target, a swap Gig (2 or more on
+ * the side being chosen), or its Gig adjustment's target and amount. */
 export function validateLegendActivationState(state: GameState, context: EngineContext) {
     const c = state.resolution.playContinuation!, r = state.resolution, source = state.objects.cards[c.sourceId], revision = cardRevision(state, c.sourceId, context);
     const ability = revision?.mechanics.abilities.find(a => a.id === c.abilityId), current = r.current, held = c.targetGigId ? state.objects.gigs[c.targetGigId] : undefined;
-    if (!supportsLegendSpendCard(revision, context).ok || !source || !ability?.activation || ability.activation.timing !== "MAIN" || c.phase !== "EFFECT" || c.remainingCost !== 0 || c.selectedSources.length || c.actorId !== state.timing.activePlayer || c.actorId !== state.timing.actingPlayer
-        || r.returnTo?.kind !== "MAIN" || state.timing.combat.stage !== "NONE" || source.controllerId !== c.actorId || source.zone.playerId !== c.actorId || source.zone.zone !== "LEGENDS" || source.face !== "UP" || source.readiness !== "SPENT"
+    const called = ability?.trigger === "WHEN_CALLED" && Boolean(ability.choose), spend = ability?.activation?.timing === "MAIN" && !ability.trigger;
+    const window = called ? r.returnTo?.kind === "MAIN" && state.timing.combat.stage === "NONE" && c.actorId === state.timing.activePlayer || r.returnTo?.kind === "RIVAL_REACT" && state.timing.combat.stage === "RIVAL_REACT" && c.actorId !== state.timing.combat.attackingPlayerId
+        : r.returnTo?.kind === "MAIN" && state.timing.combat.stage === "NONE" && c.actorId === state.timing.activePlayer;
+    if (!supportsLegendSpendCard(revision, context).ok || !source || !ability || !(called || spend) || !window || c.remainingCost !== 0 || c.selectedSources.length || c.actorId !== state.timing.actingPlayer
+        || source.controllerId !== c.actorId || source.zone.playerId !== c.actorId || source.zone.zone !== "LEGENDS" || source.face !== "UP" || spend && source.readiness !== "SPENT"
         || state.setup || state.match.outcome || r.stage !== "CHOICE" || r.searchContinuation || r.callContinuation || r.triggerContinuation || r.legendEntryContinuation || r.targetedDefeatContinuation || r.defeatContinuation || r.gigStealContinuation || r.discovered.length
-        || c.chosenEffect !== undefined || c.trashedIds || c.bottomDecked || c.effectIndex !== 0 || Object.values(state.objects.cards).some(x => x.zone.zone === "RESOLVING_PROGRAM")
-        || !current || current.id !== activationEffectId(state, c.actorId, c.sourceId, ability.id, 0) || current.sourceId !== c.sourceId || current.controllerId !== c.actorId || current.trigger || current.primitiveIndex !== undefined
-        || canonicalSerialize(current.effect) !== canonicalSerialize(ability.effects[0]) || r.pending.length !== ability.effects.length - 1 || current.effect.kind !== "SWAP_GIGS" || state.timing.step !== "TARGET_SELECTION"
-        || c.targetGigId && (!held || held.controllerId !== c.actorId || held.location.zone !== "GIGS" || held.roll.kind !== "ROLLED") || swapChoiceGigs(state, c.actorId, c.targetGigId).length < 2)
-        return failure("INVALID_LEGEND_ACTIVATION", "A paused Legend activation needs its spent face-up Legend, the Main phase and a strategic swap choice");
-    if (canonicalSerialize(playChoice(state, context)) !== canonicalSerialize(r.choice)) return failure("INVALID_PLAY_CHOICE", "Choice must exactly match the current swap Gigs");
+        || c.trashedIds || c.bottomDecked || Object.values(state.objects.cards).some(x => x.zone.zone === "RESOLVING_PROGRAM"))
+        return failure("INVALID_LEGEND_ACTIVATION", "A paused Legend ability needs its face-up Legend (spent for {Spend}), its window and no other work");
+    if (c.phase === "MODE") {
+        if (!called || current || r.pending.length || c.chosenEffect !== undefined || c.effectIndex !== 0 || c.targetGigId || state.timing.step !== "TARGET_SELECTION") return failure("INVALID_LEGEND_ACTIVATION", "Only a Called Legend pauses for its mode");
+    } else {
+        const index = called ? c.chosenEffect : 0;
+        if (c.phase !== "EFFECT" || index === undefined || c.effectIndex !== index || called !== (c.chosenEffect !== undefined) || !current || current.id !== activationEffectId(state, c.actorId, c.sourceId, ability.id, index) || current.sourceId !== c.sourceId || current.controllerId !== c.actorId || current.trigger || current.primitiveIndex !== undefined
+            || canonicalSerialize(current.effect) !== canonicalSerialize(ability.effects[index]) || r.pending.length)
+            return failure("INVALID_LEGEND_ACTIVATION", "A paused Legend effect must be its current printed or chosen effect");
+        const e = current.effect;
+        if (e.kind === "SWAP_GIGS") {
+            if (state.timing.step !== "TARGET_SELECTION" || c.targetGigId && (!held || held.controllerId !== c.actorId || held.location.zone !== "GIGS" || held.roll.kind !== "ROLLED") || swapChoiceGigs(state, c.actorId, c.targetGigId).length < 2)
+                return failure("INVALID_LEGEND_ACTIVATION", "A swap pauses only for a strategic Gig choice");
+        } else if (e.kind === "POWER_UNTIL_END_OF_TURN") {
+            if (c.targetGigId || state.timing.step !== "TARGET_SELECTION" || playPowerTargets(state, c.actorId, context).length < 2) return failure("INVALID_LEGEND_ACTIVATION", "A power mode pauses only for a strategic Unit choice");
+        } else if (e.kind === "ADJUST_GIG_UP_TO") {
+            if (state.timing.step !== (c.targetGigId ? "AMOUNT_SELECTION" : "TARGET_SELECTION") || c.targetGigId && (!held || held.location.zone !== "GIGS" || held.roll.kind !== "ROLLED")) return failure("INVALID_LEGEND_ACTIVATION", "A Gig adjustment pauses for its Gig, then its amount");
+        } else return failure("INVALID_LEGEND_ACTIVATION", "Only reviewed Legend effects pause");
+    }
+    if (canonicalSerialize(playChoice(state, context)) !== canonicalSerialize(r.choice)) return failure("INVALID_PLAY_CHOICE", "Choice must exactly match the current engine options");
     return success(null);
+}
+/** Batch V60: "{Call} Choose one effect." resolves through the activation continuation, starting with its mode choice. */
+export function beginLegendCallChoice(m: TurnMutation, legendId: CardInstanceId, actorId: PlayerId, abilityId: string): Result<null> {
+    m.phase("CALL_EFFECT");
+    m.state.resolution.stage = "DISCOVER_TRIGGERS";
+    m.state.resolution.playContinuation = { kind: "ACTIVATE", sourceId: legendId, actorId, abilityId, phase: "MODE", remainingCost: 0, selectedSources: [], effectIndex: 0 };
+    return offerPlayChoice(m);
+}
+/** The ability a pinned Legend's continuation resolves, when it is one. */
+export function legendContinuationAbility(state: GameState, context: EngineContext) {
+    const c = state.resolution.playContinuation, r = c ? cardRevision(state, c.sourceId, context) : undefined;
+    return c?.kind === "ACTIVATE" && r?.type === "LEGEND" && supportsLegendSpendCard(r, context).ok ? r.mechanics.abilities.find(a => a.id === c.abilityId) : undefined;
+}
+/** Batch V60: the current effect is a Called Legend's chosen power mode. */
+export function isLegendCallPower(state: GameState, context: EngineContext) {
+    return state.resolution.current?.effect.kind === "POWER_UNTIL_END_OF_TURN" && legendContinuationAbility(state, context)?.trigger === "WHEN_CALLED";
+}
+/** Rival Units for "a rival Unit"; the controller's field Units for a Called Legend's "a friendly Unit". */
+export function playPowerTargets(state: GameState, actor: PlayerId, context: EngineContext) {
+    const e = state.resolution.current?.effect;
+    return e?.kind === "POWER_UNTIL_END_OF_TURN" && e.target.kind === "FRIENDLY_UNIT" && isLegendCallPower(state, context) ? friendlyFieldUnits(state, actor, context) : powerTargets(state, actor, context);
 }

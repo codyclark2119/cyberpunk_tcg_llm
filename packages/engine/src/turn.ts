@@ -1,4 +1,5 @@
-import { legendStartTurnEnabled, resolveStartTurnLegends } from "./legend-spend";
+import { beginLegendCallChoice, legendStartTurnEnabled, resolveStartTurnLegends } from "./legend-spend";
+import { supportsLegendSpendCard } from "./legend-spend-support";
 import { programPlayHistoryEnabled } from "./restriction-support";
 import { expireMustAttack } from "./must-attack";
 import { checkOvertimeVictory, recordOvertimeTurnStart } from "./overtime";
@@ -124,6 +125,8 @@ export class TurnMutation {
         delete s.resolution.callContinuation;
         this.emit({ kind: "LEGEND_CALLED", cardInstanceId: legendId });
         const ability = view.getRevision(legendId)!.mechanics.abilities.find(a => a.trigger === "WHEN_CALLED");
+        // Batch V60: "{Call} Choose one effect." pauses for its mode through the activation continuation.
+        if (ability?.choose && supportsLegendSpendCard(view.getRevision(legendId), this.context).ok) return beginLegendCallChoice(this, legendId, actor, ability.id);
         if (ability) {
             this.phase("CALL_EFFECT");
             const effect = ability.effects[0];
