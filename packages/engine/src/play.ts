@@ -1,3 +1,4 @@
+import { applyFightPowerGrant } from "./fight-power-grant";
 import { applyStealReduction } from "./steal-reduction";
 import { recordCyberwareGearPlay } from "./play-cost-support";
 import { resolveSpendTarget } from "./targeted-spend";
@@ -178,6 +179,12 @@ export function continuePlay(m: TurnMutation, index: number): Result<null> {
         const moved = chooseBottomDeck(m, option.cardInstanceId, offerPlayChoice);
         // An "if you do" clause may pause on its own choice before the primitive completes.
         return !moved.ok ? moved : s.resolution.choice ? success(null) : completePlayEffect(m);
+    }
+    if (s.resolution.current?.effect.kind === "FIGHT_POWER_PER_FRIENDLY_LEGEND_THIS_TURN") { // Batch V58.
+        if (option.kind !== "CARD") return failure("INVALID_FIGHT_POWER", "Choose an enumerated friendly Unit");
+        s.resolution.choice = null;
+        const applied = applyFightPowerGrant(m, option.cardInstanceId, false);
+        return applied.ok ? completePlayEffect(m) : applied;
     }
     if (s.resolution.current?.effect.kind === "STEAL_FEWER_THIS_TURN") { // Batch V57.
         if (option.kind !== "CARD") return failure("INVALID_STEAL_REDUCTION", "Choose an enumerated rival Unit");

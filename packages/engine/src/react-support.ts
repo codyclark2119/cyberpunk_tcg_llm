@@ -1,3 +1,4 @@
+import { hasFightPowerGrant } from "./fight-power-grant-support";
 import { hasStealReduction } from "./steal-reduction-support";
 import { turnSliceAllows, failure, success, type CardRevisionSnapshot, type DeepReadonly, type GameState, type PlayerId } from "@tcg/domain";
 import type { EngineContext } from "./state";
@@ -12,6 +13,7 @@ export function isReactDecision(state: GameState, actor: PlayerId, context: Engi
 /** Full reviewed executable shapes. Keyword presence alone never certifies a card. */
 export function supportsReactPlay(card: DeepReadonly<CardRevisionSnapshot> | undefined, context: EngineContext) {
     if (hasStealReduction(card)) return failure("UNSUPPORTED_REACT_CARD", "A steal reduction is admitted only by its exact Quick Program pin"); // Batch V57.
+    if (hasFightPowerGrant(card)) return failure("UNSUPPORTED_FIGHT_POWER", "A while-fighting power grant is admitted only by its exact Quick Program pin"); // Batch V58.
     // Quick Gear defeat reaches its own complete gate; existing React branches are unchanged.
     if (reactEnabled(context) && card?.execution?.scope === "TARGETED_GEAR_DEFEAT_V1") return supportsTargetedGearDefeatCard(card, context);
     if (!reactEnabled(context) || !card || card.mechanics.abilities.some(a => a.inherited || a.guard) || card.execution?.scope !== "COMBAT_REACT_V1" || card.execution.status !== "SUPPORTED" || card.printedCost.kind !== "EDDIES" || card.mechanics.restrictions?.length || card.mechanics.equip || card.mechanics.modifiers.length)

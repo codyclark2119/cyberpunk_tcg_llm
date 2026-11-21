@@ -1,3 +1,4 @@
+import { expireFightPowerGrants } from "./fight-power-grant";
 import { expireStealReductions } from "./steal-reduction";
 import { enterOvertimeAfterTurn, overtimeEnabled } from "./overtime";
 import { unmetMustAttack } from "./must-attack";
@@ -28,7 +29,7 @@ export function finishEndTurn(m: TurnMutation) {
             card.statuses = card.statuses.filter(status => status !== "LAG");
             m.emit({ kind: "LAG_REMOVED", cardInstanceId: card.id });
         }
-    expireTemporaryPower(m); expireStealReductions(m); expireKeywordGrants(m); expireFightPreventions(m); expireFightOutcomeEffects(m);
+    expireTemporaryPower(m); expireStealReductions(m); expireFightPowerGrants(m); expireKeywordGrants(m); expireFightPreventions(m); expireFightOutcomeEffects(m);
     m.emit({ kind: "TURN_ENDED", playerId: actor, turn: s.timing.turn });
     if (enterOvertimeAfterTurn(m)) return { ok: true as const, value: null };
     s.timing.activePlayer = s.match.playerOrder[(s.players[actor].seat + 1) % s.match.playerOrder.length]; s.timing.turn++;

@@ -99,6 +99,7 @@ were recorded in their pull requests (#4, #7, #8); later batches have documents 
 | V55 (2026-11-20) | Gilded Matón | [Unit: {Play} may defeat a friendly Gear, then a rival Unit with cost 3 or less, the first "if you do" second defeat](api-admission-batch-v55.md); coverage 104/151 |
 | V56 (2026-11-20) | Riot Shield | [Gear: host {Blocker}; Rivals pay +2 €$ to use {Go Solo}, the first cost change for another player](api-admission-batch-v56.md); coverage 105/151 |
 | V57 (2026-11-20) | Take Control | [Quick Program: a rival Unit steals 1 fewer Gig this turn, draw 1 if it is an AI, DRONE or VEHICLE](api-admission-batch-v57.md); coverage 106/151 |
+| V58 (2026-11-20) | Synapse Burnout | [Quick Program: a friendly Unit has +1 power per friendly face-up Legend while fighting this turn, the first fight-only power](api-admission-batch-v58.md); coverage 107/151 |
 | V7 (2026-11-15) | Royce: Don't Call Me Simon, Wild in the Streets, Delamain: Rideshare AI | [shared defeat filter and exact pin table](api-admission-batch-v7.md); coverage 42/151 |
 | V6 (2026-09-22) | Trust No One | [contract and executable slice](api-admission-batch-v6.md), [baseline verification](api-admission-batch-v6-verification.md) |
 

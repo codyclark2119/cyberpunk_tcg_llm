@@ -1,3 +1,4 @@
+import { hasFightPowerGrant } from "./fight-power-grant-support";
 import { hasStealReduction } from "./steal-reduction-support";
 import { hasFightWinMetadata } from "./fight-win-support";
 import { supportsAttackingAuraLegend } from "./attacking-aura-support";
@@ -19,6 +20,7 @@ export function supportsCall(card: DeepReadonly<CardRevisionSnapshot> | undefine
     if (hasQuickActivation(card)) return failure("UNSUPPORTED_QUICK_ACTIVATION", "A Quick activation is admitted only by its exact Unit pin"); // Batch V49.
     if (hasFightWinMetadata(card)) return failure("UNSUPPORTED_FIGHT_WIN", "A fight-win override is admitted only by its exact Unit pin"); // Batch V52.
     if (hasStealReduction(card)) return failure("UNSUPPORTED_STEAL_REDUCTION", "A steal reduction is admitted only by its exact Quick Program pin"); // Batch V57.
+    if (hasFightPowerGrant(card)) return failure("UNSUPPORTED_FIGHT_POWER", "A while-fighting power grant is admitted only by its exact Quick Program pin"); // Batch V58.
     if (card?.execution?.scope === "ATTACKING_AURA_V1") return supportsAttackingAuraLegend(card, context);
     if (card?.execution?.scope === "FIRST_ATTACK_HISTORY_V1") return supportsFirstAttackLegend(card, context);
     if (card?.execution?.scope === "FIELD_LEGENDS_V1") return supportsFieldLegend(card, context);

@@ -1,3 +1,4 @@
+import { hasFightPowerGrant, supportsFightPowerProgram } from "./fight-power-grant-support";
 import { hasStealReduction, supportsStealReductionProgram } from "./steal-reduction-support";
 import { hasFightWinMetadata, supportsFightWinUnit } from "./fight-win-support";
 import { hasAttackConditionPowerMetadata, supportsAttackConditionPowerCard } from "./attack-condition-power-support";
@@ -49,6 +50,8 @@ export function supportsPlay(card: DeepReadonly<CardRevisionSnapshot> | undefine
     if (card && hasQuickActivation(card)) return supportsQuickActivationCard(card, context);
     // Batch V57: a steal reduction is admitted only by its exact Quick Program pin.
     if (card && hasStealReduction(card)) return supportsStealReductionProgram(card, context);
+    // Batch V58: a while-fighting power grant is admitted only by its exact Quick Program pin.
+    if (card && hasFightPowerGrant(card)) return supportsFightPowerProgram(card, context);
     // Batch V52: a fight-win override or first-win ready is admitted only by its exact Unit pin.
     if (card && hasFightWinMetadata(card)) return supportsFightWinUnit(card, context);
     if (card && hasPlayCostReductionMetadata(card)) return supportsPlayCostReduction(card, context);

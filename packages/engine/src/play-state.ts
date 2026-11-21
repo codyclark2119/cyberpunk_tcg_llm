@@ -1,3 +1,4 @@
+import { friendlyFieldUnits } from "./fight-power-grant";
 import { listSpendUnitTargets } from "./targeted-spend-queries";
 import { playPaymentAmount } from "./play-cost-support";
 import { gigAdjustmentOptions, gigSetSources, gigSetTargets } from "./gig-value";
@@ -54,6 +55,9 @@ export function playChoice(state: GameState, context: EngineContext): PendingCho
         // Batch V37: first the Gig to set (or the decline), then the other Gig whose value it takes.
         kind = "TARGET";
         options = c.targetGigId ? gigSetSources(state, c.targetGigId).map(gigInstanceId => ({ kind: "GIG", gigInstanceId })) : [{ kind: "CONFIRM", confirmed: false }, ...gigSetTargets(state).map(gigInstanceId => ({ kind: "GIG" as const, gigInstanceId }))];
+    } else if (state.resolution.current?.effect.kind === "FIGHT_POWER_PER_FRIENDLY_LEGEND_THIS_TURN") { // Batch V58.
+        kind = "TARGET";
+        options = friendlyFieldUnits(state, c.actorId, context).map(cardInstanceId => ({ kind: "CARD", cardInstanceId }));
     } else if (state.resolution.current?.effect.kind === "POWER_UNTIL_END_OF_TURN" || state.resolution.current?.effect.kind === "STEAL_FEWER_THIS_TURN") {
         kind = "TARGET";
         options = powerTargets(state, c.actorId, context).map(cardInstanceId => ({ kind: "CARD", cardInstanceId }));
@@ -96,7 +100,7 @@ export function validatePlayState(state: GameState, context: EngineContext) {
         const order = ability?.choose ? (c.chosenEffect === undefined ? ability.effects.map((_, i) => i) : [c.chosenEffect]) : ability?.effects.map((_, i) => i) ?? [], position = order.indexOf(c.effectIndex);
         if (ability?.choose && (c.chosenEffect === undefined) !== testCondition(state, c.actorId, ability.choose.allInstead, context, c.sourceId)) return failure("INVALID_MODE", "Every mode resolves exactly while the both-instead condition holds");
         if (!ability?.choose && c.chosenEffect !== undefined) return failure("INVALID_MODE", "Only a modal Program has a chosen mode");
-        if (revision!.type !== "PROGRAM" || source.zone.zone !== "RESOLVING_PROGRAM" || resolving.length !== 1 || c.remainingCost !== 0 || !ability || position < 0 || (position !== 0 && !ability.choose && current?.effect.kind !== "DEFEAT_UNIT") || (current?.effect.kind !== "SPEND_UNIT" && current?.effect.kind !== "DEFEAT_UNIT" && current?.effect.kind !== "ADJUST_GIG_UP_TO" && current?.effect.kind !== "POWER_UNTIL_END_OF_TURN" && current?.effect.kind !== "STEAL_FEWER_THIS_TURN" && current?.effect.kind !== "TRASH_THEN_RETURN_UNIT" && current?.effect.kind !== "BOTTOM_DECK_UNIT" && current?.effect.kind !== "SEARCH_TAKE_ONE_PLUS_PER_MIN_GIG" && current?.effect.kind !== "SET_GIG_TO_ANOTHER_GIG_VALUE") || current.id !== playEffectId(state, c.effectIndex) || current.sourceId !== c.sourceId || current.controllerId !== c.actorId || canonicalSerialize(current.effect) !== canonicalSerialize(ability.effects[c.effectIndex]) || state.resolution.pending.length !== order.length - 1 - position)
+        if (revision!.type !== "PROGRAM" || source.zone.zone !== "RESOLVING_PROGRAM" || resolving.length !== 1 || c.remainingCost !== 0 || !ability || position < 0 || (position !== 0 && !ability.choose && current?.effect.kind !== "DEFEAT_UNIT") || (current?.effect.kind !== "SPEND_UNIT" && current?.effect.kind !== "DEFEAT_UNIT" && current?.effect.kind !== "ADJUST_GIG_UP_TO" && current?.effect.kind !== "POWER_UNTIL_END_OF_TURN" && current?.effect.kind !== "STEAL_FEWER_THIS_TURN" && current?.effect.kind !== "FIGHT_POWER_PER_FRIENDLY_LEGEND_THIS_TURN" && current?.effect.kind !== "TRASH_THEN_RETURN_UNIT" && current?.effect.kind !== "BOTTOM_DECK_UNIT" && current?.effect.kind !== "SEARCH_TAKE_ONE_PLUS_PER_MIN_GIG" && current?.effect.kind !== "SET_GIG_TO_ANOTHER_GIG_VALUE") || current.id !== playEffectId(state, c.effectIndex) || current.sourceId !== c.sourceId || current.controllerId !== c.actorId || canonicalSerialize(current.effect) !== canonicalSerialize(ability.effects[c.effectIndex]) || state.resolution.pending.length !== order.length - 1 - position)
             return failure("INVALID_PROGRAM_EFFECT", "Resolving Program and current primitive must match its pinned ordered ability");
         for (const [index, effect] of state.resolution.pending.entries()) {
             const printed = order[position + index + 1];
@@ -118,6 +122,8 @@ export function validatePlayState(state: GameState, context: EngineContext) {
                 return failure("INVALID_GIG_TARGET", "The Gig to set and its source choices must remain eligible");
         } else if (current.effect.kind === "BOTTOM_DECK_UNIT") {
             const bottomed = validateBottomDeck(state, context); if (!bottomed.ok) return bottomed;
+        } else if (current.effect.kind === "FIGHT_POWER_PER_FRIENDLY_LEGEND_THIS_TURN") { // Batch V58.
+            if (c.targetGigId || friendlyFieldUnits(state, c.actorId, context).length < 2 || state.timing.step !== "TARGET_SELECTION" || state.fightPowerGrants?.some(x => x.origin.effectId === current.id)) return failure("INVALID_FIGHT_POWER", "Only strategic current friendly-Unit choices pause the grant");
         } else if (current.effect.kind === "STEAL_FEWER_THIS_TURN") { // Batch V57.
             if (c.targetGigId || powerTargets(state, c.actorId, context).length < 2 || state.timing.step !== "TARGET_SELECTION" || state.stealReductions?.some(x => x.origin.effectId === current.id)) return failure("INVALID_STEAL_REDUCTION", "Only strategic current rival-Unit choices pause the steal reduction");
         } else if (current.effect.kind === "POWER_UNTIL_END_OF_TURN") {

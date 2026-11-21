@@ -1,3 +1,4 @@
+import { validateFightPowerGrants } from "./fight-power-grant";
 import { validateStealReductions } from "./steal-reduction";
 import { validateFirstGearHistory } from "./play-cost-support";
 import { validateFightWinHistory } from "./fight-win-support";
@@ -187,6 +188,7 @@ export function validateState(input: unknown, context: EngineContext): Result<Ga
     const locked = validateReadyLocks(s, context);
     if (!locked.ok) return locked;
     const reductions = validateStealReductions(s, context); if (!reductions.ok) return reductions; // Batch V57.
+    const grants = validateFightPowerGrants(s, context); if (!grants.ok) return grants; // Batch V58.
     const forced = validateMustAttack(s, context);
     if (!forced.ok) return forced;
     const prevention = validateFightPreventions(s, context);

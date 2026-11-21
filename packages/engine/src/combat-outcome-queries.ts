@@ -1,3 +1,4 @@
+import { whileFightingBonus } from "./fight-power-grant";
 import { forcedFightWinner } from "./fight-win-support";
 import { hashCanonical, type FightResult, type CardInstanceId, type DefeatInstruction, type GameState, type PendingChoice, type PlayerId } from "@tcg/domain";
 import type { EngineContext } from "./state";
@@ -18,7 +19,9 @@ export function evaluateFight(state: GameState, context: EngineContext, power = 
     const c = state.timing.combat;
     if (!("target" in c) || c.target?.kind !== "CARD") throw new Error("Expected a locked Unit target");
     const attackerId = c.attackerId, defenderId = c.target.cardInstanceId;
-    const attackerPower = power(attackerId), defenderPower = power(defenderId);
+    // Batch V58 (11.4.2.1): "while fighting" power applies before the comparison.
+    const fighting = (id: CardInstanceId) => { const p = power(id); return p === null ? null : p + whileFightingBonus(state, id, context); };
+    const attackerPower = fighting(attackerId), defenderPower = fighting(defenderId);
     if (attackerPower === null || defenderPower === null) throw new Error("UNSUPPORTED_NULL_FIGHT_POWER");
     const a = referencedPower(attackerPower), d = referencedPower(defenderPower), forced = forcedFightWinner(state, attackerId, defenderId, context);
     // Batch V52 (11.4.1.4): a card that says this Unit wins supersedes the comparison; the opposing Unit always loses (11.4.1.1.1).
