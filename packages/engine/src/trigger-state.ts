@@ -1,3 +1,5 @@
+import { attachedGear } from "./attachments";
+import { isFirstHostSteal, supportsGearStealCard } from "./gear-steal-support";
 import { getDiscardableCards } from "./discard";
 import { supportsFreeCallUnit } from "./free-call-support";
 import { fightWinGuardAllows } from "./fight-win-support";
@@ -90,8 +92,12 @@ function validBinding(state: GameState, b: TriggerBinding, context: EngineContex
     if (origin.kind === "BLOCK") return b.kind === "WHEN_BLOCKER_USED" && b.sourceId === b.subjectId && b.subjectId === origin.subjectId && supportsTriggerCard(r, context).ok;
     // Batch V24: a steal trigger binding names one Gig its subject stole in this Steal Step; no other binding names a Gig.
     // Batch V47: an effect steal in a post-fight batch appends its steal bindings exactly as a Steal Step would.
-    const steal = origin.kind === "STEAL" ? origin : b.gigInstanceId !== undefined && origin.kind === "DEFEAT" && origin.fight ? c.effectSteals?.find(e => e.gigInstanceIds.includes(b.gigInstanceId!)) : undefined;
+    // Batch V67: and a first-steal Gear's extra steal inside the Steal Step batch.
+    const steal = origin.kind === "STEAL" && (b.gigInstanceId === undefined || origin.gigInstanceIds.includes(b.gigInstanceId)) ? origin : b.gigInstanceId !== undefined && (origin.kind === "DEFEAT" && origin.fight || origin.kind === "STEAL") ? c.effectSteals?.find(e => e.gigInstanceIds.includes(b.gigInstanceId!)) : undefined;
     if (Boolean(steal) !== (b.gigInstanceId !== undefined)) return false;
+    // Batch V67: the stealer's equipped first-steal Gear, once, on the first Gig of the Unit's first steal this turn.
+    if (steal && b.sourceId !== b.subjectId) return b.kind === "WHEN_GIG_STOLEN" && ability.inherited === "EQUIPPED_HOST" && ability.guard === "FIRST_HOST_STEAL_PER_TURN" && supportsGearStealCard(r, context).ok
+        && b.subjectId === steal.subjectId && b.gigInstanceId === [...steal.gigInstanceIds].sort()[0] && isFirstHostSteal(state, steal.subjectId, steal.gigInstanceIds) && attachedGear(state, steal.subjectId, context).some(g => g.id === b.sourceId);
     if (steal) return b.sourceId === b.subjectId && steal.gigInstanceIds.includes(b.gigInstanceId!) && supportsTriggerCard(r, context).ok
         && (b.kind === "WHEN_GIG_STOLEN" ? b.subjectId === steal.subjectId
             // Batch V26: a friendly field Unit observing a stolen d6.
@@ -147,7 +153,8 @@ export function validateTriggerState(state: GameState, context: EngineContext) {
             || new Set(ids).size !== ids.length || canonicalSerialize([...ids].sort()) !== canonicalSerialize(ids)
             || ids.some(id => { const g = state.objects.gigs[id]; return !g || g.controllerId !== combat.attackingPlayerId || g.location.zone !== "GIGS" || g.roll.kind !== "ROLLED"; }))
             return failure("INVALID_STEAL_TRIGGER", "Steal triggers need the current Gig-area attacker and the distinct Gigs it stole");
-        if (canonicalSerialize(discoverTriggers(state, c.origin, context).map(b => canonicalSerialize(b)).sort()) !== canonicalSerialize(c.bindings.map(b => canonicalSerialize(b)).sort()))
+        const origin = c.origin, captured = [origin, ...(c.effectSteals ?? []).map(e => ({ kind: "STEAL" as const, subjectId: e.subjectId, gigInstanceIds: [...e.gigInstanceIds] }))]; // Batch V67.
+        if (canonicalSerialize(captured.flatMap(o => discoverTriggers(state, o, context)).map(b => canonicalSerialize(b)).sort()) !== canonicalSerialize(c.bindings.map(b => canonicalSerialize(b)).sort()))
             return failure("INVALID_TRIGGER_BATCH", "Every steal trigger must be captured once per stolen Gig");
     }
     // Batch V46: a post-fight batch carries the historical fight and exactly the registrations it fired; only then may it hold no defeat.
@@ -157,10 +164,12 @@ export function validateTriggerState(state: GameState, context: EngineContext) {
     // binding of that Gig is captured once, as in a Steal Step.
     if (c.effectSteals) {
         const steals = c.effectSteals, gigIds = steals.map(e => e.gigInstanceIds[0]), origin = c.origin;
-        if (origin.kind !== "DEFEAT" || new Set(gigIds).size !== gigIds.length || steals.length > (origin.fight?.outcomes.filter(o => registration(state, o.effect, context)?.effect.kind === "STEAL_GIG").length ?? 0)
+        // Batch V67: in a Steal Step batch, at most one extra steal per first-steal Gear binding of the origin's stealer.
+        const gearSteals = origin.kind === "STEAL" ? c.bindings.filter(b => b.sourceId !== b.subjectId && b.subjectId === origin.subjectId && b.kind === "WHEN_GIG_STOLEN" && origin.gigInstanceIds.includes(b.gigInstanceId!)).length : 0;
+        if (origin.kind !== "DEFEAT" && origin.kind !== "STEAL" || new Set(gigIds).size !== gigIds.length || steals.length > (origin.kind === "STEAL" ? gearSteals : origin.fight?.outcomes.filter(o => registration(state, o.effect, context)?.effect.kind === "STEAL_GIG").length ?? 0)
             || steals.some(e => { const subject = state.objects.cards[e.subjectId], g = state.objects.gigs[e.gigInstanceIds[0]];
-                return !origin.fight?.outcomes.some(o => o.subjectId === e.subjectId && registration(state, o.effect, context)?.effect.kind === "STEAL_GIG") || !subject || !g || g.controllerId !== subject.controllerId || g.location.zone !== "GIGS" || g.roll.kind !== "ROLLED"; })
-            || canonicalSerialize(steals.flatMap(e => discoverTriggers(state, { kind: "STEAL", subjectId: e.subjectId, gigInstanceIds: [...e.gigInstanceIds] }, context)).map(b => canonicalSerialize(b)).sort()) !== canonicalSerialize(c.bindings.filter(b => b.gigInstanceId !== undefined).map(b => canonicalSerialize(b)).sort()))
+                return !(origin.kind === "STEAL" ? e.subjectId === origin.subjectId : origin.fight?.outcomes.some(o => o.subjectId === e.subjectId && registration(state, o.effect, context)?.effect.kind === "STEAL_GIG")) || !subject || !g || g.controllerId !== subject.controllerId || g.location.zone !== "GIGS" || g.roll.kind !== "ROLLED"; })
+            || origin.kind === "DEFEAT" && canonicalSerialize(steals.flatMap(e => discoverTriggers(state, { kind: "STEAL", subjectId: e.subjectId, gigInstanceIds: [...e.gigInstanceIds] }, context)).map(b => canonicalSerialize(b)).sort()) !== canonicalSerialize(c.bindings.filter(b => b.gigInstanceId !== undefined).map(b => canonicalSerialize(b)).sort()))
             return failure("INVALID_EFFECT_STEAL", "Each effect steal needs its fired registration, a distinct Gig its subject's controller now controls and every steal binding once");
     }
     // Batch V48: each effect play names a distinct Unit, played by an admitted free-play ability of this batch; a recorded
@@ -192,8 +201,8 @@ export function validateTriggerState(state: GameState, context: EngineContext) {
     if ((r.current && r.current.controllerId !== state.timing.activePlayer || rivalHasResolved) && activeIds.some(id => !c.resolvedIds.includes(id))) return failure("INVALID_TRIGGER_PRIORITY", "Turn player's pending effects precede the rival's");
     if (c.phase === "SELECT" ? Boolean(r.current) || nextTriggerGroup(state).length < 2 : !r.current) return failure("INVALID_TRIGGER_PHASE", "Ordering is strategic only with multiple eligible effects; effect choices require a current effect");
     if (c.phase !== "SELECT" && (!r.current || !["DEFEAT_UNIT", "READY_EDDIES", "DISCARD_CARDS", "DECREASE_GIG_UP_TO", "ADJUST_GIG_UP_TO", "OPTIONAL_DECREASE_FRIENDLY_GIG_THEN_DRAW_IF_MIN", "LOOK_AT_FRIENDLY_FACE_DOWN_LEGEND", "POWER_UNTIL_END_OF_TURN", "SPEND_UNIT", "READY_UNIT", "RETURN_TRASH_UNIT_TO_HAND", "PLAY_UNIT_FREE", "SEARCH_GEAR", "SEARCH_COST_MATCHING_GIGS", "TRASH_THEN_RETURN_PROGRAM", "GRANT_KEYWORD_UNTIL_END_OF_TURN", "PREVENT_UNIT_READY", "SWAP_GIGS", "READY_LEGENDS_UP_TO", "READY_UNITS_UP_TO", "SPEND_UNITS_PER_VALUE_PAIR", "DISCARD_PROGRAMS_THEN_BOTTOM_DECK", "STOLEN_GIG_PARITY_DRAW_OR_RIVAL_DISCARD", "CHOOSE_TYPE_REVEAL_TOP_ADD_AND_READY_EDDIE", "FORCE_RIVAL_UNIT_ATTACK", "STEAL_GIG"].includes(r.current.effect.kind))) return failure("INVALID_TRIGGER_PHASE", "Only reviewed adjustment/look/discard/ready/power/spend/trash-return primitives pause for choices");
-    // Batch V47: an effect steal pauses only for a Gig choice between at least two rival Gigs its fired subject may steal.
-    if (r.current?.effect.kind === "STEAL_GIG" && (c.phase !== "TARGET" || r.current.trigger?.kind !== "DELAYED_FIGHT_OUTCOME" || effectStealTargets(state, context).length < 2)) return failure("INVALID_EFFECT_STEAL", "An effect steal pauses only to choose among two or more stealable rival Gigs");
+    // Batch V47: an effect steal pauses only for a Gig choice between at least two rival Gigs its fired subject may steal (Batch V67: or its first-steal Gear host).
+    if (r.current?.effect.kind === "STEAL_GIG" && (c.phase !== "TARGET" || !(r.current.trigger?.kind === "DELAYED_FIGHT_OUTCOME" || r.current.trigger?.kind === "WHEN_GIG_STOLEN" && r.current.effect.valueNotSharedByFriendly) || effectStealTargets(state, context).length < 2)) return failure("INVALID_EFFECT_STEAL", "An effect steal pauses only to choose among two or more stealable rival Gigs");
     // Batch V19: the reviewed [Attack] Gear search pauses only for its own looked-at cards (search-state owns the details).
     if (isSearchEffect(r.current?.effect) !== Boolean(r.searchContinuation) || r.current?.effect.kind === "SEARCH_GEAR" && (c.phase !== "TARGET" || c.origin.kind !== "ATTACK" || r.current.trigger?.kind !== "WHEN_ATTACKING" || !supportsAttackSearchUnit(cardRevision(state, r.current.sourceId!, context), context).ok)) return failure("INVALID_SEARCH_CONTINUATION", "Only the reviewed attack search pauses for its looked-at cards");
     // Batch V35: the pinned {Play} cost-matching search pauses only in its own PLAY batch.

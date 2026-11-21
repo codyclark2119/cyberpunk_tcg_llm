@@ -108,6 +108,7 @@ were recorded in their pull requests (#4, #7, #8); later batches have documents 
 | V64 (2026-11-21) | Nadia: Fighting Through Grief | [Unit: can attack a Rival's Gig area the turn it's played if that Rival controls more Gigs](api-admission-batch-v64.md); coverage 114/151 |
 | V65 (2026-11-21) | Valentino Guerrera | [Unit: can attack ready Blockers while its controller has more Street Cred than a Rival; an attacked Blocker cannot block itself](api-admission-batch-v65.md); coverage 115/151 |
 | V66 (2026-11-21) | Panam Palmer: Strength Through Family | [Unit: free Calls in its controller's turn; {Attack} discard 1, then draw 1 per friendly face-up Legend](api-admission-batch-v66.md); coverage 116/151 |
+| V67 (2026-11-21) | Gorilla Arms | [Gear: the host's first steal each turn also steals a rival Gig whose value no friendly Gig shares](api-admission-batch-v67.md); coverage 117/151 |
 | V7 (2026-11-15) | Royce: Don't Call Me Simon, Wild in the Streets, Delamain: Rideshare AI | [shared defeat filter and exact pin table](api-admission-batch-v7.md); coverage 42/151 |
 | V6 (2026-09-22) | Trust No One | [contract and executable slice](api-admission-batch-v6.md), [baseline verification](api-admission-batch-v6-verification.md) |
 

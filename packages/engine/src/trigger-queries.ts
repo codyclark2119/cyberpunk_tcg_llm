@@ -1,3 +1,4 @@
+import { isFirstHostSteal } from "./gear-steal-support";
 import { fightWinGuardAllows } from "./fight-win-support";
 import { belowPowerStealFires } from "./below-power-steal";
 import { handPrograms, programBottomDeckTargets } from "./program-discard";
@@ -57,8 +58,11 @@ export function discoverTriggers(state: GameState, origin: TriggerOrigin, contex
         const actor = state.objects.cards[origin.subjectId]?.controllerId, unit = Boolean(actor) && effectiveCardTypes(state, origin.subjectId, context).includes("UNIT");
         const observers = actor && unit ? [...state.players[actor].zones.BATTLEFIELD, ...state.players[actor].zones.LEGENDS].flatMap(id => effectiveTriggeredAbilities(state, id, context).filter(b => b.kind === "WHEN_FRIENDLY_UNIT_STEALS_GIG" && b.sourceId === b.subjectId)) : [];
         const guard = (b: TriggerBinding) => cardRevision(state, b.sourceId, context)!.mechanics.abilities.find(a => a.id === b.abilityId)!.guard;
+        // Batch V67: the stealer's Gear "the first time this Unit steals 1 or more Gigs each turn": once, on its first stolen Gig.
+        const first = [...origin.gigInstanceIds].sort()[0], firstSteal = isFirstHostSteal(state, origin.subjectId, origin.gigInstanceIds);
         return [...origin.gigInstanceIds].sort().flatMap(gigInstanceId => [
-            ...effectiveTriggeredAbilities(state, origin.subjectId, context).filter(b => b.kind === "WHEN_GIG_STOLEN" && b.sourceId === b.subjectId),
+            ...effectiveTriggeredAbilities(state, origin.subjectId, context).filter(b => b.kind === "WHEN_GIG_STOLEN" && (b.sourceId === b.subjectId
+                || gigInstanceId === first && firstSteal && cardRevision(state, b.sourceId, context)!.mechanics.abilities.find(a => a.id === b.abilityId)!.guard === "FIRST_HOST_STEAL_PER_TURN")),
             ...observers.filter(b => guard(b) === "STOLEN_GIG_IS_D6" && state.objects.gigs[gigInstanceId]?.dieType === "D6" || guard(b) === "STEALER_IS_LEGEND" && stealerIsLegend(state, origin.subjectId, context)
                 // Batch V49: a friendly field Unit observing the turn's first below-power steal by another friendly Unit.
                 || guard(b) === "FIRST_OTHER_FRIENDLY_STEAL_BELOW_POWER_PER_TURN" && state.objects.cards[b.sourceId].zone.zone === "BATTLEFIELD" && belowPowerStealFires(state, b.sourceId, origin.subjectId, gigInstanceId)

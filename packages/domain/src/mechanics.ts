@@ -179,7 +179,8 @@ export const EffectSchema = z.discriminatedUnion("kind", [
     z.strictObject({ kind: z.literal("REGISTER_NEXT_FIGHT_OUTCOME"), on: z.enum(["FRIENDLY_UNIT_LOSES", "FRIENDLY_UNIT_WINS_BY_3"]),
         effect: z.union([z.strictObject({ kind: z.literal("DEFEAT_UNIT"), target: DefeatOpposingTargetSchema }), z.strictObject({ kind: z.literal("STEAL_GIG"), actor: z.literal("TRIGGER_SUBJECT"), count: z.literal(1) })]) }),
     // Batch V47: the trigger subject steals rival Gigs outside an attack (11.5.1.1.2: the effect names the actor).
-    z.strictObject({ kind: z.literal("STEAL_GIG"), actor: z.literal("TRIGGER_SUBJECT"), count: z.literal(1) }),
+    // Batch V67: "steal a rival Gig with a value not shared by a friendly Gig".
+    z.strictObject({ kind: z.literal("STEAL_GIG"), actor: z.literal("TRIGGER_SUBJECT"), count: z.literal(1), valueNotSharedByFriendly: z.literal(true).optional() }),
     // Batch V48: "Play another Unit with cost 9 or less from your trash for free. Then, bottom-deck this Unit." (11.11.4, 11.23.3):
     // one public Unit in the controller's trash other than the trigger subject is played without paying; then the subject, if
     // still in its owner's trash, is bottom-decked.
@@ -273,7 +274,7 @@ export const AbilitySchema = z.strictObject({ id: z.string().min(1), trigger: Tr
     // Batch V40: STEALER_IS_LEGEND limits it to a stealing friendly Legend ("When a friendly Legend steals a Gig").
     // Batch V49: FIRST_OTHER_FRIENDLY_STEAL_BELOW_POWER_PER_TURN is "The first time another friendly Unit steals a Gig with value less
     // than its power each turn".
-    guard: z.enum(["FIRST_BLUE_UNIT_OR_GEAR_PLAY_PER_TURN", "FIRST_FRIENDLY_ARASAKA_UNIT_ATTACK_PER_TURN", "STOLEN_GIG_IS_D6", "STEALER_IS_LEGEND", "FIRST_OTHER_FRIENDLY_STEAL_BELOW_POWER_PER_TURN", "FIRST_ARASAKA_UNIT_DEFEAT_PER_TURN", "FIRST_FIGHT_WIN_PER_TURN", "FRIENDLY_CORPO_OR_GANGER_UNIT_STEALS"]).optional(),
+    guard: z.enum(["FIRST_BLUE_UNIT_OR_GEAR_PLAY_PER_TURN", "FIRST_FRIENDLY_ARASAKA_UNIT_ATTACK_PER_TURN", "STOLEN_GIG_IS_D6", "STEALER_IS_LEGEND", "FIRST_OTHER_FRIENDLY_STEAL_BELOW_POWER_PER_TURN", "FIRST_ARASAKA_UNIT_DEFEAT_PER_TURN", "FIRST_FIGHT_WIN_PER_TURN", "FRIENDLY_CORPO_OR_GANGER_UNIT_STEALS", "FIRST_HOST_STEAL_PER_TURN"]).optional(),
     // Batch V63: FRIENDLY_CORPO_OR_GANGER_UNIT_STEALS is "When a friendly CORPO or GANGER Unit steals 1 or more Gigs": once per steal, not per Gig.
     // Batch V50: FIRST_ARASAKA_UNIT_DEFEAT_PER_TURN with WHEN_UNIT_DEFEATED is "The first time an ARASAKA Unit is defeated each turn".
     // Batch V49: QUICK is "[Quick] cost: effect" (11.30.2): also activatable as a reaction to a rival Unit's attack.
