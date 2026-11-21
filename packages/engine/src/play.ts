@@ -1,3 +1,4 @@
+import { recordCyberwareGearPlay } from "./play-cost-support";
 import { resolveSpendTarget } from "./targeted-spend";
 import { activateTriggerBatch, type PreparedTriggerBatch } from "./trigger-resolution";
 import { recordPlayedCard } from "./trigger-resolution";
@@ -151,6 +152,7 @@ export function continuePlay(m: TurnMutation, index: number): Result<null> {
         if (option.kind !== "CARD") return failure("INVALID_EQUIP_TARGET", "Choose an enumerated host");
         const equipped = attachPlayedGear(m, c.sourceId, option.cardInstanceId);
         if (!equipped.ok) return equipped;
+        recordCyberwareGearPlay(m, c.actorId, c.sourceId); // Batch V53.
         // 11.20.2: play requirements are fulfilled only after equipping, not merely after payment.
         m.emit({ kind: "CARD_PLAYED", cardInstanceId: c.sourceId });
         return finishPlay(m, c.sourceId);

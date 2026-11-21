@@ -277,6 +277,8 @@ export const ContinuousModifierSchema = z.discriminatedUnion("kind", [
     z.strictObject({ kind: z.literal("GRANT_PRINTED_POWER_TO_HOST") }),
     z.strictObject({ kind: z.literal("POWER_PER_EQUIPPED_GEAR_DURING_OWN_TURN"), amount: z.number().int() }),
     // 3.11.1.2: changes the amount paid to play this card, never its cost value; floors at the printed minimum.
+    // Batch V53: "Play your first CYBERWARE Gear each turn for -3 €$, to a minimum of 1 €$."
+    z.strictObject({ kind: z.literal("FIRST_GEAR_PLAY_COST_REDUCTION"), classification: z.literal("Cyberware"), amount: z.literal(3), minimum: z.literal(1) }),
     z.strictObject({ kind: z.literal("SELF_PLAY_COST_REDUCTION"), per: z.enum(["FRIENDLY_GIG_VALUE_AT_LEAST_8", "FRIENDLY_TRASH_UNIT", "RIVAL_UNIT", "FRIENDLY_FACE_UP_LEGEND"]), amount: z.literal(1), minimum: z.literal(1) }),
     z.strictObject({ kind: z.literal("POWER"), target: TargetSelectorSchema, amount: z.number().int(), requiresFaceUp: z.boolean() }),
     z.strictObject({ kind: z.literal("KEYWORD"), target: TargetSelectorSchema, keyword: KeywordSchema, requiresFaceUp: z.boolean() })

@@ -1,3 +1,4 @@
+import { validateFirstGearHistory } from "./play-cost-support";
 import { validateFightWinHistory } from "./fight-win-support";
 import { validateArasakaDefeatHistory } from "./arasaka-defeat";
 import { validateTargetedDefeatState } from "./targeted-defeat-state";
@@ -124,6 +125,7 @@ export function validateState(input: unknown, context: EngineContext): Result<Ga
     const belowPower = validateBelowPowerHistory(s, context); if (!belowPower.ok) return belowPower; // Batch V49.
     const arasakaDefeat = validateArasakaDefeatHistory(s, context); if (!arasakaDefeat.ok) return arasakaDefeat; // Batch V50.
     const fightWins = validateFightWinHistory(s, context); if (!fightWins.ok) return fightWins; // Batch V52.
+    const firstGear = validateFirstGearHistory(s, context); if (!firstGear.ok) return firstGear; // Batch V53.
     const fieldMetadata = validateFieldLegendMetadata(s, context); if (!fieldMetadata.ok) return fieldMetadata;
     const delayedMetadata = validateDelayedMetadata(s, context); if (!delayedMetadata.ok) return delayedMetadata;
     const delayedState = validateDelayedState(s, context); if (!delayedState.ok) return delayedState;

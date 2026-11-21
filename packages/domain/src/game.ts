@@ -110,6 +110,8 @@ export const TurnHistorySchema = z.strictObject({
     // Batch V50: the turn's first defeated ARASAKA Unit (either player's), and the Units a free play let attack rival Units this turn.
     // Batch V52: fights each Unit won this turn, for "the first time this Unit wins a fight each turn".
     fightWins: z.record(CardInstanceIdSchema, z.number().int().positive()).optional(),
+    // Batch V53: each player's first CYBERWARE Gear played this turn, for "your first CYBERWARE Gear each turn".
+    firstCyberwareGearPlays: z.record(PlayerIdSchema, CardInstanceIdSchema).optional(),
     firstArasakaDefeat: CardInstanceIdSchema.optional(), rivalUnitAttackGrants: z.array(CardInstanceIdSchema).min(1).optional(),
     firstArasakaAttacks: z.record(PlayerIdSchema, QualifyingAttackSummarySchema).optional(), gigsStolenByUnit: z.record(CardInstanceIdSchema, z.number().int().positive()).optional(), turn: z.number().int().positive(), triggeredBatches: z.number().int().nonnegative(), blueUnitOrGearPlays: z.record(PlayerIdSchema, z.number().int().nonnegative()), programPlays: z.record(PlayerIdSchema, z.number().int().nonnegative()).optional() });
 export const PendingEffectSchema = z.strictObject({ id: z.string().min(1), controllerId: PlayerIdSchema, sourceId: CardInstanceIdSchema.nullable(), primitiveIndex: z.literal(1).optional(), effect: EffectSchema, trigger: TriggerBindingSchema.omit({ sourceId: true, controllerId: true }).extend({ turn: z.number().int().positive(), ordinal: z.number().int().positive() }).optional(), causedBySequence: z.number().int().nonnegative() });

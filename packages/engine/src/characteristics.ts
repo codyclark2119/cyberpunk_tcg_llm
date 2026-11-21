@@ -36,7 +36,7 @@ export function applicablePowerModifiers(state: GameState, id: CardInstanceId, c
         if ((modifier.kind === "GRANT_KEYWORD_TO_HOST" || modifier.kind === "GRANT_KEYWORD_TO_HOST_IF") && supportsCapabilityGear(revision, context).ok) continue;
         if (modifier.kind === "RIVAL_LAGGING_UNITS_CANNOT_ATTACK" && supportsAttackPreventionUnit(revision, context).ok) continue;
         if (modifier.kind === "GRANT_PRINTED_POWER_TO_HOST" && revision.type === "GEAR" && gearEnabled(context)) continue;
-        if (modifier.kind === "SELF_PLAY_COST_REDUCTION" && supportsPlayCostReduction(revision, context).ok) continue; // Payment only, never power.
+        if ((modifier.kind === "SELF_PLAY_COST_REDUCTION" || modifier.kind === "FIRST_GEAR_PLAY_COST_REDUCTION") && supportsPlayCostReduction(revision, context).ok) continue; // Payment only, never power.
         if (modifier.kind === "CAN_ATTACK_RIVAL_UNITS_WHILE_LAGGING" && supportsValuePairUnit(revision, context).ok) continue; // Batch V30: attack permission only.
         if (modifier.kind === "OTHER_FRIENDLY_ATTACKING_UNIT_POWER" && supportsAttackingReadyUnit(revision, context).ok) continue; // Batch V38: contributes to others only.
         if (modifier.kind === "WINS_FIGHTS_AGAINST_CLASSIFICATION" && supportsFightWinUnit(revision, context).ok) continue; // Batch V52: fight outcome only.
