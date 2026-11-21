@@ -1,4 +1,5 @@
 import { canonicalSerialize, failure, success, type CardInstanceId, type GameState, type GigInstanceState, type GigStealRestriction, type PendingEffect, type PlayerId, type Result, type TemporaryKeywordGrant } from "@tcg/domain";
+import { compareKeywordGrants, validateBlockerGrant } from "./blocker-grant";
 import { isPlayedInBatch } from "./effect-play";
 import type { EngineContext } from "./state";
 import type { TurnMutation } from "./turn";
@@ -60,7 +61,7 @@ export function keywordGrantTargets(state: GameState, current: PendingEffect, co
         && card.zone.zone === "BATTLEFIELD" && card.face === "UP" && effectiveCardTypes(state, card.id, context).includes("UNIT")
         && (r => r?.printedCost.kind === "EDDIES" && r.printedCost.amount <= limit)(cardRevision(state, card.id, context))).map(card => card.id).sort();
 }
-function compareGrants(a: TemporaryKeywordGrant, b: TemporaryKeywordGrant) { return a.origin.effectId < b.origin.effectId ? -1 : a.origin.effectId > b.origin.effectId ? 1 : 0; }
+const compareGrants = compareKeywordGrants;
 export function applyKeywordGrant(m: TurnMutation, targetId: CardInstanceId, forced: boolean): Result<null> {
     const s = m.state, current = s.resolution.current, t = current?.trigger;
     if (current?.effect.kind !== "GRANT_KEYWORD_UNTIL_END_OF_TURN" || !current.sourceId || !t) return failure("INVALID_KEYWORD_GRANT", "Current reviewed grant required");
@@ -88,10 +89,11 @@ export function expireKeywordGrantsOnDeparture(m: TurnMutation, targetId: CardIn
 export function validateKeywordGrants(state: GameState, context: EngineContext) {
     const grants = state.temporaryKeywords;
     if (!grants) return success(null);
-    if (new Set(grants.map(x => x.origin.effectId)).size !== grants.length || canonicalSerialize(grants) !== canonicalSerialize([...grants].sort(compareGrants)))
+    if (new Set(grants.map(x => canonicalSerialize([x.origin.effectId, "sequence" in x.origin ? x.origin.sequence : null]))).size !== grants.length || canonicalSerialize(grants) !== canonicalSerialize([...grants].sort(compareGrants)))
         return failure("INVALID_KEYWORD_GRANT", "Unique, ordered grant occurrences required");
     const continuation = state.resolution.triggerContinuation;
     for (const x of grants) {
+        if (x.keyword === "BLOCKER") { const valid = validateBlockerGrant(state, x, context); if (!valid.ok) return valid; continue; } // Batch V74.
         const source = state.objects.cards[x.sourceId], target = state.objects.cards[x.targetId], r = cardRevision(state, x.sourceId, context), a = r?.mechanics.abilities.find(a => a.id === x.origin.abilityId);
         const effect = a?.effects[0], targetRevision = cardRevision(state, x.targetId, context);
         if (!source || !target || !r || !a || !supportsPinnedPlayUnit(r, context).ok || effect?.kind !== "GRANT_KEYWORD_UNTIL_END_OF_TURN" || effect.keyword !== x.keyword

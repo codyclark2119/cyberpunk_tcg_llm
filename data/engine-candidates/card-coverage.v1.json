@@ -9,12 +9,12 @@
   },
   "totals": {
     "cards": 151,
-    "admitted": 123,
-    "notAdmitted": 28,
+    "admitted": 124,
+    "notAdmitted": 27,
     "notAdmittedOnlyCoveredFamilies": 0,
     "byAdmission": {
-      "NOT_ADMITTED": 28,
-      "SOURCE_MATCH": 123
+      "NOT_ADMITTED": 27,
+      "SOURCE_MATCH": 124
     }
   },
   "families": [
@@ -24,7 +24,7 @@
       "summary": "Generic target filters and board conditions: classification, cost, power, ready/spent, equipped, face-up, named, lowest power.",
       "notes": "Documented as unsupported: generic condition/filter language. Each admitted filter is a literal.",
       "cardCount": 34,
-      "notAdmittedCount": 10,
+      "notAdmittedCount": 9,
       "soleBlockerCount": 0
     },
     {
@@ -33,7 +33,7 @@
       "summary": "Conditions and filters on Gig values: min/max, value-pairs, even/odd, 8+, die type, counts compared with a Rival.",
       "notes": "Conditions only, each a fixed shape.",
       "cardCount": 40,
-      "notAdmittedCount": 9,
+      "notAdmittedCount": 8,
       "soleBlockerCount": 0
     },
     {
@@ -42,7 +42,7 @@
       "summary": "Activated abilities with a [Spend] cost (and optional Eddie cost) on Legends, Units or Gear.",
       "notes": "Admitted only for Kerry: The Last Rockerboy (a Unit). Face-up Legend [Spend] abilities and Gear [Spend] abilities are not.",
       "cardCount": 17,
-      "notAdmittedCount": 9,
+      "notAdmittedCount": 8,
       "soleBlockerCount": 0
     },
     {
@@ -51,16 +51,7 @@
       "summary": "Draw cards, fixed or conditional.",
       "notes": "Routed. Variable counts need SCALED_AMOUNT; 'may draw' needs an optional prompt.",
       "cardCount": 38,
-      "notAdmittedCount": 7,
-      "soleBlockerCount": 0
-    },
-    {
-      "family": "TEMPORARY_BUFF",
-      "status": "PARTIAL",
-      "summary": "Power or keyword changes 'this turn' on a chosen Unit.",
-      "notes": "Fixed amounts on RIVAL_UNIT, SOURCE_SUBJECT or FRIENDLY_UNIT. Keyword grants, all-Unit and filtered targets are missing.",
-      "cardCount": 19,
-      "notAdmittedCount": 7,
+      "notAdmittedCount": 6,
       "soleBlockerCount": 0
     },
     {
@@ -82,6 +73,15 @@
       "soleBlockerCount": 0
     },
     {
+      "family": "TEMPORARY_BUFF",
+      "status": "PARTIAL",
+      "summary": "Power or keyword changes 'this turn' on a chosen Unit.",
+      "notes": "Fixed amounts on RIVAL_UNIT, SOURCE_SUBJECT or FRIENDLY_UNIT. Keyword grants, all-Unit and filtered targets are missing.",
+      "cardCount": 19,
+      "notAdmittedCount": 6,
+      "soleBlockerCount": 0
+    },
+    {
       "family": "DECK_SEARCH_REVEAL",
       "status": "PARTIAL",
       "summary": "Top-of-deck manipulation: search/look/reveal top N, trash from the top (Trash N), bottom-deck the rest.",
@@ -91,29 +91,11 @@
       "soleBlockerCount": 0
     },
     {
-      "family": "KEYWORD_QUICK",
-      "status": "PARTIAL",
-      "summary": "[Quick] timing: Programs and activated abilities usable in the react window.",
-      "notes": "Quick Programs are supported for Floor It, Reboot Optics and Detonate. Quick activated [Spend] abilities on Legends, Units and Gear are not offered in any react window yet.",
-      "cardCount": 12,
-      "notAdmittedCount": 5,
-      "soleBlockerCount": 0
-    },
-    {
       "family": "ATTACK_PERMISSION",
       "status": "PARTIAL",
       "summary": "Who may attack what and when: can't attack, may attack ready/spent Units, must attack, can't be blocked.",
       "notes": "Restrictions on the card itself are supported; permissions granted by effects, forced attacks and off-turn timing are not.",
       "cardCount": 16,
-      "notAdmittedCount": 4,
-      "soleBlockerCount": 0
-    },
-    {
-      "family": "DISCARD",
-      "status": "PARTIAL",
-      "summary": "Discard: self discard, a Rival discards, discard as a cost, discard a hand.",
-      "notes": "DISCARD_CARDS supports only the controller discarding exactly 1.",
-      "cardCount": 15,
       "notAdmittedCount": 4,
       "soleBlockerCount": 0
     },
@@ -136,6 +118,15 @@
       "soleBlockerCount": 0
     },
     {
+      "family": "KEYWORD_QUICK",
+      "status": "PARTIAL",
+      "summary": "[Quick] timing: Programs and activated abilities usable in the react window.",
+      "notes": "Quick Programs are supported for Floor It, Reboot Optics and Detonate. Quick activated [Spend] abilities on Legends, Units and Gear are not offered in any react window yet.",
+      "cardCount": 12,
+      "notAdmittedCount": 4,
+      "soleBlockerCount": 0
+    },
+    {
       "family": "SCALED_AMOUNT",
       "status": "PARTIAL",
       "summary": "Amounts computed from the board: 'for each', 'equal to'.",
@@ -150,6 +141,15 @@
       "summary": "Play-cost reductions, alternative costs, ability-cost and Go Solo cost changes.",
       "notes": "",
       "cardCount": 10,
+      "notAdmittedCount": 3,
+      "soleBlockerCount": 0
+    },
+    {
+      "family": "DISCARD",
+      "status": "PARTIAL",
+      "summary": "Discard: self discard, a Rival discards, discard as a cost, discard a hand.",
+      "notes": "DISCARD_CARDS supports only the controller discarding exactly 1.",
+      "cardCount": 15,
       "notAdmittedCount": 3,
       "soleBlockerCount": 0
     },
@@ -352,15 +352,6 @@
       "soleBlockerCount": 0
     },
     {
-      "family": "TRIGGER_BLOCKER_USED",
-      "status": "MISSING",
-      "summary": "'When this Unit uses [Blocker]' triggers.",
-      "notes": "Blocker redirection exists but emits no trigger.",
-      "cardCount": 3,
-      "notAdmittedCount": 1,
-      "soleBlockerCount": 0
-    },
-    {
       "family": "TRIGGER_CALL",
       "status": "PARTIAL",
       "summary": "[Call] abilities of a Legend.",
@@ -429,6 +420,15 @@
       "summary": "Continuous modifiers: auras, while-attacking power, conditional keywords.",
       "notes": "Each admitted modifier is a bespoke shape.",
       "cardCount": 4,
+      "notAdmittedCount": 0,
+      "soleBlockerCount": 0
+    },
+    {
+      "family": "TRIGGER_BLOCKER_USED",
+      "status": "MISSING",
+      "summary": "'When this Unit uses [Blocker]' triggers.",
+      "notes": "Blocker redirection exists but emits no trigger.",
+      "cardCount": 3,
       "notAdmittedCount": 0,
       "soleBlockerCount": 0
     },
@@ -1252,8 +1252,8 @@
       "colors": [
         "GREEN"
       ],
-      "admission": "NOT_ADMITTED",
-      "revision": null,
+      "admission": "SOURCE_MATCH",
+      "revision": 1,
       "families": [
         "CONDITION_BOARD",
         "CONDITION_GIG",
@@ -1264,16 +1264,7 @@
         "TEMPORARY_BUFF",
         "TRIGGER_BLOCKER_USED"
       ],
-      "blockingFamilies": [
-        "CONDITION_BOARD",
-        "CONDITION_GIG",
-        "DISCARD",
-        "DRAW",
-        "KEYWORD_QUICK",
-        "SPEND_ABILITY",
-        "TEMPORARY_BUFF",
-        "TRIGGER_BLOCKER_USED"
-      ],
+      "blockingFamilies": [],
       "note": null
     },
     {

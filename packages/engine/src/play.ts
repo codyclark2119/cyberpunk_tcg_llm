@@ -1,4 +1,5 @@
 import { chooseTrashProgram } from "./trash-program";
+import { applyBlockerGrant } from "./blocker-grant";
 import { noteSpent } from "./spend-triggers";
 import { applyMustAttack } from "./must-attack";
 import { applyFightDefeatImmunity } from "./fight-immunity";
@@ -226,6 +227,12 @@ export function continuePlay(m: TurnMutation, index: number): Result<null> {
         }
         delete c.targetGigId;
         return completePlayEffect(m);
+    }
+    if (s.resolution.current?.effect.kind === "GRANT_BLOCKER_THIS_TURN") { // Batch V74.
+        if (option.kind !== "CARD") return failure("INVALID_KEYWORD_TARGET", "Choose an enumerated friendly Unit");
+        s.resolution.choice = null;
+        const applied = applyBlockerGrant(m, option.cardInstanceId, false);
+        return applied.ok ? completePlayEffect(m) : applied;
     }
     if (s.resolution.current?.effect.kind === "FIGHT_DEFEAT_IMMUNITY_THIS_TURN") { // Batch V61.
         if (option.kind !== "CARD") return failure("INVALID_FIGHT_IMMUNITY", "Choose an enumerated friendly Unit");

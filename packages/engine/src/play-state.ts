@@ -1,4 +1,5 @@
 import { trashProgramTargets } from "./trash-program";
+import { blockerGrantTargets } from "./blocker-grant";
 import { mustAttackTargets } from "./must-attack";
 import { crossSetSources, crossSetTargets, legendContinuationAbility, playPowerTargets, swapChoiceGigs, validateLegendActivationState } from "./legend-spend";
 import { friendlyFieldUnits } from "./fight-power-grant";
@@ -73,6 +74,9 @@ export function playChoice(state: GameState, context: EngineContext): PendingCho
     } else if (state.resolution.current?.effect.kind === "FIGHT_POWER_PER_FRIENDLY_LEGEND_THIS_TURN" || state.resolution.current?.effect.kind === "FIGHT_DEFEAT_IMMUNITY_THIS_TURN") { // Batch V58, V61.
         kind = "TARGET";
         options = friendlyFieldUnits(state, c.actorId, context).map(cardInstanceId => ({ kind: "CARD", cardInstanceId }));
+    } else if (state.resolution.current?.effect.kind === "GRANT_BLOCKER_THIS_TURN") { // Batch V74.
+        kind = "TARGET";
+        options = blockerGrantTargets(state, c.actorId, context).map(cardInstanceId => ({ kind: "CARD", cardInstanceId }));
     } else if (state.resolution.current?.effect.kind === "POWER_UNTIL_END_OF_TURN" || state.resolution.current?.effect.kind === "STEAL_FEWER_THIS_TURN") {
         kind = "TARGET";
         options = playPowerTargets(state, c.actorId, context).map(cardInstanceId => ({ kind: "CARD", cardInstanceId }));

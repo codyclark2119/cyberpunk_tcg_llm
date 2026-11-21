@@ -1,4 +1,5 @@
 import { applyMustAttack, mustAttackTargets } from "./must-attack";
+import { applyBlockerGrant, blockerGrantTargets } from "./blocker-grant";
 import { applyFightDefeatImmunity } from "./fight-immunity";
 import { advanceCrossSet, advanceMandatorySwap, isLegendCallPower, mandatorySwapAvailable, playPowerTargets } from "./legend-spend";
 import { applyFightPowerGrant, friendlyFieldUnits } from "./fight-power-grant";
@@ -86,6 +87,10 @@ export class HandlerRegistry {
         if (effect.kind === "FIGHT_DEFEAT_IMMUNITY_THIS_TURN") { // Batch V61: one friendly Unit; a lone Unit is forced and none does nothing.
             const targets = friendlyFieldUnits(m.state, m.state.resolution.current!.controllerId, m.context);
             return targets.length > 1 ? offerPlayChoice(m) : targets.length === 1 ? applyFightDefeatImmunity(m, targets[0], true) : success(null);
+        }
+        if (effect.kind === "GRANT_BLOCKER_THIS_TURN") { // Batch V74: one friendly Unit with cost 4 or less; a lone Unit is forced and none does nothing.
+            const targets = blockerGrantTargets(m.state, m.state.resolution.current!.controllerId, m.context);
+            return targets.length > 1 ? offerPlayChoice(m) : targets.length === 1 ? applyBlockerGrant(m, targets[0], true) : success(null);
         }
         if (effect.kind === "FIGHT_POWER_PER_FRIENDLY_LEGEND_THIS_TURN") { // Batch V58: one friendly Unit; a lone Unit is forced and none does nothing.
             const targets = friendlyFieldUnits(m.state, m.state.resolution.current!.controllerId, m.context);

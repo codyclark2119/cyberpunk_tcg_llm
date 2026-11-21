@@ -407,6 +407,8 @@ export function continueTrigger(m: TurnMutation, index: number, forced = false):
             const result = discardCard(m, { kind: "DISCARD_CARDS", player: "RIVAL", count: 1, selection: "CHOSEN_BY_AFFECTED_PLAYER" }, option.cardInstanceId, forced);
             return result.ok ? completed(m) : result;
         }
+        // Batch V74: a "may" discard declined draws nothing.
+        if (current.effect.kind === "DISCARD_CARDS" && current.effect.optional && option.kind === "MODE" && option.mode === "DONE") { m.emit({ kind: "OPTIONAL_TRIGGER_DECLINED", effectId: current.id, controllerId: current.controllerId }); return completed(m); }
         if (current.effect.kind !== "DISCARD_CARDS" || option.kind !== "CARD") return failure("INVALID_DISCARD", "Choose one current own-hand card");
         const result = discardCard(m, current.effect, option.cardInstanceId, forced);
         if (!result.ok) return result;
@@ -421,6 +423,7 @@ export function continueTrigger(m: TurnMutation, index: number, forced = false):
             const n = friendlyFaceUpLegends(m.state, current.controllerId, m.context), drawn = n ? m.draw(current.controllerId, n) : success(null);
             if (!drawn.ok) return drawn;
         }
+        if (current.effect.thenDrawOne) { const drawn = m.draw(current.controllerId, 1); if (!drawn.ok) return drawn; } // Batch V74: "If you do, draw 1."
         return completed(m);
     }
     if (c.phase === "OPTIONAL") {

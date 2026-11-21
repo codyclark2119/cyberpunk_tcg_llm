@@ -60,7 +60,7 @@ export type FightOutcomeEffect = DeepReadonly<z.infer<typeof FightOutcomeEffectS
 export const FightOutcomeSchema = z.strictObject({ effect: FightOutcomeEffectSchema, subjectId: CardInstanceIdSchema, opposingId: CardInstanceIdSchema });
 export type FightOutcome = DeepReadonly<z.infer<typeof FightOutcomeSchema>>;
 export const TriggerBindingSchema = z.strictObject({ sourceId: CardInstanceIdSchema, subjectId: CardInstanceIdSchema, controllerId: PlayerIdSchema,
-    source: CardReferenceSchema, abilityId: z.string().min(1), delayedId: HashSchema.optional(), kind: z.enum(["DELAYED_END_TURN", "WHEN_FIGHT_WON", "WHEN_DEFEATED", "WHEN_PLAYED", "WHEN_ATTACKING", "WHEN_CARD_PLAYED", "WHEN_OWN_TURN_ENDS", "WHEN_UNIT_ATTACKS", "WHEN_BLOCKER_USED", "WHEN_GIG_STOLEN", "WHEN_FRIENDLY_UNIT_STEALS_GIG", "WHEN_UNIT_DEFEATED", "WHEN_FIGHT_LOST", "DELAYED_FIGHT_OUTCOME", "WHEN_SPENT"]),
+    source: CardReferenceSchema, abilityId: z.string().min(1), delayedId: HashSchema.optional(), kind: z.enum(["DELAYED_END_TURN", "WHEN_FIGHT_WON", "WHEN_DEFEATED", "WHEN_PLAYED", "WHEN_ATTACKING", "WHEN_CARD_PLAYED", "WHEN_OWN_TURN_ENDS", "WHEN_UNIT_ATTACKS", "WHEN_BLOCKER_USED", "WHEN_GIG_STOLEN", "WHEN_FRIENDLY_UNIT_STEALS_GIG", "WHEN_UNIT_DEFEATED", "WHEN_FIGHT_LOST", "DELAYED_FIGHT_OUTCOME", "WHEN_SPENT", "WHEN_FRIENDLY_UNIT_USES_BLOCKER"]),
     // Batch V24 (10.16.3): a steal trigger is pending once per stolen Gig, so its binding names that Gig.
     gigInstanceId: GigInstanceIdSchema.optional(),
     // Batch V46: a fired next-fight-outcome binding names the opposing Unit of its fight.
@@ -151,11 +151,17 @@ export const TemporaryPowerModifierSchema = z.discriminatedUnion("amount", [
     TemporaryPowerBaseSchema.extend({ amount: z.literal(-5), scaled: z.literal("ALL_RIVAL_UNITS"), origin: z.strictObject({ effectId: HashSchema }) })
 ).or(
     TemporaryPowerBaseSchema.extend({ amount: z.number().int().negative(), scaled: z.literal("SOURCE_POWER"), origin: z.strictObject({ effectId: HashSchema, sequence: z.number().int().nonnegative() }) })
+).or(
+    // Batch V74: the "+1 power this turn" a Legend's Blocker grant also gives with a friendly value-pair of Gigs.
+    TemporaryPowerBaseSchema.extend({ amount: z.literal(1), scaled: z.literal("BLOCKER_GRANT_BONUS"), origin: z.strictObject({ effectId: HashSchema, sequence: z.number().int().nonnegative() }) })
 );
 export type TemporaryPowerModifier = z.infer<typeof TemporaryPowerModifierSchema>;
 /** Batch V20: a keyword granted "this turn" by a resolved PLAY occurrence; it tracks the target only while it stays on the field. */
 export const TemporaryKeywordGrantSchema = z.strictObject({ kind: z.literal("KEYWORD"), keyword: z.literal("ADRENALINE"), sourceId: CardInstanceIdSchema, targetId: CardInstanceIdSchema,
-    expires: z.strictObject({ kind: z.literal("END_OF_TURN"), turn: z.number().int().positive() }), origin: z.strictObject({ effectId: HashSchema, abilityId: z.string().min(1), ordinal: z.number().int().positive() }) });
+    expires: z.strictObject({ kind: z.literal("END_OF_TURN"), turn: z.number().int().positive() }), origin: z.strictObject({ effectId: HashSchema, abilityId: z.string().min(1), ordinal: z.number().int().positive() }) }).or(
+    // Batch V74: {Blocker} from a Legend's Quick activation; `sequence` keeps repeated activations in one turn apart.
+    z.strictObject({ kind: z.literal("KEYWORD"), keyword: z.literal("BLOCKER"), sourceId: CardInstanceIdSchema, targetId: CardInstanceIdSchema,
+        expires: z.strictObject({ kind: z.literal("END_OF_TURN"), turn: z.number().int().positive() }), origin: z.strictObject({ effectId: HashSchema, abilityId: z.string().min(1), sequence: z.number().int().nonnegative() }) }));
 export type TemporaryKeywordGrant = z.infer<typeof TemporaryKeywordGrantSchema>;
 /** Batch V21: a restriction on rival stealing from a resolved PLAY occurrence (11.5.1.3); it ends at the start of its controller's next turn (8.6.2.1), wherever its source goes. */
 export const GigStealRestrictionSchema = z.strictObject({ kind: z.literal("GIG_STEAL_RESTRICTION"), actor: z.enum(["UNIT", "LEGEND"]), forbidden: z.enum(["VALUE_ABOVE_POWER", "VALUE_BELOW_POWER"]),

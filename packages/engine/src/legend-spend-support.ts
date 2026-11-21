@@ -39,11 +39,19 @@ const LEGEND_SPEND_SHAPES = [
         abilities: [{ trigger: "WHEN_FRIENDLY_UNIT_STEALS_GIG", inherited: null, guard: "FRIENDLY_CORPO_OR_GANGER_UNIT_STEALS", activation: null, conditions: [], abilityCost: { kind: "NONE" }, choose: null,
             effects: [{ kind: "READY_EDDIES", player: "CONTROLLER", count: 1 }] },
             { ...SPEND, activation: { timing: "MAIN", conditionTiming: "ACTIVATION_AND_RESOLUTION", costs: [{ kind: "PAYMENT_COST", cost: { kind: "EDDIES", amount: 1 } }, { kind: "SPEND_SOURCE" }] },
-                effects: [{ kind: "FORCE_RIVAL_UNIT_ATTACK", duration: "NEXT_TURN" }] }] }
+                effects: [{ kind: "FORCE_RIVAL_UNIT_ATTACK", duration: "NEXT_TURN" }] }] },
+    // Batch V74: Goro Takemura: Vengeful Bodyguard. "{Quick} 1 €$, {Spend} Give a friendly Unit with cost 4 or less {Blocker} this turn.
+    // If you control a value-pair of Gigs, also give it +1 power this turn. When a friendly Unit uses {Blocker}, you may discard 1. If you
+    // do, draw 1."
+    { colors: ["GREEN"], ram: { GREEN: 2 }, tags: ["Arasaka", "Corpo"], sell: true,
+        abilities: [{ ...SPEND, activation: { timing: "QUICK", conditionTiming: "ACTIVATION_AND_RESOLUTION", costs: [{ kind: "PAYMENT_COST", cost: { kind: "EDDIES", amount: 1 } }, { kind: "SPEND_SOURCE" }] },
+                effects: [{ kind: "GRANT_BLOCKER_THIS_TURN", target: { kind: "FRIENDLY_UNIT", costAtMost: 4 }, alsoPowerIf: { condition: { kind: "CONTROLS_VALUE_PAIR" }, amount: 1 } }] },
+            { trigger: "WHEN_FRIENDLY_UNIT_USES_BLOCKER", inherited: null, guard: null, activation: null, conditions: [], abilityCost: { kind: "NONE" }, choose: null,
+                effects: [{ kind: "DISCARD_CARDS", player: "CONTROLLER", count: 1, selection: "CHOSEN_BY_AFFECTED_PLAYER", optional: true, thenDrawOne: true }] }] }
 ].map(shape => canonicalSerialize({ type: "LEGEND", power: null, cost: "DASH", keywords: [], equip: null, modifiers: [], restrictions: [], ...shape }));
-/** Any Legend activation, start-of-turn trigger, value-pair draw or mandatory swap routes here first. */
+/** Any Legend activation, start-of-turn trigger, value-pair draw, mandatory swap, Blocker grant or friendly Blocker-used trigger routes here first. */
 export function hasLegendSpendMetadata(card: DeepReadonly<CardRevisionSnapshot> | undefined) {
-    return Boolean(card?.mechanics.abilities.some(a => card.type === "LEGEND" && (a.activation || a.choose) || a.guard === "FRIENDLY_CORPO_OR_GANGER_UNIT_STEALS" || a.trigger === "WHEN_OWN_TURN_STARTS" || a.effects.some(e => e.kind === "DRAW_PER_FRIENDLY_VALUE_PAIR" || e.kind === "FIGHT_DEFEAT_IMMUNITY_THIS_TURN" || e.kind === "SET_GIG_TO_ANOTHER_PLAYERS_GIG_VALUE" || e.kind === "SWAP_GIGS" && !e.optional)));
+    return Boolean(card?.mechanics.abilities.some(a => card.type === "LEGEND" && (a.activation || a.choose) || a.guard === "FRIENDLY_CORPO_OR_GANGER_UNIT_STEALS" || a.trigger === "WHEN_OWN_TURN_STARTS" || a.trigger === "WHEN_FRIENDLY_UNIT_USES_BLOCKER" || a.effects.some(e => e.kind === "GRANT_BLOCKER_THIS_TURN" || e.kind === "DISCARD_CARDS" && (e.optional || e.thenDrawOne)) || a.effects.some(e => e.kind === "DRAW_PER_FRIENDLY_VALUE_PAIR" || e.kind === "FIGHT_DEFEAT_IMMUNITY_THIS_TURN" || e.kind === "SET_GIG_TO_ANOTHER_PLAYERS_GIG_VALUE" || e.kind === "SWAP_GIGS" && !e.optional)));
 }
 export function supportsLegendSpendCard(card: DeepReadonly<CardRevisionSnapshot> | undefined, context: EngineContext) {
     const g = context.content.ruleset.gameplay, m = card?.mechanics;

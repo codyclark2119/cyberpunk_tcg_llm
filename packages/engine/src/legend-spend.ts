@@ -1,4 +1,5 @@
 import { canonicalSerialize, failure, hashCanonical, success, type CardInstanceId, type GameState, type GigInstanceId, type PlayerId, type Result } from "@tcg/domain";
+import { blockerGrantTargets } from "./blocker-grant";
 import type { EngineContext } from "./state";
 import type { TurnMutation } from "./turn";
 import { cardRevision } from "./characteristics";
@@ -67,9 +68,10 @@ export function validateLegendActivationState(state: GameState, context: EngineC
     const ability = revision?.mechanics.abilities.find(a => a.id === c.abilityId), current = r.current, held = c.targetGigId ? state.objects.gigs[c.targetGigId] : undefined;
     // Batch V73: a Called trash-then-add-Program Legend resolves its one printed effect here too (no mode).
     const trashCall = ability?.trigger === "WHEN_CALLED" && !ability.choose && supportsCallTrashProgram(revision, context).ok;
-    const modal = ability?.trigger === "WHEN_CALLED" && Boolean(ability.choose), called = modal || trashCall, spend = ability?.activation?.timing === "MAIN" && !ability.trigger;
-    const window = called ? r.returnTo?.kind === "MAIN" && state.timing.combat.stage === "NONE" && c.actorId === state.timing.activePlayer || r.returnTo?.kind === "RIVAL_REACT" && state.timing.combat.stage === "RIVAL_REACT" && c.actorId !== state.timing.combat.attackingPlayerId
-        : r.returnTo?.kind === "MAIN" && state.timing.combat.stage === "NONE" && c.actorId === state.timing.activePlayer;
+    // Batch V74: a {Quick} Legend ability is a {Spend} ability also usable in its controller's React Step (11.30.2).
+    const modal = ability?.trigger === "WHEN_CALLED" && Boolean(ability.choose), called = modal || trashCall, quick = ability?.activation?.timing === "QUICK" && !ability.trigger, spend = (ability?.activation?.timing === "MAIN" || quick) && !ability?.trigger;
+    const main = r.returnTo?.kind === "MAIN" && state.timing.combat.stage === "NONE" && c.actorId === state.timing.activePlayer;
+    const window = called || quick ? main || r.returnTo?.kind === "RIVAL_REACT" && state.timing.combat.stage === "RIVAL_REACT" && c.actorId !== state.timing.combat.attackingPlayerId : main;
     const amount = activationPaymentAmount(ability);
     if (!(supportsLegendSpendCard(revision, context).ok || trashCall) || !source || !ability || !(called || spend) || !window || called && amount || c.actorId !== state.timing.actingPlayer
         || new Set(c.selectedSources.map(p => p.cardInstanceId)).size !== c.selectedSources.length || c.selectedSources.reduce((n, p) => n + paymentValue(state, context, p), 0) + c.remainingCost !== amount
@@ -107,6 +109,8 @@ export function validateLegendActivationState(state: GameState, context: EngineC
                 return failure("INVALID_LEGEND_ACTIVATION", "A cross-player Gig set pauses only for a strategic Gig choice");
         } else if (e.kind === "ADJUST_GIG_UP_TO") {
             if (state.timing.step !== (c.targetGigId ? "AMOUNT_SELECTION" : "TARGET_SELECTION") || c.targetGigId && (!held || held.location.zone !== "GIGS" || held.roll.kind !== "ROLLED")) return failure("INVALID_LEGEND_ACTIVATION", "A Gig adjustment pauses for its Gig, then its amount");
+        } else if (e.kind === "GRANT_BLOCKER_THIS_TURN") { // Batch V74.
+            if (!quick || c.targetGigId || state.timing.step !== "TARGET_SELECTION" || blockerGrantTargets(state, c.actorId, context).length < 2) return failure("INVALID_LEGEND_ACTIVATION", "A Blocker grant pauses only for a strategic friendly-Unit choice");
         } else if (e.kind === "TRASH_THEN_ADD_TRASH_PROGRAM") { // Batch V73.
             if (!trashCall || c.targetGigId || state.timing.step !== "TARGET_SELECTION" || trashProgramTargets(state, context).length < 2) return failure("INVALID_LEGEND_ACTIVATION", "A trash-then-add pauses only for a strategic Program choice");
         } else return failure("INVALID_LEGEND_ACTIVATION", "Only reviewed Legend effects pause");
