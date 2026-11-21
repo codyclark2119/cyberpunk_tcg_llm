@@ -2,10 +2,12 @@ import { PendingEffectSchema, TriggerBindingSchema, failure, success, type CardI
 import type { EngineContext } from "./state";
 import type { TurnMutation } from "./turn";
 import { cardRevision, effectiveCardTypes } from "./characteristics";
-import { moveCardLocation } from "./card-movement";
+import { attachPlayedGear, moveCardLocation } from "./card-movement";
 import { bottomDeck } from "./bottom-deck";
 import { supportsPlay } from "./play-support";
 import { discoverTriggers, pendingTrigger } from "./trigger-queries";
+import { legalEquipHosts } from "./attachments";
+import { recordCyberwareGearPlay } from "./play-cost-support";
 
 /** Batch V48: the public Units in the controller's trash with cost 9 or less (3.11.1.2: printed cost value), other than the
  * trigger subject. A card the engine cannot play is not a target (fail-closed; a reviewed deck holds no such card).
@@ -56,4 +58,43 @@ export function recordQualifyingPlay(m: TurnMutation, id: CardInstanceId): numbe
     const ordinal = ++m.state.turnHistory!.blueUnitOrGearPlays[c.controllerId];
     m.emit({ kind: "QUALIFYING_PLAY_RECORDED", playerId: c.controllerId, cardInstanceId: id, ordinal });
     return ordinal;
+}
+/** Batch V68: the face-up CYBERWARE Gear in the controller's trash with cost 2 or less that the engine can play, has no {Play}
+ * ability (none in the snapshot has one) and has a legal host. */
+export function freeGearTargets(state: GameState, context: EngineContext): CardInstanceId[] {
+    const current = state.resolution.current, e = current?.effect;
+    if (e?.kind !== "PLAY_GEAR_FREE" || !current?.trigger || !state.players[current.controllerId]) return [];
+    return state.players[current.controllerId].zones.TRASH.filter(id => {
+        const c = state.objects.cards[id], r = cardRevision(state, id, context);
+        return c.face === "UP" && c.ownerId === current.controllerId && r?.type === "GEAR" && r.tags.includes(e.tag) && r.printedCost.kind === "EDDIES" && r.printedCost.amount <= e.maxCost
+            && supportsPlay(r, context).ok && !r.mechanics.abilities.some(a => a.trigger === "WHEN_PLAYED") && freeGearHosts(state, id, context).length > 0;
+    }).sort();
+}
+/** "Equip it only to another friendly Unit": a legal host that is a field Unit other than the trigger subject. */
+export function freeGearHosts(state: GameState, gearId: CardInstanceId, context: EngineContext): CardInstanceId[] {
+    const current = state.resolution.current;
+    if (current?.effect.kind !== "PLAY_GEAR_FREE" || !current.trigger) return [];
+    return legalEquipHosts(state, gearId, context).filter(id => id !== current.trigger!.subjectId && state.objects.cards[id].zone.zone === "BATTLEFIELD" && state.objects.cards[id].controllerId === current.controllerId && effectiveCardTypes(state, id, context).includes("UNIT"));
+}
+/** 11.20.2: the Gear is played without paying when it is equipped: it leaves the trash for its host and counts as a played Gear. */
+export function resolveFreeGearPlay(m: TurnMutation, gearId: CardInstanceId, hostId: CardInstanceId, forced: boolean): Result<null> {
+    const s = m.state, current = s.resolution.current!;
+    if (!freeGearTargets(s, m.context).includes(gearId) || !freeGearHosts(s, gearId, m.context).includes(hostId)) return failure("INVALID_FREE_GEAR_PLAY", "Choose an eligible Gear and another friendly Unit");
+    m.emit({ kind: "CARD_TARGET_SELECTED", effectId: current.id, sourceId: current.sourceId!, targetId: hostId, controllerId: current.controllerId, forced });
+    m.emit({ kind: "CARD_PLAYED", cardInstanceId: gearId });
+    const attached = attachPlayedGear(m, gearId, hostId);
+    if (!attached.ok) return attached;
+    s.objects.cards[gearId].readiness = "READY";
+    recordCyberwareGearPlay(m, current.controllerId, gearId);
+    // As for a free Unit play: a blue Gear counts toward the first-blue-play history, and its play observers join this batch.
+    const ordinal = recordQualifyingPlay(m, gearId), bindings = discoverTriggers(s, { kind: "PLAY", subjectId: gearId }, m.context), c = s.resolution.triggerContinuation!;
+    if (!ordinal && !bindings.length) return success(null);
+    (c.effectPlays ??= []).push({ subjectId: gearId, ...(ordinal ? { qualifyingOrdinal: ordinal } : {}) });
+    const sequence = s.match.eventSequence;
+    for (const b of bindings) {
+        c.bindings.push(TriggerBindingSchema.parse(b));
+        const e = PendingEffectSchema.parse(pendingTrigger(s, b, c.ordinal, sequence, m.context));
+        s.resolution.pending.push(e); m.emit({ kind: "EFFECT_PENDING", effectId: e.id, sourceId: e.sourceId! });
+    }
+    return success(null);
 }

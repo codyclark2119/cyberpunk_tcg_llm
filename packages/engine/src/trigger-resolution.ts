@@ -39,7 +39,7 @@ import { discardingPlayer, discoverTriggers, pendingTrigger, stolenGigParity, sw
 import { moveCardLocation } from "./card-movement";
 import { discardProgram, handPrograms, programBottomDeckTargets } from "./program-discard";
 import { bottomDeck } from "./bottom-deck";
-import { bottomDeckSubject, freePlayTargets, recordQualifyingPlay, resolveFreePlay } from "./free-play";
+import { bottomDeckSubject, freeGearHosts, freeGearTargets, freePlayTargets, recordQualifyingPlay, resolveFreeGearPlay, resolveFreePlay } from "./free-play";
 
 export function recordPlayedCard(m: TurnMutation, sourceId: CardInstanceId) {
     recordQualifyingPlay(m, sourceId);
@@ -206,6 +206,14 @@ export function advanceTriggers(m: TurnMutation): Result<null> {
     if (e.kind === "RETURN_TRASH_UNIT_TO_HAND") {
         if (!trashUnitTargets(m.state, r.current, m.context).length) return completed(m);
         c.phase = "TARGET"; return offer(m);
+    }
+    // Batch V68: "Play a CYBERWARE Gear ... from your trash for free. Equip it only to another friendly Unit." Mandatory: a lone Gear
+    // and a lone host are taken without a choice; with no playable Gear it does nothing.
+    if (e.kind === "PLAY_GEAR_FREE") {
+        const gear = freeGearTargets(m.state, m.context);
+        if (!gear.length) return completed(m);
+        if (gear.length > 1) { c.phase = "TARGET"; return offer(m); }
+        c.selectedGearId = gear[0]; return advanceFreeGear(m, true);
     }
     // Batch V48: "Play another Unit with cost 9 or less from your trash for free. Then, bottom-deck this Unit."
     if (e.kind === "PLAY_UNIT_FREE") {
@@ -468,6 +476,16 @@ export function continueTrigger(m: TurnMutation, index: number, forced = false):
             moveCardLocation(m, option.cardInstanceId, "HAND");
             return completed(m);
         }
+        if (current.effect.kind === "PLAY_GEAR_FREE") { // Batch V68.
+            if (option.kind !== "CARD") return failure("INVALID_FREE_GEAR_PLAY", "Choose an eligible Gear, then another friendly Unit");
+            if (!c.selectedGearId) {
+                if (!freeGearTargets(m.state, m.context).includes(option.cardInstanceId)) return failure("INVALID_FREE_GEAR_PLAY", "Choose an eligible Gear");
+                m.emit({ kind: "CARD_TARGET_SELECTED", effectId: current.id, sourceId: current.sourceId!, targetId: option.cardInstanceId, controllerId: current.controllerId, forced });
+                c.selectedGearId = option.cardInstanceId; return advanceFreeGear(m, false);
+            }
+            const gearId = c.selectedGearId; delete c.selectedGearId;
+            const played = resolveFreeGearPlay(m, gearId, option.cardInstanceId, forced); return played.ok ? completed(m) : played;
+        }
         if (current.effect.kind === "PLAY_UNIT_FREE") {
             if (option.kind === "CONFIRM" && !option.confirmed && current.effect.optional) { m.emit({ kind: "OPTIONAL_TRIGGER_DECLINED", effectId: current.id, controllerId: current.controllerId }); return completed(m); }
             if (option.kind !== "CARD") return failure("INVALID_FREE_PLAY", "Choose an eligible Unit");
@@ -530,4 +548,12 @@ export function continueTrigger(m: TurnMutation, index: number, forced = false):
         if (m.state.match.outcome) { m.emit({ kind: "EFFECT_RESOLVED", effectId: current.id }); return success(null); }
     }
     return completed(m);
+}
+/** Batch V68: with the Gear chosen, a lone host is taken without a choice; several are the controller's choice. */
+function advanceFreeGear(m: TurnMutation, gearForced: boolean): Result<null> {
+    const c = m.state.resolution.triggerContinuation!, current = m.state.resolution.current!, gearId = c.selectedGearId!, hosts = freeGearHosts(m.state, gearId, m.context);
+    if (gearForced) m.emit({ kind: "CARD_TARGET_SELECTED", effectId: current.id, sourceId: current.sourceId!, targetId: gearId, controllerId: current.controllerId, forced: true });
+    if (hosts.length > 1) { c.phase = "TARGET"; return offer(m); }
+    delete c.selectedGearId;
+    const played = resolveFreeGearPlay(m, gearId, hosts[0], true); return played.ok ? completed(m) : played;
 }

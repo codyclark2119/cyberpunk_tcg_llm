@@ -96,6 +96,8 @@ export const TriggerContinuationSchema = z.strictObject({
     spendsRemaining: z.number().int().positive().optional(),
     // Batch V31: the card the first discard moved, while its "discards 1 more" is open.
     discardedCardId: CardInstanceIdSchema.optional(),
+    // Batch V68: the Gear a free Gear play chose, while its host is chosen.
+    selectedGearId: CardInstanceIdSchema.optional(),
     // Batch V32: the Programs a current "you may discard N Programs" has discarded; complete before its bottom-deck pauses.
     discardedPrograms: z.array(CardInstanceIdSchema).min(1).max(2).optional() });
 export const QualifyingAttackSummarySchema = z.strictObject({

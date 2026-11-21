@@ -21,7 +21,7 @@ import { hashCanonical, type GameState, type CardInstanceId, type PlayerId, type
 import type { EngineContext } from "./state";
 import { cardRevision } from "./characteristics";
 import { attachedGear } from "./attachments";
-import { freePlayTargets } from "./free-play";
+import { freeGearHosts, freeGearTargets, freePlayTargets } from "./free-play";
 import { supportsEffectiveTriggerSource, triggersEnabled } from "./trigger-support";
 import { searchTargets } from "./search-state";
 import { keywordGrantTargets, trashedProgramTargets } from "./play-pin-effects";
@@ -176,6 +176,8 @@ export function triggerChoice(state: GameState, context: EngineContext): Pending
             ? [{ kind: "MODE", mode: "DONE" }, ...friendlyUnitReadyTargets(state, actorId, context).filter(id => !c.readiedUnits?.includes(id)).map(cardInstanceId => ({ kind: "CARD" as const, cardInstanceId }))]
             : current?.effect.kind === "READY_UNIT"
             ? (current.effect.target.kind === "ANOTHER_FRIENDLY_UNIT" ? stolenGigReadyTargets(state, current, context) : readyLegendTargets(state, actorId, context)).map(cardInstanceId => ({ kind: "CARD", cardInstanceId }))
+            : current?.effect.kind === "PLAY_GEAR_FREE" // Batch V68: the Gear, then its host.
+            ? (c.selectedGearId ? freeGearHosts(state, c.selectedGearId, context) : freeGearTargets(state, context)).map(cardInstanceId => ({ kind: "CARD" as const, cardInstanceId }))
             : current?.effect.kind === "PLAY_UNIT_FREE"
             ? [...(current.effect.optional ? [{ kind: "CONFIRM" as const, confirmed: false }] : []), ...freePlayTargets(state, context).map(cardInstanceId => ({ kind: "CARD" as const, cardInstanceId }))]
             : current?.effect.kind === "RETURN_TRASH_UNIT_TO_HAND"

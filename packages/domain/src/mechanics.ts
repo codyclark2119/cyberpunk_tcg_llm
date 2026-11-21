@@ -185,6 +185,8 @@ export const EffectSchema = z.discriminatedUnion("kind", [
     // one public Unit in the controller's trash other than the trigger subject is played without paying; then the subject, if
     // still in its owner's trash, is bottom-decked.
     // Batch V50: "You may play a Unit with cost 4 or less from your hand or trash for free. It can attack rival Units this turn."
+    // Batch V68: "Play a CYBERWARE Gear with cost 2 or less from your trash for free. Equip it only to another friendly Unit."
+    z.strictObject({ kind: z.literal("PLAY_GEAR_FREE"), from: z.literal("TRASH"), maxCost: z.literal(2), tag: z.literal("Cyberware"), host: z.literal("ANOTHER_FRIENDLY_UNIT") }),
     z.strictObject({ kind: z.literal("PLAY_UNIT_FREE"), from: z.enum(["TRASH", "HAND_OR_TRASH"]), maxCost: z.union([z.literal(9), z.literal(4)]), exclude: z.literal("SUBJECT").optional(), then: z.literal("BOTTOM_DECK_SUBJECT").optional(),
         optional: z.literal(true).optional(), grant: z.literal("ATTACK_RIVAL_UNITS_THIS_TURN").optional() }),
     z.strictObject({ kind: z.literal("DECREASE_GIG_UP_TO"), target: z.strictObject({ kind: z.literal("GIGS"), relation: z.literal("ANY") }), maximum: z.literal(2) }),

@@ -1,3 +1,4 @@
+import { freeGearHosts, freeGearTargets } from "./free-play";
 import { attachedGear } from "./attachments";
 import { isFirstHostSteal, supportsGearStealCard } from "./gear-steal-support";
 import { getDiscardableCards } from "./discard";
@@ -175,8 +176,9 @@ export function validateTriggerState(state: GameState, context: EngineContext) {
     // Batch V48: each effect play names a distinct Unit, played by an admitted free-play ability of this batch; a recorded
     // first-blue-play ordinal is within its controller's count.
     if (c.effectPlays) {
-        const ids = c.effectPlays.map(p => p.subjectId), plays = c.bindings.filter(b => cardRevision(state, b.sourceId, context)?.mechanics.abilities.find(a => a.id === b.abilityId)?.effects.some(e => e.kind === "PLAY_UNIT_FREE") && supportsFreePlayCard(cardRevision(state, b.sourceId, context), context).ok);
-        if (new Set(ids).size !== ids.length || ids.length > plays.length || ids.some(id => cardRevision(state, id, context)?.type !== "UNIT")
+        const ids = c.effectPlays.map(p => p.subjectId), plays = c.bindings.filter(b => cardRevision(state, b.sourceId, context)?.mechanics.abilities.find(a => a.id === b.abilityId)?.effects.some(e => e.kind === "PLAY_UNIT_FREE" || e.kind === "PLAY_GEAR_FREE") && supportsFreePlayCard(cardRevision(state, b.sourceId, context), context).ok);
+        // Batch V68: a free Gear play is recorded too.
+        if (new Set(ids).size !== ids.length || ids.length > plays.length || ids.some(id => !["UNIT", "GEAR"].includes(cardRevision(state, id, context)?.type ?? ""))
             || c.effectPlays.some(p => p.qualifyingOrdinal !== undefined && (!cardRevision(state, p.subjectId, context)?.colors.includes("BLUE") || p.qualifyingOrdinal > (history?.blueUnitOrGearPlays[state.objects.cards[p.subjectId].ownerId] ?? 0))))
             return failure("INVALID_EFFECT_PLAY", "Each effect play needs a distinct Unit and an admitted free-play ability in this batch");
     }
@@ -200,7 +202,7 @@ export function validateTriggerState(state: GameState, context: EngineContext) {
     const rivalHasResolved = c.resolvedIds.some(id => !activeIds.includes(id));
     if ((r.current && r.current.controllerId !== state.timing.activePlayer || rivalHasResolved) && activeIds.some(id => !c.resolvedIds.includes(id))) return failure("INVALID_TRIGGER_PRIORITY", "Turn player's pending effects precede the rival's");
     if (c.phase === "SELECT" ? Boolean(r.current) || nextTriggerGroup(state).length < 2 : !r.current) return failure("INVALID_TRIGGER_PHASE", "Ordering is strategic only with multiple eligible effects; effect choices require a current effect");
-    if (c.phase !== "SELECT" && (!r.current || !["DEFEAT_UNIT", "READY_EDDIES", "DISCARD_CARDS", "DECREASE_GIG_UP_TO", "ADJUST_GIG_UP_TO", "OPTIONAL_DECREASE_FRIENDLY_GIG_THEN_DRAW_IF_MIN", "LOOK_AT_FRIENDLY_FACE_DOWN_LEGEND", "POWER_UNTIL_END_OF_TURN", "SPEND_UNIT", "READY_UNIT", "RETURN_TRASH_UNIT_TO_HAND", "PLAY_UNIT_FREE", "SEARCH_GEAR", "SEARCH_COST_MATCHING_GIGS", "TRASH_THEN_RETURN_PROGRAM", "GRANT_KEYWORD_UNTIL_END_OF_TURN", "PREVENT_UNIT_READY", "SWAP_GIGS", "READY_LEGENDS_UP_TO", "READY_UNITS_UP_TO", "SPEND_UNITS_PER_VALUE_PAIR", "DISCARD_PROGRAMS_THEN_BOTTOM_DECK", "STOLEN_GIG_PARITY_DRAW_OR_RIVAL_DISCARD", "CHOOSE_TYPE_REVEAL_TOP_ADD_AND_READY_EDDIE", "FORCE_RIVAL_UNIT_ATTACK", "STEAL_GIG"].includes(r.current.effect.kind))) return failure("INVALID_TRIGGER_PHASE", "Only reviewed adjustment/look/discard/ready/power/spend/trash-return primitives pause for choices");
+    if (c.phase !== "SELECT" && (!r.current || !["DEFEAT_UNIT", "READY_EDDIES", "DISCARD_CARDS", "DECREASE_GIG_UP_TO", "ADJUST_GIG_UP_TO", "OPTIONAL_DECREASE_FRIENDLY_GIG_THEN_DRAW_IF_MIN", "LOOK_AT_FRIENDLY_FACE_DOWN_LEGEND", "POWER_UNTIL_END_OF_TURN", "SPEND_UNIT", "READY_UNIT", "RETURN_TRASH_UNIT_TO_HAND", "PLAY_UNIT_FREE", "SEARCH_GEAR", "SEARCH_COST_MATCHING_GIGS", "TRASH_THEN_RETURN_PROGRAM", "GRANT_KEYWORD_UNTIL_END_OF_TURN", "PREVENT_UNIT_READY", "SWAP_GIGS", "READY_LEGENDS_UP_TO", "READY_UNITS_UP_TO", "SPEND_UNITS_PER_VALUE_PAIR", "DISCARD_PROGRAMS_THEN_BOTTOM_DECK", "STOLEN_GIG_PARITY_DRAW_OR_RIVAL_DISCARD", "CHOOSE_TYPE_REVEAL_TOP_ADD_AND_READY_EDDIE", "FORCE_RIVAL_UNIT_ATTACK", "STEAL_GIG", "PLAY_GEAR_FREE"].includes(r.current.effect.kind))) return failure("INVALID_TRIGGER_PHASE", "Only reviewed adjustment/look/discard/ready/power/spend/trash-return primitives pause for choices");
     // Batch V47: an effect steal pauses only for a Gig choice between at least two rival Gigs its fired subject may steal (Batch V67: or its first-steal Gear host).
     if (r.current?.effect.kind === "STEAL_GIG" && (c.phase !== "TARGET" || !(r.current.trigger?.kind === "DELAYED_FIGHT_OUTCOME" || r.current.trigger?.kind === "WHEN_GIG_STOLEN" && r.current.effect.valueNotSharedByFriendly) || effectStealTargets(state, context).length < 2)) return failure("INVALID_EFFECT_STEAL", "An effect steal pauses only to choose among two or more stealable rival Gigs");
     // Batch V19: the reviewed [Attack] Gear search pauses only for its own looked-at cards (search-state owns the details).
@@ -226,6 +228,11 @@ export function validateTriggerState(state: GameState, context: EngineContext) {
     // Batch V13: the reviewed Unit DEFEATED trash return pauses only for its own target.
     // Batch V48: a free play pauses only for a strategic choice among 2+ trash Units, inside its {Defeated} trigger.
     // Batch V50: the optional {Play} free play pauses whenever it has a Unit to play, since declining is always a choice.
+    // Batch V68: a free Gear play pauses for a choice among 2 or more Gear, then among 2 or more hosts for the chosen Gear.
+    if (c.selectedGearId && (r.current?.effect.kind !== "PLAY_GEAR_FREE" || !freeGearTargets(state, context).includes(c.selectedGearId))) return failure("INVALID_FREE_GEAR_PLAY", "A chosen Gear belongs to its current free Gear play");
+    if (r.current?.effect.kind === "PLAY_GEAR_FREE" && (c.phase !== "TARGET" || r.current.trigger?.kind !== "WHEN_PLAYED" || r.current.primitiveIndex !== undefined || !supportsFreePlayCard(cardRevision(state, r.current.sourceId!, context), context).ok
+        || (c.selectedGearId ? freeGearHosts(state, c.selectedGearId, context).length : freeGearTargets(state, context).length) < 2))
+        return failure("INVALID_FREE_GEAR_PLAY", "A free Gear play pauses only for a strategic Gear or host choice");
     if (r.current?.effect.kind === "PLAY_UNIT_FREE" && (c.phase !== "TARGET" || r.current.trigger?.kind !== (r.current.effect.optional ? "WHEN_PLAYED" : "WHEN_DEFEATED") || r.current.primitiveIndex !== undefined || !supportsFreePlayCard(cardRevision(state, r.current.sourceId!, context), context).ok || freePlayTargets(state, context).length < (r.current.effect.optional ? 1 : 2)))
         return failure("INVALID_FREE_PLAY_CONTINUATION", "Only a reviewed free play may pause, for a real choice among its Units");
     if (r.current?.effect.kind === "RETURN_TRASH_UNIT_TO_HAND" && (c.phase !== "TARGET" || c.origin.kind !== "DEFEAT" || r.current.trigger?.kind !== "WHEN_DEFEATED" || r.current.primitiveIndex !== undefined || !supportsTriggerCard(cardRevision(state, r.current.sourceId!, context), context).ok)) return failure("INVALID_TRASH_RETURN_CONTINUATION", "Only the reviewed DEFEATED trash return may pause for a trash Unit");
