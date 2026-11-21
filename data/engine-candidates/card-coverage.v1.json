@@ -9,12 +9,12 @@
   },
   "totals": {
     "cards": 151,
-    "admitted": 115,
-    "notAdmitted": 36,
+    "admitted": 116,
+    "notAdmitted": 35,
     "notAdmittedOnlyCoveredFamilies": 0,
     "byAdmission": {
-      "NOT_ADMITTED": 36,
-      "SOURCE_MATCH": 115
+      "NOT_ADMITTED": 35,
+      "SOURCE_MATCH": 116
     }
   },
   "families": [
@@ -37,21 +37,21 @@
       "soleBlockerCount": 0
     },
     {
-      "family": "DRAW",
-      "status": "PARTIAL",
-      "summary": "Draw cards, fixed or conditional.",
-      "notes": "Routed. Variable counts need SCALED_AMOUNT; 'may draw' needs an optional prompt.",
-      "cardCount": 38,
-      "notAdmittedCount": 11,
-      "soleBlockerCount": 0
-    },
-    {
       "family": "GEAR_EQUIP",
       "status": "PARTIAL",
       "summary": "Equip a Gear to a friendly Unit or face-up Legend; Gear power adds to its host.",
       "notes": "Equip onto Units is supported for the admitted Gear. Gear on a Legend host in combat (a Go Solo Legend) is unsupported.",
       "cardCount": 22,
       "notAdmittedCount": 11,
+      "soleBlockerCount": 0
+    },
+    {
+      "family": "DRAW",
+      "status": "PARTIAL",
+      "summary": "Draw cards, fixed or conditional.",
+      "notes": "Routed. Variable counts need SCALED_AMOUNT; 'may draw' needs an optional prompt.",
+      "cardCount": 38,
+      "notAdmittedCount": 10,
       "soleBlockerCount": 0
     },
     {
@@ -91,15 +91,6 @@
       "soleBlockerCount": 0
     },
     {
-      "family": "DISCARD",
-      "status": "PARTIAL",
-      "summary": "Discard: self discard, a Rival discards, discard as a cost, discard a hand.",
-      "notes": "DISCARD_CARDS supports only the controller discarding exactly 1.",
-      "cardCount": 15,
-      "notAdmittedCount": 6,
-      "soleBlockerCount": 0
-    },
-    {
       "family": "TRIGGER_WHEN_SPENT",
       "status": "MISSING",
       "summary": "WHEN_SPENT: 'when this Unit or Legend is spent' (includes Zetatech Faceplate).",
@@ -109,11 +100,11 @@
       "soleBlockerCount": 0
     },
     {
-      "family": "FREE_CALL",
-      "status": "MISSING",
-      "summary": "Call a Legend by an effect or for free outside the normal Call.",
-      "notes": "",
-      "cardCount": 5,
+      "family": "DISCARD",
+      "status": "PARTIAL",
+      "summary": "Discard: self discard, a Rival discards, discard as a cost, discard a hand.",
+      "notes": "DISCARD_CARDS supports only the controller discarding exactly 1.",
+      "cardCount": 15,
       "notAdmittedCount": 5,
       "soleBlockerCount": 0
     },
@@ -123,15 +114,6 @@
       "summary": "[Quick] timing: Programs and activated abilities usable in the react window.",
       "notes": "Quick Programs are supported for Floor It, Reboot Optics and Detonate. Quick activated [Spend] abilities on Legends, Units and Gear are not offered in any react window yet.",
       "cardCount": 12,
-      "notAdmittedCount": 5,
-      "soleBlockerCount": 0
-    },
-    {
-      "family": "SCALED_AMOUNT",
-      "status": "PARTIAL",
-      "summary": "Amounts computed from the board: 'for each', 'equal to'.",
-      "notes": "Only Royce's per-equipped-Gear modifier counts anything.",
-      "cardCount": 18,
       "notAdmittedCount": 5,
       "soleBlockerCount": 0
     },
@@ -150,6 +132,24 @@
       "summary": "Lasting and delayed effects: 'until your next turn', 'next time ... this turn', 'at the end of this turn'.",
       "notes": "",
       "cardCount": 14,
+      "notAdmittedCount": 4,
+      "soleBlockerCount": 0
+    },
+    {
+      "family": "FREE_CALL",
+      "status": "MISSING",
+      "summary": "Call a Legend by an effect or for free outside the normal Call.",
+      "notes": "",
+      "cardCount": 5,
+      "notAdmittedCount": 4,
+      "soleBlockerCount": 0
+    },
+    {
+      "family": "SCALED_AMOUNT",
+      "status": "PARTIAL",
+      "summary": "Amounts computed from the board: 'for each', 'equal to'.",
+      "notes": "Only Royce's per-equipped-Gear modifier counts anything.",
+      "cardCount": 18,
       "notAdmittedCount": 4,
       "soleBlockerCount": 0
     },
@@ -271,15 +271,6 @@
       "soleBlockerCount": 0
     },
     {
-      "family": "TRIGGER_ATTACK",
-      "status": "PARTIAL",
-      "summary": "[Attack] abilities and 'when a Unit attacks' triggers.",
-      "notes": "Triggers WHEN_ATTACKING and WHEN_UNIT_ATTACKS.",
-      "cardCount": 14,
-      "notAdmittedCount": 2,
-      "soleBlockerCount": 0
-    },
-    {
       "family": "TRIGGER_CALL",
       "status": "PARTIAL",
       "summary": "[Call] abilities of a Legend.",
@@ -375,6 +366,15 @@
       "summary": "Spend or ready Units and Legends by an effect, and 'can't ready' locks.",
       "notes": "SPEND_UNIT (rival, cost at most 4) only; readying Units or Legends is missing.",
       "cardCount": 15,
+      "notAdmittedCount": 1,
+      "soleBlockerCount": 0
+    },
+    {
+      "family": "TRIGGER_ATTACK",
+      "status": "PARTIAL",
+      "summary": "[Attack] abilities and 'when a Unit attacks' triggers.",
+      "notes": "Triggers WHEN_ATTACKING and WHEN_UNIT_ATTACKS.",
+      "cardCount": 14,
       "notAdmittedCount": 1,
       "soleBlockerCount": 0
     },
@@ -2235,8 +2235,8 @@
       "colors": [
         "GREEN"
       ],
-      "admission": "NOT_ADMITTED",
-      "revision": null,
+      "admission": "SOURCE_MATCH",
+      "revision": 1,
       "families": [
         "DISCARD",
         "DRAW",
@@ -2244,13 +2244,7 @@
         "SCALED_AMOUNT",
         "TRIGGER_ATTACK"
       ],
-      "blockingFamilies": [
-        "DISCARD",
-        "DRAW",
-        "FREE_CALL",
-        "SCALED_AMOUNT",
-        "TRIGGER_ATTACK"
-      ],
+      "blockingFamilies": [],
       "note": null
     },
     {

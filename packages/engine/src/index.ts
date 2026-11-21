@@ -1,3 +1,4 @@
+import { effectiveCallCost } from "./free-call-support";
 import { checkOvertimeVictory } from "./overtime";
 import { unmetMustAttack } from "./must-attack";
 import { attackConditionPowerEnabled } from "./attack-condition-power-support";
@@ -290,7 +291,7 @@ function dispatchTurnSliceAction(mutation: TurnMutation, view: RulesView, action
         case "PLAY_CARD": return canEnterField(s, actor, action.action.cardInstanceId, context) ? startLegendEntry(mutation, actor, action.action.cardInstanceId, "PLAY") : startPlay(mutation, actor, action.action.cardInstanceId);
         case "GO_SOLO": return startLegendEntry(mutation, actor, action.action.cardInstanceId, "GO_SOLO");
         case "ACTIVATE_ABILITY": return activateAbility(mutation, actor, action.action.sourceInstanceId, action.action.abilityId);
-        case "CALL_LEGEND": return callLegend(mutation, view, actor, action.action.cardInstanceId, context.content.ruleset.gameplay!.turnSlice!.callCost);
+        case "CALL_LEGEND": return callLegend(mutation, view, actor, action.action.cardInstanceId, effectiveCallCost(s, actor, context)); // Batch V66.
         case "CHOOSE": return continueChoice(mutation, view, actor, action.action.optionIndices[0]);
         case "END_TURN": return endTurn(mutation);
         case "SELL_CARD": sellCard(mutation, view, actor, action.action.cardInstanceId); return success(undefined);

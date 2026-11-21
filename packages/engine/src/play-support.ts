@@ -1,3 +1,4 @@
+import { hasFreeCallMetadata, supportsFreeCallUnit } from "./free-call-support";
 import { hasAttackPermissionMetadata, supportsAttackPermissionUnit } from "./attack-permission-support";
 import { hasLegendSpendMetadata, supportsLegendSpendCard } from "./legend-spend-support";
 import { hasFightPowerGrant, supportsFightPowerProgram } from "./fight-power-grant-support";
@@ -46,6 +47,8 @@ export function supportsPlay(card: DeepReadonly<CardRevisionSnapshot> | undefine
     if (card && hasModalChoice(card)) return supportsModalProgram(card, context);
     // Batch V64: a conditional attack permission is admitted only by its exact Unit pin.
     if (card && hasAttackPermissionMetadata(card)) return supportsAttackPermissionUnit(card, context);
+    // Batch V66: a free Call and its discard-then-draw are admitted only by their exact Unit pin.
+    if (card && hasFreeCallMetadata(card)) return supportsFreeCallUnit(card, context);
     // Batch V45: an effect sell ("Sell the top card of your deck") is admitted only by its exact Program pin.
     if (card && hasSellTopEffect(card)) return supportsSellTopProgram(card, context);
     // Batch V47: a next-fight steal is admitted only by its exact Program pin.

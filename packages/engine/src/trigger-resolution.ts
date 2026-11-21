@@ -1,3 +1,4 @@
+import { friendlyFaceUpLegends } from "./fight-power-grant";
 import { processDeparture } from "./card-movement";
 import { isPlayedInBatch } from "./effect-play";
 import { applyMustAttack, mustAttackTargets } from "./must-attack";
@@ -387,6 +388,10 @@ export function continueTrigger(m: TurnMutation, index: number, forced = false):
             if (met && getDiscardableCards(m.state, discardingPlayer(m.state, current)).length) { c.discardedCardId = option.cardInstanceId; return offer(m); }
         }
         delete c.discardedCardId;
+        if (current.effect.thenDraw) { // Batch V66: the draw follows only an actual discard, counted as it resolves.
+            const n = friendlyFaceUpLegends(m.state, current.controllerId, m.context), drawn = n ? m.draw(current.controllerId, n) : success(null);
+            if (!drawn.ok) return drawn;
+        }
         return completed(m);
     }
     if (c.phase === "OPTIONAL") {

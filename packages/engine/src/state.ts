@@ -1,3 +1,4 @@
+import { effectiveCallCost } from "./free-call-support";
 import { validateFightDefeatImmunities } from "./fight-immunity";
 import { validateLegendSpendMetadata } from "./legend-spend-support";
 import { validateFightPowerGrants } from "./fight-power-grant";
@@ -240,7 +241,7 @@ export function validateState(input: unknown, context: EngineContext): Result<Ga
                 return failure("INVALID_CALL_CONTINUATION", "CALL target/actor/usage invalid");
             if (!supportsCall(b.cards.find(c => c.id === legend.cardId && c.revision === legend.revision), context).ok || s.resolution.current || s.resolution.pending.length || s.resolution.discovered.length || s.resolution.playContinuation || s.resolution.searchContinuation) return failure("INVALID_CALL_CONTINUATION", "CALL payment requires a supported source and exclusive continuation");
             const selected = continuation.selectedSources;
-            if (new Set(selected.map(p => p.cardInstanceId)).size !== selected.length || selected.some(p => !available.some(a => canonicalSerialize(a) === canonicalSerialize(p))) || selected.reduce((sum, p) => sum + paymentValue(s, context, p), 0) + continuation.remainingCost !== slice.callCost || continuation.remainingCost <= 0)
+            if (new Set(selected.map(p => p.cardInstanceId)).size !== selected.length || selected.some(p => !available.some(a => canonicalSerialize(a) === canonicalSerialize(p))) || selected.reduce((sum, p) => sum + paymentValue(s, context, p), 0) + continuation.remainingCost !== effectiveCallCost(s, continuation.actorId, context) || continuation.remainingCost <= 0)
                 return failure("INVALID_PAYMENT_SOURCES", "Payment selections or remaining cost invalid");
             const options = paymentCandidates(s, continuation.actorId, context, continuation.remainingCost, selected).map(source => ({ kind: "PAYMENT", source }));
             if (!options.length || choice?.kind !== "PAYMENT" || choice.min !== 1 || choice.max !== 1 || choice.ordered || choice.continuationId !== "call-payment@1" || canonicalSerialize(choice.options) !== canonicalSerialize(options))

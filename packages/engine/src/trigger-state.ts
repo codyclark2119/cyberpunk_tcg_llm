@@ -1,3 +1,5 @@
+import { getDiscardableCards } from "./discard";
+import { supportsFreeCallUnit } from "./free-call-support";
 import { fightWinGuardAllows } from "./fight-win-support";
 import { belowPowerStealFires } from "./below-power-steal";
 import { isSearchEffect } from "./search-state";
@@ -309,6 +311,13 @@ export function validateTriggerState(state: GameState, context: EngineContext) {
             return failure("INVALID_DISCARD_CONTINUATION", "Only the reviewed friendly-Legend steal parity branch pauses for an odd Gig's rival discard");
     }
     else if (typeReveal) { /* Batch V42: validated above. */ }
+    // Batch V66: Panam's {Attack} own discard pauses only for the controller's strategic hand choice; its draw follows the discard.
+    else if (r.current?.effect.kind === "DISCARD_CARDS" && r.current.effect.thenDraw) {
+        const e = r.current;
+        if (c.phase !== "DISCARD" || c.conditionMet !== undefined || e.primitiveIndex !== undefined || c.discardedCardId || c.origin.kind !== "ATTACK" || e.trigger?.kind !== "WHEN_ATTACKING"
+            || !supportsFreeCallUnit(cardRevision(state, e.sourceId!, context), context).ok || getDiscardableCards(state, e.controllerId).length < 2)
+            return failure("INVALID_DISCARD_CONTINUATION", "Only the reviewed {Attack} own discard pauses, for a choice among 2 or more hand cards");
+    }
     else if (c.phase === "DISCARD" && r.current?.effect.kind !== "DISCARD_PROGRAMS_THEN_BOTTOM_DECK" || r.current?.effect.kind === "DISCARD_CARDS" || c.conditionMet !== undefined) {
         const e = r.current;
         // No admitted primitive can change Gigs while paused here. Historical true and current

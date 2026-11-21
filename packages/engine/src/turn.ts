@@ -1,3 +1,4 @@
+import { effectiveCallCost } from "./free-call-support";
 import { beginLegendCallChoice, legendStartTurnEnabled, resolveStartTurnLegends } from "./legend-spend";
 import { supportsLegendSpendCard } from "./legend-spend-support";
 import { programPlayHistoryEnabled } from "./restriction-support";
@@ -106,11 +107,11 @@ export class TurnMutation {
         return success(null);
     }
     call(actor: PlayerId, legendId: CardInstanceId, sources: PaymentSource[]): Result<null> {
-        const s = this.state, view = new RulesView(s, this.context), policy = this.context.content.ruleset.gameplay!.turnSlice!;
+        const s = this.state, view = new RulesView(s, this.context);
         const supported = view.callEffectSupport(legendId);
         if (!supported.ok)
             return supported;
-        const payment = view.validatePaymentChoice(actor, sources, { kind: "EDDIES", amount: policy.callCost });
+        const payment = view.validatePaymentChoice(actor, sources, { kind: "EDDIES", amount: effectiveCallCost(s, actor, this.context) }); // Batch V66.
         if (!payment.ok)
             return payment;
         s.resolution.returnTo = actionReturnContext(s);

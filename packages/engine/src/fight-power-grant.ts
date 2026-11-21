@@ -10,7 +10,7 @@ export function friendlyFieldUnits(state: GameState, actor: PlayerId, context: E
     return Object.values(state.objects.cards).filter(c => c.controllerId === actor && c.zone.playerId === actor && c.zone.zone === "BATTLEFIELD" && c.face === "UP" && effectiveCardTypes(state, c.id, context).includes("UNIT")).map(c => c.id).sort();
 }
 /** "Each friendly face-up Legend": Legends-area and field Legends alike, counted whenever the fight is calculated. */
-function friendlyFaceUpLegends(state: GameState, actor: PlayerId, context: EngineContext) {
+export function friendlyFaceUpLegends(state: GameState, actor: PlayerId, context: EngineContext) {
     return [...state.players[actor].zones.LEGENDS, ...state.players[actor].zones.BATTLEFIELD].filter(id => { const c = state.objects.cards[id]; return c.controllerId === actor && c.face === "UP" && cardRevision(state, id, context)?.type === "LEGEND"; }).length;
 }
 /** 11.4.2.1: "while fighting" power, applied before the fight's power comparison; the opposing Unit is always a rival's. */

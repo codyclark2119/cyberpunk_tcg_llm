@@ -89,7 +89,9 @@ export const DiscardCardsEffectSchema = z.strictObject({
     selection: z.literal("CHOSEN_BY_AFFECTED_PLAYER"),
     when: z.strictObject({ timing: z.literal("RESOLUTION"), condition: ConditionSchema }).optional(),
     // Batch V31: "If the card's cost equals the value of a friendly Gig, that Rival discards 1 more."
-    more: z.strictObject({ condition: z.strictObject({ kind: z.literal("DISCARDED_COST_EQUALS_FRIENDLY_GIG_VALUE") }), count: z.literal(1) }).optional()
+    more: z.strictObject({ condition: z.strictObject({ kind: z.literal("DISCARDED_COST_EQUALS_FRIENDLY_GIG_VALUE") }), count: z.literal(1) }).optional(),
+    // Batch V66: "Discard 1. If you do, draw 1 for each friendly face-up Legend."
+    thenDraw: z.literal("PER_FRIENDLY_FACE_UP_LEGEND").optional()
 });
 export type DiscardCardsEffect = z.infer<typeof DiscardCardsEffectSchema>;
 export const ReadyEddiesEffectSchema = z.strictObject({ kind: z.literal("READY_EDDIES"), player: z.literal("CONTROLLER"), count: z.union([z.literal(1), z.literal(2)]),
@@ -287,6 +289,8 @@ export const ContinuousModifierSchema = z.discriminatedUnion("kind", [
     // Batch V64: "If a Rival controls more Gigs than you, this Unit can attack their Gig area the turn it's played" (11.3.1): while
     // lagging, the Gig area only, and only while the condition holds.
     z.strictObject({ kind: z.literal("CAN_ATTACK_GIG_AREA_WHILE_LAGGING_IF"), condition: z.strictObject({ kind: z.literal("RIVAL_CONTROLS_MORE_GIGS"), minimum: z.literal(1) }) }),
+    // Batch V66: "During your turn, you may Call a Legend for free" (a field Unit's controller pays no Call cost in their own turn).
+    z.strictObject({ kind: z.literal("FREE_CALL_DURING_OWN_TURN") }),
     // Batch V65: "If you have more Street Cred than a Rival, this Unit can attack ready Units with {Blocker}" (9.3.2.1 widened).
     z.strictObject({ kind: z.literal("CAN_ATTACK_READY_BLOCKERS_IF"), condition: z.strictObject({ kind: z.literal("STREET_CRED_GREATER_THAN_RIVAL") }) }),
     // Batch V52: "This Unit wins all fights against CORPO Units" (11.4.1.4).
