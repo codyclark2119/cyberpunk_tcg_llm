@@ -27,11 +27,16 @@ const LEGEND_SPEND_SHAPES = [
     // {Spend} Adjust a Gig by 1."
     { colors: ["YELLOW"], ram: { YELLOW: 2 }, tags: ["Fixer"], sell: true,
         abilities: [{ ...CALL_CHOOSE_ONE, effects: [{ kind: "FIGHT_DEFEAT_IMMUNITY_THIS_TURN", target: { kind: "FRIENDLY_UNIT" } }, { kind: "DRAW", count: 1 }] },
-            { ...SPEND, effects: [{ kind: "ADJUST_GIG_UP_TO", target: { kind: "GIGS", relation: "ANY" }, maximum: 1 }] }] }
+            { ...SPEND, effects: [{ kind: "ADJUST_GIG_UP_TO", target: { kind: "GIGS", relation: "ANY" }, maximum: 1 }] }] },
+    // Batch V62: Padre: Man of the Cross. "{Call} Choose one effect. Spend a rival Unit. // Draw 1. {Spend} Set a player's Gig to the same
+    // value as another player's Gig."
+    { colors: ["GREEN"], ram: { GREEN: 2 }, tags: ["Fixer", "Ganger", "Valentino"], sell: true,
+        abilities: [{ ...CALL_CHOOSE_ONE, effects: [{ kind: "SPEND_UNIT", target: { kind: "UNITS", relation: "RIVAL" } }, { kind: "DRAW", count: 1 }] },
+            { ...SPEND, effects: [{ kind: "SET_GIG_TO_ANOTHER_PLAYERS_GIG_VALUE" }] }] }
 ].map(shape => canonicalSerialize({ type: "LEGEND", power: null, cost: "DASH", keywords: [], equip: null, modifiers: [], restrictions: [], ...shape }));
 /** Any Legend activation, start-of-turn trigger, value-pair draw or mandatory swap routes here first. */
 export function hasLegendSpendMetadata(card: DeepReadonly<CardRevisionSnapshot> | undefined) {
-    return Boolean(card?.mechanics.abilities.some(a => card.type === "LEGEND" && (a.activation || a.choose) || a.trigger === "WHEN_OWN_TURN_STARTS" || a.effects.some(e => e.kind === "DRAW_PER_FRIENDLY_VALUE_PAIR" || e.kind === "FIGHT_DEFEAT_IMMUNITY_THIS_TURN" || e.kind === "SWAP_GIGS" && !e.optional)));
+    return Boolean(card?.mechanics.abilities.some(a => card.type === "LEGEND" && (a.activation || a.choose) || a.trigger === "WHEN_OWN_TURN_STARTS" || a.effects.some(e => e.kind === "DRAW_PER_FRIENDLY_VALUE_PAIR" || e.kind === "FIGHT_DEFEAT_IMMUNITY_THIS_TURN" || e.kind === "SET_GIG_TO_ANOTHER_PLAYERS_GIG_VALUE" || e.kind === "SWAP_GIGS" && !e.optional)));
 }
 export function supportsLegendSpendCard(card: DeepReadonly<CardRevisionSnapshot> | undefined, context: EngineContext) {
     const g = context.content.ruleset.gameplay, m = card?.mechanics;

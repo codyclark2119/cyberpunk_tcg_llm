@@ -1,5 +1,5 @@
 import { applyFightDefeatImmunity } from "./fight-immunity";
-import { advanceMandatorySwap, swapChoiceGigs } from "./legend-spend";
+import { advanceCrossSet, advanceMandatorySwap, crossSetSources, crossSetTargets, swapChoiceGigs } from "./legend-spend";
 import { swapGigs } from "./gig-transfer";
 import { applyFightPowerGrant } from "./fight-power-grant";
 import { applyStealReduction } from "./steal-reduction";
@@ -183,6 +183,14 @@ export function continuePlay(m: TurnMutation, index: number): Result<null> {
         const moved = chooseBottomDeck(m, option.cardInstanceId, offerPlayChoice);
         // An "if you do" clause may pause on its own choice before the primitive completes.
         return !moved.ok ? moved : s.resolution.choice ? success(null) : completePlayEffect(m);
+    }
+    if (s.resolution.current?.effect.kind === "SET_GIG_TO_ANOTHER_PLAYERS_GIG_VALUE") { // Batch V62.
+        const valid = c.targetGigId ? crossSetSources(s, c.targetGigId) : crossSetTargets(s);
+        if (option.kind !== "GIG" || !valid.includes(option.gigInstanceId)) return failure("INVALID_GIG_TARGET", "Choose an enumerated Gig");
+        s.resolution.choice = null;
+        m.emit({ kind: "GIG_TARGET_SELECTED", effectId: s.resolution.current.id, gigInstanceId: option.gigInstanceId });
+        const advanced = c.targetGigId ? advanceCrossSet(m, c.targetGigId, option.gigInstanceId) : advanceCrossSet(m, option.gigInstanceId, undefined);
+        return !advanced.ok ? advanced : advanced.value === "CHOICE" ? offerPlayChoice(m) : completePlayEffect(m);
     }
     if (s.resolution.current?.effect.kind === "SWAP_GIGS") { // Batch V59: the friendly Gig, then the rival Gig.
         const current = s.resolution.current;

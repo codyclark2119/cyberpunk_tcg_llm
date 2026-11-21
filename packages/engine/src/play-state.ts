@@ -1,4 +1,4 @@
-import { legendContinuationAbility, playPowerTargets, swapChoiceGigs, validateLegendActivationState } from "./legend-spend";
+import { crossSetSources, crossSetTargets, legendContinuationAbility, playPowerTargets, swapChoiceGigs, validateLegendActivationState } from "./legend-spend";
 import { friendlyFieldUnits } from "./fight-power-grant";
 import { listSpendUnitTargets } from "./targeted-spend-queries";
 import { playPaymentAmount } from "./play-cost-support";
@@ -56,6 +56,9 @@ export function playChoice(state: GameState, context: EngineContext): PendingCho
         // Batch V37: first the Gig to set (or the decline), then the other Gig whose value it takes.
         kind = "TARGET";
         options = c.targetGigId ? gigSetSources(state, c.targetGigId).map(gigInstanceId => ({ kind: "GIG", gigInstanceId })) : [{ kind: "CONFIRM", confirmed: false }, ...gigSetTargets(state).map(gigInstanceId => ({ kind: "GIG" as const, gigInstanceId }))];
+    } else if (state.resolution.current?.effect.kind === "SET_GIG_TO_ANOTHER_PLAYERS_GIG_VALUE") { // Batch V62: the Gig to set, then the other player's Gig.
+        kind = "TARGET";
+        options = (c.targetGigId ? crossSetSources(state, c.targetGigId) : crossSetTargets(state)).map(gigInstanceId => ({ kind: "GIG", gigInstanceId }));
     } else if (state.resolution.current?.effect.kind === "SWAP_GIGS") { // Batch V59: the friendly Gig, then (holding it) the rival Gig.
         kind = "TARGET";
         options = swapChoiceGigs(state, c.actorId, c.targetGigId).map(gigInstanceId => ({ kind: "GIG", gigInstanceId }));

@@ -8,6 +8,8 @@ import { activationEffectId, playChoice } from "./play-state";
 import { offerPlayChoice } from "./play";
 import { powerTargets } from "./react-queries";
 import { friendlyFieldUnits } from "./fight-power-grant";
+import { changeGigValue, gigSetSources } from "./gig-value";
+import { listSpendUnitTargets } from "./targeted-spend-queries";
 
 function rolledGigs(state: GameState, player: PlayerId, friendly: boolean) {
     return Object.values(state.objects.gigs).filter(g => g.location.zone === "GIGS" && g.roll.kind === "ROLLED" && (g.controllerId === player) === friendly).map(g => g.id).sort();
@@ -81,6 +83,12 @@ export function validateLegendActivationState(state: GameState, context: EngineC
             if (c.targetGigId || state.timing.step !== "TARGET_SELECTION" || playPowerTargets(state, c.actorId, context).length < 2) return failure("INVALID_LEGEND_ACTIVATION", "A power mode pauses only for a strategic Unit choice");
         } else if (e.kind === "FIGHT_DEFEAT_IMMUNITY_THIS_TURN") {
             if (c.targetGigId || state.timing.step !== "TARGET_SELECTION" || friendlyFieldUnits(state, c.actorId, context).length < 2) return failure("INVALID_LEGEND_ACTIVATION", "An immunity mode pauses only for a strategic friendly-Unit choice");
+        } else if (e.kind === "SPEND_UNIT") {
+            if (c.targetGigId || state.timing.step !== "TARGET_SELECTION" || listSpendUnitTargets(state, c.actorId, e.target, context).length < 2) return failure("INVALID_LEGEND_ACTIVATION", "A spend mode pauses only for a strategic rival-Unit choice");
+        } else if (e.kind === "SET_GIG_TO_ANOTHER_PLAYERS_GIG_VALUE") {
+            const target = c.targetGigId ? state.objects.gigs[c.targetGigId] : undefined;
+            if (state.timing.step !== "TARGET_SELECTION" || (c.targetGigId ? !target || target.location.zone !== "GIGS" || target.roll.kind !== "ROLLED" || crossSetSources(state, c.targetGigId).length < 2 : crossSetTargets(state).length < 2))
+                return failure("INVALID_LEGEND_ACTIVATION", "A cross-player Gig set pauses only for a strategic Gig choice");
         } else if (e.kind === "ADJUST_GIG_UP_TO") {
             if (state.timing.step !== (c.targetGigId ? "AMOUNT_SELECTION" : "TARGET_SELECTION") || c.targetGigId && (!held || held.location.zone !== "GIGS" || held.roll.kind !== "ROLLED")) return failure("INVALID_LEGEND_ACTIVATION", "A Gig adjustment pauses for its Gig, then its amount");
         } else return failure("INVALID_LEGEND_ACTIVATION", "Only reviewed Legend effects pause");
@@ -108,4 +116,34 @@ export function isLegendCallPower(state: GameState, context: EngineContext) {
 export function playPowerTargets(state: GameState, actor: PlayerId, context: EngineContext) {
     const e = state.resolution.current?.effect;
     return e?.kind === "POWER_UNTIL_END_OF_TURN" && e.target.kind === "FRIENDLY_UNIT" && isLegendCallPower(state, context) ? friendlyFieldUnits(state, actor, context) : powerTargets(state, actor, context);
+}
+/** Batch V62: a Gig whose value another player's Gig can set (6.4.3, 6.5.1: a different value on the target's faces). */
+export function crossSetSources(state: GameState, targetId: GigInstanceId) {
+    const target = state.objects.gigs[targetId];
+    return gigSetSources(state, targetId).filter(id => state.objects.gigs[id].controllerId !== target.controllerId);
+}
+export function crossSetTargets(state: GameState) {
+    return Object.values(state.objects.gigs).filter(g => g.location.zone === "GIGS" && g.roll.kind === "ROLLED" && crossSetSources(state, g.id).length).map(g => g.id).sort();
+}
+/** Batch V62: the Gig to set, then the other player's Gig whose value it takes; a lone option is taken without a choice. */
+export function advanceCrossSet(m: TurnMutation, held: GigInstanceId | undefined, from: GigInstanceId | undefined): Result<"CHOICE" | "DONE"> {
+    const s = m.state, current = s.resolution.current!, c = s.resolution.playContinuation!;
+    if (!held) {
+        const targets = crossSetTargets(s);
+        if (!targets.length) return success("DONE");
+        if (targets.length > 1) return success("CHOICE");
+        held = targets[0]; m.emit({ kind: "GIG_TARGET_SELECTED", effectId: current.id, gigInstanceId: held });
+    }
+    if (!from) {
+        const sources = crossSetSources(s, held);
+        if (sources.length !== 1) { c.targetGigId = held; return success("CHOICE"); }
+        from = sources[0]; m.emit({ kind: "GIG_TARGET_SELECTED", effectId: current.id, gigInstanceId: from });
+    }
+    const target = s.objects.gigs[held], source = s.objects.gigs[from];
+    if (target.roll.kind !== "ROLLED" || source.roll.kind !== "ROLLED") return failure("INVALID_GIG_TARGET", "Both Gigs must be rolled");
+    const changed = changeGigValue(s, held, source.roll.currentValue - target.roll.currentValue, m.context);
+    if (!changed.ok) return changed;
+    m.emit(changed.value);
+    delete c.targetGigId;
+    return success("DONE");
 }

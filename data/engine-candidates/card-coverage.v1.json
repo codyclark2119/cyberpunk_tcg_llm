@@ -9,12 +9,12 @@
   },
   "totals": {
     "cards": 151,
-    "admitted": 111,
-    "notAdmitted": 40,
+    "admitted": 112,
+    "notAdmitted": 39,
     "notAdmittedOnlyCoveredFamilies": 0,
     "byAdmission": {
-      "NOT_ADMITTED": 40,
-      "SOURCE_MATCH": 111
+      "NOT_ADMITTED": 39,
+      "SOURCE_MATCH": 112
     }
   },
   "families": [
@@ -42,7 +42,7 @@
       "summary": "Draw cards, fixed or conditional.",
       "notes": "Routed. Variable counts need SCALED_AMOUNT; 'may draw' needs an optional prompt.",
       "cardCount": 38,
-      "notAdmittedCount": 12,
+      "notAdmittedCount": 11,
       "soleBlockerCount": 0
     },
     {
@@ -60,7 +60,7 @@
       "summary": "Activated abilities with a [Spend] cost (and optional Eddie cost) on Legends, Units or Gear.",
       "notes": "Admitted only for Kerry: The Last Rockerboy (a Unit). Face-up Legend [Spend] abilities and Gear [Spend] abilities are not.",
       "cardCount": 17,
-      "notAdmittedCount": 11,
+      "notAdmittedCount": 10,
       "soleBlockerCount": 0
     },
     {
@@ -199,29 +199,11 @@
       "soleBlockerCount": 0
     },
     {
-      "family": "MODAL_CHOICE",
-      "status": "MISSING",
-      "summary": "'Choose one effect' (and 'choose both instead' upgrades).",
-      "notes": "PendingChoice MODE exists for setup, search and Gig steps, but no ability carries modes.",
-      "cardCount": 8,
-      "notAdmittedCount": 3,
-      "soleBlockerCount": 0
-    },
-    {
       "family": "REPLACEMENT_EFFECT",
       "status": "MISSING",
       "summary": "'If X would ..., instead ...' replacement effects.",
       "notes": "",
       "cardCount": 3,
-      "notAdmittedCount": 3,
-      "soleBlockerCount": 0
-    },
-    {
-      "family": "TRIGGER_CALL",
-      "status": "PARTIAL",
-      "summary": "[Call] abilities of a Legend.",
-      "notes": "Trigger WHEN_CALLED; only Viktor's search is routed. Every other Call body needs its effects routed too.",
-      "cardCount": 7,
       "notAdmittedCount": 3,
       "soleBlockerCount": 0
     },
@@ -262,15 +244,6 @@
       "soleBlockerCount": 0
     },
     {
-      "family": "GIG_ADJUST",
-      "status": "PARTIAL",
-      "summary": "Increase, decrease, adjust or set Gig values.",
-      "notes": "Maxima are fixed literals; 'set to the value of another Gig' and 'adjust by exactly 1' are missing. MODIFY_GIG_VALUE is schema-only.",
-      "cardCount": 15,
-      "notAdmittedCount": 2,
-      "soleBlockerCount": 0
-    },
-    {
       "family": "LEGEND_LOOK",
       "status": "PARTIAL",
       "summary": "Look at friendly face-down Legends.",
@@ -280,20 +253,20 @@
       "soleBlockerCount": 0
     },
     {
+      "family": "MODAL_CHOICE",
+      "status": "MISSING",
+      "summary": "'Choose one effect' (and 'choose both instead' upgrades).",
+      "notes": "PendingChoice MODE exists for setup, search and Gig steps, but no ability carries modes.",
+      "cardCount": 8,
+      "notAdmittedCount": 2,
+      "soleBlockerCount": 0
+    },
+    {
       "family": "RIVAL_CHOICE",
       "status": "MISSING",
       "summary": "A Rival makes a choice for the controller's effect.",
       "notes": "",
       "cardCount": 2,
-      "notAdmittedCount": 2,
-      "soleBlockerCount": 0
-    },
-    {
-      "family": "SPEND_OR_READY",
-      "status": "PARTIAL",
-      "summary": "Spend or ready Units and Legends by an effect, and 'can't ready' locks.",
-      "notes": "SPEND_UNIT (rival, cost at most 4) only; readying Units or Legends is missing.",
-      "cardCount": 15,
       "notAdmittedCount": 2,
       "soleBlockerCount": 0
     },
@@ -312,6 +285,15 @@
       "summary": "[Attack] abilities and 'when a Unit attacks' triggers.",
       "notes": "Triggers WHEN_ATTACKING and WHEN_UNIT_ATTACKS.",
       "cardCount": 14,
+      "notAdmittedCount": 2,
+      "soleBlockerCount": 0
+    },
+    {
+      "family": "TRIGGER_CALL",
+      "status": "PARTIAL",
+      "summary": "[Call] abilities of a Legend.",
+      "notes": "Trigger WHEN_CALLED; only Viktor's search is routed. Every other Call body needs its effects routed too.",
+      "cardCount": 7,
       "notAdmittedCount": 2,
       "soleBlockerCount": 0
     },
@@ -361,6 +343,15 @@
       "soleBlockerCount": 0
     },
     {
+      "family": "GIG_ADJUST",
+      "status": "PARTIAL",
+      "summary": "Increase, decrease, adjust or set Gig values.",
+      "notes": "Maxima are fixed literals; 'set to the value of another Gig' and 'adjust by exactly 1' are missing. MODIFY_GIG_VALUE is schema-only.",
+      "cardCount": 15,
+      "notAdmittedCount": 1,
+      "soleBlockerCount": 0
+    },
+    {
       "family": "GIG_ROLL",
       "status": "MISSING",
       "summary": "Hooks on rolling a Gig die: rerolls and triggers on rolled results.",
@@ -386,6 +377,15 @@
       "cardCount": 1,
       "notAdmittedCount": 1,
       "soleBlockerCount": 1
+    },
+    {
+      "family": "SPEND_OR_READY",
+      "status": "PARTIAL",
+      "summary": "Spend or ready Units and Legends by an effect, and 'can't ready' locks.",
+      "notes": "SPEND_UNIT (rival, cost at most 4) only; readying Units or Legends is missing.",
+      "cardCount": 15,
+      "notAdmittedCount": 1,
+      "soleBlockerCount": 0
     },
     {
       "family": "TRIGGER_BLOCKER_USED",
@@ -2198,8 +2198,8 @@
       "colors": [
         "GREEN"
       ],
-      "admission": "NOT_ADMITTED",
-      "revision": null,
+      "admission": "SOURCE_MATCH",
+      "revision": 1,
       "families": [
         "DRAW",
         "GIG_ADJUST",
@@ -2208,14 +2208,7 @@
         "SPEND_OR_READY",
         "TRIGGER_CALL"
       ],
-      "blockingFamilies": [
-        "DRAW",
-        "GIG_ADJUST",
-        "MODAL_CHOICE",
-        "SPEND_ABILITY",
-        "SPEND_OR_READY",
-        "TRIGGER_CALL"
-      ],
+      "blockingFamilies": [],
       "note": null
     },
     {

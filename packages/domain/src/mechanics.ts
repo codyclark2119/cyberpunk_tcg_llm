@@ -208,6 +208,8 @@ export const EffectSchema = z.discriminatedUnion("kind", [
     z.strictObject({ kind: z.literal("SEARCH_TAKE_ONE_PLUS_PER_MIN_GIG"), count: z.literal(3) }),
     // Batch V37: "You may set a Gig's value to the value of another Gig." (6.5: either player's Gigs, within the die's faces.)
     z.strictObject({ kind: z.literal("SET_GIG_TO_ANOTHER_GIG_VALUE"), optional: z.literal(true) }),
+    // Batch V62: "Set a player's Gig to the same value as another player's Gig." (mandatory; the two Gigs have different controllers).
+    z.strictObject({ kind: z.literal("SET_GIG_TO_ANOTHER_PLAYERS_GIG_VALUE") }),
     z.strictObject({ kind: z.literal("SEARCH_GEAR"), count: z.number().int().positive().max(5), maxCost: z.number().int().nonnegative().optional(), maxTake: z.number().int().positive().max(2) }),
     // Batch V20: "[Play] Trash 3. Add a Program from among them to your hand."
     z.strictObject({ kind: z.literal("TRASH_THEN_RETURN_PROGRAM"), count: z.literal(3) }),

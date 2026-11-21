@@ -1,5 +1,5 @@
 import { applyFightDefeatImmunity } from "./fight-immunity";
-import { advanceMandatorySwap, isLegendCallPower, mandatorySwapAvailable, playPowerTargets } from "./legend-spend";
+import { advanceCrossSet, advanceMandatorySwap, isLegendCallPower, mandatorySwapAvailable, playPowerTargets } from "./legend-spend";
 import { applyFightPowerGrant, friendlyFieldUnits } from "./fight-power-grant";
 import { applyStealReduction } from "./steal-reduction";
 import { beginTargetedSpend } from "./targeted-spend";
@@ -67,6 +67,10 @@ export class HandlerRegistry {
     }
     };
     resolve(m: TurnMutation, effect: Effect): Result<null> {
+        if (effect.kind === "SET_GIG_TO_ANOTHER_PLAYERS_GIG_VALUE") { // Batch V62: mandatory; with no settable pair it does nothing.
+            const advanced = advanceCrossSet(m, undefined, undefined);
+            return !advanced.ok ? advanced : advanced.value === "CHOICE" ? offerPlayChoice(m) : success(null);
+        }
         if (effect.kind === "SWAP_GIGS" && !effect.optional) { // Batch V59: a mandatory swap; with no Gig on either side it does nothing.
             const actor = m.state.resolution.current!.controllerId;
             if (!mandatorySwapAvailable(m.state, actor)) return success(null);
