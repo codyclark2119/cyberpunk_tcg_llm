@@ -152,6 +152,7 @@ function describeAction(a: GameAction, state: GameState, actor: PlayerId, view: 
             if (state.resolution.choice!.kind === "DISCARD" && option.kind === "CARD") return `Discard ${view.getRevision(option.cardInstanceId)?.displayName} (${option.cardInstanceId})`;
             if (state.resolution.defeatContinuation && option.kind === "CARD") return `Next in your Trash: ${view.getRevision(option.cardInstanceId)?.displayName} (${option.cardInstanceId})`;
             if (state.resolution.searchContinuation) return option.kind === "CARD" ? `Reveal and take ${view.getRevision(option.cardInstanceId)?.displayName}` : "Take no more Gears";
+            if (option.kind === "CARD" && state.resolution.current?.effect.kind === "TRASH_THEN_ADD_TRASH_PROGRAM") return `Add ${view.getRevision(option.cardInstanceId)?.displayName} (${option.cardInstanceId}) from your trash to your hand`; // Batch V73.
             if (state.resolution.playContinuation?.phase === "EQUIP" && option.kind === "CARD") return `Equip to ${view.getRevision(option.cardInstanceId)?.displayName}`;
             if (state.resolution.playContinuation && option.kind === "CARD") return `Give ${view.getRevision(option.cardInstanceId)?.displayName} (${option.cardInstanceId}) -1 power this turn`;
             if (state.resolution.playContinuation && option.kind === "GIG") {

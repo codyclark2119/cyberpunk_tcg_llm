@@ -5,7 +5,9 @@ import { cardRevision } from "./characteristics";
 import { friendlyValuePairs, supportsLegendSpendCard } from "./legend-spend-support";
 import { swapGigs } from "./gig-transfer";
 import { activationEffectId, playChoice } from "./play-state";
-import { offerPlayChoice } from "./play";
+import { beginActivationEffects, offerPlayChoice } from "./play";
+import { supportsCallTrashProgram } from "./call-trash-program-support";
+import { trashProgramTargets } from "./trash-program";
 import { powerTargets } from "./react-queries";
 import { friendlyFieldUnits } from "./fight-power-grant";
 import { changeGigValue, gigSetSources } from "./gig-value";
@@ -63,11 +65,13 @@ export function legendStartTurnEnabled(context: EngineContext) {
 export function validateLegendActivationState(state: GameState, context: EngineContext) {
     const c = state.resolution.playContinuation!, r = state.resolution, source = state.objects.cards[c.sourceId], revision = cardRevision(state, c.sourceId, context);
     const ability = revision?.mechanics.abilities.find(a => a.id === c.abilityId), current = r.current, held = c.targetGigId ? state.objects.gigs[c.targetGigId] : undefined;
-    const called = ability?.trigger === "WHEN_CALLED" && Boolean(ability.choose), spend = ability?.activation?.timing === "MAIN" && !ability.trigger;
+    // Batch V73: a Called trash-then-add-Program Legend resolves its one printed effect here too (no mode).
+    const trashCall = ability?.trigger === "WHEN_CALLED" && !ability.choose && supportsCallTrashProgram(revision, context).ok;
+    const modal = ability?.trigger === "WHEN_CALLED" && Boolean(ability.choose), called = modal || trashCall, spend = ability?.activation?.timing === "MAIN" && !ability.trigger;
     const window = called ? r.returnTo?.kind === "MAIN" && state.timing.combat.stage === "NONE" && c.actorId === state.timing.activePlayer || r.returnTo?.kind === "RIVAL_REACT" && state.timing.combat.stage === "RIVAL_REACT" && c.actorId !== state.timing.combat.attackingPlayerId
         : r.returnTo?.kind === "MAIN" && state.timing.combat.stage === "NONE" && c.actorId === state.timing.activePlayer;
     const amount = activationPaymentAmount(ability);
-    if (!supportsLegendSpendCard(revision, context).ok || !source || !ability || !(called || spend) || !window || called && amount || c.actorId !== state.timing.actingPlayer
+    if (!(supportsLegendSpendCard(revision, context).ok || trashCall) || !source || !ability || !(called || spend) || !window || called && amount || c.actorId !== state.timing.actingPlayer
         || new Set(c.selectedSources.map(p => p.cardInstanceId)).size !== c.selectedSources.length || c.selectedSources.reduce((n, p) => n + paymentValue(state, context, p), 0) + c.remainingCost !== amount
         || c.selectedSources.some(p => { const paid = state.objects.cards[p.cardInstanceId]; return !paid || p.cardInstanceId === source?.id || paid.controllerId !== c.actorId || paid.zone.playerId !== c.actorId || paid.readiness !== "SPENT"; })
         || source.controllerId !== c.actorId || source.zone.playerId !== c.actorId || source.zone.zone !== "LEGENDS" || source.face !== "UP" || spend && source.readiness !== "SPENT"
@@ -79,10 +83,10 @@ export function validateLegendActivationState(state: GameState, context: EngineC
         if (!spend || state.timing.step !== "PAYMENT_SELECTION" || c.remainingCost <= 0 || current || r.pending.length || c.effectIndex !== 0 || c.targetGigId || c.chosenEffect !== undefined || forcedPaymentSources(state, c.actorId, context, c.remainingCost, c.selectedSources))
             return failure("INVALID_PLAY_PAYMENT", "A Legend's paid {Spend} pauses only for a strategic Eddie payment");
     } else if (c.phase === "MODE") {
-        if (!called || current || r.pending.length || c.chosenEffect !== undefined || c.effectIndex !== 0 || c.targetGigId || state.timing.step !== "TARGET_SELECTION") return failure("INVALID_LEGEND_ACTIVATION", "Only a Called Legend pauses for its mode");
+        if (!modal || current || r.pending.length || c.chosenEffect !== undefined || c.effectIndex !== 0 || c.targetGigId || state.timing.step !== "TARGET_SELECTION") return failure("INVALID_LEGEND_ACTIVATION", "Only a Called Legend pauses for its mode");
     } else {
-        const index = called ? c.chosenEffect : 0;
-        if (c.phase !== "EFFECT" || c.remainingCost !== 0 || index === undefined || c.effectIndex !== index || called !== (c.chosenEffect !== undefined) || !current || current.id !== activationEffectId(state, c.actorId, c.sourceId, ability.id, index) || current.sourceId !== c.sourceId || current.controllerId !== c.actorId || current.trigger || current.primitiveIndex !== undefined
+        const index = modal ? c.chosenEffect : 0;
+        if (c.phase !== "EFFECT" || c.remainingCost !== 0 || index === undefined || c.effectIndex !== index || modal !== (c.chosenEffect !== undefined) || !current || current.id !== activationEffectId(state, c.actorId, c.sourceId, ability.id, index) || current.sourceId !== c.sourceId || current.controllerId !== c.actorId || current.trigger || current.primitiveIndex !== undefined
             || canonicalSerialize(current.effect) !== canonicalSerialize(ability.effects[index]) || r.pending.length)
             return failure("INVALID_LEGEND_ACTIVATION", "A paused Legend effect must be its current printed or chosen effect");
         const e = current.effect;
@@ -103,6 +107,8 @@ export function validateLegendActivationState(state: GameState, context: EngineC
                 return failure("INVALID_LEGEND_ACTIVATION", "A cross-player Gig set pauses only for a strategic Gig choice");
         } else if (e.kind === "ADJUST_GIG_UP_TO") {
             if (state.timing.step !== (c.targetGigId ? "AMOUNT_SELECTION" : "TARGET_SELECTION") || c.targetGigId && (!held || held.location.zone !== "GIGS" || held.roll.kind !== "ROLLED")) return failure("INVALID_LEGEND_ACTIVATION", "A Gig adjustment pauses for its Gig, then its amount");
+        } else if (e.kind === "TRASH_THEN_ADD_TRASH_PROGRAM") { // Batch V73.
+            if (!trashCall || c.targetGigId || state.timing.step !== "TARGET_SELECTION" || trashProgramTargets(state, context).length < 2) return failure("INVALID_LEGEND_ACTIVATION", "A trash-then-add pauses only for a strategic Program choice");
         } else return failure("INVALID_LEGEND_ACTIVATION", "Only reviewed Legend effects pause");
     }
     if (canonicalSerialize(playChoice(state, context)) !== canonicalSerialize(r.choice)) return failure("INVALID_PLAY_CHOICE", "Choice must exactly match the current engine options");
@@ -114,6 +120,13 @@ export function beginLegendCallChoice(m: TurnMutation, legendId: CardInstanceId,
     m.state.resolution.stage = "DISCOVER_TRIGGERS";
     m.state.resolution.playContinuation = { kind: "ACTIVATE", sourceId: legendId, actorId, abilityId, phase: "MODE", remainingCost: 0, selectedSources: [], effectIndex: 0 };
     return offerPlayChoice(m);
+}
+/** Batch V73: a Called Legend's single {Call} effect resolves through the activation continuation, so it can pause for a choice. */
+export function beginLegendCallEffects(m: TurnMutation, legendId: CardInstanceId, actorId: PlayerId, abilityId: string): Result<null> {
+    m.phase("CALL_EFFECT");
+    m.state.resolution.stage = "DISCOVER_TRIGGERS";
+    m.state.resolution.playContinuation = { kind: "ACTIVATE", sourceId: legendId, actorId, abilityId, phase: "EFFECT", remainingCost: 0, selectedSources: [], effectIndex: 0 };
+    return beginActivationEffects(m);
 }
 /** The ability a pinned Legend's continuation resolves, when it is one. */
 export function legendContinuationAbility(state: GameState, context: EngineContext) {

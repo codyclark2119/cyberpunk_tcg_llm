@@ -225,6 +225,9 @@ export const EffectSchema = z.discriminatedUnion("kind", [
     z.strictObject({ kind: z.literal("SEARCH_GEAR"), count: z.number().int().positive().max(5), maxCost: z.number().int().nonnegative().optional(), maxTake: z.number().int().positive().max(2) }),
     // Batch V20: "[Play] Trash 3. Add a Program from among them to your hand."
     z.strictObject({ kind: z.literal("TRASH_THEN_RETURN_PROGRAM"), count: z.literal(3) }),
+    // Batch V73: "{Call} Trash 3. Then, add 1 BRAINDANCE Program from your trash to your hand." (11.10.2.1: trash the top card 3
+    // times; then one Program with the tag anywhere in the controller's trash, including a card just trashed, goes to hand).
+    z.strictObject({ kind: z.literal("TRASH_THEN_ADD_TRASH_PROGRAM"), count: z.literal(3), tag: z.literal("Braindance") }),
     // Batch V20: "[Play] Give another friendly Unit with cost 5 or less [Adrenaline] this turn."
     z.strictObject({ kind: z.literal("GRANT_KEYWORD_UNTIL_END_OF_TURN"), keyword: z.literal("ADRENALINE"), target: z.strictObject({ kind: z.literal("ANOTHER_FRIENDLY_UNIT"), costAtMost: z.literal(5) }) }),
     // Batch V21: "[Play] Until your next turn, rival Units can't steal friendly Gigs with value higher than their power" (and the Legend / less-than mirror).

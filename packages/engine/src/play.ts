@@ -1,3 +1,4 @@
+import { chooseTrashProgram } from "./trash-program";
 import { noteSpent } from "./spend-triggers";
 import { applyMustAttack } from "./must-attack";
 import { applyFightDefeatImmunity } from "./fight-immunity";
@@ -93,6 +94,11 @@ function beginEffects(m: TurnMutation): Result<null> {
     }
     return pendEffects(m, a.effects.map((_, index) => index));
 }
+/** Batch V73: a Called Legend's single printed {Call} effect resolves through the activation continuation, so it can pause for a choice. */
+export function beginActivationEffects(m: TurnMutation): Result<null> {
+    m.state.resolution.choice = null;
+    return pendEffects(m, playAbility(m).effects.map((_, index) => index));
+}
 /** The listed printed effects become pending in printed order, each keeping its printed index, and resolve as a chain. */
 function pendEffects(m: TurnMutation, indexes: number[]): Result<null> {
     const s = m.state, c = s.resolution.playContinuation!, a = playAbility(m), causedBySequence = s.match.eventSequence;
@@ -179,6 +185,11 @@ export function continuePlay(m: TurnMutation, index: number): Result<null> {
         if (option.kind !== "CARD") return failure("INVALID_TRASH_TARGET", "Choose an enumerated trashed Unit");
         const returned = chooseTrashedUnit(m, option.cardInstanceId);
         return returned.ok ? completePlayEffect(m) : returned;
+    }
+    if (s.resolution.current?.effect.kind === "TRASH_THEN_ADD_TRASH_PROGRAM") { // Batch V73.
+        if (option.kind !== "CARD") return failure("INVALID_TRASH_TARGET", "Choose an enumerated trash Program");
+        const added = chooseTrashProgram(m, option.cardInstanceId);
+        return added.ok ? completePlayEffect(m) : added;
     }
     if (s.resolution.current?.effect.kind === "BOTTOM_DECK_UNIT") {
         if (option.kind !== "CARD") return failure("INVALID_BOTTOM_DECK_TARGET", "Choose an enumerated Unit");

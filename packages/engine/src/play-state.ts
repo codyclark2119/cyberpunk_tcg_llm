@@ -1,3 +1,4 @@
+import { trashProgramTargets } from "./trash-program";
 import { mustAttackTargets } from "./must-attack";
 import { crossSetSources, crossSetTargets, legendContinuationAbility, playPowerTargets, swapChoiceGigs, validateLegendActivationState } from "./legend-spend";
 import { friendlyFieldUnits } from "./fight-power-grant";
@@ -50,6 +51,9 @@ export function playChoice(state: GameState, context: EngineContext): PendingCho
     } else if (state.resolution.current?.effect.kind === "TRASH_THEN_RETURN_UNIT") {
         kind = "TARGET";
         options = trashedUnitTargets(state, context).map(cardInstanceId => ({ kind: "CARD", cardInstanceId }));
+    } else if (state.resolution.current?.effect.kind === "TRASH_THEN_ADD_TRASH_PROGRAM") { // Batch V73.
+        kind = "TARGET";
+        options = trashProgramTargets(state, context).map(cardInstanceId => ({ kind: "CARD", cardInstanceId }));
     } else if (state.resolution.current?.effect.kind === "BOTTOM_DECK_UNIT") {
         kind = "TARGET";
         options = currentBottomDeckTargets(state, context).map(cardInstanceId => ({ kind: "CARD", cardInstanceId }));
