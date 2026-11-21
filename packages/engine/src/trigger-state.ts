@@ -1,3 +1,4 @@
+import { supportsSpendTriggerCard } from "./spend-trigger-support";
 import { freeGearHosts, freeGearTargets } from "./free-play";
 import { attachedGear } from "./attachments";
 import { isFirstHostSteal, supportsGearStealCard } from "./gear-steal-support";
@@ -68,6 +69,10 @@ function validBinding(state: GameState, b: TriggerBinding, context: EngineContex
     if (b.opposingId !== undefined) return false;
     if (!source || !subject || !state.players[b.controllerId] || b.controllerId !== subject.controllerId || b.controllerId !== source.controllerId || !supportsEffectiveTriggerSource(r, context) || source.cardId !== b.source.cardId || source.revision !== b.source.revision || !ability || (b.delayedId ? ability.trigger !== "WHEN_ATTACKING" : ability.trigger !== b.kind) || (b.sourceId !== b.subjectId) !== (ability.inherited === "EQUIPPED_HOST")) return false;
     const origin = c.origin;
+    // Batch V69: a "when spent" binding names a card this batch's origin or an effect in it spent. It is captured as the card is spent,
+    // so its source is the spent card or a Gear on it, unless the source has since left the field.
+    if (b.kind === "WHEN_SPENT") return [...(origin.kind === "SPEND" ? origin.spentIds : []), ...(c.effectSpends ?? [])].includes(b.subjectId) && b.gigInstanceId === undefined && !b.delayedId && supportsSpendTriggerCard(r, context).ok
+        && (b.sourceId === b.subjectId || attachedGear(state, b.subjectId, context).some(g => g.id === b.sourceId) || !["BATTLEFIELD", "LEGENDS"].includes(source.zone.zone));
     // Batch V50: an observer of the turn's first ARASAKA Unit defeat, defeated by this batch's origin or an effect in it. The observer
     // is on the field, or was defeated with it (bindings are captured before movement).
     if (b.kind === "WHEN_UNIT_DEFEATED") {
@@ -109,7 +114,7 @@ function validBinding(state: GameState, b: TriggerBinding, context: EngineContex
             || b.kind === "WHEN_FRIENDLY_UNIT_STEALS_GIG" && ability.guard === "FIRST_OTHER_FRIENDLY_STEAL_BELOW_POWER_PER_TURN" && belowPowerStealFires(state, b.sourceId, steal.subjectId, b.gigInstanceId!) && subject.zone.zone === "BATTLEFIELD" && b.controllerId === state.objects.cards[steal.subjectId]?.controllerId
             // Batch V63: a face-up friendly Legend observing a CORPO or GANGER Unit's steal, once, on its first stolen Gig.
             || b.kind === "WHEN_FRIENDLY_UNIT_STEALS_GIG" && ability.guard === "FRIENDLY_CORPO_OR_GANGER_UNIT_STEALS" && b.gigInstanceId === [...steal.gigInstanceIds].sort()[0] && stealerIsCorpoOrGangerUnit(state, steal.subjectId, context) && subject.zone.zone === "LEGENDS" && b.controllerId === state.objects.cards[steal.subjectId]?.controllerId);
-    if (origin.kind === "DEFEAT") return false;
+    if (origin.kind === "DEFEAT" || origin.kind === "SPEND") return false;
     if (origin.kind === "ATTACK") {
         if (b.kind === "WHEN_UNIT_ATTACKS") return b.sourceId === b.subjectId && source.face === "UP" && source.zone.zone === "LEGENDS" && supportsFirstAttackLegend(r, context).ok && state.objects.cards[origin.subjectId]?.controllerId === b.controllerId && isFirstArasakaAttack(state, origin.subjectId, context);
         return b.kind === "WHEN_ATTACKING" && b.subjectId === origin.subjectId;
@@ -124,12 +129,23 @@ export function validateTriggerState(state: GameState, context: EngineContext) {
     if (!enabled && (c || history || all.some(e => e.trigger))) return failure("UNSUPPORTED_TRIGGER_POLICY", "Trigger/history data require the bounded policy");
     if (enabled && (!context.content.ruleset.gameplay?.turnSlice?.combatRestrictions || (!state.setup && (!history || history.turn !== state.timing.turn || canonicalSerialize(Object.keys(history.blueUnitOrGearPlays).sort()) !== canonicalSerialize([...state.match.playerOrder].sort()))))) return failure("INVALID_TURN_HISTORY", "Current turn, exact player counters and prior combat policy required");
     if (state.setup && history) return failure("INVALID_TURN_HISTORY", "Turn history starts with the first actual turn");
+    // Batch V69: queued "when spent" bindings wait only inside an unfinished action, each a valid captured binding of a pinned card.
+    if (history?.spendTriggers && (!(r.playContinuation || r.callContinuation || r.legendEntryContinuation || r.searchContinuation || r.current || r.choice) || c
+        || history.spendTriggers.some(b => { const source = state.objects.cards[b.sourceId], rev = cardRevision(state, b.sourceId, context), a = rev?.mechanics.abilities.find(a => a.id === b.abilityId);
+            return b.kind !== "WHEN_SPENT" || !source || !state.objects.cards[b.subjectId] || source.cardId !== b.source.cardId || source.revision !== b.source.revision || a?.trigger !== "WHEN_SPENT" || (b.sourceId !== b.subjectId) !== (a.inherited === "EQUIPPED_HOST")
+                || b.gigInstanceId !== undefined || b.delayedId !== undefined || b.opposingId !== undefined || !supportsSpendTriggerCard(rev, context).ok; })))
+        return failure("INVALID_SPEND_QUEUE", "Queued spend bindings belong to an unfinished action outside any batch");
     if (history && (programPlayHistoryEnabled(context) ? !history.programPlays || canonicalSerialize(Object.keys(history.programPlays).sort()) !== canonicalSerialize([...state.match.playerOrder].sort()) : history.programPlays)) return failure("INVALID_TURN_HISTORY", "Program-play counters exist exactly for each player under the reviewed policy");
     if (!c) return all.some(e => e.trigger || e.primitiveIndex !== undefined) || state.timing.combat.stage === "TRIGGER_RESOLUTION" || ["EDDIE_READY_SELECTION", "DISCARD_SELECTION", "TRIGGER_ORDER_SELECTION", "OPTIONAL_TRIGGER_SELECTION"].includes(state.timing.step ?? "") ? failure("ORPHAN_TRIGGER", "Pending trigger metadata requires its continuation") : success(null);
     if (!enabled || state.setup || state.match.outcome || r.returnTo || r.legendEntryContinuation || r.playContinuation || r.callContinuation || (r.searchContinuation && !isSearchEffect(r.current?.effect)) || r.gigStealContinuation || (r.defeatContinuation && !r.targetedDefeatContinuation) || r.discovered.length || r.stage !== "CHOICE" || !r.choice || c.ordinal !== history?.triggeredBatches || Object.values(state.objects.cards).some(c => c.zone.zone === "RESOLVING_PROGRAM")) return failure("INVALID_TRIGGER_CONTINUATION", "Exclusive player-choice trigger batch required");
     const combat = state.timing.combat;
     if (c.origin.kind === "END_TURN" && (!(endTurnEnabled(context) || delayedEffectsEnabled(context)) || c.origin.playerId !== state.timing.activePlayer || c.origin.turn !== state.timing.turn)) return failure("INVALID_END_TURN_RETURN", "Current active player/global turn and supported end-turn policy required");
-    if (c.origin.kind === "PLAY" || c.origin.kind === "END_TURN" || c.origin.kind === "DEFEAT" && c.origin.effectSource ? combat.stage !== "NONE" : combat.stage !== "TRIGGER_RESOLUTION" || combat.attackingPlayerId !== state.timing.activePlayer) return failure("INVALID_TRIGGER_COMBAT", "Trigger batch must pause its original combat stage");
+    // Batch V69: a SPEND batch pauses the Main Phase, or an open React Step's attack.
+    if (c.origin.kind === "SPEND" && (new Set(c.origin.spentIds).size !== c.origin.spentIds.length || c.origin.spentIds.some(id => !c.bindings.some(b => b.kind === "WHEN_SPENT" && b.subjectId === id))))
+        return failure("INVALID_SPEND_BATCH", "A SPEND batch names each spent card once, with its captured bindings");
+    if (c.effectSpends && (new Set(c.effectSpends).size !== c.effectSpends.length || c.effectSpends.some(id => !c.bindings.some(b => b.kind === "WHEN_SPENT" && b.subjectId === id))))
+        return failure("INVALID_SPEND_BATCH", "Each recorded spend names a distinct card with its captured bindings");
+    if (c.origin.kind === "SPEND" ? combat.stage !== "NONE" && (combat.stage !== "TRIGGER_RESOLUTION" || combat.attackingPlayerId !== state.timing.activePlayer) : c.origin.kind === "PLAY" || c.origin.kind === "END_TURN" || c.origin.kind === "DEFEAT" && c.origin.effectSource ? combat.stage !== "NONE" : combat.stage !== "TRIGGER_RESOLUTION" || combat.attackingPlayerId !== state.timing.activePlayer) return failure("INVALID_TRIGGER_COMBAT", "Trigger batch must pause its original combat stage");
     if (combat.stage === "TRIGGER_RESOLUTION") {
         const attacker = state.objects.cards[combat.attackerId];
         const targetValid = combat.target.kind === "CARD" ? state.objects.cards[combat.target.cardInstanceId]?.controllerId !== combat.attackingPlayerId && Boolean(state.objects.cards[combat.target.cardInstanceId]) : Boolean(state.players[combat.target.playerId]) && combat.target.playerId !== combat.attackingPlayerId;
@@ -143,7 +159,8 @@ export function validateTriggerState(state: GameState, context: EngineContext) {
         const subject = state.objects.cards[c.origin.subjectId];
         if (combat.stage !== "TRIGGER_RESOLUTION" || combat.target.kind !== "CARD" || combat.target.cardInstanceId !== c.origin.subjectId || !subject || subject.zone.zone !== "BATTLEFIELD" || subject.readiness !== "SPENT" || subject.controllerId === combat.attackingPlayerId)
             return failure("INVALID_BLOCK_TRIGGER", "The spent blocking Unit must be the current defending Unit");
-        if (canonicalSerialize(discoverTriggers(state, c.origin, context).map(b => canonicalSerialize(b)).sort()) !== canonicalSerialize(c.bindings.map(b => canonicalSerialize(b)).sort()))
+        // Batch V69: the Blocker's own "when spent" bindings are checked as recorded spends.
+        if (canonicalSerialize(discoverTriggers(state, c.origin, context).map(b => canonicalSerialize(b)).sort()) !== canonicalSerialize(c.bindings.filter(b => b.kind !== "WHEN_SPENT").map(b => canonicalSerialize(b)).sort()))
             return failure("INVALID_TRIGGER_BATCH", "Every Blocker-used ability must be captured once");
     }
     // Batch V24: the stolen Gigs are distinct, rolled and now in the attacking player's Gig area; the steal

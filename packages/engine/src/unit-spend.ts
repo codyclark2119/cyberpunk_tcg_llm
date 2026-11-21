@@ -1,3 +1,4 @@
+import { noteSpent } from "./spend-triggers";
 import { failure, success, type CardInstanceId, type GameState } from "@tcg/domain";
 import type { EngineContext } from "./state";
 import type { TurnMutation } from "./turn";
@@ -16,5 +17,6 @@ export function spendUnitForEffect(m: TurnMutation, targetId: CardInstanceId, so
     if (target.readiness === "SPENT") return success({ changed: false });
     target.readiness = "SPENT";
     m.emit({ kind: "CARD_SPENT", cardInstanceId: targetId, cause: { kind: "EFFECT", sourceId, effectId } });
+    noteSpent(m, targetId); // Batch V69.
     return success({ changed: true });
 }

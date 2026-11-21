@@ -9,12 +9,12 @@
   },
   "totals": {
     "cards": 151,
-    "admitted": 118,
-    "notAdmitted": 33,
+    "admitted": 119,
+    "notAdmitted": 32,
     "notAdmittedOnlyCoveredFamilies": 0,
     "byAdmission": {
-      "NOT_ADMITTED": 33,
-      "SOURCE_MATCH": 118
+      "NOT_ADMITTED": 32,
+      "SOURCE_MATCH": 119
     }
   },
   "families": [
@@ -42,15 +42,6 @@
       "summary": "Draw cards, fixed or conditional.",
       "notes": "Routed. Variable counts need SCALED_AMOUNT; 'may draw' needs an optional prompt.",
       "cardCount": 38,
-      "notAdmittedCount": 10,
-      "soleBlockerCount": 0
-    },
-    {
-      "family": "GEAR_EQUIP",
-      "status": "PARTIAL",
-      "summary": "Equip a Gear to a friendly Unit or face-up Legend; Gear power adds to its host.",
-      "notes": "Equip onto Units is supported for the admitted Gear. Gear on a Legend host in combat (a Go Solo Legend) is unsupported.",
-      "cardCount": 22,
       "notAdmittedCount": 9,
       "soleBlockerCount": 0
     },
@@ -61,6 +52,15 @@
       "notes": "Admitted only for Kerry: The Last Rockerboy (a Unit). Face-up Legend [Spend] abilities and Gear [Spend] abilities are not.",
       "cardCount": 17,
       "notAdmittedCount": 9,
+      "soleBlockerCount": 0
+    },
+    {
+      "family": "GEAR_EQUIP",
+      "status": "PARTIAL",
+      "summary": "Equip a Gear to a friendly Unit or face-up Legend; Gear power adds to its host.",
+      "notes": "Equip onto Units is supported for the admitted Gear. Gear on a Legend host in combat (a Go Solo Legend) is unsupported.",
+      "cardCount": 22,
+      "notAdmittedCount": 8,
       "soleBlockerCount": 0
     },
     {
@@ -91,15 +91,6 @@
       "soleBlockerCount": 0
     },
     {
-      "family": "TRIGGER_WHEN_SPENT",
-      "status": "MISSING",
-      "summary": "WHEN_SPENT: 'when this Unit or Legend is spent' (includes Zetatech Faceplate).",
-      "notes": "Documented as unsupported; needs every spending path (attack, Blocker, [Spend] costs, effects) to emit one event.",
-      "cardCount": 6,
-      "notAdmittedCount": 6,
-      "soleBlockerCount": 0
-    },
-    {
       "family": "DISCARD",
       "status": "PARTIAL",
       "summary": "Discard: self discard, a Rival discards, discard as a cost, discard a hand.",
@@ -114,6 +105,15 @@
       "summary": "[Quick] timing: Programs and activated abilities usable in the react window.",
       "notes": "Quick Programs are supported for Floor It, Reboot Optics and Detonate. Quick activated [Spend] abilities on Legends, Units and Gear are not offered in any react window yet.",
       "cardCount": 12,
+      "notAdmittedCount": 5,
+      "soleBlockerCount": 0
+    },
+    {
+      "family": "TRIGGER_WHEN_SPENT",
+      "status": "MISSING",
+      "summary": "WHEN_SPENT: 'when this Unit or Legend is spent' (includes Zetatech Faceplate).",
+      "notes": "Documented as unsupported; needs every spending path (attack, Blocker, [Spend] costs, effects) to emit one event.",
+      "cardCount": 6,
       "notAdmittedCount": 5,
       "soleBlockerCount": 0
     },
@@ -2038,18 +2038,14 @@
       "colors": [
         "BLUE"
       ],
-      "admission": "NOT_ADMITTED",
-      "revision": null,
+      "admission": "SOURCE_MATCH",
+      "revision": 1,
       "families": [
         "DRAW",
         "GEAR_EQUIP",
         "TRIGGER_WHEN_SPENT"
       ],
-      "blockingFamilies": [
-        "DRAW",
-        "GEAR_EQUIP",
-        "TRIGGER_WHEN_SPENT"
-      ],
+      "blockingFamilies": [],
       "note": null
     },
     {

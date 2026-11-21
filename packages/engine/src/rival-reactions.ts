@@ -1,3 +1,4 @@
+import { hasQueuedSpends, noteSpent } from "./spend-triggers";
 import { failure, success, type CardInstanceId, type PlayerId } from "@tcg/domain";
 import type { TurnMutation } from "./turn";
 import { isBlockerEligible } from "./react-queries";
@@ -14,11 +15,12 @@ export function declareBlocker(m: TurnMutation, actor: PlayerId, id: CardInstanc
     if (c.stage !== "RIVAL_REACT" || !isBlockerEligible(s, actor, id, m.context)) return failure("INELIGIBLE_BLOCKER", "Choose a current ready friendly field Blocker during open React");
     s.objects.cards[id].readiness = "SPENT";
     m.emit({ kind: "BLOCKER_SPENT", cardInstanceId: id });
+    noteSpent(m, id); // Batch V69: its "when spent" bindings join the Blocker batch.
     m.emit({ kind: "BLOCKER_DECLARED", cardInstanceId: id, previousTarget: c.target });
     c.target = { kind: "CARD", cardInstanceId: id }; // 9.9.1: fully replaces previous target; history belongs in events.
     // Batch V17 (9.11): a Blocker-used trigger is resolved before the defender may react again.
     const origin = { kind: "BLOCK" as const, subjectId: id };
-    if (triggersEnabled(m.context) && discoverTriggers(s, origin, m.context).length) return beginTriggers(m, origin);
+    if (triggersEnabled(m.context) && (discoverTriggers(s, origin, m.context).length || hasQueuedSpends(s))) return beginTriggers(m, origin);
     return finishAttackEffects(m);
 }
 export function passReact(m: TurnMutation, actor: PlayerId) {

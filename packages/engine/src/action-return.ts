@@ -3,6 +3,8 @@ import type { EngineContext } from "./state";
 import type { TurnMutation } from "./turn";
 import { finishAttackEffects } from "./combat";
 import { reactEnabled } from "./react-support";
+import { beginTriggers } from "./trigger-resolution";
+import { spentSubjects } from "./spend-triggers";
 
 export function actionReturnContext(state: GameState): ActionReturnContext {
     return state.resolution.returnTo ?? { kind: state.timing.combat.stage === "RIVAL_REACT" ? "RIVAL_REACT" : "MAIN" };
@@ -20,6 +22,13 @@ export function validateActionReturn(state: GameState, context: EngineContext) {
 export function finishAction(m: TurnMutation) {
     const destination = actionReturnContext(m.state);
     m.state.resolution = { stage: "STATE_BASED_CHECKS", current: null, pending: [], discovered: [], choice: null };
+    // Batch V69: "when spent" bindings no batch of this action took resolve now, before it returns.
+    const queued = m.state.turnHistory?.spendTriggers;
+    if (queued?.length && !m.state.match.outcome) {
+        const c = m.state.timing.combat;
+        if (destination.kind === "RIVAL_REACT" && "target" in c && c.target) m.state.timing.combat = { ...c, stage: "RIVAL_REACT" };
+        return beginTriggers(m, { kind: "SPEND", spentIds: spentSubjects(queued) });
+    }
     if (destination.kind === "RIVAL_REACT") return finishAttackEffects(m);
     m.phase("MAIN");
     return success(null);

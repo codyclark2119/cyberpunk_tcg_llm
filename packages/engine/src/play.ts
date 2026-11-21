@@ -1,3 +1,4 @@
+import { noteSpent } from "./spend-triggers";
 import { applyMustAttack } from "./must-attack";
 import { applyFightDefeatImmunity } from "./fight-immunity";
 import { advanceCrossSet, advanceMandatorySwap, crossSetSources, crossSetTargets, swapChoiceGigs } from "./legend-spend";
@@ -123,7 +124,7 @@ export function startPlay(m: TurnMutation, actorId: PlayerId, sourceId: CardInst
 function payValidated(m: TurnMutation, sources: PaymentSource[]): Result<null> {
     const s = m.state, c = s.resolution.playContinuation!, r = revisionOf(s, c.sourceId, m.context)!;
     c.selectedSources = sources; c.remainingCost = 0;
-    for (const p of sources) s.objects.cards[p.cardInstanceId].readiness = "SPENT";
+    for (const p of sources) { s.objects.cards[p.cardInstanceId].readiness = "SPENT"; noteSpent(m, p.cardInstanceId); } // Batch V69.
     m.emit({ kind: "PAYMENT_MADE", sources });
     if (c.kind === "ACTIVATE") return beginEffects(m); // Batch V49: a paid activation's effect follows its costs.
     if (r.type === "GEAR") {
@@ -287,7 +288,7 @@ function setGig(m: TurnMutation, sourceGigId: GigInstanceId): Result<null> {
 }
 export function activateAbility(m: TurnMutation, actorId: PlayerId, sourceId: CardInstanceId, abilityId: string): Result<null> {
     const s = m.state, ability = revisionOf(s, sourceId, m.context)!.mechanics.abilities.find(a => a.id === abilityId)!;
-    s.objects.cards[sourceId].readiness = "SPENT";
+    s.objects.cards[sourceId].readiness = "SPENT"; noteSpent(m, sourceId); // Batch V69.
     m.emit({ kind: "CARD_SPENT", cardInstanceId: sourceId });
     m.emit({ kind: "ABILITY_ACTIVATED", sourceInstanceId: sourceId, abilityId });
     const amount = activationPaymentAmount(ability);

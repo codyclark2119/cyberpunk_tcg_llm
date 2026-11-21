@@ -1,3 +1,4 @@
+import { noteSpent } from "./spend-triggers";
 import { effectiveCallCost } from "./free-call-support";
 import { beginLegendCallChoice, legendStartTurnEnabled, resolveStartTurnLegends } from "./legend-spend";
 import { supportsLegendSpendCard } from "./legend-spend-support";
@@ -116,7 +117,7 @@ export class TurnMutation {
             return payment;
         s.resolution.returnTo = actionReturnContext(s);
         for (const source of sources)
-            s.objects.cards[source.cardInstanceId].readiness = "SPENT";
+        { s.objects.cards[source.cardInstanceId].readiness = "SPENT"; noteSpent(this, source.cardInstanceId); } // Batch V69.
         this.emit({ kind: "PAYMENT_MADE", sources });
         const legend = s.objects.cards[legendId];
         legend.face = "UP";

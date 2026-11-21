@@ -1,3 +1,4 @@
+import { hasQueuedSpends, noteSpent } from "./spend-triggers";
 import { firstAttackHistoryEnabled } from "./first-attack-support";
 import { fulfilMustAttack } from "./must-attack";
 import { recordQualifyingAttack } from "./first-attack-history";
@@ -40,11 +41,12 @@ function lockAndDeclare(m: TurnMutation, actor: PlayerId, attackerId: CardInstan
     m.emit({ kind: "ATTACK_TARGET_SELECTED", attackerId, target });
     s.objects.cards[attackerId].readiness = "SPENT";
     m.emit({ kind: "ATTACKER_SPENT", attackerId });
+    noteSpent(m, attackerId); // Batch V69: its "when spent" bindings join the attack's batch.
     const causedBySequence = s.match.eventSequence; // 11.21.2: spending to declare is the trigger, not Spend activation.
     m.emit({ kind: "ATTACK_DECLARED", attackerId, attackingPlayerId: actor, target });
     recordQualifyingAttack(m, attackerId);
     fulfilMustAttack(m, attackerId); // Batch V43.
-    if (firstAttackHistoryEnabled(m.context) || supportsOrderedAttackCard(cardRevision(s, attackerId, m.context), m.context).ok || cardRevision(s, attackerId, m.context)?.execution?.scope === "COMBAT_TRIGGERS_V1" || effectiveTriggeredAbilities(s, attackerId, m.context).some(b => b.kind === "WHEN_ATTACKING" && b.sourceId !== attackerId)) return beginTriggers(m, { kind: "ATTACK", subjectId: attackerId });
+    if (firstAttackHistoryEnabled(m.context) || supportsOrderedAttackCard(cardRevision(s, attackerId, m.context), m.context).ok || cardRevision(s, attackerId, m.context)?.execution?.scope === "COMBAT_TRIGGERS_V1" || effectiveTriggeredAbilities(s, attackerId, m.context).some(b => b.kind === "WHEN_ATTACKING" && b.sourceId !== attackerId) || hasQueuedSpends(s)) return beginTriggers(m, { kind: "ATTACK", subjectId: attackerId });
     const ability = cardRevision(s, attackerId, m.context)!.mechanics.abilities.find(a => a.trigger === "WHEN_ATTACKING");
     if (ability) {
         s.resolution.stage = "DISCOVER_TRIGGERS";

@@ -1,3 +1,4 @@
+import { spentSubjects, takeQueuedSpends } from "./spend-triggers";
 import { friendlyFaceUpLegends } from "./fight-power-grant";
 import { processDeparture } from "./card-movement";
 import { isPlayedInBatch } from "./effect-play";
@@ -58,20 +59,28 @@ function resume(m: TurnMutation, origin: TriggerOrigin): Result<null> {
     if (origin.kind === "DEFEAT") return origin.effectSource ? finishAction(m) : finishCombat(m);
     // Batch V24 (9.20.2): after the steal triggers resolve, the Steal Step and the attack end.
     if (origin.kind === "STEAL") return finishCombat(m);
+    // Batch V69: a SPEND batch returns where its action would have: to an open React Step, or to the Main Phase.
+    if (origin.kind === "SPEND") {
+        if ("target" in combat && combat.target) { m.state.timing.combat = { ...combat, stage: "RIVAL_REACT" }; return finishAttackEffects(m); }
+        return finishAction(m);
+    }
     return failure("INVALID_TRIGGER_RETURN", "Trigger batch must return to its original reviewed stage");
 }
-export type PreparedTriggerBatch = { origin: TriggerOrigin; ordinal: number; bindings: TriggerBinding[]; pending: PendingEffect[] };
+export type PreparedTriggerBatch = { origin: TriggerOrigin; ordinal: number; bindings: TriggerBinding[]; pending: PendingEffect[]; effectSpends?: CardInstanceId[] };
 /** Creation of pending work is separate from resolution, so a Program can finish before it starts. */
 export function prepareTriggerBatch(m: TurnMutation, origin: TriggerOrigin, captured?: readonly TriggerBinding[]): PreparedTriggerBatch | null {
+    // Batch V69: "when spent" bindings waiting from a spend earlier in this action join this batch, after its own.
+    const queued = takeQueuedSpends(m);
     const bindings = [...(captured ?? discoverTriggers(m.state, origin, m.context))].sort((a, b) => a.sourceId < b.sourceId ? -1 : a.sourceId > b.sourceId ? 1 : a.abilityId < b.abilityId ? -1 : a.abilityId > b.abilityId ? 1 : (a.gigInstanceId ?? "") < (b.gigInstanceId ?? "") ? -1 : 1);
+    bindings.push(...queued);
     if (!bindings.length) return null;
     const ordinal = ++m.state.turnHistory!.triggeredBatches, sequence = m.state.match.eventSequence;
     const pending = bindings.map(b => PendingEffectSchema.parse(pendingTrigger(m.state, b, ordinal, sequence, m.context)));
-    return { origin, ordinal, bindings, pending };
+    return { origin, ordinal, bindings, pending, ...(queued.length ? { effectSpends: spentSubjects(queued) } : {}) };
 }
 export function activateTriggerBatch(m: TurnMutation, batch: PreparedTriggerBatch, alreadyAnnounced = false): Result<null> {
-    const { origin, ordinal, bindings, pending } = batch;
-    m.state.resolution = { stage: "DISCOVER_TRIGGERS", current: null, pending: pending.map(e => PendingEffectSchema.parse(e)), discovered: [], choice: null, triggerContinuation: { origin: TriggerOriginSchema.parse(origin), ordinal, bindings: bindings.map(b => TriggerBindingSchema.parse(b)), resolvedIds: [], phase: "SELECT" } };
+    const { origin, ordinal, bindings, pending, effectSpends } = batch;
+    m.state.resolution = { stage: "DISCOVER_TRIGGERS", current: null, pending: pending.map(e => PendingEffectSchema.parse(e)), discovered: [], choice: null, triggerContinuation: { origin: TriggerOriginSchema.parse(origin), ordinal, bindings: bindings.map(b => TriggerBindingSchema.parse(b)), resolvedIds: [], phase: "SELECT", ...(effectSpends ? { effectSpends } : {}) } };
     const combat = m.state.timing.combat;
     if (origin.kind !== "PLAY" && origin.kind !== "END_TURN" && "target" in combat && combat.target) m.state.timing.combat = { ...combat, stage: "TRIGGER_RESOLUTION" };
     if (!alreadyAnnounced) for (const e of pending) m.emit({ kind: "EFFECT_PENDING", effectId: e.id, sourceId: e.sourceId! });

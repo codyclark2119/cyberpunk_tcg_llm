@@ -1,3 +1,4 @@
+import { noteSpent } from "./spend-triggers";
 import { supportsCapabilityGear } from "./capability-support";
 import { canonicalSerialize, failure, hashCanonical, success, type CardInstanceId, type GameState, type PaymentSource, type PendingChoice, type PlayerId, type Result } from "@tcg/domain";
 import type { EngineContext } from "./state";
@@ -44,7 +45,7 @@ function completeEntry(m: TurnMutation, sources: PaymentSource[]): Result<null> 
     const paid = validatePayment(m.state, c.actorId, m.context, sources, { kind: "EDDIES", amount: legendEntryAmount(m.state, c.actorId, c.sourceId, c.mode, m.context)! });
     if (!paid.ok) return paid;
     // Ordinary € payment, including the entering Legend itself, happens before entry readiness is determined.
-    for (const source of sources) m.state.objects.cards[source.cardInstanceId].readiness = "SPENT";
+    for (const source of sources) { m.state.objects.cards[source.cardInstanceId].readiness = "SPENT"; noteSpent(m, source.cardInstanceId); } // Batch V69.
     m.emit({ kind: "PAYMENT_MADE", sources });
     const moved = moveLegendToFieldWithAttachments(m, c.sourceId, c.mode);
     if (!moved.ok) return moved;
