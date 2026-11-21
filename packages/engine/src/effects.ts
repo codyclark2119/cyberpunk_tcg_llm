@@ -1,3 +1,4 @@
+import { advanceMandatorySwap, mandatorySwapAvailable } from "./legend-spend";
 import { applyFightPowerGrant, friendlyFieldUnits } from "./fight-power-grant";
 import { applyStealReduction } from "./steal-reduction";
 import { beginTargetedSpend } from "./targeted-spend";
@@ -65,6 +66,12 @@ export class HandlerRegistry {
     }
     };
     resolve(m: TurnMutation, effect: Effect): Result<null> {
+        if (effect.kind === "SWAP_GIGS" && !effect.optional) { // Batch V59: a mandatory swap; with no Gig on either side it does nothing.
+            const actor = m.state.resolution.current!.controllerId;
+            if (!mandatorySwapAvailable(m.state, actor)) return success(null);
+            const advanced = advanceMandatorySwap(m, actor, undefined);
+            return !advanced.ok ? advanced : advanced.value === "CHOICE" ? offerPlayChoice(m) : success(null);
+        }
         if (effect.kind === "FIGHT_POWER_PER_FRIENDLY_LEGEND_THIS_TURN") { // Batch V58: one friendly Unit; a lone Unit is forced and none does nothing.
             const targets = friendlyFieldUnits(m.state, m.state.resolution.current!.controllerId, m.context);
             return targets.length > 1 ? offerPlayChoice(m) : targets.length === 1 ? applyFightPowerGrant(m, targets[0], true) : success(null);

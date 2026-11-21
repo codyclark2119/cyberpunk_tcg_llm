@@ -1,3 +1,4 @@
+import { legendStartTurnEnabled, resolveStartTurnLegends } from "./legend-spend";
 import { programPlayHistoryEnabled } from "./restriction-support";
 import { expireMustAttack } from "./must-attack";
 import { checkOvertimeVictory, recordOvertimeTurnStart } from "./overtime";
@@ -80,6 +81,9 @@ export class TurnMutation {
         expireStealRestrictions(this, actor); // 8.6.2.1, after the 8.6.1 check.
         expireReadyLocks(this, actor);
         expireMustAttack(this, actor); // Batch V43: "next turn" is over once the forcing player's own turn starts.
+        if (legendStartTurnEnabled(this.context)) { // Batch V59, 8.6.2.2: start-of-turn effects, before READY and the draw.
+            const started = resolveStartTurnLegends(this); if (!started.ok || s.match.outcome) return started;
+        }
         this.phase("READY");
         for (const zone of policy.readyZones)
             for (const id of s.players[actor].zones[zone]) {

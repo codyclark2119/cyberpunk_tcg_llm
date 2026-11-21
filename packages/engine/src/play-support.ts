@@ -1,3 +1,4 @@
+import { hasLegendSpendMetadata, supportsLegendSpendCard } from "./legend-spend-support";
 import { hasFightPowerGrant, supportsFightPowerProgram } from "./fight-power-grant-support";
 import { hasStealReduction, supportsStealReductionProgram } from "./steal-reduction-support";
 import { hasFightWinMetadata, supportsFightWinUnit } from "./fight-win-support";
@@ -50,6 +51,8 @@ export function supportsPlay(card: DeepReadonly<CardRevisionSnapshot> | undefine
     if (card && hasQuickActivation(card)) return supportsQuickActivationCard(card, context);
     // Batch V57: a steal reduction is admitted only by its exact Quick Program pin.
     if (card && hasStealReduction(card)) return supportsStealReductionProgram(card, context);
+    // Batch V59: a Legend {Spend} ability or start-of-turn trigger is never played; its Legend pin admits it.
+    if (card && hasLegendSpendMetadata(card)) return failure("UNSUPPORTED_LEGEND_SPEND", "A Legend {Spend} ability is admitted only by its exact Legend pin");
     // Batch V58: a while-fighting power grant is admitted only by its exact Quick Program pin.
     if (card && hasFightPowerGrant(card)) return supportsFightPowerProgram(card, context);
     // Batch V52: a fight-win override or first-win ready is admitted only by its exact Unit pin.
@@ -114,6 +117,8 @@ export function canActivate(state: GameState, actor: PlayerId, id: CardInstanceI
     const c = state.objects.cards[id], r = revisionOf(state, id, context), a = r?.mechanics.abilities.find(a => a.id === abilityId);
     // Batch V49 (11.30.2): a Quick activation is also offered in its controller's React Step; its Eddie cost must be payable (8.14.1: no Lag).
     const amount = activationPaymentAmount(a);
-    return Boolean((main(state, actor) || a?.activation?.timing === "QUICK" && isReactDecision(state, actor, context)) && supportsPlay(r, context).ok && r?.type === "UNIT" && c?.zone.zone === "BATTLEFIELD" && c.zone.playerId === actor && c.controllerId === actor && c.face === "UP" && c.readiness === "READY" && !c.statuses.includes("LAG") && a?.activation && a.conditions.every(condition => testCondition(state, actor, condition))
+    // Batch V59: a face-up Legend's {Spend} ability is used from the Legends area (Legends never Lag).
+    const legend = r?.type === "LEGEND" && c?.zone.zone === "LEGENDS" && supportsLegendSpendCard(r, context).ok;
+    return Boolean((main(state, actor) || a?.activation?.timing === "QUICK" && isReactDecision(state, actor, context)) && (legend || supportsPlay(r, context).ok && r?.type === "UNIT" && c?.zone.zone === "BATTLEFIELD") && c.zone.playerId === actor && c.controllerId === actor && c.face === "UP" && c.readiness === "READY" && !c.statuses.includes("LAG") && a?.activation && a.conditions.every(condition => testCondition(state, actor, condition))
         && (!amount || paymentCandidates(state, actor, context, amount, []).length));
 }

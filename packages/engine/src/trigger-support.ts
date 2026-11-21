@@ -1,3 +1,4 @@
+import { hasLegendSpendMetadata } from "./legend-spend-support";
 import { hasFightPowerGrant } from "./fight-power-grant-support";
 import { hasStealReduction } from "./steal-reduction-support";
 import { hasFightWinMetadata, supportsFightWinUnit } from "./fight-win-support";
@@ -46,6 +47,7 @@ export function supportsTriggerCard(card: DeepReadonly<CardRevisionSnapshot> | u
     if (hasFightWinMetadata(card)) return supportsFightWinUnit(card, context); // Batch V52.
     if (hasStealReduction(card)) return failure("UNSUPPORTED_STEAL_REDUCTION", "A steal reduction is admitted only by its exact Quick Program pin"); // Batch V57.
     if (hasFightPowerGrant(card)) return failure("UNSUPPORTED_FIGHT_POWER", "A while-fighting power grant is admitted only by its exact Quick Program pin"); // Batch V58.
+    if (hasLegendSpendMetadata(card)) return failure("UNSUPPORTED_LEGEND_SPEND", "A Legend {Spend} ability is admitted only by its exact Legend pin"); // Batch V59.
     if (card && hasFriendlyPlayPowerMetadata(card)) return supportsFriendlyPlayPowerUnit(card, context);
     // Batch V43: the {Play} must-attack obligation (on a Blocker Unit) is admitted only by its exact pin.
     if (hasMustAttackEffect(card)) return supportsMustAttackUnit(card, context);

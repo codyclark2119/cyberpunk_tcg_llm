@@ -5,7 +5,7 @@ export const GameAreaSchema = z.enum(["DECK", "HAND", "BATTLEFIELD", "TRASH", "E
 export const ZoneSchema = z.enum([...GameAreaSchema.options, "RESOLVING_PROGRAM"]);
 export const ZoneRefSchema = z.strictObject({ playerId: PlayerIdSchema, zone: ZoneSchema });
 export const KeywordSchema = z.enum(["GO_SOLO", "QUICK", "BLOCKER", "ADRENALINE"]);
-export const TriggerSchema = z.enum(["WHEN_SOLD", "WHEN_CALLED", "WHEN_PLAYED", "WHEN_ATTACKING", "WHEN_DEFEATED", "WHEN_FIGHT_WON", "WHEN_CARD_PLAYED", "WHEN_OWN_TURN_ENDS", "WHEN_UNIT_ATTACKS", "WHEN_BLOCKER_USED", "WHEN_GIG_STOLEN", "WHEN_FRIENDLY_UNIT_STEALS_GIG", "WHEN_UNIT_DEFEATED", "WHEN_FIGHT_LOST"]);
+export const TriggerSchema = z.enum(["WHEN_SOLD", "WHEN_CALLED", "WHEN_PLAYED", "WHEN_ATTACKING", "WHEN_DEFEATED", "WHEN_FIGHT_WON", "WHEN_CARD_PLAYED", "WHEN_OWN_TURN_ENDS", "WHEN_UNIT_ATTACKS", "WHEN_BLOCKER_USED", "WHEN_GIG_STOLEN", "WHEN_FRIENDLY_UNIT_STEALS_GIG", "WHEN_UNIT_DEFEATED", "WHEN_FIGHT_LOST", "WHEN_OWN_TURN_STARTS"]);
 export const EquipTargetSchema = z.strictObject({ kind: z.literal("FRIENDLY_UNIT_OR_FACE_UP_LEGEND") });
 export const TargetRelationshipSchema = z.enum(["CONTROLLED", "RIVAL", "ANY"]);
 export const TargetSelectorSchema = z.discriminatedUnion("kind", [
@@ -215,7 +215,10 @@ export const EffectSchema = z.discriminatedUnion("kind", [
     z.strictObject({ kind: z.literal("RESTRICT_RIVAL_GIG_STEAL"), actor: z.enum(["UNIT", "LEGEND"]), forbidden: z.enum(["VALUE_ABOVE_POWER", "VALUE_BELOW_POWER"]), duration: z.literal("UNTIL_YOUR_NEXT_TURN") }),
     // Batch V22: "[Play] If your Street Cred is an even number, a rival Unit can't ready until your next turn." (10.16.1.1: checked on resolution).
     // Batch V23: "You may swap a friendly Gig with a rival Gig." (6.7; a swap is not stealing, 6.7.2)
-    z.strictObject({ kind: z.literal("SWAP_GIGS"), optional: z.literal(true) }),
+    // Batch V59: without `optional` the swap is mandatory ("{Spend} Swap a friendly Gig with a rival Gig.").
+    z.strictObject({ kind: z.literal("SWAP_GIGS"), optional: z.literal(true).optional() }),
+    // Batch V59 (6.6, 6.6.1): "draw 1 for each friendly value-pair of Gigs"; each Gig counts toward one pair only.
+    z.strictObject({ kind: z.literal("DRAW_PER_FRIENDLY_VALUE_PAIR"), count: z.literal(1) }),
     z.strictObject({ kind: z.literal("PREVENT_UNIT_READY"), target: SpendUnitTargetSchema, when: z.strictObject({ timing: z.literal("RESOLUTION"), condition: z.strictObject({ kind: z.literal("STREET_CRED_IS_EVEN") }) }).optional(), duration: z.literal("UNTIL_YOUR_NEXT_TURN") }),
     // Batch V28: "+2 power this turn for each friendly Gig with an even value" / "Draw 1 for each friendly Gig with an odd value",
     // counted when the effect resolves.

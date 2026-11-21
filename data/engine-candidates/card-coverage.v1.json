@@ -9,12 +9,12 @@
   },
   "totals": {
     "cards": 151,
-    "admitted": 107,
-    "notAdmitted": 44,
+    "admitted": 108,
+    "notAdmitted": 43,
     "notAdmittedOnlyCoveredFamilies": 0,
     "byAdmission": {
-      "NOT_ADMITTED": 44,
-      "SOURCE_MATCH": 107
+      "NOT_ADMITTED": 43,
+      "SOURCE_MATCH": 108
     }
   },
   "families": [
@@ -24,7 +24,7 @@
       "summary": "Draw cards, fixed or conditional.",
       "notes": "Routed. Variable counts need SCALED_AMOUNT; 'may draw' needs an optional prompt.",
       "cardCount": 38,
-      "notAdmittedCount": 16,
+      "notAdmittedCount": 15,
       "soleBlockerCount": 0
     },
     {
@@ -33,7 +33,7 @@
       "summary": "Activated abilities with a [Spend] cost (and optional Eddie cost) on Legends, Units or Gear.",
       "notes": "Admitted only for Kerry: The Last Rockerboy (a Unit). Face-up Legend [Spend] abilities and Gear [Spend] abilities are not.",
       "cardCount": 17,
-      "notAdmittedCount": 15,
+      "notAdmittedCount": 14,
       "soleBlockerCount": 0
     },
     {
@@ -51,7 +51,7 @@
       "summary": "Conditions and filters on Gig values: min/max, value-pairs, even/odd, 8+, die type, counts compared with a Rival.",
       "notes": "Conditions only, each a fixed shape.",
       "cardCount": 40,
-      "notAdmittedCount": 13,
+      "notAdmittedCount": 12,
       "soleBlockerCount": 0
     },
     {
@@ -118,15 +118,6 @@
       "soleBlockerCount": 0
     },
     {
-      "family": "SCALED_AMOUNT",
-      "status": "PARTIAL",
-      "summary": "Amounts computed from the board: 'for each', 'equal to'.",
-      "notes": "Only Royce's per-equipped-Gear modifier counts anything.",
-      "cardCount": 18,
-      "notAdmittedCount": 6,
-      "soleBlockerCount": 0
-    },
-    {
       "family": "TRIGGER_CALL",
       "status": "PARTIAL",
       "summary": "[Call] abilities of a Legend.",
@@ -181,6 +172,15 @@
       "soleBlockerCount": 0
     },
     {
+      "family": "SCALED_AMOUNT",
+      "status": "PARTIAL",
+      "summary": "Amounts computed from the board: 'for each', 'equal to'.",
+      "notes": "Only Royce's per-equipped-Gear modifier counts anything.",
+      "cardCount": 18,
+      "notAdmittedCount": 5,
+      "soleBlockerCount": 0
+    },
+    {
       "family": "TRASH_RECURSION",
       "status": "MISSING",
       "summary": "Return a card from the trash (or from cards just trashed) to hand.",
@@ -231,15 +231,6 @@
       "summary": "'If X would ..., instead ...' replacement effects.",
       "notes": "",
       "cardCount": 3,
-      "notAdmittedCount": 3,
-      "soleBlockerCount": 0
-    },
-    {
-      "family": "STEAL_CONTROL",
-      "status": "MISSING",
-      "summary": "Gig control outside the ordinary attack steal: swap, extra steal, steal fewer, steal prevention.",
-      "notes": "Documented as unsupported (control transfer / steal).",
-      "cardCount": 8,
       "notAdmittedCount": 3,
       "soleBlockerCount": 0
     },
@@ -312,6 +303,15 @@
       "summary": "Spend or ready Units and Legends by an effect, and 'can't ready' locks.",
       "notes": "SPEND_UNIT (rival, cost at most 4) only; readying Units or Legends is missing.",
       "cardCount": 15,
+      "notAdmittedCount": 2,
+      "soleBlockerCount": 0
+    },
+    {
+      "family": "STEAL_CONTROL",
+      "status": "MISSING",
+      "summary": "Gig control outside the ordinary attack steal: swap, extra steal, steal fewer, steal prevention.",
+      "notes": "Documented as unsupported (control transfer / steal).",
+      "cardCount": 8,
       "notAdmittedCount": 2,
       "soleBlockerCount": 0
     },
@@ -424,15 +424,6 @@
       "soleBlockerCount": 0
     },
     {
-      "family": "TRIGGER_START_OF_TURN",
-      "status": "MISSING",
-      "summary": "'At the start of your turn' abilities.",
-      "notes": "No start-of-turn trigger exists.",
-      "cardCount": 1,
-      "notAdmittedCount": 1,
-      "soleBlockerCount": 0
-    },
-    {
       "family": "KEYWORD_ADRENALINE",
       "status": "COVERED",
       "summary": "[Adrenaline]: the Unit can attack the turn it is played.",
@@ -456,6 +447,15 @@
       "summary": "Triggers on winning or losing a fight, or winning by a margin.",
       "notes": "Trigger WHEN_FIGHT_WON (Satori). Losing a fight and win margins are missing.",
       "cardCount": 5,
+      "notAdmittedCount": 0,
+      "soleBlockerCount": 0
+    },
+    {
+      "family": "TRIGGER_START_OF_TURN",
+      "status": "MISSING",
+      "summary": "'At the start of your turn' abilities.",
+      "notes": "No start-of-turn trigger exists.",
+      "cardCount": 1,
       "notAdmittedCount": 0,
       "soleBlockerCount": 0
     },
@@ -1347,8 +1347,8 @@
       "colors": [
         "GREEN"
       ],
-      "admission": "NOT_ADMITTED",
-      "revision": null,
+      "admission": "SOURCE_MATCH",
+      "revision": 1,
       "families": [
         "CONDITION_GIG",
         "DRAW",
@@ -1357,14 +1357,7 @@
         "STEAL_CONTROL",
         "TRIGGER_START_OF_TURN"
       ],
-      "blockingFamilies": [
-        "CONDITION_GIG",
-        "DRAW",
-        "SCALED_AMOUNT",
-        "SPEND_ABILITY",
-        "STEAL_CONTROL",
-        "TRIGGER_START_OF_TURN"
-      ],
+      "blockingFamilies": [],
       "note": null
     },
     {

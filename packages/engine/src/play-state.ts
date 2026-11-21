@@ -1,3 +1,4 @@
+import { swapChoiceGigs, validateLegendActivationState } from "./legend-spend";
 import { friendlyFieldUnits } from "./fight-power-grant";
 import { listSpendUnitTargets } from "./targeted-spend-queries";
 import { playPaymentAmount } from "./play-cost-support";
@@ -55,6 +56,9 @@ export function playChoice(state: GameState, context: EngineContext): PendingCho
         // Batch V37: first the Gig to set (or the decline), then the other Gig whose value it takes.
         kind = "TARGET";
         options = c.targetGigId ? gigSetSources(state, c.targetGigId).map(gigInstanceId => ({ kind: "GIG", gigInstanceId })) : [{ kind: "CONFIRM", confirmed: false }, ...gigSetTargets(state).map(gigInstanceId => ({ kind: "GIG" as const, gigInstanceId }))];
+    } else if (state.resolution.current?.effect.kind === "SWAP_GIGS") { // Batch V59: the friendly Gig, then (holding it) the rival Gig.
+        kind = "TARGET";
+        options = swapChoiceGigs(state, c.actorId, c.targetGigId).map(gigInstanceId => ({ kind: "GIG", gigInstanceId }));
     } else if (state.resolution.current?.effect.kind === "FIGHT_POWER_PER_FRIENDLY_LEGEND_THIS_TURN") { // Batch V58.
         kind = "TARGET";
         options = friendlyFieldUnits(state, c.actorId, context).map(cardInstanceId => ({ kind: "CARD", cardInstanceId }));
@@ -76,7 +80,7 @@ export function validatePlayState(state: GameState, context: EngineContext) {
     const c = state.resolution.playContinuation, current = state.resolution.current;
     const resolving = Object.values(state.objects.cards).filter(c => c.zone.zone === "RESOLVING_PROGRAM");
     if (!c) return resolving.length || (state.timing.step === "AMOUNT_SELECTION" && !state.resolution.triggerContinuation) ? failure("INVALID_PLAY_CONTINUATION", "Resolving Programs and amount choices require a continuation") : success(null);
-    if (c.kind === "ACTIVATE") return validateActivationState(state, context); // Batch V49.
+    if (c.kind === "ACTIVATE") return revisionOf(state, c.sourceId, context)?.type === "LEGEND" ? validateLegendActivationState(state, context) : validateActivationState(state, context); // Batch V49, V59.
     const source = state.objects.cards[c.sourceId], revision = revisionOf(state, c.sourceId, context), ability = revision?.mechanics.abilities[0];
     if (!supportsPlay(revision, context).ok || !source || c.kind !== "PLAY" || c.actorId !== (state.resolution.targetedDefeatContinuation?.phase === "ORDER" || state.resolution.targetedDefeatContinuation?.phase === "EACH" ? state.timing.activePlayer : state.timing.actingPlayer) || source.controllerId !== c.actorId || source.zone.playerId !== c.actorId || source.face !== "UP" || (revision?.type === "GEAR" ? undefined : ability?.id) !== c.abilityId || state.setup || (state.timing.combat.stage !== "NONE" && (state.timing.combat.stage !== "RIVAL_REACT" || revision?.type !== "PROGRAM" || !revision.mechanics.keywords.includes("QUICK"))) || state.match.outcome || (state.resolution.searchContinuation && current?.effect.kind !== "SEARCH_TAKE_ONE_PLUS_PER_MIN_GIG") || state.resolution.callContinuation || state.resolution.discovered.length || state.resolution.stage !== "CHOICE")
         return failure("INVALID_PLAY_CONTINUATION", "Play source, scope, actor or exclusive decision state invalid");

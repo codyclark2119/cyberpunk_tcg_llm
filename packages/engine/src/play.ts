@@ -1,3 +1,5 @@
+import { advanceMandatorySwap, swapChoiceGigs } from "./legend-spend";
+import { swapGigs } from "./gig-transfer";
 import { applyFightPowerGrant } from "./fight-power-grant";
 import { applyStealReduction } from "./steal-reduction";
 import { recordCyberwareGearPlay } from "./play-cost-support";
@@ -179,6 +181,22 @@ export function continuePlay(m: TurnMutation, index: number): Result<null> {
         const moved = chooseBottomDeck(m, option.cardInstanceId, offerPlayChoice);
         // An "if you do" clause may pause on its own choice before the primitive completes.
         return !moved.ok ? moved : s.resolution.choice ? success(null) : completePlayEffect(m);
+    }
+    if (s.resolution.current?.effect.kind === "SWAP_GIGS") { // Batch V59: the friendly Gig, then the rival Gig.
+        const current = s.resolution.current;
+        if (option.kind !== "GIG" || !swapChoiceGigs(s, c.actorId, c.targetGigId).includes(option.gigInstanceId)) return failure("INVALID_GIG_SWAP", "Choose an enumerated Gig");
+        s.resolution.choice = null;
+        m.emit({ kind: "GIG_TARGET_SELECTED", effectId: current.id, gigInstanceId: option.gigInstanceId });
+        if (!c.targetGigId) {
+            const advanced = advanceMandatorySwap(m, c.actorId, option.gigInstanceId);
+            if (!advanced.ok) return advanced;
+            if (advanced.value === "CHOICE") return offerPlayChoice(m);
+        } else {
+            const swapped = swapGigs(m, current.id, c.targetGigId, option.gigInstanceId);
+            if (!swapped.ok) return swapped;
+        }
+        delete c.targetGigId;
+        return completePlayEffect(m);
     }
     if (s.resolution.current?.effect.kind === "FIGHT_POWER_PER_FRIENDLY_LEGEND_THIS_TURN") { // Batch V58.
         if (option.kind !== "CARD") return failure("INVALID_FIGHT_POWER", "Choose an enumerated friendly Unit");
