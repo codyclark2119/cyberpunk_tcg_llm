@@ -154,6 +154,9 @@ export const TemporaryPowerModifierSchema = z.discriminatedUnion("amount", [
 ).or(
     // Batch V74: the "+1 power this turn" a Legend's Blocker grant also gives with a friendly value-pair of Gigs.
     TemporaryPowerBaseSchema.extend({ amount: z.literal(1), scaled: z.literal("BLOCKER_GRANT_BONUS"), origin: z.strictObject({ effectId: HashSchema, sequence: z.number().int().nonnegative() }) })
+).or(
+    // Batch V75: "+1 power this turn for each of its equipped Gear", fixed at the count as it resolved.
+    TemporaryPowerBaseSchema.extend({ amount: z.number().int().positive(), scaled: z.literal("PER_EQUIPPED_GEAR"), origin: z.strictObject({ effectId: HashSchema, sequence: z.number().int().nonnegative() }) })
 );
 export type TemporaryPowerModifier = z.infer<typeof TemporaryPowerModifierSchema>;
 /** Batch V20: a keyword granted "this turn" by a resolved PLAY occurrence; it tracks the target only while it stays on the field. */

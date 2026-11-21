@@ -1,4 +1,5 @@
 import { trashProgramTargets } from "./trash-program";
+import { friendlyGearTargets } from "./gear-legend";
 import { blockerGrantTargets } from "./blocker-grant";
 import { mustAttackTargets } from "./must-attack";
 import { crossSetSources, crossSetTargets, legendContinuationAbility, playPowerTargets, swapChoiceGigs, validateLegendActivationState } from "./legend-spend";
@@ -72,6 +73,12 @@ export function playChoice(state: GameState, context: EngineContext): PendingCho
         kind = "TARGET";
         options = swapChoiceGigs(state, c.actorId, c.targetGigId).map(gigInstanceId => ({ kind: "GIG", gigInstanceId }));
     } else if (state.resolution.current?.effect.kind === "FIGHT_POWER_PER_FRIENDLY_LEGEND_THIS_TURN" || state.resolution.current?.effect.kind === "FIGHT_DEFEAT_IMMUNITY_THIS_TURN") { // Batch V58, V61.
+        kind = "TARGET";
+        options = friendlyFieldUnits(state, c.actorId, context).map(cardInstanceId => ({ kind: "CARD", cardInstanceId }));
+    } else if (state.resolution.current?.effect.kind === "MAY_DEFEAT_FRIENDLY_GEAR_THEN_DRAW") { // Batch V75: the decline, then each friendly Gear.
+        kind = "TARGET";
+        options = [{ kind: "CONFIRM", confirmed: false }, ...friendlyGearTargets(state, c.actorId, context).map(cardInstanceId => ({ kind: "CARD" as const, cardInstanceId }))];
+    } else if (state.resolution.current?.effect.kind === "POWER_PER_EQUIPPED_GEAR_THIS_TURN") { // Batch V75.
         kind = "TARGET";
         options = friendlyFieldUnits(state, c.actorId, context).map(cardInstanceId => ({ kind: "CARD", cardInstanceId }));
     } else if (state.resolution.current?.effect.kind === "GRANT_BLOCKER_THIS_TURN") { // Batch V74.

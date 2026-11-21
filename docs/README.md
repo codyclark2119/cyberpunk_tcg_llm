@@ -117,6 +117,7 @@ were recorded in their pull requests (#4, #7, #8); later batches have documents 
 | V72 (2026-11-21) | Rita Wheeler: No Stupid Questions | [Blocker Unit: her first spend each turn draws 1, then discards 1](api-admission-batch-v72.md); coverage 122/151 |
 | V73 (2026-11-21) | V: Streetkid | [Go Solo Legend: {Call} trash 3, then add a BRAINDANCE Program from your trash](api-admission-batch-v73.md); coverage 123/151 |
 | V74 (2026-11-21) | Goro Takemura: Vengeful Bodyguard | [Legend {Quick} Blocker grant (+1 with a value pair) and friendly Blocker-used may discard, then draw](api-admission-batch-v74.md); coverage 124/151 |
+| V75 (2026-11-21) | Dum Dum: Maelstrom Triggerman | [Legend {Call} may defeat a friendly Gear (draw 2, else 1) and {Quick} +1 power per equipped Gear](api-admission-batch-v75.md); coverage 125/151 |
 | V7 (2026-11-15) | Royce: Don't Call Me Simon, Wild in the Streets, Delamain: Rideshare AI | [shared defeat filter and exact pin table](api-admission-batch-v7.md); coverage 42/151 |
 | V6 (2026-09-22) | Trust No One | [contract and executable slice](api-admission-batch-v6.md), [baseline verification](api-admission-batch-v6-verification.md) |
 

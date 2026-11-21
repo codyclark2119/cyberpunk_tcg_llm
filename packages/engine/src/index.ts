@@ -117,6 +117,7 @@ function describeAction(a: GameAction, state: GameState, actor: PlayerId, view: 
         case "ACTIVATE_ABILITY": {
             const r = view.getRevision(a.action.sourceInstanceId), ability = r?.mechanics.abilities.find(x => x.id === (a.action.kind === "ACTIVATE_ABILITY" ? a.action.abilityId : ""));
             // Batch V49: the paid Quick activation; Kerry's label is unchanged.
+            if (ability?.effects[0]?.kind === "POWER_PER_EQUIPPED_GEAR_THIS_TURN") return `Activate ${r?.displayName}: Pay ${activationPaymentAmount(ability)} and spend to give a friendly Unit +1 power this turn for each of its equipped Gear`; // Batch V75.
             if (ability?.effects[0]?.kind === "GRANT_BLOCKER_THIS_TURN") return `Activate ${r?.displayName}: Pay ${activationPaymentAmount(ability)} and spend to give a friendly Unit with cost 4 or less Blocker this turn`; // Batch V74.
             return ability?.activation?.timing === "QUICK" ? `Activate ${r?.displayName}: Pay ${activationPaymentAmount(ability)} and spend to make a rival Unit lose this Unit's power` : `Activate ${r?.displayName}: Spend to draw 2`;
         }
@@ -156,6 +157,8 @@ function describeAction(a: GameAction, state: GameState, actor: PlayerId, view: 
             if (state.resolution.defeatContinuation && option.kind === "CARD") return `Next in your Trash: ${view.getRevision(option.cardInstanceId)?.displayName} (${option.cardInstanceId})`;
             if (state.resolution.searchContinuation) return option.kind === "CARD" ? `Reveal and take ${view.getRevision(option.cardInstanceId)?.displayName}` : "Take no more Gears";
             if (option.kind === "CARD" && state.resolution.current?.effect.kind === "TRASH_THEN_ADD_TRASH_PROGRAM") return `Add ${view.getRevision(option.cardInstanceId)?.displayName} (${option.cardInstanceId}) from your trash to your hand`; // Batch V73.
+            if (state.resolution.current?.effect.kind === "MAY_DEFEAT_FRIENDLY_GEAR_THEN_DRAW") return option.kind === "CARD" ? `Defeat ${view.getRevision(option.cardInstanceId)?.displayName} (${option.cardInstanceId}) and draw 2` : "Defeat no Gear and draw 1"; // Batch V75.
+            if (option.kind === "CARD" && state.resolution.current?.effect.kind === "POWER_PER_EQUIPPED_GEAR_THIS_TURN") return `Give ${view.getRevision(option.cardInstanceId)?.displayName} (${option.cardInstanceId}) +1 power this turn for each of its equipped Gear`; // Batch V75.
             if (option.kind === "CARD" && state.resolution.current?.effect.kind === "GRANT_BLOCKER_THIS_TURN") return `Give ${view.getRevision(option.cardInstanceId)?.displayName} (${option.cardInstanceId}) Blocker this turn`; // Batch V74.
             if (state.resolution.playContinuation?.phase === "EQUIP" && option.kind === "CARD") return `Equip to ${view.getRevision(option.cardInstanceId)?.displayName}`;
             if (state.resolution.playContinuation && option.kind === "CARD") return `Give ${view.getRevision(option.cardInstanceId)?.displayName} (${option.cardInstanceId}) -1 power this turn`;

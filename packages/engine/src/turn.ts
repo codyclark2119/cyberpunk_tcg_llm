@@ -131,6 +131,7 @@ export class TurnMutation {
         // Batch V60: "{Call} Choose one effect." pauses for its mode through the activation continuation.
         if (ability?.choose && supportsLegendSpendCard(view.getRevision(legendId), this.context).ok) return beginLegendCallChoice(this, legendId, actor, ability.id);
         if (ability && supportsCallTrashProgram(view.getRevision(legendId), this.context).ok) return beginLegendCallEffects(this, legendId, actor, ability.id); // Batch V73.
+        if (ability && supportsLegendSpendCard(view.getRevision(legendId), this.context).ok) return beginLegendCallEffects(this, legendId, actor, ability.id); // Batch V75: a pinned non-modal {Call}.
         if (ability) {
             this.phase("CALL_EFFECT");
             const effect = ability.effects[0];

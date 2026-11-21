@@ -47,11 +47,17 @@ const LEGEND_SPEND_SHAPES = [
         abilities: [{ ...SPEND, activation: { timing: "QUICK", conditionTiming: "ACTIVATION_AND_RESOLUTION", costs: [{ kind: "PAYMENT_COST", cost: { kind: "EDDIES", amount: 1 } }, { kind: "SPEND_SOURCE" }] },
                 effects: [{ kind: "GRANT_BLOCKER_THIS_TURN", target: { kind: "FRIENDLY_UNIT", costAtMost: 4 }, alsoPowerIf: { condition: { kind: "CONTROLS_VALUE_PAIR" }, amount: 1 } }] },
             { trigger: "WHEN_FRIENDLY_UNIT_USES_BLOCKER", inherited: null, guard: null, activation: null, conditions: [], abilityCost: { kind: "NONE" }, choose: null,
-                effects: [{ kind: "DISCARD_CARDS", player: "CONTROLLER", count: 1, selection: "CHOSEN_BY_AFFECTED_PLAYER", optional: true, thenDrawOne: true }] }] }
+                effects: [{ kind: "DISCARD_CARDS", player: "CONTROLLER", count: 1, selection: "CHOSEN_BY_AFFECTED_PLAYER", optional: true, thenDrawOne: true }] }] },
+    // Batch V75: Dum Dum: Maelstrom Triggerman. "{Call} You may defeat a friendly Gear. If you do, draw 2. Otherwise, draw 1.
+    // {Quick} 1 €$, {Spend} Give a friendly Unit +1 power this turn for each of its equipped Gear."
+    { colors: ["YELLOW"], ram: { YELLOW: 2 }, tags: ["Ganger", "Maelstrom"], sell: true,
+        abilities: [{ ...CALL_CHOOSE_ONE, choose: null, effects: [{ kind: "MAY_DEFEAT_FRIENDLY_GEAR_THEN_DRAW", ifDefeated: 2, otherwise: 1 }] },
+            { ...SPEND, activation: { timing: "QUICK", conditionTiming: "ACTIVATION_AND_RESOLUTION", costs: [{ kind: "PAYMENT_COST", cost: { kind: "EDDIES", amount: 1 } }, { kind: "SPEND_SOURCE" }] },
+                effects: [{ kind: "POWER_PER_EQUIPPED_GEAR_THIS_TURN", target: { kind: "FRIENDLY_UNIT" }, amount: 1 }] }] }
 ].map(shape => canonicalSerialize({ type: "LEGEND", power: null, cost: "DASH", keywords: [], equip: null, modifiers: [], restrictions: [], ...shape }));
 /** Any Legend activation, start-of-turn trigger, value-pair draw, mandatory swap, Blocker grant or friendly Blocker-used trigger routes here first. */
 export function hasLegendSpendMetadata(card: DeepReadonly<CardRevisionSnapshot> | undefined) {
-    return Boolean(card?.mechanics.abilities.some(a => card.type === "LEGEND" && (a.activation || a.choose) || a.guard === "FRIENDLY_CORPO_OR_GANGER_UNIT_STEALS" || a.trigger === "WHEN_OWN_TURN_STARTS" || a.trigger === "WHEN_FRIENDLY_UNIT_USES_BLOCKER" || a.effects.some(e => e.kind === "GRANT_BLOCKER_THIS_TURN" || e.kind === "DISCARD_CARDS" && (e.optional || e.thenDrawOne)) || a.effects.some(e => e.kind === "DRAW_PER_FRIENDLY_VALUE_PAIR" || e.kind === "FIGHT_DEFEAT_IMMUNITY_THIS_TURN" || e.kind === "SET_GIG_TO_ANOTHER_PLAYERS_GIG_VALUE" || e.kind === "SWAP_GIGS" && !e.optional)));
+    return Boolean(card?.mechanics.abilities.some(a => card.type === "LEGEND" && (a.activation || a.choose) || a.guard === "FRIENDLY_CORPO_OR_GANGER_UNIT_STEALS" || a.trigger === "WHEN_OWN_TURN_STARTS" || a.trigger === "WHEN_FRIENDLY_UNIT_USES_BLOCKER" || a.effects.some(e => e.kind === "GRANT_BLOCKER_THIS_TURN" || e.kind === "MAY_DEFEAT_FRIENDLY_GEAR_THEN_DRAW" || e.kind === "POWER_PER_EQUIPPED_GEAR_THIS_TURN" || e.kind === "DISCARD_CARDS" && (e.optional || e.thenDrawOne)) || a.effects.some(e => e.kind === "DRAW_PER_FRIENDLY_VALUE_PAIR" || e.kind === "FIGHT_DEFEAT_IMMUNITY_THIS_TURN" || e.kind === "SET_GIG_TO_ANOTHER_PLAYERS_GIG_VALUE" || e.kind === "SWAP_GIGS" && !e.optional)));
 }
 export function supportsLegendSpendCard(card: DeepReadonly<CardRevisionSnapshot> | undefined, context: EngineContext) {
     const g = context.content.ruleset.gameplay, m = card?.mechanics;

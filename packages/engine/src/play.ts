@@ -1,4 +1,5 @@
 import { chooseTrashProgram } from "./trash-program";
+import { applyGearPower, resolveGearDefeatDraw } from "./gear-legend";
 import { applyBlockerGrant } from "./blocker-grant";
 import { noteSpent } from "./spend-triggers";
 import { applyMustAttack } from "./must-attack";
@@ -227,6 +228,17 @@ export function continuePlay(m: TurnMutation, index: number): Result<null> {
         }
         delete c.targetGigId;
         return completePlayEffect(m);
+    }
+    if (s.resolution.current?.effect.kind === "MAY_DEFEAT_FRIENDLY_GEAR_THEN_DRAW") { // Batch V75.
+        if (option.kind !== "CARD" && !(option.kind === "CONFIRM" && !option.confirmed)) return failure("INVALID_DEFEAT_TARGET", "Choose an enumerated friendly Gear, or decline");
+        const resolved = resolveGearDefeatDraw(m, option.kind === "CARD" ? option.cardInstanceId : undefined, false);
+        return resolved.ok ? completePlayEffect(m) : resolved;
+    }
+    if (s.resolution.current?.effect.kind === "POWER_PER_EQUIPPED_GEAR_THIS_TURN") { // Batch V75.
+        if (option.kind !== "CARD") return failure("INVALID_POWER_TARGET", "Choose an enumerated friendly Unit");
+        s.resolution.choice = null;
+        const applied = applyGearPower(m, option.cardInstanceId, false);
+        return applied.ok ? completePlayEffect(m) : applied;
     }
     if (s.resolution.current?.effect.kind === "GRANT_BLOCKER_THIS_TURN") { // Batch V74.
         if (option.kind !== "CARD") return failure("INVALID_KEYWORD_TARGET", "Choose an enumerated friendly Unit");

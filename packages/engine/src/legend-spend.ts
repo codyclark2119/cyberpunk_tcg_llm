@@ -1,4 +1,5 @@
 import { canonicalSerialize, failure, hashCanonical, success, type CardInstanceId, type GameState, type GigInstanceId, type PlayerId, type Result } from "@tcg/domain";
+import { friendlyGearTargets } from "./gear-legend";
 import { blockerGrantTargets } from "./blocker-grant";
 import type { EngineContext } from "./state";
 import type { TurnMutation } from "./turn";
@@ -67,7 +68,8 @@ export function validateLegendActivationState(state: GameState, context: EngineC
     const c = state.resolution.playContinuation!, r = state.resolution, source = state.objects.cards[c.sourceId], revision = cardRevision(state, c.sourceId, context);
     const ability = revision?.mechanics.abilities.find(a => a.id === c.abilityId), current = r.current, held = c.targetGigId ? state.objects.gigs[c.targetGigId] : undefined;
     // Batch V73: a Called trash-then-add-Program Legend resolves its one printed effect here too (no mode).
-    const trashCall = ability?.trigger === "WHEN_CALLED" && !ability.choose && supportsCallTrashProgram(revision, context).ok;
+    // Batch V75: so does a pinned Legend's single non-modal {Call} effect.
+    const trashCall = ability?.trigger === "WHEN_CALLED" && !ability.choose && (supportsCallTrashProgram(revision, context).ok || supportsLegendSpendCard(revision, context).ok);
     // Batch V74: a {Quick} Legend ability is a {Spend} ability also usable in its controller's React Step (11.30.2).
     const modal = ability?.trigger === "WHEN_CALLED" && Boolean(ability.choose), called = modal || trashCall, quick = ability?.activation?.timing === "QUICK" && !ability.trigger, spend = (ability?.activation?.timing === "MAIN" || quick) && !ability?.trigger;
     const main = r.returnTo?.kind === "MAIN" && state.timing.combat.stage === "NONE" && c.actorId === state.timing.activePlayer;
@@ -109,6 +111,10 @@ export function validateLegendActivationState(state: GameState, context: EngineC
                 return failure("INVALID_LEGEND_ACTIVATION", "A cross-player Gig set pauses only for a strategic Gig choice");
         } else if (e.kind === "ADJUST_GIG_UP_TO") {
             if (state.timing.step !== (c.targetGigId ? "AMOUNT_SELECTION" : "TARGET_SELECTION") || c.targetGigId && (!held || held.location.zone !== "GIGS" || held.roll.kind !== "ROLLED")) return failure("INVALID_LEGEND_ACTIVATION", "A Gig adjustment pauses for its Gig, then its amount");
+        } else if (e.kind === "MAY_DEFEAT_FRIENDLY_GEAR_THEN_DRAW") { // Batch V75.
+            if (!trashCall || c.targetGigId || state.timing.step !== "TARGET_SELECTION" || !friendlyGearTargets(state, c.actorId, context).length) return failure("INVALID_LEGEND_ACTIVATION", "A Gear defeat pauses only for a defeat or decline with a friendly Gear");
+        } else if (e.kind === "POWER_PER_EQUIPPED_GEAR_THIS_TURN") { // Batch V75.
+            if (!quick || c.targetGigId || state.timing.step !== "TARGET_SELECTION" || friendlyFieldUnits(state, c.actorId, context).length < 2) return failure("INVALID_LEGEND_ACTIVATION", "A per-Gear power pauses only for a strategic friendly-Unit choice");
         } else if (e.kind === "GRANT_BLOCKER_THIS_TURN") { // Batch V74.
             if (!quick || c.targetGigId || state.timing.step !== "TARGET_SELECTION" || blockerGrantTargets(state, c.actorId, context).length < 2) return failure("INVALID_LEGEND_ACTIVATION", "A Blocker grant pauses only for a strategic friendly-Unit choice");
         } else if (e.kind === "TRASH_THEN_ADD_TRASH_PROGRAM") { // Batch V73.

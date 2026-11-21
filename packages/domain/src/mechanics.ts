@@ -232,6 +232,10 @@ export const EffectSchema = z.discriminatedUnion("kind", [
     z.strictObject({ kind: z.literal("TRASH_THEN_ADD_TRASH_PROGRAM"), count: z.literal(3), tag: z.literal("Braindance") }),
     // Batch V74: "Give a friendly Unit with cost 4 or less {Blocker} this turn. If you control a value-pair of Gigs, also give it +1 power
     // this turn." (6.6: the value pair is checked as the effect resolves).
+    // Batch V75: "You may defeat a friendly Gear. If you do, draw 2. Otherwise, draw 1."
+    z.strictObject({ kind: z.literal("MAY_DEFEAT_FRIENDLY_GEAR_THEN_DRAW"), ifDefeated: z.literal(2), otherwise: z.literal(1) }),
+    // Batch V75: "Give a friendly Unit +1 power this turn for each of its equipped Gear." (counted as it resolves).
+    z.strictObject({ kind: z.literal("POWER_PER_EQUIPPED_GEAR_THIS_TURN"), target: z.strictObject({ kind: z.literal("FRIENDLY_UNIT") }), amount: z.literal(1) }),
     z.strictObject({ kind: z.literal("GRANT_BLOCKER_THIS_TURN"), target: z.strictObject({ kind: z.literal("FRIENDLY_UNIT"), costAtMost: z.literal(4) }),
         alsoPowerIf: z.strictObject({ condition: z.strictObject({ kind: z.literal("CONTROLS_VALUE_PAIR") }), amount: z.literal(1) }) }),
     // Batch V20: "[Play] Give another friendly Unit with cost 5 or less [Adrenaline] this turn."
