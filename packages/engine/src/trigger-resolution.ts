@@ -1,3 +1,5 @@
+import { spentSubjects, takeQueuedSpends } from "./spend-triggers";
+import { friendlyFaceUpLegends } from "./fight-power-grant";
 import { processDeparture } from "./card-movement";
 import { isPlayedInBatch } from "./effect-play";
 import { applyMustAttack, mustAttackTargets } from "./must-attack";
@@ -38,7 +40,7 @@ import { discardingPlayer, discoverTriggers, pendingTrigger, stolenGigParity, sw
 import { moveCardLocation } from "./card-movement";
 import { discardProgram, handPrograms, programBottomDeckTargets } from "./program-discard";
 import { bottomDeck } from "./bottom-deck";
-import { bottomDeckSubject, freePlayTargets, recordQualifyingPlay, resolveFreePlay } from "./free-play";
+import { bottomDeckSubject, freeGearHosts, freeGearTargets, freePlayTargets, recordQualifyingPlay, resolveFreeGearPlay, resolveFreePlay } from "./free-play";
 
 export function recordPlayedCard(m: TurnMutation, sourceId: CardInstanceId) {
     recordQualifyingPlay(m, sourceId);
@@ -57,20 +59,28 @@ function resume(m: TurnMutation, origin: TriggerOrigin): Result<null> {
     if (origin.kind === "DEFEAT") return origin.effectSource ? finishAction(m) : finishCombat(m);
     // Batch V24 (9.20.2): after the steal triggers resolve, the Steal Step and the attack end.
     if (origin.kind === "STEAL") return finishCombat(m);
+    // Batch V69: a SPEND batch returns where its action would have: to an open React Step, or to the Main Phase.
+    if (origin.kind === "SPEND") {
+        if ("target" in combat && combat.target) { m.state.timing.combat = { ...combat, stage: "RIVAL_REACT" }; return finishAttackEffects(m); }
+        return finishAction(m);
+    }
     return failure("INVALID_TRIGGER_RETURN", "Trigger batch must return to its original reviewed stage");
 }
-export type PreparedTriggerBatch = { origin: TriggerOrigin; ordinal: number; bindings: TriggerBinding[]; pending: PendingEffect[] };
+export type PreparedTriggerBatch = { origin: TriggerOrigin; ordinal: number; bindings: TriggerBinding[]; pending: PendingEffect[]; effectSpends?: CardInstanceId[] };
 /** Creation of pending work is separate from resolution, so a Program can finish before it starts. */
 export function prepareTriggerBatch(m: TurnMutation, origin: TriggerOrigin, captured?: readonly TriggerBinding[]): PreparedTriggerBatch | null {
+    // Batch V69: "when spent" bindings waiting from a spend earlier in this action join this batch, after its own.
+    const queued = takeQueuedSpends(m);
     const bindings = [...(captured ?? discoverTriggers(m.state, origin, m.context))].sort((a, b) => a.sourceId < b.sourceId ? -1 : a.sourceId > b.sourceId ? 1 : a.abilityId < b.abilityId ? -1 : a.abilityId > b.abilityId ? 1 : (a.gigInstanceId ?? "") < (b.gigInstanceId ?? "") ? -1 : 1);
+    bindings.push(...queued);
     if (!bindings.length) return null;
     const ordinal = ++m.state.turnHistory!.triggeredBatches, sequence = m.state.match.eventSequence;
     const pending = bindings.map(b => PendingEffectSchema.parse(pendingTrigger(m.state, b, ordinal, sequence, m.context)));
-    return { origin, ordinal, bindings, pending };
+    return { origin, ordinal, bindings, pending, ...(queued.length ? { effectSpends: spentSubjects(queued) } : {}) };
 }
 export function activateTriggerBatch(m: TurnMutation, batch: PreparedTriggerBatch, alreadyAnnounced = false): Result<null> {
-    const { origin, ordinal, bindings, pending } = batch;
-    m.state.resolution = { stage: "DISCOVER_TRIGGERS", current: null, pending: pending.map(e => PendingEffectSchema.parse(e)), discovered: [], choice: null, triggerContinuation: { origin: TriggerOriginSchema.parse(origin), ordinal, bindings: bindings.map(b => TriggerBindingSchema.parse(b)), resolvedIds: [], phase: "SELECT" } };
+    const { origin, ordinal, bindings, pending, effectSpends } = batch;
+    m.state.resolution = { stage: "DISCOVER_TRIGGERS", current: null, pending: pending.map(e => PendingEffectSchema.parse(e)), discovered: [], choice: null, triggerContinuation: { origin: TriggerOriginSchema.parse(origin), ordinal, bindings: bindings.map(b => TriggerBindingSchema.parse(b)), resolvedIds: [], phase: "SELECT", ...(effectSpends ? { effectSpends } : {}) } };
     const combat = m.state.timing.combat;
     if (origin.kind !== "PLAY" && origin.kind !== "END_TURN" && "target" in combat && combat.target) m.state.timing.combat = { ...combat, stage: "TRIGGER_RESOLUTION" };
     if (!alreadyAnnounced) for (const e of pending) m.emit({ kind: "EFFECT_PENDING", effectId: e.id, sourceId: e.sourceId! });
@@ -206,6 +216,14 @@ export function advanceTriggers(m: TurnMutation): Result<null> {
         if (!trashUnitTargets(m.state, r.current, m.context).length) return completed(m);
         c.phase = "TARGET"; return offer(m);
     }
+    // Batch V68: "Play a CYBERWARE Gear ... from your trash for free. Equip it only to another friendly Unit." Mandatory: a lone Gear
+    // and a lone host are taken without a choice; with no playable Gear it does nothing.
+    if (e.kind === "PLAY_GEAR_FREE") {
+        const gear = freeGearTargets(m.state, m.context);
+        if (!gear.length) return completed(m);
+        if (gear.length > 1) { c.phase = "TARGET"; return offer(m); }
+        c.selectedGearId = gear[0]; return advanceFreeGear(m, true);
+    }
     // Batch V48: "Play another Unit with cost 9 or less from your trash for free. Then, bottom-deck this Unit."
     if (e.kind === "PLAY_UNIT_FREE") {
         if (freePlayTargets(m.state, m.context).length) { c.phase = "TARGET"; return offer(m); } // Batch V50: an optional play always offers its decline.
@@ -220,6 +238,11 @@ export function advanceTriggers(m: TurnMutation): Result<null> {
         return advanceReady(m);
     }
     if (e.kind === "DISCARD_CARDS") {
+        // Batch V72: "draw 1, then discard 1" draws before the discard is chosen.
+        if (e.drawFirst) {
+            const drawn = m.draw(r.current.controllerId, e.drawFirst); if (!drawn.ok) return drawn;
+            if (m.state.match.outcome) { m.emit({ kind: "EFFECT_RESOLVED", effectId: r.current.id }); return success(null); }
+        }
         // Evaluated only after the preceding primitive has actually changed authoritative state.
         const met = !e.when || testCondition(m.state, r.current.controllerId, e.when.condition, m.context, r.current.sourceId);
         if (e.when) m.emit({ kind: "CONDITION_EVALUATED", effectId: r.current.id, met });
@@ -262,6 +285,13 @@ export function advanceTriggers(m: TurnMutation): Result<null> {
         if (!searchTargets(m.state, m.context).length) { const done = finishSearch(m); return done.ok ? completed(m) : done; }
         c.phase = "TARGET"; return offer(m);
     }
+    // Batch V70: the controller privately looks at the top card, then trashes it or keeps it on top; an empty deck does nothing.
+    if (e.kind === "SEARCH_TOP_MAY_TRASH") {
+        const deck = m.state.players[r.current.controllerId].zones.DECK;
+        if (!deck.length) return completed(m);
+        r.searchContinuation = { looked: deck.slice(0, e.count), selected: [] };
+        c.phase = "TARGET"; return offer(m);
+    }
     // Batch V20: "[Play] Trash 3. Add a Program from among them"; "[Play] Give another friendly Unit ... [Adrenaline] this turn".
     if (e.kind === "TRASH_THEN_RETURN_PROGRAM") {
         if (!beginTrashProgram(m)) return completed(m);
@@ -299,7 +329,7 @@ export function advanceTriggers(m: TurnMutation): Result<null> {
         c.phase = "TARGET"; return offer(m);
     }
     if (e.kind === "DECREASE_GIG_UP_TO" || e.kind === "ADJUST_GIG_UP_TO" || e.kind === "OPTIONAL_DECREASE_FRIENDLY_GIG_THEN_DRAW_IF_MIN") {
-        if (!triggerGigTargets(m.state).length) return completed(m);
+        if (!triggerGigTargets(m.state).length) return e.kind === "ADJUST_GIG_UP_TO" ? finishAdjustThen(m) : completed(m);
         c.phase = e.kind === "OPTIONAL_DECREASE_FRIENDLY_GIG_THEN_DRAW_IF_MIN" ? "OPTIONAL" : "TARGET";
         return offer(m);
     }
@@ -387,6 +417,10 @@ export function continueTrigger(m: TurnMutation, index: number, forced = false):
             if (met && getDiscardableCards(m.state, discardingPlayer(m.state, current)).length) { c.discardedCardId = option.cardInstanceId; return offer(m); }
         }
         delete c.discardedCardId;
+        if (current.effect.thenDraw) { // Batch V66: the draw follows only an actual discard, counted as it resolves.
+            const n = friendlyFaceUpLegends(m.state, current.controllerId, m.context), drawn = n ? m.draw(current.controllerId, n) : success(null);
+            if (!drawn.ok) return drawn;
+        }
         return completed(m);
     }
     if (c.phase === "OPTIONAL") {
@@ -463,6 +497,16 @@ export function continueTrigger(m: TurnMutation, index: number, forced = false):
             moveCardLocation(m, option.cardInstanceId, "HAND");
             return completed(m);
         }
+        if (current.effect.kind === "PLAY_GEAR_FREE") { // Batch V68.
+            if (option.kind !== "CARD") return failure("INVALID_FREE_GEAR_PLAY", "Choose an eligible Gear, then another friendly Unit");
+            if (!c.selectedGearId) {
+                if (!freeGearTargets(m.state, m.context).includes(option.cardInstanceId)) return failure("INVALID_FREE_GEAR_PLAY", "Choose an eligible Gear");
+                m.emit({ kind: "CARD_TARGET_SELECTED", effectId: current.id, sourceId: current.sourceId!, targetId: option.cardInstanceId, controllerId: current.controllerId, forced });
+                c.selectedGearId = option.cardInstanceId; return advanceFreeGear(m, false);
+            }
+            const gearId = c.selectedGearId; delete c.selectedGearId;
+            const played = resolveFreeGearPlay(m, gearId, option.cardInstanceId, forced); return played.ok ? completed(m) : played;
+        }
         if (current.effect.kind === "PLAY_UNIT_FREE") {
             if (option.kind === "CONFIRM" && !option.confirmed && current.effect.optional) { m.emit({ kind: "OPTIONAL_TRIGGER_DECLINED", effectId: current.id, controllerId: current.controllerId }); return completed(m); }
             if (option.kind !== "CARD") return failure("INVALID_FREE_PLAY", "Choose an eligible Unit");
@@ -481,6 +525,12 @@ export function continueTrigger(m: TurnMutation, index: number, forced = false):
             if (option.kind !== "CARD" || !listSpendUnitTargets(m.state, current.controllerId, current.effect.target, m.context).includes(option.cardInstanceId)) return failure("INVALID_READY_LOCK_TARGET", "Choose a current rival Unit");
             m.emit({ kind: "CARD_TARGET_SELECTED", effectId: current.id, sourceId: current.sourceId!, targetId: option.cardInstanceId, controllerId: current.controllerId, forced });
             const locked = applyReadyLock(m, option.cardInstanceId); return locked.ok ? completed(m) : locked;
+        }
+        if (current.effect.kind === "SEARCH_TOP_MAY_TRASH") { // Batch V70.
+            const looked = r.searchContinuation?.looked ?? [];
+            if (option.kind === "CARD" && looked.includes(option.cardInstanceId) && m.state.players[current.controllerId].zones.DECK[0] === option.cardInstanceId) moveCardLocation(m, option.cardInstanceId, "TRASH");
+            else if (option.kind !== "MODE" || option.mode !== "DONE") return failure("INVALID_SEARCH_TARGET", "Trash the looked-at card or keep it on top");
+            delete r.searchContinuation; return completed(m);
         }
         if (isSearchEffect(current.effect)) {
             // 11.17.4.1: a hidden search may purposely fail to find; the rest is bottom-decked either way.
@@ -524,5 +574,24 @@ export function continueTrigger(m: TurnMutation, index: number, forced = false):
         if (met) { const result = m.draw(current.controllerId, current.effect.draw); if (!result.ok) return result; }
         if (m.state.match.outcome) { m.emit({ kind: "EFFECT_RESOLVED", effectId: current.id }); return success(null); }
     }
+    return current.effect.kind === "ADJUST_GIG_UP_TO" ? finishAdjustThen(m) : completed(m);
+}
+/** Batch V71: an adjustment's "Then, if you control 3 or more Gigs with different values, draw 1", checked after it (made or not). */
+function finishAdjustThen(m: TurnMutation): Result<null> {
+    const current = m.state.resolution.current!, e = current.effect;
+    if (e.kind !== "ADJUST_GIG_UP_TO" || !e.then) return completed(m);
+    const values = new Set(Object.values(m.state.objects.gigs).flatMap(g => g.controllerId === current.controllerId && g.location.zone === "GIGS" && g.roll.kind === "ROLLED" ? [g.roll.currentValue] : []));
+    const met = values.size >= e.then.minimum;
+    m.emit({ kind: "CONDITION_EVALUATED", effectId: current.id, met });
+    if (met) { const drawn = m.draw(current.controllerId, e.then.count); if (!drawn.ok) return drawn; }
+    if (m.state.match.outcome) { m.emit({ kind: "EFFECT_RESOLVED", effectId: current.id }); return success(null); }
     return completed(m);
+}
+/** Batch V68: with the Gear chosen, a lone host is taken without a choice; several are the controller's choice. */
+function advanceFreeGear(m: TurnMutation, gearForced: boolean): Result<null> {
+    const c = m.state.resolution.triggerContinuation!, current = m.state.resolution.current!, gearId = c.selectedGearId!, hosts = freeGearHosts(m.state, gearId, m.context);
+    if (gearForced) m.emit({ kind: "CARD_TARGET_SELECTED", effectId: current.id, sourceId: current.sourceId!, targetId: gearId, controllerId: current.controllerId, forced: true });
+    if (hosts.length > 1) { c.phase = "TARGET"; return offer(m); }
+    delete c.selectedGearId;
+    const played = resolveFreeGearPlay(m, gearId, hosts[0], true); return played.ok ? completed(m) : played;
 }

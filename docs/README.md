@@ -92,6 +92,28 @@ were recorded in their pull requests (#4, #7, #8); later batches have documents 
 | V48 (2026-11-20) | The Relic: Experimental Biochip | [Gear: when its host is defeated, play another trash Unit for free, then bottom-deck the host; the first free play, and fixes to V46/V47](api-admission-batch-v48.md); coverage 97/151 |
 | V49 (2026-11-20) | Rogue Amendiares: Queen of the Afterlife | [Unit: a paid Quick activation (a rival Unit loses this Unit's power), also as a reaction, and a first below-power steal trigger](api-admission-batch-v49.md); coverage 98/151 |
 | V50 (2026-11-20) | Yorinobu Arasaka: Steel Dragon | [Unit: an optional {Play} free play of a cost-4 Unit from hand or trash that can attack rival Units this turn, and a first-ARASAKA-defeat draw](api-admission-batch-v50.md); coverage 99/151 |
+| V51 (2026-11-20) | Maelstrom Zealots | [Unit: "when this Unit loses a fight, defeat the opposing rival Unit", the first printed fight-lost trigger](api-admission-batch-v51.md); coverage 100/151 |
+| V52 (2026-11-20) | Johnny Silverhand: Never Stop Fighting | [Unit: readies on its first fight win each turn and wins all fights against CORPO Units, the first effect-decided fight winner](api-admission-batch-v52.md); coverage 101/151 |
+| V53 (2026-11-20) | Viktor Vektor: Drop Your Illusions | [Unit: your first CYBERWARE Gear each turn costs 3 less, the first cost reduction given to other cards](api-admission-batch-v53.md); coverage 102/151 |
+| V54 (2026-11-20) | Towerfall | [Program: choose one, or both with less Street Cred; -5 power to all rival Units, bottom-deck all rival power-0 Units](api-admission-batch-v54.md); coverage 103/151 |
+| V55 (2026-11-20) | Gilded Matón | [Unit: {Play} may defeat a friendly Gear, then a rival Unit with cost 3 or less, the first "if you do" second defeat](api-admission-batch-v55.md); coverage 104/151 |
+| V56 (2026-11-20) | Riot Shield | [Gear: host {Blocker}; Rivals pay +2 €$ to use {Go Solo}, the first cost change for another player](api-admission-batch-v56.md); coverage 105/151 |
+| V57 (2026-11-20) | Take Control | [Quick Program: a rival Unit steals 1 fewer Gig this turn, draw 1 if it is an AI, DRONE or VEHICLE](api-admission-batch-v57.md); coverage 106/151 |
+| V58 (2026-11-20) | Synapse Burnout | [Quick Program: a friendly Unit has +1 power per friendly face-up Legend while fighting this turn, the first fight-only power](api-admission-batch-v58.md); coverage 107/151 |
+| V59 (2026-11-20) | Hanako Arasaka: Daughter of the Emperor | [Legend: {Spend} swap a friendly Gig with a rival Gig; draw 1 per value-pair at the start of your turn, the first Legend {Spend} ability and start-of-turn effect](api-admission-batch-v59.md); coverage 108/151 |
+| V60 (2026-11-21) | Wakako Okada: Peace and Harmony, Dexter DeShawn: Off the Grid | [Legends: {Call} choose one (power -2 or +2, or Draw 1); {Spend} decrease or increase a Gig by up to 2, the first modal Call](api-admission-batch-v60.md); coverage 110/151 |
+| V61 (2026-11-21) | Muamar Reyes: El Capitán | [Legend: {Call} choose one (a friendly Unit can't be defeated in a fight this turn, or Draw 1); {Spend} adjust a Gig by 1](api-admission-batch-v61.md); coverage 111/151 |
+| V62 (2026-11-21) | Padre: Man of the Cross | [Legend: {Call} choose one (spend a rival Unit, or Draw 1); {Spend} set a Gig to another player's Gig value](api-admission-batch-v62.md); coverage 112/151 |
+| V63 (2026-11-21) | Evelyn Parker: Beautiful Enigma | [Legend: ready 1 Eddie when a friendly CORPO or GANGER Unit steals; 1 €$, {Spend} a rival Unit must attack next turn](api-admission-batch-v63.md); coverage 113/151 |
+| V64 (2026-11-21) | Nadia: Fighting Through Grief | [Unit: can attack a Rival's Gig area the turn it's played if that Rival controls more Gigs](api-admission-batch-v64.md); coverage 114/151 |
+| V65 (2026-11-21) | Valentino Guerrera | [Unit: can attack ready Blockers while its controller has more Street Cred than a Rival; an attacked Blocker cannot block itself](api-admission-batch-v65.md); coverage 115/151 |
+| V66 (2026-11-21) | Panam Palmer: Strength Through Family | [Unit: free Calls in its controller's turn; {Attack} discard 1, then draw 1 per friendly face-up Legend](api-admission-batch-v66.md); coverage 116/151 |
+| V67 (2026-11-21) | Gorilla Arms | [Gear: the host's first steal each turn also steals a rival Gig whose value no friendly Gig shares](api-admission-batch-v67.md); coverage 117/151 |
+| V68 (2026-11-21) | Viktor Vektor: You Might Feel a Little Pinch | [{Play}: play a Cyberware Gear with cost 2 or less from trash for free onto another friendly Unit](api-admission-batch-v68.md); coverage 118/151 |
+| V69 (2026-11-21) | NetWatch Netdriver | ["When spent" triggers at every spend (rules 3.7, 10.16.1.1 settle Q8); Gear: the host's spend draws 1](api-admission-batch-v69.md); coverage 119/151 |
+| V70 (2026-11-21) | Tetratronic Rippler | [Gear: when the host is spent, privately look at the top card and may trash it](api-admission-batch-v70.md); coverage 120/151 |
+| V71 (2026-11-21) | Zetatech Faceplate | [Gear: when the host is spent, adjust a Gig by up to 1, then draw 1 with 3 different friendly values](api-admission-batch-v71.md); coverage 121/151 |
+| V72 (2026-11-21) | Rita Wheeler: No Stupid Questions | [Blocker Unit: her first spend each turn draws 1, then discards 1](api-admission-batch-v72.md); coverage 122/151 |
 | V7 (2026-11-15) | Royce: Don't Call Me Simon, Wild in the Streets, Delamain: Rideshare AI | [shared defeat filter and exact pin table](api-admission-batch-v7.md); coverage 42/151 |
 | V6 (2026-09-22) | Trust No One | [contract and executable slice](api-admission-batch-v6.md), [baseline verification](api-admission-batch-v6-verification.md) |
 

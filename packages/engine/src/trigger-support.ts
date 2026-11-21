@@ -1,3 +1,10 @@
+import { hasSpendTrigger, supportsSpendTriggerCard } from "./spend-trigger-support";
+import { hasGearStealMetadata, supportsGearStealCard } from "./gear-steal-support";
+import { hasFreeCallMetadata, supportsFreeCallUnit } from "./free-call-support";
+import { hasLegendSpendMetadata, supportsLegendSpendCard } from "./legend-spend-support";
+import { hasFightPowerGrant } from "./fight-power-grant-support";
+import { hasStealReduction } from "./steal-reduction-support";
+import { hasFightWinMetadata, supportsFightWinUnit } from "./fight-win-support";
 import { supportsAttackConditionPowerCard } from "./attack-condition-power-support";
 import { hasMustAttackEffect, supportsMustAttackUnit } from "./must-attack-support";
 import { hasTypeRevealEffect, supportsTypeRevealUnit } from "./type-reveal-support";
@@ -33,6 +40,12 @@ import { hasQuickActivation, supportsQuickActivationCard } from "./quick-activat
 export function triggersEnabled(context: EngineContext) { return turnSliceAllows(context.content.ruleset.gameplay?.turnSlice, "combatTriggers"); }
 /** Complete shapes, not card-name matching. The bundle must still pin explicitly reviewed immutable revisions. */
 export function supportsTriggerCard(card: DeepReadonly<CardRevisionSnapshot> | undefined, context: EngineContext) {
+    if (hasFreeCallMetadata(card)) return supportsFreeCallUnit(card, context); // Batch V66.
+    if (hasGearStealMetadata(card)) return supportsGearStealCard(card, context); // Batch V67.
+    if (hasSpendTrigger(card)) return supportsSpendTriggerCard(card, context); // Batch V69.
+    // Batch V59, V63: a pinned Legend's scheduled trigger (not its Call or start-of-turn effect) is admitted by its Legend pin, and nothing else of it.
+    if (hasLegendSpendMetadata(card)) return card!.mechanics.abilities.some(a => a.trigger && a.trigger !== "WHEN_CALLED" && a.trigger !== "WHEN_OWN_TURN_STARTS") ? supportsLegendSpendCard(card, context)
+        : failure("UNSUPPORTED_LEGEND_SPEND", "A Legend {Spend} ability is admitted only by its exact Legend pin");
     // Batch V44: modal abilities are read only by the modal Program gate.
     if (hasModalChoice(card)) return failure("UNSUPPORTED_MODAL_CHOICE", "A modal ability is admitted only by its exact Program pin");
     // Batch V45: effect sells are read only by the sell Program gate.
@@ -40,6 +53,9 @@ export function supportsTriggerCard(card: DeepReadonly<CardRevisionSnapshot> | u
     if (hasFightStealEffect(card)) return failure("UNSUPPORTED_FIGHT_STEAL", "A next-fight steal is admitted only by its exact Program pin"); // Batch V47.
     if (hasFreePlayEffect(card)) return supportsFreePlayCard(card, context); // Batch V48.
     if (hasQuickActivation(card)) return supportsQuickActivationCard(card, context); // Batch V49.
+    if (hasFightWinMetadata(card)) return supportsFightWinUnit(card, context); // Batch V52.
+    if (hasStealReduction(card)) return failure("UNSUPPORTED_STEAL_REDUCTION", "A steal reduction is admitted only by its exact Quick Program pin"); // Batch V57.
+    if (hasFightPowerGrant(card)) return failure("UNSUPPORTED_FIGHT_POWER", "A while-fighting power grant is admitted only by its exact Quick Program pin"); // Batch V58.
     if (card && hasFriendlyPlayPowerMetadata(card)) return supportsFriendlyPlayPowerUnit(card, context);
     // Batch V43: the {Play} must-attack obligation (on a Blocker Unit) is admitted only by its exact pin.
     if (hasMustAttackEffect(card)) return supportsMustAttackUnit(card, context);

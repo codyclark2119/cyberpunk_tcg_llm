@@ -1,3 +1,7 @@
+import { hasLegendSpendMetadata, supportsLegendSpendCard } from "./legend-spend-support";
+import { hasFightPowerGrant } from "./fight-power-grant-support";
+import { hasStealReduction } from "./steal-reduction-support";
+import { hasFightWinMetadata } from "./fight-win-support";
 import { supportsAttackingAuraLegend } from "./attacking-aura-support";
 import { supportsFirstAttackLegend } from "./first-attack-support";
 import { supportsFieldLegend } from "./field-legend-support";
@@ -10,11 +14,15 @@ import { hasFightStealEffect } from "./fight-steal-support";
 import { hasFreePlayEffect } from "./free-play-support";
 import { hasQuickActivation } from "./quick-activation-support";
 export function supportsCall(card: DeepReadonly<CardRevisionSnapshot> | undefined, context: EngineContext) {
+    if (hasLegendSpendMetadata(card)) return supportsLegendSpendCard(card, context); // Batch V59: Calling it is admitted by its Legend pin.
     if (hasModalChoice(card)) return failure("UNSUPPORTED_MODAL_CHOICE", "A modal ability is admitted only by its exact Program pin"); // Batch V44.
     if (hasSellTopEffect(card)) return failure("UNSUPPORTED_EFFECT_SELL", "An effect sell is admitted only by its exact Program pin"); // Batch V45.
     if (hasFightStealEffect(card)) return failure("UNSUPPORTED_FIGHT_STEAL", "A next-fight steal is admitted only by its exact Program pin"); // Batch V47.
     if (hasFreePlayEffect(card)) return failure("UNSUPPORTED_FREE_PLAY", "A free Unit play is admitted only by its exact pin"); // Batch V48.
     if (hasQuickActivation(card)) return failure("UNSUPPORTED_QUICK_ACTIVATION", "A Quick activation is admitted only by its exact Unit pin"); // Batch V49.
+    if (hasFightWinMetadata(card)) return failure("UNSUPPORTED_FIGHT_WIN", "A fight-win override is admitted only by its exact Unit pin"); // Batch V52.
+    if (hasStealReduction(card)) return failure("UNSUPPORTED_STEAL_REDUCTION", "A steal reduction is admitted only by its exact Quick Program pin"); // Batch V57.
+    if (hasFightPowerGrant(card)) return failure("UNSUPPORTED_FIGHT_POWER", "A while-fighting power grant is admitted only by its exact Quick Program pin"); // Batch V58.
     if (card?.execution?.scope === "ATTACKING_AURA_V1") return supportsAttackingAuraLegend(card, context);
     if (card?.execution?.scope === "FIRST_ATTACK_HISTORY_V1") return supportsFirstAttackLegend(card, context);
     if (card?.execution?.scope === "FIELD_LEGENDS_V1") return supportsFieldLegend(card, context);

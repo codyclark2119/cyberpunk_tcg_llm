@@ -1,3 +1,11 @@
+import { noteSpent } from "./spend-triggers";
+import { applyMustAttack } from "./must-attack";
+import { applyFightDefeatImmunity } from "./fight-immunity";
+import { advanceCrossSet, advanceMandatorySwap, crossSetSources, crossSetTargets, swapChoiceGigs } from "./legend-spend";
+import { swapGigs } from "./gig-transfer";
+import { applyFightPowerGrant } from "./fight-power-grant";
+import { applyStealReduction } from "./steal-reduction";
+import { recordCyberwareGearPlay } from "./play-cost-support";
 import { resolveSpendTarget } from "./targeted-spend";
 import { activateTriggerBatch, type PreparedTriggerBatch } from "./trigger-resolution";
 import { recordPlayedCard } from "./trigger-resolution";
@@ -78,6 +86,7 @@ function beginEffects(m: TurnMutation): Result<null> {
     s.resolution.stage = "DISCOVER_TRIGGERS";
     if (a.choose) {
         // Batch V44: "If <condition>, choose both instead" is checked as the Program resolves; otherwise its controller picks one mode.
+        if (!a.choose.allInstead) return failure("INVALID_MODE", "A Program's modal ability names its both-instead condition"); // Batch V60: Legends start in MODE.
         const all = testCondition(s, c.actorId, a.choose.allInstead, m.context, c.sourceId);
         m.emit({ kind: "CONDITION_EVALUATED", effectId: playEffectId(s, 0), met: all });
         if (!all) { c.phase = "MODE"; return offerPlayChoice(m); }
@@ -115,7 +124,7 @@ export function startPlay(m: TurnMutation, actorId: PlayerId, sourceId: CardInst
 function payValidated(m: TurnMutation, sources: PaymentSource[]): Result<null> {
     const s = m.state, c = s.resolution.playContinuation!, r = revisionOf(s, c.sourceId, m.context)!;
     c.selectedSources = sources; c.remainingCost = 0;
-    for (const p of sources) s.objects.cards[p.cardInstanceId].readiness = "SPENT";
+    for (const p of sources) { s.objects.cards[p.cardInstanceId].readiness = "SPENT"; noteSpent(m, p.cardInstanceId); } // Batch V69.
     m.emit({ kind: "PAYMENT_MADE", sources });
     if (c.kind === "ACTIVATE") return beginEffects(m); // Batch V49: a paid activation's effect follows its costs.
     if (r.type === "GEAR") {
@@ -141,7 +150,7 @@ export function continuePlay(m: TurnMutation, index: number): Result<null> {
     }
     if (c.phase === "MODE") {
         // Batch V44: one printed mode, named by its effect kind; only it becomes pending.
-        const effects = revisionOf(s, c.sourceId, m.context)!.mechanics.abilities[0].effects, index = option.kind === "MODE" ? effects.findIndex(e => e.kind === option.mode) : -1;
+        const effects = playAbility(m).effects, index = option.kind === "MODE" ? effects.findIndex(e => e.kind === option.mode) : -1;
         if (index < 0) return failure("INVALID_MODE", "Choose one enumerated printed mode");
         c.phase = "EFFECT"; c.chosenEffect = index; s.resolution.choice = null;
         m.emit({ kind: "EFFECT_MODE_CHOSEN", sourceId: c.sourceId, playerId: c.actorId, effectIndex: index });
@@ -151,6 +160,7 @@ export function continuePlay(m: TurnMutation, index: number): Result<null> {
         if (option.kind !== "CARD") return failure("INVALID_EQUIP_TARGET", "Choose an enumerated host");
         const equipped = attachPlayedGear(m, c.sourceId, option.cardInstanceId);
         if (!equipped.ok) return equipped;
+        recordCyberwareGearPlay(m, c.actorId, c.sourceId); // Batch V53.
         // 11.20.2: play requirements are fulfilled only after equipping, not merely after payment.
         m.emit({ kind: "CARD_PLAYED", cardInstanceId: c.sourceId });
         return finishPlay(m, c.sourceId);
@@ -175,6 +185,54 @@ export function continuePlay(m: TurnMutation, index: number): Result<null> {
         const moved = chooseBottomDeck(m, option.cardInstanceId, offerPlayChoice);
         // An "if you do" clause may pause on its own choice before the primitive completes.
         return !moved.ok ? moved : s.resolution.choice ? success(null) : completePlayEffect(m);
+    }
+    if (s.resolution.current?.effect.kind === "FORCE_RIVAL_UNIT_ATTACK") { // Batch V63.
+        if (option.kind !== "CARD") return failure("INVALID_MUST_ATTACK", "Choose an enumerated rival Unit");
+        s.resolution.choice = null;
+        const applied = applyMustAttack(m, option.cardInstanceId, false);
+        return applied.ok ? completePlayEffect(m) : applied;
+    }
+    if (s.resolution.current?.effect.kind === "SET_GIG_TO_ANOTHER_PLAYERS_GIG_VALUE") { // Batch V62.
+        const valid = c.targetGigId ? crossSetSources(s, c.targetGigId) : crossSetTargets(s);
+        if (option.kind !== "GIG" || !valid.includes(option.gigInstanceId)) return failure("INVALID_GIG_TARGET", "Choose an enumerated Gig");
+        s.resolution.choice = null;
+        m.emit({ kind: "GIG_TARGET_SELECTED", effectId: s.resolution.current.id, gigInstanceId: option.gigInstanceId });
+        const advanced = c.targetGigId ? advanceCrossSet(m, c.targetGigId, option.gigInstanceId) : advanceCrossSet(m, option.gigInstanceId, undefined);
+        return !advanced.ok ? advanced : advanced.value === "CHOICE" ? offerPlayChoice(m) : completePlayEffect(m);
+    }
+    if (s.resolution.current?.effect.kind === "SWAP_GIGS") { // Batch V59: the friendly Gig, then the rival Gig.
+        const current = s.resolution.current;
+        if (option.kind !== "GIG" || !swapChoiceGigs(s, c.actorId, c.targetGigId).includes(option.gigInstanceId)) return failure("INVALID_GIG_SWAP", "Choose an enumerated Gig");
+        s.resolution.choice = null;
+        m.emit({ kind: "GIG_TARGET_SELECTED", effectId: current.id, gigInstanceId: option.gigInstanceId });
+        if (!c.targetGigId) {
+            const advanced = advanceMandatorySwap(m, c.actorId, option.gigInstanceId);
+            if (!advanced.ok) return advanced;
+            if (advanced.value === "CHOICE") return offerPlayChoice(m);
+        } else {
+            const swapped = swapGigs(m, current.id, c.targetGigId, option.gigInstanceId);
+            if (!swapped.ok) return swapped;
+        }
+        delete c.targetGigId;
+        return completePlayEffect(m);
+    }
+    if (s.resolution.current?.effect.kind === "FIGHT_DEFEAT_IMMUNITY_THIS_TURN") { // Batch V61.
+        if (option.kind !== "CARD") return failure("INVALID_FIGHT_IMMUNITY", "Choose an enumerated friendly Unit");
+        s.resolution.choice = null;
+        const applied = applyFightDefeatImmunity(m, option.cardInstanceId, false);
+        return applied.ok ? completePlayEffect(m) : applied;
+    }
+    if (s.resolution.current?.effect.kind === "FIGHT_POWER_PER_FRIENDLY_LEGEND_THIS_TURN") { // Batch V58.
+        if (option.kind !== "CARD") return failure("INVALID_FIGHT_POWER", "Choose an enumerated friendly Unit");
+        s.resolution.choice = null;
+        const applied = applyFightPowerGrant(m, option.cardInstanceId, false);
+        return applied.ok ? completePlayEffect(m) : applied;
+    }
+    if (s.resolution.current?.effect.kind === "STEAL_FEWER_THIS_TURN") { // Batch V57.
+        if (option.kind !== "CARD") return failure("INVALID_STEAL_REDUCTION", "Choose an enumerated rival Unit");
+        s.resolution.choice = null;
+        const applied = applyStealReduction(m, option.cardInstanceId, false);
+        return applied.ok ? completePlayEffect(m) : applied;
     }
     if (s.resolution.current?.effect.kind === "POWER_UNTIL_END_OF_TURN") {
         if (option.kind !== "CARD") return failure("INVALID_POWER_TARGET", "Choose an enumerated rival Unit");
@@ -230,7 +288,7 @@ function setGig(m: TurnMutation, sourceGigId: GigInstanceId): Result<null> {
 }
 export function activateAbility(m: TurnMutation, actorId: PlayerId, sourceId: CardInstanceId, abilityId: string): Result<null> {
     const s = m.state, ability = revisionOf(s, sourceId, m.context)!.mechanics.abilities.find(a => a.id === abilityId)!;
-    s.objects.cards[sourceId].readiness = "SPENT";
+    s.objects.cards[sourceId].readiness = "SPENT"; noteSpent(m, sourceId); // Batch V69.
     m.emit({ kind: "CARD_SPENT", cardInstanceId: sourceId });
     m.emit({ kind: "ABILITY_ACTIVATED", sourceInstanceId: sourceId, abilityId });
     const amount = activationPaymentAmount(ability);

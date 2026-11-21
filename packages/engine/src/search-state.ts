@@ -43,7 +43,8 @@ export function searchChoice(state: GameState, context: EngineContext): PendingC
 }
 export function validateSearchState(state: GameState, context: EngineContext) {
     const c = state.resolution.searchContinuation, current = state.resolution.current;
-    if (state.resolution.triggerContinuation) return c ? validateAttackSearch(state, context) : success(null);
+    // Batch V70: the top-card keep-or-trash search is validated by the trigger state.
+    if (state.resolution.triggerContinuation) return c && current?.effect.kind !== "SEARCH_TOP_MAY_TRASH" ? validateAttackSearch(state, context) : success(null);
     if (state.resolution.playContinuation) return c || isProgramSearchEffect(current?.effect) ? validateProgramSearch(state, context) : success(null);
     if ((state.timing.step === "TARGET_SELECTION" && !state.resolution.playContinuation) !== Boolean(c)) return failure("INVALID_SEARCH_STATE", "Search step and continuation must agree");
     if (!c) return success(null);

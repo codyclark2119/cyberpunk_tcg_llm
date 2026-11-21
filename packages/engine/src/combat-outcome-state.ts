@@ -1,3 +1,4 @@
+import { reducedAllowance } from "./steal-reduction";
 import { validFightOutcomes } from "./fight-outcome";
 import { validFightFact } from "./trigger-state";
 import { triggersEnabled } from "./trigger-support";
@@ -23,7 +24,7 @@ export function validateCombatOutcome(state: GameState, context: EngineContext) 
         const continuation = r.gigStealContinuation, power = effectivePower(state, c.attackerId, context);
         if (c.target.kind !== "GIG_AREA" || !continuation || r.defeatContinuation || power === null || state.timing.actingPlayer !== c.attackingPlayerId) return failure("INVALID_GIG_STEAL", "Gig target, attacker choice and exclusive continuation required");
         const all = stealableGigsFor(state, context, c.target.playerId, c.attackerId), selected = continuation.selected;
-        if (new Set(selected).size !== selected.length || selected.some(id => !all.some(g => g.id === id)) || selected.length + continuation.remaining !== Math.min(all.length, getGigStealAllowance(power, context)) || continuation.remaining >= all.length - selected.length || canonicalSerialize(r.choice) !== canonicalSerialize(gigStealChoice(state, context)))
+        if (new Set(selected).size !== selected.length || selected.some(id => !all.some(g => g.id === id)) || selected.length + continuation.remaining !== Math.min(all.length, reducedAllowance(state, c.attackerId, getGigStealAllowance(power, context))) || continuation.remaining >= all.length - selected.length || canonicalSerialize(r.choice) !== canonicalSerialize(gigStealChoice(state, context)))
             return failure("INVALID_GIG_STEAL", "Exact remaining count, distinct still-rival selected Gigs and strategic current choices required");
     } else {
         const continuation = r.defeatContinuation;

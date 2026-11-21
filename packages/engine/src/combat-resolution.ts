@@ -1,3 +1,4 @@
+import { recordFightWin } from "./fight-win-support";
 import { endTurnEnabled } from "./end-turn-support";
 import { beginTriggers } from "./trigger-resolution";
 import { triggersEnabled } from "./trigger-support";
@@ -10,7 +11,7 @@ import { RulesView } from "./view";
 import { defeatCards, defeatSupport } from "./defeat";
 import { transferGigs } from "./gig-transfer";
 import { defeatOrderChoice, defeatsFromFightResult, evaluateFight, gigStealChoice, stealableGigsFor, unfinishedDefeatOrder } from "./combat-outcome-queries";
-import { fightOutcomeBinding, fireFightOutcomes } from "./fight-outcome";
+import { fightLostBindings, fightOutcomeBinding, fireFightOutcomes } from "./fight-outcome";
 import { belowPowerStealerPower, recordBelowPowerSteal } from "./below-power-steal";
 
 export function finishCombat(m: TurnMutation) {
@@ -43,10 +44,12 @@ function advanceDefeats(m: TurnMutation) {
         m.emit({ kind: "DEFEAT_TRASH_ORDER_SELECTED", targetId: order.targetId, cardInstanceId: option.cardInstanceId, ownerId: choice.actorId, forced: true });
     }
     m.state.resolution.choice = null;
+    // Batch V51: a loser's "loses a fight" binding is captured before the defeats move it.
+    const lost = continuation.fightResult ? fightLostBindings(m.state, continuation.fightResult, m.context) : [];
     const result = defeatCards(m, continuation.defeats, continuation.orders), outcomes = continuation.fightOutcomes;
     if (!result.ok) return result;
     // Batch V46: fired next-fight-outcome effects resolve after the fight ends, together with its DEFEATED triggers.
-    if (outcomes && continuation.fightResult) return beginTriggers(m, { kind: "DEFEAT", defeated: continuation.defeats, fight: { result: continuation.fightResult, outcomes } }, [...result.value, ...outcomes.map(fightOutcomeBinding)]);
+    if ((outcomes || lost.length) && continuation.fightResult) return beginTriggers(m, { kind: "DEFEAT", defeated: continuation.defeats, fight: { result: continuation.fightResult, outcomes: outcomes ?? [] } }, [...result.value, ...(outcomes ?? []).map(fightOutcomeBinding), ...lost]);
     return triggersEnabled(m.context) ? beginTriggers(m, { kind: "DEFEAT", defeated: continuation.defeats }, result.value) : finishCombat(m);
 }
 export function continueDefeatOrder(m: TurnMutation, index: number) {
@@ -114,6 +117,7 @@ export function resolveCombat(m: TurnMutation) {
         m.emit({ kind: "FIGHT_STARTED", attackerId: c.attackerId, defenderId: c.target.cardInstanceId });
         const result = evaluateFight(m.state, m.context, id => view.getEffectivePower(id));
         m.emit(result.event);
+        recordFightWin(m, result.event.winnerId); // Batch V52.
         return triggersEnabled(m.context) ? beginTriggers(m, { kind: "FIGHT", result: result.event }) : completeFightResult(m, result.event);
     }
     const power = view.getEffectivePower(c.attackerId);
@@ -131,7 +135,10 @@ export function completeFightResult(m: TurnMutation, result: FightResult) {
     const outcome = applyFightPreventions(m, defeatsFromFightResult(m.state, m.context, result));
     // Batch V46 (11.4.2.2.1): next-fight-outcome effects fire on this fight; they resolve once the fight has ended.
     const fired = triggersEnabled(m.context) ? fireFightOutcomes(m, result) : [];
-    if (!outcome.defeats.length) return fired.length ? beginTriggers(m, { kind: "DEFEAT", defeated: [], fight: { result: FightResultSchema.parse(result), outcomes: fired } }, fired.map(fightOutcomeBinding)) : finishCombat(m);
+    if (!outcome.defeats.length) {
+        const lost = fightLostBindings(m.state, result, m.context); // Batch V51: a loser that is not defeated still lost.
+        return fired.length || lost.length ? beginTriggers(m, { kind: "DEFEAT", defeated: [], fight: { result: FightResultSchema.parse(result), outcomes: fired } }, [...fired.map(fightOutcomeBinding), ...lost]) : finishCombat(m);
+    }
     m.state.resolution.defeatContinuation = { ...outcome, ...(triggersEnabled(m.context) ? { fightResult: FightResultSchema.parse(result) } : {}), ...(fired.length ? { fightOutcomes: fired } : {}), orders: outcome.defeats.map(d => ({ targetId: d.targetId, cardIds: [] })) };
     return advanceDefeats(m);
 }

@@ -49,7 +49,11 @@ const ability = (a: { trigger: string; effects: unknown[] }) => ({ trigger: a.tr
 const GEAR_DEFEAT_UNIT_SHAPES = [
     // Batch V34: Heywood Ripperdoc. "{Play} You may defeat a Gear. If its cost equals the value of a friendly Gig, draw 1."
     { colors: ["YELLOW"], ram: { YELLOW: 1 }, tags: ["Ripperdoc"], cost: 6, power: 8, abilities: [
-        ability({ trigger: "WHEN_PLAYED", effects: [{ kind: "DEFEAT_UNIT", target: { kind: "GEAR", relation: "ANY" }, optional: true, draw: { condition: { kind: "DEFEATED_COST_EQUALS_FRIENDLY_GIG_VALUE" }, count: 1 } }] })] }
+        ability({ trigger: "WHEN_PLAYED", effects: [{ kind: "DEFEAT_UNIT", target: { kind: "GEAR", relation: "ANY" }, optional: true, draw: { condition: { kind: "DEFEATED_COST_EQUALS_FRIENDLY_GIG_VALUE" }, count: 1 } }] })] },
+    // Batch V55: Gilded Matón. "{Play} You may defeat a friendly Gear. If you do, defeat a rival Unit with cost 3 or less."
+    { colors: ["YELLOW"], ram: { YELLOW: 2 }, tags: ["Ganger", "Valentino"], cost: 4, power: 3, abilities: [
+        ability({ trigger: "WHEN_PLAYED", effects: [{ kind: "DEFEAT_UNIT", target: { kind: "GEAR", relation: "FRIENDLY" }, optional: true,
+            then: { kind: "UNITS", relation: "RIVAL", power: { kind: "ANY" }, cost: { kind: "AT_MOST", value: 3 } } }] })] }
 ].map(shape => canonicalSerialize({ type: "UNIT", sell: false, keywords: [], equip: null, modifiers: [], restrictions: [], ...shape }));
 function reviewGearDefeatUnit(card: DeepReadonly<CardRevisionSnapshot>, context: EngineContext) {
     const m = card.mechanics;

@@ -1,3 +1,5 @@
+import { noteSpent } from "./spend-triggers";
+import { supportsCapabilityGear } from "./capability-support";
 import { canonicalSerialize, failure, hashCanonical, success, type CardInstanceId, type GameState, type PaymentSource, type PendingChoice, type PlayerId, type Result } from "@tcg/domain";
 import type { EngineContext } from "./state";
 import type { TurnMutation } from "./turn";
@@ -14,9 +16,18 @@ function eligibleSource(state: GameState, actor: PlayerId, id: CardInstanceId, c
     return Boolean(c && c.face === "UP" && c.zone.zone === "LEGENDS" && c.controllerId === actor && c.ownerId === actor && c.zone.playerId === actor && supportsFieldLegend(cardRevision(state, id, context), context).ok);
 }
 /** Readiness is deliberately not required: a spent Legend can Go Solo (official FAQ). */
-export function canEnterField(state: GameState, actor: PlayerId, id: CardInstanceId, context: EngineContext) {
+/** Batch V56: the amount paid to enter. {Go Solo} costs +2 €$ for each face-up field Gear a Rival controls with the pinned tax. */
+export function legendEntryAmount(state: GameState, actor: PlayerId, id: CardInstanceId, mode: LegendEntryMode, context: EngineContext) {
     const cost = cardRevision(state, id, context)?.printedCost;
-    return Boolean(!state.setup && !state.match.outcome && state.timing.activePlayer === actor && state.timing.actingPlayer === actor && state.timing.window === "MAIN" && state.resolution.stage === "DECISION" && state.timing.combat.stage === "NONE" && eligibleSource(state, actor, id, context) && cost?.kind === "EDDIES" && (cost.amount === 0 || paymentCandidates(state, actor, context, cost.amount, []).length));
+    if (cost?.kind !== "EDDIES") return null;
+    if (mode !== "GO_SOLO") return cost.amount;
+    const gears = Object.values(state.objects.cards).filter(h => h.controllerId !== actor && h.face === "UP" && ["BATTLEFIELD", "LEGENDS"].includes(h.zone.zone) && h.zone.playerId === h.controllerId)
+        .flatMap(h => h.attachments.map(g => state.objects.cards[g])).filter(g => g?.face === "UP" && g.controllerId !== actor && supportsCapabilityGear(cardRevision(state, g.id, context), context).ok);
+    return cost.amount + gears.flatMap(c => cardRevision(state, c.id, context)!.mechanics.modifiers.flatMap(m => m.kind === "RIVAL_GO_SOLO_COST_INCREASE" ? [m.amount] : [])).reduce((a, b) => a + b, 0);
+}
+export function canEnterField(state: GameState, actor: PlayerId, id: CardInstanceId, context: EngineContext, mode: LegendEntryMode = "PLAY") {
+    const cost = cardRevision(state, id, context)?.printedCost, amount = legendEntryAmount(state, actor, id, mode, context);
+    return Boolean(!state.setup && !state.match.outcome && state.timing.activePlayer === actor && state.timing.actingPlayer === actor && state.timing.window === "MAIN" && state.resolution.stage === "DECISION" && state.timing.combat.stage === "NONE" && eligibleSource(state, actor, id, context) && cost?.kind === "EDDIES" && amount !== null && (amount === 0 || paymentCandidates(state, actor, context, amount, []).length));
 }
 export function legendEntryChoice(state: GameState, context: EngineContext): PendingChoice {
     const c = state.resolution.legendEntryContinuation!;
@@ -31,10 +42,10 @@ function offerPayment(m: TurnMutation) {
 }
 function completeEntry(m: TurnMutation, sources: PaymentSource[]): Result<null> {
     const c = m.state.resolution.legendEntryContinuation!;
-    const paid = validatePayment(m.state, c.actorId, m.context, sources, cardRevision(m.state, c.sourceId, m.context)!.printedCost);
+    const paid = validatePayment(m.state, c.actorId, m.context, sources, { kind: "EDDIES", amount: legendEntryAmount(m.state, c.actorId, c.sourceId, c.mode, m.context)! });
     if (!paid.ok) return paid;
     // Ordinary € payment, including the entering Legend itself, happens before entry readiness is determined.
-    for (const source of sources) m.state.objects.cards[source.cardInstanceId].readiness = "SPENT";
+    for (const source of sources) { m.state.objects.cards[source.cardInstanceId].readiness = "SPENT"; noteSpent(m, source.cardInstanceId); } // Batch V69.
     m.emit({ kind: "PAYMENT_MADE", sources });
     const moved = moveLegendToFieldWithAttachments(m, c.sourceId, c.mode);
     if (!moved.ok) return moved;
@@ -44,12 +55,12 @@ function completeEntry(m: TurnMutation, sources: PaymentSource[]): Result<null> 
     return triggersEnabled(m.context) ? recordPlayedCard(m, c.sourceId) : finishAction(m);
 }
 export function startLegendEntry(m: TurnMutation, actorId: PlayerId, sourceId: CardInstanceId, mode: LegendEntryMode): Result<null> {
-    if (!canEnterField(m.state, actorId, sourceId, m.context)) return failure("ILLEGAL_LEGEND_ENTRY", "Face-up reviewed Legend, open own MAIN and exact payable printed cost required");
-    const cost = cardRevision(m.state, sourceId, m.context)!.printedCost;
-    if (cost.kind !== "EDDIES") return failure("UNSUPPORTED_LEGEND_COST", "Numeric printed cost required");
+    if (!canEnterField(m.state, actorId, sourceId, m.context, mode)) return failure("ILLEGAL_LEGEND_ENTRY", "Face-up reviewed Legend, open own MAIN and exact payable printed cost required");
+    const amount = legendEntryAmount(m.state, actorId, sourceId, mode, m.context);
+    if (amount === null) return failure("UNSUPPORTED_LEGEND_COST", "Numeric printed cost required");
     m.state.resolution.returnTo = { kind: "MAIN" };
-    m.state.resolution.legendEntryContinuation = { actorId, sourceId, mode, remainingCost: cost.amount, selectedSources: [] };
-    const forced = forcedPaymentSources(m.state, actorId, m.context, cost.amount, []);
+    m.state.resolution.legendEntryContinuation = { actorId, sourceId, mode, remainingCost: amount, selectedSources: [] };
+    const forced = forcedPaymentSources(m.state, actorId, m.context, amount, []);
     return forced ? completeEntry(m, forced) : offerPayment(m);
 }
 export function continueLegendEntry(m: TurnMutation, index: number): Result<null> {
@@ -67,7 +78,7 @@ export function validateLegendEntryState(state: GameState, context: EngineContex
     if (!eligibleSource(state, c.actorId, c.sourceId, context) || c.actorId !== state.timing.activePlayer || c.actorId !== state.timing.actingPlayer || state.setup || state.match.outcome || state.timing.combat.stage !== "NONE" || state.timing.step !== "PAYMENT_SELECTION" || r.stage !== "CHOICE" || r.returnTo?.kind !== "MAIN" || r.playContinuation || r.callContinuation || r.searchContinuation || r.triggerContinuation || r.gigStealContinuation || r.defeatContinuation || r.current || r.pending.length || r.discovered.length)
         return failure("INVALID_LEGEND_ENTRY", "Exclusive current player's Legend-entry payment must retain a public Legends-area source");
     const cost = cardRevision(state, c.sourceId, context)!.printedCost, available = paymentSources(state, c.actorId, context).map(canonicalSerialize);
-    if (cost.kind !== "EDDIES" || new Set(c.selectedSources.map(p => p.cardInstanceId)).size !== c.selectedSources.length || c.selectedSources.some(p => !available.includes(canonicalSerialize(p))) || c.selectedSources.reduce((n, p) => n + paymentValue(state, context, p), 0) + c.remainingCost !== cost.amount || forcedPaymentSources(state, c.actorId, context, c.remainingCost, c.selectedSources)) return failure("INVALID_LEGEND_PAYMENT", "Unique eligible unspent selections and exact remaining cost required; forced payment cannot pause");
+    if (cost.kind !== "EDDIES" || new Set(c.selectedSources.map(p => p.cardInstanceId)).size !== c.selectedSources.length || c.selectedSources.some(p => !available.includes(canonicalSerialize(p))) || c.selectedSources.reduce((n, p) => n + paymentValue(state, context, p), 0) + c.remainingCost !== legendEntryAmount(state, c.actorId, c.sourceId, c.mode, context) || forcedPaymentSources(state, c.actorId, context, c.remainingCost, c.selectedSources)) return failure("INVALID_LEGEND_PAYMENT", "Unique eligible unspent selections and exact remaining cost required; forced payment cannot pause");
     const expected = legendEntryChoice(state, context);
     return expected.options.length && canonicalSerialize(expected) === canonicalSerialize(r.choice) ? success(null) : failure("INVALID_LEGEND_PAYMENT_CHOICE", "Choice must equal the current exact payment possibilities");
 }

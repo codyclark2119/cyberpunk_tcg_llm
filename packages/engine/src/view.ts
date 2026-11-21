@@ -1,3 +1,7 @@
+import { effectiveCallCost, supportsFreeCallUnit } from "./free-call-support";
+import { supportsAttackPermissionUnit } from "./attack-permission-support";
+import { reducedAllowance } from "./steal-reduction";
+import { supportsFightWinUnit } from "./fight-win-support";
 import { areAllFriendlyLegendsFaceUp } from "./legend-face-condition";
 import { supportsAttackingReadyUnit } from "./attacking-ready-support";
 import { supportsPlayCostReduction } from "./play-cost-support";
@@ -73,7 +77,7 @@ export class RulesView {
     isBlockerEligible(actor: PlayerId, id: CardInstanceId) { return isBlockerEligible(this.state, actor, id, this.context); }
     listBlockers(actor: PlayerId) { return Object.values(this.state.objects.cards).filter(c => this.isBlockerEligible(actor, c.id)).map(c => c.id).sort(); }
     listQuickCards(actor: PlayerId) { return Object.values(this.state.objects.cards).filter(c => this.getRevision(c.id)?.mechanics.keywords.includes("QUICK") && canPlay(this.state, actor, c.id, this.context)).map(c => c.id).sort(); }
-    getGigStealAllowance(id: CardInstanceId) { const power = this.getEffectivePower(id); return power === null ? null : getGigStealAllowance(power, this.context); }
+    getGigStealAllowance(id: CardInstanceId) { const power = this.getEffectivePower(id); return power === null ? null : reducedAllowance(this.state, id, getGigStealAllowance(power, this.context)); } // Batch V57: less any reduction.
     listStealableGigs(defender: PlayerId) { return listStealableGigs(this.state, defender); }
     getControlledGigCount(id: PlayerId) { return this.getControlledGigs(id).length; }
     getFightDefender() { const target = this.getCombatTarget(); return target?.kind === "CARD" ? this.getCard(target.cardInstanceId) : null; }
@@ -92,7 +96,7 @@ export class RulesView {
     getCapabilitySources(id: CardInstanceId, keyword: Keyword) { return this.getEffectiveCapabilities(id).find(c => c.keyword === keyword)?.sources ?? []; }
     getEffectiveKeywords(id: CardInstanceId) { return this.getKeywords(id); }
     getKeywords(id: CardInstanceId) {
-        if (this.getRevision(id)?.mechanics.modifiers.some(m => m.kind !== "POWER_PER_EQUIPPED_GEAR_DURING_OWN_TURN" && !(m.kind === "SELF_PLAY_COST_REDUCTION" && supportsPlayCostReduction(this.getRevision(id), this.context).ok) && !(m.kind === "CAN_ATTACK_RIVAL_UNITS_WHILE_LAGGING" && supportsValuePairUnit(this.getRevision(id), this.context).ok) && !(m.kind === "FRIENDLY_ARASAKA_ATTACKING_UNIT_POWER" && supportsAttackingAuraLegend(this.getRevision(id), this.context).ok) && !(m.kind === "OTHER_FRIENDLY_ATTACKING_UNIT_POWER" && supportsAttackingReadyUnit(this.getRevision(id), this.context).ok) && !((m.kind === "GRANT_KEYWORD_TO_HOST" || m.kind === "GRANT_KEYWORD_TO_HOST_IF") && supportsCapabilityGear(this.getRevision(id), this.context).ok) && !(gearEnabled(this.context) && m.kind === "GRANT_PRINTED_POWER_TO_HOST" && this.getRevision(id)?.type === "GEAR"))) throw new Error("UNSUPPORTED_CONTINUOUS_MODIFIERS");
+        if (this.getRevision(id)?.mechanics.modifiers.some(m => m.kind !== "POWER_PER_EQUIPPED_GEAR_DURING_OWN_TURN" && !((m.kind === "SELF_PLAY_COST_REDUCTION" || m.kind === "FIRST_GEAR_PLAY_COST_REDUCTION") && supportsPlayCostReduction(this.getRevision(id), this.context).ok) && !(m.kind === "CAN_ATTACK_RIVAL_UNITS_WHILE_LAGGING" && supportsValuePairUnit(this.getRevision(id), this.context).ok) && !((m.kind === "CAN_ATTACK_GIG_AREA_WHILE_LAGGING_IF" || m.kind === "CAN_ATTACK_READY_BLOCKERS_IF") && supportsAttackPermissionUnit(this.getRevision(id), this.context).ok) && !(m.kind === "FREE_CALL_DURING_OWN_TURN" && supportsFreeCallUnit(this.getRevision(id), this.context).ok) && !(m.kind === "WINS_FIGHTS_AGAINST_CLASSIFICATION" && supportsFightWinUnit(this.getRevision(id), this.context).ok) && !(m.kind === "FRIENDLY_ARASAKA_ATTACKING_UNIT_POWER" && supportsAttackingAuraLegend(this.getRevision(id), this.context).ok) && !(m.kind === "OTHER_FRIENDLY_ATTACKING_UNIT_POWER" && supportsAttackingReadyUnit(this.getRevision(id), this.context).ok) && !((m.kind === "GRANT_KEYWORD_TO_HOST" || m.kind === "GRANT_KEYWORD_TO_HOST_IF" || m.kind === "RIVAL_GO_SOLO_COST_INCREASE") && supportsCapabilityGear(this.getRevision(id), this.context).ok) && !(gearEnabled(this.context) && m.kind === "GRANT_PRINTED_POWER_TO_HOST" && this.getRevision(id)?.type === "GEAR"))) throw new Error("UNSUPPORTED_CONTINUOUS_MODIFIERS");
         return effectiveKeywords(this.state, id, this.context);
     }
     getLegalTargets(source: CardInstanceId, target: TargetSelector) {
@@ -125,7 +129,7 @@ export class RulesView {
     }
     canCallLegend(actor: PlayerId, id: CardInstanceId) {
         const policy = this.context.content.ruleset.gameplay?.turnSlice, card = this.getCard(id);
-        return Boolean(policy && card && ((this.state.timing.window === "MAIN" && this.state.timing.combat.stage === "NONE" && this.state.timing.actingPlayer === actor && this.state.timing.activePlayer === actor) || isReactDecision(this.state, actor, this.context)) && this.state.resolution.stage === "DECISION" && card.zone.playerId === actor && card.zone.zone === "LEGENDS" && card.face === "DOWN" && card.controllerId === actor && (this.getPlayer(actor).economy.callsThisTurn ?? 0) < policy.callLimitPerTurn && (policy.callCost === 0 || this.paymentCandidates(actor, policy.callCost, []).length));
+        return Boolean(policy && card && ((this.state.timing.window === "MAIN" && this.state.timing.combat.stage === "NONE" && this.state.timing.actingPlayer === actor && this.state.timing.activePlayer === actor) || isReactDecision(this.state, actor, this.context)) && this.state.resolution.stage === "DECISION" && card.zone.playerId === actor && card.zone.zone === "LEGENDS" && card.face === "DOWN" && card.controllerId === actor && (this.getPlayer(actor).economy.callsThisTurn ?? 0) < policy.callLimitPerTurn && (effectiveCallCost(this.state, actor, this.context) === 0 || this.paymentCandidates(actor, effectiveCallCost(this.state, actor, this.context), []).length));
     }
     paymentCandidates(actor: PlayerId, remaining: number, selected: readonly PaymentSource[]) { return paymentCandidates(this.state, actor, this.context, remaining, selected); }
     listRollableFixerDice(actor: PlayerId) {

@@ -15,7 +15,8 @@ test("V6 foundation: historical decrease-by-two payload remains exact and decrea
 test("V6 foundation: directional decrease-by-three is explicit vocabulary while legacy shapes stay distinct", () => {
     const proposed = { kind: "ADJUST_GIG_UP_TO", target: { kind: "GIGS", relation: "ANY" }, maximum: 3, direction: "DECREASE" };
     assert.deepEqual(EffectSchema.parse(proposed), proposed);
-    assert.equal(EffectSchema.safeParse({ ...proposed, maximum: 2 }).success, false);
+    // Batch V60 widened the vocabulary to maximum 2 for Wakako's and Dexter's pinned "up to 2" Call modes; their gates stay exact.
+    assert.deepEqual(EffectSchema.parse({ ...proposed, maximum: 2 }), { ...proposed, maximum: 2 });
     const industrial = { ...proposed, maximum: 4, direction: "INCREASE" };
     assert.deepEqual(EffectSchema.parse(industrial), industrial);
 });

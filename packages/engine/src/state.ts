@@ -1,3 +1,10 @@
+import { effectiveCallCost } from "./free-call-support";
+import { validateFightDefeatImmunities } from "./fight-immunity";
+import { validateLegendSpendMetadata } from "./legend-spend-support";
+import { validateFightPowerGrants } from "./fight-power-grant";
+import { validateStealReductions } from "./steal-reduction";
+import { validateFirstGearHistory } from "./play-cost-support";
+import { validateFightWinHistory } from "./fight-win-support";
 import { validateArasakaDefeatHistory } from "./arasaka-defeat";
 import { validateTargetedDefeatState } from "./targeted-defeat-state";
 import { validateMustAttack } from "./must-attack";
@@ -122,6 +129,8 @@ export function validateState(input: unknown, context: EngineContext): Result<Ga
     const firstHistory = validateFirstAttackHistory(s, context); if (!firstHistory.ok) return firstHistory;
     const belowPower = validateBelowPowerHistory(s, context); if (!belowPower.ok) return belowPower; // Batch V49.
     const arasakaDefeat = validateArasakaDefeatHistory(s, context); if (!arasakaDefeat.ok) return arasakaDefeat; // Batch V50.
+    const fightWins = validateFightWinHistory(s, context); if (!fightWins.ok) return fightWins; // Batch V52.
+    const firstGear = validateFirstGearHistory(s, context); if (!firstGear.ok) return firstGear; // Batch V53.
     const fieldMetadata = validateFieldLegendMetadata(s, context); if (!fieldMetadata.ok) return fieldMetadata;
     const delayedMetadata = validateDelayedMetadata(s, context); if (!delayedMetadata.ok) return delayedMetadata;
     const delayedState = validateDelayedState(s, context); if (!delayedState.ok) return delayedState;
@@ -181,6 +190,10 @@ export function validateState(input: unknown, context: EngineContext): Result<Ga
     if (!restricted.ok) return restricted;
     const locked = validateReadyLocks(s, context);
     if (!locked.ok) return locked;
+    const reductions = validateStealReductions(s, context); if (!reductions.ok) return reductions; // Batch V57.
+    const grants = validateFightPowerGrants(s, context); if (!grants.ok) return grants; // Batch V58.
+    const immunities = validateFightDefeatImmunities(s, context); if (!immunities.ok) return immunities; // Batch V61.
+    const legendSpend = validateLegendSpendMetadata(s, context); if (!legendSpend.ok) return legendSpend; // Batch V59.
     const forced = validateMustAttack(s, context);
     if (!forced.ok) return forced;
     const prevention = validateFightPreventions(s, context);
@@ -228,7 +241,7 @@ export function validateState(input: unknown, context: EngineContext): Result<Ga
                 return failure("INVALID_CALL_CONTINUATION", "CALL target/actor/usage invalid");
             if (!supportsCall(b.cards.find(c => c.id === legend.cardId && c.revision === legend.revision), context).ok || s.resolution.current || s.resolution.pending.length || s.resolution.discovered.length || s.resolution.playContinuation || s.resolution.searchContinuation) return failure("INVALID_CALL_CONTINUATION", "CALL payment requires a supported source and exclusive continuation");
             const selected = continuation.selectedSources;
-            if (new Set(selected.map(p => p.cardInstanceId)).size !== selected.length || selected.some(p => !available.some(a => canonicalSerialize(a) === canonicalSerialize(p))) || selected.reduce((sum, p) => sum + paymentValue(s, context, p), 0) + continuation.remainingCost !== slice.callCost || continuation.remainingCost <= 0)
+            if (new Set(selected.map(p => p.cardInstanceId)).size !== selected.length || selected.some(p => !available.some(a => canonicalSerialize(a) === canonicalSerialize(p))) || selected.reduce((sum, p) => sum + paymentValue(s, context, p), 0) + continuation.remainingCost !== effectiveCallCost(s, continuation.actorId, context) || continuation.remainingCost <= 0)
                 return failure("INVALID_PAYMENT_SOURCES", "Payment selections or remaining cost invalid");
             const options = paymentCandidates(s, continuation.actorId, context, continuation.remainingCost, selected).map(source => ({ kind: "PAYMENT", source }));
             if (!options.length || choice?.kind !== "PAYMENT" || choice.min !== 1 || choice.max !== 1 || choice.ordered || choice.continuationId !== "call-payment@1" || canonicalSerialize(choice.options) !== canonicalSerialize(options))

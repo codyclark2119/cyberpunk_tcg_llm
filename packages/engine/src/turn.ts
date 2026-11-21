@@ -1,3 +1,7 @@
+import { noteSpent } from "./spend-triggers";
+import { effectiveCallCost } from "./free-call-support";
+import { beginLegendCallChoice, legendStartTurnEnabled, resolveStartTurnLegends } from "./legend-spend";
+import { supportsLegendSpendCard } from "./legend-spend-support";
 import { programPlayHistoryEnabled } from "./restriction-support";
 import { expireMustAttack } from "./must-attack";
 import { checkOvertimeVictory, recordOvertimeTurnStart } from "./overtime";
@@ -80,6 +84,9 @@ export class TurnMutation {
         expireStealRestrictions(this, actor); // 8.6.2.1, after the 8.6.1 check.
         expireReadyLocks(this, actor);
         expireMustAttack(this, actor); // Batch V43: "next turn" is over once the forcing player's own turn starts.
+        if (legendStartTurnEnabled(this.context)) { // Batch V59, 8.6.2.2: start-of-turn effects, before READY and the draw.
+            const started = resolveStartTurnLegends(this); if (!started.ok || s.match.outcome) return started;
+        }
         this.phase("READY");
         for (const zone of policy.readyZones)
             for (const id of s.players[actor].zones[zone]) {
@@ -101,16 +108,16 @@ export class TurnMutation {
         return success(null);
     }
     call(actor: PlayerId, legendId: CardInstanceId, sources: PaymentSource[]): Result<null> {
-        const s = this.state, view = new RulesView(s, this.context), policy = this.context.content.ruleset.gameplay!.turnSlice!;
+        const s = this.state, view = new RulesView(s, this.context);
         const supported = view.callEffectSupport(legendId);
         if (!supported.ok)
             return supported;
-        const payment = view.validatePaymentChoice(actor, sources, { kind: "EDDIES", amount: policy.callCost });
+        const payment = view.validatePaymentChoice(actor, sources, { kind: "EDDIES", amount: effectiveCallCost(s, actor, this.context) }); // Batch V66.
         if (!payment.ok)
             return payment;
         s.resolution.returnTo = actionReturnContext(s);
         for (const source of sources)
-            s.objects.cards[source.cardInstanceId].readiness = "SPENT";
+        { s.objects.cards[source.cardInstanceId].readiness = "SPENT"; noteSpent(this, source.cardInstanceId); } // Batch V69.
         this.emit({ kind: "PAYMENT_MADE", sources });
         const legend = s.objects.cards[legendId];
         legend.face = "UP";
@@ -120,6 +127,8 @@ export class TurnMutation {
         delete s.resolution.callContinuation;
         this.emit({ kind: "LEGEND_CALLED", cardInstanceId: legendId });
         const ability = view.getRevision(legendId)!.mechanics.abilities.find(a => a.trigger === "WHEN_CALLED");
+        // Batch V60: "{Call} Choose one effect." pauses for its mode through the activation continuation.
+        if (ability?.choose && supportsLegendSpendCard(view.getRevision(legendId), this.context).ok) return beginLegendCallChoice(this, legendId, actor, ability.id);
         if (ability) {
             this.phase("CALL_EFFECT");
             const effect = ability.effects[0];

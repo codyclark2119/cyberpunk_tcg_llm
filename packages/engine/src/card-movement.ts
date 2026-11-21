@@ -1,3 +1,6 @@
+import { expireFightDefeatImmunitiesOnDeparture } from "./fight-immunity";
+import { expireFightPowerGrantsOnDeparture } from "./fight-power-grant";
+import { expireStealReductionsOnDeparture } from "./steal-reduction";
 import { supportsFieldLegend } from "./field-legend-support";
 import { expireMustAttackOnDeparture } from "./must-attack";
 import type { LegendEntryMode } from "./legend-entry";
@@ -20,7 +23,7 @@ function revision(m: TurnMutation, id: CardInstanceId) {
 export function moveCardLocation(m: TurnMutation, id: CardInstanceId, zone: "BATTLEFIELD" | "LEGENDS" | "RESOLVING_PROGRAM" | Destination) {
     if (zone === "HAND") expirePowerOnHiddenEntry(m, id);
     const card = m.state.objects.cards[id], from = { ...card.zone };
-    if (from.zone === "BATTLEFIELD" && zone !== "BATTLEFIELD") { expireKeywordGrantsOnDeparture(m, id); expireReadyLocksOnDeparture(m, id); expireMustAttackOnDeparture(m, id); }
+    if (from.zone === "BATTLEFIELD" && zone !== "BATTLEFIELD") { expireKeywordGrantsOnDeparture(m, id); expireReadyLocksOnDeparture(m, id); expireMustAttackOnDeparture(m, id); expireStealReductionsOnDeparture(m, id); expireFightPowerGrantsOnDeparture(m, id); expireFightDefeatImmunitiesOnDeparture(m, id); }
     forgetLegendKnowledge(m, id);
     const refs = m.state.players[from.playerId].zones[from.zone]!;
     refs.splice(refs.indexOf(id), 1);

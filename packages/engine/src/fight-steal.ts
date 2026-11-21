@@ -1,3 +1,4 @@
+import { reducedAllowance } from "./steal-reduction";
 import { failure, success, type GameState, type GigInstanceId, type Result } from "@tcg/domain";
 import { belowPowerStealerPower, recordBelowPowerSteal } from "./below-power-steal";
 import type { EngineContext } from "./state";
@@ -13,11 +14,13 @@ import { PendingEffectSchema, TriggerBindingSchema } from "@tcg/domain";
 /** Batch V47: "it also steals a Gig." The fired effect's subject (the fight's winner) is the actor (11.5.1.1.2): while it is
  * still a face-up friendly field Unit that can steal, it steals one rival Gig its steal restrictions permit. */
 export function effectStealTargets(state: GameState, context: EngineContext): GigInstanceId[] {
-    const current = state.resolution.current, subjectId = current?.trigger?.kind === "DELAYED_FIGHT_OUTCOME" ? current.trigger.subjectId : undefined, subject = subjectId ? state.objects.cards[subjectId] : undefined;
+    // Batch V67: or the stealing host of a first-steal Gear trigger.
+    const current = state.resolution.current, t = current?.trigger, subjectId = t?.kind === "DELAYED_FIGHT_OUTCOME" || t?.kind === "WHEN_GIG_STOLEN" && current?.effect.kind === "STEAL_GIG" && current.effect.valueNotSharedByFriendly ? t.subjectId : undefined, subject = subjectId ? state.objects.cards[subjectId] : undefined;
     if (current?.effect.kind !== "STEAL_GIG" || !subject || subject.face !== "UP" || subject.zone.zone !== "BATTLEFIELD" || subject.controllerId !== current.controllerId || !effectiveCardTypes(state, subject.id, context).includes("UNIT")) return [];
     const power = effectivePower(state, subject.id, context), rival = state.match.playerOrder.find(p => p !== current.controllerId);
-    if (power === null || !rival || getGigStealAllowance(power, context) < 1) return [];
-    return stealableGigsFor(state, context, rival, subject.id).map(g => g.id).sort();
+    if (power === null || !rival || reducedAllowance(state, subject.id, getGigStealAllowance(power, context)) < 1) return []; // Batch V57: less any reduction.
+    const friendly = new Set(Object.values(state.objects.gigs).filter(g => g.controllerId === current.controllerId && g.location.zone === "GIGS" && g.roll.kind === "ROLLED").map(g => g.roll.kind === "ROLLED" ? g.roll.currentValue : 0));
+    return stealableGigsFor(state, context, rival, subject.id).filter(g => !(current.effect.kind === "STEAL_GIG" && current.effect.valueNotSharedByFriendly) || g.roll.kind === "ROLLED" && !friendly.has(g.roll.currentValue)).map(g => g.id).sort();
 }
 /** Moves the chosen Gig, records the stolen fact, and appends the steal triggers to this batch (11.5.1.7). */
 export function resolveEffectSteal(m: TurnMutation, gigId: GigInstanceId): Result<null> {

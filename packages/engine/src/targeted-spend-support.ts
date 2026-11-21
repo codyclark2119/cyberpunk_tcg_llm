@@ -1,3 +1,4 @@
+import { hasLegendSpendMetadata } from "./legend-spend-support";
 import { turnSliceAllows, canonicalSerialize, failure, success, type CardRevisionSnapshot, type DeepReadonly, type GameState } from "@tcg/domain";
 import type { EngineContext } from "./state";
 export function targetedSpendEnabled(context: EngineContext) { return turnSliceAllows(context.content.ruleset.gameplay?.turnSlice, "targetedSpend"); }
@@ -24,7 +25,7 @@ export function supportsTargetedSpendCard(card: DeepReadonly<CardRevisionSnapsho
         return failure("UNSUPPORTED_TARGETED_SPEND", "Entire reviewed metadata and spend shape required");
     return success(null);
 }
-function hasTargetedSpendMetadata(card: DeepReadonly<CardRevisionSnapshot>) { return card.execution?.scope === "TARGETED_SPEND_V1" || card.mechanics.abilities.some(a => a.effects.some(e => e.kind === "SPEND_UNIT" || e.kind === "SPEND_SOURCE")); }
+function hasTargetedSpendMetadata(card: DeepReadonly<CardRevisionSnapshot>) { return !hasLegendSpendMetadata(card) && (card.execution?.scope === "TARGETED_SPEND_V1" || card.mechanics.abilities.some(a => a.effects.some(e => e.kind === "SPEND_UNIT" || e.kind === "SPEND_SOURCE"))); } // Batch V62: Padre's Call spend is pinned by the Legend gate.
 export function validateTargetedSpendMetadata(state: GameState, context: EngineContext) {
     for (const c of Object.values(state.objects.cards)) {
         const r = context.content.cards.find(r => r.id === c.cardId && r.revision === c.revision);

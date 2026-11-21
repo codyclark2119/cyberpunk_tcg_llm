@@ -1,3 +1,4 @@
+import { effectiveCallCost } from "./free-call-support";
 import { checkOvertimeVictory } from "./overtime";
 import { unmetMustAttack } from "./must-attack";
 import { attackConditionPowerEnabled } from "./attack-condition-power-support";
@@ -72,7 +73,7 @@ function pushMainActions(state: GameState, actor: PlayerId, context: EngineConte
         return;
     for (const card of Object.values(state.objects.cards)) {
         if (view.isAttackEligible(actor, card.id)) actions.push({ actorId: actor, action: { kind: "DECLARE_ATTACK", cardInstanceId: card.id } });
-        if (canEnterField(state, actor, card.id, context)) actions.push({ actorId: actor, action: { kind: "GO_SOLO", cardInstanceId: card.id } });
+        if (canEnterField(state, actor, card.id, context, "GO_SOLO")) actions.push({ actorId: actor, action: { kind: "GO_SOLO", cardInstanceId: card.id } });
         if (canEnterField(state, actor, card.id, context) || canPlay(state, actor, card.id, context)) actions.push({ actorId: actor, action: { kind: "PLAY_CARD", cardInstanceId: card.id } });
         for (const ability of view.getRevision(card.id)?.mechanics.abilities ?? [])
             if (canActivate(state, actor, card.id, ability.id, context)) actions.push({ actorId: actor, action: { kind: "ACTIVATE_ABILITY", sourceInstanceId: card.id, abilityId: ability.id } });
@@ -134,6 +135,7 @@ function describeAction(a: GameAction, state: GameState, actor: PlayerId, view: 
             if (state.resolution.current?.effect.kind === "PREVENT_UNIT_READY" && option.kind === "CARD") return `${view.getRevision(option.cardInstanceId)?.displayName} (${option.cardInstanceId}, ${state.objects.cards[option.cardInstanceId].readiness.toLowerCase()}) can't ready until your next turn`;
             if (state.resolution.targetedDefeatContinuation && option.kind === "CARD") return state.resolution.targetedDefeatContinuation.phase === "ORDER" ? `Next in your Trash: ${view.getRevision(option.cardInstanceId)?.displayName} (${option.cardInstanceId})` : `Defeat ${view.getRevision(option.cardInstanceId)?.displayName} (${option.cardInstanceId}, power ${view.getEffectivePower(option.cardInstanceId)})`;
             if (state.resolution.triggerContinuation) {
+                if (state.resolution.searchContinuation && state.resolution.current?.effect.kind === "SEARCH_TOP_MAY_TRASH") return option.kind === "CARD" ? `Trash ${view.getRevision(option.cardInstanceId)?.displayName} from the top of your deck` : "Keep it on the top of your deck";
                 if (state.resolution.searchContinuation) return option.kind === "CARD" ? `Reveal and take ${view.getRevision(option.cardInstanceId)?.displayName}` : "Take no Gear";
                 if (option.kind === "CARD" && state.resolution.current?.effect.kind === "TRASH_THEN_RETURN_PROGRAM") return `Add ${view.getRevision(option.cardInstanceId)?.displayName} (${option.cardInstanceId}) from your trash to your hand`;
                 if (option.kind === "CARD" && state.resolution.current?.effect.kind === "GRANT_KEYWORD_UNTIL_END_OF_TURN") return `Give ${view.getRevision(option.cardInstanceId)?.displayName} (${option.cardInstanceId}) Adrenaline this turn`;
@@ -290,7 +292,7 @@ function dispatchTurnSliceAction(mutation: TurnMutation, view: RulesView, action
         case "PLAY_CARD": return canEnterField(s, actor, action.action.cardInstanceId, context) ? startLegendEntry(mutation, actor, action.action.cardInstanceId, "PLAY") : startPlay(mutation, actor, action.action.cardInstanceId);
         case "GO_SOLO": return startLegendEntry(mutation, actor, action.action.cardInstanceId, "GO_SOLO");
         case "ACTIVATE_ABILITY": return activateAbility(mutation, actor, action.action.sourceInstanceId, action.action.abilityId);
-        case "CALL_LEGEND": return callLegend(mutation, view, actor, action.action.cardInstanceId, context.content.ruleset.gameplay!.turnSlice!.callCost);
+        case "CALL_LEGEND": return callLegend(mutation, view, actor, action.action.cardInstanceId, effectiveCallCost(s, actor, context)); // Batch V66.
         case "CHOOSE": return continueChoice(mutation, view, actor, action.action.optionIndices[0]);
         case "END_TURN": return endTurn(mutation);
         case "SELL_CARD": sellCard(mutation, view, actor, action.action.cardInstanceId); return success(undefined);

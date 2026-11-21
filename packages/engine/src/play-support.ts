@@ -1,3 +1,11 @@
+import { hasSpendTrigger, supportsSpendTriggerCard } from "./spend-trigger-support";
+import { hasGearStealMetadata, supportsGearStealCard } from "./gear-steal-support";
+import { hasFreeCallMetadata, supportsFreeCallUnit } from "./free-call-support";
+import { hasAttackPermissionMetadata, supportsAttackPermissionUnit } from "./attack-permission-support";
+import { hasLegendSpendMetadata, supportsLegendSpendCard } from "./legend-spend-support";
+import { hasFightPowerGrant, supportsFightPowerProgram } from "./fight-power-grant-support";
+import { hasStealReduction, supportsStealReductionProgram } from "./steal-reduction-support";
+import { hasFightWinMetadata, supportsFightWinUnit } from "./fight-win-support";
 import { hasAttackConditionPowerMetadata, supportsAttackConditionPowerCard } from "./attack-condition-power-support";
 import { hasTargetedDefeatMetadata, supportsTargetedDefeatCard } from "./targeted-defeat-support";
 import { hasTargetedGearDefeatMetadata, supportsTargetedGearDefeatCard } from "./targeted-gear-defeat-support";
@@ -35,16 +43,30 @@ export function revisionOf(state: GameState, id: CardInstanceId, context: Engine
 }
 /** Admission certifies only reviewed semantic shapes, never catalog legality or arbitrary metadata. */
 export function supportsPlay(card: DeepReadonly<CardRevisionSnapshot> | undefined, context: EngineContext) {
+    // Batch V59: a Legend {Spend} ability or start-of-turn trigger is never played; its Legend pin admits it.
+    if (card && hasLegendSpendMetadata(card)) return failure("UNSUPPORTED_LEGEND_SPEND", "A Legend {Spend} ability is admitted only by its exact Legend pin");
     // Batch V44: a modal ability ("Choose one effect ... choose both instead") is admitted only by its exact Program pin.
     if (card && hasModalChoice(card)) return supportsModalProgram(card, context);
+    // Batch V64: a conditional attack permission is admitted only by its exact Unit pin.
+    if (card && hasAttackPermissionMetadata(card)) return supportsAttackPermissionUnit(card, context);
+    // Batch V66: a free Call and its discard-then-draw are admitted only by their exact Unit pin.
+    if (card && hasFreeCallMetadata(card)) return supportsFreeCallUnit(card, context);
     // Batch V45: an effect sell ("Sell the top card of your deck") is admitted only by its exact Program pin.
     if (card && hasSellTopEffect(card)) return supportsSellTopProgram(card, context);
     // Batch V47: a next-fight steal is admitted only by its exact Program pin.
+    if (card && hasGearStealMetadata(card)) return supportsGearStealCard(card, context); // Batch V67.
+    if (card && hasSpendTrigger(card)) return supportsSpendTriggerCard(card, context); // Batch V69.
     if (card && hasFightStealEffect(card)) return supportsFightStealProgram(card, context);
     // Batch V48: a free Unit play is admitted only by its exact pin.
     if (card && hasFreePlayEffect(card)) return supportsFreePlayCard(card, context);
     // Batch V49: a Quick or paid activation is admitted only by its exact Unit pin.
     if (card && hasQuickActivation(card)) return supportsQuickActivationCard(card, context);
+    // Batch V57: a steal reduction is admitted only by its exact Quick Program pin.
+    if (card && hasStealReduction(card)) return supportsStealReductionProgram(card, context);
+    // Batch V58: a while-fighting power grant is admitted only by its exact Quick Program pin.
+    if (card && hasFightPowerGrant(card)) return supportsFightPowerProgram(card, context);
+    // Batch V52: a fight-win override or first-win ready is admitted only by its exact Unit pin.
+    if (card && hasFightWinMetadata(card)) return supportsFightWinUnit(card, context);
     if (card && hasPlayCostReductionMetadata(card)) return supportsPlayCostReduction(card, context);
     if (card && hasFriendlyPlayPowerMetadata(card)) return supportsFriendlyPlayPowerUnit(card, context);
     if (card && hasAttackConditionPowerMetadata(card)) return supportsAttackConditionPowerCard(card, context);
@@ -101,10 +123,16 @@ export function canPlay(state: GameState, actor: PlayerId, id: CardInstanceId, c
     const c = state.objects.cards[id], r = revisionOf(state, id, context);
     return Boolean((main(state, actor) || (isReactDecision(state, actor, context) && r?.type === "PROGRAM" && r.mechanics.keywords.includes("QUICK"))) && c?.zone.zone === "HAND" && c.zone.playerId === actor && c.controllerId === actor && supportsPlay(r, context).ok && (r?.type !== "GEAR" || legalEquipHosts(state, id, context).length > 0) && r?.printedCost.kind === "EDDIES" && (playPaymentAmount(state, actor, id, context) === 0 || paymentCandidates(state, actor, context, playPaymentAmount(state, actor, id, context)!, []).length));
 }
+/** Batch V63: a Legend spends itself for its {Spend} ability, so it cannot also pay that ability's Eddie cost. */
+function spentCopy(state: GameState, id: CardInstanceId): GameState {
+    return { ...state, objects: { ...state.objects, cards: { ...state.objects.cards, [id]: { ...state.objects.cards[id], readiness: "SPENT" } } } };
+}
 export function canActivate(state: GameState, actor: PlayerId, id: CardInstanceId, abilityId: string, context: EngineContext) {
     const c = state.objects.cards[id], r = revisionOf(state, id, context), a = r?.mechanics.abilities.find(a => a.id === abilityId);
     // Batch V49 (11.30.2): a Quick activation is also offered in its controller's React Step; its Eddie cost must be payable (8.14.1: no Lag).
     const amount = activationPaymentAmount(a);
-    return Boolean((main(state, actor) || a?.activation?.timing === "QUICK" && isReactDecision(state, actor, context)) && supportsPlay(r, context).ok && r?.type === "UNIT" && c?.zone.zone === "BATTLEFIELD" && c.zone.playerId === actor && c.controllerId === actor && c.face === "UP" && c.readiness === "READY" && !c.statuses.includes("LAG") && a?.activation && a.conditions.every(condition => testCondition(state, actor, condition))
-        && (!amount || paymentCandidates(state, actor, context, amount, []).length));
+    // Batch V59: a face-up Legend's {Spend} ability is used from the Legends area (Legends never Lag).
+    const legend = r?.type === "LEGEND" && c?.zone.zone === "LEGENDS" && supportsLegendSpendCard(r, context).ok;
+    return Boolean((main(state, actor) || a?.activation?.timing === "QUICK" && isReactDecision(state, actor, context)) && (legend || supportsPlay(r, context).ok && r?.type === "UNIT" && c?.zone.zone === "BATTLEFIELD") && c.zone.playerId === actor && c.controllerId === actor && c.face === "UP" && c.readiness === "READY" && !c.statuses.includes("LAG") && a?.activation && a.conditions.every(condition => testCondition(state, actor, condition))
+        && (!amount || paymentCandidates(legend ? spentCopy(state, id) : state, actor, context, amount, []).length));
 }

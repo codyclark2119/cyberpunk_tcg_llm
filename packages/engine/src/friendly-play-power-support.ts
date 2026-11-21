@@ -1,3 +1,4 @@
+import { hasLegendSpendMetadata } from "./legend-spend-support";
 import { turnSliceAllows, failure, success, type CardRevisionSnapshot, type DeepReadonly, type GameState } from "@tcg/domain";
 import type { EngineContext } from "./state";
 
@@ -13,6 +14,7 @@ export function friendlyPlayPowerEnabled(context: EngineContext) {
         && turnSliceAllows(policy, "combatResolution");
 }
 export function hasFriendlyPlayPowerMetadata(card: DeepReadonly<CardRevisionSnapshot>) {
+    if (hasLegendSpendMetadata(card)) return false; // Batch V60: a Called Legend's power mode is pinned by the Legend gate.
     return card.mechanics.abilities.some(a => a.effects.some(e => e.kind === "POWER_UNTIL_END_OF_TURN" && e.target.kind === "FRIENDLY_UNIT"));
 }
 /** Complete semantic admission, not a CardId dispatch or an English-text parser. */

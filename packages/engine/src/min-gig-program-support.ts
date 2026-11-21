@@ -1,3 +1,4 @@
+import { hasLegendSpendMetadata } from "./legend-spend-support";
 import { turnSliceAllows, canonicalSerialize, failure, success, type CardRevisionSnapshot, type DeepReadonly, type GameState } from "@tcg/domain";
 import type { EngineContext } from "./state";
 
@@ -27,6 +28,7 @@ export function supportsMinGigProgramCard(card: DeepReadonly<CardRevisionSnapsho
 
 /** Directional decrease metadata belongs to this exact reviewed scope and fails closed elsewhere. */
 export function hasMinGigProgramMetadata(card: DeepReadonly<CardRevisionSnapshot>) {
+    if (hasLegendSpendMetadata(card)) return false; // Batch V60: a Legend's {Spend} decrease is pinned by the Legend gate.
     return card.execution?.scope === "MIN_GIG_PROGRAM_V1" ||
         card.mechanics.abilities.some(a => a.effects.some(e => e.kind === "ADJUST_GIG_UP_TO" && e.direction === "DECREASE"));
 }

@@ -24,7 +24,7 @@ function strongestFriendlyBound(state: GameState, actor: PlayerId, context: Engi
 function listDefeatableGear(state: GameState, actor: PlayerId, target: DefeatGearTarget, context: EngineContext) {
     if (!targetedGearDefeatPolicyComplete(context)) return [];
     return Object.values(state.objects.cards).filter(c => {
-        if (target.relation === "RIVAL" && c.controllerId === actor || c.face !== "UP" || !["BATTLEFIELD", "LEGENDS"].includes(c.zone.zone)) return false;
+        if (target.relation === "RIVAL" && c.controllerId === actor || target.relation === "FRIENDLY" && c.controllerId !== actor || c.face !== "UP" || !["BATTLEFIELD", "LEGENDS"].includes(c.zone.zone)) return false;
         if (!gearDefeatSupport(state, c.id, context).ok) return false;
         if (!target.power) return true; // Batch V34: "a Gear", any power.
         const power = effectivePower(state, c.id, context);
@@ -86,6 +86,15 @@ export function eachDefeatChoice(state: GameState, context: EngineContext, playe
     const e = state.resolution.current!;
     return { id: hashCanonical({ protocol: "targeted-defeat-each@1", turn: state.timing.turn, sourceId: e.sourceId, effectId: e.id, player }), actorId: player, kind: "TARGET", min: 1, max: 1, ordered: false, continuationId: "targeted-defeat-each@1",
         options: ownDefeatTargets(state, player, e, context).map(cardInstanceId => ({ kind: "CARD" as const, cardInstanceId })) };
+}
+/** Batch V55: the "if you do" clause's targets, listed against the current state. */
+export function thenDefeatTargets(state: GameState, e: Current, context: EngineContext) {
+    return e.effect.kind === "DEFEAT_UNIT" && e.effect.then ? listDefeatTargets(state, e.controllerId, e.effect.then, context) : [];
+}
+export function thenDefeatChoice(state: GameState, context: EngineContext): PendingChoice {
+    const e = state.resolution.current!;
+    return { id: hashCanonical({ protocol: "targeted-defeat-then@1", turn: state.timing.turn, sourceId: e.sourceId, effectId: e.id }), actorId: e.controllerId, kind: "TARGET", min: 1, max: 1, ordered: false, continuationId: "targeted-defeat-then@1",
+        options: thenDefeatTargets(state, e, context).map(cardInstanceId => ({ kind: "CARD" as const, cardInstanceId })) };
 }
 export function targetedDefeatChoice(state: GameState, context: EngineContext): PendingChoice {
     const e = state.resolution.current!;
