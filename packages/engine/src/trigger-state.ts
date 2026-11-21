@@ -1,3 +1,4 @@
+import { fightWinGuardAllows } from "./fight-win-support";
 import { belowPowerStealFires } from "./below-power-steal";
 import { isSearchEffect } from "./search-state";
 import { supportsFreePlayCard } from "./free-play-support";
@@ -43,6 +44,9 @@ import { supportsTargetedDefeatCard } from "./targeted-defeat-support";
 /** Validate the historical comparison, not a new comparison using post-trigger power. */
 export function validFightFact(state: GameState, f: FightResult) {
     const c = state.timing.combat, a = Math.max(0, f.attackerPower), d = Math.max(0, f.defenderPower);
+    // Batch V52: an effect-decided winner is still the attacker or the defender, and the other Unit is the only loser.
+    if (f.forcedWinnerId !== undefined) return "target" in c && c.target?.kind === "CARD" && f.attackerId === c.attackerId && f.defenderId === c.target.cardInstanceId && f.attackerComparisonPower === a && f.defenderComparisonPower === d
+        && [f.attackerId, f.defenderId].includes(f.forcedWinnerId) && f.winnerId === f.forcedWinnerId && canonicalSerialize(f.loserIds) === canonicalSerialize([f.forcedWinnerId === f.attackerId ? f.defenderId : f.attackerId]);
     return "target" in c && c.target?.kind === "CARD" && f.attackerId === c.attackerId && f.defenderId === c.target.cardInstanceId && f.attackerComparisonPower === a && f.defenderComparisonPower === d && f.winnerId === (a === d ? null : a > d ? f.attackerId : f.defenderId) && canonicalSerialize(f.loserIds) === canonicalSerialize([...(a <= d ? [f.attackerId] : []), ...(d <= a ? [f.defenderId] : [])]);
 }
 function validBinding(state: GameState, b: TriggerBinding, context: EngineContext) {
@@ -79,7 +83,7 @@ function validBinding(state: GameState, b: TriggerBinding, context: EngineContex
         return Boolean(d && supportsDelayedAttackGear(r, context).ok && canonicalSerialize(b) === canonicalSerialize(delayedBinding(d)));
     }
     if (origin.kind === "END_TURN") return b.kind === "WHEN_OWN_TURN_ENDS" && (b.sourceId === b.subjectId || r?.type === "GEAR" && ability.inherited === "EQUIPPED_HOST" && supportsEndTurnCard(r, context).ok) && b.controllerId === origin.playerId && ability.conditions.every(c => testCondition(state, b.controllerId, c, context, b.subjectId));
-    if (origin.kind === "FIGHT") return b.kind === "WHEN_FIGHT_WON" && b.subjectId === origin.result.winnerId && validFightFact(state, origin.result);
+    if (origin.kind === "FIGHT") return b.kind === "WHEN_FIGHT_WON" && b.subjectId === origin.result.winnerId && validFightFact(state, origin.result) && fightWinGuardAllows(state, b.sourceId, b.subjectId, b.abilityId, context);
     if (origin.kind === "DEFEAT" && (b.gigInstanceId === undefined || !origin.fight)) return b.kind === "WHEN_DEFEATED" && origin.defeated.some(d => d.targetId === b.subjectId) && !["BATTLEFIELD", "LEGENDS"].includes(subject.zone.zone);
     if (origin.kind === "BLOCK") return b.kind === "WHEN_BLOCKER_USED" && b.sourceId === b.subjectId && b.subjectId === origin.subjectId && supportsTriggerCard(r, context).ok;
     // Batch V24: a steal trigger binding names one Gig its subject stole in this Steal Step; no other binding names a Gig.

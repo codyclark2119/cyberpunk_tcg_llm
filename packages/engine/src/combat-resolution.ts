@@ -1,3 +1,4 @@
+import { recordFightWin } from "./fight-win-support";
 import { endTurnEnabled } from "./end-turn-support";
 import { beginTriggers } from "./trigger-resolution";
 import { triggersEnabled } from "./trigger-support";
@@ -116,6 +117,7 @@ export function resolveCombat(m: TurnMutation) {
         m.emit({ kind: "FIGHT_STARTED", attackerId: c.attackerId, defenderId: c.target.cardInstanceId });
         const result = evaluateFight(m.state, m.context, id => view.getEffectivePower(id));
         m.emit(result.event);
+        recordFightWin(m, result.event.winnerId); // Batch V52.
         return triggersEnabled(m.context) ? beginTriggers(m, { kind: "FIGHT", result: result.event }) : completeFightResult(m, result.event);
     }
     const power = view.getEffectivePower(c.attackerId);

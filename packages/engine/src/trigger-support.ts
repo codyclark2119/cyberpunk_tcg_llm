@@ -1,3 +1,4 @@
+import { hasFightWinMetadata, supportsFightWinUnit } from "./fight-win-support";
 import { supportsAttackConditionPowerCard } from "./attack-condition-power-support";
 import { hasMustAttackEffect, supportsMustAttackUnit } from "./must-attack-support";
 import { hasTypeRevealEffect, supportsTypeRevealUnit } from "./type-reveal-support";
@@ -40,6 +41,7 @@ export function supportsTriggerCard(card: DeepReadonly<CardRevisionSnapshot> | u
     if (hasFightStealEffect(card)) return failure("UNSUPPORTED_FIGHT_STEAL", "A next-fight steal is admitted only by its exact Program pin"); // Batch V47.
     if (hasFreePlayEffect(card)) return supportsFreePlayCard(card, context); // Batch V48.
     if (hasQuickActivation(card)) return supportsQuickActivationCard(card, context); // Batch V49.
+    if (hasFightWinMetadata(card)) return supportsFightWinUnit(card, context); // Batch V52.
     if (card && hasFriendlyPlayPowerMetadata(card)) return supportsFriendlyPlayPowerUnit(card, context);
     // Batch V43: the {Play} must-attack obligation (on a Blocker Unit) is admitted only by its exact pin.
     if (hasMustAttackEffect(card)) return supportsMustAttackUnit(card, context);

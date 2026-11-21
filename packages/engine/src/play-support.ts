@@ -1,3 +1,4 @@
+import { hasFightWinMetadata, supportsFightWinUnit } from "./fight-win-support";
 import { hasAttackConditionPowerMetadata, supportsAttackConditionPowerCard } from "./attack-condition-power-support";
 import { hasTargetedDefeatMetadata, supportsTargetedDefeatCard } from "./targeted-defeat-support";
 import { hasTargetedGearDefeatMetadata, supportsTargetedGearDefeatCard } from "./targeted-gear-defeat-support";
@@ -45,6 +46,8 @@ export function supportsPlay(card: DeepReadonly<CardRevisionSnapshot> | undefine
     if (card && hasFreePlayEffect(card)) return supportsFreePlayCard(card, context);
     // Batch V49: a Quick or paid activation is admitted only by its exact Unit pin.
     if (card && hasQuickActivation(card)) return supportsQuickActivationCard(card, context);
+    // Batch V52: a fight-win override or first-win ready is admitted only by its exact Unit pin.
+    if (card && hasFightWinMetadata(card)) return supportsFightWinUnit(card, context);
     if (card && hasPlayCostReductionMetadata(card)) return supportsPlayCostReduction(card, context);
     if (card && hasFriendlyPlayPowerMetadata(card)) return supportsFriendlyPlayPowerUnit(card, context);
     if (card && hasAttackConditionPowerMetadata(card)) return supportsAttackConditionPowerCard(card, context);

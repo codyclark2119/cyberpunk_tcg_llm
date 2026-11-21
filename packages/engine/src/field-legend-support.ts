@@ -1,3 +1,4 @@
+import { hasFightWinMetadata } from "./fight-win-support";
 import { turnSliceAllows, canonicalSerialize, failure, success, type CardRevisionSnapshot, type DeepReadonly, type GameState } from "@tcg/domain";
 import type { EngineContext } from "./state";
 import { hasModalChoice } from "./modal-program-support";
@@ -22,6 +23,7 @@ export function supportsFieldLegend(card: DeepReadonly<CardRevisionSnapshot> | u
     if (hasFightStealEffect(card)) return failure("UNSUPPORTED_FIGHT_STEAL", "A next-fight steal is admitted only by its exact Program pin"); // Batch V47.
     if (hasFreePlayEffect(card)) return failure("UNSUPPORTED_FREE_PLAY", "A free Unit play is admitted only by its exact pin"); // Batch V48.
     if (hasQuickActivation(card)) return failure("UNSUPPORTED_QUICK_ACTIVATION", "A Quick activation is admitted only by its exact Unit pin"); // Batch V49.
+    if (hasFightWinMetadata(card)) return failure("UNSUPPORTED_FIGHT_WIN", "A fight-win override is admitted only by its exact Unit pin"); // Batch V52.
     // Batch V18: a Go Solo Legend with a {Play} ability is admitted only through its exact targeted-defeat pin.
     if (card?.type === "LEGEND" && card.execution?.scope === "TARGETED_DEFEAT_V1") {
         if (!fieldLegendsEnabled(context) || !turnSliceAllows(policy, "gear") || !turnSliceAllows(policy, "combat") || !turnSliceAllows(policy, "react") || canonicalSerialize(card.mechanics.keywords) !== canonicalSerialize(["GO_SOLO"]))

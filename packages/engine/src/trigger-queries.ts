@@ -1,3 +1,4 @@
+import { fightWinGuardAllows } from "./fight-win-support";
 import { belowPowerStealFires } from "./below-power-steal";
 import { handPrograms, programBottomDeckTargets } from "./program-discard";
 import { mustAttackTargets } from "./must-attack";
@@ -43,7 +44,7 @@ export function discoverTriggers(state: GameState, origin: TriggerOrigin, contex
         const a = cardRevision(state, b.sourceId, context)!.mechanics.abilities.find(a => a.id === b.abilityId)!;
         return b.kind === "WHEN_OWN_TURN_ENDS" && b.controllerId === origin.playerId && a.conditions.every(c => testCondition(state, b.controllerId, c, context, b.subjectId));
     }))];
-    if (origin.kind === "FIGHT") return origin.result.winnerId ? effectiveTriggeredAbilities(state, origin.result.winnerId, context).filter(b => b.kind === "WHEN_FIGHT_WON") : [];
+    if (origin.kind === "FIGHT") return origin.result.winnerId ? effectiveTriggeredAbilities(state, origin.result.winnerId, context).filter(b => b.kind === "WHEN_FIGHT_WON" && fightWinGuardAllows(state, b.sourceId, b.subjectId, b.abilityId, context)) : []; // Batch V52: first win only.
     if (origin.kind === "DEFEAT") return [...origin.defeated.flatMap(d => effectiveTriggeredAbilities(state, d.targetId, context).filter(b => b.kind === "WHEN_DEFEATED")), ...(origin.fight?.outcomes ?? []).map(fightOutcomeBinding),
         // Batch V50: "The first time an ARASAKA Unit is defeated each turn": each field observer of either player, the defeated included.
         ...(origin.defeated.some(d => d.targetId === state.turnHistory?.firstArasakaDefeat) ? state.match.playerOrder.flatMap(p => [...state.players[p].zones.BATTLEFIELD].sort()).flatMap(id => effectiveTriggeredAbilities(state, id, context).filter(b => b.kind === "WHEN_UNIT_DEFEATED" && b.sourceId === b.subjectId)) : [])]; // Capture before movement; enqueue after.

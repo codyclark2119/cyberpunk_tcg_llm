@@ -1,3 +1,4 @@
+import { hasFightWinMetadata } from "./fight-win-support";
 import { supportsAttackingAuraLegend } from "./attacking-aura-support";
 import { supportsFirstAttackLegend } from "./first-attack-support";
 import { supportsFieldLegend } from "./field-legend-support";
@@ -15,6 +16,7 @@ export function supportsCall(card: DeepReadonly<CardRevisionSnapshot> | undefine
     if (hasFightStealEffect(card)) return failure("UNSUPPORTED_FIGHT_STEAL", "A next-fight steal is admitted only by its exact Program pin"); // Batch V47.
     if (hasFreePlayEffect(card)) return failure("UNSUPPORTED_FREE_PLAY", "A free Unit play is admitted only by its exact pin"); // Batch V48.
     if (hasQuickActivation(card)) return failure("UNSUPPORTED_QUICK_ACTIVATION", "A Quick activation is admitted only by its exact Unit pin"); // Batch V49.
+    if (hasFightWinMetadata(card)) return failure("UNSUPPORTED_FIGHT_WIN", "A fight-win override is admitted only by its exact Unit pin"); // Batch V52.
     if (card?.execution?.scope === "ATTACKING_AURA_V1") return supportsAttackingAuraLegend(card, context);
     if (card?.execution?.scope === "FIRST_ATTACK_HISTORY_V1") return supportsFirstAttackLegend(card, context);
     if (card?.execution?.scope === "FIELD_LEGENDS_V1") return supportsFieldLegend(card, context);

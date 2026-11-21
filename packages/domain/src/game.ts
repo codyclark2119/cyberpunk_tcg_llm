@@ -40,7 +40,9 @@ export const TimingStateSchema = z.strictObject({
 });
 export const FightResultSchema = z.strictObject({ kind: z.literal("FIGHT_RESULT"), attackerId: CardInstanceIdSchema, defenderId: CardInstanceIdSchema,
         attackerPower: z.number().int(), defenderPower: z.number().int(), attackerComparisonPower: z.number().int().nonnegative(), defenderComparisonPower: z.number().int().nonnegative(),
-        winnerId: CardInstanceIdSchema.nullable(), loserIds: z.array(CardInstanceIdSchema) });
+        winnerId: CardInstanceIdSchema.nullable(), loserIds: z.array(CardInstanceIdSchema),
+        // Batch V52 (11.4.1.4): a card effect decided the winner, superseding the power comparison.
+        forcedWinnerId: CardInstanceIdSchema.optional() });
 export type FightResult = DeepReadonly<z.infer<typeof FightResultSchema>>;
 /** Registered future work, distinct from effects requiring resolution now. */
 export const DelayedEffectSchema = z.strictObject({
@@ -106,6 +108,8 @@ export const BelowPowerStealSchema = z.strictObject({ stealerId: CardInstanceIdS
 export const TurnHistorySchema = z.strictObject({
     belowPowerSteals: z.record(PlayerIdSchema, z.array(BelowPowerStealSchema).min(1).max(2)).optional(),
     // Batch V50: the turn's first defeated ARASAKA Unit (either player's), and the Units a free play let attack rival Units this turn.
+    // Batch V52: fights each Unit won this turn, for "the first time this Unit wins a fight each turn".
+    fightWins: z.record(CardInstanceIdSchema, z.number().int().positive()).optional(),
     firstArasakaDefeat: CardInstanceIdSchema.optional(), rivalUnitAttackGrants: z.array(CardInstanceIdSchema).min(1).optional(),
     firstArasakaAttacks: z.record(PlayerIdSchema, QualifyingAttackSummarySchema).optional(), gigsStolenByUnit: z.record(CardInstanceIdSchema, z.number().int().positive()).optional(), turn: z.number().int().positive(), triggeredBatches: z.number().int().nonnegative(), blueUnitOrGearPlays: z.record(PlayerIdSchema, z.number().int().nonnegative()), programPlays: z.record(PlayerIdSchema, z.number().int().nonnegative()).optional() });
 export const PendingEffectSchema = z.strictObject({ id: z.string().min(1), controllerId: PlayerIdSchema, sourceId: CardInstanceIdSchema.nullable(), primitiveIndex: z.literal(1).optional(), effect: EffectSchema, trigger: TriggerBindingSchema.omit({ sourceId: true, controllerId: true }).extend({ turn: z.number().int().positive(), ordinal: z.number().int().positive() }).optional(), causedBySequence: z.number().int().nonnegative() });
