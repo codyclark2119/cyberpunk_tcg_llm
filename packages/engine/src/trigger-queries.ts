@@ -159,7 +159,9 @@ export function triggerChoice(state: GameState, context: EngineContext): Pending
     else if (c.phase === "TARGET" && current?.effect.kind === "CHOOSE_TYPE_REVEAL_TOP_ADD_AND_READY_EDDIE") { kind = "MODE"; options = REVEAL_TYPES.map(mode => ({ kind: "MODE", mode })); }
     else if (c.phase === "TARGET") {
         kind = "TARGET";
-        options = current?.effect.kind === "SEARCH_GEAR" || current?.effect.kind === "SEARCH_COST_MATCHING_GIGS"
+        options = current?.effect.kind === "SEARCH_TOP_MAY_TRASH" // Batch V70: keep it on top, or trash it.
+            ? [{ kind: "MODE", mode: "DONE" }, ...(state.resolution.searchContinuation?.looked ?? []).map(cardInstanceId => ({ kind: "CARD" as const, cardInstanceId }))]
+            : current?.effect.kind === "SEARCH_GEAR" || current?.effect.kind === "SEARCH_COST_MATCHING_GIGS"
             ? [{ kind: "MODE", mode: "DONE" }, ...searchTargets(state, context).filter(id => !state.resolution.searchContinuation?.selected.includes(id)).map(cardInstanceId => ({ kind: "CARD" as const, cardInstanceId }))]
             : current?.effect.kind === "FORCE_RIVAL_UNIT_ATTACK"
             ? mustAttackTargets(state, actorId, context).map(cardInstanceId => ({ kind: "CARD", cardInstanceId }))

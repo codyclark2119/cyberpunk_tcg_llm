@@ -9,12 +9,12 @@
   },
   "totals": {
     "cards": 151,
-    "admitted": 119,
-    "notAdmitted": 32,
+    "admitted": 120,
+    "notAdmitted": 31,
     "notAdmittedOnlyCoveredFamilies": 0,
     "byAdmission": {
-      "NOT_ADMITTED": 32,
-      "SOURCE_MATCH": 119
+      "NOT_ADMITTED": 31,
+      "SOURCE_MATCH": 120
     }
   },
   "families": [
@@ -60,15 +60,6 @@
       "summary": "Equip a Gear to a friendly Unit or face-up Legend; Gear power adds to its host.",
       "notes": "Equip onto Units is supported for the admitted Gear. Gear on a Legend host in combat (a Go Solo Legend) is unsupported.",
       "cardCount": 22,
-      "notAdmittedCount": 8,
-      "soleBlockerCount": 0
-    },
-    {
-      "family": "DECK_SEARCH_REVEAL",
-      "status": "PARTIAL",
-      "summary": "Top-of-deck manipulation: search/look/reveal top N, trash from the top (Trash N), bottom-deck the rest.",
-      "notes": "SEARCH_GEAR (count<=5, Gear with max cost, take<=2) only.",
-      "cardCount": 15,
       "notAdmittedCount": 7,
       "soleBlockerCount": 0
     },
@@ -79,6 +70,15 @@
       "notes": "Fixed amounts on RIVAL_UNIT, SOURCE_SUBJECT or FRIENDLY_UNIT. Keyword grants, all-Unit and filtered targets are missing.",
       "cardCount": 19,
       "notAdmittedCount": 7,
+      "soleBlockerCount": 0
+    },
+    {
+      "family": "DECK_SEARCH_REVEAL",
+      "status": "PARTIAL",
+      "summary": "Top-of-deck manipulation: search/look/reveal top N, trash from the top (Trash N), bottom-deck the rest.",
+      "notes": "SEARCH_GEAR (count<=5, Gear with max cost, take<=2) only.",
+      "cardCount": 15,
+      "notAdmittedCount": 6,
       "soleBlockerCount": 0
     },
     {
@@ -105,15 +105,6 @@
       "summary": "[Quick] timing: Programs and activated abilities usable in the react window.",
       "notes": "Quick Programs are supported for Floor It, Reboot Optics and Detonate. Quick activated [Spend] abilities on Legends, Units and Gear are not offered in any react window yet.",
       "cardCount": 12,
-      "notAdmittedCount": 5,
-      "soleBlockerCount": 0
-    },
-    {
-      "family": "TRIGGER_WHEN_SPENT",
-      "status": "MISSING",
-      "summary": "WHEN_SPENT: 'when this Unit or Legend is spent' (includes Zetatech Faceplate).",
-      "notes": "Documented as unsupported; needs every spending path (attack, Blocker, [Spend] costs, effects) to emit one event.",
-      "cardCount": 6,
       "notAdmittedCount": 5,
       "soleBlockerCount": 0
     },
@@ -159,6 +150,15 @@
       "summary": "Return a card from the trash (or from cards just trashed) to hand.",
       "notes": "",
       "cardCount": 7,
+      "notAdmittedCount": 4,
+      "soleBlockerCount": 0
+    },
+    {
+      "family": "TRIGGER_WHEN_SPENT",
+      "status": "MISSING",
+      "summary": "WHEN_SPENT: 'when this Unit or Legend is spent' (includes Zetatech Faceplate).",
+      "notes": "Documented as unsupported; needs every spending path (attack, Blocker, [Spend] costs, effects) to emit one event.",
+      "cardCount": 6,
       "notAdmittedCount": 4,
       "soleBlockerCount": 0
     },
@@ -2825,18 +2825,14 @@
       "colors": [
         "BLUE"
       ],
-      "admission": "NOT_ADMITTED",
-      "revision": null,
+      "admission": "SOURCE_MATCH",
+      "revision": 1,
       "families": [
         "DECK_SEARCH_REVEAL",
         "GEAR_EQUIP",
         "TRIGGER_WHEN_SPENT"
       ],
-      "blockingFamilies": [
-        "DECK_SEARCH_REVEAL",
-        "GEAR_EQUIP",
-        "TRIGGER_WHEN_SPENT"
-      ],
+      "blockingFamilies": [],
       "note": null
     },
     {

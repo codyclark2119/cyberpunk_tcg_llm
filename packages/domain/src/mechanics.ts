@@ -210,6 +210,8 @@ export const EffectSchema = z.discriminatedUnion("kind", [
     // Batch V35: "Search the top 4 cards of your deck. Reveal any number of cards with cost equal to any friendly Gig values and add
     // them to your hand. Bottom-deck the rest."
     z.strictObject({ kind: z.literal("SEARCH_COST_MATCHING_GIGS"), count: z.literal(4) }),
+    // Batch V70: "search the top card of your deck. You may trash it. (Otherwise, keep it on the top of your deck.)"
+    z.strictObject({ kind: z.literal("SEARCH_TOP_MAY_TRASH"), count: z.literal(1) }),
     // Batch V36: "Search the top 3 cards of your deck. Add 1 to your hand. You may add 1 more for each friendly min Gig. Bottom-deck the rest."
     z.strictObject({ kind: z.literal("SEARCH_TAKE_ONE_PLUS_PER_MIN_GIG"), count: z.literal(3) }),
     // Batch V37: "You may set a Gig's value to the value of another Gig." (6.5: either player's Gigs, within the die's faces.)

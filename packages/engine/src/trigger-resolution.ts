@@ -280,6 +280,13 @@ export function advanceTriggers(m: TurnMutation): Result<null> {
         if (!searchTargets(m.state, m.context).length) { const done = finishSearch(m); return done.ok ? completed(m) : done; }
         c.phase = "TARGET"; return offer(m);
     }
+    // Batch V70: the controller privately looks at the top card, then trashes it or keeps it on top; an empty deck does nothing.
+    if (e.kind === "SEARCH_TOP_MAY_TRASH") {
+        const deck = m.state.players[r.current.controllerId].zones.DECK;
+        if (!deck.length) return completed(m);
+        r.searchContinuation = { looked: deck.slice(0, e.count), selected: [] };
+        c.phase = "TARGET"; return offer(m);
+    }
     // Batch V20: "[Play] Trash 3. Add a Program from among them"; "[Play] Give another friendly Unit ... [Adrenaline] this turn".
     if (e.kind === "TRASH_THEN_RETURN_PROGRAM") {
         if (!beginTrashProgram(m)) return completed(m);
@@ -513,6 +520,12 @@ export function continueTrigger(m: TurnMutation, index: number, forced = false):
             if (option.kind !== "CARD" || !listSpendUnitTargets(m.state, current.controllerId, current.effect.target, m.context).includes(option.cardInstanceId)) return failure("INVALID_READY_LOCK_TARGET", "Choose a current rival Unit");
             m.emit({ kind: "CARD_TARGET_SELECTED", effectId: current.id, sourceId: current.sourceId!, targetId: option.cardInstanceId, controllerId: current.controllerId, forced });
             const locked = applyReadyLock(m, option.cardInstanceId); return locked.ok ? completed(m) : locked;
+        }
+        if (current.effect.kind === "SEARCH_TOP_MAY_TRASH") { // Batch V70.
+            const looked = r.searchContinuation?.looked ?? [];
+            if (option.kind === "CARD" && looked.includes(option.cardInstanceId) && m.state.players[current.controllerId].zones.DECK[0] === option.cardInstanceId) moveCardLocation(m, option.cardInstanceId, "TRASH");
+            else if (option.kind !== "MODE" || option.mode !== "DONE") return failure("INVALID_SEARCH_TARGET", "Trash the looked-at card or keep it on top");
+            delete r.searchContinuation; return completed(m);
         }
         if (isSearchEffect(current.effect)) {
             // 11.17.4.1: a hidden search may purposely fail to find; the rest is bottom-decked either way.

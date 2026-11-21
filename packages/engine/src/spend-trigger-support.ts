@@ -7,7 +7,12 @@ const SPEND_TRIGGER_SHAPES = [
     // Batch V69: NetWatch Netdriver. "(Equip to a friendly Unit or face-up Legend.) When this Unit or Legend is spent, draw 1."
     { type: "GEAR", sell: true, power: 2, equip: { kind: "FRIENDLY_UNIT_OR_FACE_UP_LEGEND" }, modifiers: [{ kind: "GRANT_PRINTED_POWER_TO_HOST" }],
         colors: ["BLUE"], ram: { BLUE: 2 }, tags: ["Cyberware", "Netrunner", "Netwatch"], cost: 3,
-        abilities: [ability({ trigger: "WHEN_SPENT", inherited: "EQUIPPED_HOST", effects: [{ kind: "DRAW", count: 1 }] })] }
+        abilities: [ability({ trigger: "WHEN_SPENT", inherited: "EQUIPPED_HOST", effects: [{ kind: "DRAW", count: 1 }] })] },
+    // Batch V70: Tetratronic Rippler. "(Equip to a friendly Unit or face-up Legend.) When this Unit or Legend is spent, search the top
+    // card of your deck. You may trash it. (Otherwise, keep it on the top of your deck.)"
+    { type: "GEAR", sell: true, power: 1, equip: { kind: "FRIENDLY_UNIT_OR_FACE_UP_LEGEND" }, modifiers: [{ kind: "GRANT_PRINTED_POWER_TO_HOST" }],
+        colors: ["BLUE"], ram: { BLUE: 2 }, tags: ["Cyberware"], cost: 1,
+        abilities: [ability({ trigger: "WHEN_SPENT", inherited: "EQUIPPED_HOST", effects: [{ kind: "SEARCH_TOP_MAY_TRASH", count: 1 }] })] }
 ].map(shape => canonicalSerialize({ keywords: [], restrictions: [], ...shape }));
 /** Any "when spent" trigger routes here first, so no other gate can admit what it does not read. */
 export function hasSpendTrigger(card: DeepReadonly<CardRevisionSnapshot> | undefined) {
