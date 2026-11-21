@@ -39,7 +39,12 @@ export function bottomDeck(m: TurnMutation, id: CardInstanceId, forced: boolean)
     m.emit({ kind: "CARD_TARGET_SELECTED", effectId: current.id, sourceId: current.sourceId!, targetId: id, controllerId: current.controllerId, forced });
     for (const gearId of gearIds) m.emit({ kind: "GEAR_DETACHED", gearInstanceId: gearId, hostInstanceId: id, reason: "HOST_LEFT_AREA" });
     host.attachments = [];
-    const order = [...batch];
+    moveToBottom(m, owner, batch);
+    if (cardRevision(s, id, m.context)?.type === "LEGEND") moveCardLocation(m, id, "REMOVED");
+    return success(null);
+}
+function moveToBottom(m: TurnMutation, owner: PlayerId, batch: readonly CardInstanceId[]) {
+    const s = m.state, order = [...batch];
     for (let i = order.length - 1; i > 0; i--) {
         const r = drawDeterministicInteger(s.rng, i + 1);
         s.rng = r.rng;
@@ -61,13 +66,29 @@ export function bottomDeck(m: TurnMutation, id: CardInstanceId, forced: boolean)
         s.players[owner].zones.DECK.push(cid);
         m.emit({ kind: "CARD_MOVED", cardInstanceId: cid, from, to: card.zone });
     }
-    if (cardRevision(s, id, m.context)?.type === "LEGEND") moveCardLocation(m, id, "REMOVED");
+}
+/** Batch V54: "bottom-deck all": every qualifying Unit and its Gear leave together; each owner's cards go to the bottom of
+ * their deck in one random order (11.15.1). */
+function bottomDeckAll(m: TurnMutation, ids: readonly CardInstanceId[]): Result<null> {
+    const s = m.state, current = s.resolution.current!, byOwner = new Map<PlayerId, CardInstanceId[]>(), legends: CardInstanceId[] = [];
+    for (const id of ids) {
+        const host = s.objects.cards[id], gearIds = [...host.attachments].sort();
+        if (gearIds.some(g => s.objects.cards[g].ownerId !== host.ownerId)) return failure("UNSUPPORTED_MULTI_OWNER_ORDER", "Bottom-decking cards of different owners together needs a reviewed protocol");
+        m.emit({ kind: "CARD_TARGET_SELECTED", effectId: current.id, sourceId: current.sourceId!, targetId: id, controllerId: current.controllerId, forced: true });
+        for (const gearId of gearIds) m.emit({ kind: "GEAR_DETACHED", gearInstanceId: gearId, hostInstanceId: id, reason: "HOST_LEFT_AREA" });
+        host.attachments = [];
+        byOwner.set(host.ownerId, [...(byOwner.get(host.ownerId) ?? []), id, ...gearIds]);
+        if (cardRevision(s, id, m.context)?.type === "LEGEND") legends.push(id);
+    }
+    for (const owner of s.match.playerOrder) { const batch = byOwner.get(owner); if (batch) moveToBottom(m, owner, batch); }
+    for (const id of legends) moveCardLocation(m, id, "REMOVED");
     return success(null);
 }
 /** Bottom-deck one Unit of the current phase; a single eligible Unit is forced and none ends the primitive. */
 function advance(m: TurnMutation, offer: (m: TurnMutation) => Result<null>): Result<null> {
     const s = m.state, c = s.resolution.playContinuation!, current = s.resolution.current!;
     if (current.effect.kind !== "BOTTOM_DECK_UNIT") return failure("INVALID_BOTTOM_DECK", "Expected the bottom-deck primitive");
+    if (current.effect.target.all) return bottomDeckAll(m, currentBottomDeckTargets(s, m.context));
     for (;;) {
         const targets = currentBottomDeckTargets(s, m.context);
         if (targets.length > 1) return offer(m);
@@ -96,6 +117,7 @@ export function chooseBottomDeck(m: TurnMutation, id: CardInstanceId, offer: (m:
 export function validateBottomDeck(state: GameState, context: EngineContext) {
     const c = state.resolution.playContinuation!, current = state.resolution.current;
     if (current?.effect.kind !== "BOTTOM_DECK_UNIT") return c.bottomDecked ? failure("INVALID_BOTTOM_DECK", "A bottom-decked Unit belongs only to the current bottom-deck primitive") : success(null);
+    if (current.effect.target.all) return failure("INVALID_BOTTOM_DECK", "Bottom-decking all qualifying Units never pauses"); // Batch V54.
     const first = c.bottomDecked ? state.objects.cards[c.bottomDecked] : undefined;
     if (c.targetGigId || state.timing.step !== "TARGET_SELECTION" || currentBottomDeckTargets(state, context).length < 2 || state.resolution.targetedDefeatContinuation || state.resolution.defeatContinuation || state.resolution.triggerContinuation
         || (c.bottomDecked && (!current.effect.then || !first || !(first.zone.zone === "DECK" && first.zone.playerId === first.ownerId || first.zone.zone === "REMOVED" && cardRevision(state, first.id, context)?.type === "LEGEND"))))

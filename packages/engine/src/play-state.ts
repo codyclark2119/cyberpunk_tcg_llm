@@ -119,7 +119,7 @@ export function validatePlayState(state: GameState, context: EngineContext) {
         } else if (current.effect.kind === "BOTTOM_DECK_UNIT") {
             const bottomed = validateBottomDeck(state, context); if (!bottomed.ok) return bottomed;
         } else if (current.effect.kind === "POWER_UNTIL_END_OF_TURN") {
-            if (c.targetGigId || powerTargets(state, c.actorId, context).length < 2 || state.timing.step !== "TARGET_SELECTION") return failure("INVALID_POWER_TARGET", "Only strategic current rival-Unit choices pause the power primitive");
+            if (c.targetGigId || current.effect.target.kind === "ALL_RIVAL_UNITS" || powerTargets(state, c.actorId, context).length < 2 || state.timing.step !== "TARGET_SELECTION") return failure("INVALID_POWER_TARGET", "Only strategic current rival-Unit choices pause the power primitive");
         } else {
             const targets = adjustmentTargets(state);
             if (!targets.length || (c.targetGigId && !targets.includes(c.targetGigId)) || state.timing.step !== (c.targetGigId ? "AMOUNT_SELECTION" : "TARGET_SELECTION")) return failure("INVALID_GIG_TARGET", "Gig target and decision step must remain eligible");

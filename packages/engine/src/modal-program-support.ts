@@ -7,7 +7,11 @@ const MODAL_PROGRAM_SHAPES = [
     // Batch V44: Pyramid Song. "Choose one effect. If a friendly d4 is a min Gig, choose both instead. Give a rival Unit -5 power
     // this turn. // Bottom-deck a rival Unit with power 0."
     { colors: ["BLUE"], ram: { BLUE: 3 }, tags: ["Braindance"], cost: 3, abilities: [ability({ choose: { count: 1, allInstead: { kind: "FRIENDLY_GIG_IS_MIN", dieType: "D4" } },
-        effects: [{ kind: "POWER_UNTIL_END_OF_TURN", target: { kind: "RIVAL_UNIT" }, amount: -5 }, { kind: "BOTTOM_DECK_UNIT", target: { relation: "RIVAL", power: 0 } }] })] }
+        effects: [{ kind: "POWER_UNTIL_END_OF_TURN", target: { kind: "RIVAL_UNIT" }, amount: -5 }, { kind: "BOTTOM_DECK_UNIT", target: { relation: "RIVAL", power: 0 } }] })] },
+    // Batch V54: Towerfall. "Choose one effect. If you have less ☆ (Street Cred) than a Rival, choose both instead. Give all rival
+    // Units -5 power this turn. // Bottom-deck all rival Units with power 0."
+    { colors: ["BLUE"], ram: { BLUE: 4 }, tags: ["Braindance"], cost: 6, abilities: [ability({ choose: { count: 1, allInstead: { kind: "STREET_CRED_LESS_THAN_RIVAL" } },
+        effects: [{ kind: "POWER_UNTIL_END_OF_TURN", target: { kind: "ALL_RIVAL_UNITS" }, amount: -5 }, { kind: "BOTTOM_DECK_UNIT", target: { relation: "RIVAL", power: 0, all: true } }] })] }
 ].map(shape => canonicalSerialize({ type: "PROGRAM", sell: true, power: null, keywords: [], equip: null, modifiers: [], restrictions: [], ...shape }));
 /** Any modal ability routes here first, so no other gate can admit a `choose` it does not read. */
 export function hasModalChoice(card: DeepReadonly<CardRevisionSnapshot> | undefined) {

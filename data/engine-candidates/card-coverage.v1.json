@@ -9,12 +9,12 @@
   },
   "totals": {
     "cards": 151,
-    "admitted": 102,
-    "notAdmitted": 49,
+    "admitted": 103,
+    "notAdmitted": 48,
     "notAdmittedOnlyCoveredFamilies": 0,
     "byAdmission": {
-      "NOT_ADMITTED": 49,
-      "SOURCE_MATCH": 102
+      "NOT_ADMITTED": 48,
+      "SOURCE_MATCH": 103
     }
   },
   "families": [
@@ -28,21 +28,21 @@
       "soleBlockerCount": 0
     },
     {
-      "family": "CONDITION_BOARD",
-      "status": "PARTIAL",
-      "summary": "Generic target filters and board conditions: classification, cost, power, ready/spent, equipped, face-up, named, lowest power.",
-      "notes": "Documented as unsupported: generic condition/filter language. Each admitted filter is a literal.",
-      "cardCount": 34,
-      "notAdmittedCount": 15,
-      "soleBlockerCount": 0
-    },
-    {
       "family": "SPEND_ABILITY",
       "status": "PARTIAL",
       "summary": "Activated abilities with a [Spend] cost (and optional Eddie cost) on Legends, Units or Gear.",
       "notes": "Admitted only for Kerry: The Last Rockerboy (a Unit). Face-up Legend [Spend] abilities and Gear [Spend] abilities are not.",
       "cardCount": 17,
       "notAdmittedCount": 15,
+      "soleBlockerCount": 0
+    },
+    {
+      "family": "CONDITION_BOARD",
+      "status": "PARTIAL",
+      "summary": "Generic target filters and board conditions: classification, cost, power, ready/spent, equipped, face-up, named, lowest power.",
+      "notes": "Documented as unsupported: generic condition/filter language. Each admitted filter is a literal.",
+      "cardCount": 34,
+      "notAdmittedCount": 14,
       "soleBlockerCount": 0
     },
     {
@@ -69,7 +69,7 @@
       "summary": "Power or keyword changes 'this turn' on a chosen Unit.",
       "notes": "Fixed amounts on RIVAL_UNIT, SOURCE_SUBJECT or FRIENDLY_UNIT. Keyword grants, all-Unit and filtered targets are missing.",
       "cardCount": 19,
-      "notAdmittedCount": 11,
+      "notAdmittedCount": 10,
       "soleBlockerCount": 0
     },
     {
@@ -100,15 +100,6 @@
       "soleBlockerCount": 0
     },
     {
-      "family": "MODAL_CHOICE",
-      "status": "MISSING",
-      "summary": "'Choose one effect' (and 'choose both instead' upgrades).",
-      "notes": "PendingChoice MODE exists for setup, search and Gig steps, but no ability carries modes.",
-      "cardCount": 8,
-      "notAdmittedCount": 7,
-      "soleBlockerCount": 0
-    },
-    {
       "family": "PLAY_BY_EFFECT",
       "status": "MISSING",
       "summary": "Play a card by an effect: from hand, trash or deck top, for free or for its cost, with after-play riders.",
@@ -132,6 +123,15 @@
       "summary": "Discard: self discard, a Rival discards, discard as a cost, discard a hand.",
       "notes": "DISCARD_CARDS supports only the controller discarding exactly 1.",
       "cardCount": 15,
+      "notAdmittedCount": 6,
+      "soleBlockerCount": 0
+    },
+    {
+      "family": "MODAL_CHOICE",
+      "status": "MISSING",
+      "summary": "'Choose one effect' (and 'choose both instead' upgrades).",
+      "notes": "PendingChoice MODE exists for setup, search and Gig steps, but no ability carries modes.",
+      "cardCount": 8,
       "notAdmittedCount": 6,
       "soleBlockerCount": 0
     },
@@ -235,15 +235,6 @@
       "soleBlockerCount": 0
     },
     {
-      "family": "CONDITION_STREET_CRED",
-      "status": "PARTIAL",
-      "summary": "Conditions on Street Cred.",
-      "notes": "Nearly complete as conditions; gating an effect mode on them is not.",
-      "cardCount": 13,
-      "notAdmittedCount": 3,
-      "soleBlockerCount": 0
-    },
-    {
       "family": "EDDIE_ECONOMY",
       "status": "PARTIAL",
       "summary": "Ready Eddies, sell cards from unusual zones, pay Eddies during resolution.",
@@ -298,12 +289,12 @@
       "soleBlockerCount": 0
     },
     {
-      "family": "UNIT_ZONE_MOVE",
-      "status": "MISSING",
-      "summary": "Move a Unit off the field other than defeat: bottom-deck it or return it to hand.",
-      "notes": "MOVE_CARD is schema-only with no handler.",
-      "cardCount": 10,
-      "notAdmittedCount": 3,
+      "family": "CONDITION_STREET_CRED",
+      "status": "PARTIAL",
+      "summary": "Conditions on Street Cred.",
+      "notes": "Nearly complete as conditions; gating an effect mode on them is not.",
+      "cardCount": 13,
+      "notAdmittedCount": 2,
       "soleBlockerCount": 0
     },
     {
@@ -312,15 +303,6 @@
       "summary": "Look at friendly face-down Legends.",
       "notes": "One Legend, attack-triggered (Kiroshi Optics). 'All face-down Legends' is missing.",
       "cardCount": 3,
-      "notAdmittedCount": 2,
-      "soleBlockerCount": 0
-    },
-    {
-      "family": "MASS_EFFECT",
-      "status": "MISSING",
-      "summary": "Effects on all Units or each player.",
-      "notes": "",
-      "cardCount": 5,
       "notAdmittedCount": 2,
       "soleBlockerCount": 0
     },
@@ -370,11 +352,29 @@
       "soleBlockerCount": 0
     },
     {
+      "family": "UNIT_ZONE_MOVE",
+      "status": "MISSING",
+      "summary": "Move a Unit off the field other than defeat: bottom-deck it or return it to hand.",
+      "notes": "MOVE_CARD is schema-only with no handler.",
+      "cardCount": 10,
+      "notAdmittedCount": 2,
+      "soleBlockerCount": 0
+    },
+    {
       "family": "GIG_ROLL",
       "status": "MISSING",
       "summary": "Hooks on rolling a Gig die: rerolls and triggers on rolled results.",
       "notes": "",
       "cardCount": 1,
+      "notAdmittedCount": 1,
+      "soleBlockerCount": 0
+    },
+    {
+      "family": "MASS_EFFECT",
+      "status": "MISSING",
+      "summary": "Effects on all Units or each player.",
+      "notes": "",
+      "cardCount": 5,
       "notAdmittedCount": 1,
       "soleBlockerCount": 0
     },
@@ -2978,8 +2978,8 @@
       "colors": [
         "BLUE"
       ],
-      "admission": "NOT_ADMITTED",
-      "revision": null,
+      "admission": "SOURCE_MATCH",
+      "revision": 1,
       "families": [
         "CONDITION_BOARD",
         "CONDITION_STREET_CRED",
@@ -2988,14 +2988,7 @@
         "TEMPORARY_BUFF",
         "UNIT_ZONE_MOVE"
       ],
-      "blockingFamilies": [
-        "CONDITION_BOARD",
-        "CONDITION_STREET_CRED",
-        "MASS_EFFECT",
-        "MODAL_CHOICE",
-        "TEMPORARY_BUFF",
-        "UNIT_ZONE_MOVE"
-      ],
+      "blockingFamilies": [],
       "note": null
     },
     {

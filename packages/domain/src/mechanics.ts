@@ -102,7 +102,8 @@ export type SpendUnitTarget = z.infer<typeof SpendUnitTargetSchema>;
 export const SpendUnitEffectSchema = z.strictObject({ kind: z.literal("SPEND_UNIT"), target: SpendUnitTargetSchema, preventReady: z.literal("UNTIL_YOUR_NEXT_TURN").optional() });
 // Batch V15: field Units to bottom-deck, by relation, optional readiness and "lowest-power" (every tied minimum).
 // Batch V44: "with power 0", the referenced power (2.10.1: a negative value counts as 0).
-export const BottomDeckTargetSchema = z.strictObject({ relation: z.enum(["RIVAL", "CONTROLLED"]), readiness: z.enum(["READY", "SPENT"]).optional(), lowestPower: z.literal(true).optional(), power: z.literal(0).optional() });
+// Batch V54: "Bottom-deck all rival Units with power 0": every qualifying Unit at once, with no choice.
+export const BottomDeckTargetSchema = z.strictObject({ relation: z.enum(["RIVAL", "CONTROLLED"]), readiness: z.enum(["READY", "SPENT"]).optional(), lowestPower: z.literal(true).optional(), power: z.literal(0).optional(), all: z.literal(true).optional() });
 export type BottomDeckTarget = z.infer<typeof BottomDeckTargetSchema>;
 // Shared Unit-defeat filter (plan section 6, scope 3b). The grammar admits nothing by itself:
 // every card using it is pinned literally by its execution gate (exact per-card check).
@@ -184,7 +185,7 @@ export const EffectSchema = z.discriminatedUnion("kind", [
     z.strictObject({ kind: z.literal("OPTIONAL_DECREASE_FRIENDLY_GIG_THEN_DRAW_IF_MIN"), maximum: z.literal(2), draw: z.literal(1) }),
     z.strictObject({ kind: z.literal("CREATE_NEXT_RIVAL_FIGHT_PREVENTION") }),
     // Batch V49: `scale: "SOURCE_POWER"` multiplies the amount by the source's power at resolution ("loses power equal to this Unit's power").
-    z.strictObject({ kind: z.literal("POWER_UNTIL_END_OF_TURN"), target: z.strictObject({ kind: z.enum(["RIVAL_UNIT", "SOURCE_SUBJECT", "FRIENDLY_UNIT"]) }), amount: z.number().int(), scale: z.literal("SOURCE_POWER").optional() }),
+    z.strictObject({ kind: z.literal("POWER_UNTIL_END_OF_TURN"), target: z.strictObject({ kind: z.enum(["RIVAL_UNIT", "SOURCE_SUBJECT", "FRIENDLY_UNIT", "ALL_RIVAL_UNITS"]) }), amount: z.number().int(), scale: z.literal("SOURCE_POWER").optional() }),
     // Batch V27: STOLEN_GIG is "increase it", the Gig a steal trigger names.
     z.strictObject({ kind: z.literal("ADJUST_GIG_UP_TO"), target: z.union([z.strictObject({ kind: z.literal("GIGS"), relation: z.literal("ANY") }), z.strictObject({ kind: z.literal("STOLEN_GIG") })]), maximum: z.union([z.literal(1), z.literal(3), z.literal(4), z.literal(5), z.literal(6)]), direction: z.enum(["INCREASE", "DECREASE"]).optional() }),
     z.strictObject({ kind: z.literal("CONDITIONAL_DRAW"), timing: z.literal("RESOLUTION"), condition: ConditionSchema, count: z.number().int().positive() }),

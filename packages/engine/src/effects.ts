@@ -36,6 +36,11 @@ export class HandlerRegistry {
             return met ? applyTemporaryPower(m, current.trigger.subjectId) : success(null);
         }
         const targets = powerTargets(m.state, m.state.timing.actingPlayer, m.context);
+        // Batch V54: "all rival Units": each Unit there as the effect resolves, with no choice.
+        if (current.effect.kind === "POWER_UNTIL_END_OF_TURN" && current.effect.target.kind === "ALL_RIVAL_UNITS") {
+            for (const id of targets) { const applied = applyTemporaryPower(m, id, true); if (!applied.ok) return applied; }
+            return success(null);
+        }
         return targets.length > 1 ? offerPlayChoice(m) : targets.length === 1 ? applyTemporaryPower(m, targets[0], true) : success(null);
     },
     ADJUST_GIG_UP_TO: (m: TurnMutation): Result<null> => adjustmentTargets(m.state).length ? offerPlayChoice(m) : success(null),

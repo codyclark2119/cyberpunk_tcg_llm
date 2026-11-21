@@ -134,6 +134,9 @@ export const TemporaryPowerModifierSchema = z.discriminatedUnion("amount", [
 ).or(
     // Batch V49: "A rival Unit loses power equal to this Unit's power this turn": the source's power at resolution; `sequence`
     // keeps repeated activations in one turn apart.
+    // Batch V54: "Give all rival Units -5 power this turn": one modifier per Unit from one resolving effect, kept apart by target.
+    TemporaryPowerBaseSchema.extend({ amount: z.literal(-5), scaled: z.literal("ALL_RIVAL_UNITS"), origin: z.strictObject({ effectId: HashSchema }) })
+).or(
     TemporaryPowerBaseSchema.extend({ amount: z.number().int().negative(), scaled: z.literal("SOURCE_POWER"), origin: z.strictObject({ effectId: HashSchema, sequence: z.number().int().nonnegative() }) })
 );
 export type TemporaryPowerModifier = z.infer<typeof TemporaryPowerModifierSchema>;

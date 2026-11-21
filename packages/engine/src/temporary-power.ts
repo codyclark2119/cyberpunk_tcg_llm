@@ -26,7 +26,8 @@ export function compareTemporaryPower(a: TemporaryPowerModifier, b: TemporaryPow
     const occurrence = (x: TemporaryPowerModifier) => "origin" in x ? x.origin.effectId : "";
     // Batch V49: repeated activations share an effect id and differ by their activation sequence.
     const sequence = (x: TemporaryPowerModifier) => "scaled" in x && x.scaled === "SOURCE_POWER" ? x.origin.sequence : -1;
-    return occurrence(a) < occurrence(b) ? -1 : occurrence(a) > occurrence(b) ? 1 : sequence(a) - sequence(b);
+    // Batch V54: one "all rival Units" effect makes one modifier per target.
+    return occurrence(a) < occurrence(b) ? -1 : occurrence(a) > occurrence(b) ? 1 : sequence(a) !== sequence(b) ? sequence(a) - sequence(b) : a.targetId < b.targetId ? -1 : a.targetId > b.targetId ? 1 : 0;
 }
 export function applyTemporaryPower(m: TurnMutation, targetId: CardInstanceId, forced = false) {
     const current = m.state.resolution.current;
@@ -63,6 +64,12 @@ export function applyTemporaryPower(m: TurnMutation, targetId: CardInstanceId, f
         m.emit({ kind: "CARD_TARGET_SELECTED", effectId: current.id, sourceId: current.sourceId, targetId, controllerId: current.controllerId, forced });
         if (power <= 0) return success(null);
         modifier = { ...base, amount: -power, scaled: "SOURCE_POWER", origin: { effectId: current.id, sequence: current.causedBySequence } };
+    } else if (current.effect.amount === -5 && current.effect.target.kind === "ALL_RIVAL_UNITS") {
+        // Batch V54: Towerfall's "-5 power this turn" to every rival Unit, applied while it resolves.
+        const c = m.state.resolution.playContinuation;
+        if (!c || c.sourceId !== current.sourceId || m.state.objects.cards[current.sourceId]?.zone.zone !== "RESOLVING_PROGRAM" || !supportsModalProgram(cardRevision(m.state, current.sourceId, m.context), m.context).ok
+            || !powerTargets(m.state, current.controllerId, m.context).includes(targetId)) return failure("INVALID_POWER_TARGET", "Each current rival Unit for the reviewed resolving Program");
+        modifier = { ...base, amount: -5, scaled: "ALL_RIVAL_UNITS", origin: { effectId: current.id } };
     } else if (current.effect.amount === -5) {
         // Batch V44: the modal Program's "-5 power this turn", applied while it resolves.
         const c = m.state.resolution.playContinuation;
@@ -99,7 +106,7 @@ export function validateTemporaryPower(state: GameState, context: EngineContext)
     if (!metadata.ok) return metadata;
     const modifiers = state.temporaryModifiers;
     if (!modifiers) return success(null);
-    if (!reactEnabled(context) || !modifiers.length || new Set(modifiers.map(x => canonicalSerialize([x.sourceId, "origin" in x ? x.origin.effectId : null, "scaled" in x && x.scaled === "SOURCE_POWER" ? x.origin.sequence : null]))).size !== modifiers.length || canonicalSerialize(modifiers) !== canonicalSerialize([...modifiers].sort(compareTemporaryPower))) return failure("INVALID_TEMPORARY_POWER", "Nonempty canonical reviewed modifiers with distinct source/occurrences required");
+    if (!reactEnabled(context) || !modifiers.length || new Set(modifiers.map(x => canonicalSerialize([x.sourceId, "origin" in x ? x.origin.effectId : null, "scaled" in x && x.scaled === "SOURCE_POWER" ? x.origin.sequence : null, "scaled" in x && x.scaled === "ALL_RIVAL_UNITS" ? x.targetId : null]))).size !== modifiers.length || canonicalSerialize(modifiers) !== canonicalSerialize([...modifiers].sort(compareTemporaryPower))) return failure("INVALID_TEMPORARY_POWER", "Nonempty canonical reviewed modifiers with distinct source/occurrences required");
     for (const x of modifiers) {
         const source = state.objects.cards[x.sourceId], target = state.objects.cards[x.targetId], r = cardRevision(state, x.sourceId, context);
         // Batch V41: the revealed card's printed cost, on the Go Solo Legend that revealed it during a resolved current-turn ATTACK occurrence.
@@ -121,6 +128,14 @@ export function validateTemporaryPower(state: GameState, context: EngineContext)
                 || target.controllerId === source.controllerId || x.expires.turn !== state.timing.turn || x.origin.sequence >= state.match.eventSequence
                 || x.origin.effectId !== activationEffectId(state, source.controllerId, source.id, a.id, 0) || c?.kind === "ACTIVATE" && c.sourceId === source.id && state.resolution.current?.id === x.origin.effectId)
                 return failure("INVALID_TEMPORARY_POWER", "Source-power loss needs its reviewed public Unit, a rival public Unit target and a resolved current-turn activation");
+            continue;
+        }
+        // Batch V54: Towerfall's "-5 power this turn" to each rival Unit there as it resolved.
+        if ("scaled" in x && x.scaled === "ALL_RIVAL_UNITS") {
+            const effect = r?.mechanics.abilities[0]?.effects.find(e => e.kind === "POWER_UNTIL_END_OF_TURN");
+            if (x.expires.turn !== state.timing.turn || !source || !target || !supportsModalProgram(r, context).ok || effect?.kind !== "POWER_UNTIL_END_OF_TURN" || effect.target.kind !== "ALL_RIVAL_UNITS" || !["TRASH", "RESOLVING_PROGRAM"].includes(source.zone.zone)
+                || target.controllerId === source.controllerId || !["BATTLEFIELD", "TRASH", "REMOVED"].includes(target.zone.zone) || target.face !== "UP" || !(effectiveCardTypes(state, x.targetId, context).includes("UNIT") || removedFieldLegend(state, x.targetId, context)))
+                return failure("INVALID_TEMPORARY_POWER", "All-rival power needs its reviewed played Program, a public rival Unit target and the current turn");
             continue;
         }
         // Batch V28: the scaled self power of a resolved current-turn ATTACK occurrence; at most +2 for every Gig in the game.

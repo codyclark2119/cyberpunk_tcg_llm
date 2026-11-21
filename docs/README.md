@@ -95,6 +95,7 @@ were recorded in their pull requests (#4, #7, #8); later batches have documents 
 | V51 (2026-11-20) | Maelstrom Zealots | [Unit: "when this Unit loses a fight, defeat the opposing rival Unit", the first printed fight-lost trigger](api-admission-batch-v51.md); coverage 100/151 |
 | V52 (2026-11-20) | Johnny Silverhand: Never Stop Fighting | [Unit: readies on its first fight win each turn and wins all fights against CORPO Units, the first effect-decided fight winner](api-admission-batch-v52.md); coverage 101/151 |
 | V53 (2026-11-20) | Viktor Vektor: Drop Your Illusions | [Unit: your first CYBERWARE Gear each turn costs 3 less, the first cost reduction given to other cards](api-admission-batch-v53.md); coverage 102/151 |
+| V54 (2026-11-20) | Towerfall | [Program: choose one, or both with less Street Cred; -5 power to all rival Units, bottom-deck all rival power-0 Units](api-admission-batch-v54.md); coverage 103/151 |
 | V7 (2026-11-15) | Royce: Don't Call Me Simon, Wild in the Streets, Delamain: Rideshare AI | [shared defeat filter and exact pin table](api-admission-batch-v7.md); coverage 42/151 |
 | V6 (2026-09-22) | Trust No One | [contract and executable slice](api-admission-batch-v6.md), [baseline verification](api-admission-batch-v6-verification.md) |
 
