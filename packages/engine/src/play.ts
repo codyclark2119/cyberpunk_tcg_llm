@@ -1,3 +1,4 @@
+import { applyStealReduction } from "./steal-reduction";
 import { recordCyberwareGearPlay } from "./play-cost-support";
 import { resolveSpendTarget } from "./targeted-spend";
 import { activateTriggerBatch, type PreparedTriggerBatch } from "./trigger-resolution";
@@ -177,6 +178,12 @@ export function continuePlay(m: TurnMutation, index: number): Result<null> {
         const moved = chooseBottomDeck(m, option.cardInstanceId, offerPlayChoice);
         // An "if you do" clause may pause on its own choice before the primitive completes.
         return !moved.ok ? moved : s.resolution.choice ? success(null) : completePlayEffect(m);
+    }
+    if (s.resolution.current?.effect.kind === "STEAL_FEWER_THIS_TURN") { // Batch V57.
+        if (option.kind !== "CARD") return failure("INVALID_STEAL_REDUCTION", "Choose an enumerated rival Unit");
+        s.resolution.choice = null;
+        const applied = applyStealReduction(m, option.cardInstanceId, false);
+        return applied.ok ? completePlayEffect(m) : applied;
     }
     if (s.resolution.current?.effect.kind === "POWER_UNTIL_END_OF_TURN") {
         if (option.kind !== "CARD") return failure("INVALID_POWER_TARGET", "Choose an enumerated rival Unit");

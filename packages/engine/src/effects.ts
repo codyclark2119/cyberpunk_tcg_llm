@@ -1,3 +1,4 @@
+import { applyStealReduction } from "./steal-reduction";
 import { beginTargetedSpend } from "./targeted-spend";
 import { resolveRevealTopGainPower } from "./legend-reveal";
 import { beginTargetedDefeat } from "./targeted-defeat";
@@ -63,6 +64,10 @@ export class HandlerRegistry {
     }
     };
     resolve(m: TurnMutation, effect: Effect): Result<null> {
+        if (effect.kind === "STEAL_FEWER_THIS_TURN") { // Batch V57: one rival Unit; a lone Unit is forced and none does nothing.
+            const targets = powerTargets(m.state, m.state.resolution.current!.controllerId, m.context);
+            return targets.length > 1 ? offerPlayChoice(m) : targets.length === 1 ? applyStealReduction(m, targets[0], true) : success(null);
+        }
         if (effect.kind === "SPEND_UNIT") return beginTargetedSpend(m);
         if (effect.kind === "DEFEAT_UNIT") return beginTargetedDefeat(m);
         if (effect.kind === "SPEND_ALL_UNITS") return spendAllRivalUnits(m);

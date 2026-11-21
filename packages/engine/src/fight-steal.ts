@@ -1,3 +1,4 @@
+import { reducedAllowance } from "./steal-reduction";
 import { failure, success, type GameState, type GigInstanceId, type Result } from "@tcg/domain";
 import { belowPowerStealerPower, recordBelowPowerSteal } from "./below-power-steal";
 import type { EngineContext } from "./state";
@@ -16,7 +17,7 @@ export function effectStealTargets(state: GameState, context: EngineContext): Gi
     const current = state.resolution.current, subjectId = current?.trigger?.kind === "DELAYED_FIGHT_OUTCOME" ? current.trigger.subjectId : undefined, subject = subjectId ? state.objects.cards[subjectId] : undefined;
     if (current?.effect.kind !== "STEAL_GIG" || !subject || subject.face !== "UP" || subject.zone.zone !== "BATTLEFIELD" || subject.controllerId !== current.controllerId || !effectiveCardTypes(state, subject.id, context).includes("UNIT")) return [];
     const power = effectivePower(state, subject.id, context), rival = state.match.playerOrder.find(p => p !== current.controllerId);
-    if (power === null || !rival || getGigStealAllowance(power, context) < 1) return [];
+    if (power === null || !rival || reducedAllowance(state, subject.id, getGigStealAllowance(power, context)) < 1) return []; // Batch V57: less any reduction.
     return stealableGigsFor(state, context, rival, subject.id).map(g => g.id).sort();
 }
 /** Moves the chosen Gig, records the stolen fact, and appends the steal triggers to this batch (11.5.1.7). */

@@ -150,6 +150,10 @@ export const GigStealRestrictionSchema = z.strictObject({ kind: z.literal("GIG_S
 export type GigStealRestriction = z.infer<typeof GigStealRestrictionSchema>;
 /** Batch V22: a chosen rival Unit that can't ready (2.6) until the start of the locking player's next turn (8.6.2.1), or until it leaves the field.
  * A PLAY-trigger origin carries its trigger ordinal; a resolving Program's primitive does not. */
+// Batch V57: "steals 1 fewer Gig this turn" on one rival field Unit, from one resolved Program effect.
+export const StealReductionSchema = z.strictObject({ kind: z.literal("STEAL_REDUCTION"), targetId: CardInstanceIdSchema, sourceId: CardInstanceIdSchema, controllerId: PlayerIdSchema,
+    amount: z.literal(1), createdTurn: z.number().int().positive(), origin: z.strictObject({ effectId: HashSchema }) });
+export type StealReduction = z.infer<typeof StealReductionSchema>;
 export const ReadyLockSchema = z.strictObject({ kind: z.literal("READY_LOCK"), targetId: CardInstanceIdSchema, sourceId: CardInstanceIdSchema, lockingPlayerId: PlayerIdSchema, createdTurn: z.number().int().positive(),
     origin: z.strictObject({ effectId: HashSchema, abilityId: z.string().min(1), ordinal: z.number().int().positive().optional() }) });
 export type ReadyLock = z.infer<typeof ReadyLockSchema>;
@@ -212,6 +216,7 @@ export const GameStateSchema = z.strictObject({
     temporaryKeywords: z.array(TemporaryKeywordGrantSchema).min(1).optional(),
     gigStealRestrictions: z.array(GigStealRestrictionSchema).min(1).optional(),
     readyLocks: z.array(ReadyLockSchema).min(1).optional(),
+    stealReductions: z.array(StealReductionSchema).min(1).optional(),
     mustAttack: z.array(MustAttackSchema).min(1).optional(),
     fightOutcomeEffects: z.array(FightOutcomeEffectSchema).min(1).optional(),
     resolution: ResolutionStateSchema, rng: RngStateSchema

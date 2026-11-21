@@ -1,3 +1,4 @@
+import { validateStealReductions } from "./steal-reduction";
 import { validateFirstGearHistory } from "./play-cost-support";
 import { validateFightWinHistory } from "./fight-win-support";
 import { validateArasakaDefeatHistory } from "./arasaka-defeat";
@@ -185,6 +186,7 @@ export function validateState(input: unknown, context: EngineContext): Result<Ga
     if (!restricted.ok) return restricted;
     const locked = validateReadyLocks(s, context);
     if (!locked.ok) return locked;
+    const reductions = validateStealReductions(s, context); if (!reductions.ok) return reductions; // Batch V57.
     const forced = validateMustAttack(s, context);
     if (!forced.ok) return forced;
     const prevention = validateFightPreventions(s, context);

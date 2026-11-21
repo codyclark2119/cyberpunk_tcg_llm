@@ -189,6 +189,9 @@ export const EffectSchema = z.discriminatedUnion("kind", [
     z.strictObject({ kind: z.literal("OPTIONAL_DECREASE_FRIENDLY_GIG_THEN_DRAW_IF_MIN"), maximum: z.literal(2), draw: z.literal(1) }),
     z.strictObject({ kind: z.literal("CREATE_NEXT_RIVAL_FIGHT_PREVENTION") }),
     // Batch V49: `scale: "SOURCE_POWER"` multiplies the amount by the source's power at resolution ("loses power equal to this Unit's power").
+    // Batch V57: "A rival Unit steals 1 fewer Gig this turn. If that Unit is an AI, DRONE, or VEHICLE, draw 1."
+    z.strictObject({ kind: z.literal("STEAL_FEWER_THIS_TURN"), target: z.strictObject({ kind: z.literal("RIVAL_UNIT") }), amount: z.literal(1),
+        draw: z.strictObject({ classifications: z.tuple([z.literal("AI"), z.literal("Drone"), z.literal("Vehicle")]), count: z.literal(1) }) }),
     z.strictObject({ kind: z.literal("POWER_UNTIL_END_OF_TURN"), target: z.strictObject({ kind: z.enum(["RIVAL_UNIT", "SOURCE_SUBJECT", "FRIENDLY_UNIT", "ALL_RIVAL_UNITS"]) }), amount: z.number().int(), scale: z.literal("SOURCE_POWER").optional() }),
     // Batch V27: STOLEN_GIG is "increase it", the Gig a steal trigger names.
     z.strictObject({ kind: z.literal("ADJUST_GIG_UP_TO"), target: z.union([z.strictObject({ kind: z.literal("GIGS"), relation: z.literal("ANY") }), z.strictObject({ kind: z.literal("STOLEN_GIG") })]), maximum: z.union([z.literal(1), z.literal(3), z.literal(4), z.literal(5), z.literal(6)]), direction: z.enum(["INCREASE", "DECREASE"]).optional() }),

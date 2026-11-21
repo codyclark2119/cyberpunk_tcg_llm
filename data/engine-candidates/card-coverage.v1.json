@@ -9,12 +9,12 @@
   },
   "totals": {
     "cards": 151,
-    "admitted": 105,
-    "notAdmitted": 46,
+    "admitted": 106,
+    "notAdmitted": 45,
     "notAdmittedOnlyCoveredFamilies": 0,
     "byAdmission": {
-      "NOT_ADMITTED": 46,
-      "SOURCE_MATCH": 105
+      "NOT_ADMITTED": 45,
+      "SOURCE_MATCH": 106
     }
   },
   "families": [
@@ -24,7 +24,7 @@
       "summary": "Draw cards, fixed or conditional.",
       "notes": "Routed. Variable counts need SCALED_AMOUNT; 'may draw' needs an optional prompt.",
       "cardCount": 38,
-      "notAdmittedCount": 17,
+      "notAdmittedCount": 16,
       "soleBlockerCount": 0
     },
     {
@@ -42,7 +42,7 @@
       "summary": "Generic target filters and board conditions: classification, cost, power, ready/spent, equipped, face-up, named, lowest power.",
       "notes": "Documented as unsupported: generic condition/filter language. Each admitted filter is a literal.",
       "cardCount": 34,
-      "notAdmittedCount": 14,
+      "notAdmittedCount": 13,
       "soleBlockerCount": 0
     },
     {
@@ -91,15 +91,6 @@
       "soleBlockerCount": 0
     },
     {
-      "family": "KEYWORD_QUICK",
-      "status": "PARTIAL",
-      "summary": "[Quick] timing: Programs and activated abilities usable in the react window.",
-      "notes": "Quick Programs are supported for Floor It, Reboot Optics and Detonate. Quick activated [Spend] abilities on Legends, Units and Gear are not offered in any react window yet.",
-      "cardCount": 12,
-      "notAdmittedCount": 7,
-      "soleBlockerCount": 0
-    },
-    {
       "family": "PLAY_BY_EFFECT",
       "status": "MISSING",
       "summary": "Play a card by an effect: from hand, trash or deck top, for free or for its cost, with after-play riders.",
@@ -123,6 +114,15 @@
       "summary": "Discard: self discard, a Rival discards, discard as a cost, discard a hand.",
       "notes": "DISCARD_CARDS supports only the controller discarding exactly 1.",
       "cardCount": 15,
+      "notAdmittedCount": 6,
+      "soleBlockerCount": 0
+    },
+    {
+      "family": "KEYWORD_QUICK",
+      "status": "PARTIAL",
+      "summary": "[Quick] timing: Programs and activated abilities usable in the react window.",
+      "notes": "Quick Programs are supported for Floor It, Reboot Optics and Detonate. Quick activated [Spend] abilities on Legends, Units and Gear are not offered in any react window yet.",
+      "cardCount": 12,
       "notAdmittedCount": 6,
       "soleBlockerCount": 0
     },
@@ -178,15 +178,6 @@
       "notes": "Maxima are fixed literals; 'set to the value of another Gig' and 'adjust by exactly 1' are missing. MODIFY_GIG_VALUE is schema-only.",
       "cardCount": 15,
       "notAdmittedCount": 5,
-      "soleBlockerCount": 0
-    },
-    {
-      "family": "STEAL_CONTROL",
-      "status": "MISSING",
-      "summary": "Gig control outside the ordinary attack steal: swap, extra steal, steal fewer, steal prevention.",
-      "notes": "Documented as unsupported (control transfer / steal).",
-      "cardCount": 8,
-      "notAdmittedCount": 4,
       "soleBlockerCount": 0
     },
     {
@@ -249,6 +240,15 @@
       "summary": "'If X would ..., instead ...' replacement effects.",
       "notes": "",
       "cardCount": 3,
+      "notAdmittedCount": 3,
+      "soleBlockerCount": 0
+    },
+    {
+      "family": "STEAL_CONTROL",
+      "status": "MISSING",
+      "summary": "Gig control outside the ordinary attack steal: swap, extra steal, steal fewer, steal prevention.",
+      "notes": "Documented as unsupported (control transfer / steal).",
+      "cardCount": 8,
       "notAdmittedCount": 3,
       "soleBlockerCount": 0
     },
@@ -2866,20 +2866,15 @@
       "colors": [
         "GREEN"
       ],
-      "admission": "NOT_ADMITTED",
-      "revision": null,
+      "admission": "SOURCE_MATCH",
+      "revision": 1,
       "families": [
         "CONDITION_BOARD",
         "DRAW",
         "KEYWORD_QUICK",
         "STEAL_CONTROL"
       ],
-      "blockingFamilies": [
-        "CONDITION_BOARD",
-        "DRAW",
-        "KEYWORD_QUICK",
-        "STEAL_CONTROL"
-      ],
+      "blockingFamilies": [],
       "note": null
     },
     {

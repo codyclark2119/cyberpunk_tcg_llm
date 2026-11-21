@@ -1,3 +1,4 @@
+import { reducedAllowance } from "./steal-reduction";
 import { supportsFightWinUnit } from "./fight-win-support";
 import { areAllFriendlyLegendsFaceUp } from "./legend-face-condition";
 import { supportsAttackingReadyUnit } from "./attacking-ready-support";
@@ -74,7 +75,7 @@ export class RulesView {
     isBlockerEligible(actor: PlayerId, id: CardInstanceId) { return isBlockerEligible(this.state, actor, id, this.context); }
     listBlockers(actor: PlayerId) { return Object.values(this.state.objects.cards).filter(c => this.isBlockerEligible(actor, c.id)).map(c => c.id).sort(); }
     listQuickCards(actor: PlayerId) { return Object.values(this.state.objects.cards).filter(c => this.getRevision(c.id)?.mechanics.keywords.includes("QUICK") && canPlay(this.state, actor, c.id, this.context)).map(c => c.id).sort(); }
-    getGigStealAllowance(id: CardInstanceId) { const power = this.getEffectivePower(id); return power === null ? null : getGigStealAllowance(power, this.context); }
+    getGigStealAllowance(id: CardInstanceId) { const power = this.getEffectivePower(id); return power === null ? null : reducedAllowance(this.state, id, getGigStealAllowance(power, this.context)); } // Batch V57: less any reduction.
     listStealableGigs(defender: PlayerId) { return listStealableGigs(this.state, defender); }
     getControlledGigCount(id: PlayerId) { return this.getControlledGigs(id).length; }
     getFightDefender() { const target = this.getCombatTarget(); return target?.kind === "CARD" ? this.getCard(target.cardInstanceId) : null; }

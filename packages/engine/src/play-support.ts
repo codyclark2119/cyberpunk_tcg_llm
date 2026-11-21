@@ -1,3 +1,4 @@
+import { hasStealReduction, supportsStealReductionProgram } from "./steal-reduction-support";
 import { hasFightWinMetadata, supportsFightWinUnit } from "./fight-win-support";
 import { hasAttackConditionPowerMetadata, supportsAttackConditionPowerCard } from "./attack-condition-power-support";
 import { hasTargetedDefeatMetadata, supportsTargetedDefeatCard } from "./targeted-defeat-support";
@@ -46,6 +47,8 @@ export function supportsPlay(card: DeepReadonly<CardRevisionSnapshot> | undefine
     if (card && hasFreePlayEffect(card)) return supportsFreePlayCard(card, context);
     // Batch V49: a Quick or paid activation is admitted only by its exact Unit pin.
     if (card && hasQuickActivation(card)) return supportsQuickActivationCard(card, context);
+    // Batch V57: a steal reduction is admitted only by its exact Quick Program pin.
+    if (card && hasStealReduction(card)) return supportsStealReductionProgram(card, context);
     // Batch V52: a fight-win override or first-win ready is admitted only by its exact Unit pin.
     if (card && hasFightWinMetadata(card)) return supportsFightWinUnit(card, context);
     if (card && hasPlayCostReductionMetadata(card)) return supportsPlayCostReduction(card, context);

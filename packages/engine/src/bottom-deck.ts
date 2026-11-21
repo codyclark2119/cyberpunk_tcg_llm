@@ -1,3 +1,4 @@
+import { expireStealReductionsOnDeparture } from "./steal-reduction";
 import { failure, success, type BottomDeckTarget, type CardInstanceId, type GameState, type PlayerId, type Result } from "@tcg/domain";
 import { expireMustAttackOnDeparture } from "./must-attack";
 import type { EngineContext } from "./state";
@@ -54,6 +55,7 @@ function moveToBottom(m: TurnMutation, owner: PlayerId, batch: readonly CardInst
         expirePowerOnHiddenEntry(m, cid);
         expireKeywordGrantsOnDeparture(m, cid);
         expireReadyLocksOnDeparture(m, cid);
+        expireStealReductionsOnDeparture(m, cid);
         expireMustAttackOnDeparture(m, cid);
         forgetLegendKnowledge(m, cid);
         const card = s.objects.cards[cid], from = { ...card.zone }, refs = s.players[from.playerId].zones[from.zone]!;
