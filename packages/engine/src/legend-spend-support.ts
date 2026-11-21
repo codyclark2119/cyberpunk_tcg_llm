@@ -22,11 +22,16 @@ const LEGEND_SPEND_SHAPES = [
     // {Spend}: Increase a Gig by up to 2."
     { colors: ["RED"], ram: { RED: 2 }, tags: ["Fixer"], sell: true,
         abilities: [{ ...CALL_CHOOSE_ONE, effects: [{ kind: "POWER_UNTIL_END_OF_TURN", target: { kind: "FRIENDLY_UNIT" }, amount: 2 }, { kind: "DRAW", count: 1 }] },
-            { ...SPEND, effects: [{ kind: "ADJUST_GIG_UP_TO", target: { kind: "GIGS", relation: "ANY" }, maximum: 2, direction: "INCREASE" }] }] }
+            { ...SPEND, effects: [{ kind: "ADJUST_GIG_UP_TO", target: { kind: "GIGS", relation: "ANY" }, maximum: 2, direction: "INCREASE" }] }] },
+    // Batch V61: Muamar Reyes: El Capitán. "{Call} Choose one effect. A friendly Unit can't be defeated in a fight this turn. // Draw 1.
+    // {Spend} Adjust a Gig by 1."
+    { colors: ["YELLOW"], ram: { YELLOW: 2 }, tags: ["Fixer"], sell: true,
+        abilities: [{ ...CALL_CHOOSE_ONE, effects: [{ kind: "FIGHT_DEFEAT_IMMUNITY_THIS_TURN", target: { kind: "FRIENDLY_UNIT" } }, { kind: "DRAW", count: 1 }] },
+            { ...SPEND, effects: [{ kind: "ADJUST_GIG_UP_TO", target: { kind: "GIGS", relation: "ANY" }, maximum: 1 }] }] }
 ].map(shape => canonicalSerialize({ type: "LEGEND", power: null, cost: "DASH", keywords: [], equip: null, modifiers: [], restrictions: [], ...shape }));
 /** Any Legend activation, start-of-turn trigger, value-pair draw or mandatory swap routes here first. */
 export function hasLegendSpendMetadata(card: DeepReadonly<CardRevisionSnapshot> | undefined) {
-    return Boolean(card?.mechanics.abilities.some(a => card.type === "LEGEND" && (a.activation || a.choose) || a.trigger === "WHEN_OWN_TURN_STARTS" || a.effects.some(e => e.kind === "DRAW_PER_FRIENDLY_VALUE_PAIR" || e.kind === "SWAP_GIGS" && !e.optional)));
+    return Boolean(card?.mechanics.abilities.some(a => card.type === "LEGEND" && (a.activation || a.choose) || a.trigger === "WHEN_OWN_TURN_STARTS" || a.effects.some(e => e.kind === "DRAW_PER_FRIENDLY_VALUE_PAIR" || e.kind === "FIGHT_DEFEAT_IMMUNITY_THIS_TURN" || e.kind === "SWAP_GIGS" && !e.optional)));
 }
 export function supportsLegendSpendCard(card: DeepReadonly<CardRevisionSnapshot> | undefined, context: EngineContext) {
     const g = context.content.ruleset.gameplay, m = card?.mechanics;

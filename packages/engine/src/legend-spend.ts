@@ -79,6 +79,8 @@ export function validateLegendActivationState(state: GameState, context: EngineC
                 return failure("INVALID_LEGEND_ACTIVATION", "A swap pauses only for a strategic Gig choice");
         } else if (e.kind === "POWER_UNTIL_END_OF_TURN") {
             if (c.targetGigId || state.timing.step !== "TARGET_SELECTION" || playPowerTargets(state, c.actorId, context).length < 2) return failure("INVALID_LEGEND_ACTIVATION", "A power mode pauses only for a strategic Unit choice");
+        } else if (e.kind === "FIGHT_DEFEAT_IMMUNITY_THIS_TURN") {
+            if (c.targetGigId || state.timing.step !== "TARGET_SELECTION" || friendlyFieldUnits(state, c.actorId, context).length < 2) return failure("INVALID_LEGEND_ACTIVATION", "An immunity mode pauses only for a strategic friendly-Unit choice");
         } else if (e.kind === "ADJUST_GIG_UP_TO") {
             if (state.timing.step !== (c.targetGigId ? "AMOUNT_SELECTION" : "TARGET_SELECTION") || c.targetGigId && (!held || held.location.zone !== "GIGS" || held.roll.kind !== "ROLLED")) return failure("INVALID_LEGEND_ACTIVATION", "A Gig adjustment pauses for its Gig, then its amount");
         } else return failure("INVALID_LEGEND_ACTIVATION", "Only reviewed Legend effects pause");

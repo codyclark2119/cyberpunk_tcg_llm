@@ -1,3 +1,4 @@
+import { applyFightDefeatImmunity } from "./fight-immunity";
 import { advanceMandatorySwap, isLegendCallPower, mandatorySwapAvailable, playPowerTargets } from "./legend-spend";
 import { applyFightPowerGrant, friendlyFieldUnits } from "./fight-power-grant";
 import { applyStealReduction } from "./steal-reduction";
@@ -71,6 +72,10 @@ export class HandlerRegistry {
             if (!mandatorySwapAvailable(m.state, actor)) return success(null);
             const advanced = advanceMandatorySwap(m, actor, undefined);
             return !advanced.ok ? advanced : advanced.value === "CHOICE" ? offerPlayChoice(m) : success(null);
+        }
+        if (effect.kind === "FIGHT_DEFEAT_IMMUNITY_THIS_TURN") { // Batch V61: one friendly Unit; a lone Unit is forced and none does nothing.
+            const targets = friendlyFieldUnits(m.state, m.state.resolution.current!.controllerId, m.context);
+            return targets.length > 1 ? offerPlayChoice(m) : targets.length === 1 ? applyFightDefeatImmunity(m, targets[0], true) : success(null);
         }
         if (effect.kind === "FIGHT_POWER_PER_FRIENDLY_LEGEND_THIS_TURN") { // Batch V58: one friendly Unit; a lone Unit is forced and none does nothing.
             const targets = friendlyFieldUnits(m.state, m.state.resolution.current!.controllerId, m.context);

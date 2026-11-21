@@ -161,6 +161,10 @@ export type StealReduction = z.infer<typeof StealReductionSchema>;
 export const FightPowerGrantSchema = z.strictObject({ kind: z.literal("FIGHT_POWER_GRANT"), targetId: CardInstanceIdSchema, sourceId: CardInstanceIdSchema, controllerId: PlayerIdSchema,
     amount: z.literal(1), createdTurn: z.number().int().positive(), origin: z.strictObject({ effectId: HashSchema }) });
 export type FightPowerGrant = z.infer<typeof FightPowerGrantSchema>;
+// Batch V61: "can't be defeated in a fight this turn" on one friendly field Unit.
+export const FightDefeatImmunitySchema = z.strictObject({ kind: z.literal("FIGHT_DEFEAT_IMMUNITY"), targetId: CardInstanceIdSchema, sourceId: CardInstanceIdSchema, controllerId: PlayerIdSchema,
+    createdTurn: z.number().int().positive(), origin: z.strictObject({ effectId: HashSchema }) });
+export type FightDefeatImmunity = z.infer<typeof FightDefeatImmunitySchema>;
 export const ReadyLockSchema = z.strictObject({ kind: z.literal("READY_LOCK"), targetId: CardInstanceIdSchema, sourceId: CardInstanceIdSchema, lockingPlayerId: PlayerIdSchema, createdTurn: z.number().int().positive(),
     origin: z.strictObject({ effectId: HashSchema, abilityId: z.string().min(1), ordinal: z.number().int().positive().optional() }) });
 export type ReadyLock = z.infer<typeof ReadyLockSchema>;
@@ -225,6 +229,7 @@ export const GameStateSchema = z.strictObject({
     readyLocks: z.array(ReadyLockSchema).min(1).optional(),
     stealReductions: z.array(StealReductionSchema).min(1).optional(),
     fightPowerGrants: z.array(FightPowerGrantSchema).min(1).optional(),
+    fightDefeatImmunities: z.array(FightDefeatImmunitySchema).min(1).optional(),
     mustAttack: z.array(MustAttackSchema).min(1).optional(),
     fightOutcomeEffects: z.array(FightOutcomeEffectSchema).min(1).optional(),
     resolution: ResolutionStateSchema, rng: RngStateSchema

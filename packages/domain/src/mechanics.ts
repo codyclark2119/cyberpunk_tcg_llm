@@ -189,6 +189,8 @@ export const EffectSchema = z.discriminatedUnion("kind", [
     z.strictObject({ kind: z.literal("OPTIONAL_DECREASE_FRIENDLY_GIG_THEN_DRAW_IF_MIN"), maximum: z.literal(2), draw: z.literal(1) }),
     z.strictObject({ kind: z.literal("CREATE_NEXT_RIVAL_FIGHT_PREVENTION") }),
     // Batch V49: `scale: "SOURCE_POWER"` multiplies the amount by the source's power at resolution ("loses power equal to this Unit's power").
+    // Batch V61: "A friendly Unit can't be defeated in a fight this turn."
+    z.strictObject({ kind: z.literal("FIGHT_DEFEAT_IMMUNITY_THIS_TURN"), target: z.strictObject({ kind: z.literal("FRIENDLY_UNIT") }) }),
     // Batch V58: "A friendly Unit has +1 power for each friendly face-up Legend while fighting rival Units this turn."
     z.strictObject({ kind: z.literal("FIGHT_POWER_PER_FRIENDLY_LEGEND_THIS_TURN"), target: z.strictObject({ kind: z.literal("FRIENDLY_UNIT") }), amount: z.literal(1) }),
     // Batch V57: "A rival Unit steals 1 fewer Gig this turn. If that Unit is an AI, DRONE, or VEHICLE, draw 1."

@@ -9,12 +9,12 @@
   },
   "totals": {
     "cards": 151,
-    "admitted": 110,
-    "notAdmitted": 41,
+    "admitted": 111,
+    "notAdmitted": 40,
     "notAdmittedOnlyCoveredFamilies": 0,
     "byAdmission": {
-      "NOT_ADMITTED": 41,
-      "SOURCE_MATCH": 110
+      "NOT_ADMITTED": 40,
+      "SOURCE_MATCH": 111
     }
   },
   "families": [
@@ -28,15 +28,6 @@
       "soleBlockerCount": 0
     },
     {
-      "family": "DRAW",
-      "status": "PARTIAL",
-      "summary": "Draw cards, fixed or conditional.",
-      "notes": "Routed. Variable counts need SCALED_AMOUNT; 'may draw' needs an optional prompt.",
-      "cardCount": 38,
-      "notAdmittedCount": 13,
-      "soleBlockerCount": 0
-    },
-    {
       "family": "CONDITION_GIG",
       "status": "PARTIAL",
       "summary": "Conditions and filters on Gig values: min/max, value-pairs, even/odd, 8+, die type, counts compared with a Rival.",
@@ -46,11 +37,11 @@
       "soleBlockerCount": 0
     },
     {
-      "family": "SPEND_ABILITY",
+      "family": "DRAW",
       "status": "PARTIAL",
-      "summary": "Activated abilities with a [Spend] cost (and optional Eddie cost) on Legends, Units or Gear.",
-      "notes": "Admitted only for Kerry: The Last Rockerboy (a Unit). Face-up Legend [Spend] abilities and Gear [Spend] abilities are not.",
-      "cardCount": 17,
+      "summary": "Draw cards, fixed or conditional.",
+      "notes": "Routed. Variable counts need SCALED_AMOUNT; 'may draw' needs an optional prompt.",
+      "cardCount": 38,
       "notAdmittedCount": 12,
       "soleBlockerCount": 0
     },
@@ -60,6 +51,15 @@
       "summary": "Equip a Gear to a friendly Unit or face-up Legend; Gear power adds to its host.",
       "notes": "Equip onto Units is supported for the admitted Gear. Gear on a Legend host in combat (a Go Solo Legend) is unsupported.",
       "cardCount": 22,
+      "notAdmittedCount": 11,
+      "soleBlockerCount": 0
+    },
+    {
+      "family": "SPEND_ABILITY",
+      "status": "PARTIAL",
+      "summary": "Activated abilities with a [Spend] cost (and optional Eddie cost) on Legends, Units or Gear.",
+      "notes": "Admitted only for Kerry: The Last Rockerboy (a Unit). Face-up Legend [Spend] abilities and Gear [Spend] abilities are not.",
+      "cardCount": 17,
       "notAdmittedCount": 11,
       "soleBlockerCount": 0
     },
@@ -154,28 +154,10 @@
       "soleBlockerCount": 0
     },
     {
-      "family": "MODAL_CHOICE",
-      "status": "MISSING",
-      "summary": "'Choose one effect' (and 'choose both instead' upgrades).",
-      "notes": "PendingChoice MODE exists for setup, search and Gig steps, but no ability carries modes.",
-      "cardCount": 8,
-      "notAdmittedCount": 4,
-      "soleBlockerCount": 0
-    },
-    {
       "family": "TRASH_RECURSION",
       "status": "MISSING",
       "summary": "Return a card from the trash (or from cards just trashed) to hand.",
       "notes": "",
-      "cardCount": 7,
-      "notAdmittedCount": 4,
-      "soleBlockerCount": 0
-    },
-    {
-      "family": "TRIGGER_CALL",
-      "status": "PARTIAL",
-      "summary": "[Call] abilities of a Legend.",
-      "notes": "Trigger WHEN_CALLED; only Viktor's search is routed. Every other Call body needs its effects routed too.",
       "cardCount": 7,
       "notAdmittedCount": 4,
       "soleBlockerCount": 0
@@ -199,15 +181,6 @@
       "soleBlockerCount": 0
     },
     {
-      "family": "GIG_ADJUST",
-      "status": "PARTIAL",
-      "summary": "Increase, decrease, adjust or set Gig values.",
-      "notes": "Maxima are fixed literals; 'set to the value of another Gig' and 'adjust by exactly 1' are missing. MODIFY_GIG_VALUE is schema-only.",
-      "cardCount": 15,
-      "notAdmittedCount": 3,
-      "soleBlockerCount": 0
-    },
-    {
       "family": "GO_SOLO",
       "status": "PARTIAL",
       "summary": "[Go Solo]: play a Legend as a ready Unit that can attack this turn and is removed when it leaves the field.",
@@ -226,11 +199,29 @@
       "soleBlockerCount": 0
     },
     {
+      "family": "MODAL_CHOICE",
+      "status": "MISSING",
+      "summary": "'Choose one effect' (and 'choose both instead' upgrades).",
+      "notes": "PendingChoice MODE exists for setup, search and Gig steps, but no ability carries modes.",
+      "cardCount": 8,
+      "notAdmittedCount": 3,
+      "soleBlockerCount": 0
+    },
+    {
       "family": "REPLACEMENT_EFFECT",
       "status": "MISSING",
       "summary": "'If X would ..., instead ...' replacement effects.",
       "notes": "",
       "cardCount": 3,
+      "notAdmittedCount": 3,
+      "soleBlockerCount": 0
+    },
+    {
+      "family": "TRIGGER_CALL",
+      "status": "PARTIAL",
+      "summary": "[Call] abilities of a Legend.",
+      "notes": "Trigger WHEN_CALLED; only Viktor's search is routed. Every other Call body needs its effects routed too.",
+      "cardCount": 7,
       "notAdmittedCount": 3,
       "soleBlockerCount": 0
     },
@@ -262,20 +253,20 @@
       "soleBlockerCount": 0
     },
     {
-      "family": "FIGHT_MODIFIER",
-      "status": "PARTIAL",
-      "summary": "Fight-scoped rules: power while fighting, can't be defeated in a fight, wins all fights against, fight-outcome riders.",
-      "notes": "Only Reboot Optics' next-fight prevention.",
-      "cardCount": 5,
-      "notAdmittedCount": 2,
-      "soleBlockerCount": 0
-    },
-    {
       "family": "GEAR_MOVE_OR_SACRIFICE",
       "status": "MISSING",
       "summary": "Move Gear between hosts, or defeat a friendly Gear as a cost or choice.",
       "notes": "",
       "cardCount": 3,
+      "notAdmittedCount": 2,
+      "soleBlockerCount": 0
+    },
+    {
+      "family": "GIG_ADJUST",
+      "status": "PARTIAL",
+      "summary": "Increase, decrease, adjust or set Gig values.",
+      "notes": "Maxima are fixed literals; 'set to the value of another Gig' and 'adjust by exactly 1' are missing. MODIFY_GIG_VALUE is schema-only.",
+      "cardCount": 15,
       "notAdmittedCount": 2,
       "soleBlockerCount": 0
     },
@@ -358,6 +349,15 @@
       "notes": "MOVE_CARD is schema-only with no handler.",
       "cardCount": 10,
       "notAdmittedCount": 2,
+      "soleBlockerCount": 0
+    },
+    {
+      "family": "FIGHT_MODIFIER",
+      "status": "PARTIAL",
+      "summary": "Fight-scoped rules: power while fighting, can't be defeated in a fight, wins all fights against, fight-outcome riders.",
+      "notes": "Only Reboot Optics' next-fight prevention.",
+      "cardCount": 5,
+      "notAdmittedCount": 1,
       "soleBlockerCount": 0
     },
     {
@@ -2015,8 +2015,8 @@
       "colors": [
         "YELLOW"
       ],
-      "admission": "NOT_ADMITTED",
-      "revision": null,
+      "admission": "SOURCE_MATCH",
+      "revision": 1,
       "families": [
         "DRAW",
         "FIGHT_MODIFIER",
@@ -2025,14 +2025,7 @@
         "SPEND_ABILITY",
         "TRIGGER_CALL"
       ],
-      "blockingFamilies": [
-        "DRAW",
-        "FIGHT_MODIFIER",
-        "GIG_ADJUST",
-        "MODAL_CHOICE",
-        "SPEND_ABILITY",
-        "TRIGGER_CALL"
-      ],
+      "blockingFamilies": [],
       "note": null
     },
     {

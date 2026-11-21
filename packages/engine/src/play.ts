@@ -1,3 +1,4 @@
+import { applyFightDefeatImmunity } from "./fight-immunity";
 import { advanceMandatorySwap, swapChoiceGigs } from "./legend-spend";
 import { swapGigs } from "./gig-transfer";
 import { applyFightPowerGrant } from "./fight-power-grant";
@@ -198,6 +199,12 @@ export function continuePlay(m: TurnMutation, index: number): Result<null> {
         }
         delete c.targetGigId;
         return completePlayEffect(m);
+    }
+    if (s.resolution.current?.effect.kind === "FIGHT_DEFEAT_IMMUNITY_THIS_TURN") { // Batch V61.
+        if (option.kind !== "CARD") return failure("INVALID_FIGHT_IMMUNITY", "Choose an enumerated friendly Unit");
+        s.resolution.choice = null;
+        const applied = applyFightDefeatImmunity(m, option.cardInstanceId, false);
+        return applied.ok ? completePlayEffect(m) : applied;
     }
     if (s.resolution.current?.effect.kind === "FIGHT_POWER_PER_FRIENDLY_LEGEND_THIS_TURN") { // Batch V58.
         if (option.kind !== "CARD") return failure("INVALID_FIGHT_POWER", "Choose an enumerated friendly Unit");

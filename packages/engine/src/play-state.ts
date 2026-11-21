@@ -59,7 +59,7 @@ export function playChoice(state: GameState, context: EngineContext): PendingCho
     } else if (state.resolution.current?.effect.kind === "SWAP_GIGS") { // Batch V59: the friendly Gig, then (holding it) the rival Gig.
         kind = "TARGET";
         options = swapChoiceGigs(state, c.actorId, c.targetGigId).map(gigInstanceId => ({ kind: "GIG", gigInstanceId }));
-    } else if (state.resolution.current?.effect.kind === "FIGHT_POWER_PER_FRIENDLY_LEGEND_THIS_TURN") { // Batch V58.
+    } else if (state.resolution.current?.effect.kind === "FIGHT_POWER_PER_FRIENDLY_LEGEND_THIS_TURN" || state.resolution.current?.effect.kind === "FIGHT_DEFEAT_IMMUNITY_THIS_TURN") { // Batch V58, V61.
         kind = "TARGET";
         options = friendlyFieldUnits(state, c.actorId, context).map(cardInstanceId => ({ kind: "CARD", cardInstanceId }));
     } else if (state.resolution.current?.effect.kind === "POWER_UNTIL_END_OF_TURN" || state.resolution.current?.effect.kind === "STEAL_FEWER_THIS_TURN") {
