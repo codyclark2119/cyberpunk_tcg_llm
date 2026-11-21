@@ -204,7 +204,9 @@ export const EffectSchema = z.discriminatedUnion("kind", [
         draw: z.strictObject({ classifications: z.tuple([z.literal("AI"), z.literal("Drone"), z.literal("Vehicle")]), count: z.literal(1) }) }),
     z.strictObject({ kind: z.literal("POWER_UNTIL_END_OF_TURN"), target: z.strictObject({ kind: z.enum(["RIVAL_UNIT", "SOURCE_SUBJECT", "FRIENDLY_UNIT", "ALL_RIVAL_UNITS"]) }), amount: z.number().int(), scale: z.literal("SOURCE_POWER").optional() }),
     // Batch V27: STOLEN_GIG is "increase it", the Gig a steal trigger names.
-    z.strictObject({ kind: z.literal("ADJUST_GIG_UP_TO"), target: z.union([z.strictObject({ kind: z.literal("GIGS"), relation: z.literal("ANY") }), z.strictObject({ kind: z.literal("STOLEN_GIG") })]), maximum: z.union([z.literal(1), z.literal(2), z.literal(3), z.literal(4), z.literal(5), z.literal(6)]), direction: z.enum(["INCREASE", "DECREASE"]).optional() }),
+    z.strictObject({ kind: z.literal("ADJUST_GIG_UP_TO"), target: z.union([z.strictObject({ kind: z.literal("GIGS"), relation: z.literal("ANY") }), z.strictObject({ kind: z.literal("STOLEN_GIG") })]), maximum: z.union([z.literal(1), z.literal(2), z.literal(3), z.literal(4), z.literal(5), z.literal(6)]), direction: z.enum(["INCREASE", "DECREASE"]).optional(),
+        // Batch V71: "Then, if you control 3 or more Gigs with different values, draw 1."
+        then: z.strictObject({ kind: z.literal("DRAW_IF_DISTINCT_FRIENDLY_GIG_VALUES"), minimum: z.literal(3), count: z.literal(1) }).optional() }),
     z.strictObject({ kind: z.literal("CONDITIONAL_DRAW"), timing: z.literal("RESOLUTION"), condition: ConditionSchema, count: z.number().int().positive() }),
     // Batch V19: an absent maxCost is "a Gear" with no cost limit.
     // Batch V35: "Search the top 4 cards of your deck. Reveal any number of cards with cost equal to any friendly Gig values and add

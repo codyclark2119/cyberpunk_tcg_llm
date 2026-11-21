@@ -112,6 +112,7 @@ were recorded in their pull requests (#4, #7, #8); later batches have documents 
 | V68 (2026-11-21) | Viktor Vektor: You Might Feel a Little Pinch | [{Play}: play a Cyberware Gear with cost 2 or less from trash for free onto another friendly Unit](api-admission-batch-v68.md); coverage 118/151 |
 | V69 (2026-11-21) | NetWatch Netdriver | ["When spent" triggers at every spend (rules 3.7, 10.16.1.1 settle Q8); Gear: the host's spend draws 1](api-admission-batch-v69.md); coverage 119/151 |
 | V70 (2026-11-21) | Tetratronic Rippler | [Gear: when the host is spent, privately look at the top card and may trash it](api-admission-batch-v70.md); coverage 120/151 |
+| V71 (2026-11-21) | Zetatech Faceplate | [Gear: when the host is spent, adjust a Gig by up to 1, then draw 1 with 3 different friendly values](api-admission-batch-v71.md); coverage 121/151 |
 | V7 (2026-11-15) | Royce: Don't Call Me Simon, Wild in the Streets, Delamain: Rideshare AI | [shared defeat filter and exact pin table](api-admission-batch-v7.md); coverage 42/151 |
 | V6 (2026-09-22) | Trust No One | [contract and executable slice](api-admission-batch-v6.md), [baseline verification](api-admission-batch-v6-verification.md) |
 

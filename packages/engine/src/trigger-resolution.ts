@@ -324,7 +324,7 @@ export function advanceTriggers(m: TurnMutation): Result<null> {
         c.phase = "TARGET"; return offer(m);
     }
     if (e.kind === "DECREASE_GIG_UP_TO" || e.kind === "ADJUST_GIG_UP_TO" || e.kind === "OPTIONAL_DECREASE_FRIENDLY_GIG_THEN_DRAW_IF_MIN") {
-        if (!triggerGigTargets(m.state).length) return completed(m);
+        if (!triggerGigTargets(m.state).length) return e.kind === "ADJUST_GIG_UP_TO" ? finishAdjustThen(m) : completed(m);
         c.phase = e.kind === "OPTIONAL_DECREASE_FRIENDLY_GIG_THEN_DRAW_IF_MIN" ? "OPTIONAL" : "TARGET";
         return offer(m);
     }
@@ -569,6 +569,17 @@ export function continueTrigger(m: TurnMutation, index: number, forced = false):
         if (met) { const result = m.draw(current.controllerId, current.effect.draw); if (!result.ok) return result; }
         if (m.state.match.outcome) { m.emit({ kind: "EFFECT_RESOLVED", effectId: current.id }); return success(null); }
     }
+    return current.effect.kind === "ADJUST_GIG_UP_TO" ? finishAdjustThen(m) : completed(m);
+}
+/** Batch V71: an adjustment's "Then, if you control 3 or more Gigs with different values, draw 1", checked after it (made or not). */
+function finishAdjustThen(m: TurnMutation): Result<null> {
+    const current = m.state.resolution.current!, e = current.effect;
+    if (e.kind !== "ADJUST_GIG_UP_TO" || !e.then) return completed(m);
+    const values = new Set(Object.values(m.state.objects.gigs).flatMap(g => g.controllerId === current.controllerId && g.location.zone === "GIGS" && g.roll.kind === "ROLLED" ? [g.roll.currentValue] : []));
+    const met = values.size >= e.then.minimum;
+    m.emit({ kind: "CONDITION_EVALUATED", effectId: current.id, met });
+    if (met) { const drawn = m.draw(current.controllerId, e.then.count); if (!drawn.ok) return drawn; }
+    if (m.state.match.outcome) { m.emit({ kind: "EFFECT_RESOLVED", effectId: current.id }); return success(null); }
     return completed(m);
 }
 /** Batch V68: with the Gear chosen, a lone host is taken without a choice; several are the controller's choice. */

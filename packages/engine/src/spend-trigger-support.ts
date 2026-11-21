@@ -12,7 +12,13 @@ const SPEND_TRIGGER_SHAPES = [
     // card of your deck. You may trash it. (Otherwise, keep it on the top of your deck.)"
     { type: "GEAR", sell: true, power: 1, equip: { kind: "FRIENDLY_UNIT_OR_FACE_UP_LEGEND" }, modifiers: [{ kind: "GRANT_PRINTED_POWER_TO_HOST" }],
         colors: ["BLUE"], ram: { BLUE: 2 }, tags: ["Cyberware"], cost: 1,
-        abilities: [ability({ trigger: "WHEN_SPENT", inherited: "EQUIPPED_HOST", effects: [{ kind: "SEARCH_TOP_MAY_TRASH", count: 1 }] })] }
+        abilities: [ability({ trigger: "WHEN_SPENT", inherited: "EQUIPPED_HOST", effects: [{ kind: "SEARCH_TOP_MAY_TRASH", count: 1 }] })] },
+    // Batch V71: Zetatech Faceplate. "(Equip to a friendly Unit or face-up Legend.) When this Unit or Legend is spent, adjust a Gig by
+    // up to 1. Then, if you control 3 or more Gigs with different values, draw 1."
+    { type: "GEAR", sell: true, power: 2, equip: { kind: "FRIENDLY_UNIT_OR_FACE_UP_LEGEND" }, modifiers: [{ kind: "GRANT_PRINTED_POWER_TO_HOST" }],
+        colors: ["YELLOW"], ram: { YELLOW: 2 }, tags: ["Cyberware", "Zetatech"], cost: 2,
+        abilities: [ability({ trigger: "WHEN_SPENT", inherited: "EQUIPPED_HOST", effects: [{ kind: "ADJUST_GIG_UP_TO", target: { kind: "GIGS", relation: "ANY" }, maximum: 1,
+            then: { kind: "DRAW_IF_DISTINCT_FRIENDLY_GIG_VALUES", minimum: 3, count: 1 } }] })] }
 ].map(shape => canonicalSerialize({ keywords: [], restrictions: [], ...shape }));
 /** Any "when spent" trigger routes here first, so no other gate can admit what it does not read. */
 export function hasSpendTrigger(card: DeepReadonly<CardRevisionSnapshot> | undefined) {
