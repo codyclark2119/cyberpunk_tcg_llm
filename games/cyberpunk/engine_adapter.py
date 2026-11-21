@@ -15,7 +15,15 @@ from typing import Any, Callable, Mapping, Sequence
 
 
 class EngineProtocolError(RuntimeError):
-    """Raised when the Node worker rejects a request or violates the JSONL contract."""
+    """Raised when the Node worker rejects a request or violates the JSONL contract.
+
+    ``errors`` keeps the engine's own ``{code, message, path?}`` entries when it
+    rejected a request, so a caller can report a refusal without parsing text.
+    """
+
+    def __init__(self, message: str, errors: Sequence[Mapping[str, Any]] = ()) -> None:
+        super().__init__(message)
+        self.errors = [dict(e) for e in errors]
 
 
 class EngineWorker:
@@ -89,7 +97,7 @@ class EngineWorker:
         if not response.get("ok"):
             errors = response.get("errors") or []
             detail = "; ".join(f"{e.get('code')}: {e.get('message')}" for e in errors)
-            raise EngineProtocolError(detail or "engine request failed")
+            raise EngineProtocolError(detail or "engine request failed", errors)
         value = response.get("value")
         if not isinstance(value, dict):
             raise EngineProtocolError("successful engine response is missing object value")
@@ -105,6 +113,18 @@ class EngineWorker:
         if value.get("kind") != "transition":
             raise EngineProtocolError(f"expected transition response, got {value.get('kind')!r}")
         return value
+
+    def compose_scenario(self, *, content: Mapping[str, Any], scenario: Mapping[str, Any]) -> Mapping[str, Any]:
+        """Build one exact position at the active seat's MAIN step and return its trusted state.
+
+        ``scenario`` is passed through untouched; the engine alone admits its
+        cards, completes the deck and validates the state (plan section 7).
+        Refusals raise EngineProtocolError with the engine's ``errors``.
+        """
+        value = self._send("composeScenario", content=content, fields={"scenario": scenario})
+        if value.get("kind") != "state" or not isinstance(value.get("state"), dict):
+            raise EngineProtocolError(f"expected state response, got {value.get('kind')!r}")
+        return value["state"]
 
     def model_input(self, *, content: Mapping[str, Any], state: Mapping[str, Any], actor_id: str) -> Mapping[str, Any]:
         """Return the Node-owned public ModelInputV2 payload for ``actor_id``."""

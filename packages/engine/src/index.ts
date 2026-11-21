@@ -407,6 +407,7 @@ export function transferGigControl(state: GameState, id: GigInstanceId, controll
 }
 export * from "./rng";
 export * from "./initialization";
+export { composeScenario, ScenarioSchema, SCENARIO_MATCH_ID, SCENARIO_PLAYERS, SCENARIO_DEFAULT_TURN, type Scenario } from "./scenario";
 export * from "./win";
 
 export { moveCardForEffect } from "./card-movement";

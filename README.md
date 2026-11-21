@@ -34,7 +34,7 @@ Dependency direction:
 - Persistence implements domain repository contracts and maps database envelopes to canonical models.
 - Engine depends only on domain and Zod. Domain depends only on Zod and Node's deterministic SHA-256 primitive. Neither imports React, Next, Apollo, GraphQL, database drivers, networking, or WebSockets.
 - Training harness depends on domain and engine. It has no database or model-provider integration.
-- The Python harness reaches the engine only through the JSONL worker (`scripts/engine-worker.ts`, wrapped by `games/cyberpunk/engine_adapter.py`). Nothing under `harness/` imports from `games/`.
+- The Python harness reaches the engine only through the JSONL worker (`scripts/engine-worker.ts`, wrapped by `games/cyberpunk/engine_adapter.py`). Besides `createGame` and the state ops, the worker's `composeScenario` builds one exact MAIN-step position from a public description ([docs/engine-scenario-2026-11-21.md](docs/engine-scenario-2026-11-21.md)). Nothing under `harness/` imports from `games/`.
 - The policy layer (`games/cyberpunk/policy_bot.py`, `policy_prompt.py`, `policy_mlx.py`) only chooses among offered action IDs; it implements no rules and invents no actions.
 
 `npm test` checks package manifests and source imports to enforce these boundaries. Shared packages export TypeScript source and are transpiled by Next/tsx. They are private workspaces, not published libraries. The current headless runtime is Node.js; browser-only/WASM packaging would need a hashing adapter.

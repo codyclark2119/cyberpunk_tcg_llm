@@ -19,6 +19,45 @@ REPO_ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(REPO_ROOT))
 
 from games.cyberpunk.engine_adapter import EngineProtocolError, EngineWorker, choose_action_id
+from games.cyberpunk.local_match import load_setup_file
+
+SCENARIO_LEGENDS = (
+    ["jackie-welles-pour-one-out-for-me", "saburo-arasaka-stubborn-patriarch", "yorinobu-arasaka-embracing-destruction"],
+    ["goro-takemura-hands-unclean", "v-corporate-exile", "viktor-vektor-sit-down-and-relax"],
+)
+
+
+def scenario(**edits):
+    """A composeScenario description: seat 0 has a ready Unit with Gear, seat 1 a spent Unit."""
+    players = [{
+        "field": [{"card": "field-operator", "readiness": "READY", "gear": ["dying-night-v-s-pistol"]}],
+        "legends": [{"card": slug, "face": "DOWN", "readiness": "READY"} for slug in legends],
+        "hand": [], "trash": [], "deck": [], "gigs": [{"die": "D6", "value": 3}], "eddies": {"ready": 2, "spent": 0},
+    } for legends in SCENARIO_LEGENDS]
+    players[1]["field"] = [{"card": "corpo-security", "readiness": "SPENT"}]
+    value = {"seed": "adapter-scenario", "activeSeat": 0, "players": players}
+    value.update(edits)
+    return value
+
+
+def check_scenario(worker: EngineWorker, app_root: Path, node: str) -> int:
+    """composeScenario through the worker: a valid MAIN state the other ops accept, and structured refusals."""
+    content = load_setup_file(app_root / "tests" / "fixtures" / "constructed-reference-decks.v1.json", node=node, app_root=app_root).content
+    state = worker.compose_scenario(content=content, scenario=scenario())
+    assert state["timing"]["step"] == "MAIN"
+    actor = state["match"]["playerOrder"][0]
+    actions = worker.list_legal_actions(content=content, state=state, actor_id=actor)
+    attacker = state["players"][actor]["zones"]["BATTLEFIELD"][0]
+    assert any(a["action"]["kind"] == "DECLARE_ATTACK" and a["action"].get("cardInstanceId") == attacker for a in actions)
+    bad = scenario()
+    bad["players"][1]["hand"] = ["no-such-card"]
+    try:
+        worker.compose_scenario(content=content, scenario=bad)
+    except EngineProtocolError as exc:
+        assert exc.errors == [{"code": "UNKNOWN_CARD", "message": "no-such-card is not in the content bundle", "path": "players[1].hand[0]"}], exc.errors
+    else:
+        raise AssertionError("an unknown card was accepted")
+    return len(actions)
 
 
 def load_probe(app_root: Path):
@@ -79,7 +118,10 @@ def main() -> int:
         else:
             raise AssertionError("unoffered actionId was accepted by Python boundary")
 
+        scenario_actions = check_scenario(worker, app_root, args.node)
+
     print(f"PASS modelInputV2 adapter: {len(actual_ids)} legal actions, actionId-only transition")
+    print(f"PASS composeScenario adapter: {scenario_actions} legal actions at MAIN, structured refusal")
     return 0
 
 
