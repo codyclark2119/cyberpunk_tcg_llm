@@ -942,3 +942,19 @@ python scripts/eval_engine_check.py   # the tool against the engine on them: dat
 On 309 held-out positions, no settled verdict disagreed with the engine and 91.5% of questions were settled
 ([docs/engine-oracle-eval-2026-11-15.md](docs/engine-oracle-eval-2026-11-15.md)). `eval_assistant.py
 --no-engine-check` runs the quiz without the tool for comparison.
+
+### engine_scenario: an exact situation on the engine
+
+`games/cyberpunk/assistant/engine_scenario.py` answers what an effect does in one exact situation, which
+random positions rarely reach. The engine's `composeScenario` op builds the setup (each seat's field,
+Legends, hand, trash, deck top, Gigs and Eddies) at the active seat's Main phase; the setup must be a legal
+Constructed deck ([docs/engine-scenario-2026-11-21.md](docs/engine-scenario-2026-11-21.md)). Then at most
+8 steps, each a kind, a card and an optional target or choice, are matched to exactly one action the engine
+offered; no match, or two, stops the run and returns the offers. Only a single-option choice and an Eddie
+payment are taken without a step, and both are listed. Each step reports what was applied, a diff of each
+seat's own observation, any open choice and the next offers. It is not yet an assistant tool (plan section
+7, PR 4).
+
+```bash
+python scripts/test_engine_scenario.py   # matcher, refusals and diffs; scenarios on the real engine
+```
