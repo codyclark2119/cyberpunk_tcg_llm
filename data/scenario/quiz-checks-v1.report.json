@@ -1,0 +1,316 @@
+{
+ "report_version": "engine-scenario-checks-report-v1",
+ "engine": {
+  "version": "0.4.72-gear-legend-v75",
+  "artifactHash": "8f909fe69962b5d423484a2d89f686917ac46fd0480ecf8426577b6e1514894c"
+ },
+ "checks": {
+  "path": "data/scenario/quiz-checks-v1.json",
+  "sha256": "c4d71f4623d8de207bfa0c1cbe019b59f08fae14c243d39fdf36738ed516ba13",
+  "version": "engine-scenario-checks-v1"
+ },
+ "gold": {
+  "data/gold/quiz_mc_2026-11-12.jsonl": "ed7db32629048c8bc7fce198bad3660c64ea6e067b9a0bbe890f2b805691caf4",
+  "data/gold/quiz_mc_2026-11-13.jsonl": "2ff7b96b776f69526db113bd94b7b5d61d0ca56ee577642bad47620543bcf00d",
+  "data/gold/official_basic_test.jsonl": "8e08192d9598ce3c72d16b13cad185fbd4fdf4949a6765f3d9c3af320e0bed67"
+ },
+ "summary": {
+  "questions": 24,
+  "question_ids_covered": 39,
+  "agrees": 21,
+  "disagrees": 0,
+  "setup_failed": 0,
+  "stopped": 0,
+  "engine_error": 1,
+  "out_of_reach": 2
+ },
+ "results": [
+  {
+   "id": "cody-quiz-03",
+   "key": "B",
+   "reading": false,
+   "engine_answer": "B",
+   "outcome": "agrees",
+   "evidence": []
+  },
+  {
+   "id": "cody-quiz-05",
+   "key": "A",
+   "reading": true,
+   "engine_answer": "A",
+   "outcome": "agrees",
+   "evidence": [
+    "sketchy-ripper [p0-c4] seat 0: (not visible) -> HAND"
+   ]
+  },
+  {
+   "id": "cody-quiz-06",
+   "key": "B",
+   "also": [
+    "official-43f712c9"
+   ],
+   "outcome": "out_of_reach",
+   "detail": "The key is about the card's cost as a characteristic. The engine shows only what was paid (6 printed, 4 paid with two 8+ Gigs); no admitted effect reads a Program's cost while it is played, so no scenario can separate the two.",
+   "evidence": [
+    "seat 0 HAND count: 1 -> 0",
+    "seat 0 TRASH count: 0 -> 1",
+    "seat 1 BATTLEFIELD count: 1 -> 0",
+    "seat 1 TRASH count: 0 -> 1",
+    "carnage-at-the-colosseum [p0-c4] seat 0: zone HAND -> TRASH; face DOWN -> UP",
+    "corpo-security [p1-c3] seat 1: zone BATTLEFIELD -> TRASH; keywords ['BLOCKER'] -> []",
+    "seat 0 eddies ready/spent: 6/0 -> 2/4"
+   ]
+  },
+  {
+   "id": "cody-quiz-08",
+   "key": "A",
+   "also": [
+    "official-561546f5"
+   ],
+   "reading": true,
+   "engine_answer": "A",
+   "outcome": "agrees",
+   "evidence": [
+    "combat: None -> RIVAL_REACT: seat 0 sasha-yakovleva-won-t-let-you-down [p0-c0] attacks the gig area of seat 1"
+   ]
+  },
+  {
+   "id": "cody-quiz-09",
+   "key": "B",
+   "also": [
+    "official-205786f8"
+   ],
+   "reading": false,
+   "engine_answer": "B",
+   "outcome": "agrees",
+   "evidence": []
+  },
+  {
+   "id": "cody-quiz-11",
+   "key": "B",
+   "reading": false,
+   "engine_answer": "B",
+   "outcome": "agrees",
+   "evidence": []
+  },
+  {
+   "id": "cody-quiz-12",
+   "key": "A",
+   "reading": true,
+   "engine_answer": "A",
+   "outcome": "agrees",
+   "evidence": [
+    "DONE"
+   ]
+  },
+  {
+   "id": "cody-quiz-19",
+   "key": "A",
+   "also": [
+    "official-8ef00678"
+   ],
+   "reading": true,
+   "engine_answer": "A",
+   "outcome": "agrees",
+   "evidence": [
+    "psycho-squad [p0-c3] seat 0: BATTLEFIELD -> (not visible)",
+    "seat 0 DECK count: 34 -> 35"
+   ]
+  },
+  {
+   "id": "cody-quiz-26",
+   "key": "B",
+   "reading": false,
+   "engine_answer": "B",
+   "outcome": "agrees",
+   "evidence": []
+  },
+  {
+   "id": "cody-quiz-30",
+   "key": "C",
+   "also": [
+    "official-732de81d"
+   ],
+   "reading": true,
+   "engine_answer": "C",
+   "outcome": "agrees",
+   "evidence": [
+    "v-corporate-exile [p0-c0] seat 0: zone BATTLEFIELD -> REMOVED; power 10 -> 8; attachments ['p0-c3'] -> []; keywords ['GO_SOLO'] -> []",
+    "dying-night-v-s-pistol [p0-c3] seat 0: BATTLEFIELD -> (not visible)",
+    "seat 0 DECK count: 32 -> 33"
+   ]
+  },
+  {
+   "id": "cody-quiz-32",
+   "key": "B",
+   "reading": false,
+   "engine_answer": "B",
+   "outcome": "agrees",
+   "evidence": []
+  },
+  {
+   "id": "cody-quiz-34",
+   "key": "A",
+   "reading": true,
+   "engine_answer": "A",
+   "outcome": "agrees",
+   "evidence": [
+    "Play Wild in the Streets"
+   ]
+  },
+  {
+   "id": "cody-quiz-35",
+   "key": "A",
+   "also": [
+    "official-26b32781"
+   ],
+   "reading": true,
+   "engine_answer": "A",
+   "outcome": "agrees",
+   "evidence": [
+    "EDDIES slot 0 of seat 0",
+    "EDDIES slot 1 of seat 0",
+    "EDDIES slot 2 of seat 0"
+   ]
+  },
+  {
+   "id": "cody-quiz-36",
+   "key": "B",
+   "reading": false,
+   "engine_answer": "B",
+   "outcome": "agrees",
+   "evidence": []
+  },
+  {
+   "id": "cody-quiz-36-control",
+   "control_for": "cody-quiz-36",
+   "outcome": "control_ok",
+   "reading": true,
+   "evidence": [
+    "seat 0 DECK count: 39 -> 38"
+   ]
+  },
+  {
+   "id": "cody-quiz-37",
+   "key": "A",
+   "also": [
+    "official-5fc12824"
+   ],
+   "reading": true,
+   "engine_answer": "A",
+   "outcome": "agrees",
+   "evidence": [
+    "Go Solo with Goro Takemura: Hands Unclean"
+   ]
+  },
+  {
+   "id": "cody-quiz-39",
+   "key": "A",
+   "reading": true,
+   "engine_answer": "A",
+   "outcome": "agrees",
+   "evidence": [
+    "seat 0 HAND count: 0 -> 1"
+   ]
+  },
+  {
+   "id": "cody-quiz2-05",
+   "key": "A",
+   "also": [
+    "official-39880a7d"
+   ],
+   "reading": true,
+   "engine_answer": "A",
+   "outcome": "agrees",
+   "evidence": [
+    "Block with Augmented Negotiators"
+   ]
+  },
+  {
+   "id": "cody-quiz2-12",
+   "key": "A",
+   "also": [
+    "official-b99cdb18"
+   ],
+   "reading": true,
+   "engine_answer": "A",
+   "outcome": "agrees",
+   "evidence": [
+    "psycho-squad [p1-c3] seat 1: zone BATTLEFIELD -> TRASH"
+   ]
+  },
+  {
+   "id": "cody-quiz2-16",
+   "key": "B",
+   "also": [
+    "official-0c648b1b"
+   ],
+   "outcome": "out_of_reach",
+   "detail": "Same as cody-quiz-06: the key is about the Gear's cost as a characteristic; the engine shows only what was paid (6 printed, 4 paid with two face-up Legends).",
+   "evidence": [
+    "seat 0 BATTLEFIELD count: 1 -> 2",
+    "seat 0 HAND count: 1 -> 0",
+    "corpo-security [p0-c3] seat 0: power 2 -> 5; attachments [] -> ['p0-c4']",
+    "zetatech-berserk [p0-c4] seat 0: zone HAND -> BATTLEFIELD; face DOWN -> UP; power None -> 3",
+    "seat 0 eddies ready/spent: 6/0 -> 2/4"
+   ]
+  },
+  {
+   "id": "cody-quiz2-24",
+   "key": "B",
+   "also": [
+    "official-1505f3f1"
+   ],
+   "reading": false,
+   "engine_answer": "B",
+   "outcome": "agrees",
+   "evidence": []
+  },
+  {
+   "id": "cody-quiz2-25",
+   "key": "B",
+   "also": [
+    "official-00fb46ac"
+   ],
+   "reading": true,
+   "engine_answer": "B",
+   "outcome": "agrees",
+   "evidence": [
+    "corpo-security (p1-c3)"
+   ]
+  },
+  {
+   "id": "cody-quiz2-29",
+   "key": "A",
+   "also": [
+    "official-8ce0c702"
+   ],
+   "outcome": "engine_error",
+   "detail": "engine_error: the engine failed to observe or list actions for this position (the worker gave no structured error); this is an engine fault, not an answer"
+  },
+  {
+   "id": "cody-quiz2-35",
+   "key": "B",
+   "also": [
+    "official-d67f61fe"
+   ],
+   "reading": false,
+   "engine_answer": "B",
+   "outcome": "agrees",
+   "evidence": []
+  },
+  {
+   "id": "cody-quiz2-36",
+   "key": "A",
+   "also": [
+    "official-70586605"
+   ],
+   "reading": true,
+   "engine_answer": "A",
+   "outcome": "agrees",
+   "evidence": [
+    "modded-kusanagi [p1-c3] seat 1: zone BATTLEFIELD -> TRASH; keywords ['ADRENALINE'] -> []"
+   ]
+  }
+ ]
+}

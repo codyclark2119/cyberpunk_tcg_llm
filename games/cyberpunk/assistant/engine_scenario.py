@@ -164,6 +164,17 @@ def _option_names(option: Mapping, slugs: Mapping[str, str], legends: Mapping[tu
     return {_norm(n) for n in names if n}
 
 
+_LABEL_PID = re.compile(r"\((p\d+-c\d+)\)")
+
+
+def _effect_names(d: Mapping, slugs: Mapping[str, str]) -> set[str]:
+    """An effect option (trigger order) by the card whose effect it is: the first card its label names."""
+    if (d.get("option") or {}).get("kind") != "EFFECT":
+        return set()
+    m = _LABEL_PID.search(d["label"])
+    return {_norm(n) for n in (m[1], slugs.get(m[1], ""))} - {""} if m else set()
+
+
 def describe(action: Mapping, slugs: Mapping[str, str], legends: Mapping[tuple[int, int], str]) -> dict:
     """One offered action as the report lists it: kind, card or option, and the engine's label."""
     d = action["descriptor"]
@@ -178,7 +189,8 @@ def describe(action: Mapping, slugs: Mapping[str, str], legends: Mapping[tuple[i
         out["card"] = source["gigId"]
     if d["kind"] == "CHOOSE":
         out["choice_kind"] = d["choiceKind"]
-        out["option"] = option_text(d["option"], slugs)
+        # An effect's id is an opaque hash; the engine's label names it.
+        out["option"] = d["label"] if d["option"].get("kind") == "EFFECT" else option_text(d["option"], slugs)
     out["label"] = d["label"]
     return out
 
@@ -207,7 +219,7 @@ def match_step(step: Mapping, actions: Sequence[Mapping], slugs: Mapping[str, st
     if kind == "CHOOSE" and "choice" in step:
         want = _norm(step["choice"])
         hits = [a for a in hits if want in _option_names(a["descriptor"]["option"], slugs, legends)
-                or want == _norm(a["descriptor"]["label"])]
+                or want == _norm(a["descriptor"]["label"]) or want in _effect_names(a["descriptor"], slugs)]
     if "label" in step:
         hits = [a for a in hits if _norm(a["descriptor"]["label"]) == _norm(step["label"])]
     if len(hits) == 1:
@@ -242,13 +254,35 @@ def slug_map(views: Sequence[Mapping]) -> dict[str, str]:
             for c in p["cards"] if c.get("content")}
 
 
-def legend_names(setup: Mapping) -> dict[tuple[int, int], str]:
-    """(seat, slot) -> slug from the setup the caller wrote: face-down Legends are hidden even from their owner."""
-    out = {}
+def setup_legends(setup: Mapping) -> dict[int, list[str]]:
+    """seat -> its Legend slugs in the order the caller wrote them (legends[i] starts in LEGENDS slot i)."""
+    out: dict[int, list[str]] = {}
     for seat, player in enumerate(setup.get("players") or []):
-        for slot, legend in enumerate((player or {}).get("legends") or []):
-            if isinstance(legend, Mapping) and isinstance(legend.get("card"), str):
-                out[(seat, slot)] = legend["card"]
+        out[seat] = [lg["card"] for lg in (player or {}).get("legends") or []
+                     if isinstance(lg, Mapping) and isinstance(lg.get("card"), str)]
+    return out
+
+
+def legend_slots(views: Sequence[Mapping], written: Mapping[int, list[str]],
+                 revealed: Mapping[int, set[str]]) -> dict[tuple[int, int], str]:
+    """(seat, slot) -> slug for the Legends area as it stands now.
+
+    Face-down Legends are hidden even from their owner, so a hidden slot is named from the setup: the Legends the
+    owner has not seen face up since, in the order written. The area closes up when a Legend leaves it (Go Solo),
+    which moves the later slots down; face-down Legends keep their order.
+    """
+    out = {}
+    for view in views:
+        me = _own(view)
+        seat = me["seat"]
+        hidden = [slug for slug in written.get(seat, []) if slug not in revealed.get(seat, set())]
+        for slot, c in enumerate(c for c in me["cards"] if c.get("zone") == "LEGENDS"):
+            if c.get("content"):
+                out[(seat, slot)] = c["content"]["cardId"]
+                continue
+            m = _LEGEND_SLOT.match(c["publicId"])
+            if m and hidden:
+                out[(int(m[1]), int(m[2]))] = hidden.pop(0)
     return out
 
 
@@ -267,27 +301,54 @@ def _gig_text(gig: Mapping) -> str:
     return f"{gig['dieType']}={value}" if value is not None else gig["dieType"]
 
 
+def combat_text(views: Sequence[Mapping]) -> str | None:
+    """The open combat, if any: its stage, the attacker and the target, as the observations show them."""
+    combat = views[0].get("combat")
+    if not combat:
+        return None
+    names = slug_map(views)
+    attacker = f"{names.get(combat['attackerId'], 'hidden')} [{combat['attackerId']}]"
+    target = combat.get("target") or {}
+    if target.get("kind") == "CARD":
+        aim = f"{names.get(target['cardInstanceId'], 'hidden')} [{target['cardInstanceId']}]"
+    elif target.get("kind") == "GIG_AREA":
+        aim = f"the gig area of seat {target['playerSeat']}"
+    else:
+        aim = "no target yet"
+    return f"{combat['stage']}: seat {combat['attackingSeat']} {attacker} attacks {aim}"
+
+
 def snapshot(views: Sequence[Mapping], legends: Mapping[tuple[int, int], str]) -> dict:
     """The facts the diff compares, from each seat's own view of itself (plus the shared match facts)."""
     first = views[0]
-    snap: dict[str, Any] = {"match": {k: first.get(k) for k in ("turn", "activeSeat", "actingSeat", "window",
-                                                                "step", "resolutionStage", "outcome")},
-                            "cards": {}, "seats": {}}
+    snap: dict[str, Any] = {"match": {**{k: first.get(k) for k in ("turn", "activeSeat", "actingSeat", "window",
+                                                                   "step", "resolutionStage", "outcome")},
+                                      "combat": combat_text(views)},
+                            "cards": {}, "seats": {}, "seen": set()}
     for view in views:
         me = _own(view)
         seat = me["seat"]
         snap["seats"][seat] = {"street_cred": me.get("streetCred"), "counts": dict(me.get("counts") or {}),
                                "gigs": {g["id"]: (g.get("zone"), _gig_text(g)) for g in me.get("gigs") or []}}
         for c in me["cards"]:
-            snap["cards"][c["publicId"]] = {
-                "name": _card_name(c, legends), "seat": seat, "zone": c.get("zone"), "readiness": c.get("readiness"),
+            name = _card_name(c, legends)
+            # A face-down Legend's id is its slot, which moves when the area closes up: key it by name instead.
+            key = f"seat:{seat}:LEGENDS:{name}" if _LEGEND_SLOT.match(c["publicId"]) else c["publicId"]
+            snap["cards"][key] = {
+                "pid": c["publicId"], "name": name, "seat": seat, "zone": c.get("zone"), "readiness": c.get("readiness"),
                 "face": c.get("face"), "damage": c.get("damage"), "power": c.get("effectivePower"),
                 "counters": c.get("counters") or {}, "attachments": list(c.get("attachments") or []),
                 "keywords": list(c.get("effectiveKeywords") or [])}
+        # What this seat sees of its rival's cards that are not public by zone (a reveal shows up here).
+        rival = next((p for p in view["players"] if p["seat"] != seat), None)
+        for c in (rival or {}).get("cards", []):
+            if c.get("content") and c.get("zone") in PRIVATE_ZONES:
+                snap["seen"].add((seat, c["publicId"], c["content"]["cardId"], c.get("zone")))
     return snap
 
 
 _EDDIE = re.compile(r"^seat:\d+:EDDIES:\d+$")
+PRIVATE_ZONES = ("HAND", "DECK", "EDDIES")
 
 
 def diff(before: Mapping, after: Mapping) -> list[str]:
@@ -310,21 +371,35 @@ def diff(before: Mapping, after: Mapping) -> list[str]:
             if old != new:
                 lines.append(f"seat {seat} gig {gid}: {_gig_state(old)} -> {_gig_state(new)}")
     bc, ac = before["cards"], after["cards"]
-    for pid in sorted(set(bc) | set(ac), key=_pid_key):
+    # A face-down Legend that turned face up (a Call) or left face up (Go Solo): one line, not a vanish and an appear.
+    flipped = {}
+    for key, new in ac.items():
+        hidden = f"seat:{new['seat']}:LEGENDS:{new['name']} (face down)"
+        if key not in bc and hidden in bc and hidden not in ac:
+            flipped[hidden] = key
+    for hidden, key in sorted(flipped.items()):
+        new = ac[key]
+        lines.append(f"{new['name']} [{new['pid']}] seat {new['seat']}: face-down Legend -> face up in {new['zone']}"
+                     + (f" ({new['readiness'].lower()})" if new.get("readiness") else ""))
+    skip = set(flipped) | set(flipped.values())
+    for pid in sorted((set(bc) | set(ac)) - skip, key=_pid_key):
         if _EDDIE.match(pid):
             continue  # Eddie slots: the EDDIES count and readiness lines below say it
         old, new = bc.get(pid), ac.get(pid)
         if old is None:
-            lines.append(f"{new['name']} [{pid}] seat {new['seat']}: (not visible) -> {new['zone']}")
+            lines.append(f"{new['name']} [{new['pid']}] seat {new['seat']}: (not visible) -> {new['zone']}")
             continue
         if new is None:
-            lines.append(f"{old['name']} [{pid}] seat {old['seat']}: {old['zone']} -> (not visible)")
+            lines.append(f"{old['name']} [{old['pid']}] seat {old['seat']}: {old['zone']} -> (not visible)")
             continue
+        pid = new["pid"]
         changes = [f"{f} {old[f]} -> {new[f]}" for f in ("zone", "readiness", "face", "damage", "power",
                                                           "counters", "attachments", "keywords")
                    if old[f] != new[f]]
         if changes:
             lines.append(f"{new['name']} [{pid}] seat {new['seat']}: " + "; ".join(changes))
+    for seat, pid, slug, zone in sorted(after["seen"] - before["seen"]):
+        lines.append(f"seat {seat} now sees its rival's {slug} [{pid}] in {zone}")
     for seat in sorted(set(before["seats"]) | set(after["seats"])):
         old, new = _eddies(bc, seat), _eddies(ac, seat)
         if old != new:
@@ -350,6 +425,8 @@ def board(views: Sequence[Mapping], legends: Mapping[tuple[int, int], str]) -> d
     first = views[0]
     out: dict[str, Any] = {k: first.get(k) for k in ("turn", "activeSeat", "actingSeat", "window", "step",
                                                      "resolutionStage", "outcome") if first.get(k) is not None}
+    if combat_text(views):
+        out["combat"] = combat_text(views)
     if first.get("choice"):
         out["choice"] = {k: first["choice"].get(k) for k in ("kind", "actorSeat", "min", "max")}
     seats = []
@@ -417,15 +494,34 @@ def _auto_option(actions: Sequence[Mapping], pay: list[str], slugs, legends) -> 
     return None, ""
 
 
+def _codes(exc: EngineProtocolError) -> str:
+    """The engine's error codes, or a fixed phrase: the transport message carries request ids, which vary."""
+    return ", ".join(sorted({str(e.get("code")) for e in exc.errors})) or "the worker gave no structured error"
+
+
 class _Run:
     def __init__(self, worker: EngineWorker, content: Mapping, setup: Mapping, state: Mapping):
-        self.worker, self.content, self.legends = worker, content, legend_names(setup)
+        self.worker, self.content, self.written = worker, content, setup_legends(setup)
+        self.revealed: dict[int, set[str]] = {seat: set() for seat in self.written}
         self.state = state
         self.refresh()
 
     def refresh(self) -> None:
+        try:
+            self._refresh()
+        except EngineProtocolError as exc:
+            raise ScenarioError("engine_error", "the engine failed to observe or list actions for this position "
+                                f"({_codes(exc)}); this is an engine fault, not an answer",
+                                engine_errors=exc.errors) from exc
+
+    def _refresh(self) -> None:
         self.views = observe_both(self.worker, self.content, self.state)
         self.slugs = slug_map(self.views)
+        for view in self.views:
+            seat = view["viewerSeat"]
+            seen = {c["content"]["cardId"] for c in _own(view)["cards"] if c.get("content")}
+            self.revealed.setdefault(seat, set()).update(seen & set(self.written.get(seat, [])))
+        self.legends = legend_slots(self.views, self.written, self.revealed)
         actor = self.state["timing"]["actingPlayer"]
         self.actor_seat = _seat_ids(self.state).index(actor)
         if self.state["match"].get("outcome"):
@@ -436,9 +532,18 @@ class _Run:
 
     def apply(self, action: Mapping) -> None:
         actor = self.state["timing"]["actingPlayer"]
-        self.state = self.worker.apply_action(content=self.content, state=self.state, actor_id=actor,
-                                              action_id=action["actionId"])["state"]
-        self.refresh()
+        before = {k: getattr(self, k) for k in ("state", "views", "slugs", "legends", "actor_seat", "actions")}
+        try:
+            self.state = self.worker.apply_action(content=self.content, state=self.state, actor_id=actor,
+                                                  action_id=action["actionId"])["state"]
+            self.refresh()
+        except (EngineProtocolError, ScenarioError) as exc:
+            for k, v in before.items():  # the report keeps showing the last position the engine could observe
+                setattr(self, k, v)
+            if isinstance(exc, ScenarioError):
+                raise
+            raise ScenarioError("engine_error", f"the engine failed to apply this action ({_codes(exc)}); this is "
+                                "an engine fault, not an answer", engine_errors=exc.errors) from exc
 
     def describe(self, action: Mapping) -> dict:
         return describe(action, self.slugs, self.legends)
@@ -499,13 +604,19 @@ def run_scenario(worker: EngineWorker, content: Mapping, setup: Mapping, steps: 
             pay = list(step.get("pay") or [])
             run.settle(pay, auto)
             if "target" in step and step["kind"] != "CHOOSE":
+                combat = run.views[0].get("combat") or {}
+                attack = step["kind"] == "DECLARE_ATTACK"
                 targets = [a for a in run.actions if a["descriptor"]["kind"] == "CHOOSE"
                            and a["descriptor"]["choiceKind"] == "TARGET"]
+                if attack and combat.get("stage") != "ATTACK_TARGET_SELECTION":
+                    targets = []  # the engine locked the attack's target; a TARGET choice now is a trigger's own
                 if targets:
                     chosen = match_step({"kind": "CHOOSE", "choice": step["target"]}, targets, run.slugs, run.legends)
                     entry["target"] = run.describe(chosen)
                     run.apply(chosen)
                     run.settle(pay, auto)
+                elif attack and combat:
+                    entry["target"] = {"locked": combat_text(run.views)}
                 else:
                     entry["target"] = {"note": "the engine asked for no target choice; see the diff for what it locked in"}
             if auto:

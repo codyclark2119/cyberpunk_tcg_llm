@@ -957,4 +957,10 @@ seat's own observation, any open choice and the next offers. It is not yet an as
 
 ```bash
 python scripts/test_engine_scenario.py   # matcher, refusals and diffs; scenarios on the real engine
+python scripts/eval_engine_scenarios.py  # stage 1: one scenario per quiz card question, engine answer vs key
 ```
+
+Stage 1 ([docs/engine-scenario-checks-2026-11-24.md](docs/engine-scenario-checks-2026-11-24.md)): of the 24
+keyed card questions, the engine's answer agrees with the key on 21 and disagrees on none; 2 cannot be decided
+by any engine and 1 hits an engine fault fixed for bundle 10. The scenarios (`data/scenario/`) are derived from
+eval questions and feed no prompt, retrieval or training.
