@@ -57,6 +57,7 @@ python scripts/test_tf_dataset.py   # rules-only true/false LoRA set: mutations,
 python scripts/test_engine_tf_items.py   # engine-verified legality items: replays labels on the engine
 python scripts/test_engine_positions.py  # engine oracle position catalog: cache, stale checks, hidden info
 python scripts/test_engine_check.py      # engine_check tool: verdicts recounted from the position index
+python scripts/test_engine_scenario.py   # engine_scenario: step matcher and diffs on composed scenarios
 python scripts/eval_engine_check.py --check  # engine_check vs the engine on held-out positions (report current)
 python scripts/check_deck_rules.py --negative-control
 ```
