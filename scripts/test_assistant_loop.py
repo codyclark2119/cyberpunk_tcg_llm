@@ -477,10 +477,14 @@ def test_prompt_guard_estimate_learns_from_reported_counts_and_only_tightens():
 
 
 def test_a_worker_refusal_drops_more_and_asks_again():
-    free = SizedModel(list(GUARD_SCRIPT))
+    # One search more than GUARD_SCRIPT: the loop's estimate (3 chars a token) is a third higher than this model's
+    # count (4), so the results it can drop must outweigh that on the fixed prompt and specs, which grew with each
+    # new tool (v9's engine_scenario tipped three searches over).
+    script = [*GUARD_SCRIPT[:-1], call("search_rules", query="steal gig", k=10), GUARD_SCRIPT[-1]]
+    free = SizedModel(list(script))
     turn([], GUARD_QUESTION, free)
-    hidden = free.sizes[3] - 100  # the worker's cap, unknown to the loop until it refuses
-    model = SizedModel(list(GUARD_SCRIPT), refuse_over=hidden)
+    hidden = free.sizes[4] - 100  # the worker's cap, unknown to the loop until it refuses
+    model = SizedModel(list(script), refuse_over=hidden)
     result = turn([], GUARD_QUESTION, model)
     assert result.ok and result.stop_reason == "answer" and model.sizes[-1] <= hidden < model.sizes[-2]
     refused = [s for s in result.trace if s["kind"] == "model" and not s["ok"]]
@@ -490,7 +494,7 @@ def test_a_worker_refusal_drops_more_and_asks_again():
     assert context[0]["reason"] == "worker_refused" and context[0]["dropped"] and context[0]["limit"] == hidden
     assert context[0]["dropped"][0]["message"] == 3, "the first tool result goes first"
     # A refusal that does not name the cap still drops one more result per refusal until the worker accepts.
-    quiet = SizedModel(list(GUARD_SCRIPT), refuse_over=hidden, report_cap=False)
+    quiet = SizedModel(list(script), refuse_over=hidden, report_cap=False)
     result = turn([], GUARD_QUESTION, quiet)
     assert result.ok and quiet.sizes[-1] <= hidden
     dropped = [d["message"] for s in result.trace if s["kind"] == "context" for d in s["dropped"]]

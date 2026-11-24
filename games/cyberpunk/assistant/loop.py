@@ -96,7 +96,9 @@ from games.cyberpunk.prompts import RULES_VERSION, TOURNAMENT_RULES_VERSION
 # read as a cost, the first retrieved rule taken over a more specific one, and never searching past the preload.
 # v8 (2026-11-14): adds the ``engine_check`` tool (``engine_oracle.py``: what the game engine offered in recorded
 # Demo positions) and ``ENGINE_GUIDANCE``, one line on reporting its verdict; v7's wording is unchanged.
-ASSISTANT_PROMPT_VERSION = "assistant-chat-v8"
+# v9 (2026-11-24): adds the ``engine_scenario`` tool (``engine_scenario.py``: the engine builds a described board and
+# plays the steps) and ``SCENARIO_GUIDANCE``, one line on when to use it; v8's wording is unchanged.
+ASSISTANT_PROMPT_VERSION = "assistant-chat-v9"
 MAX_TOOL_CALLS = 6
 MAX_TOOL_CALLS_LIMIT = 16           # the most a run may allow (scripts/eval_assistant.py --max-tool-calls)
 MAX_TOKENS_LIMIT = 16384            # per model step; same as scripts/mlx_chat_worker.py (see the docstring)
@@ -122,11 +124,19 @@ ENGINE_GUIDANCE = ("- For whether a play can be made, engine_check shows what th
                    "Its facts_that_split are hints, not rules.")
 
 
-def system_prompt(max_tool_calls: int = MAX_TOOL_CALLS, engine_check: bool = True) -> str:
+# v9: general on purpose too (it names no card).
+SCENARIO_GUIDANCE = ("- For what a card's effect does in a specific situation, build that situation with engine_scenario "
+                     "and play the steps; answer from its changes and offers and say the engine showed it. "
+                     "If it stops, fix the setup or steps from its message.")
+
+
+def system_prompt(max_tool_calls: int = MAX_TOOL_CALLS, engine_check: bool = True,
+                  engine_scenario: bool = True) -> str:
     """The system prompt stating ``max_tool_calls``; at the defaults it is exactly ``SYSTEM_PROMPT``.
 
-    ``engine_check=False`` leaves out ENGINE_GUIDANCE, for runs without the tool (``run_turn``)."""
-    engine_line = f"\n{ENGINE_GUIDANCE}" if engine_check else ""
+    ``engine_check=False`` leaves out ENGINE_GUIDANCE and ``engine_scenario=False`` SCENARIO_GUIDANCE, for runs
+    without those tools (``run_turn``)."""
+    engine_line = (f"\n{ENGINE_GUIDANCE}" if engine_check else "") + (f"\n{SCENARIO_GUIDANCE}" if engine_scenario else "")
     return f"""You answer questions about Cyberpunk TCG, a card game that launched in 2026 and is in open beta. You know nothing true about it: anything you seem to remember is wrong or invented.
 Warning: some terms here are the reverse of other card games. In these rules an attack spends a friendly ready Unit (rule 9.1), and a spent rival Unit is a valid attack target (rule 9.3.2.1). Where the rules text and your expectations differ, the rules text is right.
 
@@ -153,14 +163,20 @@ def default_max_tokens(enable_thinking: bool) -> int:
     return DEFAULT_THINKING_MAX_TOKENS if enable_thinking else DEFAULT_MAX_TOKENS
 
 
-def active_tool_specs(engine_check: bool = True) -> list[dict]:
-    """The tool specs a turn offers: all of them, or all but engine_check."""
-    return [s for s in tool_specs() if engine_check or s["function"]["name"] != "engine_check"]
+def disabled_tools(engine_check: bool = True, engine_scenario: bool = True) -> set[str]:
+    return {name for name, on in (("engine_check", engine_check), ("engine_scenario", engine_scenario)) if not on}
 
 
-def tool_specs_sha256(engine_check: bool = True) -> str:
+def active_tool_specs(engine_check: bool = True, engine_scenario: bool = True) -> list[dict]:
+    """The tool specs a turn offers: all of them, or all but the engine tools switched off."""
+    off = disabled_tools(engine_check, engine_scenario)
+    return [s for s in tool_specs() if s["function"]["name"] not in off]
+
+
+def tool_specs_sha256(engine_check: bool = True, engine_scenario: bool = True) -> str:
     """Hash of the tool specs exactly as the model receives them, for run headers."""
-    canonical = json.dumps(active_tool_specs(engine_check), ensure_ascii=False, sort_keys=True, separators=(",", ":"))
+    canonical = json.dumps(active_tool_specs(engine_check, engine_scenario), ensure_ascii=False, sort_keys=True,
+                           separators=(",", ":"))
     return hashlib.sha256(canonical.encode("utf-8")).hexdigest()
 
 
@@ -526,8 +542,9 @@ def deck_context(deck: dict) -> str:
 
 
 def build_messages(history: list[dict], user_message: str, deck: dict | None = None, *,
-                   max_tool_calls: int = MAX_TOOL_CALLS, engine_check: bool = True) -> list[dict]:
-    prompt = system_prompt(max_tool_calls, engine_check)
+                   max_tool_calls: int = MAX_TOOL_CALLS, engine_check: bool = True,
+                   engine_scenario: bool = True) -> list[dict]:
+    prompt = system_prompt(max_tool_calls, engine_check, engine_scenario)
     system = prompt if deck is None else f"{prompt}\n\n{deck_context(deck)}"
     return [{"role": "system", "content": system}, *history, {"role": "user", "content": user_message}]
 
@@ -538,7 +555,7 @@ async def run_turn(history: list[dict], user_message: str, model: ChatModel, *,
                    preload: bool = DEFAULT_PRELOAD, preload_text: str | None = None,
                    preload_k: int = DEFAULT_PRELOAD_K, preload_chars: int = DEFAULT_PRELOAD_CHARS,
                    preload_cards: list[str] | None = None, max_prompt_tokens: int | None = None,
-                   engine_check: bool = True) -> TurnResult:
+                   engine_check: bool = True, engine_scenario: bool = True) -> TurnResult:
     """Run one user turn to an answer, an error or the tool-call cap. ``history`` is not modified.
 
     ``deck`` is the session's loaded deck (see ``deck_context``), or None.
@@ -549,12 +566,15 @@ async def run_turn(history: list[dict], user_message: str, model: ChatModel, *,
     ``max_prompt_tokens`` is the prompt cap the guard keeps to (default: the
     model's ``prompt_token_limit(max_tokens)`` when it has one; see ``PromptGuard``).
     ``engine_check=False`` offers every tool but engine_check, drops its prompt line, and refuses a call
-    to it as an unknown tool (the eval's ``--no-engine-check`` arm).
+    to it as an unknown tool (the eval's ``--no-engine-check`` arm); ``engine_scenario=False`` does the same for
+    engine_scenario (``--no-engine-scenario``).
     """
     started = time.monotonic()
     max_tokens = default_max_tokens(enable_thinking) if max_tokens is None else max_tokens
-    messages = build_messages(history, user_message, deck, max_tool_calls=max_tool_calls, engine_check=engine_check)
-    specs = active_tool_specs(engine_check)
+    messages = build_messages(history, user_message, deck, max_tool_calls=max_tool_calls, engine_check=engine_check,
+                              engine_scenario=engine_scenario)
+    specs = active_tool_specs(engine_check, engine_scenario)
+    off = disabled_tools(engine_check, engine_scenario)
     turn = TurnResult(ok=False, answer="", stop_reason="", preload=preload, max_tokens=max_tokens)
     step = 0
 
@@ -659,9 +679,9 @@ async def run_turn(history: list[dict], user_message: str, model: ChatModel, *,
                 hint = XML_CALL_HINT if call.format == "xml" else JSON_CALL_HINT
                 result = _tool_error(call.name, "malformed_tool_call",
                                      f"{call.error}. Write {hint} with one of: {', '.join(TOOLS)}.")
-            elif not engine_check and call.name == "engine_check":
+            elif call.name in off:
                 offered = ", ".join(s["function"]["name"] for s in specs)
-                result = _tool_error(call.name, "unknown_tool", f"No tool named 'engine_check'. Tools: {offered}.")
+                result = _tool_error(call.name, "unknown_tool", f"No tool named {call.name!r}. Tools: {offered}.")
             else:
                 result = call_tool(call.name, call.arguments)  # validates; unknown or bad args never run
             elapsed = round((time.monotonic() - tool_started) * 1000, 2)

@@ -952,8 +952,16 @@ Constructed deck ([docs/engine-scenario-2026-11-21.md](docs/engine-scenario-2026
 8 steps, each a kind, a card and an optional target or choice, are matched to exactly one action the engine
 offered; no match, or two, stops the run and returns the offers. Only a single-option choice and an Eddie
 payment are taken without a step, and both are listed. Each step reports what was applied, a diff of each
-seat's own observation, any open choice and the next offers. It is not yet an assistant tool (plan section
-7, PR 4).
+seat's own observation, any open choice and the next offers.
+
+Since prompt v9 it is an assistant tool ([docs/engine-scenario-tool-2026-11-24.md](docs/engine-scenario-tool-2026-11-24.md)).
+The model may leave out empty zones and the Legends: a seat with no Legends gets three face-down filler
+Legends, the first triple the engine accepts as a legal deck, and the report names them. The model sees step
+labels, changes and up to 25 offers as short strings. v9 adds one prompt line: build the situation, play the
+steps, answer from the changes and offers. On the assistant page an answer that ran it carries an
+"engine scenario" badge and a `scenario` button that opens the boards, each step's changes and the offers in
+the side panel; the Tools tab takes the setup and steps as JSON and shows the same view.
+`eval_assistant.py --no-engine-scenario` runs the quiz without the tool and its line.
 
 ```bash
 python scripts/test_engine_scenario.py   # matcher, refusals and diffs; scenarios on the real engine

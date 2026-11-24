@@ -373,8 +373,8 @@ def test_routes_list_public_decks_and_run_deck_tools():
                           headers=LOCAL)
     assert missing.status_code == 404
     tools = [t["name"] for t in client.get("/api/tools", headers=LOCAL).json()["tools"]]
-    assert tools[-7:-1] == ["parse_deck", "check_deck", "deck_profile", "similar_decks", "archetype_of",
-                            "played_with"] and tools[-1] == "engine_check"
+    assert tools[-8:-2] == ["parse_deck", "check_deck", "deck_profile", "similar_decks", "archetype_of",
+                            "played_with"] and tools[-2:] == ["engine_check", "engine_scenario"]
     # The page builds a textarea for pasted text and the deck dict, and a picker over /api/decks.
     for needle in ('fetch("/api/decks")', 'field === "deck_id"', 'el("textarea"', "Insert last parsed deck",
                    'spec.type === "object"'):

@@ -215,6 +215,44 @@ function engineBadgeText(checks) {
   const verdicts = [...new Set((checks || []).map((c) => verdictText(c.verdict)))];
   return verdicts.length ? "engine-checked: " + verdicts.join(", ") : "";
 }
+// engine_scenario results in a turn's trace: each tool step that ran it and got a report back, in order.
+// A refused call (a setup the engine would not build, a step kind it does not know) built no scenario.
+function engineScenarios(trace) {
+  return (Array.isArray(trace) ? trace : []).filter((s) => s && s.kind === "tool" && s.tool === "engine_scenario" &&
+    s.ok && s.result && typeof s.result === "object" && Array.isArray(s.result.steps)).map((s) => s.result);
+}
+// One scenario in a few words: "2 steps played", "board only", or "stopped at step 2".
+function scenarioOutcomeText(run) {
+  const r = run || {};
+  if (r.stopped && typeof r.stopped === "object") return "stopped at step " + ((r.stopped.at ?? 0) + 1);
+  const n = Array.isArray(r.steps) ? r.steps.length : 0;
+  return n ? n + " step" + (n === 1 ? "" : "s") + " played" : "board only";
+}
+// "engine scenario: 2 steps played, stopped at step 1" (distinct outcomes in call order), or "".
+function scenarioBadgeText(runs) {
+  const outcomes = [...new Set((runs || []).map(scenarioOutcomeText))];
+  return outcomes.length ? "engine scenario: " + outcomes.join(", ") : "";
+}
+// A chip's label: the first step the engine applied, or what the run came to.
+function scenarioChipText(run) {
+  const first = ((run && run.steps) || []).find((st) => st && st.applied);
+  return "scenario: " + (first ? first.applied : scenarioOutcomeText(run));
+}
+// Example JSON for the tools form's object and array fields.
+// The page names no card (scripts/test_assistant_ui.py checks), so the slugs are placeholders.
+const JSON_PLACEHOLDERS = {
+  "engine_scenario.setup": '{"activeSeat": 0, "players": [{"field": [{"card": "<your-unit>", "readiness": "READY"}], ' +
+    '"hand": ["<card-in-hand>"], "deck": ["<top-card>"], "eddies": {"ready": 2, "spent": 0}}, ' +
+    '{"field": [{"card": "<rival-unit>", "readiness": "SPENT"}], "deck": ["<top-card>"]}]}',
+  "engine_scenario.steps": '[{"kind": "DECLARE_ATTACK", "card": "<your-unit>", "target": "<rival-unit>"}]',
+};
+function jsonPlaceholder(tool, field) {
+  const key = tool + "." + field;
+  if (Object.prototype.hasOwnProperty.call(JSON_PLACEHOLDERS, key)) return JSON_PLACEHOLDERS[key];
+  return '{"zones": [{"zone_code": "legends", "cards": [{"card_slug": "...", "quantity": 1}]}, ' +
+    '{"zone_code": "deck", "cards": []}]}';
+}
+
 // The play a check asked about, as a short line: "attack_target <card> -> <target>".
 function enginePlayText(check) {
   const c = check || {};
@@ -520,6 +558,86 @@ function showEngineCheck(check) {
   body.appendChild(nv);
 }
 
+// engine_scenario ---------------------------------------------------------------------
+// A "scenario" button per engine scenario in a turn, opening its steps and changes in the side panel.
+function scenarioButtons(runs) {
+  if (!runs.length) return null;
+  const box = el("div", {class: "sources engine"});
+  box.appendChild(el("span", {class: "muted"}, "Scenario:"));
+  for (const run of runs) {
+    const b = el("button", {type: "button", class: "enginechip", title: "the board and steps engine_scenario played"},
+      scenarioChipText(run) + " (" + scenarioOutcomeText(run) + ")");
+    b.addEventListener("click", () => showEngineScenario(run));
+    box.appendChild(b);
+  }
+  return box;
+}
+// One board (start or final) as text lines per seat, taken from the report as it is.
+function scenarioBoard(board) {
+  const b = board || {};
+  const box = el("div", {class: "position"});
+  box.appendChild(el("div", {class: "poshead"}, "turn " + (b.turn ?? "?") + " · active seat " + (b.activeSeat ?? "?") +
+    " · acting seat " + (b.actingSeat ?? "?") + " · " + (b.window || b.step || "")));
+  if (b.combat) box.appendChild(el("div", {}, "combat: " + (typeof b.combat === "string" ? b.combat : JSON.stringify(b.combat))));
+  for (const seat of Array.isArray(b.seats) ? b.seats : []) {
+    box.appendChild(factsList({["seat " + seat.seat]: "street cred " + (seat.street_cred ?? 0) + " · eddies " +
+        ((seat.eddies || {}).ready ?? 0) + " ready, " + ((seat.eddies || {}).spent ?? 0) + " spent",
+      field: seat.battlefield, legends: seat.legends, hand: seat.hand, gigs: seat.gigs, trash: seat.trash,
+      counts: Object.entries(seat.counts || {}).map(([k, v]) => k.toLowerCase() + " " + v)}));
+  }
+  return box;
+}
+// One engine_scenario report in the side panel.
+function showEngineScenario(run) {
+  $("sideTitle").textContent = "engine_scenario: " + scenarioOutcomeText(run);
+  const body = $("sideBody");
+  body.className = "";
+  body.textContent = "";
+  body.appendChild(scenarioView(run));
+}
+// One engine_scenario report as an element: the start board, each step's action, changes and what the
+// engine offered next, where it stopped, and the final board. All text comes from the report.
+function scenarioView(run) {
+  const body = el("div", {class: "scenario"});
+  const engine = run.engine || {};
+  body.appendChild(factsList({engine: (engine.version || "?") + " · " + String(engine.artifactHash || "?").slice(0, 12),
+    "legends added": run.legends_added ? Object.entries(run.legends_added).map(([seat, slugs]) => seat + ": " + slugs.join(", ")) : null,
+    note: run.legends_note}));
+  body.appendChild(el("h3", {}, "Start"));
+  body.appendChild(scenarioBoard(run.start && run.start.board));
+  const steps = Array.isArray(run.steps) ? run.steps : [];
+  steps.forEach((st, i) => {
+    const box = el("div", {class: "position yes"});
+    box.appendChild(el("div", {class: "poshead"}, "step " + (i + 1) + " · seat " + st.seat + " · " +
+      (st.applied || "no action")));
+    box.appendChild(factsList({target: st.target, "chosen for you": st.auto, "open choice": st.open_choice,
+      "next to act": "seat " + st.next_seat}));
+    const changes = Array.isArray(st.changes) ? st.changes : [];
+    box.appendChild(el("div", {class: "muted"}, changes.length ? "Changes" : "No changes"));
+    const ul = el("ul", {class: "plain"});
+    for (const line of changes) ul.appendChild(el("li", {}, String(line)));
+    box.appendChild(ul);
+    const offers = st.offers || {};
+    const d = el("details", {class: "chunks"});
+    d.appendChild(el("summary", {}, (offers.count ?? 0) + " action(s) offered next"));
+    const ol = el("ul", {});
+    for (const o of offers.actions || []) ol.appendChild(el("li", {}, String(o)));
+    d.appendChild(ol);
+    box.appendChild(d);
+    body.appendChild(box);
+  });
+  if (run.stopped) {
+    const box = el("div", {class: "position no"});
+    box.appendChild(el("div", {class: "err"}, "stopped at step " + ((run.stopped.at ?? 0) + 1) + ": " +
+      (run.stopped.reason || "") + (run.stopped.message ? " · " + run.stopped.message : "")));
+    box.appendChild(factsList({offered: run.stopped.offers, matches: run.stopped.matches}));
+    body.appendChild(box);
+  }
+  body.appendChild(el("h3", {}, "Final"));
+  body.appendChild(scenarioBoard(run.final));
+  return body;
+}
+
 function showTurn(question, data, restored) {
   $("chatLog").appendChild(el("div", {class: "msg q"}, question));
   const answer = el("div", {class: "msg a"});
@@ -527,6 +645,9 @@ function showTurn(question, data, restored) {
   const checks = engineChecks(data.trace);
   const badge = engineBadgeText(checks);
   if (badge) answer.appendChild(el("div", {class: "enginebadge", title: "the answer used engine_check: what the game engine offered in recorded positions"}, badge));
+  const runs = engineScenarios(data.trace);
+  const scenarioBadge = scenarioBadgeText(runs);
+  if (scenarioBadge) answer.appendChild(el("div", {class: "enginebadge", title: "the answer used engine_scenario: the game engine built the board and played the steps"}, scenarioBadge));
   const body = el("div", {class: data.ok ? "" : "err"});
   // The one HTML sink on the page: mdToHtml escapes everything before adding its few fixed tags,
   // and links only this turn's cited ids (citationLinks).
@@ -542,6 +663,8 @@ function showTurn(question, data, restored) {
   if (src) answer.appendChild(src);
   const engineBox = engineButtons(checks);
   if (engineBox) answer.appendChild(engineBox);
+  const scenarioBox = scenarioButtons(runs);
+  if (scenarioBox) answer.appendChild(scenarioBox);
   if (data.trace && data.trace.length) {
     const d = el("details", {class: "trace"});
     d.appendChild(el("summary", {}, "Trace: " + (data.autoToolCalls ? data.autoToolCalls + " auto step(s), " : "") +
@@ -1052,10 +1175,9 @@ function pick(name, quiet) {
     if (field === "deck_id") {
       input = deckPicker();
       wide = true;
-    } else if (spec.type === "object") {
+    } else if (spec.type === "object" || spec.type === "array") {
       input = el("textarea", {class: "x", spellcheck: "false"});
-      input.placeholder = '{"zones": [{"zone_code": "legends", "cards": [{"card_slug": "...", "quantity": 1}]}, ' +
-        '{"zone_code": "deck", "cards": []}]}';
+      input.placeholder = jsonPlaceholder(tool.name, field);
       wide = true;
     } else if (spec.type === "string" && (spec.maxLength || 0) >= LONG_TEXT) {
       input = el("textarea", {class: "x", spellcheck: "false"});
@@ -1096,7 +1218,7 @@ function collectArgs() {
   for (const input of $("toolForm").querySelectorAll("input,select,textarea")) {
     const raw = input.value.trim();
     if (raw === "") continue;
-    if (input.dataset.type === "object") {
+    if (input.dataset.type === "object" || input.dataset.type === "array") {
       try { args[input.name] = JSON.parse(raw); } catch (err) { throw new Error(input.name + " is not valid JSON: " + err.message); }
     } else if (input.dataset.type === "integer") {
       const n = Number(raw);
@@ -1122,6 +1244,10 @@ async function run() {
     $("output").className = data.ok ? "" : "err";
     $("output").textContent = JSON.stringify(data, null, 2);
     showToolTiles(tool.name, data);
+    if (tool.name === "engine_scenario" && data.ok && data.result) {
+      $("toolTiles").hidden = false;
+      $("toolTiles").appendChild(scenarioView(data.result));
+    }
     if (data.ok) {
       const s = data.sources || {};
       const bits = [];

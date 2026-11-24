@@ -301,7 +301,7 @@ def test_fake_run_writes_header_records_and_summary_deterministically():
     from games.cyberpunk.assistant.loop import ASSISTANT_PROMPT_VERSION
     from games.cyberpunk.prompts import RULES_VERSION, TOURNAMENT_RULES_VERSION
     assert header["assistant_prompt_version"] == ASSISTANT_PROMPT_VERSION and header["rules_version"] == RULES_VERSION
-    assert header["assistant_prompt_version"] == "assistant-chat-v8", "the default fake run names the v8 prompt"
+    assert header["assistant_prompt_version"] == "assistant-chat-v9", "the default fake run names the v9 prompt"
     assert header["tournament_rules_version"] == TOURNAMENT_RULES_VERSION
     assert len(items) == 40 and summary["kind"] == "summary"
     keys = {"kind", "id", "chosen", "correct", "outcome", "parse", "known_incorrect", "known_incorrect_hit",
@@ -574,6 +574,47 @@ def test_no_engine_check_drops_the_tool_and_its_line_and_says_so_in_the_header()
     assert len(on_seen[0][1]) == len(off_seen[0][1]) + 1
     assert off_steps[0]["tool"] == "engine_check" and off_steps[0]["errorKind"] == "unknown_tool", off_steps
     assert off_steps[0]["result"] is None, "the tool never ran with --no-engine-check"
+
+
+def test_no_engine_scenario_drops_that_tool_and_line_and_both_flags_combine():
+    from games.cyberpunk.assistant.loop import (ENGINE_GUIDANCE, SCENARIO_GUIDANCE, SYSTEM_PROMPT, system_prompt,
+                                                tool_specs_sha256)
+
+    class Recorder:
+        """Answers A at once; records the prompt and tool names it was given."""
+        label = "recorder"
+        seen: list = []
+
+        async def generate(self, messages, tools, *, max_tokens, enable_thinking):
+            Recorder.seen.append((messages[0]["content"], [t["function"]["name"] for t in tools]))
+            return {"ok": True, "text": "Answer: A", "finishReason": "stop", "promptTokens": 0,
+                    "generationTokens": 0, "elapsedMs": 0}
+
+    with tempfile.TemporaryDirectory() as tmp:
+        base = ["--set", str(GOLD), "--fake", "--runs-dir", tmp, "--limit", "1", "--no-preload"]
+        runs = {}
+        for name, flags in (("noes", ["--no-engine-scenario"]),
+                            ("neither", ["--no-engine-scenario", "--no-engine-check"])):
+            Recorder.seen = []
+            code, _, err = main_in_process(*base, "--name", name, *flags, model_cls=Recorder)
+            assert code == 0, err
+            runs[name] = (read_jsonl(Path(tmp) / f"{name}.jsonl")[0], Recorder.seen)
+    header, seen = runs["noes"]
+    prompt = system_prompt(engine_scenario=False)
+    assert prompt == SYSTEM_PROMPT.replace("\n" + SCENARIO_GUIDANCE, "") and ENGINE_GUIDANCE in prompt
+    assert header["engine_scenario"] is False and "engine_check" not in header
+    assert header["tool_specs_sha256"] == tool_specs_sha256(True, False) != tool_specs_sha256()
+    assert header["system_prompt_sha256"] == hashlib.sha256(prompt.encode()).hexdigest()
+    assert {p for p, _ in seen} == {prompt}
+    assert all("engine_check" in names and "engine_scenario" not in names for _, names in seen)
+    header, seen = runs["neither"]
+    prompt = system_prompt(engine_check=False, engine_scenario=False)
+    assert SCENARIO_GUIDANCE not in prompt and ENGINE_GUIDANCE not in prompt
+    assert header["engine_scenario"] is False and header["engine_check"] is False
+    assert header["tool_specs_sha256"] == tool_specs_sha256(False, False)
+    assert header["system_prompt_sha256"] == hashlib.sha256(prompt.encode()).hexdigest()
+    assert {p for p, _ in seen} == {prompt}
+    assert not any({"engine_check", "engine_scenario"} & set(names) for _, names in seen)
 
 
 def test_partial_is_written_per_row_and_the_final_file_is_unchanged_by_it():
