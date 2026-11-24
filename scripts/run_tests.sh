@@ -79,7 +79,7 @@ py-tf-dataset        | quick | "$PY" scripts/test_tf_dataset.py               | 
 py-engine-tf-items   | quick | "$PY" scripts/test_engine_tf_items.py          | line:PASS engine tf items: 14/14
 py-engine-positions  | quick | "$PY" scripts/test_engine_positions.py         | line:PASS engine positions: 10/10
 py-engine-check      | quick | "$PY" scripts/test_engine_check.py            | line:PASS engine check: 7/7
-py-engine-scenario   | quick | "$PY" scripts/test_engine_scenario.py         | line:PASS engine scenario: 10/10
+py-engine-scenario   | quick | "$PY" scripts/test_engine_scenario.py         | line:PASS engine scenario: 16/16
 py-match-audit       | quick | "$PY" scripts/test_audit_match_records.py      | line:PASS match record audit: 12/12
 deck-rules           | full  | "$PY" scripts/check_deck_rules.py --negative-control | contains:agree:    272/272;;contains:reproduce budget AND usage exactly: 272/272;;absent:<-- LOOK
 integration          | full  | prepare_integration && npm run test:integration | tap:3

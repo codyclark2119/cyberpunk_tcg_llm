@@ -58,6 +58,7 @@ python scripts/test_engine_tf_items.py   # engine-verified legality items: repla
 python scripts/test_engine_positions.py  # engine oracle position catalog: cache, stale checks, hidden info
 python scripts/test_engine_check.py      # engine_check tool: verdicts recounted from the position index
 python scripts/test_engine_scenario.py   # engine_scenario: step matcher and diffs on composed scenarios
+python scripts/eval_engine_scenarios.py --check  # stage-1 quiz card scenarios on the engine (report current)
 python scripts/eval_engine_check.py --check  # engine_check vs the engine on held-out positions (report current)
 python scripts/check_deck_rules.py --negative-control
 ```

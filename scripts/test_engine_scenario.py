@@ -19,7 +19,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
 from games.cyberpunk.assistant import engine_scenario as es
 from games.cyberpunk.config import REPO_ROOT
-from games.cyberpunk.engine_adapter import EngineWorker
+from games.cyberpunk.engine_adapter import EngineProtocolError, EngineWorker
 
 
 def raises(fn, kind: str) -> es.ScenarioError:
@@ -142,8 +142,9 @@ def test_diff_names_moves_readiness_gigs_and_hidden_cards():
     assert "seat 0 HAND count: 1 -> 0" in lines, lines
     assert "seat 0 gig p0-D6: D6=3 in GIGS -> D6=5 in GIGS" in lines, lines
     assert "beta-program [p0-c3] seat 0: zone HAND -> TRASH; face DOWN -> UP" in lines, lines
-    assert "delta-legend (face down) [seat:0:LEGENDS:1] seat 0: LEGENDS -> (not visible)" in lines, lines
-    assert "delta-legend [p0-c7] seat 0: (not visible) -> LEGENDS" in lines, lines
+    # A Call turns the face-down Legend face up: one line, though its id changes from a slot to a card.
+    assert "delta-legend [p0-c7] seat 0: face-down Legend -> face up in LEGENDS (spent)" in lines, lines
+    assert not any("(not visible)" in line for line in lines), lines
     assert "seat 0 eddies ready/spent: 1/0 -> 0/1" in lines, lines
     assert es.diff(before, before) == []
 
@@ -231,7 +232,7 @@ def test_a_composed_scenario_plays_steps_and_shows_only_what_the_seats_see():
                    for st in report["steps"] for line in st["diff"]), [st["diff"] for st in report["steps"]]
         assert call["applied"]["kind"] == "CALL_LEGEND", call
         assert call["applied"]["card"] == "jackie-welles-pour-one-out-for-me", call
-        assert any("jackie-welles-pour-one-out-for-me [" in line and "(not visible) -> LEGENDS" in line
+        assert any("jackie-welles-pour-one-out-for-me [" in line and "face-down Legend -> face up in LEGENDS" in line
                    for line in call["diff"]), call["diff"]
         assert attack["applied"]["kind"] == "DECLARE_ATTACK", attack
         # The spent rival Unit was targeted (by choice, or locked in when it was the only target).
@@ -298,6 +299,106 @@ def test_a_setup_the_engine_rejects_comes_back_with_its_errors():
         # A bad step list is refused before the engine is asked anything.
         raises(lambda: es.run_scenario(worker, content, setup(), [{"kind": "FLY"}]), "invalid_steps")
         assert len(worker.scenarios) == 2
+
+
+def test_go_solo_closes_up_the_legends_area_and_the_hidden_names_follow():
+    content, _ = es.reviewed_content(REPO_ROOT)
+    value = setup()
+    value["players"][0]["legends"] = [{"card": "sasha-yakovleva-won-t-let-you-down", "face": "UP", "readiness": "READY"},
+                                      {"card": "jackie-welles-pour-one-out-for-me", "face": "DOWN", "readiness": "READY"},
+                                      {"card": "wakako-okada-peace-and-harmony", "face": "DOWN", "readiness": "READY"}]
+    value["players"][0]["eddies"] = {"ready": 7, "spent": 0}
+    value["players"][0]["hand"], value["players"][0]["field"] = [], []
+    with RecordingWorker() as worker:
+        report = es.run_scenario(worker, content, value, [
+            {"kind": "GO_SOLO", "card": "sasha-yakovleva-won-t-let-you-down"},
+            {"kind": "CALL_LEGEND", "card": "wakako-okada-peace-and-harmony"}])
+    assert report["stopped"] is None, report["stopped"]
+    solo, call = report["steps"]
+    # Sasha left slot 0, so Jackie and Wakako moved to slots 0 and 1: the offers still name them right.
+    calls = sorted(o["card"] for o in solo["offers"]["actions"] if o["kind"] == "CALL_LEGEND")
+    assert calls == ["jackie-welles-pour-one-out-for-me", "wakako-okada-peace-and-harmony"], calls
+    assert not any("(face down)" in line for line in solo["diff"]), solo["diff"]
+    assert any(line.startswith("wakako-okada-peace-and-harmony [") and "face-down Legend -> face up" in line
+               for line in call["diff"]), call["diff"]
+    assert call["applied"]["card"] == "wakako-okada-peace-and-harmony", call["applied"]
+
+
+class FailingWorker(RecordingWorker):
+    """Fails like the worker does when the engine throws: no structured error, a transport message with an id."""
+
+    def __init__(self):
+        super().__init__()
+        self.fail = False
+
+    def apply_action(self, **kwargs):
+        transition = super().apply_action(**kwargs)
+        self.fail = True
+        return transition
+
+    def model_input(self, **kwargs):
+        if self.fail:
+            raise EngineProtocolError("request/response mismatch: expected 'py-9', got ''")
+        return super().model_input(**kwargs)
+
+
+def test_an_engine_failure_stops_the_run_as_an_engine_fault():
+    content, _ = es.reviewed_content(REPO_ROOT)
+    with FailingWorker() as worker:
+        report = es.run_scenario(worker, content, setup(), [{"kind": "END_TURN"}, {"kind": "END_TURN"}])
+    assert report["stopped"]["reason"] == "engine_error" and report["stopped"]["at"] == 0, report["stopped"]
+    # The message is stable (no request id) and says it is not an answer; the board stays the last one observed.
+    assert "py-9" not in report["stopped"]["message"] and "not an answer" in report["stopped"]["message"]
+    assert report["final"]["board"]["activeSeat"] == 0
+
+
+def test_a_reveal_to_the_rival_shows_in_the_diff():
+    hand = {"publicId": "p0-c3", "zone": "HAND", "readiness": "READY", "face": "DOWN", "content": {"cardId": "beta-program"}}
+    unseen = [_view(0, [hand]), _view(1, [])]
+    rival_view = _view(1, [])
+    rival_view["players"][1]["cards"] = [hand]
+    seen = [_view(0, [hand]), rival_view]
+    lines = es.diff(es.snapshot(unseen, {}), es.snapshot(seen, {}))
+    assert lines == ["seat 1 now sees its rival's beta-program [p0-c3] in HAND"], lines
+
+
+def test_trigger_order_choices_match_by_the_card_their_label_names():
+    order = [action("CHOOSE", "Resolve Beta Program (p0-c3) for Alpha Unit", choiceKind="ORDER",
+                    option={"kind": "EFFECT", "effectId": "f" * 64}),
+             action("CHOOSE", "Resolve Alpha Unit (p0-c1) for Alpha Unit", choiceKind="ORDER",
+                    option={"kind": "EFFECT", "effectId": "e" * 64})]
+    m = es.match_step({"kind": "CHOOSE", "choice": "beta-program"}, order, SLUGS, LEGENDS)
+    assert m["descriptor"]["label"].startswith("Resolve Beta Program"), m
+    # The report names an effect option by its label, never by the opaque id.
+    assert es.describe(order[0], SLUGS, LEGENDS)["option"] == "Resolve Beta Program (p0-c3) for Alpha Unit"
+
+
+def test_the_quiz_checks_feed_nothing_but_their_own_measurement():
+    """data/scenario holds scenarios derived from eval questions: only the stage-1 script and this test name it."""
+    allowed = {"scripts/eval_engine_scenarios.py", "scripts/test_engine_scenario.py"}
+    names = []
+    for path in [*REPO_ROOT.glob("games/**/*.py"), *REPO_ROOT.glob("harness/**/*.py"), *REPO_ROOT.glob("scripts/*.py"),
+                 *REPO_ROOT.glob("scripts/**/*.ts"), *REPO_ROOT.glob("games/**/*.js")]:
+        rel = str(path.relative_to(REPO_ROOT))
+        if rel not in allowed and "data/scenario" in path.read_text(encoding="utf-8", errors="ignore"):
+            names.append(rel)
+    assert not names, names
+    checks = json.loads((REPO_ROOT / "data/scenario/quiz-checks-v1.json").read_text(encoding="utf-8"))
+    gold = "\n".join((REPO_ROOT / f).read_text(encoding="utf-8") for f in (
+        "data/gold/quiz_mc_2026-11-12.jsonl", "data/gold/quiz_mc_2026-11-13.jsonl",
+        "data/gold/official_basic_test.jsonl"))
+    for c in checks["checks"]:
+        assert '"id": "%s"' % c.get("control_for", c["id"]) in gold, c["id"]
+        assert "question" not in c and "choices" not in c, c["id"]  # the text and the key stay in data/gold
+
+
+def test_the_stage_one_report_is_current():
+    sys.path.insert(0, str(REPO_ROOT / "scripts"))
+    import eval_engine_scenarios as stage1
+    checks = json.loads(stage1.CHECKS_PATH.read_text(encoding="utf-8"))
+    fresh = stage1.report_text(stage1.evaluate(checks, stage1.gold_keys()))
+    assert stage1._without_engine(fresh) == stage1._without_engine(stage1.REPORT_PATH.read_text(encoding="utf-8")), \
+        "run scripts/eval_engine_scenarios.py and review what changed"
 
 
 def test_reviewed_content_holds_every_admitted_card():
