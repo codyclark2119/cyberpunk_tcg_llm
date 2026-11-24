@@ -564,6 +564,95 @@ class _Run:
             self.apply(action)
 
 
+# Completing a short setup (the assistant tool) ----------------------------------------------------
+
+PLAYER_DEFAULTS = {"field": [], "hand": [], "trash": [], "deck": [], "gigs": [], "eddies": {"ready": 0, "spent": 0}}
+# Legends the tool may add, face down, when a player lists none. A face-down Legend does nothing until it is
+# Called, so these only make the deck legal; three per colour (a RAM 6 card needs three), in a fixed order.
+FILLER_LEGENDS = {
+    "BLUE": ("jackie-welles-pour-one-out-for-me", "wakako-okada-peace-and-harmony", "evelyn-parker-beautiful-enigma"),
+    "GREEN": ("padre-man-of-the-cross", "hanako-arasaka-daughter-of-the-emperor", "saburo-arasaka-stubborn-patriarch"),
+    "RED": ("dexter-deshawn-off-the-grid", "v-streetkid", "yorinobu-arasaka-embracing-destruction"),
+    "YELLOW": ("muamar-reyes-el-capita-n", "dum-dum-maelstrom-triggerman", "viktor-vektor-sit-down-and-relax"),
+}
+MAX_LEGEND_TRIES = 60
+
+
+def _player_cards(player: Mapping) -> list[str]:
+    cards = [*player.get("hand", []), *player.get("trash", []), *player.get("deck", [])]
+    for host in [*player.get("field", []), *player.get("legends", [])]:
+        if isinstance(host, Mapping):
+            cards += [host.get("card"), *host.get("gear", [])]
+    return [c for c in cards if isinstance(c, str)]
+
+
+def legend_candidates(player: Mapping, colours: Mapping[str, list[str]]) -> list[list[str]]:
+    """Filler Legend triples to try, most promising first: the colours of the player's own cards, by how often
+    they occur. Which one is legal is the engine's call (composeScenario checks RAM); this only orders the tries."""
+    import itertools
+
+    need: dict[str, int] = {}
+    for slug in _player_cards(player):
+        for colour in colours.get(slug, []):
+            need[colour] = need.get(colour, 0) + 1
+    order = sorted(FILLER_LEGENDS, key=lambda c: (-need.get(c, 0), c))
+    pool = [slug for colour in order for slug in FILLER_LEGENDS[colour]]
+
+    def score(triple):
+        have = {c for c in FILLER_LEGENDS if any(s in FILLER_LEGENDS[c] for s in triple)}
+        return (-sum(1 for c in need if c in have), -sum(need.get(c, 0) for c in have), [pool.index(s) for s in triple])
+
+    return [list(t) for t in sorted(itertools.combinations(pool, 3), key=score)]
+
+
+def complete_setup(worker: EngineWorker, content: Mapping, setup: Any, *, seed: str = DEFAULT_SEED
+                   ) -> tuple[dict, dict[int, list[str]]]:
+    """Fill what a short setup leaves out, so that the engine accepts it, and say what was filled.
+
+    Missing player fields get empty defaults and ``activeSeat`` defaults to 0. A player with no ``legends`` gets
+    three face-down filler Legends: the tool tries candidate triples (``legend_candidates``) and keeps the first the
+    engine composes, so the engine alone judges the deck. Any other refusal comes back as ``invalid_setup``.
+    """
+    if not isinstance(setup, Mapping) or not isinstance(setup.get("players"), list) or len(setup["players"]) != 2:
+        raise ScenarioError("invalid_setup", "setup must be an object with players: [seat 0, seat 1]")
+    full = {"activeSeat": 0, **{k: v for k, v in setup.items() if k != "players"}, "players": []}
+    for player in setup["players"]:
+        if not isinstance(player, Mapping):
+            raise ScenarioError("invalid_setup", "each player must be an object")
+        full["players"].append({**PLAYER_DEFAULTS, **player})
+    colours = {c["id"]: list(c.get("colors") or []) for c in content.get("cards", [])}
+    open_seats = [i for i, p in enumerate(full["players"]) if not p.get("legends")]
+    tries = {seat: legend_candidates(full["players"][seat], colours) for seat in open_seats}
+    pick = {seat: 0 for seat in open_seats}
+    for _ in range(MAX_LEGEND_TRIES):
+        for seat in open_seats:
+            full["players"][seat]["legends"] = [{"card": slug, "face": "DOWN", "readiness": "READY"}
+                                                for slug in tries[seat][pick[seat]]]
+        try:
+            worker.compose_scenario(content=content, scenario={"seed": seed, **full})
+            return full, {seat: tries[seat][pick[seat]] for seat in open_seats}
+        except EngineProtocolError as exc:
+            if not exc.errors:
+                raise ScenarioError("engine_error", f"the engine failed to compose this setup ({_codes(exc)}); this is "
+                                    "an engine fault, not an answer") from exc
+            deck = [e for e in exc.errors if e.get("code") == "INVALID_DECK"
+                    and any(str(e.get("path")) == f"players[{seat}]" for seat in open_seats)]
+            if not deck or len(deck) != len(exc.errors):
+                raise ScenarioError("invalid_setup", f"the engine rejected the setup: {exc}",
+                                    engine_errors=exc.errors) from exc
+            for seat in open_seats:
+                if any(str(e.get("path")) == f"players[{seat}]" for e in deck):
+                    pick[seat] += 1
+                    if pick[seat] >= len(tries[seat]):
+                        raise ScenarioError("invalid_setup", "no three Legends make this player's cards a legal "
+                                            f"deck (each Legend gives 2 RAM of its colour); use fewer colours or "
+                                            f"cheaper cards for seat {seat}: {exc}",
+                                            engine_errors=exc.errors) from exc
+    raise ScenarioError("invalid_setup", f"no filler Legends found in {MAX_LEGEND_TRIES} tries. Each Legend gives 2 RAM "
+                        "of its colour and a seat has 3, so the cards may need more RAM than that; use fewer colours "
+                        "or cheaper cards, or list three Legends")
+
+
 def run_scenario(worker: EngineWorker, content: Mapping, setup: Mapping, steps: Any,
                  *, seed: str = DEFAULT_SEED, engine: Mapping | None = None) -> dict:
     """Compose ``setup`` on the engine, play ``steps``, and return the report.
@@ -635,3 +724,82 @@ def run_scenario(worker: EngineWorker, content: Mapping, setup: Mapping, steps: 
     report["stopped"] = stopped
     report["final"] = {"board": board(run.views, run.legends)}
     return report
+
+
+# The assistant tool --------------------------------------------------------------------------
+
+DESCRIPTION = ("Use to see what a card's effect does in an exact situation: the game engine builds the board you "
+               "describe, plays your steps, and reports offers and changes.")
+SETUP_HELP = ("{activeSeat: 0|1, players: [seat0, seat1]}; each player: field [{card, readiness: READY|SPENT, "
+              "gear?: [slug]}], hand, trash, deck (top first) as slug lists, gigs [{die: D4..D12, value}], "
+              "eddies {ready, spent}; legends (3 x {card, face: UP|DOWN, readiness}) only if they matter. "
+              "Cards are slugs.")
+STEPS_HELP = ("Up to 8 of {kind, card?, target?, choice?}; kind: PLAY_CARD, SELL_CARD, GO_SOLO, DECLARE_ATTACK, "
+              "DECLARE_BLOCKER, ACTIVATE_ABILITY, CALL_LEGEND, ROLL_GIG, CHOOSE, PASS_REACT, END_TURN. "
+              "target: a slug or \"gig\". Whoever must act takes the next step.")
+MODEL_OFFERS = 25
+
+_shared: dict[str, Any] = {}
+
+
+def _offer_text(offer: Mapping) -> str:
+    bits = [offer["kind"]]
+    if offer.get("card"):
+        bits.append(offer["card"])
+    if offer.get("option"):
+        bits.append(f"-> {offer['option']}")
+    return " ".join(bits)
+
+
+def for_model(report: Mapping, filled: Mapping[int, list[str]]) -> dict:
+    """The report, trimmed for the model: labels instead of descriptor objects, offers as short strings."""
+    def offers(block: Mapping) -> dict:
+        return {"count": block["count"], "actions": [_offer_text(o) for o in block["actions"][:MODEL_OFFERS]]}
+
+    out: dict[str, Any] = {"engine": report.get("engine"), "start": {"board": report["start"]["board"],
+                                                                    "offers": offers(report["start"]["offers"])}}
+    if filled:
+        out["legends_added"] = {f"seat {seat}": slugs for seat, slugs in sorted(filled.items())}
+        out["legends_note"] = "Added face down to make the deck legal; they do nothing unless Called."
+    steps = []
+    for st in report["steps"]:
+        entry: dict[str, Any] = {"step": st["step"], "seat": st["seat"]}
+        if st.get("applied"):
+            entry["applied"] = st["applied"]["label"]
+        if isinstance(st.get("target"), Mapping):
+            entry["target"] = st["target"].get("label") or st["target"].get("locked") or st["target"].get("note")
+        if st.get("auto"):
+            entry["auto"] = [f"{a['label']} ({a['why']})" for a in st["auto"]]
+        entry["changes"] = st["diff"]
+        if st.get("pending"):
+            entry["open_choice"] = st["pending"]
+        entry["next_seat"] = st["next_seat"]
+        entry["offers"] = offers(st["offers"])
+        steps.append(entry)
+    out["steps"] = steps
+    if report.get("stopped"):
+        stopped = dict(report["stopped"])
+        if isinstance(stopped.get("offers"), list):
+            stopped["offers"] = [_offer_text(o) for o in stopped["offers"][:MODEL_OFFERS]]
+        if isinstance(stopped.get("matches"), list):
+            stopped["matches"] = [_offer_text(o) + f" [{o.get('public_id', '')}]" for o in stopped["matches"]]
+        stopped.pop("engine_errors", None)
+        out["stopped"] = stopped
+    out["final"] = report["final"]["board"]
+    return out
+
+
+def run_for_tool(setup: Any, steps: Any = (), *, app_root=REPO_ROOT, node: str = "node") -> dict:
+    """Run one scenario for the assistant (or the chat page) on a shared worker; one at a time."""
+    import threading
+
+    lock = _shared.setdefault("lock", threading.Lock())
+    with lock:
+        content, engine = reviewed_content(app_root, node)
+        worker = _shared.get("worker")
+        if worker is None or worker._process.poll() is not None:
+            worker = _shared["worker"] = EngineWorker(app_root, node=node)
+        steps = parse_steps(list(steps))
+        full, filled = complete_setup(worker, content, setup)
+        report = run_scenario(worker, content, full, steps, engine=engine)
+        return for_model(report, filled)

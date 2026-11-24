@@ -373,6 +373,105 @@ def test_trigger_order_choices_match_by_the_card_their_label_names():
     assert es.describe(order[0], SLUGS, LEGENDS)["option"] == "Resolve Beta Program (p0-c3) for Alpha Unit"
 
 
+# The assistant's entry point (PR 4): short setups, the model's view of the report, the tool ----------
+
+
+class ComposeFailingWorker(RecordingWorker):
+    """Fails composeScenario like a worker exception does: no structured error."""
+
+    def compose_scenario(self, *, content, scenario):
+        raise EngineProtocolError("request/response mismatch: expected 'py-3', got ''")
+
+
+def test_a_short_setup_gets_defaults_and_filler_legends_the_engine_accepts():
+    content, _ = es.reviewed_content(REPO_ROOT)
+    colours = {c["id"]: c.get("colors") or [] for c in content["cards"]}
+    short = {"players": [{"field": [{"card": "field-operator", "readiness": "READY"}], "hand": ["animals-wrecker"]},
+                         {"legends": setup()["players"][1]["legends"]}]}
+    with RecordingWorker() as worker:
+        full, filled = es.complete_setup(worker, content, short)
+        assert len(worker.scenarios) >= 1 and worker.scenarios[-1] == {"seed": es.DEFAULT_SEED, **full}
+    assert full["activeSeat"] == 0 and list(filled) == [0], "only the seat without Legends is filled"
+    seat0, seat1 = full["players"]
+    assert seat1["legends"] == short["players"][1]["legends"] and seat1["hand"] == [] and seat1["eddies"] == {"ready": 0, "spent": 0}
+    assert seat0["field"] == short["players"][0]["field"] and seat0["trash"] == [] and seat0["gigs"] == []
+    assert [l["card"] for l in seat0["legends"]] == filled[0] and len(set(filled[0])) == 3
+    assert all(l["face"] == "DOWN" and l["readiness"] == "READY" for l in seat0["legends"])
+    # The engine took a GREEN + RED deck, so the filler covers both colours.
+    legend_colours = {c for slug in filled[0] for c in colours[slug]}
+    assert {"GREEN", "RED"} <= legend_colours, filled
+    assert short["players"][0].get("legends") is None, "the caller's setup is not changed"
+    # The candidate order is a pure function of the cards: the same setup gets the same Legends.
+    assert es.legend_candidates(short["players"][0], colours) == es.legend_candidates(dict(short["players"][0]), colours)
+
+
+def test_a_setup_no_filler_can_make_legal_is_refused_with_the_ram_rule():
+    content, _ = es.reviewed_content(REPO_ROOT)
+    # Three colours that each need more than one Legend's RAM cannot fit three Legends (2 RAM each).
+    greedy = {"players": [{"hand": ["animals-wrecker", "adrenaline-converter", "psycho-squad", "field-operator"]}, {}]}
+    with RecordingWorker() as worker:
+        exc = raises(lambda: es.complete_setup(worker, content, greedy), "invalid_setup")
+        assert len(worker.scenarios) <= es.MAX_LEGEND_TRIES
+    assert "2 RAM" in str(exc) and "fewer colours" in str(exc), str(exc)
+    for bad in (None, {"players": [{}]}, {"players": [{}, "seat"]}):
+        with RecordingWorker() as worker:
+            raises(lambda: es.complete_setup(worker, content, bad), "invalid_setup")
+            assert worker.scenarios == [], "a malformed setup never reaches the engine"
+    with ComposeFailingWorker() as worker:
+        exc = raises(lambda: es.complete_setup(worker, content, {"players": [{}, {}]}), "engine_error")
+    assert "py-3" not in str(exc) and "not an answer" in str(exc)
+
+
+def test_the_model_sees_labels_short_offers_and_what_was_added():
+    content, engine = es.reviewed_content(REPO_ROOT)
+    short = {"players": [{"field": [{"card": "field-operator", "readiness": "READY"}]},
+                         {"field": [{"card": "corpo-security", "readiness": "SPENT"}]}]}
+    with RecordingWorker() as worker:
+        full, filled = es.complete_setup(worker, content, short)
+        report = es.run_scenario(worker, content, full, [{"kind": "DECLARE_ATTACK", "card": "field-operator",
+                                                          "target": "corpo-security"}], engine=engine)
+        stopped = es.run_scenario(worker, content, full, [{"kind": "PLAY_CARD", "card": "field-operator"}],
+                                  engine=engine)
+    out = es.for_model(report, filled)
+    assert set(out) == {"engine", "start", "legends_added", "legends_note", "steps", "final"}
+    assert out["engine"] == engine and out["legends_added"] == {f"seat {s}": filled[s] for s in (0, 1)}
+    assert "do nothing unless Called" in out["legends_note"]
+    (step,) = out["steps"]
+    assert step["applied"] == report["steps"][0]["applied"]["label"] and step["changes"] == report["steps"][0]["diff"]
+    assert step["next_seat"] == 1 and step["offers"]["count"] == report["steps"][0]["offers"]["count"]
+    assert all(isinstance(o, str) for o in step["offers"]["actions"]) and "PASS_REACT" in step["offers"]["actions"]
+    assert len(step["offers"]["actions"]) <= es.MODEL_OFFERS and out["final"] == report["final"]["board"]
+    assert any("attacks corpo-security" in line for line in step["changes"]), step["changes"]
+    # A stop keeps its reason and offers (as strings) but never the raw engine errors; no filler, no note. The
+    # stopped step is listed with nothing applied and no changes.
+    out = es.for_model(stopped, {})
+    assert "legends_added" not in out and "legends_note" not in out
+    assert [("applied" in st, st["changes"]) for st in out["steps"]] == [(False, [])], out["steps"]
+    assert out["stopped"]["reason"] == "no_match" and "engine_errors" not in out["stopped"]
+    assert all(isinstance(o, str) for o in out["stopped"]["offers"]), out["stopped"]
+    assert len(json.dumps(out)) < 12000, "a report the 8B can read in one tool result"
+
+
+def test_the_assistant_tool_runs_one_scenario_and_maps_refusals():
+    from games.cyberpunk.assistant import tools
+
+    short = {"players": [{"field": [{"card": "field-operator", "readiness": "READY"}]},
+                         {"field": [{"card": "corpo-security", "readiness": "SPENT"}]}]}
+    steps = [{"kind": "DECLARE_ATTACK", "card": "field-operator", "target": "corpo-security"}]
+    out = tools.call_tool("engine_scenario", {"setup": short, "steps": steps})
+    assert out["ok"] and out["result"]["steps"][0]["applied"] == "Attack with Field Operator", out
+    assert out["sources"]["card_slugs"] == ["field-operator", "corpo-security"], "the cards the call named, in order"
+    assert tools.call_tool("engine_scenario", {"setup": short, "steps": steps}) == out, "deterministic"
+    bad = {"players": [{"hand": ["no-such-card"]}, {}]}
+    out = tools.call_tool("engine_scenario", {"setup": bad})
+    assert not out["ok"] and out["error_kind"] == "invalid_setup", out
+    assert any(e.get("path") == "players[0].hand[0]" for e in out.get("engine_errors", [])), out
+    out = tools.call_tool("engine_scenario", {"setup": short, "steps": [{"kind": "FLY"}]})
+    assert not out["ok"] and out["error_kind"] == "invalid_steps", out
+    out = tools.call_tool("engine_scenario", {"setup": short, "steps": {"kind": "END_TURN"}})
+    assert not out["ok"], "steps must be a list"
+
+
 def test_the_quiz_checks_feed_nothing_but_their_own_measurement():
     """data/scenario holds scenarios derived from eval questions: only the stage-1 script and this test name it."""
     allowed = {"scripts/eval_engine_scenarios.py", "scripts/test_engine_scenario.py"}
