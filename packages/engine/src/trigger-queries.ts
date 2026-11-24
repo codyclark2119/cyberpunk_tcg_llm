@@ -35,7 +35,7 @@ export function effectiveTriggeredAbilities(state: GameState, subjectId: CardIns
         const r = cardRevision(state, source.id, context);
         if (!supportsEffectiveTriggerSource(r, context) || !r) return [];
         return r.mechanics.abilities.flatMap(a => {
-            if (!a.trigger || (source.id !== subjectId) !== (a.inherited === "EQUIPPED_HOST") || !(a.trigger === "WHEN_FIGHT_WON" || a.trigger === "WHEN_SPENT" || a.trigger === "WHEN_DEFEATED" || a.trigger === "WHEN_PLAYED" || a.trigger === "WHEN_ATTACKING" || a.trigger === "WHEN_CARD_PLAYED" || a.trigger === "WHEN_OWN_TURN_ENDS" || a.trigger === "WHEN_UNIT_ATTACKS" || a.trigger === "WHEN_BLOCKER_USED" || a.trigger === "WHEN_GIG_STOLEN" || a.trigger === "WHEN_FRIENDLY_UNIT_STEALS_GIG" || a.trigger === "WHEN_UNIT_DEFEATED" || a.trigger === "WHEN_FIGHT_LOST")) return [];
+            if (!a.trigger || (source.id !== subjectId) !== (a.inherited === "EQUIPPED_HOST") || !(a.trigger === "WHEN_FIGHT_WON" || a.trigger === "WHEN_SPENT" || a.trigger === "WHEN_DEFEATED" || a.trigger === "WHEN_PLAYED" || a.trigger === "WHEN_ATTACKING" || a.trigger === "WHEN_CARD_PLAYED" || a.trigger === "WHEN_OWN_TURN_ENDS" || a.trigger === "WHEN_UNIT_ATTACKS" || a.trigger === "WHEN_BLOCKER_USED" || a.trigger === "WHEN_GIG_STOLEN" || a.trigger === "WHEN_FRIENDLY_UNIT_STEALS_GIG" || a.trigger === "WHEN_UNIT_DEFEATED" || a.trigger === "WHEN_FIGHT_LOST" || a.trigger === "WHEN_FRIENDLY_UNIT_USES_BLOCKER")) return [];
             return [{ sourceId: source.id, subjectId, controllerId: subject.controllerId, source: { cardId: r.id, revision: r.revision }, abilityId: a.id, kind: a.trigger }];
         });
     }).sort((a, b) => a.sourceId < b.sourceId ? -1 : a.sourceId > b.sourceId ? 1 : a.abilityId < b.abilityId ? -1 : a.abilityId > b.abilityId ? 1 : 0);
@@ -50,7 +50,12 @@ export function discoverTriggers(state: GameState, origin: TriggerOrigin, contex
         // Batch V50: "The first time an ARASAKA Unit is defeated each turn": each field observer of either player, the defeated included.
         ...(origin.defeated.some(d => d.targetId === state.turnHistory?.firstArasakaDefeat) ? state.match.playerOrder.flatMap(p => [...state.players[p].zones.BATTLEFIELD].sort()).flatMap(id => effectiveTriggeredAbilities(state, id, context).filter(b => b.kind === "WHEN_UNIT_DEFEATED" && b.sourceId === b.subjectId)) : [])]; // Capture before movement; enqueue after.
     // Batch V17: "When this Unit uses [Blocker]" belongs to the blocking Unit only (9.11).
-    if (origin.kind === "BLOCK") return effectiveTriggeredAbilities(state, origin.subjectId, context).filter(b => b.kind === "WHEN_BLOCKER_USED" && b.sourceId === b.subjectId);
+    // Batch V74: "When a friendly Unit uses {Blocker}" belongs to each face-up friendly source of the blocking Unit's controller.
+    if (origin.kind === "BLOCK") {
+        const actor = state.objects.cards[origin.subjectId]?.controllerId;
+        return [...effectiveTriggeredAbilities(state, origin.subjectId, context).filter(b => b.kind === "WHEN_BLOCKER_USED" && b.sourceId === b.subjectId),
+            ...(actor ? [...state.players[actor].zones.BATTLEFIELD, ...state.players[actor].zones.LEGENDS].sort().flatMap(id => effectiveTriggeredAbilities(state, id, context).filter(b => b.kind === "WHEN_FRIENDLY_UNIT_USES_BLOCKER" && b.sourceId === b.subjectId)) : [])];
+    }
     // Batch V24 (10.16.3, 11.5.1.7): "When this Unit steals a Gig" is pending once per stolen Gig, after all have moved.
     // Batch V26: "When a friendly Unit steals a d6" belongs to each friendly field source, the stealing Unit included.
     // Batch V40: "When a friendly Legend steals a Gig" also belongs to a face-up friendly Legend in the Legends area.
@@ -153,7 +158,7 @@ export function triggerChoice(state: GameState, context: EngineContext): Pending
     else if (c.phase === "READY") { kind = "READY_EDDIE"; options = readyableEddieSlots(state, actorId).filter(slot => !c.selectedEddieSlots?.includes(slot)).map(slot => ({ kind: "EDDIE_SLOT", slot })); }
     // Batch V32: a Program discard offers only own-hand Programs, and declining only before the first discard.
     else if (c.phase === "DISCARD" && current?.effect.kind === "DISCARD_PROGRAMS_THEN_BOTTOM_DECK") { kind = "DISCARD"; options = [...(c.discardedPrograms ? [] : [{ kind: "MODE" as const, mode: "DONE" as const }]), ...handPrograms(state, actorId, context).map(cardInstanceId => ({ kind: "CARD" as const, cardInstanceId }))]; }
-    else if (c.phase === "DISCARD") { if (current) actorId = discardingPlayer(state, current); kind = "DISCARD"; options = getDiscardableCards(state, actorId).map(cardInstanceId => ({ kind: "CARD", cardInstanceId })); }
+    else if (c.phase === "DISCARD") { if (current) actorId = discardingPlayer(state, current); kind = "DISCARD"; options = [...(current?.effect.kind === "DISCARD_CARDS" && current.effect.optional ? [{ kind: "MODE" as const, mode: "DONE" as const }] : []), ...getDiscardableCards(state, actorId).map(cardInstanceId => ({ kind: "CARD" as const, cardInstanceId }))]; } // Batch V74: a "may" discard can be declined.
     else if (c.phase === "OPTIONAL") { kind = "OPTIONAL"; options = [{ kind: "CONFIRM", confirmed: true }, { kind: "CONFIRM", confirmed: false }]; }
     // Batch V42: the card type to name.
     else if (c.phase === "TARGET" && current?.effect.kind === "CHOOSE_TYPE_REVEAL_TOP_ADD_AND_READY_EDDIE") { kind = "MODE"; options = REVEAL_TYPES.map(mode => ({ kind: "MODE", mode })); }

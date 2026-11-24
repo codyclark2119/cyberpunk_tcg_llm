@@ -1,6 +1,7 @@
 import { noteSpent } from "./spend-triggers";
 import { effectiveCallCost } from "./free-call-support";
-import { beginLegendCallChoice, legendStartTurnEnabled, resolveStartTurnLegends } from "./legend-spend";
+import { beginLegendCallChoice, beginLegendCallEffects, legendStartTurnEnabled, resolveStartTurnLegends } from "./legend-spend";
+import { supportsCallTrashProgram } from "./call-trash-program-support";
 import { supportsLegendSpendCard } from "./legend-spend-support";
 import { programPlayHistoryEnabled } from "./restriction-support";
 import { expireMustAttack } from "./must-attack";
@@ -129,6 +130,8 @@ export class TurnMutation {
         const ability = view.getRevision(legendId)!.mechanics.abilities.find(a => a.trigger === "WHEN_CALLED");
         // Batch V60: "{Call} Choose one effect." pauses for its mode through the activation continuation.
         if (ability?.choose && supportsLegendSpendCard(view.getRevision(legendId), this.context).ok) return beginLegendCallChoice(this, legendId, actor, ability.id);
+        if (ability && supportsCallTrashProgram(view.getRevision(legendId), this.context).ok) return beginLegendCallEffects(this, legendId, actor, ability.id); // Batch V73.
+        if (ability && supportsLegendSpendCard(view.getRevision(legendId), this.context).ok) return beginLegendCallEffects(this, legendId, actor, ability.id); // Batch V75: a pinned non-modal {Call}.
         if (ability) {
             this.phase("CALL_EFFECT");
             const effect = ability.effects[0];

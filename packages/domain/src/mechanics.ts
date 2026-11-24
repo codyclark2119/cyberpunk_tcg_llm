@@ -5,7 +5,7 @@ export const GameAreaSchema = z.enum(["DECK", "HAND", "BATTLEFIELD", "TRASH", "E
 export const ZoneSchema = z.enum([...GameAreaSchema.options, "RESOLVING_PROGRAM"]);
 export const ZoneRefSchema = z.strictObject({ playerId: PlayerIdSchema, zone: ZoneSchema });
 export const KeywordSchema = z.enum(["GO_SOLO", "QUICK", "BLOCKER", "ADRENALINE"]);
-export const TriggerSchema = z.enum(["WHEN_SOLD", "WHEN_CALLED", "WHEN_PLAYED", "WHEN_ATTACKING", "WHEN_DEFEATED", "WHEN_FIGHT_WON", "WHEN_CARD_PLAYED", "WHEN_OWN_TURN_ENDS", "WHEN_UNIT_ATTACKS", "WHEN_BLOCKER_USED", "WHEN_GIG_STOLEN", "WHEN_FRIENDLY_UNIT_STEALS_GIG", "WHEN_UNIT_DEFEATED", "WHEN_FIGHT_LOST", "WHEN_OWN_TURN_STARTS", "WHEN_SPENT"]);
+export const TriggerSchema = z.enum(["WHEN_SOLD", "WHEN_CALLED", "WHEN_PLAYED", "WHEN_ATTACKING", "WHEN_DEFEATED", "WHEN_FIGHT_WON", "WHEN_CARD_PLAYED", "WHEN_OWN_TURN_ENDS", "WHEN_UNIT_ATTACKS", "WHEN_BLOCKER_USED", "WHEN_GIG_STOLEN", "WHEN_FRIENDLY_UNIT_STEALS_GIG", "WHEN_UNIT_DEFEATED", "WHEN_FIGHT_LOST", "WHEN_OWN_TURN_STARTS", "WHEN_SPENT", "WHEN_FRIENDLY_UNIT_USES_BLOCKER"]);
 export const EquipTargetSchema = z.strictObject({ kind: z.literal("FRIENDLY_UNIT_OR_FACE_UP_LEGEND") });
 export const TargetRelationshipSchema = z.enum(["CONTROLLED", "RIVAL", "ANY"]);
 export const TargetSelectorSchema = z.discriminatedUnion("kind", [
@@ -93,7 +93,9 @@ export const DiscardCardsEffectSchema = z.strictObject({
     // Batch V66: "Discard 1. If you do, draw 1 for each friendly face-up Legend."
     thenDraw: z.literal("PER_FRIENDLY_FACE_UP_LEGEND").optional(),
     // Batch V72: "draw 1, then discard 1": the draw comes first.
-    drawFirst: z.literal(1).optional()
+    drawFirst: z.literal(1).optional(),
+    // Batch V74: "you may discard 1. If you do, draw 1." (the controller may decline; only a discard draws).
+    optional: z.literal(true).optional(), thenDrawOne: z.literal(true).optional()
 });
 export type DiscardCardsEffect = z.infer<typeof DiscardCardsEffectSchema>;
 export const ReadyEddiesEffectSchema = z.strictObject({ kind: z.literal("READY_EDDIES"), player: z.literal("CONTROLLER"), count: z.union([z.literal(1), z.literal(2)]),
@@ -225,6 +227,17 @@ export const EffectSchema = z.discriminatedUnion("kind", [
     z.strictObject({ kind: z.literal("SEARCH_GEAR"), count: z.number().int().positive().max(5), maxCost: z.number().int().nonnegative().optional(), maxTake: z.number().int().positive().max(2) }),
     // Batch V20: "[Play] Trash 3. Add a Program from among them to your hand."
     z.strictObject({ kind: z.literal("TRASH_THEN_RETURN_PROGRAM"), count: z.literal(3) }),
+    // Batch V73: "{Call} Trash 3. Then, add 1 BRAINDANCE Program from your trash to your hand." (11.10.2.1: trash the top card 3
+    // times; then one Program with the tag anywhere in the controller's trash, including a card just trashed, goes to hand).
+    z.strictObject({ kind: z.literal("TRASH_THEN_ADD_TRASH_PROGRAM"), count: z.literal(3), tag: z.literal("Braindance") }),
+    // Batch V74: "Give a friendly Unit with cost 4 or less {Blocker} this turn. If you control a value-pair of Gigs, also give it +1 power
+    // this turn." (6.6: the value pair is checked as the effect resolves).
+    // Batch V75: "You may defeat a friendly Gear. If you do, draw 2. Otherwise, draw 1."
+    z.strictObject({ kind: z.literal("MAY_DEFEAT_FRIENDLY_GEAR_THEN_DRAW"), ifDefeated: z.literal(2), otherwise: z.literal(1) }),
+    // Batch V75: "Give a friendly Unit +1 power this turn for each of its equipped Gear." (counted as it resolves).
+    z.strictObject({ kind: z.literal("POWER_PER_EQUIPPED_GEAR_THIS_TURN"), target: z.strictObject({ kind: z.literal("FRIENDLY_UNIT") }), amount: z.literal(1) }),
+    z.strictObject({ kind: z.literal("GRANT_BLOCKER_THIS_TURN"), target: z.strictObject({ kind: z.literal("FRIENDLY_UNIT"), costAtMost: z.literal(4) }),
+        alsoPowerIf: z.strictObject({ condition: z.strictObject({ kind: z.literal("CONTROLS_VALUE_PAIR") }), amount: z.literal(1) }) }),
     // Batch V20: "[Play] Give another friendly Unit with cost 5 or less [Adrenaline] this turn."
     z.strictObject({ kind: z.literal("GRANT_KEYWORD_UNTIL_END_OF_TURN"), keyword: z.literal("ADRENALINE"), target: z.strictObject({ kind: z.literal("ANOTHER_FRIENDLY_UNIT"), costAtMost: z.literal(5) }) }),
     // Batch V21: "[Play] Until your next turn, rival Units can't steal friendly Gigs with value higher than their power" (and the Legend / less-than mirror).

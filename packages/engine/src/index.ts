@@ -59,7 +59,8 @@ function pushReactActions(state: GameState, context: EngineContext, view: RulesV
     for (const c of view.faceDownLegends(actor)) if (view.canCallLegend(actor, c.id)) actions.push({ actorId: actor, action: { kind: "CALL_LEGEND", cardInstanceId: c.id } });
     for (const cardInstanceId of view.listQuickCards(actor)) actions.push({ actorId: actor, action: { kind: "PLAY_CARD", cardInstanceId } });
     // Batch V49 (11.30.2): a field Unit's Quick activation, in card id then printed order.
-    for (const id of [...state.players[actor].zones.BATTLEFIELD].sort())
+    // Batch V74: and a face-up Legend's Quick ability from the Legends area.
+    for (const id of [...state.players[actor].zones.BATTLEFIELD, ...state.players[actor].zones.LEGENDS].sort())
         for (const ability of view.getRevision(id)?.mechanics.abilities ?? [])
             if (ability.activation?.timing === "QUICK" && canActivate(state, actor, id, ability.id, context)) actions.push({ actorId: actor, action: { kind: "ACTIVATE_ABILITY", sourceInstanceId: id, abilityId: ability.id } });
     for (const cardInstanceId of view.listBlockers(actor)) actions.push({ actorId: actor, action: { kind: "DECLARE_BLOCKER", cardInstanceId } });
@@ -116,6 +117,8 @@ function describeAction(a: GameAction, state: GameState, actor: PlayerId, view: 
         case "ACTIVATE_ABILITY": {
             const r = view.getRevision(a.action.sourceInstanceId), ability = r?.mechanics.abilities.find(x => x.id === (a.action.kind === "ACTIVATE_ABILITY" ? a.action.abilityId : ""));
             // Batch V49: the paid Quick activation; Kerry's label is unchanged.
+            if (ability?.effects[0]?.kind === "POWER_PER_EQUIPPED_GEAR_THIS_TURN") return `Activate ${r?.displayName}: Pay ${activationPaymentAmount(ability)} and spend to give a friendly Unit +1 power this turn for each of its equipped Gear`; // Batch V75.
+            if (ability?.effects[0]?.kind === "GRANT_BLOCKER_THIS_TURN") return `Activate ${r?.displayName}: Pay ${activationPaymentAmount(ability)} and spend to give a friendly Unit with cost 4 or less Blocker this turn`; // Batch V74.
             return ability?.activation?.timing === "QUICK" ? `Activate ${r?.displayName}: Pay ${activationPaymentAmount(ability)} and spend to make a rival Unit lose this Unit's power` : `Activate ${r?.displayName}: Spend to draw 2`;
         }
         case "SELL_CARD": return `Sell ${view.getRevision(a.action.cardInstanceId)?.displayName}`;
@@ -146,12 +149,17 @@ function describeAction(a: GameAction, state: GameState, actor: PlayerId, view: 
                 if (option.kind === "EFFECT") { const e = state.resolution.pending.find(e => e.id === option.effectId)!; return `Resolve ${view.getRevision(e.sourceId!)?.displayName} (${e.sourceId}) for ${view.getRevision(e.trigger!.subjectId)?.displayName}`; }
                 if (option.kind === "CONFIRM") return option.confirmed ? (state.resolution.current?.effect.kind === "SWAP_GIGS" ? "Swap a friendly Gig with a rival Gig" : "Use the optional Gig decrease") : "Decline the optional effect";
                 if (option.kind === "GIG") { const g = view.getGig(option.gigInstanceId); return `${state.resolution.current?.effect.kind === "SWAP_GIGS" ? (g.controllerId === actor ? "Give" : "Take") : "Choose"} ${g.controllerId === actor ? "your" : "rival"} ${g.dieType} (current ${g.roll.kind === "ROLLED" ? g.roll.currentValue : "unrolled"})${state.resolution.current?.effect.kind === "SWAP_GIGS" ? " in the swap" : ""}`; }
+                if (option.kind === "MODE" && option.mode === "DONE" && state.resolution.current?.effect.kind === "DISCARD_CARDS" && state.resolution.current.effect.optional) return "Discard nothing"; // Batch V74.
                 if (option.kind === "AMOUNT") return `Decrease by ${option.amount}`;
                 if (option.kind === "MODE") return option.mode === "KEEP" ? "Adjust by zero (keep current value)" : option.mode === "INCREASE_1" ? "Increase by 1" : "Decrease by 1";
             }
             if (state.resolution.choice!.kind === "DISCARD" && option.kind === "CARD") return `Discard ${view.getRevision(option.cardInstanceId)?.displayName} (${option.cardInstanceId})`;
             if (state.resolution.defeatContinuation && option.kind === "CARD") return `Next in your Trash: ${view.getRevision(option.cardInstanceId)?.displayName} (${option.cardInstanceId})`;
             if (state.resolution.searchContinuation) return option.kind === "CARD" ? `Reveal and take ${view.getRevision(option.cardInstanceId)?.displayName}` : "Take no more Gears";
+            if (option.kind === "CARD" && state.resolution.current?.effect.kind === "TRASH_THEN_ADD_TRASH_PROGRAM") return `Add ${view.getRevision(option.cardInstanceId)?.displayName} (${option.cardInstanceId}) from your trash to your hand`; // Batch V73.
+            if (state.resolution.current?.effect.kind === "MAY_DEFEAT_FRIENDLY_GEAR_THEN_DRAW") return option.kind === "CARD" ? `Defeat ${view.getRevision(option.cardInstanceId)?.displayName} (${option.cardInstanceId}) and draw 2` : "Defeat no Gear and draw 1"; // Batch V75.
+            if (option.kind === "CARD" && state.resolution.current?.effect.kind === "POWER_PER_EQUIPPED_GEAR_THIS_TURN") return `Give ${view.getRevision(option.cardInstanceId)?.displayName} (${option.cardInstanceId}) +1 power this turn for each of its equipped Gear`; // Batch V75.
+            if (option.kind === "CARD" && state.resolution.current?.effect.kind === "GRANT_BLOCKER_THIS_TURN") return `Give ${view.getRevision(option.cardInstanceId)?.displayName} (${option.cardInstanceId}) Blocker this turn`; // Batch V74.
             if (state.resolution.playContinuation?.phase === "EQUIP" && option.kind === "CARD") return `Equip to ${view.getRevision(option.cardInstanceId)?.displayName}`;
             if (state.resolution.playContinuation && option.kind === "CARD") return `Give ${view.getRevision(option.cardInstanceId)?.displayName} (${option.cardInstanceId}) -1 power this turn`;
             if (state.resolution.playContinuation && option.kind === "GIG") {
@@ -407,6 +415,7 @@ export function transferGigControl(state: GameState, id: GigInstanceId, controll
 }
 export * from "./rng";
 export * from "./initialization";
+export { composeScenario, ScenarioSchema, SCENARIO_MATCH_ID, SCENARIO_PLAYERS, SCENARIO_DEFAULT_TURN, type Scenario } from "./scenario";
 export * from "./win";
 
 export { moveCardForEffect } from "./card-movement";

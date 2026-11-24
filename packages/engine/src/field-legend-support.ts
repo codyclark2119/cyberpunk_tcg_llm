@@ -1,4 +1,5 @@
 import { hasFightWinMetadata } from "./fight-win-support";
+import { hasCallTrashProgram, supportsCallTrashProgram } from "./call-trash-program-support";
 import { turnSliceAllows, canonicalSerialize, failure, success, type CardRevisionSnapshot, type DeepReadonly, type GameState } from "@tcg/domain";
 import type { EngineContext } from "./state";
 import { hasModalChoice } from "./modal-program-support";
@@ -18,6 +19,7 @@ const reviewedShapes = [
 ];
 export function supportsFieldLegend(card: DeepReadonly<CardRevisionSnapshot> | undefined, context: EngineContext) {
     const m = card?.mechanics, policy = context.content.ruleset.gameplay?.turnSlice;
+    if (hasCallTrashProgram(card)) return supportsCallTrashProgram(card, context); // Batch V73: its {Go Solo} shares the field-Legend lifecycle.
     if (hasModalChoice(card)) return failure("UNSUPPORTED_MODAL_CHOICE", "A modal ability is admitted only by its exact Program pin"); // Batch V44.
     if (hasSellTopEffect(card)) return failure("UNSUPPORTED_EFFECT_SELL", "An effect sell is admitted only by its exact Program pin"); // Batch V45.
     if (hasFightStealEffect(card)) return failure("UNSUPPORTED_FIGHT_STEAL", "A next-fight steal is admitted only by its exact Program pin"); // Batch V47.

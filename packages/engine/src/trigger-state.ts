@@ -1,4 +1,5 @@
 import { supportsSpendTriggerCard } from "./spend-trigger-support";
+import { supportsLegendSpendCard } from "./legend-spend-support";
 import { freeGearHosts, freeGearTargets } from "./free-play";
 import { attachedGear } from "./attachments";
 import { isFirstHostSteal, supportsGearStealCard } from "./gear-steal-support";
@@ -96,7 +97,10 @@ function validBinding(state: GameState, b: TriggerBinding, context: EngineContex
     if (origin.kind === "END_TURN") return b.kind === "WHEN_OWN_TURN_ENDS" && (b.sourceId === b.subjectId || r?.type === "GEAR" && ability.inherited === "EQUIPPED_HOST" && supportsEndTurnCard(r, context).ok) && b.controllerId === origin.playerId && ability.conditions.every(c => testCondition(state, b.controllerId, c, context, b.subjectId));
     if (origin.kind === "FIGHT") return b.kind === "WHEN_FIGHT_WON" && b.subjectId === origin.result.winnerId && validFightFact(state, origin.result) && fightWinGuardAllows(state, b.sourceId, b.subjectId, b.abilityId, context);
     if (origin.kind === "DEFEAT" && (b.gigInstanceId === undefined || !origin.fight)) return b.kind === "WHEN_DEFEATED" && origin.defeated.some(d => d.targetId === b.subjectId) && !["BATTLEFIELD", "LEGENDS"].includes(subject.zone.zone);
-    if (origin.kind === "BLOCK") return b.kind === "WHEN_BLOCKER_USED" && b.sourceId === b.subjectId && b.subjectId === origin.subjectId && supportsTriggerCard(r, context).ok;
+    if (origin.kind === "BLOCK") return (b.kind === "WHEN_BLOCKER_USED" && b.subjectId === origin.subjectId
+        // Batch V74: a face-up friendly observer of the blocking Unit's controller.
+        || b.kind === "WHEN_FRIENDLY_UNIT_USES_BLOCKER" && subject.face === "UP" && ["BATTLEFIELD", "LEGENDS"].includes(subject.zone.zone) && subject.controllerId === state.objects.cards[origin.subjectId]?.controllerId && supportsLegendSpendCard(r, context).ok)
+        && b.sourceId === b.subjectId && supportsTriggerCard(r, context).ok;
     // Batch V24: a steal trigger binding names one Gig its subject stole in this Steal Step; no other binding names a Gig.
     // Batch V47: an effect steal in a post-fight batch appends its steal bindings exactly as a Steal Step would.
     // Batch V67: and a first-steal Gear's extra steal inside the Steal Step batch.
@@ -357,6 +361,13 @@ export function validateTriggerState(state: GameState, context: EngineContext) {
         if (c.phase !== "DISCARD" || c.conditionMet !== undefined || e.primitiveIndex !== undefined || c.discardedCardId || c.origin.kind !== "ATTACK" || e.trigger?.kind !== "WHEN_ATTACKING"
             || !supportsFreeCallUnit(cardRevision(state, e.sourceId!, context), context).ok || getDiscardableCards(state, e.controllerId).length < 2)
             return failure("INVALID_DISCARD_CONTINUATION", "Only the reviewed {Attack} own discard pauses, for a choice among 2 or more hand cards");
+    }
+    // Batch V74: Goro's "you may discard 1. If you do, draw 1." pauses for the controller's discard or decline, with 1 or more hand cards.
+    else if (r.current?.effect.kind === "DISCARD_CARDS" && r.current.effect.optional) {
+        const e = r.current;
+        if (c.phase !== "DISCARD" || c.conditionMet !== undefined || e.primitiveIndex !== undefined || c.discardedCardId || c.origin.kind !== "BLOCK" || e.trigger?.kind !== "WHEN_FRIENDLY_UNIT_USES_BLOCKER"
+            || !supportsLegendSpendCard(cardRevision(state, e.sourceId!, context), context).ok || !getDiscardableCards(state, e.controllerId).length)
+            return failure("INVALID_DISCARD_CONTINUATION", "Only the reviewed Blocker-used may discard pauses, for a discard or a decline");
     }
     // Batch V72: Rita's first-spend own discard pauses after its draw, for the controller's choice among 2 or more hand cards.
     else if (r.current?.effect.kind === "DISCARD_CARDS" && r.current.effect.drawFirst) {

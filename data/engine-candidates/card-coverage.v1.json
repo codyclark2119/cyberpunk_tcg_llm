@@ -9,12 +9,12 @@
   },
   "totals": {
     "cards": 151,
-    "admitted": 122,
-    "notAdmitted": 29,
+    "admitted": 125,
+    "notAdmitted": 26,
     "notAdmittedOnlyCoveredFamilies": 0,
     "byAdmission": {
-      "NOT_ADMITTED": 29,
-      "SOURCE_MATCH": 122
+      "NOT_ADMITTED": 26,
+      "SOURCE_MATCH": 125
     }
   },
   "families": [
@@ -24,7 +24,7 @@
       "summary": "Generic target filters and board conditions: classification, cost, power, ready/spent, equipped, face-up, named, lowest power.",
       "notes": "Documented as unsupported: generic condition/filter language. Each admitted filter is a literal.",
       "cardCount": 34,
-      "notAdmittedCount": 11,
+      "notAdmittedCount": 9,
       "soleBlockerCount": 0
     },
     {
@@ -33,7 +33,7 @@
       "summary": "Conditions and filters on Gig values: min/max, value-pairs, even/odd, 8+, die type, counts compared with a Rival.",
       "notes": "Conditions only, each a fixed shape.",
       "cardCount": 40,
-      "notAdmittedCount": 9,
+      "notAdmittedCount": 8,
       "soleBlockerCount": 0
     },
     {
@@ -42,34 +42,7 @@
       "summary": "Activated abilities with a [Spend] cost (and optional Eddie cost) on Legends, Units or Gear.",
       "notes": "Admitted only for Kerry: The Last Rockerboy (a Unit). Face-up Legend [Spend] abilities and Gear [Spend] abilities are not.",
       "cardCount": 17,
-      "notAdmittedCount": 9,
-      "soleBlockerCount": 0
-    },
-    {
-      "family": "DRAW",
-      "status": "PARTIAL",
-      "summary": "Draw cards, fixed or conditional.",
-      "notes": "Routed. Variable counts need SCALED_AMOUNT; 'may draw' needs an optional prompt.",
-      "cardCount": 38,
       "notAdmittedCount": 7,
-      "soleBlockerCount": 0
-    },
-    {
-      "family": "TEMPORARY_BUFF",
-      "status": "PARTIAL",
-      "summary": "Power or keyword changes 'this turn' on a chosen Unit.",
-      "notes": "Fixed amounts on RIVAL_UNIT, SOURCE_SUBJECT or FRIENDLY_UNIT. Keyword grants, all-Unit and filtered targets are missing.",
-      "cardCount": 19,
-      "notAdmittedCount": 7,
-      "soleBlockerCount": 0
-    },
-    {
-      "family": "DECK_SEARCH_REVEAL",
-      "status": "PARTIAL",
-      "summary": "Top-of-deck manipulation: search/look/reveal top N, trash from the top (Trash N), bottom-deck the rest.",
-      "notes": "SEARCH_GEAR (count<=5, Gear with max cost, take<=2) only.",
-      "cardCount": 15,
-      "notAdmittedCount": 6,
       "soleBlockerCount": 0
     },
     {
@@ -91,11 +64,29 @@
       "soleBlockerCount": 0
     },
     {
-      "family": "KEYWORD_QUICK",
+      "family": "DECK_SEARCH_REVEAL",
       "status": "PARTIAL",
-      "summary": "[Quick] timing: Programs and activated abilities usable in the react window.",
-      "notes": "Quick Programs are supported for Floor It, Reboot Optics and Detonate. Quick activated [Spend] abilities on Legends, Units and Gear are not offered in any react window yet.",
-      "cardCount": 12,
+      "summary": "Top-of-deck manipulation: search/look/reveal top N, trash from the top (Trash N), bottom-deck the rest.",
+      "notes": "SEARCH_GEAR (count<=5, Gear with max cost, take<=2) only.",
+      "cardCount": 15,
+      "notAdmittedCount": 5,
+      "soleBlockerCount": 0
+    },
+    {
+      "family": "DRAW",
+      "status": "PARTIAL",
+      "summary": "Draw cards, fixed or conditional.",
+      "notes": "Routed. Variable counts need SCALED_AMOUNT; 'may draw' needs an optional prompt.",
+      "cardCount": 38,
+      "notAdmittedCount": 5,
+      "soleBlockerCount": 0
+    },
+    {
+      "family": "TEMPORARY_BUFF",
+      "status": "PARTIAL",
+      "summary": "Power or keyword changes 'this turn' on a chosen Unit.",
+      "notes": "Fixed amounts on RIVAL_UNIT, SOURCE_SUBJECT or FRIENDLY_UNIT. Keyword grants, all-Unit and filtered targets are missing.",
+      "cardCount": 19,
       "notAdmittedCount": 5,
       "soleBlockerCount": 0
     },
@@ -105,15 +96,6 @@
       "summary": "Who may attack what and when: can't attack, may attack ready/spent Units, must attack, can't be blocked.",
       "notes": "Restrictions on the card itself are supported; permissions granted by effects, forced attacks and off-turn timing are not.",
       "cardCount": 16,
-      "notAdmittedCount": 4,
-      "soleBlockerCount": 0
-    },
-    {
-      "family": "DISCARD",
-      "status": "PARTIAL",
-      "summary": "Discard: self discard, a Rival discards, discard as a cost, discard a hand.",
-      "notes": "DISCARD_CARDS supports only the controller discarding exactly 1.",
-      "cardCount": 15,
       "notAdmittedCount": 4,
       "soleBlockerCount": 0
     },
@@ -136,24 +118,6 @@
       "soleBlockerCount": 0
     },
     {
-      "family": "SCALED_AMOUNT",
-      "status": "PARTIAL",
-      "summary": "Amounts computed from the board: 'for each', 'equal to'.",
-      "notes": "Only Royce's per-equipped-Gear modifier counts anything.",
-      "cardCount": 18,
-      "notAdmittedCount": 4,
-      "soleBlockerCount": 0
-    },
-    {
-      "family": "TRASH_RECURSION",
-      "status": "MISSING",
-      "summary": "Return a card from the trash (or from cards just trashed) to hand.",
-      "notes": "",
-      "cardCount": 7,
-      "notAdmittedCount": 4,
-      "soleBlockerCount": 0
-    },
-    {
       "family": "COST_MODIFIER",
       "status": "MISSING",
       "summary": "Play-cost reductions, alternative costs, ability-cost and Go Solo cost changes.",
@@ -163,11 +127,20 @@
       "soleBlockerCount": 0
     },
     {
-      "family": "GO_SOLO",
+      "family": "DISCARD",
       "status": "PARTIAL",
-      "summary": "[Go Solo]: play a Legend as a ready Unit that can attack this turn and is removed when it leaves the field.",
-      "notes": "Supported only for Go Solo Legends with no other text or with Blocker (V: Corporate Exile, Goro: Hands Unclean). Go Solo Legends with Play/Attack/Defeated triggers, Go Solo cost changes and Gear on Legend hosts in combat are not.",
-      "cardCount": 10,
+      "summary": "Discard: self discard, a Rival discards, discard as a cost, discard a hand.",
+      "notes": "DISCARD_CARDS supports only the controller discarding exactly 1.",
+      "cardCount": 15,
+      "notAdmittedCount": 3,
+      "soleBlockerCount": 0
+    },
+    {
+      "family": "KEYWORD_QUICK",
+      "status": "PARTIAL",
+      "summary": "[Quick] timing: Programs and activated abilities usable in the react window.",
+      "notes": "Quick Programs are supported for Floor It, Reboot Optics and Detonate. Quick activated [Spend] abilities on Legends, Units and Gear are not offered in any react window yet.",
+      "cardCount": 12,
       "notAdmittedCount": 3,
       "soleBlockerCount": 0
     },
@@ -181,6 +154,24 @@
       "soleBlockerCount": 0
     },
     {
+      "family": "SCALED_AMOUNT",
+      "status": "PARTIAL",
+      "summary": "Amounts computed from the board: 'for each', 'equal to'.",
+      "notes": "Only Royce's per-equipped-Gear modifier counts anything.",
+      "cardCount": 18,
+      "notAdmittedCount": 3,
+      "soleBlockerCount": 0
+    },
+    {
+      "family": "TRASH_RECURSION",
+      "status": "MISSING",
+      "summary": "Return a card from the trash (or from cards just trashed) to hand.",
+      "notes": "",
+      "cardCount": 7,
+      "notAdmittedCount": 3,
+      "soleBlockerCount": 0
+    },
+    {
       "family": "EDDIE_ECONOMY",
       "status": "PARTIAL",
       "summary": "Ready Eddies, sell cards from unusual zones, pay Eddies during resolution.",
@@ -190,11 +181,11 @@
       "soleBlockerCount": 0
     },
     {
-      "family": "GEAR_MOVE_OR_SACRIFICE",
-      "status": "MISSING",
-      "summary": "Move Gear between hosts, or defeat a friendly Gear as a cost or choice.",
-      "notes": "",
-      "cardCount": 3,
+      "family": "GO_SOLO",
+      "status": "PARTIAL",
+      "summary": "[Go Solo]: play a Legend as a ready Unit that can attack this turn and is removed when it leaves the field.",
+      "notes": "Supported only for Go Solo Legends with no other text or with Blocker (V: Corporate Exile, Goro: Hands Unclean). Go Solo Legends with Play/Attack/Defeated triggers, Go Solo cost changes and Gear on Legend hosts in combat are not.",
+      "cardCount": 10,
       "notAdmittedCount": 2,
       "soleBlockerCount": 0
     },
@@ -231,15 +222,6 @@
       "summary": "A Rival makes a choice for the controller's effect.",
       "notes": "",
       "cardCount": 2,
-      "notAdmittedCount": 2,
-      "soleBlockerCount": 0
-    },
-    {
-      "family": "TRIGGER_CALL",
-      "status": "PARTIAL",
-      "summary": "[Call] abilities of a Legend.",
-      "notes": "Trigger WHEN_CALLED; only Viktor's search is routed. Every other Call body needs its effects routed too.",
-      "cardCount": 7,
       "notAdmittedCount": 2,
       "soleBlockerCount": 0
     },
@@ -307,6 +289,15 @@
       "soleBlockerCount": 0
     },
     {
+      "family": "GEAR_MOVE_OR_SACRIFICE",
+      "status": "MISSING",
+      "summary": "Move Gear between hosts, or defeat a friendly Gear as a cost or choice.",
+      "notes": "",
+      "cardCount": 3,
+      "notAdmittedCount": 1,
+      "soleBlockerCount": 0
+    },
+    {
       "family": "GIG_ROLL",
       "status": "MISSING",
       "summary": "Hooks on rolling a Gig die: rerolls and triggers on rolled results.",
@@ -357,15 +348,6 @@
       "summary": "[Attack] abilities and 'when a Unit attacks' triggers.",
       "notes": "Triggers WHEN_ATTACKING and WHEN_UNIT_ATTACKS.",
       "cardCount": 14,
-      "notAdmittedCount": 1,
-      "soleBlockerCount": 0
-    },
-    {
-      "family": "TRIGGER_BLOCKER_USED",
-      "status": "MISSING",
-      "summary": "'When this Unit uses [Blocker]' triggers.",
-      "notes": "Blocker redirection exists but emits no trigger.",
-      "cardCount": 3,
       "notAdmittedCount": 1,
       "soleBlockerCount": 0
     },
@@ -429,6 +411,24 @@
       "summary": "Continuous modifiers: auras, while-attacking power, conditional keywords.",
       "notes": "Each admitted modifier is a bespoke shape.",
       "cardCount": 4,
+      "notAdmittedCount": 0,
+      "soleBlockerCount": 0
+    },
+    {
+      "family": "TRIGGER_BLOCKER_USED",
+      "status": "MISSING",
+      "summary": "'When this Unit uses [Blocker]' triggers.",
+      "notes": "Blocker redirection exists but emits no trigger.",
+      "cardCount": 3,
+      "notAdmittedCount": 0,
+      "soleBlockerCount": 0
+    },
+    {
+      "family": "TRIGGER_CALL",
+      "status": "PARTIAL",
+      "summary": "[Call] abilities of a Legend.",
+      "notes": "Trigger WHEN_CALLED; only Viktor's search is routed. Every other Call body needs its effects routed too.",
+      "cardCount": 7,
       "notAdmittedCount": 0,
       "soleBlockerCount": 0
     },
@@ -1001,8 +1001,8 @@
       "colors": [
         "YELLOW"
       ],
-      "admission": "NOT_ADMITTED",
-      "revision": null,
+      "admission": "SOURCE_MATCH",
+      "revision": 1,
       "families": [
         "DRAW",
         "GEAR_MOVE_OR_SACRIFICE",
@@ -1012,15 +1012,7 @@
         "TEMPORARY_BUFF",
         "TRIGGER_CALL"
       ],
-      "blockingFamilies": [
-        "DRAW",
-        "GEAR_MOVE_OR_SACRIFICE",
-        "KEYWORD_QUICK",
-        "SCALED_AMOUNT",
-        "SPEND_ABILITY",
-        "TEMPORARY_BUFF",
-        "TRIGGER_CALL"
-      ],
+      "blockingFamilies": [],
       "note": null
     },
     {
@@ -1252,8 +1244,8 @@
       "colors": [
         "GREEN"
       ],
-      "admission": "NOT_ADMITTED",
-      "revision": null,
+      "admission": "SOURCE_MATCH",
+      "revision": 1,
       "families": [
         "CONDITION_BOARD",
         "CONDITION_GIG",
@@ -1264,16 +1256,7 @@
         "TEMPORARY_BUFF",
         "TRIGGER_BLOCKER_USED"
       ],
-      "blockingFamilies": [
-        "CONDITION_BOARD",
-        "CONDITION_GIG",
-        "DISCARD",
-        "DRAW",
-        "KEYWORD_QUICK",
-        "SPEND_ABILITY",
-        "TEMPORARY_BUFF",
-        "TRIGGER_BLOCKER_USED"
-      ],
+      "blockingFamilies": [],
       "note": null
     },
     {
@@ -3019,8 +3002,8 @@
       "colors": [
         "RED"
       ],
-      "admission": "NOT_ADMITTED",
-      "revision": null,
+      "admission": "SOURCE_MATCH",
+      "revision": 1,
       "families": [
         "CONDITION_BOARD",
         "DECK_SEARCH_REVEAL",
@@ -3028,13 +3011,7 @@
         "TRASH_RECURSION",
         "TRIGGER_CALL"
       ],
-      "blockingFamilies": [
-        "CONDITION_BOARD",
-        "DECK_SEARCH_REVEAL",
-        "GO_SOLO",
-        "TRASH_RECURSION",
-        "TRIGGER_CALL"
-      ],
+      "blockingFamilies": [],
       "note": null
     },
     {

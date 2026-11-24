@@ -1,3 +1,6 @@
+import { trashProgramTargets } from "./trash-program";
+import { friendlyGearTargets } from "./gear-legend";
+import { blockerGrantTargets } from "./blocker-grant";
 import { mustAttackTargets } from "./must-attack";
 import { crossSetSources, crossSetTargets, legendContinuationAbility, playPowerTargets, swapChoiceGigs, validateLegendActivationState } from "./legend-spend";
 import { friendlyFieldUnits } from "./fight-power-grant";
@@ -50,6 +53,9 @@ export function playChoice(state: GameState, context: EngineContext): PendingCho
     } else if (state.resolution.current?.effect.kind === "TRASH_THEN_RETURN_UNIT") {
         kind = "TARGET";
         options = trashedUnitTargets(state, context).map(cardInstanceId => ({ kind: "CARD", cardInstanceId }));
+    } else if (state.resolution.current?.effect.kind === "TRASH_THEN_ADD_TRASH_PROGRAM") { // Batch V73.
+        kind = "TARGET";
+        options = trashProgramTargets(state, context).map(cardInstanceId => ({ kind: "CARD", cardInstanceId }));
     } else if (state.resolution.current?.effect.kind === "BOTTOM_DECK_UNIT") {
         kind = "TARGET";
         options = currentBottomDeckTargets(state, context).map(cardInstanceId => ({ kind: "CARD", cardInstanceId }));
@@ -69,6 +75,15 @@ export function playChoice(state: GameState, context: EngineContext): PendingCho
     } else if (state.resolution.current?.effect.kind === "FIGHT_POWER_PER_FRIENDLY_LEGEND_THIS_TURN" || state.resolution.current?.effect.kind === "FIGHT_DEFEAT_IMMUNITY_THIS_TURN") { // Batch V58, V61.
         kind = "TARGET";
         options = friendlyFieldUnits(state, c.actorId, context).map(cardInstanceId => ({ kind: "CARD", cardInstanceId }));
+    } else if (state.resolution.current?.effect.kind === "MAY_DEFEAT_FRIENDLY_GEAR_THEN_DRAW") { // Batch V75: the decline, then each friendly Gear.
+        kind = "TARGET";
+        options = [{ kind: "CONFIRM", confirmed: false }, ...friendlyGearTargets(state, c.actorId, context).map(cardInstanceId => ({ kind: "CARD" as const, cardInstanceId }))];
+    } else if (state.resolution.current?.effect.kind === "POWER_PER_EQUIPPED_GEAR_THIS_TURN") { // Batch V75.
+        kind = "TARGET";
+        options = friendlyFieldUnits(state, c.actorId, context).map(cardInstanceId => ({ kind: "CARD", cardInstanceId }));
+    } else if (state.resolution.current?.effect.kind === "GRANT_BLOCKER_THIS_TURN") { // Batch V74.
+        kind = "TARGET";
+        options = blockerGrantTargets(state, c.actorId, context).map(cardInstanceId => ({ kind: "CARD", cardInstanceId }));
     } else if (state.resolution.current?.effect.kind === "POWER_UNTIL_END_OF_TURN" || state.resolution.current?.effect.kind === "STEAL_FEWER_THIS_TURN") {
         kind = "TARGET";
         options = playPowerTargets(state, c.actorId, context).map(cardInstanceId => ({ kind: "CARD", cardInstanceId }));

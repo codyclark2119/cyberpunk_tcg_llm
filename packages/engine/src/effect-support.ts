@@ -1,3 +1,4 @@
+import { hasCallTrashProgram, supportsCallTrashProgram } from "./call-trash-program-support";
 import { hasLegendSpendMetadata, supportsLegendSpendCard } from "./legend-spend-support";
 import { hasFightPowerGrant } from "./fight-power-grant-support";
 import { hasStealReduction } from "./steal-reduction-support";
@@ -15,6 +16,7 @@ import { hasFreePlayEffect } from "./free-play-support";
 import { hasQuickActivation } from "./quick-activation-support";
 export function supportsCall(card: DeepReadonly<CardRevisionSnapshot> | undefined, context: EngineContext) {
     if (hasLegendSpendMetadata(card)) return supportsLegendSpendCard(card, context); // Batch V59: Calling it is admitted by its Legend pin.
+    if (hasCallTrashProgram(card)) return supportsCallTrashProgram(card, context); // Batch V73: Calling it is admitted by its exact pin.
     if (hasModalChoice(card)) return failure("UNSUPPORTED_MODAL_CHOICE", "A modal ability is admitted only by its exact Program pin"); // Batch V44.
     if (hasSellTopEffect(card)) return failure("UNSUPPORTED_EFFECT_SELL", "An effect sell is admitted only by its exact Program pin"); // Batch V45.
     if (hasFightStealEffect(card)) return failure("UNSUPPORTED_FIGHT_STEAL", "A next-fight steal is admitted only by its exact Program pin"); // Batch V47.

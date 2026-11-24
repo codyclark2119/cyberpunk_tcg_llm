@@ -1,4 +1,6 @@
 import { applyMustAttack, mustAttackTargets } from "./must-attack";
+import { applyGearPower, friendlyGearTargets, resolveGearDefeatDraw } from "./gear-legend";
+import { applyBlockerGrant, blockerGrantTargets } from "./blocker-grant";
 import { applyFightDefeatImmunity } from "./fight-immunity";
 import { advanceCrossSet, advanceMandatorySwap, isLegendCallPower, mandatorySwapAvailable, playPowerTargets } from "./legend-spend";
 import { applyFightPowerGrant, friendlyFieldUnits } from "./fight-power-grant";
@@ -18,6 +20,7 @@ import { isProgramSearchEffect, programSearchMaxTake, searchChoice, searchTarget
 import { drawDeterministicInteger } from "./rng";
 import { isUnitSpendSubject, spendUnitForEffect } from "./unit-spend";
 import { resolveTrashThenReturn } from "./trash-return";
+import { resolveTrashThenAddProgram } from "./trash-program";
 import { resolveBottomDeck } from "./bottom-deck";
 import { resolveDrawPerFriendlyGig, resolvePowerPerFriendlyGig } from "./gig-parity";
 import { gigSetTargets } from "./gig-value";
@@ -86,6 +89,16 @@ export class HandlerRegistry {
             const targets = friendlyFieldUnits(m.state, m.state.resolution.current!.controllerId, m.context);
             return targets.length > 1 ? offerPlayChoice(m) : targets.length === 1 ? applyFightDefeatImmunity(m, targets[0], true) : success(null);
         }
+        if (effect.kind === "MAY_DEFEAT_FRIENDLY_GEAR_THEN_DRAW") // Batch V75: with a friendly Gear, a defeat or the decline; with none, draw 1.
+            return friendlyGearTargets(m.state, m.state.resolution.current!.controllerId, m.context).length ? offerPlayChoice(m) : resolveGearDefeatDraw(m, undefined, true);
+        if (effect.kind === "POWER_PER_EQUIPPED_GEAR_THIS_TURN") { // Batch V75: one friendly Unit; a lone Unit is forced and none does nothing.
+            const targets = friendlyFieldUnits(m.state, m.state.resolution.current!.controllerId, m.context);
+            return targets.length > 1 ? offerPlayChoice(m) : targets.length === 1 ? applyGearPower(m, targets[0], true) : success(null);
+        }
+        if (effect.kind === "GRANT_BLOCKER_THIS_TURN") { // Batch V74: one friendly Unit with cost 4 or less; a lone Unit is forced and none does nothing.
+            const targets = blockerGrantTargets(m.state, m.state.resolution.current!.controllerId, m.context);
+            return targets.length > 1 ? offerPlayChoice(m) : targets.length === 1 ? applyBlockerGrant(m, targets[0], true) : success(null);
+        }
         if (effect.kind === "FIGHT_POWER_PER_FRIENDLY_LEGEND_THIS_TURN") { // Batch V58: one friendly Unit; a lone Unit is forced and none does nothing.
             const targets = friendlyFieldUnits(m.state, m.state.resolution.current!.controllerId, m.context);
             return targets.length > 1 ? offerPlayChoice(m) : targets.length === 1 ? applyFightPowerGrant(m, targets[0], true) : success(null);
@@ -111,6 +124,7 @@ export class HandlerRegistry {
         if (effect.kind === "SET_GIG_TO_ANOTHER_GIG_VALUE") return gigSetTargets(m.state).length ? offerPlayChoice(m) : success(null);
         if (effect.kind === "SEARCH_TAKE_ONE_PLUS_PER_MIN_GIG") return this.primitives.SEARCH_TAKE_ONE_PLUS_PER_MIN_GIG(m, effect);
         if (effect.kind === "TRASH_THEN_RETURN_UNIT") return resolveTrashThenReturn(m, effect, offerPlayChoice);
+        if (effect.kind === "TRASH_THEN_ADD_TRASH_PROGRAM") return resolveTrashThenAddProgram(m, effect, offerPlayChoice); // Batch V73.
         if (effect.kind === "BOTTOM_DECK_UNIT") return resolveBottomDeck(m, offerPlayChoice);
         if (effect.kind === "SELL_TOP_OF_DECK") return resolveSellTopOfDeck(m); // Batch V45.
         return failure("UNSUPPORTED_CALL_EFFECT", "No registered typed CALL primitive");

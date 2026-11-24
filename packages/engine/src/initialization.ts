@@ -80,6 +80,40 @@ export function createGameWithEvents(input: z.input<typeof CreateGameInputSchema
     for (const p of Object.values(s.players))
         p.economy = { sellsThisTurn: 0, callsThisTurn: 0, usageTurn: 1 };
     if (triggersEnabled(context)) s.turnHistory = { ...(firstAttackHistoryEnabled(context) ? { firstArasakaAttacks: initialFirstAttackHistory(s) } : {}), turn: 1, triggeredBatches: 0, blueUnitOrGearPlays: Object.fromEntries(s.match.playerOrder.map(id => [id, 0])), ...(programPlayHistoryEnabled(context) ? { programPlays: Object.fromEntries(s.match.playerOrder.map(id => [id, 0])) } : {}) };
+    const admitted = admitDeckCards(s, context); if (!admitted.ok) return admitted;
+    if (engineSetup) {
+        delete s.turnHistory;
+        const mutation = new TurnMutation(s, context);
+        const begun = beginSetup(mutation);
+        return begun.ok ? mutation.result(false) : begun;
+    }
+    const shuffle = <T>(items: T[]) => { for (let i = items.length - 1; i > 0; i--) {
+        const r = drawDeterministicInteger(s.rng, i + 1);
+        s.rng = r.rng;
+        [items[i], items[r.rawValue - 1]] = [items[r.rawValue - 1], items[i]];
+    } };
+    for (const id of s.match.playerOrder) {
+        const p = s.players[id];
+        shuffle(p.zones.DECK);
+        shuffle(p.zones.LEGENDS);
+        for (const [index, cid] of p.zones.LEGENDS.entries())
+            s.objects.cards[cid].readiness = id === first && index < rules.firstPlayerSpentLegends ? "SPENT" : "READY";
+    }
+    const mutation = new TurnMutation(s, context);
+    for (const actor of s.match.playerOrder) {
+        const dealt = mutation.draw(actor, rules.openingHand);
+        if (!dealt.ok)
+            return dealt;
+    }
+    const started = mutation.startTurn();
+    if (!started.ok)
+        return started;
+    return mutation.result(false);
+}
+/** Every deck card's admission: the deck-wide capability metadata checks, then each pinned revision's
+ * executable decision and gate. createGame runs it on every new game; composeScenario reuses it. */
+export function admitDeckCards(s: GameState, context: EngineContext): Result<null> {
+    const policy = context.content.ruleset.gameplay?.turnSlice;
     // Capability admission is deck-wide, never a hidden-Legend-specific label/filter.
     const attackPowerMetadata = validateAttackConditionPowerMetadata(s, context); if (!attackPowerMetadata.ok) return attackPowerMetadata;
     const spendMetadata = validateTargetedSpendMetadata(s, context); if (!spendMetadata.ok) return spendMetadata;
@@ -119,34 +153,7 @@ export function createGameWithEvents(input: z.input<typeof CreateGameInputSchema
         else if (content.mechanics.restrictions?.length || content.mechanics.equip || content.mechanics.abilities.length || content.mechanics.modifiers.length)
             return failure("UNSUPPORTED_CARD_EFFECT", "Turn slice requires cards without unsupported automatic effects");
     }
-    if (engineSetup) {
-        delete s.turnHistory;
-        const mutation = new TurnMutation(s, context);
-        const begun = beginSetup(mutation);
-        return begun.ok ? mutation.result(false) : begun;
-    }
-    const shuffle = <T>(items: T[]) => { for (let i = items.length - 1; i > 0; i--) {
-        const r = drawDeterministicInteger(s.rng, i + 1);
-        s.rng = r.rng;
-        [items[i], items[r.rawValue - 1]] = [items[r.rawValue - 1], items[i]];
-    } };
-    for (const id of s.match.playerOrder) {
-        const p = s.players[id];
-        shuffle(p.zones.DECK);
-        shuffle(p.zones.LEGENDS);
-        for (const [index, cid] of p.zones.LEGENDS.entries())
-            s.objects.cards[cid].readiness = id === first && index < rules.firstPlayerSpentLegends ? "SPENT" : "READY";
-    }
-    const mutation = new TurnMutation(s, context);
-    for (const actor of s.match.playerOrder) {
-        const dealt = mutation.draw(actor, rules.openingHand);
-        if (!dealt.ok)
-            return dealt;
-    }
-    const started = mutation.startTurn();
-    if (!started.ok)
-        return started;
-    return mutation.result(false);
+    return success(null);
 }
 export function createGame(input: z.input<typeof CreateGameInputSchema>, context: EngineContext): Result<GameState> {
     const initialized = createGameWithEvents(input, context);

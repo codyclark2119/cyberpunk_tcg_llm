@@ -1,4 +1,5 @@
 import { isLegendCallPower, playPowerTargets } from "./legend-spend";
+import { validateGearPower } from "./gear-legend";
 import { supportsLegendSpendCard } from "./legend-spend-support";
 import { supportsAttackConditionPowerCard } from "./attack-condition-power-support";
 import { isPlayedInBatch } from "./effect-play";
@@ -18,6 +19,7 @@ import { supportsLegendReveal } from "./legend-reveal-support";
 import { supportsModalProgram } from "./modal-program-support";
 import { supportsQuickActivationCard } from "./quick-activation-support";
 import { activationEffectId } from "./play-state";
+import { validateBlockerBonus } from "./blocker-grant";
 function removedFieldLegend(state: GameState, id: CardInstanceId, context: EngineContext) {
     const target = state.objects.cards[id];
     return target?.face === "UP" && target.zone.zone === "REMOVED" && supportsFieldLegend(cardRevision(state, id, context), context).ok;
@@ -27,7 +29,7 @@ export function compareTemporaryPower(a: TemporaryPowerModifier, b: TemporaryPow
     if (a.sourceId !== b.sourceId) return a.sourceId < b.sourceId ? -1 : 1;
     const occurrence = (x: TemporaryPowerModifier) => "origin" in x ? x.origin.effectId : "";
     // Batch V49: repeated activations share an effect id and differ by their activation sequence.
-    const sequence = (x: TemporaryPowerModifier) => "scaled" in x && x.scaled === "SOURCE_POWER" ? x.origin.sequence : -1;
+    const sequence = (x: TemporaryPowerModifier) => "scaled" in x && (x.scaled === "SOURCE_POWER" || x.scaled === "BLOCKER_GRANT_BONUS" || x.scaled === "PER_EQUIPPED_GEAR") ? x.origin.sequence : -1; // Batch V74: so does the Blocker grant's +1.
     // Batch V54: one "all rival Units" effect makes one modifier per target.
     return occurrence(a) < occurrence(b) ? -1 : occurrence(a) > occurrence(b) ? 1 : sequence(a) !== sequence(b) ? sequence(a) - sequence(b) : a.targetId < b.targetId ? -1 : a.targetId > b.targetId ? 1 : 0;
 }
@@ -114,7 +116,7 @@ export function validateTemporaryPower(state: GameState, context: EngineContext)
     if (!metadata.ok) return metadata;
     const modifiers = state.temporaryModifiers;
     if (!modifiers) return success(null);
-    if (!reactEnabled(context) || !modifiers.length || new Set(modifiers.map(x => canonicalSerialize([x.sourceId, "origin" in x ? x.origin.effectId : null, "scaled" in x && x.scaled === "SOURCE_POWER" ? x.origin.sequence : null, "scaled" in x && x.scaled === "ALL_RIVAL_UNITS" ? x.targetId : null]))).size !== modifiers.length || canonicalSerialize(modifiers) !== canonicalSerialize([...modifiers].sort(compareTemporaryPower))) return failure("INVALID_TEMPORARY_POWER", "Nonempty canonical reviewed modifiers with distinct source/occurrences required");
+    if (!reactEnabled(context) || !modifiers.length || new Set(modifiers.map(x => canonicalSerialize([x.sourceId, "origin" in x ? x.origin.effectId : null, "scaled" in x && (x.scaled === "SOURCE_POWER" || x.scaled === "BLOCKER_GRANT_BONUS" || x.scaled === "PER_EQUIPPED_GEAR") ? x.origin.sequence : null, "scaled" in x && x.scaled === "ALL_RIVAL_UNITS" ? x.targetId : null]))).size !== modifiers.length || canonicalSerialize(modifiers) !== canonicalSerialize([...modifiers].sort(compareTemporaryPower))) return failure("INVALID_TEMPORARY_POWER", "Nonempty canonical reviewed modifiers with distinct source/occurrences required");
     for (const x of modifiers) {
         const source = state.objects.cards[x.sourceId], target = state.objects.cards[x.targetId], r = cardRevision(state, x.sourceId, context);
         // Batch V41: the revealed card's printed cost, on the Go Solo Legend that revealed it during a resolved current-turn ATTACK occurrence.
@@ -146,6 +148,12 @@ export function validateTemporaryPower(state: GameState, context: EngineContext)
                 || target.controllerId === source.controllerId || x.expires.turn !== state.timing.turn || x.origin.sequence >= state.match.eventSequence
                 || x.origin.effectId !== activationEffectId(state, source.controllerId, source.id, a.id, 0) || c?.kind === "ACTIVATE" && c.sourceId === source.id && state.resolution.current?.id === x.origin.effectId)
                 return failure("INVALID_TEMPORARY_POWER", "Source-power loss needs its reviewed public Unit, a rival public Unit target and a resolved current-turn activation");
+            continue;
+        }
+        // Batch V74: the +1 a Legend's Blocker grant also gave, with a friendly value-pair of Gigs as it resolved.
+        if ("scaled" in x && (x.scaled === "BLOCKER_GRANT_BONUS" || x.scaled === "PER_EQUIPPED_GEAR")) { // Batch V75: and a Legend's per-Gear power.
+            const valid = (x.scaled === "BLOCKER_GRANT_BONUS" ? validateBlockerBonus : validateGearPower)(state, x as never, context, id => { const t = state.objects.cards[id]; return t?.face === "UP" && (["BATTLEFIELD", "TRASH", "REMOVED"].includes(t.zone.zone) && effectiveCardTypes(state, id, context).includes("UNIT") || removedFieldLegend(state, id, context)); });
+            if (!valid.ok) return valid;
             continue;
         }
         // Batch V54: Towerfall's "-5 power this turn" to each rival Unit there as it resolved.
