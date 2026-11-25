@@ -164,7 +164,9 @@ export const TemporaryPowerModifierSchema = z.discriminatedUnion("amount", [
     // Batch V76: a Legend's "When you play a BRAINDANCE Program, give a friendly Unit +1 power this turn", one per trigger occurrence.
     TemporaryPowerBaseSchema.extend({ amount: z.literal(1), scaled: z.literal("PROGRAM_PLAY_TRIGGER"), origin: z.strictObject({ effectId: HashSchema, abilityId: z.string().min(1), ordinal: z.number().int().positive() }) })).or(
     // Batch V79: a played Program's "Give this Unit +3 power this turn" on the friendly Unit it chose.
-    TemporaryPowerBaseSchema.extend({ amount: z.literal(3), scaled: z.literal("PROGRAM_UNIT_GRANT"), origin: z.strictObject({ effectId: HashSchema }) })
+    TemporaryPowerBaseSchema.extend({ amount: z.literal(3), scaled: z.literal("PROGRAM_UNIT_GRANT"), origin: z.strictObject({ effectId: HashSchema }) })).or(
+    // Batch V80: the "+2 power this turn" a Legend's rival-Unit attack grant also gives a ROCKER Unit; `sequence` keeps activations apart.
+    TemporaryPowerBaseSchema.extend({ amount: z.literal(2), scaled: z.literal("ROCKER_ATTACK_GRANT_BONUS"), origin: z.strictObject({ effectId: HashSchema, sequence: z.number().int().nonnegative() }) })
 );
 export type TemporaryPowerModifier = z.infer<typeof TemporaryPowerModifierSchema>;
 /** Batch V20: a keyword granted "this turn" by a resolved PLAY occurrence; it tracks the target only while it stays on the field. */

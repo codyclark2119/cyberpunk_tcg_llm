@@ -5,6 +5,7 @@ import { otherPlayerMayChoose, revealedTop, rivalOf } from "./rival-reveal";
 import { validateHandReset } from "./hand-reset";
 import { validateUnitGrantPause, READY_ATTACK_MODE, POWER_MODE } from "./ready-attack-grant";
 import { blockerGrantTargets } from "./blocker-grant";
+import { rockerGrantTargets } from "./rocker-grant";
 import { mustAttackTargets } from "./must-attack";
 import { crossSetSources, crossSetTargets, legendContinuationAbility, playPowerTargets, swapChoiceGigs, validateLegendActivationState } from "./legend-spend";
 import { friendlyFieldUnits } from "./fight-power-grant";
@@ -98,6 +99,9 @@ export function playChoice(state: GameState, context: EngineContext): PendingCho
     } else if (state.resolution.current?.effect.kind === "POWER_PER_EQUIPPED_GEAR_THIS_TURN") { // Batch V75.
         kind = "TARGET";
         options = friendlyFieldUnits(state, c.actorId, context).map(cardInstanceId => ({ kind: "CARD", cardInstanceId }));
+    } else if (state.resolution.current?.effect.kind === "FRIENDLY_UNIT_ATTACK_RIVAL_UNITS_THE_TURN_PLAYED") { // Batch V80.
+        kind = "TARGET";
+        options = rockerGrantTargets(state, c.actorId, context).map(cardInstanceId => ({ kind: "CARD", cardInstanceId }));
     } else if (state.resolution.current?.effect.kind === "GRANT_BLOCKER_THIS_TURN") { // Batch V74.
         kind = "TARGET";
         options = blockerGrantTargets(state, c.actorId, context).map(cardInstanceId => ({ kind: "CARD", cardInstanceId }));

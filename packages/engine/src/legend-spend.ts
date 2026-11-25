@@ -2,6 +2,7 @@ import { canonicalSerialize, failure, hashCanonical, success, type CardInstanceI
 import { friendlyGearTargets } from "./gear-legend";
 import { trashedTopProgram } from "./braindance-legend";
 import { blockerGrantTargets } from "./blocker-grant";
+import { rockerGrantTargets } from "./rocker-grant";
 import type { EngineContext } from "./state";
 import type { TurnMutation } from "./turn";
 import { cardRevision } from "./characteristics";
@@ -75,10 +76,10 @@ export function validateLegendActivationState(state: GameState, context: EngineC
     const modal = ability?.trigger === "WHEN_CALLED" && Boolean(ability.choose), called = modal || trashCall, quick = ability?.activation?.timing === "QUICK" && !ability.trigger, spend = (ability?.activation?.timing === "MAIN" || quick) && !ability?.trigger;
     const main = r.returnTo?.kind === "MAIN" && state.timing.combat.stage === "NONE" && c.actorId === state.timing.activePlayer;
     const window = called || quick ? main || r.returnTo?.kind === "RIVAL_REACT" && state.timing.combat.stage === "RIVAL_REACT" && c.actorId !== state.timing.combat.attackingPlayerId : main;
-    const amount = activationPaymentAmount(ability);
+    const amount = activationPaymentAmount(ability, state, c.actorId);
     if (!(supportsLegendSpendCard(revision, context).ok || trashCall) || !source || !ability || !(called || spend) || !window || called && amount || c.actorId !== state.timing.actingPlayer
         || new Set(c.selectedSources.map(p => p.cardInstanceId)).size !== c.selectedSources.length || c.selectedSources.reduce((n, p) => n + paymentValue(state, context, p), 0) + c.remainingCost !== amount
-        || c.selectedSources.some(p => { const paid = state.objects.cards[p.cardInstanceId]; return !paid || p.cardInstanceId === source?.id || paid.controllerId !== c.actorId || paid.zone.playerId !== c.actorId || paid.readiness !== "SPENT"; })
+        || c.selectedSources.some(p => { const paid = state.objects.cards[p.cardInstanceId]; return !paid || p.cardInstanceId === source?.id || paid.controllerId !== c.actorId || paid.zone.playerId !== c.actorId || paid.readiness !== (c.phase === "PAYMENT" ? "READY" : "SPENT"); }) // Batch V80: a 2 €$ cost pauses with a source chosen, not yet spent.
         || source.controllerId !== c.actorId || source.zone.playerId !== c.actorId || source.zone.zone !== "LEGENDS" || source.face !== "UP" || spend && source.readiness !== "SPENT"
         || state.setup || state.match.outcome || r.stage !== "CHOICE" || r.searchContinuation || r.callContinuation || r.triggerContinuation || r.legendEntryContinuation || r.targetedDefeatContinuation || r.defeatContinuation || r.gigStealContinuation || r.discovered.length
         || c.trashedIds || c.bottomDecked || Object.values(state.objects.cards).some(x => x.zone.zone === "RESOLVING_PROGRAM"))
@@ -118,6 +119,8 @@ export function validateLegendActivationState(state: GameState, context: EngineC
             if (!trashCall || c.targetGigId || state.timing.step !== "TARGET_SELECTION" || !friendlyGearTargets(state, c.actorId, context).length) return failure("INVALID_LEGEND_ACTIVATION", "A Gear defeat pauses only for a defeat or decline with a friendly Gear");
         } else if (e.kind === "POWER_PER_EQUIPPED_GEAR_THIS_TURN") { // Batch V75.
             if (!quick || c.targetGigId || state.timing.step !== "TARGET_SELECTION" || friendlyFieldUnits(state, c.actorId, context).length < 2) return failure("INVALID_LEGEND_ACTIVATION", "A per-Gear power pauses only for a strategic friendly-Unit choice");
+        } else if (e.kind === "FRIENDLY_UNIT_ATTACK_RIVAL_UNITS_THE_TURN_PLAYED") { // Batch V80.
+            if (!spend || quick || c.targetGigId || state.timing.step !== "TARGET_SELECTION" || rockerGrantTargets(state, c.actorId, context).length < 2) return failure("INVALID_LEGEND_ACTIVATION", "A rival-Unit attack grant pauses only for a strategic friendly-Unit choice");
         } else if (e.kind === "GRANT_BLOCKER_THIS_TURN") { // Batch V74.
             if (!quick || c.targetGigId || state.timing.step !== "TARGET_SELECTION" || blockerGrantTargets(state, c.actorId, context).length < 2) return failure("INVALID_LEGEND_ACTIVATION", "A Blocker grant pauses only for a strategic friendly-Unit choice");
         } else if (e.kind === "TRASH_THEN_ADD_TRASH_PROGRAM") { // Batch V73.

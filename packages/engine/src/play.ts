@@ -1,6 +1,7 @@
 import { chooseTrashProgram } from "./trash-program";
 import { applyGearPower, resolveGearDefeatDraw } from "./gear-legend";
 import { applyBlockerGrant } from "./blocker-grant";
+import { applyRockerGrant } from "./rocker-grant";
 import { noteSpent } from "./spend-triggers";
 import { applyMustAttack } from "./must-attack";
 import { applyFightDefeatImmunity } from "./fight-immunity";
@@ -122,7 +123,7 @@ function pendEffects(m: TurnMutation, indexes: number[]): Result<null> {
 }
 function completePayment(m: TurnMutation, sources: PaymentSource[]): Result<null> {
     const s = m.state, c = s.resolution.playContinuation!, r = revisionOf(s, c.sourceId, m.context)!;
-    const amount = c.kind === "ACTIVATE" ? activationPaymentAmount(playAbility(m)) : playPaymentAmount(s, c.actorId, c.sourceId, m.context)!;
+    const amount = c.kind === "ACTIVATE" ? activationPaymentAmount(playAbility(m), s, c.actorId) : playPaymentAmount(s, c.actorId, c.sourceId, m.context)!;
     const payment = validatePayment(s, c.actorId, m.context, sources, { kind: "EDDIES", amount });
     return payment.ok ? payValidated(m, payment.value) : payment;
 }
@@ -274,6 +275,11 @@ export function continuePlay(m: TurnMutation, index: number): Result<null> {
         const applied = applyGearPower(m, option.cardInstanceId, false);
         return applied.ok ? completePlayEffect(m) : applied;
     }
+    if (s.resolution.current?.effect.kind === "FRIENDLY_UNIT_ATTACK_RIVAL_UNITS_THE_TURN_PLAYED") { // Batch V80.
+        if (option.kind !== "CARD") return failure("INVALID_GRANT_TARGET", "Choose a current friendly field Unit");
+        const applied = applyRockerGrant(m, option.cardInstanceId, false);
+        return applied.ok ? completePlayEffect(m) : applied;
+    }
     if (s.resolution.current?.effect.kind === "GRANT_BLOCKER_THIS_TURN") { // Batch V74.
         if (option.kind !== "CARD") return failure("INVALID_KEYWORD_TARGET", "Choose an enumerated friendly Unit");
         s.resolution.choice = null;
@@ -355,7 +361,7 @@ export function activateAbility(m: TurnMutation, actorId: PlayerId, sourceId: Ca
     s.objects.cards[sourceId].readiness = "SPENT"; noteSpent(m, sourceId); // Batch V69.
     m.emit({ kind: "CARD_SPENT", cardInstanceId: sourceId });
     m.emit({ kind: "ABILITY_ACTIVATED", sourceInstanceId: sourceId, abilityId });
-    const amount = activationPaymentAmount(ability);
+    const amount = activationPaymentAmount(ability, s, actorId);
     if (amount) {
         // Batch V49 (11.30.2): a paid Quick activation, in MAIN or the React Step; it returns to whichever decision it was taken from.
         s.resolution.returnTo = actionReturnContext(s);

@@ -1,3 +1,4 @@
+import { rockerGrantEnabled } from "./rocker-grant";
 import { failure, success, type CardInstanceId, type GameState } from "@tcg/domain";
 import type { EngineContext } from "./state";
 import type { TurnMutation } from "./turn";
@@ -10,7 +11,7 @@ export function arasakaDefeatHistoryEnabled(context: EngineContext) {
     return context.content.cards.some(r => r.mechanics.abilities.some(a => a.guard === "FIRST_ARASAKA_UNIT_DEFEAT_PER_TURN") && supportsFreePlayCard(r, context).ok);
 }
 export function rivalUnitAttackGrantsEnabled(context: EngineContext) {
-    return context.content.cards.some(r => r.mechanics.abilities.some(a => a.effects.some(e => e.kind === "PLAY_UNIT_FREE" && e.grant)) && supportsFreePlayCard(r, context).ok);
+    return context.content.cards.some(r => r.mechanics.abilities.some(a => a.effects.some(e => e.kind === "PLAY_UNIT_FREE" && e.grant)) && supportsFreePlayCard(r, context).ok) || rockerGrantEnabled(context); // Batch V80.
 }
 /** Called with each defeat batch before its cards move: the turn's first face-up ARASAKA Unit to be defeated, by either player.
  * Simultaneous defeats take the lowest card id, so the one first-time event belongs to exactly one card. */

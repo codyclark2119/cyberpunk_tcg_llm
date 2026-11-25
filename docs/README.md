@@ -125,6 +125,7 @@ were recorded in their pull requests (#4, #7, #8); later batches have documents 
 | V77 (2026-11-25) | Fool on the Hill | [Program revealing the top 2; a Rival chooses hand, or trash and draw 2](api-admission-batch-v77.md); coverage 127/151 |
 | V78 (2026-11-25) | Shattered Memories | [Program discarding both hands; each player may draw 5, and a total matching a friendly Gig draws 2](api-admission-batch-v78.md); coverage 128/151 |
 | V79 (2026-11-25) | Gunpoint Diplomacy | [Program giving a friendly Unit +3 power and a next attack on ready Units; with less Street Cred a Rival picks one](api-admission-batch-v79.md); coverage 129/151 |
+| V80 (2026-11-25) | Johnny Silverhand: Rocking Renegade | [Legend {Spend}: a friendly Unit may attack spent rival Units the turn it's played, +2 power if ROCKER; cost -1 per friendly 8+ Gig](api-admission-batch-v80.md); coverage 130/151 |
 | V7 (2026-11-15) | Royce: Don't Call Me Simon, Wild in the Streets, Delamain: Rideshare AI | [shared defeat filter and exact pin table](api-admission-batch-v7.md); coverage 42/151 |
 | V6 (2026-09-22) | Trust No One | [contract and executable slice](api-admission-batch-v6.md), [baseline verification](api-admission-batch-v6-verification.md) |
 

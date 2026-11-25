@@ -241,6 +241,8 @@ export const EffectSchema = z.discriminatedUnion("kind", [
     // Batch V79: "Give a friendly Unit these effects. If you have less Street Cred than a Rival, they instead choose one effect for you.
     // The next time this Unit attacks this turn, it may attack ready Units. // Give this Unit +3 power this turn."
     z.strictObject({ kind: z.literal("FRIENDLY_UNIT_READY_ATTACK_AND_POWER"), power: z.literal(3), rivalChoosesOneIf: z.literal("STREET_CRED_LESS_THAN_RIVAL") }),
+    // Batch V80: "A friendly Unit can attack spent rival Units the turn it's played. If it's a ROCKER Unit, also give it +2 power this turn."
+    z.strictObject({ kind: z.literal("FRIENDLY_UNIT_ATTACK_RIVAL_UNITS_THE_TURN_PLAYED"), alsoPowerIfTag: z.literal("Rocker"), amount: z.literal(2) }),
     // Batch V76: "Trash the top card of your deck. If it's a Program, you may add it to your hand."
     z.strictObject({ kind: z.literal("TRASH_TOP_MAY_ADD_PROGRAM") }),
     // Batch V76: "Give a friendly Unit +1 power this turn" from a Legend's "When you play a BRAINDANCE Program" trigger.
@@ -312,7 +314,9 @@ export const AbilitySchema = z.strictObject({ id: z.string().min(1), trigger: Tr
     // Batch V63: FRIENDLY_CORPO_OR_GANGER_UNIT_STEALS is "When a friendly CORPO or GANGER Unit steals 1 or more Gigs": once per steal, not per Gig.
     // Batch V50: FIRST_ARASAKA_UNIT_DEFEAT_PER_TURN with WHEN_UNIT_DEFEATED is "The first time an ARASAKA Unit is defeated each turn".
     // Batch V49: QUICK is "[Quick] cost: effect" (11.30.2): also activatable as a reaction to a rival Unit's attack.
-    activation: z.strictObject({ timing: z.enum(["MAIN", "QUICK"]), conditionTiming: z.literal("ACTIVATION_AND_RESOLUTION"), costs: z.array(ActivationCostSchema) }).optional(),
+    activation: z.strictObject({ timing: z.enum(["MAIN", "QUICK"]), conditionTiming: z.literal("ACTIVATION_AND_RESOLUTION"), costs: z.array(ActivationCostSchema),
+        // Batch V80: "This effect costs -1 €$ for each friendly Gig with 8+ value" (no minimum is printed, so it can reach 0).
+        costReduction: z.strictObject({ per: z.literal("FRIENDLY_GIG_VALUE_AT_LEAST_8"), amount: z.literal(1) }).optional() }).optional(),
     // Batch V44: "Choose one effect. If <condition>, choose both instead." The effects are the modes in printed order; the
     // condition is checked as the Program resolves, and while it holds every mode resolves in order.
     // Batch V60: a Legend's "{Call} Choose one effect." has no "choose both instead" condition.

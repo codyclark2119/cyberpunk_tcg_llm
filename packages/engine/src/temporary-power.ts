@@ -22,6 +22,7 @@ import { supportsQuickActivationCard } from "./quick-activation-support";
 import { activationEffectId } from "./play-state";
 import { validateBlockerBonus } from "./blocker-grant";
 import { validateUnitGrantPower } from "./ready-attack-grant";
+import { validateRockerBonus } from "./rocker-grant";
 function removedFieldLegend(state: GameState, id: CardInstanceId, context: EngineContext) {
     const target = state.objects.cards[id];
     return target?.face === "UP" && target.zone.zone === "REMOVED" && supportsFieldLegend(cardRevision(state, id, context), context).ok;
@@ -31,7 +32,7 @@ export function compareTemporaryPower(a: TemporaryPowerModifier, b: TemporaryPow
     if (a.sourceId !== b.sourceId) return a.sourceId < b.sourceId ? -1 : 1;
     const occurrence = (x: TemporaryPowerModifier) => "origin" in x ? x.origin.effectId : "";
     // Batch V49: repeated activations share an effect id and differ by their activation sequence.
-    const sequence = (x: TemporaryPowerModifier) => "scaled" in x && (x.scaled === "SOURCE_POWER" || x.scaled === "BLOCKER_GRANT_BONUS" || x.scaled === "PER_EQUIPPED_GEAR") ? x.origin.sequence : -1; // Batch V74: so does the Blocker grant's +1.
+    const sequence = (x: TemporaryPowerModifier) => "scaled" in x && (x.scaled === "SOURCE_POWER" || x.scaled === "BLOCKER_GRANT_BONUS" || x.scaled === "PER_EQUIPPED_GEAR" || x.scaled === "ROCKER_ATTACK_GRANT_BONUS") ? x.origin.sequence : -1; // Batch V74: so does the Blocker grant's +1.
     // Batch V54: one "all rival Units" effect makes one modifier per target.
     return occurrence(a) < occurrence(b) ? -1 : occurrence(a) > occurrence(b) ? 1 : sequence(a) !== sequence(b) ? sequence(a) - sequence(b) : a.targetId < b.targetId ? -1 : a.targetId > b.targetId ? 1 : 0;
 }
@@ -118,7 +119,7 @@ export function validateTemporaryPower(state: GameState, context: EngineContext)
     if (!metadata.ok) return metadata;
     const modifiers = state.temporaryModifiers;
     if (!modifiers) return success(null);
-    if (!reactEnabled(context) || !modifiers.length || new Set(modifiers.map(x => canonicalSerialize([x.sourceId, "origin" in x ? x.origin.effectId : null, "scaled" in x && (x.scaled === "SOURCE_POWER" || x.scaled === "BLOCKER_GRANT_BONUS" || x.scaled === "PER_EQUIPPED_GEAR") ? x.origin.sequence : null, "scaled" in x && x.scaled === "ALL_RIVAL_UNITS" ? x.targetId : null]))).size !== modifiers.length || canonicalSerialize(modifiers) !== canonicalSerialize([...modifiers].sort(compareTemporaryPower))) return failure("INVALID_TEMPORARY_POWER", "Nonempty canonical reviewed modifiers with distinct source/occurrences required");
+    if (!reactEnabled(context) || !modifiers.length || new Set(modifiers.map(x => canonicalSerialize([x.sourceId, "origin" in x ? x.origin.effectId : null, "scaled" in x && (x.scaled === "SOURCE_POWER" || x.scaled === "BLOCKER_GRANT_BONUS" || x.scaled === "PER_EQUIPPED_GEAR" || x.scaled === "ROCKER_ATTACK_GRANT_BONUS") ? x.origin.sequence : null, "scaled" in x && x.scaled === "ALL_RIVAL_UNITS" ? x.targetId : null]))).size !== modifiers.length || canonicalSerialize(modifiers) !== canonicalSerialize([...modifiers].sort(compareTemporaryPower))) return failure("INVALID_TEMPORARY_POWER", "Nonempty canonical reviewed modifiers with distinct source/occurrences required");
     for (const x of modifiers) {
         const source = state.objects.cards[x.sourceId], target = state.objects.cards[x.targetId], r = cardRevision(state, x.sourceId, context);
         // Batch V41: the revealed card's printed cost, on the Go Solo Legend that revealed it during a resolved current-turn ATTACK occurrence.
@@ -153,8 +154,8 @@ export function validateTemporaryPower(state: GameState, context: EngineContext)
             continue;
         }
         // Batch V74: the +1 a Legend's Blocker grant also gave, with a friendly value-pair of Gigs as it resolved.
-        if ("scaled" in x && (x.scaled === "BLOCKER_GRANT_BONUS" || x.scaled === "PER_EQUIPPED_GEAR" || x.scaled === "PROGRAM_PLAY_TRIGGER" || x.scaled === "PROGRAM_UNIT_GRANT")) { // Batch V79: and a Program's Unit grant. // Batch V75: and a Legend's per-Gear power. Batch V76: and its BRAINDANCE play power.
-            const valid = (x.scaled === "BLOCKER_GRANT_BONUS" ? validateBlockerBonus : x.scaled === "PER_EQUIPPED_GEAR" ? validateGearPower : x.scaled === "PROGRAM_UNIT_GRANT" ? validateUnitGrantPower : validateProgramPlayPower)(state, x as never, context, id => { const t = state.objects.cards[id]; return t?.face === "UP" && (["BATTLEFIELD", "TRASH", "REMOVED"].includes(t.zone.zone) && effectiveCardTypes(state, id, context).includes("UNIT") || removedFieldLegend(state, id, context)); });
+        if ("scaled" in x && (x.scaled === "BLOCKER_GRANT_BONUS" || x.scaled === "PER_EQUIPPED_GEAR" || x.scaled === "PROGRAM_PLAY_TRIGGER" || x.scaled === "PROGRAM_UNIT_GRANT" || x.scaled === "ROCKER_ATTACK_GRANT_BONUS")) { // Batch V79: and a Program's Unit grant. Batch V80: and a ROCKER grant's +2. // Batch V75: and a Legend's per-Gear power. Batch V76: and its BRAINDANCE play power.
+            const valid = (x.scaled === "BLOCKER_GRANT_BONUS" ? validateBlockerBonus : x.scaled === "PER_EQUIPPED_GEAR" ? validateGearPower : x.scaled === "PROGRAM_UNIT_GRANT" ? validateUnitGrantPower : x.scaled === "ROCKER_ATTACK_GRANT_BONUS" ? validateRockerBonus : validateProgramPlayPower)(state, x as never, context, id => { const t = state.objects.cards[id]; return t?.face === "UP" && (["BATTLEFIELD", "TRASH", "REMOVED"].includes(t.zone.zone) && effectiveCardTypes(state, id, context).includes("UNIT") || removedFieldLegend(state, id, context)); });
             if (!valid.ok) return valid;
             continue;
         }

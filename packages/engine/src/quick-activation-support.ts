@@ -1,5 +1,6 @@
 import { hasLegendSpendMetadata } from "./legend-spend-support";
-import { turnSliceAllows, canonicalSerialize, failure, success, type Ability, type CardRevisionSnapshot, type DeepReadonly } from "@tcg/domain";
+import { turnSliceAllows, canonicalSerialize, failure, success, type Ability, type CardRevisionSnapshot, type DeepReadonly, type GameState, type PlayerId } from "@tcg/domain";
+import { activationCostReduction } from "./rocker-grant";
 import type { EngineContext } from "./state";
 /** Batch V49+: Units with a paid "[Quick] cost: effect" activation (11.30) or a below-power first-steal trigger, each pinned whole. */
 const QUICK_ACTIVATION_SHAPES = [
@@ -27,10 +28,12 @@ export function supportsQuickActivationCard(card: DeepReadonly<CardRevisionSnaps
         return failure("UNSUPPORTED_QUICK_ACTIVATION", "Complete reviewed printed Unit with an exact Quick activation and first-steal trigger required");
     return success(null);
 }
-/** The Eddie part of an activation's costs ("2 €$"), or 0 when it has none. */
-export function activationPaymentAmount(ability: DeepReadonly<Ability> | undefined) {
-    const cost = ability?.activation?.costs.find(c => c.kind === "PAYMENT_COST");
-    return cost?.kind === "PAYMENT_COST" && cost.cost.kind === "EDDIES" ? cost.cost.amount : 0;
+/** The Eddie part of an activation's costs ("2 €$"), or 0 when it has none. Batch V80: with `state` and `actor`, a printed reduction
+ * applies, to a minimum of 0; without them (labels of abilities with no reduction) the printed amount. */
+export function activationPaymentAmount(ability: DeepReadonly<Ability> | undefined, state?: GameState, actor?: PlayerId) {
+    const cost = ability?.activation?.costs.find(c => c.kind === "PAYMENT_COST"), printed = cost?.kind === "PAYMENT_COST" && cost.cost.kind === "EDDIES" ? cost.cost.amount : 0;
+    const reduction = ability?.activation?.costReduction;
+    return reduction && state && actor ? Math.max(0, printed - activationCostReduction(state, actor, reduction)) : printed;
 }
 /** The first-steal history exists only for content holding a reviewed card that reads it. */
 export function belowPowerHistoryEnabled(context: EngineContext) {

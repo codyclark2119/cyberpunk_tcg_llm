@@ -9,12 +9,12 @@
   },
   "totals": {
     "cards": 151,
-    "admitted": 129,
-    "notAdmitted": 22,
+    "admitted": 130,
+    "notAdmitted": 21,
     "notAdmittedOnlyCoveredFamilies": 0,
     "byAdmission": {
-      "NOT_ADMITTED": 22,
-      "SOURCE_MATCH": 129
+      "NOT_ADMITTED": 21,
+      "SOURCE_MATCH": 130
     }
   },
   "families": [
@@ -24,7 +24,7 @@
       "summary": "Generic target filters and board conditions: classification, cost, power, ready/spent, equipped, face-up, named, lowest power.",
       "notes": "Documented as unsupported: generic condition/filter language. Each admitted filter is a literal.",
       "cardCount": 34,
-      "notAdmittedCount": 8,
+      "notAdmittedCount": 7,
       "soleBlockerCount": 0
     },
     {
@@ -33,7 +33,7 @@
       "summary": "Conditions and filters on Gig values: min/max, value-pairs, even/odd, 8+, die type, counts compared with a Rival.",
       "notes": "Conditions only, each a fixed shape.",
       "cardCount": 40,
-      "notAdmittedCount": 7,
+      "notAdmittedCount": 6,
       "soleBlockerCount": 0
     },
     {
@@ -60,7 +60,7 @@
       "summary": "Activated abilities with a [Spend] cost (and optional Eddie cost) on Legends, Units or Gear.",
       "notes": "Admitted only for Kerry: The Last Rockerboy (a Unit). Face-up Legend [Spend] abilities and Gear [Spend] abilities are not.",
       "cardCount": 17,
-      "notAdmittedCount": 6,
+      "notAdmittedCount": 5,
       "soleBlockerCount": 0
     },
     {
@@ -70,24 +70,6 @@
       "notes": "",
       "cardCount": 5,
       "notAdmittedCount": 4,
-      "soleBlockerCount": 0
-    },
-    {
-      "family": "ATTACK_PERMISSION",
-      "status": "PARTIAL",
-      "summary": "Who may attack what and when: can't attack, may attack ready/spent Units, must attack, can't be blocked.",
-      "notes": "Restrictions on the card itself are supported; permissions granted by effects, forced attacks and off-turn timing are not.",
-      "cardCount": 16,
-      "notAdmittedCount": 3,
-      "soleBlockerCount": 0
-    },
-    {
-      "family": "COST_MODIFIER",
-      "status": "MISSING",
-      "summary": "Play-cost reductions, alternative costs, ability-cost and Go Solo cost changes.",
-      "notes": "",
-      "cardCount": 10,
-      "notAdmittedCount": 3,
       "soleBlockerCount": 0
     },
     {
@@ -136,21 +118,21 @@
       "soleBlockerCount": 0
     },
     {
-      "family": "SCALED_AMOUNT",
+      "family": "ATTACK_PERMISSION",
       "status": "PARTIAL",
-      "summary": "Amounts computed from the board: 'for each', 'equal to'.",
-      "notes": "Only Royce's per-equipped-Gear modifier counts anything.",
-      "cardCount": 18,
-      "notAdmittedCount": 3,
+      "summary": "Who may attack what and when: can't attack, may attack ready/spent Units, must attack, can't be blocked.",
+      "notes": "Restrictions on the card itself are supported; permissions granted by effects, forced attacks and off-turn timing are not.",
+      "cardCount": 16,
+      "notAdmittedCount": 2,
       "soleBlockerCount": 0
     },
     {
-      "family": "TEMPORARY_BUFF",
-      "status": "PARTIAL",
-      "summary": "Power or keyword changes 'this turn' on a chosen Unit.",
-      "notes": "Fixed amounts on RIVAL_UNIT, SOURCE_SUBJECT or FRIENDLY_UNIT. Keyword grants, all-Unit and filtered targets are missing.",
-      "cardCount": 19,
-      "notAdmittedCount": 3,
+      "family": "COST_MODIFIER",
+      "status": "MISSING",
+      "summary": "Play-cost reductions, alternative costs, ability-cost and Go Solo cost changes.",
+      "notes": "",
+      "cardCount": 10,
+      "notAdmittedCount": 2,
       "soleBlockerCount": 0
     },
     {
@@ -195,6 +177,24 @@
       "summary": "Look at friendly face-down Legends.",
       "notes": "One Legend, attack-triggered (Kiroshi Optics). 'All face-down Legends' is missing.",
       "cardCount": 3,
+      "notAdmittedCount": 2,
+      "soleBlockerCount": 0
+    },
+    {
+      "family": "SCALED_AMOUNT",
+      "status": "PARTIAL",
+      "summary": "Amounts computed from the board: 'for each', 'equal to'.",
+      "notes": "Only Royce's per-equipped-Gear modifier counts anything.",
+      "cardCount": 18,
+      "notAdmittedCount": 2,
+      "soleBlockerCount": 0
+    },
+    {
+      "family": "TEMPORARY_BUFF",
+      "status": "PARTIAL",
+      "summary": "Power or keyword changes 'this turn' on a chosen Unit.",
+      "notes": "Fixed amounts on RIVAL_UNIT, SOURCE_SUBJECT or FRIENDLY_UNIT. Keyword grants, all-Unit and filtered targets are missing.",
+      "cardCount": 19,
       "notAdmittedCount": 2,
       "soleBlockerCount": 0
     },
@@ -1482,8 +1482,8 @@
       "colors": [
         "RED"
       ],
-      "admission": "NOT_ADMITTED",
-      "revision": null,
+      "admission": "SOURCE_MATCH",
+      "revision": 1,
       "families": [
         "ATTACK_PERMISSION",
         "CONDITION_BOARD",
@@ -1493,15 +1493,7 @@
         "SPEND_ABILITY",
         "TEMPORARY_BUFF"
       ],
-      "blockingFamilies": [
-        "ATTACK_PERMISSION",
-        "CONDITION_BOARD",
-        "CONDITION_GIG",
-        "COST_MODIFIER",
-        "SCALED_AMOUNT",
-        "SPEND_ABILITY",
-        "TEMPORARY_BUFF"
-      ],
+      "blockingFamilies": [],
       "note": null
     },
     {
