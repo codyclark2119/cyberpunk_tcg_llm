@@ -1,4 +1,5 @@
 import { supportsFreeCallUnit } from "./free-call-support";
+import { supportsModalProgram } from "./modal-program-support";
 import { supportsAttackPermissionUnit } from "./attack-permission-support";
 import { supportsFightWinUnit } from "./fight-win-support";
 import { attackingAuraEnabled, supportsAttackingAuraLegend } from "./attacking-aura-support";
@@ -7,6 +8,7 @@ import { supportsCapabilityGear } from "./capability-support";
 import { supportsAttackPreventionUnit } from "./attack-prevention-support";
 import type { CardInstanceId, GameState } from "@tcg/domain";
 import type { EngineContext } from "./state";
+import { supportsLegendSpendCard } from "./legend-spend-support";
 import { combatResolutionEnabled } from "./combat-resolution-policy";
 import { attachedGear, gearEnabled } from "./attachments";
 import { supportsValuePairUnit } from "./value-pair-support";
@@ -44,6 +46,8 @@ export function applicablePowerModifiers(state: GameState, id: CardInstanceId, c
         if (modifier.kind === "CAN_ATTACK_RIVAL_UNITS_WHILE_LAGGING" && supportsValuePairUnit(revision, context).ok) continue; // Batch V30: attack permission only.
         if (modifier.kind === "OTHER_FRIENDLY_ATTACKING_UNIT_POWER" && supportsAttackingReadyUnit(revision, context).ok) continue; // Batch V38: contributes to others only.
         if (modifier.kind === "WINS_FIGHTS_AGAINST_CLASSIFICATION" && supportsFightWinUnit(revision, context).ok) continue; // Batch V52: fight outcome only.
+        if (modifier.kind === "ALTERNATIVE_PLAY_COST_IF_FIXER_EMPTY" && supportsModalProgram(revision, context).ok) continue; // Batch V83: payment only.
+        if ((modifier.kind === "MAY_REROLL_FIXER_GIG_ONCE" || modifier.kind === "DRAW_ON_EXTREME_GIG_ROLL") && supportsLegendSpendCard(revision, context).ok) continue; // Batch V81: roll riders only.
         if (modifier.kind !== "POWER_PER_EQUIPPED_GEAR_DURING_OWN_TURN") throw new Error("UNSUPPORTED_CONTINUOUS_MODIFIERS");
         if (card.face === "UP" && card.zone.zone === "LEGENDS" && state.timing.turn > 0 && state.timing.activePlayer === card.controllerId)
             result.push({ sourceId: id, subjectId: id, kind: modifier.kind, amount: modifier.amount * gear.length });

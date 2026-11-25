@@ -1,4 +1,5 @@
 import type { TurnMutation } from "./turn";
+import { supportsModalProgram } from "./modal-program-support";
 import { triggersEnabled } from "./trigger-support";
 import { turnSliceAllows, canonicalSerialize, failure, success, type CardInstanceId, type CardRevisionSnapshot, type ContinuousModifier, type DeepReadonly, type GameState, type PlayerId } from "@tcg/domain";
 import type { EngineContext } from "./state";
@@ -70,7 +71,10 @@ export function playPaymentAmount(state: GameState, actor: PlayerId, id: CardIns
     if (r?.printedCost.kind !== "EDDIES") return null;
     const printed = r.printedCost.amount, reductions = r.mechanics.modifiers.filter((m): m is DeepReadonly<Reduction> => m.kind === "SELF_PLAY_COST_REDUCTION");
     const own = !reductions.length || !supportsPlayCostReduction(r, context).ok ? printed : reductions.reduce((amount, m) => Math.max(Math.min(amount, m.minimum), amount - m.amount * reductionCount(state, actor, m, context)), printed);
-    return firstGearReductions(state, actor, id, context).reduce((amount, m) => Math.max(Math.min(amount, m.minimum), amount - m.amount), own);
+    const paid = firstGearReductions(state, actor, id, context).reduce((amount, m) => Math.max(Math.min(amount, m.minimum), amount - m.amount), own);
+    // Batch V83: "If your fixer area is empty, play this Program for 1 €$": the lower amount, read whenever the amount is computed.
+    const alternative = r.mechanics.modifiers.find(m => m.kind === "ALTERNATIVE_PLAY_COST_IF_FIXER_EMPTY");
+    return alternative?.kind === "ALTERNATIVE_PLAY_COST_IF_FIXER_EMPTY" && supportsModalProgram(r, context).ok && !state.players[actor]?.gigs.FIXER.length ? Math.min(paid, alternative.amount) : paid;
 }
 type FirstGearReduction = Extract<ContinuousModifier, { kind: "FIRST_GEAR_PLAY_COST_REDUCTION" }>;
 /** Batch V53: each face-up friendly field Unit's pinned reduction applies to the actor's first CYBERWARE Gear play this turn. The

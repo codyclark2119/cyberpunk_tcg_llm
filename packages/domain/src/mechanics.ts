@@ -241,6 +241,16 @@ export const EffectSchema = z.discriminatedUnion("kind", [
     // Batch V79: "Give a friendly Unit these effects. If you have less Street Cred than a Rival, they instead choose one effect for you.
     // The next time this Unit attacks this turn, it may attack ready Units. // Give this Unit +3 power this turn."
     z.strictObject({ kind: z.literal("FRIENDLY_UNIT_READY_ATTACK_AND_POWER"), power: z.literal(3), rivalChoosesOneIf: z.literal("STREET_CRED_LESS_THAN_RIVAL") }),
+    // Batch V80: "A friendly Unit can attack spent rival Units the turn it's played. If it's a ROCKER Unit, also give it +2 power this turn."
+    z.strictObject({ kind: z.literal("FRIENDLY_UNIT_ATTACK_RIVAL_UNITS_THE_TURN_PLAYED"), alsoPowerIfTag: z.literal("Rocker"), amount: z.literal(2) }),
+    // Batch V83: "A Unit can't attack until your next turn." Any face-up field Unit, either player's.
+    z.strictObject({ kind: z.literal("UNIT_CANNOT_ATTACK_UNTIL_YOUR_NEXT_TURN") }),
+    // Batch V83: "A friendly Legend may use {Go Solo} for -2 €$ this turn, to a minimum of 1 €$."
+    z.strictObject({ kind: z.literal("FRIENDLY_GO_SOLO_DISCOUNT_THIS_TURN"), amount: z.literal(2), minimum: z.literal(1) }),
+    // Batch V82: "Move a Gear from this Legend to an unequipped friendly Unit. If you do, ready that Unit."
+    z.strictObject({ kind: z.literal("MOVE_SOURCE_GEAR_TO_UNEQUIPPED_UNIT_THEN_READY") }),
+    // Batch V82: "if 5 or more friendly Units and/or Legends are equipped, ready them", checked as it resolves.
+    z.strictObject({ kind: z.literal("READY_EQUIPPED_FRIENDLY_IF_AT_LEAST"), minimum: z.literal(5) }),
     // Batch V76: "Trash the top card of your deck. If it's a Program, you may add it to your hand."
     z.strictObject({ kind: z.literal("TRASH_TOP_MAY_ADD_PROGRAM") }),
     // Batch V76: "Give a friendly Unit +1 power this turn" from a Legend's "When you play a BRAINDANCE Program" trigger.
@@ -312,7 +322,9 @@ export const AbilitySchema = z.strictObject({ id: z.string().min(1), trigger: Tr
     // Batch V63: FRIENDLY_CORPO_OR_GANGER_UNIT_STEALS is "When a friendly CORPO or GANGER Unit steals 1 or more Gigs": once per steal, not per Gig.
     // Batch V50: FIRST_ARASAKA_UNIT_DEFEAT_PER_TURN with WHEN_UNIT_DEFEATED is "The first time an ARASAKA Unit is defeated each turn".
     // Batch V49: QUICK is "[Quick] cost: effect" (11.30.2): also activatable as a reaction to a rival Unit's attack.
-    activation: z.strictObject({ timing: z.enum(["MAIN", "QUICK"]), conditionTiming: z.literal("ACTIVATION_AND_RESOLUTION"), costs: z.array(ActivationCostSchema) }).optional(),
+    activation: z.strictObject({ timing: z.enum(["MAIN", "QUICK"]), conditionTiming: z.literal("ACTIVATION_AND_RESOLUTION"), costs: z.array(ActivationCostSchema),
+        // Batch V80: "This effect costs -1 €$ for each friendly Gig with 8+ value" (no minimum is printed, so it can reach 0).
+        costReduction: z.strictObject({ per: z.literal("FRIENDLY_GIG_VALUE_AT_LEAST_8"), amount: z.literal(1) }).optional() }).optional(),
     // Batch V44: "Choose one effect. If <condition>, choose both instead." The effects are the modes in printed order; the
     // condition is checked as the Program resolves, and while it holds every mode resolves in order.
     // Batch V60: a Legend's "{Call} Choose one effect." has no "choose both instead" condition.
@@ -334,6 +346,12 @@ export const ContinuousModifierSchema = z.discriminatedUnion("kind", [
     // Batch V38: "Other friendly Units have +2 power while attacking." A field Unit's live contribution, never to itself.
     z.strictObject({ kind: z.literal("OTHER_FRIENDLY_ATTACKING_UNIT_POWER"), amount: z.literal(2) }),
     z.strictObject({ kind: z.literal("GRANT_KEYWORD_TO_HOST"), keyword: z.literal("BLOCKER") }),
+    // Batch V81: "When you roll in a Gig from your fixer area, you may ignore the result and reroll it once. When you roll a min or max
+    // value on a Gig, draw 1. If it's a d20, draw 3 instead." A face-up Legend's start-of-turn roll rider; never power or keywords.
+    z.strictObject({ kind: z.literal("MAY_REROLL_FIXER_GIG_ONCE") }),
+    z.strictObject({ kind: z.literal("DRAW_ON_EXTREME_GIG_ROLL"), count: z.literal(1), d20Count: z.literal(3) }),
+    // Batch V83: "If your fixer area is empty, play this Program for 1 €$." The amount paid, never the cost value (3.11.1.2).
+    z.strictObject({ kind: z.literal("ALTERNATIVE_PLAY_COST_IF_FIXER_EMPTY"), amount: z.literal(1) }),
     // Batch V56: "Rivals must pay +2 €$ to use {Go Solo}."
     z.strictObject({ kind: z.literal("RIVAL_GO_SOLO_COST_INCREASE"), amount: z.literal(2) }),
     // Batch V39: "If a Rival controls at least 2 more Gigs than you, this Unit has [Adrenaline]": a Gear's live conditional grant.

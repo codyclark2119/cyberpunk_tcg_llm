@@ -1,4 +1,5 @@
 import { noteSpent } from "./spend-triggers";
+import { discountedGoSoloAmount, spendGoSoloDiscount } from "./go-solo-discount";
 import { supportsCapabilityGear } from "./capability-support";
 import { canonicalSerialize, failure, hashCanonical, success, type CardInstanceId, type GameState, type PaymentSource, type PendingChoice, type PlayerId, type Result } from "@tcg/domain";
 import type { EngineContext } from "./state";
@@ -23,7 +24,7 @@ export function legendEntryAmount(state: GameState, actor: PlayerId, id: CardIns
     if (mode !== "GO_SOLO") return cost.amount;
     const gears = Object.values(state.objects.cards).filter(h => h.controllerId !== actor && h.face === "UP" && ["BATTLEFIELD", "LEGENDS"].includes(h.zone.zone) && h.zone.playerId === h.controllerId)
         .flatMap(h => h.attachments.map(g => state.objects.cards[g])).filter(g => g?.face === "UP" && g.controllerId !== actor && supportsCapabilityGear(cardRevision(state, g.id, context), context).ok);
-    return cost.amount + gears.flatMap(c => cardRevision(state, c.id, context)!.mechanics.modifiers.flatMap(m => m.kind === "RIVAL_GO_SOLO_COST_INCREASE" ? [m.amount] : [])).reduce((a, b) => a + b, 0);
+    return discountedGoSoloAmount(state, actor, cost.amount + gears.flatMap(c => cardRevision(state, c.id, context)!.mechanics.modifiers.flatMap(m => m.kind === "RIVAL_GO_SOLO_COST_INCREASE" ? [m.amount] : [])).reduce((a, b) => a + b, 0)); // Batch V83: then -2, to 1.
 }
 export function canEnterField(state: GameState, actor: PlayerId, id: CardInstanceId, context: EngineContext, mode: LegendEntryMode = "PLAY") {
     const cost = cardRevision(state, id, context)?.printedCost, amount = legendEntryAmount(state, actor, id, mode, context);
@@ -49,7 +50,7 @@ function completeEntry(m: TurnMutation, sources: PaymentSource[]): Result<null> 
     m.emit({ kind: "PAYMENT_MADE", sources });
     const moved = moveLegendToFieldWithAttachments(m, c.sourceId, c.mode);
     if (!moved.ok) return moved;
-    if (c.mode === "GO_SOLO") m.emit({ kind: "GO_SOLO_ACTIVATED", cardInstanceId: c.sourceId });
+    if (c.mode === "GO_SOLO") { m.emit({ kind: "GO_SOLO_ACTIVATED", cardInstanceId: c.sourceId }); spendGoSoloDiscount(m, c.actorId, c.sourceId); }
     m.emit({ kind: "CARD_PLAYED", cardInstanceId: c.sourceId });
     // 4.5/11.25 and official Jackie FAQ: both entry modes play a Unit; moving its Gear is not another play.
     return triggersEnabled(m.context) ? recordPlayedCard(m, c.sourceId) : finishAction(m);

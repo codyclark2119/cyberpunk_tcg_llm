@@ -136,7 +136,7 @@ function spentCopy(state: GameState, id: CardInstanceId): GameState {
 export function canActivate(state: GameState, actor: PlayerId, id: CardInstanceId, abilityId: string, context: EngineContext) {
     const c = state.objects.cards[id], r = revisionOf(state, id, context), a = r?.mechanics.abilities.find(a => a.id === abilityId);
     // Batch V49 (11.30.2): a Quick activation is also offered in its controller's React Step; its Eddie cost must be payable (8.14.1: no Lag).
-    const amount = activationPaymentAmount(a);
+    const amount = activationPaymentAmount(a, state, actor);
     // Batch V59: a face-up Legend's {Spend} ability is used from the Legends area (Legends never Lag).
     const legend = r?.type === "LEGEND" && c?.zone.zone === "LEGENDS" && supportsLegendSpendCard(r, context).ok;
     return Boolean((main(state, actor) || a?.activation?.timing === "QUICK" && isReactDecision(state, actor, context)) && (legend || supportsPlay(r, context).ok && r?.type === "UNIT" && c?.zone.zone === "BATTLEFIELD") && c.zone.playerId === actor && c.controllerId === actor && c.face === "UP" && c.readiness === "READY" && !c.statuses.includes("LAG") && a?.activation && a.conditions.every(condition => testCondition(state, actor, condition))

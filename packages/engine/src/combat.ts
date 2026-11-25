@@ -1,4 +1,5 @@
 import { endReadyUnitAttack, markReadyUnitAttackInUse } from "./ready-attack-grant";
+import { attackLocked } from "./attack-lock";
 import { hasQueuedSpends, noteSpent } from "./spend-triggers";
 import { firstAttackHistoryEnabled } from "./first-attack-support";
 import { fulfilMustAttack } from "./must-attack";
@@ -36,7 +37,7 @@ export function finishAttackEffects(m: TurnMutation): Result<null> {
 }
 function lockAndDeclare(m: TurnMutation, actor: PlayerId, attackerId: CardInstanceId, target: AttackTarget): Result<null> {
     const s = m.state;
-    if (!attackSourceValid(s, actor, attackerId, m.context) || s.objects.cards[attackerId].readiness !== "READY" || !listAttackTargets(s, attackerId, actor, m.context).some(t => canonicalSerialize(t) === canonicalSerialize(target))) return failure("INVALID_ATTACK_TARGET", "Attacker and selected target must still be legal");
+    if (!attackSourceValid(s, actor, attackerId, m.context) || attackLocked(s, attackerId) || s.objects.cards[attackerId].readiness !== "READY" || !listAttackTargets(s, attackerId, actor, m.context).some(t => canonicalSerialize(t) === canonicalSerialize(target))) return failure("INVALID_ATTACK_TARGET", "Attacker and selected target must still be legal");
     s.resolution.choice = null;
     s.timing.combat = { stage: "ATTACK_EFFECTS", attackingPlayerId: actor, attackerId, target };
     s.timing.step = "ATTACK_EFFECTS"; s.timing.window = "RESOLVING";
