@@ -1,4 +1,5 @@
 import { laggingGigAreaAttack, readyBlockerAttack } from "./attack-permission-support";
+import { attackLocked } from "./attack-lock";
 import { readyUnitAttack } from "./ready-attack-grant";
 import { hasRivalUnitAttackGrant } from "./arasaka-defeat";
 import { canonicalSerialize, type AttackTarget, type CardInstanceId, type GameState, type PlayerId } from "@tcg/domain";
@@ -35,5 +36,5 @@ export function listAttackTargets(state: GameState, attackerId: CardInstanceId, 
     return cards.sort((a, b) => canonicalSerialize(a) < canonicalSerialize(b) ? -1 : 1);
 }
 export function isAttackEligible(state: GameState, actor: PlayerId, id: CardInstanceId, context: EngineContext) {
-    return !state.setup && !state.match.outcome && state.timing.activePlayer === actor && state.timing.actingPlayer === actor && state.timing.window === "MAIN" && state.resolution.stage === "DECISION" && state.timing.combat.stage === "NONE" && attackSourceValid(state, actor, id, context) && state.objects.cards[id].readiness === "READY" && listAttackTargets(state, id, actor, context).length > 0;
+    return !state.setup && !state.match.outcome && state.timing.activePlayer === actor && state.timing.actingPlayer === actor && state.timing.window === "MAIN" && state.resolution.stage === "DECISION" && state.timing.combat.stage === "NONE" && attackSourceValid(state, actor, id, context) && !attackLocked(state, id) && state.objects.cards[id].readiness === "READY" && listAttackTargets(state, id, actor, context).length > 0;
 }

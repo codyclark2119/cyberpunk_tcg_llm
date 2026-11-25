@@ -3,6 +3,7 @@ import { applyGearPower, resolveGearDefeatDraw } from "./gear-legend";
 import { applyBlockerGrant } from "./blocker-grant";
 import { applyRockerGrant } from "./rocker-grant";
 import { moveGearAndReady, selectMovedGear } from "./gear-move";
+import { applyAttackLock } from "./attack-lock";
 import { noteSpent } from "./spend-triggers";
 import { applyMustAttack } from "./must-attack";
 import { applyFightDefeatImmunity } from "./fight-immunity";
@@ -101,7 +102,7 @@ function beginEffects(m: TurnMutation): Result<null> {
     s.resolution.stage = "DISCOVER_TRIGGERS";
     if (a.choose) {
         // Batch V44: "If <condition>, choose both instead" is checked as the Program resolves; otherwise its controller picks one mode.
-        if (!a.choose.allInstead) return failure("INVALID_MODE", "A Program's modal ability names its both-instead condition"); // Batch V60: Legends start in MODE.
+        if (!a.choose.allInstead) { c.phase = "MODE"; return offerPlayChoice(m); } // Batch V83: a plain "Choose one effect." always picks.
         const all = testCondition(s, c.actorId, a.choose.allInstead, m.context, c.sourceId);
         m.emit({ kind: "CONDITION_EVALUATED", effectId: playEffectId(s, 0), met: all });
         if (!all) { c.phase = "MODE"; return offerPlayChoice(m); }
@@ -275,6 +276,11 @@ export function continuePlay(m: TurnMutation, index: number): Result<null> {
         s.resolution.choice = null;
         const applied = applyGearPower(m, option.cardInstanceId, false);
         return applied.ok ? completePlayEffect(m) : applied;
+    }
+    if (s.resolution.current?.effect.kind === "UNIT_CANNOT_ATTACK_UNTIL_YOUR_NEXT_TURN") { // Batch V83.
+        if (option.kind !== "CARD") return failure("INVALID_ATTACK_LOCK", "Choose a face-up field Unit");
+        const locked = applyAttackLock(m, option.cardInstanceId, false);
+        return locked.ok ? completePlayEffect(m) : locked;
     }
     if (s.resolution.current?.effect.kind === "MOVE_SOURCE_GEAR_TO_UNEQUIPPED_UNIT_THEN_READY") { // Batch V82: the Gear, then its Unit.
         if (option.kind !== "CARD") return failure("INVALID_GEAR_MOVE", "Choose a Gear on this Legend or an unequipped friendly Unit");

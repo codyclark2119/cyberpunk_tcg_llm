@@ -126,6 +126,8 @@ export const TurnHistorySchema = z.strictObject({
     spendTriggers: z.array(TriggerBindingSchema).min(1).optional(),
     // Batch V72: cards with a "the first time this Unit is spent each turn" trigger already spent this turn.
     firstSpends: z.array(CardInstanceIdSchema).min(1).optional(),
+    // Batch V83: unused "a friendly Legend may use {Go Solo} for -2 €$ this turn" grants, by resolved effect, in grant order.
+    goSoloDiscounts: z.array(HashSchema).min(1).optional(),
     // Batch V79: Units whose next attack this turn may target ready Units, by id; `inAttack` once that attack is declared, until it ends.
     readyUnitAttackGrants: z.array(z.strictObject({ unitId: CardInstanceIdSchema, inAttack: z.boolean() })).min(1).optional(), turn: z.number().int().positive(), triggeredBatches: z.number().int().nonnegative(), blueUnitOrGearPlays: z.record(PlayerIdSchema, z.number().int().nonnegative()), programPlays: z.record(PlayerIdSchema, z.number().int().nonnegative()).optional() });
 export const PendingEffectSchema = z.strictObject({ id: z.string().min(1), controllerId: PlayerIdSchema, sourceId: CardInstanceIdSchema.nullable(), primitiveIndex: z.literal(1).optional(), effect: EffectSchema, trigger: TriggerBindingSchema.omit({ sourceId: true, controllerId: true }).extend({ turn: z.number().int().positive(), ordinal: z.number().int().positive() }).optional(), causedBySequence: z.number().int().nonnegative() });
@@ -197,6 +199,10 @@ export type FightDefeatImmunity = z.infer<typeof FightDefeatImmunitySchema>;
 export const ReadyLockSchema = z.strictObject({ kind: z.literal("READY_LOCK"), targetId: CardInstanceIdSchema, sourceId: CardInstanceIdSchema, lockingPlayerId: PlayerIdSchema, createdTurn: z.number().int().positive(),
     origin: z.strictObject({ effectId: HashSchema, abilityId: z.string().min(1), ordinal: z.number().int().positive().optional() }) });
 export type ReadyLock = z.infer<typeof ReadyLockSchema>;
+// Batch V83: "A Unit can't attack until your next turn": one resolved Program mode's lock on one face-up field Unit, either player's.
+export const AttackLockSchema = z.strictObject({ kind: z.literal("ATTACK_LOCK"), targetId: CardInstanceIdSchema, sourceId: CardInstanceIdSchema, lockingPlayerId: PlayerIdSchema, createdTurn: z.number().int().positive(),
+    origin: z.strictObject({ effectId: HashSchema, abilityId: z.string().min(1) }) });
+export type AttackLock = z.infer<typeof AttackLockSchema>;
 // Batch V43: "A rival Unit must attack next turn if it can": the obligation of one resolved PLAY occurrence on one rival Unit.
 export const MustAttackSchema = z.strictObject({ kind: z.literal("MUST_ATTACK"), targetId: CardInstanceIdSchema, sourceId: CardInstanceIdSchema, forcingPlayerId: PlayerIdSchema, createdTurn: z.number().int().positive(),
     // Batch V63: a Legend's {Spend} activation creates it too; its activation effect id names the occurrence.
@@ -266,6 +272,7 @@ export const GameStateSchema = z.strictObject({
     temporaryKeywords: z.array(TemporaryKeywordGrantSchema).min(1).optional(),
     gigStealRestrictions: z.array(GigStealRestrictionSchema).min(1).optional(),
     readyLocks: z.array(ReadyLockSchema).min(1).optional(),
+    attackLocks: z.array(AttackLockSchema).min(1).optional(), // Batch V83.
     stealReductions: z.array(StealReductionSchema).min(1).optional(),
     fightPowerGrants: z.array(FightPowerGrantSchema).min(1).optional(),
     fightDefeatImmunities: z.array(FightDefeatImmunitySchema).min(1).optional(),
@@ -332,6 +339,10 @@ export const EventPayloadSchema = z.discriminatedUnion("kind", [
     z.strictObject({ kind: z.literal("GIG_STEAL_RESTRICTED"), restriction: GigStealRestrictionSchema }),
     z.strictObject({ kind: z.literal("GIG_STEAL_RESTRICTION_EXPIRED"), sourceId: CardInstanceIdSchema, protectedPlayerId: PlayerIdSchema, effectId: HashSchema }),
     z.strictObject({ kind: z.literal("READY_LOCKED"), lock: ReadyLockSchema }),
+    z.strictObject({ kind: z.literal("ATTACK_LOCKED"), lock: AttackLockSchema }),
+    z.strictObject({ kind: z.literal("ATTACK_LOCK_EXPIRED"), targetId: CardInstanceIdSchema, sourceId: CardInstanceIdSchema, effectId: HashSchema, reason: z.enum(["NEXT_TURN", "LEFT_FIELD"]) }),
+    z.strictObject({ kind: z.literal("GO_SOLO_DISCOUNT_GRANTED"), effectId: HashSchema, playerId: PlayerIdSchema }),
+    z.strictObject({ kind: z.literal("GO_SOLO_DISCOUNT_USED"), cardInstanceId: CardInstanceIdSchema, effectId: HashSchema }),
     z.strictObject({ kind: z.literal("READY_LOCK_EXPIRED"), targetId: CardInstanceIdSchema, sourceId: CardInstanceIdSchema, effectId: HashSchema, reason: z.enum(["NEXT_TURN", "LEFT_FIELD"]) }),
     z.strictObject({ kind: z.literal("GIGS_SWAPPED"), effectId: HashSchema, gigInstanceIds: z.tuple([GigInstanceIdSchema, GigInstanceIdSchema]) }),
     z.strictObject({ kind: z.literal("READY_PREVENTED"), cardInstanceId: CardInstanceIdSchema, effectIds: z.array(HashSchema).min(1) }),
