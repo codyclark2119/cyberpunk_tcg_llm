@@ -1,8 +1,9 @@
-import { failure, success, type GameState, type PlayerId, type Result } from "@tcg/domain";
+import { failure, success, type GameState, type PendingChoice, type PlayerId, type Result } from "@tcg/domain";
 import type { EngineContext } from "./state";
 import type { TurnMutation } from "./turn";
 import { cardRevision } from "./characteristics";
 import { supportsCall } from "./effect-support";
+import { testCondition } from "./conditions";
 
 /** Batch V84: "You may Call a Legend for free. (You can only Call a Legend once per turn.)" The public slots of the controller's
  * face-down Legends they may Call now: none once the turn's Call limit is used. */
@@ -13,6 +14,24 @@ export function freeCallSlots(state: GameState, actor: PlayerId, context: Engine
         const c = state.objects.cards[id];
         return c.face === "DOWN" && c.controllerId === actor && c.zone.zone === "LEGENDS" && supportsCall(cardRevision(state, id, context), context).ok ? [slot] : [];
     });
+}
+/** Batch V85: a Program's free Call, after its condition ("If you control a min Gig") is checked as it resolves; with no Legend to
+ * Call it does nothing. */
+export function beginProgramFreeCall(m: TurnMutation, offer: (m: TurnMutation) => Result<null>): Result<null> {
+    const current = m.state.resolution.current!, condition = current.effect.kind === "MAY_CALL_LEGEND_FREE" ? current.effect.condition : undefined;
+    if (condition) {
+        const met = testCondition(m.state, current.controllerId, condition, m.context, current.sourceId);
+        m.emit({ kind: "CONDITION_EVALUATED", effectId: current.id, met });
+        if (!met) return success(null);
+    }
+    return freeCallSlots(m.state, current.controllerId, m.context).length ? offer(m) : success(null);
+}
+/** The decline, or a public Legend slot. */
+export function chooseFreeCall(m: TurnMutation, option: PendingChoice["options"][number]): Result<null> {
+    const current = m.state.resolution.current!;
+    if (option.kind === "CONFIRM" && !option.confirmed) { m.emit({ kind: "OPTIONAL_TRIGGER_DECLINED", effectId: current.id, controllerId: current.controllerId }); return success(null); }
+    if (option.kind !== "LEGEND_SLOT") return failure("INVALID_FREE_CALL", "Choose a public Legend slot or decline");
+    return callLegendFree(m, option.slot);
 }
 /** The Call happens now; the Legend's {Call} ability (a trigger of its own) waits until the action's trigger batches are done. */
 export function callLegendFree(m: TurnMutation, slot: number): Result<null> {

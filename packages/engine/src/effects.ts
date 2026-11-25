@@ -7,7 +7,8 @@ import { resolveUnitGrant } from "./ready-attack-grant";
 import { applyBlockerGrant, blockerGrantTargets } from "./blocker-grant";
 import { applyRockerGrant, rockerGrantTargets } from "./rocker-grant";
 import { beginGearMove } from "./gear-move";
-import { applyAttackLock, attackLockTargets } from "./attack-lock";
+import { applyAttackLock, currentLockTargets } from "./attack-lock";
+import { beginProgramFreeCall } from "./free-call-effect";
 import { grantGoSoloDiscount } from "./go-solo-discount";
 import { applyFightDefeatImmunity } from "./fight-immunity";
 import { advanceCrossSet, advanceMandatorySwap, isLegendCallPower, mandatorySwapAvailable, playPowerTargets } from "./legend-spend";
@@ -109,10 +110,11 @@ export class HandlerRegistry {
         }
         if (effect.kind === "MOVE_SOURCE_GEAR_TO_UNEQUIPPED_UNIT_THEN_READY") return beginGearMove(m, offerPlayChoice); // Batch V82.
         if (effect.kind === "UNIT_CANNOT_ATTACK_UNTIL_YOUR_NEXT_TURN") { // Batch V83: any face-up field Unit; a lone Unit is forced and none does nothing.
-            const targets = attackLockTargets(m.state, m.context);
+            const targets = currentLockTargets(m.state, m.context);
             return targets.length > 1 ? offerPlayChoice(m) : targets.length === 1 ? applyAttackLock(m, targets[0], true) : success(null);
         }
         if (effect.kind === "FRIENDLY_GO_SOLO_DISCOUNT_THIS_TURN") return grantGoSoloDiscount(m); // Batch V83.
+        if (effect.kind === "MAY_CALL_LEGEND_FREE") return beginProgramFreeCall(m, offerPlayChoice); // Batch V85.
         if (effect.kind === "FRIENDLY_UNIT_ATTACK_RIVAL_UNITS_THE_TURN_PLAYED") { // Batch V80: one friendly Unit; a lone Unit is forced and none does nothing.
             const targets = rockerGrantTargets(m.state, m.state.resolution.current!.controllerId, m.context);
             return targets.length > 1 ? offerPlayChoice(m) : targets.length === 1 ? applyRockerGrant(m, targets[0], true) : success(null);

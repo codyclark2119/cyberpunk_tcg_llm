@@ -9,12 +9,12 @@
   },
   "totals": {
     "cards": 151,
-    "admitted": 134,
-    "notAdmitted": 17,
+    "admitted": 135,
+    "notAdmitted": 16,
     "notAdmittedOnlyCoveredFamilies": 0,
     "byAdmission": {
-      "NOT_ADMITTED": 17,
-      "SOURCE_MATCH": 134
+      "NOT_ADMITTED": 16,
+      "SOURCE_MATCH": 135
     }
   },
   "families": [
@@ -37,21 +37,21 @@
       "soleBlockerCount": 0
     },
     {
-      "family": "CONDITION_GIG",
-      "status": "PARTIAL",
-      "summary": "Conditions and filters on Gig values: min/max, value-pairs, even/odd, 8+, die type, counts compared with a Rival.",
-      "notes": "Conditions only, each a fixed shape.",
-      "cardCount": 40,
-      "notAdmittedCount": 5,
-      "soleBlockerCount": 0
-    },
-    {
       "family": "GEAR_EQUIP",
       "status": "PARTIAL",
       "summary": "Equip a Gear to a friendly Unit or face-up Legend; Gear power adds to its host.",
       "notes": "Equip onto Units is supported for the admitted Gear. Gear on a Legend host in combat (a Go Solo Legend) is unsupported.",
       "cardCount": 22,
       "notAdmittedCount": 5,
+      "soleBlockerCount": 0
+    },
+    {
+      "family": "CONDITION_GIG",
+      "status": "PARTIAL",
+      "summary": "Conditions and filters on Gig values: min/max, value-pairs, even/odd, 8+, die type, counts compared with a Rival.",
+      "notes": "Conditions only, each a fixed shape.",
+      "cardCount": 40,
+      "notAdmittedCount": 4,
       "soleBlockerCount": 0
     },
     {
@@ -69,15 +69,6 @@
       "summary": "Top-of-deck manipulation: search/look/reveal top N, trash from the top (Trash N), bottom-deck the rest.",
       "notes": "SEARCH_GEAR (count<=5, Gear with max cost, take<=2) only.",
       "cardCount": 15,
-      "notAdmittedCount": 3,
-      "soleBlockerCount": 0
-    },
-    {
-      "family": "FREE_CALL",
-      "status": "MISSING",
-      "summary": "Call a Legend by an effect or for free outside the normal Call.",
-      "notes": "",
-      "cardCount": 5,
       "notAdmittedCount": 3,
       "soleBlockerCount": 0
     },
@@ -109,20 +100,20 @@
       "soleBlockerCount": 0
     },
     {
-      "family": "DURATION_DELAYED",
-      "status": "PARTIAL",
-      "summary": "Lasting and delayed effects: 'until your next turn', 'next time ... this turn', 'at the end of this turn'.",
-      "notes": "",
-      "cardCount": 14,
-      "notAdmittedCount": 2,
-      "soleBlockerCount": 0
-    },
-    {
       "family": "EDDIE_ECONOMY",
       "status": "PARTIAL",
       "summary": "Ready Eddies, sell cards from unusual zones, pay Eddies during resolution.",
       "notes": "READY_EDDIES (controller, 1 or 2) only.",
       "cardCount": 8,
+      "notAdmittedCount": 2,
+      "soleBlockerCount": 0
+    },
+    {
+      "family": "FREE_CALL",
+      "status": "MISSING",
+      "summary": "Call a Legend by an effect or for free outside the normal Call.",
+      "notes": "",
+      "cardCount": 5,
       "notAdmittedCount": 2,
       "soleBlockerCount": 0
     },
@@ -208,15 +199,6 @@
       "soleBlockerCount": 0
     },
     {
-      "family": "ATTACK_PERMISSION",
-      "status": "PARTIAL",
-      "summary": "Who may attack what and when: can't attack, may attack ready/spent Units, must attack, can't be blocked.",
-      "notes": "Restrictions on the card itself are supported; permissions granted by effects, forced attacks and off-turn timing are not.",
-      "cardCount": 16,
-      "notAdmittedCount": 1,
-      "soleBlockerCount": 0
-    },
-    {
       "family": "COST_MODIFIER",
       "status": "MISSING",
       "summary": "Play-cost reductions, alternative costs, ability-cost and Go Solo cost changes.",
@@ -231,6 +213,15 @@
       "summary": "Draw cards, fixed or conditional.",
       "notes": "Routed. Variable counts need SCALED_AMOUNT; 'may draw' needs an optional prompt.",
       "cardCount": 38,
+      "notAdmittedCount": 1,
+      "soleBlockerCount": 0
+    },
+    {
+      "family": "DURATION_DELAYED",
+      "status": "PARTIAL",
+      "summary": "Lasting and delayed effects: 'until your next turn', 'next time ... this turn', 'at the end of this turn'.",
+      "notes": "",
+      "cardCount": 14,
       "notAdmittedCount": 1,
       "soleBlockerCount": 0
     },
@@ -304,6 +295,15 @@
       "notes": "Guards FIRST_BLUE_UNIT_OR_GEAR_PLAY_PER_TURN and FIRST_FRIENDLY_ARASAKA_UNIT_ATTACK_PER_TURN.",
       "cardCount": 11,
       "notAdmittedCount": 1,
+      "soleBlockerCount": 0
+    },
+    {
+      "family": "ATTACK_PERMISSION",
+      "status": "PARTIAL",
+      "summary": "Who may attack what and when: can't attack, may attack ready/spent Units, must attack, can't be blocked.",
+      "notes": "Restrictions on the card itself are supported; permissions granted by effects, forced attacks and off-turn timing are not.",
+      "cardCount": 16,
+      "notAdmittedCount": 0,
       "soleBlockerCount": 0
     },
     {
@@ -792,20 +792,15 @@
       "colors": [
         "BLUE"
       ],
-      "admission": "NOT_ADMITTED",
-      "revision": null,
+      "admission": "SOURCE_MATCH",
+      "revision": 1,
       "families": [
         "ATTACK_PERMISSION",
         "CONDITION_GIG",
         "DURATION_DELAYED",
         "FREE_CALL"
       ],
-      "blockingFamilies": [
-        "ATTACK_PERMISSION",
-        "CONDITION_GIG",
-        "DURATION_DELAYED",
-        "FREE_CALL"
-      ],
+      "blockingFamilies": [],
       "note": null
     },
     {

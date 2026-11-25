@@ -28,7 +28,7 @@ import { PendingEffectSchema, TriggerBindingSchema, TriggerOriginSchema, failure
 import type { TurnMutation } from "./turn";
 import { cardRevision } from "./characteristics";
 import { finishAction } from "./action-return";
-import { callLegendFree, freeCallSlots } from "./free-call-effect";
+import { chooseFreeCall, freeCallSlots } from "./free-call-effect";
 import { finishAttackEffects } from "./combat";
 import { applyProgramPlayPower } from "./braindance-legend";
 import { finishCombat, completeFightResult } from "./combat-resolution";
@@ -576,9 +576,7 @@ export function continueTrigger(m: TurnMutation, index: number, forced = false):
             const done = finishSearch(m); return done.ok ? completed(m) : done;
         }
         if (current.effect.kind === "MAY_CALL_LEGEND_FREE") {
-            if (option.kind === "CONFIRM" && !option.confirmed) { m.emit({ kind: "OPTIONAL_TRIGGER_DECLINED", effectId: current.id, controllerId: current.controllerId }); return completed(m); }
-            if (option.kind !== "LEGEND_SLOT") return failure("INVALID_FREE_CALL", "Choose a public Legend slot or decline");
-            const called = callLegendFree(m, option.slot); return called.ok ? completed(m) : called;
+            const called = chooseFreeCall(m, option); return called.ok ? completed(m) : called;
         }
         if (current.effect.kind === "LOOK_AT_FRIENDLY_FACE_DOWN_LEGEND") {
             if (option.kind !== "LEGEND_SLOT") return failure("INVALID_LOOK_TARGET", "Choose a public Legend slot");

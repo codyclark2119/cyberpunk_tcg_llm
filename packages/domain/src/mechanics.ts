@@ -15,6 +15,7 @@ export const TargetSelectorSchema = z.discriminatedUnion("kind", [
     z.strictObject({ kind: z.literal("GIGS"), relation: TargetRelationshipSchema })
 ]);
 export const NamedUnitConditionSchema = z.strictObject({ kind: z.literal("SUBJECT_IS_UNIT_NAMED"), identity: z.literal("V") });
+export const FriendlyMinGigConditionSchema = z.strictObject({ kind: z.literal("FRIENDLY_GIG_IS_MIN"), dieType: z.literal("D4").optional() });
 export const ConditionSchema = z.discriminatedUnion("kind", [
     z.strictObject({ kind: z.literal("ALL_FRIENDLY_LEGENDS_FACE_UP") }),
     z.strictObject({ kind: z.literal("STREET_CRED_IS_EVEN") }),
@@ -42,8 +43,8 @@ export const ConditionSchema = z.discriminatedUnion("kind", [
     // Batch V39: "If a Rival controls at least 2 more Gigs than you" (Gigs in each Gig area, counted live).
     // Batch V64: "If a Rival controls more Gigs than you" is minimum 1.
     z.strictObject({ kind: z.literal("RIVAL_CONTROLS_MORE_GIGS"), minimum: z.union([z.literal(1), z.literal(2)]) }),
-    // Batch V44: "If a friendly d4 is a min Gig" (6.3.1: a rolled own d4 at 1 in the Gig area).
-    z.strictObject({ kind: z.literal("FRIENDLY_GIG_IS_MIN"), dieType: z.literal("D4") }),
+    // Batch V44: "If a friendly d4 is a min Gig" (6.3.1: a rolled own d4 at 1 in the Gig area). Batch V85: with no die type, any friendly min Gig.
+    FriendlyMinGigConditionSchema,
     // Batch V45: "If you control a Gig with an even value and a Gig with an odd value" (two friendly rolled Gigs).
     z.strictObject({ kind: z.literal("FRIENDLY_GIGS_EVEN_AND_ODD") })
 ]);
@@ -244,9 +245,11 @@ export const EffectSchema = z.discriminatedUnion("kind", [
     // Batch V80: "A friendly Unit can attack spent rival Units the turn it's played. If it's a ROCKER Unit, also give it +2 power this turn."
     z.strictObject({ kind: z.literal("FRIENDLY_UNIT_ATTACK_RIVAL_UNITS_THE_TURN_PLAYED"), alsoPowerIfTag: z.literal("Rocker"), amount: z.literal(2) }),
     // Batch V84: "You may Call a Legend for free. (You can only Call a Legend once per turn.)" Its {Call} ability waits for the action's end.
-    z.strictObject({ kind: z.literal("MAY_CALL_LEGEND_FREE") }),
+    // Batch V85: "If you control a min Gig, you may Call a Legend for free", checked as it resolves.
+    z.strictObject({ kind: z.literal("MAY_CALL_LEGEND_FREE"), condition: FriendlyMinGigConditionSchema.optional() }),
     // Batch V83: "A Unit can't attack until your next turn." Any face-up field Unit, either player's.
-    z.strictObject({ kind: z.literal("UNIT_CANNOT_ATTACK_UNTIL_YOUR_NEXT_TURN") }),
+    // Batch V85: "A rival Unit can't attack until your next turn."
+    z.strictObject({ kind: z.literal("UNIT_CANNOT_ATTACK_UNTIL_YOUR_NEXT_TURN"), target: z.literal("RIVAL_UNIT").optional() }),
     // Batch V83: "A friendly Legend may use {Go Solo} for -2 €$ this turn, to a minimum of 1 €$."
     z.strictObject({ kind: z.literal("FRIENDLY_GO_SOLO_DISCOUNT_THIS_TURN"), amount: z.literal(2), minimum: z.literal(1) }),
     // Batch V82: "Move a Gear from this Legend to an unequipped friendly Unit. If you do, ready that Unit."
