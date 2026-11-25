@@ -15,6 +15,7 @@ import { recordPlayedCard } from "./trigger-resolution";
 import { discoverTriggers } from "./trigger-queries";
 import { chooseTrashedTopProgram, isBraindanceProgram } from "./braindance-legend";
 import { chooseRivalReveal } from "./rival-reveal";
+import { chooseHandResetDraw } from "./hand-reset";
 import { triggersEnabled } from "./trigger-support";
 import { actionReturnContext, finishAction } from "./action-return";
 import { applyTemporaryPower } from "./temporary-power";
@@ -236,6 +237,13 @@ export function continuePlay(m: TurnMutation, index: number): Result<null> {
         }
         delete c.targetGigId;
         return completePlayEffect(m);
+    }
+    if (s.resolution.current?.effect.kind === "EACH_PLAYER_DISCARDS_HAND_MAY_DRAW") { // Batch V78: the controller, then the Rival.
+        if (option.kind !== "MODE") return failure("INVALID_OPTIONAL_DRAW", "Choose whether to draw");
+        const sourceId = c.sourceId, chosen = chooseHandResetDraw(m, option.mode === "DRAW");
+        if (!chosen.ok) return chosen;
+        if (m.state.match.outcome) return finishPlay(m, sourceId);
+        return chosen.value.done ? completePlayEffect(m) : offerPlayChoice(m);
     }
     if (s.resolution.current?.effect.kind === "REVEAL_TOP_RIVAL_CHOOSES_HAND_OR_TRASH") { // Batch V77.
         if (option.kind !== "MODE") return failure("INVALID_DESTINATION", "Choose hand or trash for the revealed cards");

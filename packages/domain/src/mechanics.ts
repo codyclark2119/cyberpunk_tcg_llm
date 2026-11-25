@@ -235,6 +235,9 @@ export const EffectSchema = z.discriminatedUnion("kind", [
     // Batch V77: "Reveal the top 2 cards of your deck. A Rival chooses whether you add them to your hand or trash them. If you trash
     // them, draw 2."
     z.strictObject({ kind: z.literal("REVEAL_TOP_RIVAL_CHOOSES_HAND_OR_TRASH"), count: z.literal(2), drawIfTrashed: z.literal(2) }),
+    // Batch V78: "Each player discards their hand and may draw 5. If the total number of discarded cards equals the value of a friendly
+    // Gig, draw 2."
+    z.strictObject({ kind: z.literal("EACH_PLAYER_DISCARDS_HAND_MAY_DRAW"), draw: z.literal(5), drawIfTotalMatchesFriendlyGig: z.literal(2) }),
     // Batch V76: "Trash the top card of your deck. If it's a Program, you may add it to your hand."
     z.strictObject({ kind: z.literal("TRASH_TOP_MAY_ADD_PROGRAM") }),
     // Batch V76: "Give a friendly Unit +1 power this turn" from a Legend's "When you play a BRAINDANCE Program" trigger.

@@ -120,6 +120,7 @@ were recorded in their pull requests (#4, #7, #8); later batches have documents 
 | V75 (2026-11-21) | Dum Dum: Maelstrom Triggerman | [Legend {Call} may defeat a friendly Gear (draw 2, else 1) and {Quick} +1 power per equipped Gear](api-admission-batch-v75.md); coverage 125/151 |
 | V76 (2026-11-25) | Judy Álvarez: Braindance Maestro | [Legend trigger on playing a BRAINDANCE Program (+1 power) and {Spend} trash the top card, may add a Program](api-admission-batch-v76.md); coverage 126/151 |
 | V77 (2026-11-25) | Fool on the Hill | [Program revealing the top 2; a Rival chooses hand, or trash and draw 2](api-admission-batch-v77.md); coverage 127/151 |
+| V78 (2026-11-25) | Shattered Memories | [Program discarding both hands; each player may draw 5, and a total matching a friendly Gig draws 2](api-admission-batch-v78.md); coverage 128/151 |
 | V7 (2026-11-15) | Royce: Don't Call Me Simon, Wild in the Streets, Delamain: Rideshare AI | [shared defeat filter and exact pin table](api-admission-batch-v7.md); coverage 42/151 |
 | V6 (2026-09-22) | Trust No One | [contract and executable slice](api-admission-batch-v6.md), [baseline verification](api-admission-batch-v6-verification.md) |
 

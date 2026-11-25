@@ -1,4 +1,5 @@
 import { effectiveCallCost } from "./free-call-support";
+import { otherPlayerMayChoose } from "./rival-reveal";
 import { validateFightDefeatImmunities } from "./fight-immunity";
 import { validateLegendSpendMetadata } from "./legend-spend-support";
 import { validateFightPowerGrants } from "./fight-power-grant";
@@ -209,7 +210,7 @@ export function validateState(input: unknown, context: EngineContext): Result<Ga
     }
     if (slice && !s.setup) {
         const step = s.timing.step;
-        if (ids.length !== 2 || !s.timing.firstPlayer || !ids.includes(s.timing.firstPlayer) || !step || (!["RIVAL_REACT", "COMBAT_RESOLUTION_PENDING", "DEFEAT_ORDER_SELECTION", "TRIGGER_RESOLUTION"].includes(s.timing.combat.stage) && !s.resolution.targetedDefeatContinuation && !s.resolution.triggerContinuation?.effectDefeats && !(s.resolution.triggerContinuation?.origin.kind === "DEFEAT" && s.resolution.triggerContinuation.origin.effectSource) && s.resolution.current?.effect.kind !== "REVEAL_TOP_RIVAL_CHOOSES_HAND_OR_TRASH" && s.timing.actingPlayer !== s.timing.activePlayer))
+        if (ids.length !== 2 || !s.timing.firstPlayer || !ids.includes(s.timing.firstPlayer) || !step || (!["RIVAL_REACT", "COMBAT_RESOLUTION_PENDING", "DEFEAT_ORDER_SELECTION", "TRIGGER_RESOLUTION"].includes(s.timing.combat.stage) && !s.resolution.targetedDefeatContinuation && !s.resolution.triggerContinuation?.effectDefeats && !(s.resolution.triggerContinuation?.origin.kind === "DEFEAT" && s.resolution.triggerContinuation.origin.effectSource) && !otherPlayerMayChoose(s) && s.timing.actingPlayer !== s.timing.activePlayer))
             return failure("INVALID_TURN_STATE", "Turn slice requires two players, first player and an active decision actor");
         if (s.timing.turn < 1 || s.timing.activePlayer !== ids[(s.players[s.timing.firstPlayer].seat + s.timing.turn - 1) % ids.length])
             return failure("INVALID_TURN_ORDER", "Active player must follow first-player and turn order");

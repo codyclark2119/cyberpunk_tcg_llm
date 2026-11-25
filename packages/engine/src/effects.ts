@@ -2,6 +2,7 @@ import { applyMustAttack, mustAttackTargets } from "./must-attack";
 import { applyGearPower, friendlyGearTargets, resolveGearDefeatDraw } from "./gear-legend";
 import { resolveTrashTop } from "./braindance-legend";
 import { resolveRivalReveal } from "./rival-reveal";
+import { resolveHandReset } from "./hand-reset";
 import { applyBlockerGrant, blockerGrantTargets } from "./blocker-grant";
 import { applyFightDefeatImmunity } from "./fight-immunity";
 import { advanceCrossSet, advanceMandatorySwap, isLegendCallPower, mandatorySwapAvailable, playPowerTargets } from "./legend-spend";
@@ -92,6 +93,7 @@ export class HandlerRegistry {
             return targets.length > 1 ? offerPlayChoice(m) : targets.length === 1 ? applyFightDefeatImmunity(m, targets[0], true) : success(null);
         }
         if (effect.kind === "REVEAL_TOP_RIVAL_CHOOSES_HAND_OR_TRASH") return resolveRivalReveal(m, offerPlayChoice); // Batch V77: the Rival chooses.
+        if (effect.kind === "EACH_PLAYER_DISCARDS_HAND_MAY_DRAW") return resolveHandReset(m, offerPlayChoice); // Batch V78: each player chooses in turn.
         if (effect.kind === "TRASH_TOP_MAY_ADD_PROGRAM") return resolveTrashTop(m, offerPlayChoice); // Batch V76: a trashed Program pauses for the take-or-leave.
         if (effect.kind === "MAY_DEFEAT_FRIENDLY_GEAR_THEN_DRAW") // Batch V75: with a friendly Gear, a defeat or the decline; with none, draw 1.
             return friendlyGearTargets(m.state, m.state.resolution.current!.controllerId, m.context).length ? offerPlayChoice(m) : resolveGearDefeatDraw(m, undefined, true);

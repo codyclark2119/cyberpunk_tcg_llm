@@ -218,7 +218,10 @@ export const ResolutionStateSchema = z.strictObject({
         // Batch V15: the Unit the first clause bottom-decked, while its "if you do" clause awaits a choice.
         bottomDecked: CardInstanceIdSchema.optional(),
         // Batch V44: the one printed mode a modal Program's controller chose; absent while every mode resolves.
-        chosenEffect: z.number().int().nonnegative().optional() }).optional(),
+        chosenEffect: z.number().int().nonnegative().optional(),
+        // Batch V78: the cards a hand reset discarded from both hands, in discard order (empty when both hands were), while each player
+        // in turn chooses whether to draw.
+        discardedIds: z.array(CardInstanceIdSchema).optional() }).optional(),
     searchContinuation: z.strictObject({ looked: z.array(CardInstanceIdSchema), selected: z.array(CardInstanceIdSchema) }).optional(),
     callContinuation: z.strictObject({ actorId: PlayerIdSchema, legendId: CardInstanceIdSchema, remainingCost: z.number().int().nonnegative(), selectedSources: z.array(PaymentSourceSchema) }).optional(),
     current: PendingEffectSchema.nullable(), pending: z.array(PendingEffectSchema), discovered: z.array(PendingEffectSchema), choice: PendingChoiceSchema.nullable()
@@ -290,6 +293,8 @@ export const EventPayloadSchema = z.discriminatedUnion("kind", [
     z.strictObject({ kind: z.literal("OPTIONAL_TRIGGER_DECLINED"), effectId: HashSchema, controllerId: PlayerIdSchema }),
     // Batch V77: a Rival's choice of where an effect's revealed cards go.
     z.strictObject({ kind: z.literal("DESTINATION_CHOSEN"), effectId: HashSchema, playerId: PlayerIdSchema, destination: z.enum(["HAND", "TRASH"]) }),
+    // Batch V78: a player's choice whether to take an effect's optional draw.
+    z.strictObject({ kind: z.literal("OPTIONAL_DRAW_CHOSEN"), effectId: HashSchema, playerId: PlayerIdSchema, draw: z.boolean() }),
     z.strictObject({ kind: z.literal("QUALIFYING_PLAY_RECORDED"), playerId: PlayerIdSchema, cardInstanceId: CardInstanceIdSchema, ordinal: z.number().int().positive() }),
     z.strictObject({ kind: z.literal("FIGHT_PREVENTION_CREATED"), effect: FightPreventionSchema }),
     z.strictObject({ kind: z.literal("FIGHT_PREVENTION_CONSUMED"), effectId: HashSchema, sourceId: CardInstanceIdSchema, controllerId: PlayerIdSchema, attackerId: CardInstanceIdSchema, defenderId: CardInstanceIdSchema }),
