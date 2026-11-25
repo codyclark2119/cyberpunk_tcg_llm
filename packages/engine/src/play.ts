@@ -1,4 +1,5 @@
 import { selectTrashProgram } from "./trash-program-play";
+import { chooseDeckTop } from "./deck-top-play";
 import { moveToBottom } from "./bottom-deck";
 import { chooseTrashedGearDestination, selectTrashedGear } from "./trash-gear";
 import { playHandGear, selectHandGear } from "./hand-gear-play";
@@ -62,7 +63,10 @@ function finishPlay(m: TurnMutation, sourceId: CardInstanceId, aftermath?: Prepa
     if (m.state.objects.cards[sourceId].zone.zone === "RESOLVING_PROGRAM") { if (m.state.resolution.playContinuation?.fromTrash) moveToBottom(m, m.state.objects.cards[sourceId].ownerId, [sourceId]); else moveCardLocation(m, sourceId, "TRASH"); }
     // Batch V94: a trash Program a Legend's ability chose is played (paying its cost) once the ability has resolved.
     const trashProgram = m.state.resolution.playContinuation?.trashProgramId;
-    if (trashProgram && !m.state.match.outcome) return startPlay(m, m.state.resolution.playContinuation!.actorId, trashProgram, true);
+    if (trashProgram && !m.state.match.outcome) return startPlay(m, m.state.resolution.playContinuation!.actorId, trashProgram, "TRASH");
+    // Batch V95: a revealed top card a Unit's ability chose to play for free is played once the ability has resolved.
+    const deckPlay = m.state.resolution.playContinuation?.deckPlayId;
+    if (deckPlay && !m.state.match.outcome) return startPlay(m, m.state.resolution.playContinuation!.actorId, deckPlay, "DECK");
     // Batch V92: a Gear a Legend's ability played from hand starts its own play batch once the ability has resolved (Batch V93: or a
     // Gear a Program played from the trash, once the Program has resolved).
     const handGear = m.state.resolution.playContinuation?.playedGearId;
@@ -140,17 +144,18 @@ function pendEffects(m: TurnMutation, indexes: number[]): Result<null> {
 }
 function completePayment(m: TurnMutation, sources: PaymentSource[]): Result<null> {
     const s = m.state, c = s.resolution.playContinuation!, r = revisionOf(s, c.sourceId, m.context)!;
-    const amount = c.kind === "ACTIVATE" ? activationPaymentAmount(playAbility(m), s, c.actorId) : playPaymentAmount(s, c.actorId, c.sourceId, m.context)!;
+    const amount = c.kind === "ACTIVATE" ? activationPaymentAmount(playAbility(m), s, c.actorId) : c.freeFromDeck ? 0 : playPaymentAmount(s, c.actorId, c.sourceId, m.context)!; // Batch V95: played for free.
     const payment = validatePayment(s, c.actorId, m.context, sources, { kind: "EDDIES", amount });
     return payment.ok ? payValidated(m, payment.value) : payment;
 }
 
-export function startPlay(m: TurnMutation, actorId: PlayerId, sourceId: CardInstanceId, fromTrash = false): Result<null> {
+export function startPlay(m: TurnMutation, actorId: PlayerId, sourceId: CardInstanceId, origin: "HAND" | "TRASH" | "DECK" = "HAND"): Result<null> {
     const s = m.state, r = revisionOf(s, sourceId, m.context)!;
     if (r.printedCost.kind !== "EDDIES") return failure("UNSUPPORTED_CARD_PLAY", "Reviewed printed payment required");
     s.resolution.returnTo = actionReturnContext(s);
-    if (!fromTrash) { s.objects.cards[sourceId].face = "UP"; m.emit({ kind: "CARD_REVEALED", cardInstanceId: sourceId }); } // Batch V94: a trash card is public.
-    s.resolution.playContinuation = { kind: "PLAY", actorId, sourceId, ...(fromTrash ? { fromTrash: true as const } : {}), ...(r.type !== "GEAR" && r.mechanics.abilities[0] ? { abilityId: r.mechanics.abilities[0].id } : {}), phase: "PAYMENT", remainingCost: playPaymentAmount(s, actorId, sourceId, m.context)!, selectedSources: [], effectIndex: 0 };
+    // Batch V94: a trash card is public (Batch V95: a deck card was revealed as the ability resolved); either moves face up as it is played.
+    if (origin === "HAND") { s.objects.cards[sourceId].face = "UP"; m.emit({ kind: "CARD_REVEALED", cardInstanceId: sourceId }); }
+    s.resolution.playContinuation = { kind: "PLAY", actorId, sourceId, ...(origin === "TRASH" ? { fromTrash: true as const } : origin === "DECK" ? { freeFromDeck: true as const } : {}), ...(r.type !== "GEAR" && r.mechanics.abilities[0] ? { abilityId: r.mechanics.abilities[0].id } : {}), phase: "PAYMENT", remainingCost: origin === "DECK" ? 0 : playPaymentAmount(s, actorId, sourceId, m.context)!, selectedSources: [], effectIndex: 0 };
     const forced = forcedPaymentSources(s, actorId, m.context, s.resolution.playContinuation.remainingCost, []);
     if (forced) return completePayment(m, forced);
     return offerPlayChoice(m);
@@ -318,6 +323,10 @@ export function continuePlay(m: TurnMutation, index: number): Result<null> {
     if (s.resolution.current?.effect.kind === "PLAY_TRASH_PROGRAM_THEN_BOTTOM_DECK") { // Batch V94.
         if (option.kind !== "CARD") return failure("INVALID_TRASH_PLAY", "Choose a Program in your trash");
         const chosen = selectTrashProgram(m, option.cardInstanceId, false);
+        return chosen.ok ? completePlayEffect(m) : chosen;
+    }
+    if (s.resolution.current?.effect.kind === "REVEAL_TOP_MAY_PLAY_FREE_ELSE_HAND") { // Batch V95: hand, play, or a Gear's host.
+        const chosen = chooseDeckTop(m, option);
         return chosen.ok ? completePlayEffect(m) : chosen;
     }
     if (s.resolution.current?.effect.kind === "PLAY_GEAR_FROM_HAND_FREE") { // Batch V92: the hand Gear, then its host.

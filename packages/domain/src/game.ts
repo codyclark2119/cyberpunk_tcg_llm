@@ -275,7 +275,10 @@ export const ResolutionStateSchema = z.strictObject({
         trashedGearId: CardInstanceIdSchema.optional(),
         // Batch V94: the trash Program a Legend's ability chose to play (never at a decision), and a Program played from the trash, which
         // is bottom-decked after it resolves instead of going to the trash.
-        trashProgramId: CardInstanceIdSchema.optional(), fromTrash: z.literal(true).optional() }).optional(),
+        trashProgramId: CardInstanceIdSchema.optional(), fromTrash: z.literal(true).optional(),
+        // Batch V95: the revealed top card of the deck chosen to play for free, a Unit or Program (never at a decision; a Gear is equipped
+        // at once), and a card played that way, which pays nothing.
+        deckPlayId: CardInstanceIdSchema.optional(), freeFromDeck: z.literal(true).optional() }).optional(),
     searchContinuation: z.strictObject({ looked: z.array(CardInstanceIdSchema), selected: z.array(CardInstanceIdSchema) }).optional(),
     callContinuation: z.strictObject({ actorId: PlayerIdSchema, legendId: CardInstanceIdSchema, remainingCost: z.number().int().nonnegative(), selectedSources: z.array(PaymentSourceSchema) }).optional(),
     current: PendingEffectSchema.nullable(), pending: z.array(PendingEffectSchema), discovered: z.array(PendingEffectSchema), choice: PendingChoiceSchema.nullable()

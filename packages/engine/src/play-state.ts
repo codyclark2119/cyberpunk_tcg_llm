@@ -1,4 +1,5 @@
 import { currentTrashPlayTargets } from "./trash-program-play";
+import { deckTopOptions } from "./deck-top-play";
 import { trashGearOptions, validateTrashGear } from "./trash-gear";
 import { handGearOptions } from "./hand-gear-play";
 import { trashProgramTargets } from "./trash-program";
@@ -122,6 +123,9 @@ export function playChoice(state: GameState, context: EngineContext): PendingCho
     } else if (state.resolution.current?.effect.kind === "TRASH_THEN_ADD_GEAR_MAY_PLAY_IF_GIG_COST") { // Batch V93: the Gear, then hand or its host.
         kind = "TARGET";
         options = trashGearOptions(state, context);
+    } else if (state.resolution.current?.effect.kind === "REVEAL_TOP_MAY_PLAY_FREE_ELSE_HAND") { // Batch V95.
+        kind = "TARGET";
+        options = deckTopOptions(state, context);
     } else if (state.resolution.current?.effect.kind === "PLAY_TRASH_PROGRAM_THEN_BOTTOM_DECK") { // Batch V94.
         kind = "TARGET";
         options = currentTrashPlayTargets(state, context).map(cardInstanceId => ({ kind: "CARD", cardInstanceId }));
@@ -157,7 +161,7 @@ export function validatePlayState(state: GameState, context: EngineContext) {
     const source = state.objects.cards[c.sourceId], revision = revisionOf(state, c.sourceId, context), ability = revision?.mechanics.abilities[0];
     if (!supportsPlay(revision, context).ok || !source || c.kind !== "PLAY" || c.actorId !== (state.resolution.targetedDefeatContinuation?.phase === "ORDER" || state.resolution.targetedDefeatContinuation?.phase === "EACH" || otherPlayerMayChoose(state) ? state.timing.activePlayer : state.timing.actingPlayer) || source.controllerId !== c.actorId || source.zone.playerId !== c.actorId || source.face !== "UP" || (revision?.type === "GEAR" ? undefined : ability?.id) !== c.abilityId || state.setup || (state.timing.combat.stage !== "NONE" && (state.timing.combat.stage !== "RIVAL_REACT" || revision?.type !== "PROGRAM" || !revision.mechanics.keywords.includes("QUICK"))) || state.match.outcome || (state.resolution.searchContinuation && current?.effect.kind !== "SEARCH_TAKE_ONE_PLUS_PER_MIN_GIG") || state.resolution.callContinuation || state.resolution.discovered.length || state.resolution.stage !== "CHOICE")
         return failure("INVALID_PLAY_CONTINUATION", "Play source, scope, actor or exclusive decision state invalid");
-    const cost = revision!.printedCost, amount = playPaymentAmount(state, c.actorId, c.sourceId, context);
+    const cost = revision!.printedCost, amount = c.freeFromDeck ? 0 : playPaymentAmount(state, c.actorId, c.sourceId, context); // Batch V95: played for free.
     if (cost.kind !== "EDDIES" || new Set(c.selectedSources.map(p => p.cardInstanceId)).size !== c.selectedSources.length || c.selectedSources.reduce((n, p) => n + paymentValue(state, context, p), 0) + c.remainingCost !== amount)
         return failure("INVALID_PLAY_PAYMENT", "Exact cost and unique selected sources must match the printed cost");
     if (c.phase === "PAYMENT") {

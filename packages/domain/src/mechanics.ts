@@ -280,6 +280,8 @@ export const EffectSchema = z.discriminatedUnion("kind", [
     z.strictObject({ kind: z.literal("TRASH_THEN_ADD_GEAR_MAY_PLAY_IF_GIG_COST"), count: z.literal(4) }),
     // Batch V94: "Play a Program from your trash. Bottom-deck it after you play it. (You still pay its cost.)"
     z.strictObject({ kind: z.literal("PLAY_TRASH_PROGRAM_THEN_BOTTOM_DECK") }),
+    // Batch V95: "Reveal the top card of your deck. You may play it for free. Otherwise, add it to your hand."
+    z.strictObject({ kind: z.literal("REVEAL_TOP_MAY_PLAY_FREE_ELSE_HAND") }),
     // Batch V90: "Give an equipped Unit +3 power this turn for each of its equipped Gears. If that Unit steals or fights, defeat it at
     // the end of this turn." Any player's equipped Unit; the Gear counted as it resolves; the defeat is registered on that Unit.
     z.strictObject({ kind: z.literal("EQUIPPED_UNIT_POWER_PER_GEAR_THIS_TURN"), amount: z.literal(3),

@@ -143,6 +143,7 @@ were recorded in their pull requests (#4, #7, #8); later batches have documents 
 | V92 (2026-11-25) | River Ward: Detective on the Hunt | [A {Quick} free hand-Gear play and a friendly equipped-defeat search](api-admission-batch-v92.md); coverage 142/151 |
 | V93 (2026-11-25) | The Heist | [Trash 4, add a Gear, or play it free from the trash when its cost matches a Gig](api-admission-batch-v93.md); coverage 143/151 |
 | V94 (2026-11-25) | Alt Cunningham: Soulkiller Architect | [A paid {Spend} that plays a Program from the trash, then bottom-decks it](api-admission-batch-v94.md); coverage 144/151 |
+| V95 (2026-11-25) | Judy Álvarez: Nothing to Doubt | [A paid {Spend} that reveals the top card to play for free or add to hand](api-admission-batch-v95.md); coverage 145/151 |
 | V7 (2026-11-15) | Royce: Don't Call Me Simon, Wild in the Streets, Delamain: Rideshare AI | [shared defeat filter and exact pin table](api-admission-batch-v7.md); coverage 42/151 |
 | V6 (2026-09-22) | Trust No One | [contract and executable slice](api-admission-batch-v6.md), [baseline verification](api-admission-batch-v6-verification.md) |
 

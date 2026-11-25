@@ -1,3 +1,4 @@
+import { revealedDeckTop } from "./deck-top-play";
 import { effectiveCallCost } from "./free-call-support";
 import { checkOvertimeVictory } from "./overtime";
 import { unmetMustAttack } from "./must-attack";
@@ -118,6 +119,7 @@ function describeAction(a: GameAction, state: GameState, actor: PlayerId, view: 
         case "ACTIVATE_ABILITY": {
             const r = view.getRevision(a.action.sourceInstanceId), ability = r?.mechanics.abilities.find(x => x.id === (a.action.kind === "ACTIVATE_ABILITY" ? a.action.abilityId : ""));
             // Batch V49: the paid Quick activation; Kerry's label is unchanged.
+            if (ability?.effects[0]?.kind === "REVEAL_TOP_MAY_PLAY_FREE_ELSE_HAND") return `Activate ${r?.displayName}: Pay ${activationPaymentAmount(ability)} and spend to reveal the top card of your deck, then play it for free or add it to your hand`; // Batch V95.
             if (ability?.effects[0]?.kind === "PLAY_TRASH_PROGRAM_THEN_BOTTOM_DECK") return `Activate ${r?.displayName}: Pay ${activationPaymentAmount(ability)} and spend to play a Program from your trash, then bottom-deck it`; // Batch V94.
             if (ability?.effects[0]?.kind === "PLAY_GEAR_FROM_HAND_FREE") return `Activate ${r?.displayName}: Spend to play a Gear with cost 2 or less from your hand for free`; // Batch V92.
             if (ability?.effects[0]?.kind === "TRASH_TOP_MAY_ADD_PROGRAM") return `Activate ${r?.displayName}: Spend to trash the top card of your deck`; // Batch V76.
@@ -187,6 +189,10 @@ function describeAction(a: GameAction, state: GameState, actor: PlayerId, view: 
             if (state.resolution.current?.effect.kind === "TRASH_TOP_MAY_ADD_PROGRAM") return option.kind === "CARD" ? `Add ${view.getRevision(option.cardInstanceId)?.displayName} (${option.cardInstanceId}) from your trash to your hand` : "Leave it in your trash"; // Batch V76.
             if (state.resolution.current?.effect.kind === "MAY_DEFEAT_FRIENDLY_GEAR_THEN_DRAW") return option.kind === "CARD" ? `Defeat ${view.getRevision(option.cardInstanceId)?.displayName} (${option.cardInstanceId}) and draw 2` : "Defeat no Gear and draw 1"; // Batch V75.
             if (option.kind === "CARD" && state.resolution.current?.effect.kind === "POWER_PER_EQUIPPED_GEAR_THIS_TURN") return `Give ${view.getRevision(option.cardInstanceId)?.displayName} (${option.cardInstanceId}) +1 power this turn for each of its equipped Gear`; // Batch V75.
+            if (state.resolution.current?.effect.kind === "REVEAL_TOP_MAY_PLAY_FREE_ELSE_HAND") { // Batch V95.
+                const top = revealedDeckTop(state)[0], card = top ? `${view.getRevision(top)?.displayName} (${top})` : "the revealed card";
+                return option.kind === "CARD" ? `Play ${card} for free, equipped to ${view.getRevision(option.cardInstanceId)?.displayName} (${option.cardInstanceId})` : option.kind === "CONFIRM" && option.confirmed ? `Play ${card} for free` : `Add ${card} to your hand`;
+            }
             if (option.kind === "CARD" && state.resolution.current?.effect.kind === "PLAY_TRASH_PROGRAM_THEN_BOTTOM_DECK") return `Play ${view.getRevision(option.cardInstanceId)?.displayName} (${option.cardInstanceId}) from your trash`; // Batch V94.
             if (state.resolution.current?.effect.kind === "TRASH_THEN_ADD_GEAR_MAY_PLAY_IF_GIG_COST") { // Batch V93.
                 const held = state.resolution.playContinuation?.trashedGearId, gear = held ? view.getRevision(held)?.displayName : undefined;
