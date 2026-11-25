@@ -396,8 +396,9 @@ export function validateTriggerState(state: GameState, context: EngineContext) {
         // true must agree; advancing an index cannot manufacture a false-condition discard.
         if (c.phase !== "DISCARD" || e?.effect.kind !== "DISCARD_CARDS" || e.primitiveIndex !== 1 || c.conditionMet !== true || !e.effect.when || !testCondition(state, e.controllerId, e.effect.when.condition, context, e.sourceId)) return failure("INVALID_DISCARD_CONTINUATION", "Post-draw true condition and exact current second primitive required");
     }
-    // Batch V84: a free Call pauses only for its Legend slot (or declining), with a face-down Legend it may Call, from its pinned Unit's {Play}.
-    if (r.current?.effect.kind === "MAY_CALL_LEGEND_FREE" && (c.phase !== "TARGET" || r.current.trigger?.kind !== "WHEN_PLAYED" || r.current.primitiveIndex !== undefined
+    // Batch V84: a free Call pauses only for its Legend slot (or declining), with a face-down Legend it may Call, from its pinned Unit's {Play}
+    // (Batch V86: or, after its look, {Defeated}).
+    if (r.current?.effect.kind === "MAY_CALL_LEGEND_FREE" && (c.phase !== "TARGET" || r.current.trigger?.kind !== (r.current.effect.lookAtAll ? "WHEN_DEFEATED" : "WHEN_PLAYED") || r.current.primitiveIndex !== undefined
         || !supportsFreeCallUnit(cardRevision(state, r.current.sourceId!, context), context).ok || !freeCallSlots(state, r.current.controllerId, context).length))
         return failure("INVALID_FREE_CALL", "A free Call pauses only for a Legend its pinned {Play} may Call");
     if (r.current?.effect.kind === "LOOK_AT_FRIENDLY_FACE_DOWN_LEGEND" && c.phase !== "TARGET") return failure("INVALID_TRIGGER_PHASE", "Private look pauses only for a target");

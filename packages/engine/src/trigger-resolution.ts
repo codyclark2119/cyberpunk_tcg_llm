@@ -28,7 +28,7 @@ import { PendingEffectSchema, TriggerBindingSchema, TriggerOriginSchema, failure
 import type { TurnMutation } from "./turn";
 import { cardRevision } from "./characteristics";
 import { finishAction } from "./action-return";
-import { chooseFreeCall, freeCallSlots } from "./free-call-effect";
+import { beginTriggerFreeCall, chooseFreeCall } from "./free-call-effect";
 import { finishAttackEffects } from "./combat";
 import { applyProgramPlayPower } from "./braindance-legend";
 import { finishCombat, completeFightResult } from "./combat-resolution";
@@ -344,9 +344,10 @@ export function advanceTriggers(m: TurnMutation): Result<null> {
         c.phase = "OPTIONAL"; return offer(m);
     }
     if (e.kind === "RESTRICT_RIVAL_GIG_STEAL") { const restricted = applyStealRestriction(m); return restricted.ok ? completed(m) : restricted; }
-    // Batch V84: "You may Call a Legend for free": a choice only while a face-down Legend may be Called this turn.
+    // Batch V84: "You may Call a Legend for free": a choice only while a face-down Legend may be Called this turn (Batch V86: after a look).
     if (e.kind === "MAY_CALL_LEGEND_FREE") {
-        if (!freeCallSlots(m.state, r.current.controllerId, m.context).length) return completed(m);
+        const callable = beginTriggerFreeCall(m); if (!callable.ok) return callable;
+        if (!callable.value) return completed(m);
         c.phase = "TARGET"; return offer(m);
     }
     if (e.kind === "LOOK_AT_FRIENDLY_FACE_DOWN_LEGEND") {

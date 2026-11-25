@@ -9,12 +9,12 @@
   },
   "totals": {
     "cards": 151,
-    "admitted": 135,
-    "notAdmitted": 16,
+    "admitted": 136,
+    "notAdmitted": 15,
     "notAdmittedOnlyCoveredFamilies": 0,
     "byAdmission": {
-      "NOT_ADMITTED": 16,
-      "SOURCE_MATCH": 135
+      "NOT_ADMITTED": 15,
+      "SOURCE_MATCH": 136
     }
   },
   "families": [
@@ -109,29 +109,11 @@
       "soleBlockerCount": 0
     },
     {
-      "family": "FREE_CALL",
-      "status": "MISSING",
-      "summary": "Call a Legend by an effect or for free outside the normal Call.",
-      "notes": "",
-      "cardCount": 5,
-      "notAdmittedCount": 2,
-      "soleBlockerCount": 0
-    },
-    {
       "family": "KEYWORD_BLOCKER",
       "status": "COVERED",
       "summary": "Printed [Blocker] on a Unit, or granted to a Gear's host.",
       "notes": "Keyword BLOCKER. Temporary grants by an effect are TEMPORARY_BUFF.",
       "cardCount": 11,
-      "notAdmittedCount": 2,
-      "soleBlockerCount": 0
-    },
-    {
-      "family": "LEGEND_LOOK",
-      "status": "PARTIAL",
-      "summary": "Look at friendly face-down Legends.",
-      "notes": "One Legend, attack-triggered (Kiroshi Optics). 'All face-down Legends' is missing.",
-      "cardCount": 3,
       "notAdmittedCount": 2,
       "soleBlockerCount": 0
     },
@@ -235,11 +217,29 @@
       "soleBlockerCount": 0
     },
     {
+      "family": "FREE_CALL",
+      "status": "MISSING",
+      "summary": "Call a Legend by an effect or for free outside the normal Call.",
+      "notes": "",
+      "cardCount": 5,
+      "notAdmittedCount": 1,
+      "soleBlockerCount": 0
+    },
+    {
       "family": "GO_SOLO",
       "status": "PARTIAL",
       "summary": "[Go Solo]: play a Legend as a ready Unit that can attack this turn and is removed when it leaves the field.",
       "notes": "Supported only for Go Solo Legends with no other text or with Blocker (V: Corporate Exile, Goro: Hands Unclean). Go Solo Legends with Play/Attack/Defeated triggers, Go Solo cost changes and Gear on Legend hosts in combat are not.",
       "cardCount": 10,
+      "notAdmittedCount": 1,
+      "soleBlockerCount": 0
+    },
+    {
+      "family": "LEGEND_LOOK",
+      "status": "PARTIAL",
+      "summary": "Look at friendly face-down Legends.",
+      "notes": "One Legend, attack-triggered (Kiroshi Optics). 'All face-down Legends' is missing.",
+      "cardCount": 3,
       "notAdmittedCount": 1,
       "soleBlockerCount": 0
     },
@@ -267,15 +267,6 @@
       "summary": "[Attack] abilities and 'when a Unit attacks' triggers.",
       "notes": "Triggers WHEN_ATTACKING and WHEN_UNIT_ATTACKS.",
       "cardCount": 14,
-      "notAdmittedCount": 1,
-      "soleBlockerCount": 0
-    },
-    {
-      "family": "TRIGGER_DEFEATED",
-      "status": "PARTIAL",
-      "summary": "[Defeated] abilities.",
-      "notes": "Trigger WHEN_DEFEATED, admitted only for Dexter: One Last Chance.",
-      "cardCount": 7,
       "notAdmittedCount": 1,
       "soleBlockerCount": 0
     },
@@ -420,6 +411,15 @@
       "summary": "'When you play a <filter> card' triggers.",
       "notes": "Trigger WHEN_CARD_PLAYED with guard FIRST_BLUE_UNIT_OR_GEAR_PLAY_PER_TURN (Jackie: Pour One Out).",
       "cardCount": 2,
+      "notAdmittedCount": 0,
+      "soleBlockerCount": 0
+    },
+    {
+      "family": "TRIGGER_DEFEATED",
+      "status": "PARTIAL",
+      "summary": "[Defeated] abilities.",
+      "notes": "Trigger WHEN_DEFEATED, admitted only for Dexter: One Last Chance.",
+      "cardCount": 7,
       "notAdmittedCount": 0,
       "soleBlockerCount": 0
     },
@@ -2709,18 +2709,14 @@
       "colors": [
         "YELLOW"
       ],
-      "admission": "NOT_ADMITTED",
-      "revision": null,
+      "admission": "SOURCE_MATCH",
+      "revision": 1,
       "families": [
         "FREE_CALL",
         "LEGEND_LOOK",
         "TRIGGER_DEFEATED"
       ],
-      "blockingFamilies": [
-        "FREE_CALL",
-        "LEGEND_LOOK",
-        "TRIGGER_DEFEATED"
-      ],
+      "blockingFamilies": [],
       "note": null
     },
     {

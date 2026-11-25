@@ -126,8 +126,9 @@ export const TurnHistorySchema = z.strictObject({
     spendTriggers: z.array(TriggerBindingSchema).min(1).optional(),
     // Batch V72: cards with a "the first time this Unit is spent each turn" trigger already spent this turn.
     firstSpends: z.array(CardInstanceIdSchema).min(1).optional(),
-    // Batch V84: a Legend Called for free by an effect, whose {Call} ability resolves once the action's trigger batches are done.
-    queuedCall: z.strictObject({ playerId: PlayerIdSchema, legendId: CardInstanceIdSchema }).optional(),
+    // Batch V84: a Legend Called for free by an effect, whose {Call} ability resolves once the action's trigger batches are done (Batch
+    // V86: or its attack has ended); `started` while that ability resolves, which may be the non-active player's.
+    queuedCall: z.strictObject({ playerId: PlayerIdSchema, legendId: CardInstanceIdSchema, started: z.literal(true).optional() }).optional(),
     // Batch V83: unused "a friendly Legend may use {Go Solo} for -2 €$ this turn" grants, by resolved effect, in grant order.
     goSoloDiscounts: z.array(HashSchema).min(1).optional(),
     // Batch V79: Units whose next attack this turn may target ready Units, by id; `inAttack` once that attack is declared, until it ends.

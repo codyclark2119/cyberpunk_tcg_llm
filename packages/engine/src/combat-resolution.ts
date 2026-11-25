@@ -14,6 +14,7 @@ import { transferGigs } from "./gig-transfer";
 import { defeatOrderChoice, defeatsFromFightResult, evaluateFight, gigStealChoice, stealableGigsFor, unfinishedDefeatOrder } from "./combat-outcome-queries";
 import { fightLostBindings, fightOutcomeBinding, fireFightOutcomes } from "./fight-outcome";
 import { belowPowerStealerPower, recordBelowPowerSteal } from "./below-power-steal";
+import { startQueuedCall } from "./free-call-effect";
 
 export function finishCombat(m: TurnMutation) {
     const c = m.state.timing.combat;
@@ -23,6 +24,9 @@ export function finishCombat(m: TurnMutation) {
     m.state.timing.combat = { stage: "NONE" };
     m.state.timing.actingPlayer = m.state.timing.activePlayer;
     m.state.resolution = { stage: "DECISION", current: null, pending: [], discovered: [], choice: null };
+    // Batch V86: a Legend an effect Called for free during the attack resolves its {Call} ability once the attack has ended.
+    const call = startQueuedCall(m);
+    if (call) return call;
     // 9.29 does not ready participants or expire Floor It's END_OF_TURN modifier.
     m.phase("MAIN");
     return success(null);

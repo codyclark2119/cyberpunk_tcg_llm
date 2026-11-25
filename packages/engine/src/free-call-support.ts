@@ -3,7 +3,7 @@ import type { EngineContext } from "./state";
 import { cardRevision } from "./characteristics";
 /** A free-Call ability as pinned: anything not listed is absent. */
 const ability = (a: { trigger: string; effects: unknown[] }) => ({ trigger: a.trigger, inherited: null, guard: null, activation: null, conditions: [], abilityCost: { kind: "NONE" }, choose: null, effects: a.effects });
-/** Batch V66+: printed cards that let their controller Call a Legend for free (Batch V84: as an effect; Batch V85: from a Program), each
+/** Batch V66+: printed cards that let their controller Call a Legend for free (Batch V84: as an effect; Batch V85: from a Program; Batch V86: when defeated), each
  * pinned whole with its execution scope. */
 const FREE_CALL_SHAPES = [
     // Batch V66: Panam Palmer: Strength Through Family. "During your turn, you may Call a Legend for free. {Attack} Discard 1. If you
@@ -15,7 +15,10 @@ const FREE_CALL_SHAPES = [
     // Batch V85: Chrome Reverie. "A rival Unit can't attack until your next turn. If you control a min Gig, you may Call a Legend for
     // free. (You can only Call a Legend once per turn.)"
     { type: "PROGRAM", sell: true, power: null, scope: "NONCOMBAT_PLAY_V1", colors: ["BLUE"], ram: { BLUE: 1 }, tags: ["Braindance"], cost: 3, modifiers: [], abilities: [ability({ trigger: "WHEN_PLAYED", effects: [
-        { kind: "UNIT_CANNOT_ATTACK_UNTIL_YOUR_NEXT_TURN", target: "RIVAL_UNIT" }, { kind: "MAY_CALL_LEGEND_FREE", condition: { kind: "FRIENDLY_GIG_IS_MIN" } }] })] }
+        { kind: "UNIT_CANNOT_ATTACK_UNTIL_YOUR_NEXT_TURN", target: "RIVAL_UNIT" }, { kind: "MAY_CALL_LEGEND_FREE", condition: { kind: "FRIENDLY_GIG_IS_MIN" } }] })] },
+    // Batch V86: T-Bug: Amateur Philosopher. "{Defeated} Look at all friendly face-down Legends. Then, you may Call a Legend for free. (You
+    // can only Call a Legend once per turn.)"
+    { colors: ["YELLOW"], ram: { YELLOW: 2 }, tags: ["Merc", "Netrunner"], cost: 4, power: 4, modifiers: [], abilities: [ability({ trigger: "WHEN_DEFEATED", effects: [{ kind: "MAY_CALL_LEGEND_FREE", lookAtAll: true }] })] }
 ].map(shape => canonicalSerialize({ type: "UNIT", sell: false, scope: "COMBAT_TRIGGERS_V1", keywords: [], equip: null, restrictions: [], ...shape }));
 export function hasFreeCallMetadata(card: DeepReadonly<CardRevisionSnapshot> | undefined) {
     return Boolean(card?.mechanics.modifiers.some(x => x.kind === "FREE_CALL_DURING_OWN_TURN") || card?.mechanics.abilities.some(a => a.effects.some(e => e.kind === "DISCARD_CARDS" && e.thenDraw || e.kind === "MAY_CALL_LEGEND_FREE")));
