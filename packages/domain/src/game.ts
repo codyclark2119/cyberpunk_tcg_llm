@@ -60,17 +60,22 @@ export type FightOutcomeEffect = DeepReadonly<z.infer<typeof FightOutcomeEffectS
 export const FightOutcomeSchema = z.strictObject({ effect: FightOutcomeEffectSchema, subjectId: CardInstanceIdSchema, opposingId: CardInstanceIdSchema });
 export type FightOutcome = DeepReadonly<z.infer<typeof FightOutcomeSchema>>;
 export const TriggerBindingSchema = z.strictObject({ sourceId: CardInstanceIdSchema, subjectId: CardInstanceIdSchema, controllerId: PlayerIdSchema,
-    source: CardReferenceSchema, abilityId: z.string().min(1), delayedId: HashSchema.optional(), kind: z.enum(["DELAYED_END_TURN", "WHEN_FIGHT_WON", "WHEN_DEFEATED", "WHEN_PLAYED", "WHEN_ATTACKING", "WHEN_CARD_PLAYED", "WHEN_OWN_TURN_ENDS", "WHEN_UNIT_ATTACKS", "WHEN_BLOCKER_USED", "WHEN_GIG_STOLEN", "WHEN_FRIENDLY_UNIT_STEALS_GIG", "WHEN_UNIT_DEFEATED", "WHEN_FIGHT_LOST", "DELAYED_FIGHT_OUTCOME", "WHEN_SPENT", "WHEN_FRIENDLY_UNIT_USES_BLOCKER"]),
+    source: CardReferenceSchema, abilityId: z.string().min(1), delayedId: HashSchema.optional(), kind: z.enum(["DELAYED_END_TURN", "WHEN_FIGHT_WON", "WHEN_DEFEATED", "WHEN_PLAYED", "WHEN_ATTACKING", "WHEN_CARD_PLAYED", "WHEN_OWN_TURN_ENDS", "WHEN_UNIT_ATTACKS", "WHEN_BLOCKER_USED", "WHEN_GIG_STOLEN", "WHEN_FRIENDLY_UNIT_STEALS_GIG", "WHEN_UNIT_DEFEATED", "WHEN_FIGHT_LOST", "DELAYED_FIGHT_OUTCOME", "WHEN_SPENT", "WHEN_FRIENDLY_UNIT_USES_BLOCKER", "WHEN_RIVAL_CHANGES_FRIENDLY_GIGS"]),
     // Batch V24 (10.16.3): a steal trigger is pending once per stolen Gig, so its binding names that Gig.
     gigInstanceId: GigInstanceIdSchema.optional(),
     // Batch V46: a fired next-fight-outcome binding names the opposing Unit of its fight.
-    opposingId: CardInstanceIdSchema.optional() });
+    opposingId: CardInstanceIdSchema.optional(),
+    // Batch V88: a Rival's adjust or swap binding names the effect that changed the Gig (one occurrence per effect, 6.4, 6.7).
+    changeEffectId: z.string().min(1).optional() });
 export type TriggerBinding = DeepReadonly<z.infer<typeof TriggerBindingSchema>>;
 export const TriggerOriginSchema = z.discriminatedUnion("kind", [
     z.strictObject({ kind: z.literal("END_TURN"), playerId: PlayerIdSchema, turn: z.number().int().positive(), delayedEffects: z.array(DelayedEffectSchema).min(1).optional() }),
     z.strictObject({ kind: z.enum(["PLAY", "ATTACK", "BLOCK"]), subjectId: CardInstanceIdSchema }),
     // Batch V69 (3.7, 10.16.1): "when ... is spent" triggers of cards an action spent outside any other batch, resolved as the action ends.
     z.strictObject({ kind: z.literal("SPEND"), spentIds: z.array(CardInstanceIdSchema).min(1) }),
+    // Batch V88: "When a Rival adjusts or swaps 1 or more friendly Gigs" triggers of a Rival's effect outside any other batch, resolved as
+    // the action ends.
+    z.strictObject({ kind: z.literal("GIG_CHANGE"), subjectIds: z.array(CardInstanceIdSchema).min(1) }),
     z.strictObject({ kind: z.literal("FIGHT"), result: FightResultSchema }),
     // Batch V24 (11.5.1.7): steal triggers become pending after every stolen Gig has moved.
     z.strictObject({ kind: z.literal("STEAL"), subjectId: CardInstanceIdSchema, gigInstanceIds: z.array(GigInstanceIdSchema).min(1) }),
@@ -104,6 +109,8 @@ export const TriggerContinuationSchema = z.strictObject({
     selectedGearId: CardInstanceIdSchema.optional(),
     // Batch V69: cards spent before or during this batch whose "when spent" bindings it holds, in order.
     effectSpends: z.array(CardInstanceIdSchema).min(1).optional(),
+    // Batch V88: observers of a Rival's adjust or swap made during this batch, whose bindings it holds, in order.
+    effectGigChanges: z.array(CardInstanceIdSchema).min(1).optional(),
     // Batch V76: a played BRAINDANCE Program whose "When you play" bindings joined its own effect's DEFEAT batch.
     programPlay: CardInstanceIdSchema.optional(),
     // Batch V32: the Programs a current "you may discard N Programs" has discarded; complete before its bottom-deck pauses.
@@ -126,6 +133,8 @@ export const TurnHistorySchema = z.strictObject({
     firstArasakaAttacks: z.record(PlayerIdSchema, QualifyingAttackSummarySchema).optional(), gigsStolenByUnit: z.record(CardInstanceIdSchema, z.number().int().positive()).optional(),
     // Batch V69: "when spent" bindings pending from a spend outside any trigger batch, until the action's next batch or its end.
     spendTriggers: z.array(TriggerBindingSchema).min(1).optional(),
+    // Batch V88: "When a Rival adjusts or swaps" bindings pending from a change outside any trigger batch, until the action's next batch or end.
+    gigChangeTriggers: z.array(TriggerBindingSchema).min(1).optional(),
     // Batch V72: cards with a "the first time this Unit is spent each turn" trigger already spent this turn.
     firstSpends: z.array(CardInstanceIdSchema).min(1).optional(),
     // Batch V84: a Legend Called for free by an effect, whose {Call} ability resolves once the action's trigger batches are done (Batch

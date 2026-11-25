@@ -1,6 +1,7 @@
 import { failure, success, type GigInstanceId, type PlayerId } from "@tcg/domain";
 import { checkOvertimeVictory } from "./overtime";
 import type { TurnMutation } from "./turn";
+import { noteRivalGigChange } from "./gig-change-triggers";
 /** Trusted transfer batch: validate everything, move all, then publish canonical facts.
  * No decisions, triggers, observers or state validation can interleave the simultaneous moves.
  */
@@ -36,6 +37,7 @@ export function swapGigs(m: TurnMutation, effectId: string, friendlyId: GigInsta
     const moved = [{ id: friendlyId, previous: pa, current: pb }, { id: rivalId, previous: pb, current: pa }].sort((x, y) => x.id < y.id ? -1 : 1);
     for (const x of moved) m.emit({ kind: "GIG_CONTROL_CHANGED", gigInstanceId: x.id, previous: x.previous, current: x.current });
     m.emit({ kind: "GIGS_SWAPPED", effectId, gigInstanceIds: [friendlyId, rivalId] });
+    noteRivalGigChange(m, [pa, pb]); // Batch V88: the Rival whose Gig was swapped observes it.
     checkOvertimeVictory(m);
     return success(null);
 }

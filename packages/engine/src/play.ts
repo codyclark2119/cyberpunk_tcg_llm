@@ -5,6 +5,7 @@ import { applyRockerGrant } from "./rocker-grant";
 import { moveGearAndReady, selectMovedGear } from "./gear-move";
 import { applyAttackLock } from "./attack-lock";
 import { noteSpent } from "./spend-triggers";
+import { noteRivalGigChange } from "./gig-change-triggers";
 import { applyMustAttack } from "./must-attack";
 import { applyFightDefeatImmunity } from "./fight-immunity";
 import { advanceCrossSet, advanceMandatorySwap, crossSetSources, crossSetTargets, swapChoiceGigs } from "./legend-spend";
@@ -342,7 +343,7 @@ export function continuePlay(m: TurnMutation, index: number): Result<null> {
     else {
         const changed = changeGigValue(s, c.targetGigId, delta, m.context);
         if (!changed.ok) return changed;
-        m.emit(changed.value);
+        m.emit(changed.value); noteRivalGigChange(m, [s.objects.gigs[c.targetGigId].controllerId]); // Batch V88.
     }
     m.emit({ kind: "EFFECT_RESOLVED", effectId: s.resolution.current!.id });
     delete c.targetGigId; c.effectIndex++;

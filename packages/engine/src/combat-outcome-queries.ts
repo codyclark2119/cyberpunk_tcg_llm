@@ -21,8 +21,8 @@ export function evaluateFight(state: GameState, context: EngineContext, power = 
     if (!("target" in c) || c.target?.kind !== "CARD") throw new Error("Expected a locked Unit target");
     const attackerId = c.attackerId, defenderId = c.target.cardInstanceId;
     // Batch V58 (11.4.2.1): "while fighting" power applies before the comparison.
-    const fighting = (id: CardInstanceId) => { const p = power(id); return p === null ? null : p + whileFightingBonus(state, id, context); };
-    const attackerPower = fighting(attackerId), defenderPower = fighting(defenderId);
+    const fighting = (id: CardInstanceId, opposingId: CardInstanceId) => { const p = power(id); return p === null ? null : p + whileFightingBonus(state, id, opposingId, context); };
+    const attackerPower = fighting(attackerId, defenderId), defenderPower = fighting(defenderId, attackerId);
     if (attackerPower === null || defenderPower === null) throw new Error("UNSUPPORTED_NULL_FIGHT_POWER");
     const a = referencedPower(attackerPower), d = referencedPower(defenderPower), forced = forcedFightWinner(state, attackerId, defenderId, context);
     // Batch V52 (11.4.1.4): a card that says this Unit wins supersedes the comparison; the opposing Unit always loses (11.4.1.1.1).
@@ -50,6 +50,6 @@ export function defeatsFromFightResult(state: GameState, context: EngineContext,
     return withoutImmuneFightDefeats(state, result.loserIds.flatMap(targetId => {
         const defeatedBy = targetId === result.attackerId ? result.defenderId : result.attackerId;
         const power = effectivePower(state, defeatedBy, context);
-        return power !== null && referencedPower(power + whileFightingBonus(state, defeatedBy, context)) > 0 ? [{ targetId, defeatedBy }] : [];
+        return power !== null && referencedPower(power + whileFightingBonus(state, defeatedBy, targetId, context)) > 0 ? [{ targetId, defeatedBy }] : [];
     }));
 }

@@ -5,7 +5,7 @@ export const GameAreaSchema = z.enum(["DECK", "HAND", "BATTLEFIELD", "TRASH", "E
 export const ZoneSchema = z.enum([...GameAreaSchema.options, "RESOLVING_PROGRAM"]);
 export const ZoneRefSchema = z.strictObject({ playerId: PlayerIdSchema, zone: ZoneSchema });
 export const KeywordSchema = z.enum(["GO_SOLO", "QUICK", "BLOCKER", "ADRENALINE"]);
-export const TriggerSchema = z.enum(["WHEN_SOLD", "WHEN_CALLED", "WHEN_PLAYED", "WHEN_ATTACKING", "WHEN_DEFEATED", "WHEN_FIGHT_WON", "WHEN_CARD_PLAYED", "WHEN_OWN_TURN_ENDS", "WHEN_UNIT_ATTACKS", "WHEN_BLOCKER_USED", "WHEN_GIG_STOLEN", "WHEN_FRIENDLY_UNIT_STEALS_GIG", "WHEN_UNIT_DEFEATED", "WHEN_FIGHT_LOST", "WHEN_OWN_TURN_STARTS", "WHEN_SPENT", "WHEN_FRIENDLY_UNIT_USES_BLOCKER"]);
+export const TriggerSchema = z.enum(["WHEN_SOLD", "WHEN_CALLED", "WHEN_PLAYED", "WHEN_ATTACKING", "WHEN_DEFEATED", "WHEN_FIGHT_WON", "WHEN_CARD_PLAYED", "WHEN_OWN_TURN_ENDS", "WHEN_UNIT_ATTACKS", "WHEN_BLOCKER_USED", "WHEN_GIG_STOLEN", "WHEN_FRIENDLY_UNIT_STEALS_GIG", "WHEN_UNIT_DEFEATED", "WHEN_FIGHT_LOST", "WHEN_OWN_TURN_STARTS", "WHEN_SPENT", "WHEN_FRIENDLY_UNIT_USES_BLOCKER", "WHEN_RIVAL_CHANGES_FRIENDLY_GIGS"]);
 export const EquipTargetSchema = z.strictObject({ kind: z.literal("FRIENDLY_UNIT_OR_FACE_UP_LEGEND") });
 export const TargetRelationshipSchema = z.enum(["CONTROLLED", "RIVAL", "ANY"]);
 export const TargetSelectorSchema = z.discriminatedUnion("kind", [
@@ -169,6 +169,8 @@ export const EffectSchema = z.discriminatedUnion("kind", [
     // "Add another Unit from your trash to your hand" (batch V13): one public trash Unit other than the
     // trigger subject, chosen by the ability's controller.
     z.strictObject({ kind: z.literal("RETURN_TRASH_UNIT_TO_HAND"), exclude: z.literal("SUBJECT") }),
+    // Batch V88: "you may add a card from your trash to your hand" (any card of the controller's own trash, or none).
+    z.strictObject({ kind: z.literal("MAY_RETURN_TRASH_CARD_TO_HAND") }),
     // "Trash 3. Add a Unit from among them to your hand." (batch V14): 11.10.2.1 trash the top card of
     // your deck 3 times, one at a time, then return one Unit among exactly those cards.
     z.strictObject({ kind: z.literal("TRASH_THEN_RETURN_UNIT"), count: z.literal(3) }),
@@ -350,6 +352,8 @@ export const ContinuousModifierSchema = z.discriminatedUnion("kind", [
     z.strictObject({ kind: z.literal("CAN_ATTACK_READY_BLOCKERS_IF"), condition: z.strictObject({ kind: z.literal("STREET_CRED_GREATER_THAN_RIVAL") }) }),
     // Batch V52: "This Unit wins all fights against CORPO Units" (11.4.1.4).
     z.strictObject({ kind: z.literal("WINS_FIGHTS_AGAINST_CLASSIFICATION"), classification: z.literal("Corpo") }),
+    // Batch V88: "This Unit has +2 power while fighting a Legend" (11.4.2.1), against a Legend on the field in either player's fight.
+    z.strictObject({ kind: z.literal("POWER_WHILE_FIGHTING_LEGEND"), amount: z.literal(2) }),
     z.strictObject({ kind: z.literal("FRIENDLY_ARASAKA_ATTACKING_UNIT_POWER"), amount: z.literal(1) }),
     // Batch V38: "Other friendly Units have +2 power while attacking." A field Unit's live contribution, never to itself.
     z.strictObject({ kind: z.literal("OTHER_FRIENDLY_ATTACKING_UNIT_POWER"), amount: z.literal(2) }),

@@ -1,3 +1,4 @@
+import { hasGigChangeTriggerMetadata, supportsGigChangeTriggerCard } from "./gig-change-trigger-support";
 import { hasSpendTrigger, supportsSpendTriggerCard } from "./spend-trigger-support";
 import { hasGearStealMetadata, supportsGearStealCard } from "./gear-steal-support";
 import { hasFreeCallMetadata, supportsFreeCallUnit } from "./free-call-support";
@@ -46,6 +47,7 @@ export function supportsTriggerCard(card: DeepReadonly<CardRevisionSnapshot> | u
     if (hasFreeCallMetadata(card)) return supportsFreeCallUnit(card, context); // Batch V66.
     if (hasGearStealMetadata(card)) return supportsGearStealCard(card, context); // Batch V67.
     if (hasSpendTrigger(card)) return supportsSpendTriggerCard(card, context); // Batch V69.
+    if (hasGigChangeTriggerMetadata(card)) return supportsGigChangeTriggerCard(card, context); // Batch V88.
     // Batch V59, V63: a pinned Legend's scheduled trigger (not its Call or start-of-turn effect) is admitted by its Legend pin, and nothing else of it.
     if (hasLegendSpendMetadata(card)) return card!.mechanics.abilities.some(a => a.trigger && a.trigger !== "WHEN_CALLED" && a.trigger !== "WHEN_OWN_TURN_STARTS") ? supportsLegendSpendCard(card, context)
         : failure("UNSUPPORTED_LEGEND_SPEND", "A Legend {Spend} ability is admitted only by its exact Legend pin");

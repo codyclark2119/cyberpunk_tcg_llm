@@ -38,7 +38,7 @@ export function effectiveTriggeredAbilities(state: GameState, subjectId: CardIns
         const r = cardRevision(state, source.id, context);
         if (!supportsEffectiveTriggerSource(r, context) || !r) return [];
         return r.mechanics.abilities.flatMap(a => {
-            if (!a.trigger || (source.id !== subjectId) !== (a.inherited === "EQUIPPED_HOST") || !(a.trigger === "WHEN_FIGHT_WON" || a.trigger === "WHEN_SPENT" || a.trigger === "WHEN_DEFEATED" || a.trigger === "WHEN_PLAYED" || a.trigger === "WHEN_ATTACKING" || a.trigger === "WHEN_CARD_PLAYED" || a.trigger === "WHEN_OWN_TURN_ENDS" || a.trigger === "WHEN_UNIT_ATTACKS" || a.trigger === "WHEN_BLOCKER_USED" || a.trigger === "WHEN_GIG_STOLEN" || a.trigger === "WHEN_FRIENDLY_UNIT_STEALS_GIG" || a.trigger === "WHEN_UNIT_DEFEATED" || a.trigger === "WHEN_FIGHT_LOST" || a.trigger === "WHEN_FRIENDLY_UNIT_USES_BLOCKER")) return [];
+            if (!a.trigger || (source.id !== subjectId) !== (a.inherited === "EQUIPPED_HOST") || !(a.trigger === "WHEN_FIGHT_WON" || a.trigger === "WHEN_SPENT" || a.trigger === "WHEN_DEFEATED" || a.trigger === "WHEN_PLAYED" || a.trigger === "WHEN_ATTACKING" || a.trigger === "WHEN_CARD_PLAYED" || a.trigger === "WHEN_OWN_TURN_ENDS" || a.trigger === "WHEN_UNIT_ATTACKS" || a.trigger === "WHEN_BLOCKER_USED" || a.trigger === "WHEN_GIG_STOLEN" || a.trigger === "WHEN_FRIENDLY_UNIT_STEALS_GIG" || a.trigger === "WHEN_UNIT_DEFEATED" || a.trigger === "WHEN_FIGHT_LOST" || a.trigger === "WHEN_FRIENDLY_UNIT_USES_BLOCKER" || a.trigger === "WHEN_RIVAL_CHANGES_FRIENDLY_GIGS")) return [];
             return [{ sourceId: source.id, subjectId, controllerId: subject.controllerId, source: { cardId: r.id, revision: r.revision }, abilityId: a.id, kind: a.trigger }];
         });
     }).sort((a, b) => a.sourceId < b.sourceId ? -1 : a.sourceId > b.sourceId ? 1 : a.abilityId < b.abilityId ? -1 : a.abilityId > b.abilityId ? 1 : 0);
@@ -78,7 +78,7 @@ export function discoverTriggers(state: GameState, origin: TriggerOrigin, contex
                 || guard(b) === "FRIENDLY_CORPO_OR_GANGER_UNIT_STEALS" && gigInstanceId === [...origin.gigInstanceIds].sort()[0] && stealerIsCorpoOrGangerUnit(state, origin.subjectId, context))
         ].map(b => ({ ...b, gigInstanceId })));
     }
-    if (origin.kind === "SPEND") return []; // Batch V69: its bindings were captured as each card was spent.
+    if (origin.kind === "SPEND" || origin.kind === "GIG_CHANGE") return []; // Batch V69, V88: its bindings were captured as each card was spent, or each Gig changed.
     const own = effectiveTriggeredAbilities(state, origin.subjectId, context).filter(b => {
         if (b.kind !== (origin.kind === "PLAY" ? "WHEN_PLAYED" : "WHEN_ATTACKING")) return false;
         // Losing His Way FAQ0c5b038a: becoming face-up after declaration does not create a trigger.
@@ -110,7 +110,7 @@ export function stealerIsLegend(state: GameState, subjectId: CardInstanceId, con
 }
 export function triggerId(state: GameState, binding: TriggerBinding, ordinal: number) {
     if (binding.delayedId) return binding.delayedId;
-    return hashCanonical({ protocol: "reviewed-trigger@1", turn: state.timing.turn, ordinal, sourceId: binding.sourceId, subjectId: binding.subjectId, source: binding.source, abilityId: binding.abilityId, kind: binding.kind, controllerSeat: state.players[binding.controllerId].seat, ...(binding.gigInstanceId ? { gigInstanceId: binding.gigInstanceId } : {}) });
+    return hashCanonical({ protocol: "reviewed-trigger@1", turn: state.timing.turn, ordinal, sourceId: binding.sourceId, subjectId: binding.subjectId, source: binding.source, abilityId: binding.abilityId, kind: binding.kind, controllerSeat: state.players[binding.controllerId].seat, ...(binding.gigInstanceId ? { gigInstanceId: binding.gigInstanceId } : {}), ...(binding.changeEffectId ? { changeEffectId: binding.changeEffectId } : {}) });
 }
 export function pendingTrigger(state: GameState, binding: TriggerBinding, ordinal: number, sequence: number, context: EngineContext, primitiveIndex: 0 | 1 = 0): PendingEffect {
     const a = context.content.cards.find(c => c.id === binding.source.cardId && c.revision === binding.source.revision)!.mechanics.abilities.find(a => a.id === binding.abilityId)!;
@@ -142,6 +142,10 @@ export function triggerGigTargets(state: GameState, context?: EngineContext) {
     // Batch V23: a swap chooses the friendly Gig first, then the rival Gig.
     const side = current.effect.kind === "SWAP_GIGS" ? (chosen ? "RIVAL" : "FRIENDLY") : current.effect.kind === "OPTIONAL_DECREASE_FRIENDLY_GIG_THEN_DRAW_IF_MIN" ? "FRIENDLY" : "ANY";
     return Object.values(state.objects.gigs).filter(g => g.location.zone === "GIGS" && g.roll.kind === "ROLLED" && (side === "ANY" || (g.controllerId === current.controllerId) === (side === "FRIENDLY"))).map(g => g.id).sort();
+}
+/** Batch V88: "add a card from your trash to your hand": any card the controller owns in their own trash. */
+export function trashCardTargets(state: GameState, controllerId: PlayerId) {
+    return state.players[controllerId].zones.TRASH.filter(id => state.objects.cards[id]?.ownerId === controllerId && state.objects.cards[id].face === "UP").sort();
 }
 /** Batch V13: public Units in the controller's own trash, other than the trigger subject ("another Unit"). */
 export function trashUnitTargets(state: GameState, current: PendingEffect, context: EngineContext): CardInstanceId[] {
@@ -197,6 +201,8 @@ export function triggerChoice(state: GameState, context: EngineContext): Pending
             ? [...(current.effect.optional ? [{ kind: "CONFIRM" as const, confirmed: false }] : []), ...freePlayTargets(state, context).map(cardInstanceId => ({ kind: "CARD" as const, cardInstanceId }))]
             : current?.effect.kind === "RETURN_TRASH_UNIT_TO_HAND"
             ? trashUnitTargets(state, current, context).map(cardInstanceId => ({ kind: "CARD", cardInstanceId }))
+            : current?.effect.kind === "MAY_RETURN_TRASH_CARD_TO_HAND" // Batch V88: decline, or any card of the controller's trash.
+            ? [{ kind: "CONFIRM" as const, confirmed: false }, ...trashCardTargets(state, actorId).map(cardInstanceId => ({ kind: "CARD" as const, cardInstanceId }))]
             : current?.effect.kind === "MAY_CALL_LEGEND_FREE" // Batch V84: decline, or a public Legend slot (Batch V87: to look at).
             ? [{ kind: "CONFIRM" as const, confirmed: false }, ...(current.effect.lookAtOne ? privateLookTargets(state, actorId, context) : freeCallSlots(state, actorId, context)).map(slot => ({ kind: "LEGEND_SLOT" as const, slot }))]
             : current?.effect.kind === "LOOK_AT_FRIENDLY_FACE_DOWN_LEGEND"
