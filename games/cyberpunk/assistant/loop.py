@@ -100,7 +100,9 @@ from games.cyberpunk.prompts import RULES_VERSION, TOURNAMENT_RULES_VERSION
 # plays the steps) and ``SCENARIO_GUIDANCE``, one line on when to use it; v8's wording is unchanged.
 # v10 (2026-11-25): no prompt text change; the preload adds card demos (``preload.card_demos``): the engine plays
 # each linked card once on a fixed board. The model made 0 engine tool calls in the v8 and v9 quiz runs.
-ASSISTANT_PROMPT_VERSION = "assistant-chat-v10"
+# v11 (2026-11-25): no prompt text change; card demos are off by default (``preload_demos=False``). On the Mac they
+# cost about 3 points per quiz seed (docs/preload-card-demos-quiz-2026-11-25.md).
+ASSISTANT_PROMPT_VERSION = "assistant-chat-v11"
 MAX_TOOL_CALLS = 6
 MAX_TOOL_CALLS_LIMIT = 16           # the most a run may allow (scripts/eval_assistant.py --max-tool-calls)
 MAX_TOKENS_LIMIT = 16384            # per model step; same as scripts/mlx_chat_worker.py (see the docstring)
@@ -558,7 +560,7 @@ async def run_turn(history: list[dict], user_message: str, model: ChatModel, *,
                    preload_k: int = DEFAULT_PRELOAD_K, preload_chars: int = DEFAULT_PRELOAD_CHARS,
                    preload_cards: list[str] | None = None, max_prompt_tokens: int | None = None,
                    engine_check: bool = True, engine_scenario: bool = True,
-                   preload_demos: bool = True) -> TurnResult:
+                   preload_demos: bool = False) -> TurnResult:
     """Run one user turn to an answer, an error or the tool-call cap. ``history`` is not modified.
 
     ``deck`` is the session's loaded deck (see ``deck_context``), or None.
@@ -570,8 +572,8 @@ async def run_turn(history: list[dict], user_message: str, model: ChatModel, *,
     model's ``prompt_token_limit(max_tokens)`` when it has one; see ``PromptGuard``).
     ``engine_check=False`` offers every tool but engine_check, drops its prompt line, and refuses a call
     to it as an unknown tool (the eval's ``--no-engine-check`` arm); ``engine_scenario=False`` does the same for
-    engine_scenario (``--no-engine-scenario``). ``preload_demos=False`` leaves the preload's card demos out
-    (``--no-preload-demos``).
+    engine_scenario (``--no-engine-scenario``). ``preload_demos=True`` adds the preload's card demos
+    (``--preload-demos``; off by default since v11).
     """
     started = time.monotonic()
     max_tokens = default_max_tokens(enable_thinking) if max_tokens is None else max_tokens

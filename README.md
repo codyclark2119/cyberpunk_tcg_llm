@@ -963,13 +963,16 @@ steps, answer from the changes and offers. On the assistant page an answer that 
 the side panel; the Tools tab takes the setup and steps as JSON and shows the same view.
 `eval_assistant.py --no-engine-scenario` runs the quiz without the tool and its line.
 
-In the v8 and v9 quiz runs the 8B never called an engine tool itself. Since v10
-([docs/preload-card-demos-2026-11-25.md](docs/preload-card-demos-2026-11-25.md)) the preload adds **card
-demos**: for each linked card it sent (up to 2 Units, Programs or Gear), the engine plays the card once on a small
+In the v8 and v9 quiz runs the 8B never called an engine tool itself. v10
+([docs/preload-card-demos-2026-11-25.md](docs/preload-card-demos-2026-11-25.md)) added **card demos** to the
+preload; they lowered quiz scores by about 3 points per seed
+([docs/preload-card-demos-quiz-2026-11-25.md](docs/preload-card-demos-quiz-2026-11-25.md)), so since v11 they are
+off by default and `run_turn(preload_demos=True)` or `eval_assistant.py --preload-demos` turns them on. With
+demos on: for each linked card it sent (up to 2 Units, Programs or Gear), the engine plays the card once on a small
 fixed board built from the card's type and colour only. Any choice the card opens is resolved with its first
 listed option. The model gets the steps, changes and next offers as an `engine_scenario` result before it
 answers. Demos have their own 3,500-character budget, so the rules and cards the preload sends do not change.
-They are cached per card and engine. `eval_assistant.py --no-preload-demos` leaves them out.
+They are cached per card and engine.
 
 ```bash
 python scripts/test_engine_scenario.py   # matcher, refusals and diffs; scenarios on the real engine

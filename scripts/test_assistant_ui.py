@@ -274,8 +274,11 @@ def test_preload_toggle_reaches_the_route_and_auto_steps_show_distinctly():
     auto = [s for s in on["trace"] if s.get("auto")]
     implied = [s for s in auto if "implied" in s]
     assert on["preload"] is True and on["autoToolCalls"] == len(auto) and [s["tool"] for s in auto] == [
-        "search_rules", "get_card"] + ["get_rule"] * len(implied) + ["engine_scenario"]
-    demo = auto[-1]
+        "search_rules", "get_card"] + ["get_rule"] * len(implied), "card demos are off by default since v11"
+    # A turn with card demos on (preload_demos=True) traces the demo step, which the page draws distinctly.
+    demo_turn = asyncio.run(run_turn([], "Is Sketchy Ripper a Unit?", ScriptedModel(["a"]), preload=True,
+                                     preload_demos=True))
+    demo = [s for s in demo_turn.trace if s.get("auto")][-1]
     assert demo["demo"]["card"] == "sketchy-ripper" and demo["sent"] and demo["result"]["demo"] == "sketchy-ripper"
     assert run_pure("stepLine(input)", demo).startswith("engine_scenario · ok · demo of sketchy-ripper · sent ")
     assert run_pure("scenarioChipText(input)", demo["result"]).startswith("demo: Play Sketchy Ripper")
@@ -353,7 +356,7 @@ def test_deck_context_is_structured_and_absent_without_a_deck():
     messages = build_messages([{"role": "user", "content": "earlier"}], "q", deck)
     assert [m["role"] for m in messages] == ["system", "user", "user"] and messages[-1]["content"] == "q"
     assert loaded_deck_from(messages) == deck and "deck argument" in messages[0]["content"]
-    assert ASSISTANT_PROMPT_VERSION == "assistant-chat-v10"
+    assert ASSISTANT_PROMPT_VERSION == "assistant-chat-v11"
 
 
 # Trace and sources -------------------------------------------------------------------------
