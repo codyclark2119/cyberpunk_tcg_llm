@@ -301,7 +301,7 @@ def test_fake_run_writes_header_records_and_summary_deterministically():
     from games.cyberpunk.assistant.loop import ASSISTANT_PROMPT_VERSION
     from games.cyberpunk.prompts import RULES_VERSION, TOURNAMENT_RULES_VERSION
     assert header["assistant_prompt_version"] == ASSISTANT_PROMPT_VERSION and header["rules_version"] == RULES_VERSION
-    assert header["assistant_prompt_version"] == "assistant-chat-v9", "the default fake run names the v9 prompt"
+    assert header["assistant_prompt_version"] == "assistant-chat-v10", "the default fake run names the v10 prompt"
     assert header["tournament_rules_version"] == TOURNAMENT_RULES_VERSION
     assert len(items) == 40 and summary["kind"] == "summary"
     keys = {"kind", "id", "chosen", "correct", "outcome", "parse", "known_incorrect", "known_incorrect_hit",
@@ -313,9 +313,11 @@ def test_fake_run_writes_header_records_and_summary_deterministically():
         assert record["correct"] == gold[record["id"]]["correct"]
         assert record["tools_called"] == ["search_rules"] and record["rule_ids"], record["id"]
         auto = record["auto_tools"]
-        cards = [t for t in auto[1:] if t != "get_rule"]
-        # The search, then the linked cards, then the implied-rule get_rule steps (preload.implied_rules).
-        assert auto == ["search_rules", *cards] + ["get_rule"] * (len(auto) - 1 - len(cards)), auto
+        demos = [t for t in auto if t == "engine_scenario"]
+        cards = [t for t in auto[1:] if t not in ("get_rule", "engine_scenario")]
+        # The search, the linked cards, the implied-rule get_rule steps (preload.implied_rules), then card demos.
+        assert auto == ["search_rules", *cards] + ["get_rule"] * (len(auto) - 1 - len(cards) - len(demos)) + demos, auto
+        assert len(demos) <= min(len(cards), 2), auto
         assert set(cards) <= {"get_card", "find_card"}, auto
         assert all("implied" in s for s in record["trace"][:len(auto)] if s["tool"] == "get_rule")
         assert [s["kind"] for s in record["trace"]] == ["tool"] * len(auto) + ["model", "tool", "model"]
