@@ -197,8 +197,8 @@ export function triggerChoice(state: GameState, context: EngineContext): Pending
             ? [...(current.effect.optional ? [{ kind: "CONFIRM" as const, confirmed: false }] : []), ...freePlayTargets(state, context).map(cardInstanceId => ({ kind: "CARD" as const, cardInstanceId }))]
             : current?.effect.kind === "RETURN_TRASH_UNIT_TO_HAND"
             ? trashUnitTargets(state, current, context).map(cardInstanceId => ({ kind: "CARD", cardInstanceId }))
-            : current?.effect.kind === "MAY_CALL_LEGEND_FREE" // Batch V84: decline, or a public Legend slot.
-            ? [{ kind: "CONFIRM" as const, confirmed: false }, ...freeCallSlots(state, actorId, context).map(slot => ({ kind: "LEGEND_SLOT" as const, slot }))]
+            : current?.effect.kind === "MAY_CALL_LEGEND_FREE" // Batch V84: decline, or a public Legend slot (Batch V87: to look at).
+            ? [{ kind: "CONFIRM" as const, confirmed: false }, ...(current.effect.lookAtOne ? privateLookTargets(state, actorId, context) : freeCallSlots(state, actorId, context)).map(slot => ({ kind: "LEGEND_SLOT" as const, slot }))]
             : current?.effect.kind === "LOOK_AT_FRIENDLY_FACE_DOWN_LEGEND"
             ? privateLookTargets(state, actorId, context).map(slot => ({ kind: "LEGEND_SLOT", slot }))
             : current?.effect.kind === "PROGRAM_PLAY_FRIENDLY_POWER_THIS_TURN" // Batch V76.

@@ -1,4 +1,4 @@
-import { failure, success, type GameState, type PendingChoice, type PlayerId, type Result } from "@tcg/domain";
+import { failure, success, type CardInstanceId, type GameState, type PendingChoice, type PlayerId, type Result } from "@tcg/domain";
 import type { EngineContext } from "./state";
 import type { TurnMutation } from "./turn";
 import { cardRevision } from "./characteristics";
@@ -33,7 +33,32 @@ export function beginTriggerFreeCall(m: TurnMutation): Result<boolean> {
     const current = m.state.resolution.current!, actor = current.controllerId;
     if (current.effect.kind === "MAY_CALL_LEGEND_FREE" && current.effect.lookAtAll)
         for (const slot of privateLookTargets(m.state, actor, m.context)) { const looked = grantLegendKnowledge(m, actor, slot); if (!looked.ok) return looked; }
+    if (current.effect.kind === "MAY_CALL_LEGEND_FREE" && current.effect.lookAtOne) return success(privateLookTargets(m.state, actor, m.context).length > 0); // Batch V87: the look is offered even without a Call left.
     return success(freeCallSlots(m.state, actor, m.context).length > 0);
+}
+/** Batch V87: whether a looked-at Legend may be Called by "If that Legend is ARASAKA or has {Go Solo}, you may Call it for free": it
+ * qualifies and is still a face-down Legend its controller may Call this turn. */
+export function lookedLegendCallable(state: GameState, actor: PlayerId, legendId: CardInstanceId, context: EngineContext) {
+    const current = state.resolution.current, look = current?.effect.kind === "MAY_CALL_LEGEND_FREE" ? current.effect.lookAtOne : undefined, r = cardRevision(state, legendId, context);
+    return Boolean(look && r && (r.tags.includes(look.tag) || r.keywords.includes(look.keyword) || r.mechanics.keywords.includes(look.keyword))
+        && freeCallSlots(state, actor, context).includes(state.players[actor].zones.LEGENDS.indexOf(legendId)));
+}
+/** Batch V87: the look first ("Look at no Legend" or a public slot); then, for a Legend that qualifies, the Call ("Call it" or not). */
+export function chooseLookThenCall(m: TurnMutation, option: PendingChoice["options"][number], offerCall: () => Result<null>, done: () => Result<null>): Result<null> {
+    const current = m.state.resolution.current!, c = m.state.resolution.triggerContinuation!, actor = current.controllerId;
+    if (c.lookedLegendId) {
+        const legendId = c.lookedLegendId; delete c.lookedLegendId;
+        if (option.kind !== "CONFIRM") return failure("INVALID_FREE_CALL", "Call the looked-at Legend, or not");
+        if (!option.confirmed) { m.emit({ kind: "OPTIONAL_TRIGGER_DECLINED", effectId: current.id, controllerId: actor }); return done(); }
+        const called = callLegendFree(m, m.state.players[actor].zones.LEGENDS.indexOf(legendId)); return called.ok ? done() : called;
+    }
+    if (option.kind === "CONFIRM" && !option.confirmed) { m.emit({ kind: "OPTIONAL_TRIGGER_DECLINED", effectId: current.id, controllerId: actor }); return done(); }
+    if (option.kind !== "LEGEND_SLOT") return failure("INVALID_LOOK_TARGET", "Choose a public Legend slot or look at none");
+    const looked = grantLegendKnowledge(m, actor, option.slot); if (!looked.ok) return looked;
+    const legendId = m.state.players[actor].zones.LEGENDS[option.slot];
+    if (!lookedLegendCallable(m.state, actor, legendId, m.context)) return done();
+    c.lookedLegendId = legendId;
+    return offerCall();
 }
 /** The decline, or a public Legend slot. */
 export function chooseFreeCall(m: TurnMutation, option: PendingChoice["options"][number]): Result<null> {

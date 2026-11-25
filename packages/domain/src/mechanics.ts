@@ -247,7 +247,9 @@ export const EffectSchema = z.discriminatedUnion("kind", [
     // Batch V84: "You may Call a Legend for free. (You can only Call a Legend once per turn.)" Its {Call} ability waits for the action's end.
     // Batch V85: "If you control a min Gig, you may Call a Legend for free", checked as it resolves.
     // Batch V86: "Look at all friendly face-down Legends. Then, you may Call a Legend for free."
-    z.strictObject({ kind: z.literal("MAY_CALL_LEGEND_FREE"), condition: FriendlyMinGigConditionSchema.optional(), lookAtAll: z.literal(true).optional() }),
+    // Batch V87: "you may look at a friendly face-down Legend. If that Legend is ARASAKA or has {Go Solo}, you may Call it for free."
+    z.strictObject({ kind: z.literal("MAY_CALL_LEGEND_FREE"), condition: FriendlyMinGigConditionSchema.optional(), lookAtAll: z.literal(true).optional(),
+        lookAtOne: z.strictObject({ tag: z.literal("Arasaka"), keyword: z.literal("GO_SOLO") }).optional() }),
     // Batch V83: "A Unit can't attack until your next turn." Any face-up field Unit, either player's.
     // Batch V85: "A rival Unit can't attack until your next turn."
     z.strictObject({ kind: z.literal("UNIT_CANNOT_ATTACK_UNTIL_YOUR_NEXT_TURN"), target: z.literal("RIVAL_UNIT").optional() }),

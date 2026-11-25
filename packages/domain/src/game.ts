@@ -90,6 +90,8 @@ export const TriggerContinuationSchema = z.strictObject({
     // Batch V48: every effect defeat of this batch, in order (several sources may defeat inside one batch).
     effectDefeats: z.array(z.strictObject({ targetId: CardInstanceIdSchema, defeatedBy: CardInstanceIdSchema })).min(1).optional(), origin: TriggerOriginSchema, ordinal: z.number().int().positive(), bindings: z.array(TriggerBindingSchema).min(1),
     selectedEddieSlots: z.array(z.number().int().nonnegative()).length(1).optional(), resolvedIds: z.array(HashSchema), phase: z.enum(["SELECT", "OPTIONAL", "TARGET", "AMOUNT", "DISCARD", "READY"]), trashedIds: z.array(CardInstanceIdSchema).min(1).max(3).optional(), conditionMet: z.literal(true).optional(), targetGigId: GigInstanceIdSchema.optional(),
+    // Batch V87: the face-down Legend just looked at, while its free Call is offered.
+    lookedLegendId: CardInstanceIdSchema.optional(),
     // Batch V29: the Legend already readied by a current "ready up to 2" choice.
     readiedLegends: z.array(CardInstanceIdSchema).length(1).optional(),
     // Batch V38: the Units already readied by a current "ready up to 3 friendly Units" choice.

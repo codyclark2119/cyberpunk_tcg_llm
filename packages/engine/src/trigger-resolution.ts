@@ -28,7 +28,7 @@ import { PendingEffectSchema, TriggerBindingSchema, TriggerOriginSchema, failure
 import type { TurnMutation } from "./turn";
 import { cardRevision } from "./characteristics";
 import { finishAction } from "./action-return";
-import { beginTriggerFreeCall, chooseFreeCall } from "./free-call-effect";
+import { beginTriggerFreeCall, chooseFreeCall, chooseLookThenCall } from "./free-call-effect";
 import { finishAttackEffects } from "./combat";
 import { applyProgramPlayPower } from "./braindance-legend";
 import { finishCombat, completeFightResult } from "./combat-resolution";
@@ -142,7 +142,7 @@ export function completed(m: TurnMutation): Result<null> {
     }
     m.emit({ kind: "EFFECT_RESOLVED", effectId: current.id });
     if (m.state.match.outcome) return success(null);
-    c.resolvedIds.push(current.id); c.phase = "SELECT"; delete c.targetGigId; delete c.conditionMet; delete c.selectedEddieSlots;
+    c.resolvedIds.push(current.id); c.phase = "SELECT"; delete c.targetGigId; delete c.lookedLegendId; delete c.conditionMet; delete c.selectedEddieSlots;
     m.state.resolution.current = null; m.state.resolution.choice = null;
     return advanceTriggers(m);
 }
@@ -452,6 +452,7 @@ export function continueTrigger(m: TurnMutation, index: number, forced = false):
         if (current.effect.thenDrawOne) { const drawn = m.draw(current.controllerId, 1); if (!drawn.ok) return drawn; } // Batch V74: "If you do, draw 1."
         return completed(m);
     }
+    if (c.phase === "OPTIONAL" && current.effect.kind === "MAY_CALL_LEGEND_FREE") return chooseLookThenCall(m, option, () => offer(m), () => completed(m)); // Batch V87: Call the looked-at Legend, or not.
     if (c.phase === "OPTIONAL") {
         if (option.kind !== "CONFIRM") return failure("INVALID_OPTIONAL_TRIGGER", "Accept or decline explicitly");
         m.emit({ kind: option.confirmed ? "OPTIONAL_TRIGGER_ACCEPTED" : "OPTIONAL_TRIGGER_DECLINED", effectId: current.id, controllerId: current.controllerId });
@@ -577,6 +578,7 @@ export function continueTrigger(m: TurnMutation, index: number, forced = false):
             const done = finishSearch(m); return done.ok ? completed(m) : done;
         }
         if (current.effect.kind === "MAY_CALL_LEGEND_FREE") {
+            if (current.effect.lookAtOne) return chooseLookThenCall(m, option, () => { m.state.resolution.triggerContinuation!.phase = "OPTIONAL"; return offer(m); }, () => completed(m)); // Batch V87.
             const called = chooseFreeCall(m, option); return called.ok ? completed(m) : called;
         }
         if (current.effect.kind === "LOOK_AT_FRIENDLY_FACE_DOWN_LEGEND") {

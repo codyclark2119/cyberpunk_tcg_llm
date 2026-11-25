@@ -134,6 +134,7 @@ were recorded in their pull requests (#4, #7, #8); later batches have documents 
 | V84 (2026-11-25) | Tyger's Whisper | [Free Call from a {Play}; the Legend's {Call} resolves after the action](api-admission-batch-v84.md); coverage 134/151 |
 | V85 (2026-11-25) | Chrome Reverie | [Program: a rival Unit can't attack until your next turn, then a free Call with a min Gig](api-admission-batch-v85.md); coverage 135/151 |
 | V86 (2026-11-25) | T-Bug: Amateur Philosopher | [{Defeated}: look at all face-down Legends, then a free Call, in either player's turn](api-admission-batch-v86.md); coverage 136/151 |
+| V87 (2026-11-25) | Arasaka Emergency Radioport | [When spent: look at a face-down Legend, Call it free if ARASAKA or Go Solo](api-admission-batch-v87.md); coverage 137/151 |
 | V7 (2026-11-15) | Royce: Don't Call Me Simon, Wild in the Streets, Delamain: Rideshare AI | [shared defeat filter and exact pin table](api-admission-batch-v7.md); coverage 42/151 |
 | V6 (2026-09-22) | Trust No One | [contract and executable slice](api-admission-batch-v6.md), [baseline verification](api-admission-batch-v6-verification.md) |
 

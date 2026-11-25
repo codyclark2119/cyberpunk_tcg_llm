@@ -9,12 +9,12 @@
   },
   "totals": {
     "cards": 151,
-    "admitted": 136,
-    "notAdmitted": 15,
+    "admitted": 137,
+    "notAdmitted": 14,
     "notAdmittedOnlyCoveredFamilies": 0,
     "byAdmission": {
-      "NOT_ADMITTED": 15,
-      "SOURCE_MATCH": 136
+      "NOT_ADMITTED": 14,
+      "SOURCE_MATCH": 137
     }
   },
   "families": [
@@ -33,16 +33,7 @@
       "summary": "Generic target filters and board conditions: classification, cost, power, ready/spent, equipped, face-up, named, lowest power.",
       "notes": "Documented as unsupported: generic condition/filter language. Each admitted filter is a literal.",
       "cardCount": 34,
-      "notAdmittedCount": 5,
-      "soleBlockerCount": 0
-    },
-    {
-      "family": "GEAR_EQUIP",
-      "status": "PARTIAL",
-      "summary": "Equip a Gear to a friendly Unit or face-up Legend; Gear power adds to its host.",
-      "notes": "Equip onto Units is supported for the admitted Gear. Gear on a Legend host in combat (a Go Solo Legend) is unsupported.",
-      "cardCount": 22,
-      "notAdmittedCount": 5,
+      "notAdmittedCount": 4,
       "soleBlockerCount": 0
     },
     {
@@ -51,6 +42,15 @@
       "summary": "Conditions and filters on Gig values: min/max, value-pairs, even/odd, 8+, die type, counts compared with a Rival.",
       "notes": "Conditions only, each a fixed shape.",
       "cardCount": 40,
+      "notAdmittedCount": 4,
+      "soleBlockerCount": 0
+    },
+    {
+      "family": "GEAR_EQUIP",
+      "status": "PARTIAL",
+      "summary": "Equip a Gear to a friendly Unit or face-up Legend; Gear power adds to its host.",
+      "notes": "Equip onto Units is supported for the admitted Gear. Gear on a Legend host in combat (a Go Solo Legend) is unsupported.",
+      "cardCount": 22,
       "notAdmittedCount": 4,
       "soleBlockerCount": 0
     },
@@ -154,15 +154,6 @@
       "soleBlockerCount": 0
     },
     {
-      "family": "TRIGGER_WHEN_SPENT",
-      "status": "MISSING",
-      "summary": "WHEN_SPENT: 'when this Unit or Legend is spent' (includes Zetatech Faceplate).",
-      "notes": "Documented as unsupported; needs every spending path (attack, Blocker, [Spend] costs, effects) to emit one event.",
-      "cardCount": 6,
-      "notAdmittedCount": 2,
-      "soleBlockerCount": 0
-    },
-    {
       "family": "UNIT_DEFEAT",
       "status": "PARTIAL",
       "summary": "Defeat a Unit or Gear chosen with a filter.",
@@ -217,29 +208,11 @@
       "soleBlockerCount": 0
     },
     {
-      "family": "FREE_CALL",
-      "status": "MISSING",
-      "summary": "Call a Legend by an effect or for free outside the normal Call.",
-      "notes": "",
-      "cardCount": 5,
-      "notAdmittedCount": 1,
-      "soleBlockerCount": 0
-    },
-    {
       "family": "GO_SOLO",
       "status": "PARTIAL",
       "summary": "[Go Solo]: play a Legend as a ready Unit that can attack this turn and is removed when it leaves the field.",
       "notes": "Supported only for Go Solo Legends with no other text or with Blocker (V: Corporate Exile, Goro: Hands Unclean). Go Solo Legends with Play/Attack/Defeated triggers, Go Solo cost changes and Gear on Legend hosts in combat are not.",
       "cardCount": 10,
-      "notAdmittedCount": 1,
-      "soleBlockerCount": 0
-    },
-    {
-      "family": "LEGEND_LOOK",
-      "status": "PARTIAL",
-      "summary": "Look at friendly face-down Legends.",
-      "notes": "One Legend, attack-triggered (Kiroshi Optics). 'All face-down Legends' is missing.",
-      "cardCount": 3,
       "notAdmittedCount": 1,
       "soleBlockerCount": 0
     },
@@ -280,6 +253,15 @@
       "soleBlockerCount": 0
     },
     {
+      "family": "TRIGGER_WHEN_SPENT",
+      "status": "MISSING",
+      "summary": "WHEN_SPENT: 'when this Unit or Legend is spent' (includes Zetatech Faceplate).",
+      "notes": "Documented as unsupported; needs every spending path (attack, Blocker, [Spend] costs, effects) to emit one event.",
+      "cardCount": 6,
+      "notAdmittedCount": 1,
+      "soleBlockerCount": 0
+    },
+    {
       "family": "TURN_HISTORY",
       "status": "PARTIAL",
       "summary": "'First time each turn', 'this turn you played', 'if it stole or fought this turn'.",
@@ -303,6 +285,15 @@
       "summary": "Conditions on Street Cred.",
       "notes": "Nearly complete as conditions; gating an effect mode on them is not.",
       "cardCount": 13,
+      "notAdmittedCount": 0,
+      "soleBlockerCount": 0
+    },
+    {
+      "family": "FREE_CALL",
+      "status": "MISSING",
+      "summary": "Call a Legend by an effect or for free outside the normal Call.",
+      "notes": "",
+      "cardCount": 5,
       "notAdmittedCount": 0,
       "soleBlockerCount": 0
     },
@@ -339,6 +330,15 @@
       "summary": "[Adrenaline]: the Unit can attack the turn it is played.",
       "notes": "Keyword ADRENALINE (Riding Nomad). Conditional or granted Adrenaline also needs STATIC_MODIFIER or TEMPORARY_BUFF.",
       "cardCount": 4,
+      "notAdmittedCount": 0,
+      "soleBlockerCount": 0
+    },
+    {
+      "family": "LEGEND_LOOK",
+      "status": "PARTIAL",
+      "summary": "Look at friendly face-down Legends.",
+      "notes": "One Legend, attack-triggered (Kiroshi Optics). 'All face-down Legends' is missing.",
+      "cardCount": 3,
       "notAdmittedCount": 0,
       "soleBlockerCount": 0
     },
@@ -661,8 +661,8 @@
       "colors": [
         "RED"
       ],
-      "admission": "NOT_ADMITTED",
-      "revision": null,
+      "admission": "SOURCE_MATCH",
+      "revision": 1,
       "families": [
         "CONDITION_BOARD",
         "FREE_CALL",
@@ -670,13 +670,7 @@
         "LEGEND_LOOK",
         "TRIGGER_WHEN_SPENT"
       ],
-      "blockingFamilies": [
-        "CONDITION_BOARD",
-        "FREE_CALL",
-        "GEAR_EQUIP",
-        "LEGEND_LOOK",
-        "TRIGGER_WHEN_SPENT"
-      ],
+      "blockingFamilies": [],
       "note": null
     },
     {

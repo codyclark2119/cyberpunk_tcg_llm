@@ -21,7 +21,7 @@ const FREE_CALL_SHAPES = [
     { colors: ["YELLOW"], ram: { YELLOW: 2 }, tags: ["Merc", "Netrunner"], cost: 4, power: 4, modifiers: [], abilities: [ability({ trigger: "WHEN_DEFEATED", effects: [{ kind: "MAY_CALL_LEGEND_FREE", lookAtAll: true }] })] }
 ].map(shape => canonicalSerialize({ type: "UNIT", sell: false, scope: "COMBAT_TRIGGERS_V1", keywords: [], equip: null, restrictions: [], ...shape }));
 export function hasFreeCallMetadata(card: DeepReadonly<CardRevisionSnapshot> | undefined) {
-    return Boolean(card?.mechanics.modifiers.some(x => x.kind === "FREE_CALL_DURING_OWN_TURN") || card?.mechanics.abilities.some(a => a.effects.some(e => e.kind === "DISCARD_CARDS" && e.thenDraw || e.kind === "MAY_CALL_LEGEND_FREE")));
+    return Boolean(card?.mechanics.modifiers.some(x => x.kind === "FREE_CALL_DURING_OWN_TURN") || card?.mechanics.abilities.some(a => a.trigger !== "WHEN_SPENT" /* Batch V87: the spend gate owns it */ && a.effects.some(e => e.kind === "DISCARD_CARDS" && e.thenDraw || e.kind === "MAY_CALL_LEGEND_FREE")));
 }
 export function supportsFreeCallUnit(card: DeepReadonly<CardRevisionSnapshot> | undefined, context: EngineContext) {
     const m = card?.mechanics;
