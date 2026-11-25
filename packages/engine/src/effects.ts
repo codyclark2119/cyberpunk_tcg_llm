@@ -1,3 +1,4 @@
+import { resolveTrashGear } from "./trash-gear";
 import { applyMustAttack, mustAttackTargets } from "./must-attack";
 import { beginHandGearPlay } from "./hand-gear-play";
 import { applyGearPower, friendlyGearTargets, resolveGearDefeatDraw } from "./gear-legend";
@@ -155,6 +156,7 @@ export class HandlerRegistry {
         if (effect.kind === "SET_GIG_TO_ANOTHER_GIG_VALUE") return gigSetTargets(m.state).length ? offerPlayChoice(m) : success(null);
         if (effect.kind === "SEARCH_TAKE_ONE_PLUS_PER_MIN_GIG") return this.primitives.SEARCH_TAKE_ONE_PLUS_PER_MIN_GIG(m, effect);
         if (effect.kind === "TRASH_THEN_RETURN_UNIT") return resolveTrashThenReturn(m, effect, offerPlayChoice);
+        if (effect.kind === "TRASH_THEN_ADD_GEAR_MAY_PLAY_IF_GIG_COST") return resolveTrashGear(m, effect, offerPlayChoice); // Batch V93.
         if (effect.kind === "TRASH_THEN_ADD_TRASH_PROGRAM") return resolveTrashThenAddProgram(m, effect, offerPlayChoice); // Batch V73.
         if (effect.kind === "BOTTOM_DECK_UNIT") return resolveBottomDeck(m, offerPlayChoice);
         if (effect.kind === "SELL_TOP_OF_DECK") return resolveSellTopOfDeck(m); // Batch V45.

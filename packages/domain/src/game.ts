@@ -256,7 +256,7 @@ export const ResolutionStateSchema = z.strictObject({
     legendEntryContinuation: z.strictObject({ mode: z.enum(["GO_SOLO", "PLAY"]), actorId: PlayerIdSchema, sourceId: CardInstanceIdSchema, remainingCost: z.number().int().positive(), selectedSources: z.array(PaymentSourceSchema) }).optional(),
     playContinuation: z.strictObject({ kind: z.enum(["PLAY", "ACTIVATE"]), actorId: PlayerIdSchema, sourceId: CardInstanceIdSchema, abilityId: z.string().min(1).optional(), phase: z.enum(["PAYMENT", "EFFECT", "EQUIP", "MODE"]), remainingCost: z.number().int().nonnegative(), selectedSources: z.array(PaymentSourceSchema), effectIndex: z.number().int().nonnegative(), targetGigId: GigInstanceIdSchema.optional(),
         // Batch V14: the cards the current Program primitive trashed from the deck, in trash order.
-        trashedIds: z.array(CardInstanceIdSchema).min(1).max(3).optional(),
+        trashedIds: z.array(CardInstanceIdSchema).min(1).max(4).optional(), // Batch V93: up to 4.
         // Batch V15: the Unit the first clause bottom-decked, while its "if you do" clause awaits a choice.
         bottomDecked: CardInstanceIdSchema.optional(),
         // Batch V44: the one printed mode a modal Program's controller chose; absent while every mode resolves.
@@ -270,7 +270,9 @@ export const ResolutionStateSchema = z.strictObject({
         movedGearId: CardInstanceIdSchema.optional(),
         // Batch V92: the hand Gear chosen to play for free, while its host is chosen; then, once it is equipped, the played Gear whose
         // play batch follows the ability.
-        handGearId: CardInstanceIdSchema.optional(), playedGearId: CardInstanceIdSchema.optional() }).optional(),
+        handGearId: CardInstanceIdSchema.optional(), playedGearId: CardInstanceIdSchema.optional(),
+        // Batch V93: the trashed Gear chosen, while its controller adds it to hand or chooses a host to play it on.
+        trashedGearId: CardInstanceIdSchema.optional() }).optional(),
     searchContinuation: z.strictObject({ looked: z.array(CardInstanceIdSchema), selected: z.array(CardInstanceIdSchema) }).optional(),
     callContinuation: z.strictObject({ actorId: PlayerIdSchema, legendId: CardInstanceIdSchema, remainingCost: z.number().int().nonnegative(), selectedSources: z.array(PaymentSourceSchema) }).optional(),
     current: PendingEffectSchema.nullable(), pending: z.array(PendingEffectSchema), discovered: z.array(PendingEffectSchema), choice: PendingChoiceSchema.nullable()

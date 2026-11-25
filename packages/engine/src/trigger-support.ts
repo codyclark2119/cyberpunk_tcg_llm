@@ -1,3 +1,4 @@
+import { hasTrashGearEffect } from "./trash-gear";
 import { hasPaidAttackPower, supportsPaidAttackPowerUnit } from "./paid-attack-power-support";
 import { hasDefeatReplacement, supportsDefeatReplacementGear } from "./defeat-replacement-support";
 import { hasGigChangeTriggerMetadata, supportsGigChangeTriggerCard } from "./gig-change-trigger-support";
@@ -59,6 +60,7 @@ export function supportsTriggerCard(card: DeepReadonly<CardRevisionSnapshot> | u
     if (hasModalChoice(card)) return failure("UNSUPPORTED_MODAL_CHOICE", "A modal ability is admitted only by its exact Program pin");
     // Batch V45: effect sells are read only by the sell Program gate.
     if (hasRivalRevealEffect(card)) return failure("UNSUPPORTED_RIVAL_REVEAL", "A Rival-choice reveal is admitted only by its exact Program pin"); // Batch V77.
+    if (hasTrashGearEffect(card)) return failure("UNSUPPORTED_TRASH_GEAR", "A trash-and-add-Gear effect is admitted only by its exact Program pin"); // Batch V93.
     if (hasHandResetEffect(card)) return failure("UNSUPPORTED_HAND_RESET", "A hand reset is admitted only by its exact Program pin"); // Batch V78.
     if (hasUnitGrantEffect(card)) return failure("UNSUPPORTED_UNIT_GRANT", "A friendly-Unit grant is admitted only by its exact Program pin"); // Batch V79.
     if (hasSellTopEffect(card)) return failure("UNSUPPORTED_EFFECT_SELL", "An effect sell is admitted only by its exact Program pin");

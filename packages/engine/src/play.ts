@@ -1,3 +1,4 @@
+import { chooseTrashedGearDestination, selectTrashedGear } from "./trash-gear";
 import { playHandGear, selectHandGear } from "./hand-gear-play";
 import { chooseTrashProgram } from "./trash-program";
 import { applyGearPower, resolveGearDefeatDraw } from "./gear-legend";
@@ -56,8 +57,9 @@ export function offerPlayChoice(m: TurnMutation) {
 }
 function finishPlay(m: TurnMutation, sourceId: CardInstanceId, aftermath?: PreparedTriggerBatch | null) {
     if (m.state.objects.cards[sourceId].zone.zone === "RESOLVING_PROGRAM") moveCardLocation(m, sourceId, "TRASH");
-    // Batch V92: a Gear a Legend's ability played from hand starts its own play batch once the ability has resolved.
-    const handGear = m.state.resolution.playContinuation?.kind === "ACTIVATE" ? m.state.resolution.playContinuation.playedGearId : undefined;
+    // Batch V92: a Gear a Legend's ability played from hand starts its own play batch once the ability has resolved (Batch V93: or a
+    // Gear a Program played from the trash, once the Program has resolved).
+    const handGear = m.state.resolution.playContinuation?.playedGearId;
     if (handGear && !m.state.match.outcome) return recordPlayedCard(m, handGear);
     // Batch V76: "When you play a BRAINDANCE Program" bindings, pending since the play, wait for the Program to resolve.
     const programPlay = !m.state.match.outcome && triggersEnabled(m.context) && m.state.resolution.playContinuation?.kind === "PLAY" && isBraindanceProgram(m.state, sourceId, m.context)
@@ -207,6 +209,10 @@ export function continuePlay(m: TurnMutation, index: number): Result<null> {
         if (option.kind !== "CARD") return failure("INVALID_TRASH_TARGET", "Choose an enumerated trashed Unit");
         const returned = chooseTrashedUnit(m, option.cardInstanceId);
         return returned.ok ? completePlayEffect(m) : returned;
+    }
+    if (s.resolution.current?.effect.kind === "TRASH_THEN_ADD_GEAR_MAY_PLAY_IF_GIG_COST") { // Batch V93: the Gear, then hand or its host.
+        const chosen = c.trashedGearId ? chooseTrashedGearDestination(m, option) : option.kind === "CARD" ? selectTrashedGear(m, option.cardInstanceId, false, offerPlayChoice) : failure("INVALID_TRASH_TARGET", "Choose a trashed Gear");
+        return !chosen.ok || s.resolution.playContinuation?.trashedGearId ? chosen : completePlayEffect(m);
     }
     if (s.resolution.current?.effect.kind === "TRASH_THEN_ADD_TRASH_PROGRAM") { // Batch V73.
         if (option.kind !== "CARD") return failure("INVALID_TRASH_TARGET", "Choose an enumerated trash Program");

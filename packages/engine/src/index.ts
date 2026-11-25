@@ -186,6 +186,11 @@ function describeAction(a: GameAction, state: GameState, actor: PlayerId, view: 
             if (state.resolution.current?.effect.kind === "TRASH_TOP_MAY_ADD_PROGRAM") return option.kind === "CARD" ? `Add ${view.getRevision(option.cardInstanceId)?.displayName} (${option.cardInstanceId}) from your trash to your hand` : "Leave it in your trash"; // Batch V76.
             if (state.resolution.current?.effect.kind === "MAY_DEFEAT_FRIENDLY_GEAR_THEN_DRAW") return option.kind === "CARD" ? `Defeat ${view.getRevision(option.cardInstanceId)?.displayName} (${option.cardInstanceId}) and draw 2` : "Defeat no Gear and draw 1"; // Batch V75.
             if (option.kind === "CARD" && state.resolution.current?.effect.kind === "POWER_PER_EQUIPPED_GEAR_THIS_TURN") return `Give ${view.getRevision(option.cardInstanceId)?.displayName} (${option.cardInstanceId}) +1 power this turn for each of its equipped Gear`; // Batch V75.
+            if (state.resolution.current?.effect.kind === "TRASH_THEN_ADD_GEAR_MAY_PLAY_IF_GIG_COST") { // Batch V93.
+                const held = state.resolution.playContinuation?.trashedGearId, gear = held ? view.getRevision(held)?.displayName : undefined;
+                if (held && option.kind === "CONFIRM") return `Add ${gear} to your hand`;
+                if (option.kind === "CARD") return held ? `Play ${gear} for free, equipped to ${view.getRevision(option.cardInstanceId)?.displayName} (${option.cardInstanceId})` : `Take ${view.getRevision(option.cardInstanceId)?.displayName} (${option.cardInstanceId}) from the trashed cards`;
+            }
             if (option.kind === "CARD" && state.resolution.current?.effect.kind === "PLAY_GEAR_FROM_HAND_FREE") { // Batch V92.
                 const held = state.resolution.playContinuation?.handGearId;
                 return held ? `Equip ${view.getRevision(held)?.displayName} to ${view.getRevision(option.cardInstanceId)?.displayName} (${option.cardInstanceId})` : `Play ${view.getRevision(option.cardInstanceId)?.displayName} (${option.cardInstanceId}) from your hand for free`;
