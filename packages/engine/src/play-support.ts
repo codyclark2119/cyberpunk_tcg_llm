@@ -31,6 +31,7 @@ import { turnSliceAllows, canonicalSerialize, failure, success, type CardRevisio
 import type { EngineContext } from "./state";
 import { hasModalChoice, supportsModalProgram } from "./modal-program-support";
 import { hasSellTopEffect, supportsSellTopProgram } from "./program-sell-support";
+import { hasRivalRevealEffect, supportsRivalRevealProgram } from "./rival-reveal";
 import { hasFightStealEffect, supportsFightStealProgram } from "./fight-steal-support";
 import { hasFreePlayEffect, supportsFreePlayCard } from "./free-play-support";
 import { paymentCandidates } from "./payment";
@@ -53,6 +54,7 @@ export function supportsPlay(card: DeepReadonly<CardRevisionSnapshot> | undefine
     if (card && hasFreeCallMetadata(card)) return supportsFreeCallUnit(card, context);
     // Batch V45: an effect sell ("Sell the top card of your deck") is admitted only by its exact Program pin.
     if (card && hasSellTopEffect(card)) return supportsSellTopProgram(card, context);
+    if (card && hasRivalRevealEffect(card)) return supportsRivalRevealProgram(card, context); // Batch V77.
     // Batch V47: a next-fight steal is admitted only by its exact Program pin.
     if (card && hasGearStealMetadata(card)) return supportsGearStealCard(card, context); // Batch V67.
     if (card && hasSpendTrigger(card)) return supportsSpendTriggerCard(card, context); // Batch V69.

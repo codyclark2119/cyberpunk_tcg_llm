@@ -11,6 +11,7 @@ import { turnSliceAllows, failure, success, type CardRevisionSnapshot, type Deep
 import type { EngineContext } from "./state";
 import { hasModalChoice } from "./modal-program-support";
 import { hasSellTopEffect } from "./program-sell-support";
+import { hasRivalRevealEffect } from "./rival-reveal";
 import { hasFightStealEffect } from "./fight-steal-support";
 import { hasFreePlayEffect } from "./free-play-support";
 import { hasQuickActivation } from "./quick-activation-support";
@@ -18,6 +19,7 @@ export function supportsCall(card: DeepReadonly<CardRevisionSnapshot> | undefine
     if (hasLegendSpendMetadata(card)) return supportsLegendSpendCard(card, context); // Batch V59: Calling it is admitted by its Legend pin.
     if (hasCallTrashProgram(card)) return supportsCallTrashProgram(card, context); // Batch V73: Calling it is admitted by its exact pin.
     if (hasModalChoice(card)) return failure("UNSUPPORTED_MODAL_CHOICE", "A modal ability is admitted only by its exact Program pin"); // Batch V44.
+    if (hasRivalRevealEffect(card)) return failure("UNSUPPORTED_RIVAL_REVEAL", "A Rival-choice reveal is admitted only by its exact Program pin"); // Batch V77.
     if (hasSellTopEffect(card)) return failure("UNSUPPORTED_EFFECT_SELL", "An effect sell is admitted only by its exact Program pin"); // Batch V45.
     if (hasFightStealEffect(card)) return failure("UNSUPPORTED_FIGHT_STEAL", "A next-fight steal is admitted only by its exact Program pin"); // Batch V47.
     if (hasFreePlayEffect(card)) return failure("UNSUPPORTED_FREE_PLAY", "A free Unit play is admitted only by its exact pin"); // Batch V48.

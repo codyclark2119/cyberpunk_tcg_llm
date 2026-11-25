@@ -9,12 +9,12 @@
   },
   "totals": {
     "cards": 151,
-    "admitted": 126,
-    "notAdmitted": 25,
+    "admitted": 127,
+    "notAdmitted": 24,
     "notAdmittedOnlyCoveredFamilies": 0,
     "byAdmission": {
-      "NOT_ADMITTED": 25,
-      "SOURCE_MATCH": 126
+      "NOT_ADMITTED": 24,
+      "SOURCE_MATCH": 127
     }
   },
   "families": [
@@ -64,15 +64,6 @@
       "soleBlockerCount": 0
     },
     {
-      "family": "DRAW",
-      "status": "PARTIAL",
-      "summary": "Draw cards, fixed or conditional.",
-      "notes": "Routed. Variable counts need SCALED_AMOUNT; 'may draw' needs an optional prompt.",
-      "cardCount": 38,
-      "notAdmittedCount": 5,
-      "soleBlockerCount": 0
-    },
-    {
       "family": "ATTACK_PERMISSION",
       "status": "PARTIAL",
       "summary": "Who may attack what and when: can't attack, may attack ready/spent Units, must attack, can't be blocked.",
@@ -82,11 +73,11 @@
       "soleBlockerCount": 0
     },
     {
-      "family": "DECK_SEARCH_REVEAL",
+      "family": "DRAW",
       "status": "PARTIAL",
-      "summary": "Top-of-deck manipulation: search/look/reveal top N, trash from the top (Trash N), bottom-deck the rest.",
-      "notes": "SEARCH_GEAR (count<=5, Gear with max cost, take<=2) only.",
-      "cardCount": 15,
+      "summary": "Draw cards, fixed or conditional.",
+      "notes": "Routed. Variable counts need SCALED_AMOUNT; 'may draw' needs an optional prompt.",
+      "cardCount": 38,
       "notAdmittedCount": 4,
       "soleBlockerCount": 0
     },
@@ -123,6 +114,15 @@
       "summary": "Play-cost reductions, alternative costs, ability-cost and Go Solo cost changes.",
       "notes": "",
       "cardCount": 10,
+      "notAdmittedCount": 3,
+      "soleBlockerCount": 0
+    },
+    {
+      "family": "DECK_SEARCH_REVEAL",
+      "status": "PARTIAL",
+      "summary": "Top-of-deck manipulation: search/look/reveal top N, trash from the top (Trash N), bottom-deck the rest.",
+      "notes": "SEARCH_GEAR (count<=5, Gear with max cost, take<=2) only.",
+      "cardCount": 15,
       "notAdmittedCount": 3,
       "soleBlockerCount": 0
     },
@@ -204,15 +204,6 @@
       "summary": "'Choose one effect' (and 'choose both instead' upgrades).",
       "notes": "PendingChoice MODE exists for setup, search and Gig steps, but no ability carries modes.",
       "cardCount": 8,
-      "notAdmittedCount": 2,
-      "soleBlockerCount": 0
-    },
-    {
-      "family": "RIVAL_CHOICE",
-      "status": "MISSING",
-      "summary": "A Rival makes a choice for the controller's effect.",
-      "notes": "",
-      "cardCount": 2,
       "notAdmittedCount": 2,
       "soleBlockerCount": 0
     },
@@ -323,6 +314,15 @@
       "cardCount": 1,
       "notAdmittedCount": 1,
       "soleBlockerCount": 1
+    },
+    {
+      "family": "RIVAL_CHOICE",
+      "status": "MISSING",
+      "summary": "A Rival makes a choice for the controller's effect.",
+      "notes": "",
+      "cardCount": 2,
+      "notAdmittedCount": 1,
+      "soleBlockerCount": 0
     },
     {
       "family": "SPEND_OR_READY",
@@ -1154,18 +1154,14 @@
       "colors": [
         "GREEN"
       ],
-      "admission": "NOT_ADMITTED",
-      "revision": null,
+      "admission": "SOURCE_MATCH",
+      "revision": 1,
       "families": [
         "DECK_SEARCH_REVEAL",
         "DRAW",
         "RIVAL_CHOICE"
       ],
-      "blockingFamilies": [
-        "DECK_SEARCH_REVEAL",
-        "DRAW",
-        "RIVAL_CHOICE"
-      ],
+      "blockingFamilies": [],
       "note": null
     },
     {

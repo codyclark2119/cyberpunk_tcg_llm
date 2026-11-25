@@ -288,6 +288,8 @@ export const EventPayloadSchema = z.discriminatedUnion("kind", [
     z.strictObject({ kind: z.literal("TRIGGER_ORDER_SELECTED"), effectId: HashSchema, controllerId: PlayerIdSchema, forced: z.boolean() }),
     z.strictObject({ kind: z.literal("OPTIONAL_TRIGGER_ACCEPTED"), effectId: HashSchema, controllerId: PlayerIdSchema }),
     z.strictObject({ kind: z.literal("OPTIONAL_TRIGGER_DECLINED"), effectId: HashSchema, controllerId: PlayerIdSchema }),
+    // Batch V77: a Rival's choice of where an effect's revealed cards go.
+    z.strictObject({ kind: z.literal("DESTINATION_CHOSEN"), effectId: HashSchema, playerId: PlayerIdSchema, destination: z.enum(["HAND", "TRASH"]) }),
     z.strictObject({ kind: z.literal("QUALIFYING_PLAY_RECORDED"), playerId: PlayerIdSchema, cardInstanceId: CardInstanceIdSchema, ordinal: z.number().int().positive() }),
     z.strictObject({ kind: z.literal("FIGHT_PREVENTION_CREATED"), effect: FightPreventionSchema }),
     z.strictObject({ kind: z.literal("FIGHT_PREVENTION_CONSUMED"), effectId: HashSchema, sourceId: CardInstanceIdSchema, controllerId: PlayerIdSchema, attackerId: CardInstanceIdSchema, defenderId: CardInstanceIdSchema }),

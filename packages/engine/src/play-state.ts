@@ -1,6 +1,7 @@
 import { trashProgramTargets } from "./trash-program";
 import { friendlyGearTargets } from "./gear-legend";
 import { trashedTopProgram } from "./braindance-legend";
+import { revealedTop, rivalOf } from "./rival-reveal";
 import { blockerGrantTargets } from "./blocker-grant";
 import { mustAttackTargets } from "./must-attack";
 import { crossSetSources, crossSetTargets, legendContinuationAbility, playPowerTargets, swapChoiceGigs, validateLegendActivationState } from "./legend-spend";
@@ -76,6 +77,9 @@ export function playChoice(state: GameState, context: EngineContext): PendingCho
     } else if (state.resolution.current?.effect.kind === "FIGHT_POWER_PER_FRIENDLY_LEGEND_THIS_TURN" || state.resolution.current?.effect.kind === "FIGHT_DEFEAT_IMMUNITY_THIS_TURN") { // Batch V58, V61.
         kind = "TARGET";
         options = friendlyFieldUnits(state, c.actorId, context).map(cardInstanceId => ({ kind: "CARD", cardInstanceId }));
+    } else if (state.resolution.current?.effect.kind === "REVEAL_TOP_RIVAL_CHOOSES_HAND_OR_TRASH") { // Batch V77: the Rival sends them to hand or trash.
+        kind = "MODE";
+        options = [{ kind: "MODE", mode: "HAND" }, { kind: "MODE", mode: "TRASH" }];
     } else if (state.resolution.current?.effect.kind === "TRASH_TOP_MAY_ADD_PROGRAM") { // Batch V76: leave it, or add the trashed Program.
         kind = "TARGET";
         const program = trashedTopProgram(state, c.actorId, context);
@@ -101,7 +105,7 @@ export function playChoice(state: GameState, context: EngineContext): PendingCho
         const effect = state.resolution.current!.effect;
         options = effect.kind === "ADJUST_GIG_UP_TO" ? gigAdjustmentOptions(gig, effect) : [];
     }
-    return { id: hashCanonical({ continuation: playIdentity(state), phase: c.phase, index: c.effectIndex, selected: c.selectedSources, target: c.targetGigId ?? null, ...(c.bottomDecked ? { bottomDecked: c.bottomDecked } : {}) }), actorId: c.actorId, kind, options, min: 1, max: 1, ordered: false, continuationId: "noncombat-play@1" };
+    return { id: hashCanonical({ continuation: playIdentity(state), phase: c.phase, index: c.effectIndex, selected: c.selectedSources, target: c.targetGigId ?? null, ...(c.bottomDecked ? { bottomDecked: c.bottomDecked } : {}) }), actorId: state.resolution.current?.effect.kind === "REVEAL_TOP_RIVAL_CHOOSES_HAND_OR_TRASH" ? rivalOf(state, c.actorId) : c.actorId, kind, options, min: 1, max: 1, ordered: false, continuationId: "noncombat-play@1" };
 }
 export function validatePlayState(state: GameState, context: EngineContext) {
     const c = state.resolution.playContinuation, current = state.resolution.current;
@@ -109,7 +113,7 @@ export function validatePlayState(state: GameState, context: EngineContext) {
     if (!c) return resolving.length || (state.timing.step === "AMOUNT_SELECTION" && !state.resolution.triggerContinuation) ? failure("INVALID_PLAY_CONTINUATION", "Resolving Programs and amount choices require a continuation") : success(null);
     if (c.kind === "ACTIVATE") return revisionOf(state, c.sourceId, context)?.type === "LEGEND" ? validateLegendActivationState(state, context) : validateActivationState(state, context); // Batch V49, V59.
     const source = state.objects.cards[c.sourceId], revision = revisionOf(state, c.sourceId, context), ability = revision?.mechanics.abilities[0];
-    if (!supportsPlay(revision, context).ok || !source || c.kind !== "PLAY" || c.actorId !== (state.resolution.targetedDefeatContinuation?.phase === "ORDER" || state.resolution.targetedDefeatContinuation?.phase === "EACH" ? state.timing.activePlayer : state.timing.actingPlayer) || source.controllerId !== c.actorId || source.zone.playerId !== c.actorId || source.face !== "UP" || (revision?.type === "GEAR" ? undefined : ability?.id) !== c.abilityId || state.setup || (state.timing.combat.stage !== "NONE" && (state.timing.combat.stage !== "RIVAL_REACT" || revision?.type !== "PROGRAM" || !revision.mechanics.keywords.includes("QUICK"))) || state.match.outcome || (state.resolution.searchContinuation && current?.effect.kind !== "SEARCH_TAKE_ONE_PLUS_PER_MIN_GIG") || state.resolution.callContinuation || state.resolution.discovered.length || state.resolution.stage !== "CHOICE")
+    if (!supportsPlay(revision, context).ok || !source || c.kind !== "PLAY" || c.actorId !== (state.resolution.targetedDefeatContinuation?.phase === "ORDER" || state.resolution.targetedDefeatContinuation?.phase === "EACH" || current?.effect.kind === "REVEAL_TOP_RIVAL_CHOOSES_HAND_OR_TRASH" ? state.timing.activePlayer : state.timing.actingPlayer) || source.controllerId !== c.actorId || source.zone.playerId !== c.actorId || source.face !== "UP" || (revision?.type === "GEAR" ? undefined : ability?.id) !== c.abilityId || state.setup || (state.timing.combat.stage !== "NONE" && (state.timing.combat.stage !== "RIVAL_REACT" || revision?.type !== "PROGRAM" || !revision.mechanics.keywords.includes("QUICK"))) || state.match.outcome || (state.resolution.searchContinuation && current?.effect.kind !== "SEARCH_TAKE_ONE_PLUS_PER_MIN_GIG") || state.resolution.callContinuation || state.resolution.discovered.length || state.resolution.stage !== "CHOICE")
         return failure("INVALID_PLAY_CONTINUATION", "Play source, scope, actor or exclusive decision state invalid");
     const cost = revision!.printedCost, amount = playPaymentAmount(state, c.actorId, c.sourceId, context);
     if (cost.kind !== "EDDIES" || new Set(c.selectedSources.map(p => p.cardInstanceId)).size !== c.selectedSources.length || c.selectedSources.reduce((n, p) => n + paymentValue(state, context, p), 0) + c.remainingCost !== amount)
@@ -131,7 +135,7 @@ export function validatePlayState(state: GameState, context: EngineContext) {
         const order = ability?.choose ? (c.chosenEffect === undefined ? ability.effects.map((_, i) => i) : [c.chosenEffect]) : ability?.effects.map((_, i) => i) ?? [], position = order.indexOf(c.effectIndex);
         if (ability?.choose && (c.chosenEffect === undefined) !== Boolean(ability.choose.allInstead && testCondition(state, c.actorId, ability.choose.allInstead, context, c.sourceId))) return failure("INVALID_MODE", "Every mode resolves exactly while the both-instead condition holds");
         if (!ability?.choose && c.chosenEffect !== undefined) return failure("INVALID_MODE", "Only a modal Program has a chosen mode");
-        if (revision!.type !== "PROGRAM" || source.zone.zone !== "RESOLVING_PROGRAM" || resolving.length !== 1 || c.remainingCost !== 0 || !ability || position < 0 || (position !== 0 && !ability.choose && current?.effect.kind !== "DEFEAT_UNIT") || (current?.effect.kind !== "SPEND_UNIT" && current?.effect.kind !== "DEFEAT_UNIT" && current?.effect.kind !== "ADJUST_GIG_UP_TO" && current?.effect.kind !== "POWER_UNTIL_END_OF_TURN" && current?.effect.kind !== "STEAL_FEWER_THIS_TURN" && current?.effect.kind !== "FIGHT_POWER_PER_FRIENDLY_LEGEND_THIS_TURN" && current?.effect.kind !== "TRASH_THEN_RETURN_UNIT" && current?.effect.kind !== "BOTTOM_DECK_UNIT" && current?.effect.kind !== "SEARCH_TAKE_ONE_PLUS_PER_MIN_GIG" && current?.effect.kind !== "SET_GIG_TO_ANOTHER_GIG_VALUE") || current.id !== playEffectId(state, c.effectIndex) || current.sourceId !== c.sourceId || current.controllerId !== c.actorId || canonicalSerialize(current.effect) !== canonicalSerialize(ability.effects[c.effectIndex]) || state.resolution.pending.length !== order.length - 1 - position)
+        if (revision!.type !== "PROGRAM" || source.zone.zone !== "RESOLVING_PROGRAM" || resolving.length !== 1 || c.remainingCost !== 0 || !ability || position < 0 || (position !== 0 && !ability.choose && current?.effect.kind !== "DEFEAT_UNIT") || (current?.effect.kind !== "SPEND_UNIT" && current?.effect.kind !== "DEFEAT_UNIT" && current?.effect.kind !== "ADJUST_GIG_UP_TO" && current?.effect.kind !== "POWER_UNTIL_END_OF_TURN" && current?.effect.kind !== "STEAL_FEWER_THIS_TURN" && current?.effect.kind !== "FIGHT_POWER_PER_FRIENDLY_LEGEND_THIS_TURN" && current?.effect.kind !== "TRASH_THEN_RETURN_UNIT" && current?.effect.kind !== "BOTTOM_DECK_UNIT" && current?.effect.kind !== "SEARCH_TAKE_ONE_PLUS_PER_MIN_GIG" && current?.effect.kind !== "SET_GIG_TO_ANOTHER_GIG_VALUE" && current?.effect.kind !== "REVEAL_TOP_RIVAL_CHOOSES_HAND_OR_TRASH") || current.id !== playEffectId(state, c.effectIndex) || current.sourceId !== c.sourceId || current.controllerId !== c.actorId || canonicalSerialize(current.effect) !== canonicalSerialize(ability.effects[c.effectIndex]) || state.resolution.pending.length !== order.length - 1 - position)
             return failure("INVALID_PROGRAM_EFFECT", "Resolving Program and current primitive must match its pinned ordered ability");
         for (const [index, effect] of state.resolution.pending.entries()) {
             const printed = order[position + index + 1];
@@ -153,6 +157,8 @@ export function validatePlayState(state: GameState, context: EngineContext) {
                 return failure("INVALID_GIG_TARGET", "The Gig to set and its source choices must remain eligible");
         } else if (current.effect.kind === "BOTTOM_DECK_UNIT") {
             const bottomed = validateBottomDeck(state, context); if (!bottomed.ok) return bottomed;
+        } else if (current.effect.kind === "REVEAL_TOP_RIVAL_CHOOSES_HAND_OR_TRASH") { // Batch V77: the Rival holds the choice over revealed cards.
+            if (c.targetGigId || state.timing.step !== "TARGET_SELECTION" || !revealedTop(state, c.actorId).length || state.timing.actingPlayer !== rivalOf(state, c.actorId)) return failure("INVALID_RIVAL_REVEAL", "A reveal pauses only for the Rival's hand-or-trash choice over revealed cards");
         } else if (current.effect.kind === "FIGHT_POWER_PER_FRIENDLY_LEGEND_THIS_TURN") { // Batch V58.
             if (c.targetGigId || friendlyFieldUnits(state, c.actorId, context).length < 2 || state.timing.step !== "TARGET_SELECTION" || state.fightPowerGrants?.some(x => x.origin.effectId === current.id)) return failure("INVALID_FIGHT_POWER", "Only strategic current friendly-Unit choices pause the grant");
         } else if (current.effect.kind === "STEAL_FEWER_THIS_TURN") { // Batch V57.

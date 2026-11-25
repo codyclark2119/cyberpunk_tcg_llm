@@ -232,6 +232,9 @@ export const EffectSchema = z.discriminatedUnion("kind", [
     z.strictObject({ kind: z.literal("TRASH_THEN_ADD_TRASH_PROGRAM"), count: z.literal(3), tag: z.literal("Braindance") }),
     // Batch V74: "Give a friendly Unit with cost 4 or less {Blocker} this turn. If you control a value-pair of Gigs, also give it +1 power
     // this turn." (6.6: the value pair is checked as the effect resolves).
+    // Batch V77: "Reveal the top 2 cards of your deck. A Rival chooses whether you add them to your hand or trash them. If you trash
+    // them, draw 2."
+    z.strictObject({ kind: z.literal("REVEAL_TOP_RIVAL_CHOOSES_HAND_OR_TRASH"), count: z.literal(2), drawIfTrashed: z.literal(2) }),
     // Batch V76: "Trash the top card of your deck. If it's a Program, you may add it to your hand."
     z.strictObject({ kind: z.literal("TRASH_TOP_MAY_ADD_PROGRAM") }),
     // Batch V76: "Give a friendly Unit +1 power this turn" from a Legend's "When you play a BRAINDANCE Program" trigger.

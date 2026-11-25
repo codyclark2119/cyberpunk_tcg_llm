@@ -14,6 +14,7 @@ import { activateTriggerBatch, beginTriggers, joinProgramPlayBindings, type Prep
 import { recordPlayedCard } from "./trigger-resolution";
 import { discoverTriggers } from "./trigger-queries";
 import { chooseTrashedTopProgram, isBraindanceProgram } from "./braindance-legend";
+import { chooseRivalReveal } from "./rival-reveal";
 import { triggersEnabled } from "./trigger-support";
 import { actionReturnContext, finishAction } from "./action-return";
 import { applyTemporaryPower } from "./temporary-power";
@@ -235,6 +236,12 @@ export function continuePlay(m: TurnMutation, index: number): Result<null> {
         }
         delete c.targetGigId;
         return completePlayEffect(m);
+    }
+    if (s.resolution.current?.effect.kind === "REVEAL_TOP_RIVAL_CHOOSES_HAND_OR_TRASH") { // Batch V77.
+        if (option.kind !== "MODE") return failure("INVALID_DESTINATION", "Choose hand or trash for the revealed cards");
+        const sourceId = c.sourceId, chosen = chooseRivalReveal(m, option.mode);
+        if (!chosen.ok) return chosen;
+        return m.state.match.outcome ? finishPlay(m, sourceId) : completePlayEffect(m); // Drawing from an empty deck ends the game, as in resolveChain.
     }
     if (s.resolution.current?.effect.kind === "TRASH_TOP_MAY_ADD_PROGRAM") { // Batch V76.
         if (option.kind !== "CARD" && !(option.kind === "CONFIRM" && !option.confirmed)) return failure("INVALID_TRASH_TARGET", "Add the trashed Program, or leave it");
