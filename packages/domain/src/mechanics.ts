@@ -238,6 +238,9 @@ export const EffectSchema = z.discriminatedUnion("kind", [
     // Batch V78: "Each player discards their hand and may draw 5. If the total number of discarded cards equals the value of a friendly
     // Gig, draw 2."
     z.strictObject({ kind: z.literal("EACH_PLAYER_DISCARDS_HAND_MAY_DRAW"), draw: z.literal(5), drawIfTotalMatchesFriendlyGig: z.literal(2) }),
+    // Batch V79: "Give a friendly Unit these effects. If you have less Street Cred than a Rival, they instead choose one effect for you.
+    // The next time this Unit attacks this turn, it may attack ready Units. // Give this Unit +3 power this turn."
+    z.strictObject({ kind: z.literal("FRIENDLY_UNIT_READY_ATTACK_AND_POWER"), power: z.literal(3), rivalChoosesOneIf: z.literal("STREET_CRED_LESS_THAN_RIVAL") }),
     // Batch V76: "Trash the top card of your deck. If it's a Program, you may add it to your hand."
     z.strictObject({ kind: z.literal("TRASH_TOP_MAY_ADD_PROGRAM") }),
     // Batch V76: "Give a friendly Unit +1 power this turn" from a Legend's "When you play a BRAINDANCE Program" trigger.

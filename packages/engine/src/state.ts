@@ -1,5 +1,6 @@
 import { effectiveCallCost } from "./free-call-support";
 import { otherPlayerMayChoose } from "./rival-reveal";
+import { validateReadyUnitAttackGrants } from "./ready-attack-grant";
 import { validateFightDefeatImmunities } from "./fight-immunity";
 import { validateLegendSpendMetadata } from "./legend-spend-support";
 import { validateFightPowerGrants } from "./fight-power-grant";
@@ -130,6 +131,7 @@ export function validateState(input: unknown, context: EngineContext): Result<Ga
     const firstHistory = validateFirstAttackHistory(s, context); if (!firstHistory.ok) return firstHistory;
     const belowPower = validateBelowPowerHistory(s, context); if (!belowPower.ok) return belowPower; // Batch V49.
     const arasakaDefeat = validateArasakaDefeatHistory(s, context); if (!arasakaDefeat.ok) return arasakaDefeat; // Batch V50.
+    const readyAttack = validateReadyUnitAttackGrants(s, context); if (!readyAttack.ok) return readyAttack; // Batch V79.
     const fightWins = validateFightWinHistory(s, context); if (!fightWins.ok) return fightWins; // Batch V52.
     const firstGear = validateFirstGearHistory(s, context); if (!firstGear.ok) return firstGear; // Batch V53.
     const fieldMetadata = validateFieldLegendMetadata(s, context); if (!fieldMetadata.ok) return fieldMetadata;

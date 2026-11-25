@@ -51,8 +51,8 @@ export function chooseRivalReveal(m: TurnMutation, destination: string): Result<
     for (const id of cards) moveCardLocation(m, id, destination);
     return destination === "TRASH" ? m.draw(controller, current.effect.drawIfTrashed) : success(null);
 }
-/** Batch V77, V78: the current play effects whose choice another player may hold while the controller's turn continues. */
+/** Batch V77, V78, V79: the current play effects whose choice another player may hold while the controller's turn continues. */
 export function otherPlayerMayChoose(state: GameState) {
     const kind = state.resolution.current?.effect.kind;
-    return kind === "REVEAL_TOP_RIVAL_CHOOSES_HAND_OR_TRASH" || kind === "EACH_PLAYER_DISCARDS_HAND_MAY_DRAW";
+    return kind === "REVEAL_TOP_RIVAL_CHOOSES_HAND_OR_TRASH" || kind === "EACH_PLAYER_DISCARDS_HAND_MAY_DRAW" || kind === "FRIENDLY_UNIT_READY_ATTACK_AND_POWER"; // Batch V79.
 }

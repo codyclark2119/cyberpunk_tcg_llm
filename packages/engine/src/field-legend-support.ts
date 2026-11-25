@@ -6,6 +6,7 @@ import { hasModalChoice } from "./modal-program-support";
 import { hasSellTopEffect } from "./program-sell-support";
 import { hasRivalRevealEffect } from "./rival-reveal";
 import { hasHandResetEffect } from "./hand-reset";
+import { hasUnitGrantEffect } from "./ready-attack-grant";
 import { hasFightStealEffect } from "./fight-steal-support";
 import { hasFreePlayEffect } from "./free-play-support";
 import { hasQuickActivation } from "./quick-activation-support";
@@ -25,6 +26,7 @@ export function supportsFieldLegend(card: DeepReadonly<CardRevisionSnapshot> | u
     if (hasModalChoice(card)) return failure("UNSUPPORTED_MODAL_CHOICE", "A modal ability is admitted only by its exact Program pin"); // Batch V44.
     if (hasRivalRevealEffect(card)) return failure("UNSUPPORTED_RIVAL_REVEAL", "A Rival-choice reveal is admitted only by its exact Program pin"); // Batch V77.
     if (hasHandResetEffect(card)) return failure("UNSUPPORTED_HAND_RESET", "A hand reset is admitted only by its exact Program pin"); // Batch V78.
+    if (hasUnitGrantEffect(card)) return failure("UNSUPPORTED_UNIT_GRANT", "A friendly-Unit grant is admitted only by its exact Program pin"); // Batch V79.
     if (hasSellTopEffect(card)) return failure("UNSUPPORTED_EFFECT_SELL", "An effect sell is admitted only by its exact Program pin"); // Batch V45.
     if (hasFightStealEffect(card)) return failure("UNSUPPORTED_FIGHT_STEAL", "A next-fight steal is admitted only by its exact Program pin"); // Batch V47.
     if (hasFreePlayEffect(card)) return failure("UNSUPPORTED_FREE_PLAY", "A free Unit play is admitted only by its exact pin"); // Batch V48.

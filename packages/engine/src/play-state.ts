@@ -3,6 +3,7 @@ import { friendlyGearTargets } from "./gear-legend";
 import { trashedTopProgram } from "./braindance-legend";
 import { otherPlayerMayChoose, revealedTop, rivalOf } from "./rival-reveal";
 import { validateHandReset } from "./hand-reset";
+import { validateUnitGrantPause, READY_ATTACK_MODE, POWER_MODE } from "./ready-attack-grant";
 import { blockerGrantTargets } from "./blocker-grant";
 import { mustAttackTargets } from "./must-attack";
 import { crossSetSources, crossSetTargets, legendContinuationAbility, playPowerTargets, swapChoiceGigs, validateLegendActivationState } from "./legend-spend";
@@ -84,6 +85,9 @@ export function playChoice(state: GameState, context: EngineContext): PendingCho
     } else if (state.resolution.current?.effect.kind === "EACH_PLAYER_DISCARDS_HAND_MAY_DRAW") { // Batch V78: the acting player draws 5 or not.
         kind = "MODE";
         options = [{ kind: "MODE", mode: "DRAW" }, { kind: "MODE", mode: "DECLINE" }];
+    } else if (state.resolution.current?.effect.kind === "FRIENDLY_UNIT_READY_ATTACK_AND_POWER") { // Batch V79: the friendly Unit, then (held) the Rival's effect.
+        kind = c.grantTargetId ? "MODE" : "TARGET";
+        options = c.grantTargetId ? [{ kind: "MODE", mode: READY_ATTACK_MODE }, { kind: "MODE", mode: POWER_MODE }] : friendlyFieldUnits(state, c.actorId, context).map(cardInstanceId => ({ kind: "CARD", cardInstanceId }));
     } else if (state.resolution.current?.effect.kind === "TRASH_TOP_MAY_ADD_PROGRAM") { // Batch V76: leave it, or add the trashed Program.
         kind = "TARGET";
         const program = trashedTopProgram(state, c.actorId, context);
@@ -109,8 +113,8 @@ export function playChoice(state: GameState, context: EngineContext): PendingCho
         const effect = state.resolution.current!.effect;
         options = effect.kind === "ADJUST_GIG_UP_TO" ? gigAdjustmentOptions(gig, effect) : [];
     }
-    return { id: hashCanonical({ continuation: playIdentity(state), phase: c.phase, index: c.effectIndex, selected: c.selectedSources, target: c.targetGigId ?? null, ...(c.bottomDecked ? { bottomDecked: c.bottomDecked } : {}), ...(c.discardedIds ? { discardedIds: c.discardedIds, chooser: state.timing.actingPlayer } : {}) }),
-        actorId: state.resolution.current?.effect.kind === "REVEAL_TOP_RIVAL_CHOOSES_HAND_OR_TRASH" ? rivalOf(state, c.actorId) : state.resolution.current?.effect.kind === "EACH_PLAYER_DISCARDS_HAND_MAY_DRAW" ? state.timing.actingPlayer : c.actorId, kind, options, min: 1, max: 1, ordered: false, continuationId: "noncombat-play@1" };
+    return { id: hashCanonical({ continuation: playIdentity(state), phase: c.phase, index: c.effectIndex, selected: c.selectedSources, target: c.targetGigId ?? null, ...(c.bottomDecked ? { bottomDecked: c.bottomDecked } : {}), ...(c.discardedIds ? { discardedIds: c.discardedIds, chooser: state.timing.actingPlayer } : {}), ...(c.grantTargetId ? { grantTargetId: c.grantTargetId } : {}) }),
+        actorId: state.resolution.current?.effect.kind === "REVEAL_TOP_RIVAL_CHOOSES_HAND_OR_TRASH" ? rivalOf(state, c.actorId) : state.resolution.current?.effect.kind === "EACH_PLAYER_DISCARDS_HAND_MAY_DRAW" || c.grantTargetId ? state.timing.actingPlayer : c.actorId, kind, options, min: 1, max: 1, ordered: false, continuationId: "noncombat-play@1" };
 }
 export function validatePlayState(state: GameState, context: EngineContext) {
     const c = state.resolution.playContinuation, current = state.resolution.current;
@@ -140,7 +144,7 @@ export function validatePlayState(state: GameState, context: EngineContext) {
         const order = ability?.choose ? (c.chosenEffect === undefined ? ability.effects.map((_, i) => i) : [c.chosenEffect]) : ability?.effects.map((_, i) => i) ?? [], position = order.indexOf(c.effectIndex);
         if (ability?.choose && (c.chosenEffect === undefined) !== Boolean(ability.choose.allInstead && testCondition(state, c.actorId, ability.choose.allInstead, context, c.sourceId))) return failure("INVALID_MODE", "Every mode resolves exactly while the both-instead condition holds");
         if (!ability?.choose && c.chosenEffect !== undefined) return failure("INVALID_MODE", "Only a modal Program has a chosen mode");
-        if (revision!.type !== "PROGRAM" || source.zone.zone !== "RESOLVING_PROGRAM" || resolving.length !== 1 || c.remainingCost !== 0 || !ability || position < 0 || (position !== 0 && !ability.choose && current?.effect.kind !== "DEFEAT_UNIT") || (current?.effect.kind !== "SPEND_UNIT" && current?.effect.kind !== "DEFEAT_UNIT" && current?.effect.kind !== "ADJUST_GIG_UP_TO" && current?.effect.kind !== "POWER_UNTIL_END_OF_TURN" && current?.effect.kind !== "STEAL_FEWER_THIS_TURN" && current?.effect.kind !== "FIGHT_POWER_PER_FRIENDLY_LEGEND_THIS_TURN" && current?.effect.kind !== "TRASH_THEN_RETURN_UNIT" && current?.effect.kind !== "BOTTOM_DECK_UNIT" && current?.effect.kind !== "SEARCH_TAKE_ONE_PLUS_PER_MIN_GIG" && current?.effect.kind !== "SET_GIG_TO_ANOTHER_GIG_VALUE" && current?.effect.kind !== "REVEAL_TOP_RIVAL_CHOOSES_HAND_OR_TRASH" && current?.effect.kind !== "EACH_PLAYER_DISCARDS_HAND_MAY_DRAW") || current.id !== playEffectId(state, c.effectIndex) || current.sourceId !== c.sourceId || current.controllerId !== c.actorId || canonicalSerialize(current.effect) !== canonicalSerialize(ability.effects[c.effectIndex]) || state.resolution.pending.length !== order.length - 1 - position)
+        if (revision!.type !== "PROGRAM" || source.zone.zone !== "RESOLVING_PROGRAM" || resolving.length !== 1 || c.remainingCost !== 0 || !ability || position < 0 || (position !== 0 && !ability.choose && current?.effect.kind !== "DEFEAT_UNIT") || (current?.effect.kind !== "SPEND_UNIT" && current?.effect.kind !== "DEFEAT_UNIT" && current?.effect.kind !== "ADJUST_GIG_UP_TO" && current?.effect.kind !== "POWER_UNTIL_END_OF_TURN" && current?.effect.kind !== "STEAL_FEWER_THIS_TURN" && current?.effect.kind !== "FIGHT_POWER_PER_FRIENDLY_LEGEND_THIS_TURN" && current?.effect.kind !== "TRASH_THEN_RETURN_UNIT" && current?.effect.kind !== "BOTTOM_DECK_UNIT" && current?.effect.kind !== "SEARCH_TAKE_ONE_PLUS_PER_MIN_GIG" && current?.effect.kind !== "SET_GIG_TO_ANOTHER_GIG_VALUE" && current?.effect.kind !== "REVEAL_TOP_RIVAL_CHOOSES_HAND_OR_TRASH" && current?.effect.kind !== "EACH_PLAYER_DISCARDS_HAND_MAY_DRAW" && current?.effect.kind !== "FRIENDLY_UNIT_READY_ATTACK_AND_POWER") || current.id !== playEffectId(state, c.effectIndex) || current.sourceId !== c.sourceId || current.controllerId !== c.actorId || canonicalSerialize(current.effect) !== canonicalSerialize(ability.effects[c.effectIndex]) || state.resolution.pending.length !== order.length - 1 - position)
             return failure("INVALID_PROGRAM_EFFECT", "Resolving Program and current primitive must match its pinned ordered ability");
         for (const [index, effect] of state.resolution.pending.entries()) {
             const printed = order[position + index + 1];
@@ -167,6 +171,9 @@ export function validatePlayState(state: GameState, context: EngineContext) {
         } else if (current.effect.kind === "EACH_PLAYER_DISCARDS_HAND_MAY_DRAW") { // Batch V78: each player's draw choice over the recorded discards.
             if (c.targetGigId) return failure("INVALID_HAND_RESET", "A hand reset holds no Gig");
             const reset = validateHandReset(state, c.actorId); if (!reset.ok) return reset;
+        } else if (current.effect.kind === "FRIENDLY_UNIT_READY_ATTACK_AND_POWER") { // Batch V79.
+            if (c.targetGigId) return failure("INVALID_UNIT_GRANT", "A Unit grant holds no Gig");
+            const paused = validateUnitGrantPause(state, c.actorId, context); if (!paused.ok) return paused;
         } else if (current.effect.kind === "FIGHT_POWER_PER_FRIENDLY_LEGEND_THIS_TURN") { // Batch V58.
             if (c.targetGigId || friendlyFieldUnits(state, c.actorId, context).length < 2 || state.timing.step !== "TARGET_SELECTION" || state.fightPowerGrants?.some(x => x.origin.effectId === current.id)) return failure("INVALID_FIGHT_POWER", "Only strategic current friendly-Unit choices pause the grant");
         } else if (current.effect.kind === "STEAL_FEWER_THIS_TURN") { // Batch V57.
@@ -180,6 +187,7 @@ export function validatePlayState(state: GameState, context: EngineContext) {
     }
     if (c.chosenEffect !== undefined && c.phase !== "EFFECT") return failure("INVALID_MODE", "A chosen mode belongs only to a resolving modal Program");
     if (c.trashedIds && current?.effect.kind !== "TRASH_THEN_RETURN_UNIT") return failure("INVALID_TRASH_RETURN", "Trashed cards belong only to the current trash-return primitive");
+    if (c.grantTargetId && (current?.effect.kind !== "FRIENDLY_UNIT_READY_ATTACK_AND_POWER" || c.phase !== "EFFECT")) return failure("INVALID_UNIT_GRANT", "A held Unit belongs only to the current Unit grant"); // Batch V79.
     if (c.discardedIds && (current?.effect.kind !== "EACH_PLAYER_DISCARDS_HAND_MAY_DRAW" || c.phase !== "EFFECT")) return failure("INVALID_HAND_RESET", "Discarded cards belong only to the current hand reset"); // Batch V78.
     if (c.bottomDecked && current?.effect.kind !== "BOTTOM_DECK_UNIT") return failure("INVALID_BOTTOM_DECK", "A bottom-decked Unit belongs only to the current bottom-deck primitive");
     if (c.phase !== "PAYMENT") {

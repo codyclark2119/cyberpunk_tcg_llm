@@ -125,7 +125,9 @@ export const TurnHistorySchema = z.strictObject({
     // Batch V69: "when spent" bindings pending from a spend outside any trigger batch, until the action's next batch or its end.
     spendTriggers: z.array(TriggerBindingSchema).min(1).optional(),
     // Batch V72: cards with a "the first time this Unit is spent each turn" trigger already spent this turn.
-    firstSpends: z.array(CardInstanceIdSchema).min(1).optional(), turn: z.number().int().positive(), triggeredBatches: z.number().int().nonnegative(), blueUnitOrGearPlays: z.record(PlayerIdSchema, z.number().int().nonnegative()), programPlays: z.record(PlayerIdSchema, z.number().int().nonnegative()).optional() });
+    firstSpends: z.array(CardInstanceIdSchema).min(1).optional(),
+    // Batch V79: Units whose next attack this turn may target ready Units, by id; `inAttack` once that attack is declared, until it ends.
+    readyUnitAttackGrants: z.array(z.strictObject({ unitId: CardInstanceIdSchema, inAttack: z.boolean() })).min(1).optional(), turn: z.number().int().positive(), triggeredBatches: z.number().int().nonnegative(), blueUnitOrGearPlays: z.record(PlayerIdSchema, z.number().int().nonnegative()), programPlays: z.record(PlayerIdSchema, z.number().int().nonnegative()).optional() });
 export const PendingEffectSchema = z.strictObject({ id: z.string().min(1), controllerId: PlayerIdSchema, sourceId: CardInstanceIdSchema.nullable(), primitiveIndex: z.literal(1).optional(), effect: EffectSchema, trigger: TriggerBindingSchema.omit({ sourceId: true, controllerId: true }).extend({ turn: z.number().int().positive(), ordinal: z.number().int().positive() }).optional(), causedBySequence: z.number().int().nonnegative() });
 export const ActionReturnContextSchema = z.discriminatedUnion("kind", [z.strictObject({ kind: z.literal("MAIN") }), z.strictObject({ kind: z.literal("RIVAL_REACT") })]);
 export type ActionReturnContext = z.infer<typeof ActionReturnContextSchema>;
@@ -160,7 +162,9 @@ export const TemporaryPowerModifierSchema = z.discriminatedUnion("amount", [
     // Batch V75: "+1 power this turn for each of its equipped Gear", fixed at the count as it resolved.
     TemporaryPowerBaseSchema.extend({ amount: z.number().int().positive(), scaled: z.literal("PER_EQUIPPED_GEAR"), origin: z.strictObject({ effectId: HashSchema, sequence: z.number().int().nonnegative() }) })).or(
     // Batch V76: a Legend's "When you play a BRAINDANCE Program, give a friendly Unit +1 power this turn", one per trigger occurrence.
-    TemporaryPowerBaseSchema.extend({ amount: z.literal(1), scaled: z.literal("PROGRAM_PLAY_TRIGGER"), origin: z.strictObject({ effectId: HashSchema, abilityId: z.string().min(1), ordinal: z.number().int().positive() }) })
+    TemporaryPowerBaseSchema.extend({ amount: z.literal(1), scaled: z.literal("PROGRAM_PLAY_TRIGGER"), origin: z.strictObject({ effectId: HashSchema, abilityId: z.string().min(1), ordinal: z.number().int().positive() }) })).or(
+    // Batch V79: a played Program's "Give this Unit +3 power this turn" on the friendly Unit it chose.
+    TemporaryPowerBaseSchema.extend({ amount: z.literal(3), scaled: z.literal("PROGRAM_UNIT_GRANT"), origin: z.strictObject({ effectId: HashSchema }) })
 );
 export type TemporaryPowerModifier = z.infer<typeof TemporaryPowerModifierSchema>;
 /** Batch V20: a keyword granted "this turn" by a resolved PLAY occurrence; it tracks the target only while it stays on the field. */
@@ -221,7 +225,9 @@ export const ResolutionStateSchema = z.strictObject({
         chosenEffect: z.number().int().nonnegative().optional(),
         // Batch V78: the cards a hand reset discarded from both hands, in discard order (empty when both hands were), while each player
         // in turn chooses whether to draw.
-        discardedIds: z.array(CardInstanceIdSchema).optional() }).optional(),
+        discardedIds: z.array(CardInstanceIdSchema).optional(),
+        // Batch V79: the friendly Unit chosen for both effects, while a Rival chooses which one it gets.
+        grantTargetId: CardInstanceIdSchema.optional() }).optional(),
     searchContinuation: z.strictObject({ looked: z.array(CardInstanceIdSchema), selected: z.array(CardInstanceIdSchema) }).optional(),
     callContinuation: z.strictObject({ actorId: PlayerIdSchema, legendId: CardInstanceIdSchema, remainingCost: z.number().int().nonnegative(), selectedSources: z.array(PaymentSourceSchema) }).optional(),
     current: PendingEffectSchema.nullable(), pending: z.array(PendingEffectSchema), discovered: z.array(PendingEffectSchema), choice: PendingChoiceSchema.nullable()
@@ -295,6 +301,8 @@ export const EventPayloadSchema = z.discriminatedUnion("kind", [
     z.strictObject({ kind: z.literal("DESTINATION_CHOSEN"), effectId: HashSchema, playerId: PlayerIdSchema, destination: z.enum(["HAND", "TRASH"]) }),
     // Batch V78: a player's choice whether to take an effect's optional draw.
     z.strictObject({ kind: z.literal("OPTIONAL_DRAW_CHOSEN"), effectId: HashSchema, playerId: PlayerIdSchema, draw: z.boolean() }),
+    // Batch V79: "The next time this Unit attacks this turn, it may attack ready Units."
+    z.strictObject({ kind: z.literal("READY_UNIT_ATTACK_GRANTED"), effectId: HashSchema, targetId: CardInstanceIdSchema }),
     z.strictObject({ kind: z.literal("QUALIFYING_PLAY_RECORDED"), playerId: PlayerIdSchema, cardInstanceId: CardInstanceIdSchema, ordinal: z.number().int().positive() }),
     z.strictObject({ kind: z.literal("FIGHT_PREVENTION_CREATED"), effect: FightPreventionSchema }),
     z.strictObject({ kind: z.literal("FIGHT_PREVENTION_CONSUMED"), effectId: HashSchema, sourceId: CardInstanceIdSchema, controllerId: PlayerIdSchema, attackerId: CardInstanceIdSchema, defenderId: CardInstanceIdSchema }),

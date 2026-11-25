@@ -33,6 +33,7 @@ import { hasModalChoice, supportsModalProgram } from "./modal-program-support";
 import { hasSellTopEffect, supportsSellTopProgram } from "./program-sell-support";
 import { hasRivalRevealEffect, supportsRivalRevealProgram } from "./rival-reveal";
 import { hasHandResetEffect, supportsHandResetProgram } from "./hand-reset";
+import { hasUnitGrantEffect, supportsUnitGrantProgram } from "./ready-attack-grant";
 import { hasFightStealEffect, supportsFightStealProgram } from "./fight-steal-support";
 import { hasFreePlayEffect, supportsFreePlayCard } from "./free-play-support";
 import { paymentCandidates } from "./payment";
@@ -57,6 +58,7 @@ export function supportsPlay(card: DeepReadonly<CardRevisionSnapshot> | undefine
     if (card && hasSellTopEffect(card)) return supportsSellTopProgram(card, context);
     if (card && hasRivalRevealEffect(card)) return supportsRivalRevealProgram(card, context); // Batch V77.
     if (card && hasHandResetEffect(card)) return supportsHandResetProgram(card, context); // Batch V78.
+    if (card && hasUnitGrantEffect(card)) return supportsUnitGrantProgram(card, context); // Batch V79.
     // Batch V47: a next-fight steal is admitted only by its exact Program pin.
     if (card && hasGearStealMetadata(card)) return supportsGearStealCard(card, context); // Batch V67.
     if (card && hasSpendTrigger(card)) return supportsSpendTriggerCard(card, context); // Batch V69.

@@ -9,12 +9,12 @@
   },
   "totals": {
     "cards": 151,
-    "admitted": 128,
-    "notAdmitted": 23,
+    "admitted": 129,
+    "notAdmitted": 22,
     "notAdmittedOnlyCoveredFamilies": 0,
     "byAdmission": {
-      "NOT_ADMITTED": 23,
-      "SOURCE_MATCH": 128
+      "NOT_ADMITTED": 22,
+      "SOURCE_MATCH": 129
     }
   },
   "families": [
@@ -64,24 +64,6 @@
       "soleBlockerCount": 0
     },
     {
-      "family": "ATTACK_PERMISSION",
-      "status": "PARTIAL",
-      "summary": "Who may attack what and when: can't attack, may attack ready/spent Units, must attack, can't be blocked.",
-      "notes": "Restrictions on the card itself are supported; permissions granted by effects, forced attacks and off-turn timing are not.",
-      "cardCount": 16,
-      "notAdmittedCount": 4,
-      "soleBlockerCount": 0
-    },
-    {
-      "family": "DURATION_DELAYED",
-      "status": "PARTIAL",
-      "summary": "Lasting and delayed effects: 'until your next turn', 'next time ... this turn', 'at the end of this turn'.",
-      "notes": "",
-      "cardCount": 14,
-      "notAdmittedCount": 4,
-      "soleBlockerCount": 0
-    },
-    {
       "family": "FREE_CALL",
       "status": "MISSING",
       "summary": "Call a Legend by an effect or for free outside the normal Call.",
@@ -91,12 +73,12 @@
       "soleBlockerCount": 0
     },
     {
-      "family": "TEMPORARY_BUFF",
+      "family": "ATTACK_PERMISSION",
       "status": "PARTIAL",
-      "summary": "Power or keyword changes 'this turn' on a chosen Unit.",
-      "notes": "Fixed amounts on RIVAL_UNIT, SOURCE_SUBJECT or FRIENDLY_UNIT. Keyword grants, all-Unit and filtered targets are missing.",
-      "cardCount": 19,
-      "notAdmittedCount": 4,
+      "summary": "Who may attack what and when: can't attack, may attack ready/spent Units, must attack, can't be blocked.",
+      "notes": "Restrictions on the card itself are supported; permissions granted by effects, forced attacks and off-turn timing are not.",
+      "cardCount": 16,
+      "notAdmittedCount": 3,
       "soleBlockerCount": 0
     },
     {
@@ -127,6 +109,15 @@
       "soleBlockerCount": 0
     },
     {
+      "family": "DURATION_DELAYED",
+      "status": "PARTIAL",
+      "summary": "Lasting and delayed effects: 'until your next turn', 'next time ... this turn', 'at the end of this turn'.",
+      "notes": "",
+      "cardCount": 14,
+      "notAdmittedCount": 3,
+      "soleBlockerCount": 0
+    },
+    {
       "family": "KEYWORD_QUICK",
       "status": "PARTIAL",
       "summary": "[Quick] timing: Programs and activated abilities usable in the react window.",
@@ -150,6 +141,15 @@
       "summary": "Amounts computed from the board: 'for each', 'equal to'.",
       "notes": "Only Royce's per-equipped-Gear modifier counts anything.",
       "cardCount": 18,
+      "notAdmittedCount": 3,
+      "soleBlockerCount": 0
+    },
+    {
+      "family": "TEMPORARY_BUFF",
+      "status": "PARTIAL",
+      "summary": "Power or keyword changes 'this turn' on a chosen Unit.",
+      "notes": "Fixed amounts on RIVAL_UNIT, SOURCE_SUBJECT or FRIENDLY_UNIT. Keyword grants, all-Unit and filtered targets are missing.",
+      "cardCount": 19,
       "notAdmittedCount": 3,
       "soleBlockerCount": 0
     },
@@ -195,15 +195,6 @@
       "summary": "Look at friendly face-down Legends.",
       "notes": "One Legend, attack-triggered (Kiroshi Optics). 'All face-down Legends' is missing.",
       "cardCount": 3,
-      "notAdmittedCount": 2,
-      "soleBlockerCount": 0
-    },
-    {
-      "family": "MODAL_CHOICE",
-      "status": "MISSING",
-      "summary": "'Choose one effect' (and 'choose both instead' upgrades).",
-      "notes": "PendingChoice MODE exists for setup, search and Gig steps, but no ability carries modes.",
-      "cardCount": 8,
       "notAdmittedCount": 2,
       "soleBlockerCount": 0
     },
@@ -262,15 +253,6 @@
       "soleBlockerCount": 0
     },
     {
-      "family": "CONDITION_STREET_CRED",
-      "status": "PARTIAL",
-      "summary": "Conditions on Street Cred.",
-      "notes": "Nearly complete as conditions; gating an effect mode on them is not.",
-      "cardCount": 13,
-      "notAdmittedCount": 1,
-      "soleBlockerCount": 0
-    },
-    {
       "family": "FIGHT_MODIFIER",
       "status": "PARTIAL",
       "summary": "Fight-scoped rules: power while fighting, can't be defeated in a fight, wins all fights against, fight-outcome riders.",
@@ -298,6 +280,15 @@
       "soleBlockerCount": 0
     },
     {
+      "family": "MODAL_CHOICE",
+      "status": "MISSING",
+      "summary": "'Choose one effect' (and 'choose both instead' upgrades).",
+      "notes": "PendingChoice MODE exists for setup, search and Gig steps, but no ability carries modes.",
+      "cardCount": 8,
+      "notAdmittedCount": 1,
+      "soleBlockerCount": 0
+    },
+    {
       "family": "PROMO_NO_TEXT",
       "status": "OUT_OF_SCOPE",
       "summary": "Source record with no rules text, cost or RAM: not a playable card in this snapshot.",
@@ -305,15 +296,6 @@
       "cardCount": 1,
       "notAdmittedCount": 1,
       "soleBlockerCount": 1
-    },
-    {
-      "family": "RIVAL_CHOICE",
-      "status": "MISSING",
-      "summary": "A Rival makes a choice for the controller's effect.",
-      "notes": "",
-      "cardCount": 2,
-      "notAdmittedCount": 1,
-      "soleBlockerCount": 0
     },
     {
       "family": "SPEND_OR_READY",
@@ -370,6 +352,15 @@
       "soleBlockerCount": 0
     },
     {
+      "family": "CONDITION_STREET_CRED",
+      "status": "PARTIAL",
+      "summary": "Conditions on Street Cred.",
+      "notes": "Nearly complete as conditions; gating an effect mode on them is not.",
+      "cardCount": 13,
+      "notAdmittedCount": 0,
+      "soleBlockerCount": 0
+    },
+    {
       "family": "GIG_ADJUST",
       "status": "PARTIAL",
       "summary": "Increase, decrease, adjust or set Gig values.",
@@ -393,6 +384,15 @@
       "summary": "Effects on all Units or each player.",
       "notes": "",
       "cardCount": 5,
+      "notAdmittedCount": 0,
+      "soleBlockerCount": 0
+    },
+    {
+      "family": "RIVAL_CHOICE",
+      "status": "MISSING",
+      "summary": "A Rival makes a choice for the controller's effect.",
+      "notes": "",
+      "cardCount": 2,
       "notAdmittedCount": 0,
       "soleBlockerCount": 0
     },
@@ -1262,8 +1262,8 @@
       "colors": [
         "RED"
       ],
-      "admission": "NOT_ADMITTED",
-      "revision": null,
+      "admission": "SOURCE_MATCH",
+      "revision": 1,
       "families": [
         "ATTACK_PERMISSION",
         "CONDITION_STREET_CRED",
@@ -1272,14 +1272,7 @@
         "RIVAL_CHOICE",
         "TEMPORARY_BUFF"
       ],
-      "blockingFamilies": [
-        "ATTACK_PERMISSION",
-        "CONDITION_STREET_CRED",
-        "DURATION_DELAYED",
-        "MODAL_CHOICE",
-        "RIVAL_CHOICE",
-        "TEMPORARY_BUFF"
-      ],
+      "blockingFamilies": [],
       "note": null
     },
     {
