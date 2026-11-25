@@ -425,7 +425,9 @@
                   "WHEN_FIGHT_LOST",
                   "DELAYED_FIGHT_OUTCOME",
                   "WHEN_SPENT",
-                  "WHEN_FRIENDLY_UNIT_USES_BLOCKER"
+                  "WHEN_FRIENDLY_UNIT_USES_BLOCKER",
+                  "WHEN_RIVAL_CHANGES_FRIENDLY_GIGS",
+                  "DELAYED_END_TURN_DEFEAT"
                 ]
               }
             },
@@ -692,58 +694,370 @@
                                               {
                                                 "anyOf": [
                                                   {
-                                                    "oneOf": [
+                                                    "anyOf": [
                                                       {
-                                                        "type": "object",
-                                                        "properties": {
-                                                          "kind": {
-                                                            "type": "string",
-                                                            "const": "POWER"
+                                                        "anyOf": [
+                                                          {
+                                                            "oneOf": [
+                                                              {
+                                                                "type": "object",
+                                                                "properties": {
+                                                                  "kind": {
+                                                                    "type": "string",
+                                                                    "const": "POWER"
+                                                                  },
+                                                                  "sourceId": {
+                                                                    "type": "string",
+                                                                    "minLength": 1,
+                                                                    "maxLength": 200,
+                                                                    "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$"
+                                                                  },
+                                                                  "targetId": {
+                                                                    "type": "string",
+                                                                    "minLength": 1,
+                                                                    "maxLength": 200,
+                                                                    "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$"
+                                                                  },
+                                                                  "expires": {
+                                                                    "type": "object",
+                                                                    "properties": {
+                                                                      "kind": {
+                                                                        "type": "string",
+                                                                        "const": "END_OF_TURN"
+                                                                      },
+                                                                      "turn": {
+                                                                        "type": "integer",
+                                                                        "exclusiveMinimum": 0,
+                                                                        "maximum": 9007199254740991
+                                                                      }
+                                                                    },
+                                                                    "required": [
+                                                                      "kind",
+                                                                      "turn"
+                                                                    ],
+                                                                    "additionalProperties": false
+                                                                  },
+                                                                  "amount": {
+                                                                    "type": "number",
+                                                                    "const": -1
+                                                                  }
+                                                                },
+                                                                "required": [
+                                                                  "kind",
+                                                                  "sourceId",
+                                                                  "targetId",
+                                                                  "expires",
+                                                                  "amount"
+                                                                ],
+                                                                "additionalProperties": false
+                                                              },
+                                                              {
+                                                                "type": "object",
+                                                                "properties": {
+                                                                  "kind": {
+                                                                    "type": "string",
+                                                                    "const": "POWER"
+                                                                  },
+                                                                  "sourceId": {
+                                                                    "type": "string",
+                                                                    "minLength": 1,
+                                                                    "maxLength": 200,
+                                                                    "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$"
+                                                                  },
+                                                                  "targetId": {
+                                                                    "type": "string",
+                                                                    "minLength": 1,
+                                                                    "maxLength": 200,
+                                                                    "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$"
+                                                                  },
+                                                                  "expires": {
+                                                                    "type": "object",
+                                                                    "properties": {
+                                                                      "kind": {
+                                                                        "type": "string",
+                                                                        "const": "END_OF_TURN"
+                                                                      },
+                                                                      "turn": {
+                                                                        "type": "integer",
+                                                                        "exclusiveMinimum": 0,
+                                                                        "maximum": 9007199254740991
+                                                                      }
+                                                                    },
+                                                                    "required": [
+                                                                      "kind",
+                                                                      "turn"
+                                                                    ],
+                                                                    "additionalProperties": false
+                                                                  },
+                                                                  "amount": {
+                                                                    "type": "number",
+                                                                    "const": 2
+                                                                  },
+                                                                  "origin": {
+                                                                    "type": "object",
+                                                                    "properties": {
+                                                                      "effectId": {
+                                                                        "type": "string",
+                                                                        "pattern": "^[a-f0-9]{64}$"
+                                                                      },
+                                                                      "abilityId": {
+                                                                        "type": "string",
+                                                                        "minLength": 1
+                                                                      },
+                                                                      "ordinal": {
+                                                                        "type": "integer",
+                                                                        "exclusiveMinimum": 0,
+                                                                        "maximum": 9007199254740991
+                                                                      }
+                                                                    },
+                                                                    "required": [
+                                                                      "effectId",
+                                                                      "abilityId",
+                                                                      "ordinal"
+                                                                    ],
+                                                                    "additionalProperties": false
+                                                                  }
+                                                                },
+                                                                "required": [
+                                                                  "kind",
+                                                                  "sourceId",
+                                                                  "targetId",
+                                                                  "expires",
+                                                                  "amount",
+                                                                  "origin"
+                                                                ],
+                                                                "additionalProperties": false
+                                                              },
+                                                              {
+                                                                "type": "object",
+                                                                "properties": {
+                                                                  "kind": {
+                                                                    "type": "string",
+                                                                    "const": "POWER"
+                                                                  },
+                                                                  "sourceId": {
+                                                                    "type": "string",
+                                                                    "minLength": 1,
+                                                                    "maxLength": 200,
+                                                                    "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$"
+                                                                  },
+                                                                  "targetId": {
+                                                                    "type": "string",
+                                                                    "minLength": 1,
+                                                                    "maxLength": 200,
+                                                                    "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$"
+                                                                  },
+                                                                  "expires": {
+                                                                    "type": "object",
+                                                                    "properties": {
+                                                                      "kind": {
+                                                                        "type": "string",
+                                                                        "const": "END_OF_TURN"
+                                                                      },
+                                                                      "turn": {
+                                                                        "type": "integer",
+                                                                        "exclusiveMinimum": 0,
+                                                                        "maximum": 9007199254740991
+                                                                      }
+                                                                    },
+                                                                    "required": [
+                                                                      "kind",
+                                                                      "turn"
+                                                                    ],
+                                                                    "additionalProperties": false
+                                                                  },
+                                                                  "amount": {
+                                                                    "type": "number",
+                                                                    "const": 5
+                                                                  },
+                                                                  "origin": {
+                                                                    "type": "object",
+                                                                    "properties": {
+                                                                      "effectId": {
+                                                                        "type": "string",
+                                                                        "pattern": "^[a-f0-9]{64}$"
+                                                                      },
+                                                                      "abilityId": {
+                                                                        "type": "string",
+                                                                        "minLength": 1
+                                                                      },
+                                                                      "ordinal": {
+                                                                        "type": "integer",
+                                                                        "exclusiveMinimum": 0,
+                                                                        "maximum": 9007199254740991
+                                                                      }
+                                                                    },
+                                                                    "required": [
+                                                                      "effectId",
+                                                                      "abilityId",
+                                                                      "ordinal"
+                                                                    ],
+                                                                    "additionalProperties": false
+                                                                  }
+                                                                },
+                                                                "required": [
+                                                                  "kind",
+                                                                  "sourceId",
+                                                                  "targetId",
+                                                                  "expires",
+                                                                  "amount",
+                                                                  "origin"
+                                                                ],
+                                                                "additionalProperties": false
+                                                              },
+                                                              {
+                                                                "type": "object",
+                                                                "properties": {
+                                                                  "kind": {
+                                                                    "type": "string",
+                                                                    "const": "POWER"
+                                                                  },
+                                                                  "sourceId": {
+                                                                    "type": "string",
+                                                                    "minLength": 1,
+                                                                    "maxLength": 200,
+                                                                    "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$"
+                                                                  },
+                                                                  "targetId": {
+                                                                    "type": "string",
+                                                                    "minLength": 1,
+                                                                    "maxLength": 200,
+                                                                    "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$"
+                                                                  },
+                                                                  "expires": {
+                                                                    "type": "object",
+                                                                    "properties": {
+                                                                      "kind": {
+                                                                        "type": "string",
+                                                                        "const": "END_OF_TURN"
+                                                                      },
+                                                                      "turn": {
+                                                                        "type": "integer",
+                                                                        "exclusiveMinimum": 0,
+                                                                        "maximum": 9007199254740991
+                                                                      }
+                                                                    },
+                                                                    "required": [
+                                                                      "kind",
+                                                                      "turn"
+                                                                    ],
+                                                                    "additionalProperties": false
+                                                                  },
+                                                                  "amount": {
+                                                                    "type": "number",
+                                                                    "const": -5
+                                                                  },
+                                                                  "origin": {
+                                                                    "type": "object",
+                                                                    "properties": {
+                                                                      "effectId": {
+                                                                        "type": "string",
+                                                                        "pattern": "^[a-f0-9]{64}$"
+                                                                      }
+                                                                    },
+                                                                    "required": [
+                                                                      "effectId"
+                                                                    ],
+                                                                    "additionalProperties": false
+                                                                  }
+                                                                },
+                                                                "required": [
+                                                                  "kind",
+                                                                  "sourceId",
+                                                                  "targetId",
+                                                                  "expires",
+                                                                  "amount",
+                                                                  "origin"
+                                                                ],
+                                                                "additionalProperties": false
+                                                              }
+                                                            ]
                                                           },
-                                                          "sourceId": {
-                                                            "type": "string",
-                                                            "minLength": 1,
-                                                            "maxLength": 200,
-                                                            "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$"
-                                                          },
-                                                          "targetId": {
-                                                            "type": "string",
-                                                            "minLength": 1,
-                                                            "maxLength": 200,
-                                                            "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$"
-                                                          },
-                                                          "expires": {
+                                                          {
                                                             "type": "object",
                                                             "properties": {
                                                               "kind": {
                                                                 "type": "string",
-                                                                "const": "END_OF_TURN"
+                                                                "const": "POWER"
                                                               },
-                                                              "turn": {
+                                                              "sourceId": {
+                                                                "type": "string",
+                                                                "minLength": 1,
+                                                                "maxLength": 200,
+                                                                "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$"
+                                                              },
+                                                              "targetId": {
+                                                                "type": "string",
+                                                                "minLength": 1,
+                                                                "maxLength": 200,
+                                                                "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$"
+                                                              },
+                                                              "expires": {
+                                                                "type": "object",
+                                                                "properties": {
+                                                                  "kind": {
+                                                                    "type": "string",
+                                                                    "const": "END_OF_TURN"
+                                                                  },
+                                                                  "turn": {
+                                                                    "type": "integer",
+                                                                    "exclusiveMinimum": 0,
+                                                                    "maximum": 9007199254740991
+                                                                  }
+                                                                },
+                                                                "required": [
+                                                                  "kind",
+                                                                  "turn"
+                                                                ],
+                                                                "additionalProperties": false
+                                                              },
+                                                              "amount": {
                                                                 "type": "integer",
                                                                 "exclusiveMinimum": 0,
-                                                                "maximum": 9007199254740991
+                                                                "maximum": 9007199254740991,
+                                                                "multipleOf": 2
+                                                              },
+                                                              "scaled": {
+                                                                "type": "string",
+                                                                "const": "FRIENDLY_EVEN_GIGS"
+                                                              },
+                                                              "origin": {
+                                                                "type": "object",
+                                                                "properties": {
+                                                                  "effectId": {
+                                                                    "type": "string",
+                                                                    "pattern": "^[a-f0-9]{64}$"
+                                                                  },
+                                                                  "abilityId": {
+                                                                    "type": "string",
+                                                                    "minLength": 1
+                                                                  },
+                                                                  "ordinal": {
+                                                                    "type": "integer",
+                                                                    "exclusiveMinimum": 0,
+                                                                    "maximum": 9007199254740991
+                                                                  }
+                                                                },
+                                                                "required": [
+                                                                  "effectId",
+                                                                  "abilityId",
+                                                                  "ordinal"
+                                                                ],
+                                                                "additionalProperties": false
                                                               }
                                                             },
                                                             "required": [
                                                               "kind",
-                                                              "turn"
+                                                              "sourceId",
+                                                              "targetId",
+                                                              "expires",
+                                                              "amount",
+                                                              "scaled",
+                                                              "origin"
                                                             ],
                                                             "additionalProperties": false
-                                                          },
-                                                          "amount": {
-                                                            "type": "number",
-                                                            "const": -1
                                                           }
-                                                        },
-                                                        "required": [
-                                                          "kind",
-                                                          "sourceId",
-                                                          "targetId",
-                                                          "expires",
-                                                          "amount"
-                                                        ],
-                                                        "additionalProperties": false
+                                                        ]
                                                       },
                                                       {
                                                         "type": "object",
@@ -784,162 +1098,20 @@
                                                             "additionalProperties": false
                                                           },
                                                           "amount": {
-                                                            "type": "number",
-                                                            "const": 2
-                                                          },
-                                                          "origin": {
-                                                            "type": "object",
-                                                            "properties": {
-                                                              "effectId": {
-                                                                "type": "string",
-                                                                "pattern": "^[a-f0-9]{64}$"
+                                                            "anyOf": [
+                                                              {
+                                                                "type": "number",
+                                                                "const": -2
                                                               },
-                                                              "abilityId": {
-                                                                "type": "string",
-                                                                "minLength": 1
-                                                              },
-                                                              "ordinal": {
-                                                                "type": "integer",
-                                                                "exclusiveMinimum": 0,
-                                                                "maximum": 9007199254740991
+                                                              {
+                                                                "type": "number",
+                                                                "const": 2
                                                               }
-                                                            },
-                                                            "required": [
-                                                              "effectId",
-                                                              "abilityId",
-                                                              "ordinal"
-                                                            ],
-                                                            "additionalProperties": false
-                                                          }
-                                                        },
-                                                        "required": [
-                                                          "kind",
-                                                          "sourceId",
-                                                          "targetId",
-                                                          "expires",
-                                                          "amount",
-                                                          "origin"
-                                                        ],
-                                                        "additionalProperties": false
-                                                      },
-                                                      {
-                                                        "type": "object",
-                                                        "properties": {
-                                                          "kind": {
+                                                            ]
+                                                          },
+                                                          "scaled": {
                                                             "type": "string",
-                                                            "const": "POWER"
-                                                          },
-                                                          "sourceId": {
-                                                            "type": "string",
-                                                            "minLength": 1,
-                                                            "maxLength": 200,
-                                                            "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$"
-                                                          },
-                                                          "targetId": {
-                                                            "type": "string",
-                                                            "minLength": 1,
-                                                            "maxLength": 200,
-                                                            "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$"
-                                                          },
-                                                          "expires": {
-                                                            "type": "object",
-                                                            "properties": {
-                                                              "kind": {
-                                                                "type": "string",
-                                                                "const": "END_OF_TURN"
-                                                              },
-                                                              "turn": {
-                                                                "type": "integer",
-                                                                "exclusiveMinimum": 0,
-                                                                "maximum": 9007199254740991
-                                                              }
-                                                            },
-                                                            "required": [
-                                                              "kind",
-                                                              "turn"
-                                                            ],
-                                                            "additionalProperties": false
-                                                          },
-                                                          "amount": {
-                                                            "type": "number",
-                                                            "const": 5
-                                                          },
-                                                          "origin": {
-                                                            "type": "object",
-                                                            "properties": {
-                                                              "effectId": {
-                                                                "type": "string",
-                                                                "pattern": "^[a-f0-9]{64}$"
-                                                              },
-                                                              "abilityId": {
-                                                                "type": "string",
-                                                                "minLength": 1
-                                                              },
-                                                              "ordinal": {
-                                                                "type": "integer",
-                                                                "exclusiveMinimum": 0,
-                                                                "maximum": 9007199254740991
-                                                              }
-                                                            },
-                                                            "required": [
-                                                              "effectId",
-                                                              "abilityId",
-                                                              "ordinal"
-                                                            ],
-                                                            "additionalProperties": false
-                                                          }
-                                                        },
-                                                        "required": [
-                                                          "kind",
-                                                          "sourceId",
-                                                          "targetId",
-                                                          "expires",
-                                                          "amount",
-                                                          "origin"
-                                                        ],
-                                                        "additionalProperties": false
-                                                      },
-                                                      {
-                                                        "type": "object",
-                                                        "properties": {
-                                                          "kind": {
-                                                            "type": "string",
-                                                            "const": "POWER"
-                                                          },
-                                                          "sourceId": {
-                                                            "type": "string",
-                                                            "minLength": 1,
-                                                            "maxLength": 200,
-                                                            "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$"
-                                                          },
-                                                          "targetId": {
-                                                            "type": "string",
-                                                            "minLength": 1,
-                                                            "maxLength": 200,
-                                                            "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$"
-                                                          },
-                                                          "expires": {
-                                                            "type": "object",
-                                                            "properties": {
-                                                              "kind": {
-                                                                "type": "string",
-                                                                "const": "END_OF_TURN"
-                                                              },
-                                                              "turn": {
-                                                                "type": "integer",
-                                                                "exclusiveMinimum": 0,
-                                                                "maximum": 9007199254740991
-                                                              }
-                                                            },
-                                                            "required": [
-                                                              "kind",
-                                                              "turn"
-                                                            ],
-                                                            "additionalProperties": false
-                                                          },
-                                                          "amount": {
-                                                            "type": "number",
-                                                            "const": -5
+                                                            "const": "LEGEND_CALL"
                                                           },
                                                           "origin": {
                                                             "type": "object",
@@ -961,6 +1133,7 @@
                                                           "targetId",
                                                           "expires",
                                                           "amount",
+                                                          "scaled",
                                                           "origin"
                                                         ],
                                                         "additionalProperties": false
@@ -1008,12 +1181,17 @@
                                                       "amount": {
                                                         "type": "integer",
                                                         "exclusiveMinimum": 0,
-                                                        "maximum": 9007199254740991,
-                                                        "multipleOf": 2
+                                                        "maximum": 9007199254740991
                                                       },
                                                       "scaled": {
                                                         "type": "string",
-                                                        "const": "FRIENDLY_EVEN_GIGS"
+                                                        "const": "REVEALED_CARD_COST"
+                                                      },
+                                                      "revealedCardId": {
+                                                        "type": "string",
+                                                        "minLength": 1,
+                                                        "maxLength": 200,
+                                                        "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$"
                                                       },
                                                       "origin": {
                                                         "type": "object",
@@ -1047,6 +1225,7 @@
                                                       "expires",
                                                       "amount",
                                                       "scaled",
+                                                      "revealedCardId",
                                                       "origin"
                                                     ],
                                                     "additionalProperties": false
@@ -1092,20 +1271,12 @@
                                                     "additionalProperties": false
                                                   },
                                                   "amount": {
-                                                    "anyOf": [
-                                                      {
-                                                        "type": "number",
-                                                        "const": -2
-                                                      },
-                                                      {
-                                                        "type": "number",
-                                                        "const": 2
-                                                      }
-                                                    ]
+                                                    "type": "number",
+                                                    "const": -5
                                                   },
                                                   "scaled": {
                                                     "type": "string",
-                                                    "const": "LEGEND_CALL"
+                                                    "const": "ALL_RIVAL_UNITS"
                                                   },
                                                   "origin": {
                                                     "type": "object",
@@ -1174,18 +1345,12 @@
                                               },
                                               "amount": {
                                                 "type": "integer",
-                                                "exclusiveMinimum": 0,
-                                                "maximum": 9007199254740991
+                                                "minimum": -9007199254740991,
+                                                "exclusiveMaximum": 0
                                               },
                                               "scaled": {
                                                 "type": "string",
-                                                "const": "REVEALED_CARD_COST"
-                                              },
-                                              "revealedCardId": {
-                                                "type": "string",
-                                                "minLength": 1,
-                                                "maxLength": 200,
-                                                "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$"
+                                                "const": "SOURCE_POWER"
                                               },
                                               "origin": {
                                                 "type": "object",
@@ -1194,20 +1359,15 @@
                                                     "type": "string",
                                                     "pattern": "^[a-f0-9]{64}$"
                                                   },
-                                                  "abilityId": {
-                                                    "type": "string",
-                                                    "minLength": 1
-                                                  },
-                                                  "ordinal": {
+                                                  "sequence": {
                                                     "type": "integer",
-                                                    "exclusiveMinimum": 0,
+                                                    "minimum": 0,
                                                     "maximum": 9007199254740991
                                                   }
                                                 },
                                                 "required": [
                                                   "effectId",
-                                                  "abilityId",
-                                                  "ordinal"
+                                                  "sequence"
                                                 ],
                                                 "additionalProperties": false
                                               }
@@ -1219,7 +1379,6 @@
                                               "expires",
                                               "amount",
                                               "scaled",
-                                              "revealedCardId",
                                               "origin"
                                             ],
                                             "additionalProperties": false
@@ -1266,11 +1425,11 @@
                                           },
                                           "amount": {
                                             "type": "number",
-                                            "const": -5
+                                            "const": 1
                                           },
                                           "scaled": {
                                             "type": "string",
-                                            "const": "ALL_RIVAL_UNITS"
+                                            "const": "BLOCKER_GRANT_BONUS"
                                           },
                                           "origin": {
                                             "type": "object",
@@ -1278,10 +1437,16 @@
                                               "effectId": {
                                                 "type": "string",
                                                 "pattern": "^[a-f0-9]{64}$"
+                                              },
+                                              "sequence": {
+                                                "type": "integer",
+                                                "minimum": 0,
+                                                "maximum": 9007199254740991
                                               }
                                             },
                                             "required": [
-                                              "effectId"
+                                              "effectId",
+                                              "sequence"
                                             ],
                                             "additionalProperties": false
                                           }
@@ -1339,12 +1504,12 @@
                                       },
                                       "amount": {
                                         "type": "integer",
-                                        "minimum": -9007199254740991,
-                                        "exclusiveMaximum": 0
+                                        "exclusiveMinimum": 0,
+                                        "maximum": 9007199254740991
                                       },
                                       "scaled": {
                                         "type": "string",
-                                        "const": "SOURCE_POWER"
+                                        "const": "PER_EQUIPPED_GEAR"
                                       },
                                       "origin": {
                                         "type": "object",
@@ -1423,7 +1588,7 @@
                                   },
                                   "scaled": {
                                     "type": "string",
-                                    "const": "BLOCKER_GRANT_BONUS"
+                                    "const": "PROGRAM_PLAY_TRIGGER"
                                   },
                                   "origin": {
                                     "type": "object",
@@ -1432,15 +1597,20 @@
                                         "type": "string",
                                         "pattern": "^[a-f0-9]{64}$"
                                       },
-                                      "sequence": {
+                                      "abilityId": {
+                                        "type": "string",
+                                        "minLength": 1
+                                      },
+                                      "ordinal": {
                                         "type": "integer",
-                                        "minimum": 0,
+                                        "exclusiveMinimum": 0,
                                         "maximum": 9007199254740991
                                       }
                                     },
                                     "required": [
                                       "effectId",
-                                      "sequence"
+                                      "abilityId",
+                                      "ordinal"
                                     ],
                                     "additionalProperties": false
                                   }
@@ -1497,13 +1667,12 @@
                                 "additionalProperties": false
                               },
                               "amount": {
-                                "type": "integer",
-                                "exclusiveMinimum": 0,
-                                "maximum": 9007199254740991
+                                "type": "number",
+                                "const": 3
                               },
                               "scaled": {
                                 "type": "string",
-                                "const": "PER_EQUIPPED_GEAR"
+                                "const": "PROGRAM_UNIT_GRANT"
                               },
                               "origin": {
                                 "type": "object",
@@ -1511,16 +1680,10 @@
                                   "effectId": {
                                     "type": "string",
                                     "pattern": "^[a-f0-9]{64}$"
-                                  },
-                                  "sequence": {
-                                    "type": "integer",
-                                    "minimum": 0,
-                                    "maximum": 9007199254740991
                                   }
                                 },
                                 "required": [
-                                  "effectId",
-                                  "sequence"
+                                  "effectId"
                                 ],
                                 "additionalProperties": false
                               }
@@ -1577,12 +1740,13 @@
                             "additionalProperties": false
                           },
                           "amount": {
-                            "type": "number",
-                            "const": 1
+                            "type": "integer",
+                            "exclusiveMinimum": 0,
+                            "maximum": 9007199254740991
                           },
                           "scaled": {
                             "type": "string",
-                            "const": "PROGRAM_PLAY_TRIGGER"
+                            "const": "PAID_MAX_GIG"
                           },
                           "origin": {
                             "type": "object",
@@ -1590,21 +1754,10 @@
                               "effectId": {
                                 "type": "string",
                                 "pattern": "^[a-f0-9]{64}$"
-                              },
-                              "abilityId": {
-                                "type": "string",
-                                "minLength": 1
-                              },
-                              "ordinal": {
-                                "type": "integer",
-                                "exclusiveMinimum": 0,
-                                "maximum": 9007199254740991
                               }
                             },
                             "required": [
-                              "effectId",
-                              "abilityId",
-                              "ordinal"
+                              "effectId"
                             ],
                             "additionalProperties": false
                           }
@@ -1661,12 +1814,14 @@
                         "additionalProperties": false
                       },
                       "amount": {
-                        "type": "number",
-                        "const": 3
+                        "type": "integer",
+                        "exclusiveMinimum": 0,
+                        "maximum": 9007199254740991,
+                        "multipleOf": 3
                       },
                       "scaled": {
                         "type": "string",
-                        "const": "PROGRAM_UNIT_GRANT"
+                        "const": "PROGRAM_PER_EQUIPPED_GEAR"
                       },
                       "origin": {
                         "type": "object",

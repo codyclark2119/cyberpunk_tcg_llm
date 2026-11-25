@@ -4,7 +4,9 @@ import { applyBlockerGrant } from "./blocker-grant";
 import { applyRockerGrant } from "./rocker-grant";
 import { moveGearAndReady, selectMovedGear } from "./gear-move";
 import { applyAttackLock } from "./attack-lock";
+import { applyEquippedGearPower } from "./end-turn-defeat";
 import { noteSpent } from "./spend-triggers";
+import { noteRivalGigChange } from "./gig-change-triggers";
 import { applyMustAttack } from "./must-attack";
 import { applyFightDefeatImmunity } from "./fight-immunity";
 import { advanceCrossSet, advanceMandatorySwap, crossSetSources, crossSetTargets, swapChoiceGigs } from "./legend-spend";
@@ -282,6 +284,12 @@ export function continuePlay(m: TurnMutation, index: number): Result<null> {
         const called = chooseFreeCall(m, option);
         return called.ok ? completePlayEffect(m) : called;
     }
+    if (s.resolution.current?.effect.kind === "EQUIPPED_UNIT_POWER_PER_GEAR_THIS_TURN") { // Batch V90.
+        if (option.kind !== "CARD") return failure("INVALID_POWER_TARGET", "Choose an equipped field Unit");
+        s.resolution.choice = null;
+        const applied = applyEquippedGearPower(m, option.cardInstanceId, false);
+        return applied.ok ? completePlayEffect(m) : applied;
+    }
     if (s.resolution.current?.effect.kind === "UNIT_CANNOT_ATTACK_UNTIL_YOUR_NEXT_TURN") { // Batch V83.
         if (option.kind !== "CARD") return failure("INVALID_ATTACK_LOCK", "Choose a face-up field Unit");
         const locked = applyAttackLock(m, option.cardInstanceId, false);
@@ -342,7 +350,7 @@ export function continuePlay(m: TurnMutation, index: number): Result<null> {
     else {
         const changed = changeGigValue(s, c.targetGigId, delta, m.context);
         if (!changed.ok) return changed;
-        m.emit(changed.value);
+        m.emit(changed.value); noteRivalGigChange(m, [s.objects.gigs[c.targetGigId].controllerId]); // Batch V88.
     }
     m.emit({ kind: "EFFECT_RESOLVED", effectId: s.resolution.current!.id });
     delete c.targetGigId; c.effectIndex++;

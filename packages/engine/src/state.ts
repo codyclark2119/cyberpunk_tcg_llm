@@ -1,3 +1,4 @@
+import { validateEndTurnDefeats } from "./end-turn-defeat";
 import { effectiveCallCost } from "./free-call-support";
 import { otherPlayerMayChoose } from "./rival-reveal";
 import { validateReadyUnitAttackGrants } from "./ready-attack-grant";
@@ -5,6 +6,7 @@ import { validateFightDefeatImmunities } from "./fight-immunity";
 import { validateGigReroll } from "./gig-reroll";
 import { validateGearMove } from "./gear-move";
 import { validateAttackLocks } from "./attack-lock";
+import { rivalChangeTriggerActs } from "./gig-change-triggers";
 import { startedQueuedCall, validateQueuedCall } from "./free-call-effect";
 import { validateGoSoloDiscounts } from "./go-solo-discount";
 import { validateLegendSpendMetadata } from "./legend-spend-support";
@@ -205,6 +207,7 @@ export function validateState(input: unknown, context: EngineContext): Result<Ga
     const reroll = validateGigReroll(s, context); if (!reroll.ok) return reroll; // Batch V81.
     const gearMove = validateGearMove(s, context); if (!gearMove.ok) return gearMove; // Batch V82.
     const attackLocks = validateAttackLocks(s, context); if (!attackLocks.ok) return attackLocks; // Batch V83.
+    const endTurnDefeats = validateEndTurnDefeats(s, context); if (!endTurnDefeats.ok) return endTurnDefeats; // Batch V90.
     const queuedCall = validateQueuedCall(s, context); if (!queuedCall.ok) return queuedCall; // Batch V84.
     const discounts = validateGoSoloDiscounts(s, context); if (!discounts.ok) return discounts; // Batch V83.
     const forced = validateMustAttack(s, context);
@@ -222,7 +225,7 @@ export function validateState(input: unknown, context: EngineContext): Result<Ga
     }
     if (slice && !s.setup) {
         const step = s.timing.step;
-        if (ids.length !== 2 || !s.timing.firstPlayer || !ids.includes(s.timing.firstPlayer) || !step || (!["RIVAL_REACT", "COMBAT_RESOLUTION_PENDING", "DEFEAT_ORDER_SELECTION", "TRIGGER_RESOLUTION"].includes(s.timing.combat.stage) && !s.resolution.targetedDefeatContinuation && !s.resolution.triggerContinuation?.effectDefeats && !(s.resolution.triggerContinuation?.origin.kind === "DEFEAT" && s.resolution.triggerContinuation.origin.effectSource) && !otherPlayerMayChoose(s) && startedQueuedCall(s)?.playerId !== s.timing.actingPlayer /* Batch V86 */ && s.timing.actingPlayer !== s.timing.activePlayer))
+        if (ids.length !== 2 || !s.timing.firstPlayer || !ids.includes(s.timing.firstPlayer) || !step || (!["RIVAL_REACT", "COMBAT_RESOLUTION_PENDING", "DEFEAT_ORDER_SELECTION", "TRIGGER_RESOLUTION"].includes(s.timing.combat.stage) && !s.resolution.targetedDefeatContinuation && !s.resolution.triggerContinuation?.effectDefeats && !(s.resolution.triggerContinuation?.origin.kind === "DEFEAT" && s.resolution.triggerContinuation.origin.effectSource) && !otherPlayerMayChoose(s) && startedQueuedCall(s)?.playerId !== s.timing.actingPlayer /* Batch V86 */ && !rivalChangeTriggerActs(s) /* Batch V88 */ && s.timing.actingPlayer !== s.timing.activePlayer))
             return failure("INVALID_TURN_STATE", "Turn slice requires two players, first player and an active decision actor");
         if (s.timing.turn < 1 || s.timing.activePlayer !== ids[(s.players[s.timing.firstPlayer].seat + s.timing.turn - 1) % ids.length])
             return failure("INVALID_TURN_ORDER", "Active player must follow first-player and turn order");
@@ -246,7 +249,7 @@ export function validateState(input: unknown, context: EngineContext): Result<Ga
         if (s.match.outcome && (!ids.includes(s.match.outcome.winnerId) || !ids.includes(s.match.outcome.loserId) || s.match.outcome.winnerId === s.match.outcome.loserId))
             return failure("INVALID_OUTCOME", "Outcome players invalid");
         const continuation = s.resolution.callContinuation;
-        if ((step === "PAYMENT_SELECTION") !== Boolean(continuation || s.resolution.legendEntryContinuation || s.resolution.playContinuation?.phase === "PAYMENT") || (step === "PAYMENT_SELECTION" && !choice))
+        if ((step === "PAYMENT_SELECTION") !== Boolean(continuation || s.resolution.legendEntryContinuation || s.resolution.playContinuation?.phase === "PAYMENT" || s.resolution.triggerContinuation?.phase === "PAYMENT" /* Batch V91 */) || (step === "PAYMENT_SELECTION" && !choice))
             return failure("INVALID_PAYMENT_STATE", "Payment step, choice and continuation must agree");
         if (continuation) {
             const legend = s.objects.cards[continuation.legendId], available = paymentSources(s, continuation.actorId, context);

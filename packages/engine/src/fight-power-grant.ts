@@ -4,6 +4,7 @@ import type { TurnMutation } from "./turn";
 import { cardRevision, effectiveCardTypes } from "./characteristics";
 import { isUnitSpendSubject } from "./unit-spend";
 import { supportsFightPowerProgram } from "./fight-power-grant-support";
+import { supportsGigChangeTriggerCard } from "./gig-change-trigger-support";
 
 /** Batch V58: the controller's face-up field Units, the choices for "a friendly Unit". */
 export function friendlyFieldUnits(state: GameState, actor: PlayerId, context: EngineContext) {
@@ -13,10 +14,13 @@ export function friendlyFieldUnits(state: GameState, actor: PlayerId, context: E
 export function friendlyFaceUpLegends(state: GameState, actor: PlayerId, context: EngineContext) {
     return [...state.players[actor].zones.LEGENDS, ...state.players[actor].zones.BATTLEFIELD].filter(id => { const c = state.objects.cards[id]; return c.controllerId === actor && c.face === "UP" && cardRevision(state, id, context)?.type === "LEGEND"; }).length;
 }
-/** 11.4.2.1: "while fighting" power, applied before the fight's power comparison; the opposing Unit is always a rival's. */
-export function whileFightingBonus(state: GameState, id: CardInstanceId, context: EngineContext) {
-    const grants = (state.fightPowerGrants ?? []).filter(x => x.targetId === id);
-    return grants.reduce((n, x) => n + x.amount * friendlyFaceUpLegends(state, x.controllerId, context), 0);
+/** 11.4.2.1: "while fighting" power, applied before the fight's power comparison; the opposing Unit is always a rival's. Batch V88: a
+ * pinned field Unit's "+2 power while fighting a Legend" also counts when the opposing card is a Legend (one on the field). */
+export function whileFightingBonus(state: GameState, id: CardInstanceId, opposingId: CardInstanceId, context: EngineContext) {
+    const grants = (state.fightPowerGrants ?? []).filter(x => x.targetId === id), c = state.objects.cards[id], r = cardRevision(state, id, context);
+    const legend = Boolean(c && r && c.face === "UP" && c.zone.zone === "BATTLEFIELD" && cardRevision(state, opposingId, context)?.type === "LEGEND" && supportsGigChangeTriggerCard(r, context).ok);
+    return grants.reduce((n, x) => n + x.amount * friendlyFaceUpLegends(state, x.controllerId, context), 0)
+        + (legend ? r!.mechanics.modifiers.reduce((n, x) => n + (x.kind === "POWER_WHILE_FIGHTING_LEGEND" ? x.amount : 0), 0) : 0);
 }
 function compare(a: FightPowerGrant, b: FightPowerGrant) { return a.origin.effectId < b.origin.effectId ? -1 : a.origin.effectId > b.origin.effectId ? 1 : 0; }
 export function applyFightPowerGrant(m: TurnMutation, targetId: CardInstanceId, forced: boolean) {

@@ -1,3 +1,4 @@
+import { armEndTurnDefeats } from "./end-turn-defeat";
 import { endReadyUnitAttack } from "./ready-attack-grant";
 import { recordFightWin } from "./fight-win-support";
 import { endTurnEnabled } from "./end-turn-support";
@@ -33,8 +34,8 @@ export function finishCombat(m: TurnMutation) {
 }
 function advanceDefeats(m: TurnMutation) {
     const continuation = m.state.resolution.defeatContinuation!;
-    while (unfinishedDefeatOrder(m.state)) {
-        const choice = defeatOrderChoice(m.state), order = unfinishedDefeatOrder(m.state)!;
+    while (unfinishedDefeatOrder(m.state, m.context)) {
+        const choice = defeatOrderChoice(m.state, m.context), order = unfinishedDefeatOrder(m.state, m.context)!;
         if (choice.options.length > 1) {
             const c = m.state.timing.combat;
             if (!("target" in c) || !c.target) return failure("INVALID_FIGHT", "Locked target required");
@@ -55,11 +56,11 @@ function advanceDefeats(m: TurnMutation) {
     const result = defeatCards(m, continuation.defeats, continuation.orders), outcomes = continuation.fightOutcomes;
     if (!result.ok) return result;
     // Batch V46: fired next-fight-outcome effects resolve after the fight ends, together with its DEFEATED triggers.
-    if ((outcomes || lost.length) && continuation.fightResult) return beginTriggers(m, { kind: "DEFEAT", defeated: continuation.defeats, fight: { result: continuation.fightResult, outcomes: outcomes ?? [] } }, [...result.value, ...(outcomes ?? []).map(fightOutcomeBinding), ...lost]);
-    return triggersEnabled(m.context) ? beginTriggers(m, { kind: "DEFEAT", defeated: continuation.defeats }, result.value) : finishCombat(m);
+    if ((outcomes || lost.length) && continuation.fightResult) return beginTriggers(m, { kind: "DEFEAT", defeated: result.value.defeated, fight: { result: continuation.fightResult, outcomes: outcomes ?? [] } }, [...result.value.triggered, ...(outcomes ?? []).map(fightOutcomeBinding), ...lost]);
+    return triggersEnabled(m.context) ? beginTriggers(m, { kind: "DEFEAT", defeated: result.value.defeated }, result.value.triggered) : finishCombat(m);
 }
 export function continueDefeatOrder(m: TurnMutation, index: number) {
-    const choice = m.state.resolution.choice, option = choice?.options[index], order = unfinishedDefeatOrder(m.state);
+    const choice = m.state.resolution.choice, option = choice?.options[index], order = unfinishedDefeatOrder(m.state, m.context);
     if (!order || option?.kind !== "CARD") return failure("INVALID_DEFEAT_ORDER", "Choose the next card in its owner's Trash order");
     m.state.resolution.defeatContinuation!.orders.find(o => o.targetId === order.targetId)!.cardIds.push(option.cardInstanceId);
     m.emit({ kind: "DEFEAT_TRASH_ORDER_SELECTED", targetId: order.targetId, cardInstanceId: option.cardInstanceId, ownerId: choice!.actorId, forced: false });
@@ -87,6 +88,7 @@ function advanceGigSteal(m: TurnMutation) {
             const g = m.state.objects.gigs[id];
             if (g.roll.kind !== "ROLLED") throw new Error("Validated transfer must contain rolled Gigs");
             m.emit({ kind: "GIG_STOLEN", gigInstanceId: id, fromPlayer: defendingPlayer, toPlayer: c.attackingPlayerId, currentValue: g.roll.currentValue, attackerId: c.attackerId });
+            armEndTurnDefeats(m, [c.attackerId], "STEAL"); // Batch V90.
             if (endTurnEnabled(m.context)) {
                 const steals = m.state.turnHistory!.gigsStolenByUnit ??= {};
                 steals[c.attackerId] = (steals[c.attackerId] ?? 0) + 1;
@@ -121,6 +123,7 @@ export function resolveCombat(m: TurnMutation) {
             if (view.getEffectivePower(id) === null) return failure("UNSUPPORTED_NULL_FIGHT_POWER", "Null is not a numeric power");
         }
         m.emit({ kind: "FIGHT_STARTED", attackerId: c.attackerId, defenderId: c.target.cardInstanceId });
+        armEndTurnDefeats(m, [c.attackerId, c.target.cardInstanceId], "FIGHT"); // Batch V90.
         const result = evaluateFight(m.state, m.context, id => view.getEffectivePower(id));
         m.emit(result.event);
         recordFightWin(m, result.event.winnerId); // Batch V52.

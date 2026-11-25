@@ -8,6 +8,7 @@ import { applyBlockerGrant, blockerGrantTargets } from "./blocker-grant";
 import { applyRockerGrant, rockerGrantTargets } from "./rocker-grant";
 import { beginGearMove } from "./gear-move";
 import { applyAttackLock, currentLockTargets } from "./attack-lock";
+import { applyEquippedGearPower, currentEquippedTargets } from "./end-turn-defeat";
 import { beginProgramFreeCall } from "./free-call-effect";
 import { grantGoSoloDiscount } from "./go-solo-discount";
 import { applyFightDefeatImmunity } from "./fight-immunity";
@@ -107,6 +108,10 @@ export class HandlerRegistry {
         if (effect.kind === "POWER_PER_EQUIPPED_GEAR_THIS_TURN") { // Batch V75: one friendly Unit; a lone Unit is forced and none does nothing.
             const targets = friendlyFieldUnits(m.state, m.state.resolution.current!.controllerId, m.context);
             return targets.length > 1 ? offerPlayChoice(m) : targets.length === 1 ? applyGearPower(m, targets[0], true) : success(null);
+        }
+        if (effect.kind === "EQUIPPED_UNIT_POWER_PER_GEAR_THIS_TURN") { // Batch V90: any equipped Unit; a lone Unit is forced and none does nothing.
+            const targets = currentEquippedTargets(m.state, m.context);
+            return targets.length > 1 ? offerPlayChoice(m) : targets.length === 1 ? applyEquippedGearPower(m, targets[0], true) : success(null);
         }
         if (effect.kind === "MOVE_SOURCE_GEAR_TO_UNEQUIPPED_UNIT_THEN_READY") return beginGearMove(m, offerPlayChoice); // Batch V82.
         if (effect.kind === "UNIT_CANNOT_ATTACK_UNTIL_YOUR_NEXT_TURN") { // Batch V83: any face-up field Unit; a lone Unit is forced and none does nothing.

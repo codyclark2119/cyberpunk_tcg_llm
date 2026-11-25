@@ -1,3 +1,5 @@
+import { validatePaidPower } from "./paid-attack-power";
+import { validateEquippedGearPower } from "./end-turn-defeat";
 import { isLegendCallPower, playPowerTargets } from "./legend-spend";
 import { validateGearPower } from "./gear-legend";
 import { validateProgramPlayPower } from "./braindance-legend";
@@ -154,8 +156,8 @@ export function validateTemporaryPower(state: GameState, context: EngineContext)
             continue;
         }
         // Batch V74: the +1 a Legend's Blocker grant also gave, with a friendly value-pair of Gigs as it resolved.
-        if ("scaled" in x && (x.scaled === "BLOCKER_GRANT_BONUS" || x.scaled === "PER_EQUIPPED_GEAR" || x.scaled === "PROGRAM_PLAY_TRIGGER" || x.scaled === "PROGRAM_UNIT_GRANT" || x.scaled === "ROCKER_ATTACK_GRANT_BONUS")) { // Batch V79: and a Program's Unit grant. Batch V80: and a ROCKER grant's +2. // Batch V75: and a Legend's per-Gear power. Batch V76: and its BRAINDANCE play power.
-            const valid = (x.scaled === "BLOCKER_GRANT_BONUS" ? validateBlockerBonus : x.scaled === "PER_EQUIPPED_GEAR" ? validateGearPower : x.scaled === "PROGRAM_UNIT_GRANT" ? validateUnitGrantPower : x.scaled === "ROCKER_ATTACK_GRANT_BONUS" ? validateRockerBonus : validateProgramPlayPower)(state, x as never, context, id => { const t = state.objects.cards[id]; return t?.face === "UP" && (["BATTLEFIELD", "TRASH", "REMOVED"].includes(t.zone.zone) && effectiveCardTypes(state, id, context).includes("UNIT") || removedFieldLegend(state, id, context)); });
+        if ("scaled" in x && (x.scaled === "BLOCKER_GRANT_BONUS" || x.scaled === "PER_EQUIPPED_GEAR" || x.scaled === "PROGRAM_PLAY_TRIGGER" || x.scaled === "PROGRAM_UNIT_GRANT" || x.scaled === "ROCKER_ATTACK_GRANT_BONUS" || x.scaled === "PROGRAM_PER_EQUIPPED_GEAR" || x.scaled === "PAID_MAX_GIG")) { // Batch V91: and a paid max-Gig power. // Batch V90: and a Program's per-Gear power on any equipped Unit. // Batch V79: and a Program's Unit grant. Batch V80: and a ROCKER grant's +2. // Batch V75: and a Legend's per-Gear power. Batch V76: and its BRAINDANCE play power.
+            const valid = (x.scaled === "BLOCKER_GRANT_BONUS" ? validateBlockerBonus : x.scaled === "PER_EQUIPPED_GEAR" ? validateGearPower : x.scaled === "PROGRAM_UNIT_GRANT" ? validateUnitGrantPower : x.scaled === "PROGRAM_PER_EQUIPPED_GEAR" ? validateEquippedGearPower : x.scaled === "PAID_MAX_GIG" ? validatePaidPower : x.scaled === "ROCKER_ATTACK_GRANT_BONUS" ? validateRockerBonus : validateProgramPlayPower)(state, x as never, context, id => { const t = state.objects.cards[id]; return t?.face === "UP" && (["BATTLEFIELD", "TRASH", "REMOVED"].includes(t.zone.zone) && effectiveCardTypes(state, id, context).includes("UNIT") || removedFieldLegend(state, id, context)); });
             if (!valid.ok) return valid;
             continue;
         }

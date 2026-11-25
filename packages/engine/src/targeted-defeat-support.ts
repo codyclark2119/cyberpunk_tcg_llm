@@ -38,7 +38,11 @@ const TARGETED_DEFEAT_SHAPES = [
         effects: [{ kind: "DEFEAT_UNIT", target: { kind: "UNITS", relation: "RIVAL", power: { kind: "ANY" } } }] },
     // Batch V46: Safety Override. "{Quick} The next time a friendly Unit loses a fight this turn, defeat the opposing rival Unit."
     { type: "PROGRAM", colors: ["YELLOW"], ram: { YELLOW: 3 }, tags: ["Quickhack"], cost: 2, sell: true, power: null, keywords: ["QUICK"],
-        effects: [{ kind: "REGISTER_NEXT_FIGHT_OUTCOME", on: "FRIENDLY_UNIT_LOSES", effect: { kind: "DEFEAT_UNIT", target: { kind: "OPPOSING_UNIT" } } }] }
+        effects: [{ kind: "REGISTER_NEXT_FIGHT_OUTCOME", on: "FRIENDLY_UNIT_LOSES", effect: { kind: "DEFEAT_UNIT", target: { kind: "OPPOSING_UNIT" } } }] },
+    // Batch V90: Cyberpsychosis. "{Quick} Give an equipped Unit +3 power this turn for each of its equipped Gears. If that Unit steals or
+    // fights, defeat it at the end of this turn."
+    { type: "PROGRAM", colors: ["YELLOW"], ram: { YELLOW: 2 }, tags: ["Quickhack"], cost: 3, sell: true, power: null, keywords: ["QUICK"],
+        effects: [{ kind: "EQUIPPED_UNIT_POWER_PER_GEAR_THIS_TURN", amount: 3, ifStealsOrFights: { timing: "END_OF_TURN", effect: { kind: "DEFEAT_UNIT", target: { kind: "TRIGGER_SUBJECT" } } } }] }
 ].map(shape => canonicalSerialize({ modifiers: [], keywords: [], ...shape }));
 /** A multi-ability defeat card as pinned: every ability whole, in printed order; anything not listed is absent. */
 const ability = (a: { trigger: string; effects: unknown[] }) => ({ trigger: a.trigger, inherited: null, guard: null, activation: null, conditions: [], abilityCost: { kind: "NONE" }, effects: a.effects });
@@ -74,7 +78,7 @@ export function supportsTargetedDefeatCard(card: DeepReadonly<CardRevisionSnapsh
 // Owns TARGETED_DEFEAT_V1 and Unit-target defeat effects only. The Gear scope and Gear-target
 // effects are owned by validateTargetedGearDefeatMetadata, which validateState registers alongside
 // this one; a mixed card is claimed by both detectors and must satisfy both complete gates.
-export function hasTargetedDefeatMetadata(card: DeepReadonly<CardRevisionSnapshot>) { return card.execution?.scope === "TARGETED_DEFEAT_V1" || card.mechanics.abilities.some(a => a.effects.some(e => e.kind === "DEFEAT_UNIT" && e.target.kind !== "GEAR" || e.kind === "SPEND_ALL_UNITS" || e.kind === "REGISTER_NEXT_FIGHT_OUTCOME" && e.effect.kind === "DEFEAT_UNIT")); }
+export function hasTargetedDefeatMetadata(card: DeepReadonly<CardRevisionSnapshot>) { return card.execution?.scope === "TARGETED_DEFEAT_V1" || card.mechanics.abilities.some(a => a.effects.some(e => e.kind === "DEFEAT_UNIT" && e.target.kind !== "GEAR" || e.kind === "SPEND_ALL_UNITS" || e.kind === "REGISTER_NEXT_FIGHT_OUTCOME" && e.effect.kind === "DEFEAT_UNIT" || e.kind === "EQUIPPED_UNIT_POWER_PER_GEAR_THIS_TURN")); }
 export function validateTargetedDefeatMetadata(state: GameState, context: EngineContext) {
     for (const c of Object.values(state.objects.cards)) { const r = context.content.cards.find(r => r.id === c.cardId && r.revision === c.revision); if (r && hasTargetedDefeatMetadata(r)) { const v = supportsTargetedDefeatCard(r, context); if (!v.ok) return v; } }
     return success(null);

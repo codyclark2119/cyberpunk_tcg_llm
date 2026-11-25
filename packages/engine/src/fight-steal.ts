@@ -1,3 +1,4 @@
+import { armEndTurnDefeats } from "./end-turn-defeat";
 import { reducedAllowance } from "./steal-reduction";
 import { failure, success, type GameState, type GigInstanceId, type Result } from "@tcg/domain";
 import { belowPowerStealerPower, recordBelowPowerSteal } from "./below-power-steal";
@@ -32,6 +33,7 @@ export function resolveEffectSteal(m: TurnMutation, gigId: GigInstanceId): Resul
         const g = s.objects.gigs[gigId];
         if (g.roll.kind !== "ROLLED") throw new Error("Validated transfer must contain rolled Gigs");
         m.emit({ kind: "GIG_STOLEN", gigInstanceId: gigId, fromPlayer: from, toPlayer: current.controllerId, currentValue: g.roll.currentValue, attackerId: subjectId });
+        armEndTurnDefeats(m, [subjectId], "STEAL"); // Batch V90.
         if (endTurnEnabled(m.context)) { const steals = s.turnHistory!.gigsStolenByUnit ??= {}; steals[subjectId] = (steals[subjectId] ?? 0) + 1; }
     });
     if (!moved.ok) return moved;

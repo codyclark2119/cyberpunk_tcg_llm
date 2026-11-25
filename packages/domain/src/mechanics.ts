@@ -5,7 +5,7 @@ export const GameAreaSchema = z.enum(["DECK", "HAND", "BATTLEFIELD", "TRASH", "E
 export const ZoneSchema = z.enum([...GameAreaSchema.options, "RESOLVING_PROGRAM"]);
 export const ZoneRefSchema = z.strictObject({ playerId: PlayerIdSchema, zone: ZoneSchema });
 export const KeywordSchema = z.enum(["GO_SOLO", "QUICK", "BLOCKER", "ADRENALINE"]);
-export const TriggerSchema = z.enum(["WHEN_SOLD", "WHEN_CALLED", "WHEN_PLAYED", "WHEN_ATTACKING", "WHEN_DEFEATED", "WHEN_FIGHT_WON", "WHEN_CARD_PLAYED", "WHEN_OWN_TURN_ENDS", "WHEN_UNIT_ATTACKS", "WHEN_BLOCKER_USED", "WHEN_GIG_STOLEN", "WHEN_FRIENDLY_UNIT_STEALS_GIG", "WHEN_UNIT_DEFEATED", "WHEN_FIGHT_LOST", "WHEN_OWN_TURN_STARTS", "WHEN_SPENT", "WHEN_FRIENDLY_UNIT_USES_BLOCKER"]);
+export const TriggerSchema = z.enum(["WHEN_SOLD", "WHEN_CALLED", "WHEN_PLAYED", "WHEN_ATTACKING", "WHEN_DEFEATED", "WHEN_FIGHT_WON", "WHEN_CARD_PLAYED", "WHEN_OWN_TURN_ENDS", "WHEN_UNIT_ATTACKS", "WHEN_BLOCKER_USED", "WHEN_GIG_STOLEN", "WHEN_FRIENDLY_UNIT_STEALS_GIG", "WHEN_UNIT_DEFEATED", "WHEN_FIGHT_LOST", "WHEN_OWN_TURN_STARTS", "WHEN_SPENT", "WHEN_FRIENDLY_UNIT_USES_BLOCKER", "WHEN_RIVAL_CHANGES_FRIENDLY_GIGS"]);
 export const EquipTargetSchema = z.strictObject({ kind: z.literal("FRIENDLY_UNIT_OR_FACE_UP_LEGEND") });
 export const TargetRelationshipSchema = z.enum(["CONTROLLED", "RIVAL", "ANY"]);
 export const TargetSelectorSchema = z.discriminatedUnion("kind", [
@@ -144,7 +144,9 @@ export const DefeatGearTargetSchema = z.strictObject({ kind: z.literal("GEAR"), 
 export type DefeatGearTarget = z.infer<typeof DefeatGearTargetSchema>;
 // Batch V46: "the opposing rival Unit" of the fight that fired a next-fight-outcome effect; no target choice.
 export const DefeatOpposingTargetSchema = z.strictObject({ kind: z.literal("OPPOSING_UNIT") });
-export const DefeatTargetSchema = z.discriminatedUnion("kind", [DefeatUnitTargetSchema, DefeatGearTargetSchema, DefeatOpposingTargetSchema]);
+// Batch V90: "defeat it" of a delayed end-of-turn defeat: the Unit its binding names; no target choice.
+export const DefeatSubjectTargetSchema = z.strictObject({ kind: z.literal("TRIGGER_SUBJECT") });
+export const DefeatTargetSchema = z.discriminatedUnion("kind", [DefeatUnitTargetSchema, DefeatGearTargetSchema, DefeatOpposingTargetSchema, DefeatSubjectTargetSchema]);
 export type DefeatTarget = z.infer<typeof DefeatTargetSchema>;
 export const DefeatUnitEffectSchema = z.strictObject({ kind: z.literal("DEFEAT_UNIT"), target: DefeatTargetSchema,
     when: z.strictObject({ timing: z.literal("RESOLUTION"), condition: z.strictObject({ kind: z.literal("STREET_CRED_GREATER_THAN_RIVAL") }) }).optional(),
@@ -169,6 +171,8 @@ export const EffectSchema = z.discriminatedUnion("kind", [
     // "Add another Unit from your trash to your hand" (batch V13): one public trash Unit other than the
     // trigger subject, chosen by the ability's controller.
     z.strictObject({ kind: z.literal("RETURN_TRASH_UNIT_TO_HAND"), exclude: z.literal("SUBJECT") }),
+    // Batch V88: "you may add a card from your trash to your hand" (any card of the controller's own trash, or none).
+    z.strictObject({ kind: z.literal("MAY_RETURN_TRASH_CARD_TO_HAND") }),
     // "Trash 3. Add a Unit from among them to your hand." (batch V14): 11.10.2.1 trash the top card of
     // your deck 3 times, one at a time, then return one Unit among exactly those cards.
     z.strictObject({ kind: z.literal("TRASH_THEN_RETURN_UNIT"), count: z.literal(3) }),
@@ -265,6 +269,12 @@ export const EffectSchema = z.discriminatedUnion("kind", [
     z.strictObject({ kind: z.literal("PROGRAM_PLAY_FRIENDLY_POWER_THIS_TURN"), amount: z.literal(1) }),
     // Batch V75: "You may defeat a friendly Gear. If you do, draw 2. Otherwise, draw 1."
     z.strictObject({ kind: z.literal("MAY_DEFEAT_FRIENDLY_GEAR_THEN_DRAW"), ifDefeated: z.literal(2), otherwise: z.literal(1) }),
+    // Batch V91: "You may pay 2 €$. If you do, this Unit gains power equal to a friendly max Gig this turn." (6.3.2: a die at its top face.)
+    z.strictObject({ kind: z.literal("MAY_PAY_FOR_POWER_EQUAL_TO_FRIENDLY_MAX_GIG"), cost: z.literal(2) }),
+    // Batch V90: "Give an equipped Unit +3 power this turn for each of its equipped Gears. If that Unit steals or fights, defeat it at
+    // the end of this turn." Any player's equipped Unit; the Gear counted as it resolves; the defeat is registered on that Unit.
+    z.strictObject({ kind: z.literal("EQUIPPED_UNIT_POWER_PER_GEAR_THIS_TURN"), amount: z.literal(3),
+        ifStealsOrFights: z.strictObject({ timing: z.literal("END_OF_TURN"), effect: DefeatUnitEffectSchema }) }),
     // Batch V75: "Give a friendly Unit +1 power this turn for each of its equipped Gear." (counted as it resolves).
     z.strictObject({ kind: z.literal("POWER_PER_EQUIPPED_GEAR_THIS_TURN"), target: z.strictObject({ kind: z.literal("FRIENDLY_UNIT") }), amount: z.literal(1) }),
     z.strictObject({ kind: z.literal("GRANT_BLOCKER_THIS_TURN"), target: z.strictObject({ kind: z.literal("FRIENDLY_UNIT"), costAtMost: z.literal(4) }),
@@ -350,6 +360,11 @@ export const ContinuousModifierSchema = z.discriminatedUnion("kind", [
     z.strictObject({ kind: z.literal("CAN_ATTACK_READY_BLOCKERS_IF"), condition: z.strictObject({ kind: z.literal("STREET_CRED_GREATER_THAN_RIVAL") }) }),
     // Batch V52: "This Unit wins all fights against CORPO Units" (11.4.1.4).
     z.strictObject({ kind: z.literal("WINS_FIGHTS_AGAINST_CLASSIFICATION"), classification: z.literal("Corpo") }),
+    // Batch V88: "This Unit has +2 power while fighting a Legend" (11.4.2.1), against a Legend on the field in either player's fight.
+    z.strictObject({ kind: z.literal("POWER_WHILE_FIGHTING_LEGEND"), amount: z.literal(2) }),
+    // Batch V89 (10.24-10.29): "If this Unit would be defeated, defeat its DEADMAN TRANSMITTER instead." A Gear's mandatory replacement of
+    // its host's defeat by its own.
+    z.strictObject({ kind: z.literal("DEFEAT_THIS_GEAR_INSTEAD_OF_HOST") }),
     z.strictObject({ kind: z.literal("FRIENDLY_ARASAKA_ATTACKING_UNIT_POWER"), amount: z.literal(1) }),
     // Batch V38: "Other friendly Units have +2 power while attacking." A field Unit's live contribution, never to itself.
     z.strictObject({ kind: z.literal("OTHER_FRIENDLY_ATTACKING_UNIT_POWER"), amount: z.literal(2) }),

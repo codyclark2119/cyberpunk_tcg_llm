@@ -8,7 +8,7 @@ import { unwrap } from "./turn-replay";
 /** Trusted edge-case arrangements only. Headline replay imports none of these helpers. */
 export function clearField(s: GameState, context: EngineContext) {
     const m = new TurnMutation(s, context);
-    for (const c of Object.values(m.state.objects.cards)) if (c.zone.zone === "BATTLEFIELD" && !Object.values(m.state.objects.cards).some(h => h.attachments.includes(c.id))) unwrap(processDeparture(m, c.id, "TRASH", defeatBatch(m.state, c.id)));
+    for (const c of Object.values(m.state.objects.cards)) if (c.zone.zone === "BATTLEFIELD" && !Object.values(m.state.objects.cards).some(h => h.attachments.includes(c.id))) unwrap(processDeparture(m, c.id, "TRASH", defeatBatch(m.state, c.id, context)));
     return unwrap(validateState(m.state, context));
 }
 export function fund(s: GameState, context: EngineContext, player = s.timing.activePlayer) {

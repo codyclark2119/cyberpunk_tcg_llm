@@ -6,6 +6,7 @@ import { finishAttackEffects } from "./combat";
 import { reactEnabled } from "./react-support";
 import { beginTriggers } from "./trigger-resolution";
 import { spentSubjects } from "./spend-triggers";
+import { gigChangeSubjects } from "./gig-change-triggers";
 import { startQueuedCall, startedQueuedCall } from "./free-call-effect";
 
 export function actionReturnContext(state: GameState): ActionReturnContext {
@@ -31,6 +32,13 @@ export function finishAction(m: TurnMutation) {
         const c = m.state.timing.combat;
         if (destination.kind === "RIVAL_REACT" && "target" in c && c.target) m.state.timing.combat = { ...c, stage: "RIVAL_REACT" };
         return beginTriggers(m, { kind: "SPEND", spentIds: spentSubjects(queued) });
+    }
+    // Batch V88: so do Rival-change bindings (a SPEND batch above takes them too).
+    const changes = m.state.turnHistory?.gigChangeTriggers;
+    if (changes?.length && !m.state.match.outcome) {
+        const c = m.state.timing.combat;
+        if (destination.kind === "RIVAL_REACT" && "target" in c && c.target) m.state.timing.combat = { ...c, stage: "RIVAL_REACT" };
+        return beginTriggers(m, { kind: "GIG_CHANGE", subjectIds: gigChangeSubjects(changes) });
     }
     if (destination.kind === "RIVAL_REACT") return finishAttackEffects(m);
     // Batch V84: a Legend an effect Called for free resolves its {Call} ability once the action's batches are done.
