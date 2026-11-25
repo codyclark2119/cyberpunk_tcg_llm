@@ -94,7 +94,9 @@ export const TriggerContinuationSchema = z.strictObject({
     effectPlays: z.array(z.strictObject({ subjectId: CardInstanceIdSchema, qualifyingOrdinal: z.number().int().positive().optional() })).min(1).optional(),
     // Batch V48: every effect defeat of this batch, in order (several sources may defeat inside one batch).
     effectDefeats: z.array(z.strictObject({ targetId: CardInstanceIdSchema, defeatedBy: CardInstanceIdSchema })).min(1).optional(), origin: TriggerOriginSchema, ordinal: z.number().int().positive(), bindings: z.array(TriggerBindingSchema).min(1),
-    selectedEddieSlots: z.array(z.number().int().nonnegative()).length(1).optional(), resolvedIds: z.array(HashSchema), phase: z.enum(["SELECT", "OPTIONAL", "TARGET", "AMOUNT", "DISCARD", "READY"]), trashedIds: z.array(CardInstanceIdSchema).min(1).max(3).optional(), conditionMet: z.literal(true).optional(), targetGigId: GigInstanceIdSchema.optional(),
+    selectedEddieSlots: z.array(z.number().int().nonnegative()).length(1).optional(), resolvedIds: z.array(HashSchema), phase: z.enum(["SELECT", "OPTIONAL", "TARGET", "AMOUNT", "DISCARD", "READY", "PAYMENT"]), trashedIds: z.array(CardInstanceIdSchema).min(1).max(3).optional(), conditionMet: z.literal(true).optional(), targetGigId: GigInstanceIdSchema.optional(),
+    // Batch V91: a paid trigger's sources chosen so far (phase PAYMENT), then the sources it spent while its Gig is chosen (phase TARGET).
+    paymentSelected: z.array(PaymentSourceSchema).min(1).optional(), paid: z.array(PaymentSourceSchema).min(1).optional(),
     // Batch V87: the face-down Legend just looked at, while its free Call is offered.
     lookedLegendId: CardInstanceIdSchema.optional(),
     // Batch V29: the Legend already readied by a current "ready up to 2" choice.
@@ -187,6 +189,8 @@ export const TemporaryPowerModifierSchema = z.discriminatedUnion("amount", [
     TemporaryPowerBaseSchema.extend({ amount: z.literal(1), scaled: z.literal("PROGRAM_PLAY_TRIGGER"), origin: z.strictObject({ effectId: HashSchema, abilityId: z.string().min(1), ordinal: z.number().int().positive() }) })).or(
     // Batch V79: a played Program's "Give this Unit +3 power this turn" on the friendly Unit it chose.
     TemporaryPowerBaseSchema.extend({ amount: z.literal(3), scaled: z.literal("PROGRAM_UNIT_GRANT"), origin: z.strictObject({ effectId: HashSchema }) })).or(
+    // Batch V91: an attacking Unit's paid "power equal to a friendly max Gig this turn", the chosen Gig's value as it resolved.
+    TemporaryPowerBaseSchema.extend({ amount: z.number().int().positive(), scaled: z.literal("PAID_MAX_GIG"), origin: z.strictObject({ effectId: HashSchema }) })).or(
     // Batch V90: a played Program's "+3 power this turn for each of its equipped Gears" on any player's equipped Unit, fixed as it resolved.
     TemporaryPowerBaseSchema.extend({ amount: z.number().int().positive().multipleOf(3), scaled: z.literal("PROGRAM_PER_EQUIPPED_GEAR"), origin: z.strictObject({ effectId: HashSchema }) })).or(
     // Batch V80: the "+2 power this turn" a Legend's rival-Unit attack grant also gives a ROCKER Unit; `sequence` keeps activations apart.

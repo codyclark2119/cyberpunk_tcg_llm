@@ -249,7 +249,7 @@ export function validateState(input: unknown, context: EngineContext): Result<Ga
         if (s.match.outcome && (!ids.includes(s.match.outcome.winnerId) || !ids.includes(s.match.outcome.loserId) || s.match.outcome.winnerId === s.match.outcome.loserId))
             return failure("INVALID_OUTCOME", "Outcome players invalid");
         const continuation = s.resolution.callContinuation;
-        if ((step === "PAYMENT_SELECTION") !== Boolean(continuation || s.resolution.legendEntryContinuation || s.resolution.playContinuation?.phase === "PAYMENT") || (step === "PAYMENT_SELECTION" && !choice))
+        if ((step === "PAYMENT_SELECTION") !== Boolean(continuation || s.resolution.legendEntryContinuation || s.resolution.playContinuation?.phase === "PAYMENT" || s.resolution.triggerContinuation?.phase === "PAYMENT" /* Batch V91 */) || (step === "PAYMENT_SELECTION" && !choice))
             return failure("INVALID_PAYMENT_STATE", "Payment step, choice and continuation must agree");
         if (continuation) {
             const legend = s.objects.cards[continuation.legendId], available = paymentSources(s, continuation.actorId, context);

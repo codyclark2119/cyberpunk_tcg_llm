@@ -1,3 +1,4 @@
+import { paidPowerOptions } from "./paid-attack-power";
 import { armedEndTurnDefeatBindings } from "./end-turn-defeat";
 import { isFirstHostSteal } from "./gear-steal-support";
 import { fightWinGuardAllows } from "./fight-win-support";
@@ -172,6 +173,8 @@ export function triggerChoice(state: GameState, context: EngineContext): Pending
     // Batch V32: a Program discard offers only own-hand Programs, and declining only before the first discard.
     else if (c.phase === "DISCARD" && current?.effect.kind === "DISCARD_PROGRAMS_THEN_BOTTOM_DECK") { kind = "DISCARD"; options = [...(c.discardedPrograms ? [] : [{ kind: "MODE" as const, mode: "DONE" as const }]), ...handPrograms(state, actorId, context).map(cardInstanceId => ({ kind: "CARD" as const, cardInstanceId }))]; }
     else if (c.phase === "DISCARD") { if (current) actorId = discardingPlayer(state, current); kind = "DISCARD"; options = [...(current?.effect.kind === "DISCARD_CARDS" && current.effect.optional ? [{ kind: "MODE" as const, mode: "DONE" as const }] : []), ...getDiscardableCards(state, actorId).map(cardInstanceId => ({ kind: "CARD" as const, cardInstanceId }))]; } // Batch V74: a "may" discard can be declined.
+    // Batch V91: a paid power's payment sources, then its max Gig.
+    else if ((c.phase === "PAYMENT" || c.phase === "TARGET") && current?.effect.kind === "MAY_PAY_FOR_POWER_EQUAL_TO_FRIENDLY_MAX_GIG") { kind = c.phase === "PAYMENT" ? "PAYMENT" : "TARGET"; options = paidPowerOptions(state, context); }
     else if (c.phase === "OPTIONAL") { kind = "OPTIONAL"; options = [{ kind: "CONFIRM", confirmed: true }, { kind: "CONFIRM", confirmed: false }]; }
     // Batch V42: the card type to name.
     else if (c.phase === "TARGET" && current?.effect.kind === "CHOOSE_TYPE_REVEAL_TOP_ADD_AND_READY_EDDIE") { kind = "MODE"; options = REVEAL_TYPES.map(mode => ({ kind: "MODE", mode })); }

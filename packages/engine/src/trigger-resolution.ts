@@ -1,3 +1,4 @@
+import { beginPaidPower, continuePaidPower } from "./paid-attack-power";
 import { spentSubjects, takeQueuedSpends } from "./spend-triggers";
 import { gigChangeSubjects, noteRivalGigChange, takeQueuedGigChanges } from "./gig-change-triggers";
 import { readyEquippedFriendly } from "./gear-move";
@@ -122,7 +123,7 @@ function offer(m: TurnMutation): Result<null> {
     const choice = triggerChoice(m.state, m.context), c = m.state.resolution.triggerContinuation!;
     if (choice.options.length === 1) { m.state.resolution.choice = choice; return continueTrigger(m, 0, true); }
     m.state.resolution.choice = choice; m.state.resolution.stage = "CHOICE"; m.state.timing.actingPlayer = choice.actorId;
-    const step = c.phase === "READY" ? "EDDIE_READY_SELECTION" : c.phase === "DISCARD" ? "DISCARD_SELECTION" : c.phase === "SELECT" ? "TRIGGER_ORDER_SELECTION" : c.phase === "OPTIONAL" ? "OPTIONAL_TRIGGER_SELECTION" : c.phase === "TARGET" ? "TARGET_SELECTION" : "AMOUNT_SELECTION";
+    const step = c.phase === "PAYMENT" ? "PAYMENT_SELECTION" : c.phase === "READY" ? "EDDIE_READY_SELECTION" : c.phase === "DISCARD" ? "DISCARD_SELECTION" : c.phase === "SELECT" ? "TRIGGER_ORDER_SELECTION" : c.phase === "OPTIONAL" ? "OPTIONAL_TRIGGER_SELECTION" : c.phase === "TARGET" ? "TARGET_SELECTION" : "AMOUNT_SELECTION";
     m.state.timing.step = step; m.state.timing.window = step;
     m.emit({ kind: "PHASE_CHANGED", step });
     return success(null);
@@ -143,7 +144,7 @@ export function completed(m: TurnMutation): Result<null> {
     }
     m.emit({ kind: "EFFECT_RESOLVED", effectId: current.id });
     if (m.state.match.outcome) return success(null);
-    c.resolvedIds.push(current.id); c.phase = "SELECT"; delete c.targetGigId; delete c.lookedLegendId; delete c.conditionMet; delete c.selectedEddieSlots;
+    c.resolvedIds.push(current.id); c.phase = "SELECT"; delete c.targetGigId; delete c.lookedLegendId; delete c.conditionMet; delete c.selectedEddieSlots; delete c.paymentSelected; delete c.paid;
     m.state.resolution.current = null; m.state.resolution.choice = null;
     return advanceTriggers(m);
 }
@@ -180,6 +181,7 @@ export function advanceTriggers(m: TurnMutation): Result<null> {
         c.phase = "TARGET"; return offer(m);
     }
     if (e.kind === "DEFEAT_UNIT") { c.phase = "TARGET"; return beginTargetedDefeat(m); }
+    if (e.kind === "MAY_PAY_FOR_POWER_EQUAL_TO_FRIENDLY_MAX_GIG") return beginPaidPower(m, offer, completed); // Batch V91.
     // Batch V8: "Spend this Unit", then the ordered rival-Unit spend.
     if (e.kind === "SPEND_SOURCE") {
         const current = r.current;
@@ -458,6 +460,7 @@ export function continueTrigger(m: TurnMutation, index: number, forced = false):
         if (current.effect.thenDrawOne) { const drawn = m.draw(current.controllerId, 1); if (!drawn.ok) return drawn; } // Batch V74: "If you do, draw 1."
         return completed(m);
     }
+    if (current.effect.kind === "MAY_PAY_FOR_POWER_EQUAL_TO_FRIENDLY_MAX_GIG") return continuePaidPower(m, option, forced, offer, completed); // Batch V91.
     if (c.phase === "OPTIONAL" && current.effect.kind === "MAY_CALL_LEGEND_FREE") return chooseLookThenCall(m, option, () => offer(m), () => completed(m)); // Batch V87: Call the looked-at Legend, or not.
     if (c.phase === "OPTIONAL") {
         if (option.kind !== "CONFIRM") return failure("INVALID_OPTIONAL_TRIGGER", "Accept or decline explicitly");

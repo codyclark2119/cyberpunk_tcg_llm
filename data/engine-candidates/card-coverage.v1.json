@@ -9,12 +9,12 @@
   },
   "totals": {
     "cards": 151,
-    "admitted": 140,
-    "notAdmitted": 11,
+    "admitted": 141,
+    "notAdmitted": 10,
     "notAdmittedOnlyCoveredFamilies": 0,
     "byAdmission": {
-      "NOT_ADMITTED": 11,
-      "SOURCE_MATCH": 140
+      "NOT_ADMITTED": 10,
+      "SOURCE_MATCH": 141
     }
   },
   "families": [
@@ -25,15 +25,6 @@
       "notes": "",
       "cardCount": 9,
       "notAdmittedCount": 6,
-      "soleBlockerCount": 0
-    },
-    {
-      "family": "CONDITION_GIG",
-      "status": "PARTIAL",
-      "summary": "Conditions and filters on Gig values: min/max, value-pairs, even/odd, 8+, die type, counts compared with a Rival.",
-      "notes": "Conditions only, each a fixed shape.",
-      "cardCount": 40,
-      "notAdmittedCount": 4,
       "soleBlockerCount": 0
     },
     {
@@ -51,6 +42,15 @@
       "summary": "Generic target filters and board conditions: classification, cost, power, ready/spent, equipped, face-up, named, lowest power.",
       "notes": "Documented as unsupported: generic condition/filter language. Each admitted filter is a literal.",
       "cardCount": 34,
+      "notAdmittedCount": 3,
+      "soleBlockerCount": 0
+    },
+    {
+      "family": "CONDITION_GIG",
+      "status": "PARTIAL",
+      "summary": "Conditions and filters on Gig values: min/max, value-pairs, even/odd, 8+, die type, counts compared with a Rival.",
+      "notes": "Conditions only, each a fixed shape.",
+      "cardCount": 40,
       "notAdmittedCount": 3,
       "soleBlockerCount": 0
     },
@@ -78,15 +78,6 @@
       "summary": "Discard: self discard, a Rival discards, discard as a cost, discard a hand.",
       "notes": "DISCARD_CARDS supports only the controller discarding exactly 1.",
       "cardCount": 15,
-      "notAdmittedCount": 2,
-      "soleBlockerCount": 0
-    },
-    {
-      "family": "EDDIE_ECONOMY",
-      "status": "PARTIAL",
-      "summary": "Ready Eddies, sell cards from unusual zones, pay Eddies during resolution.",
-      "notes": "READY_EDDIES (controller, 1 or 2) only.",
-      "cardCount": 8,
       "notAdmittedCount": 2,
       "soleBlockerCount": 0
     },
@@ -136,6 +127,15 @@
       "soleBlockerCount": 0
     },
     {
+      "family": "EDDIE_ECONOMY",
+      "status": "PARTIAL",
+      "summary": "Ready Eddies, sell cards from unusual zones, pay Eddies during resolution.",
+      "notes": "READY_EDDIES (controller, 1 or 2) only.",
+      "cardCount": 8,
+      "notAdmittedCount": 1,
+      "soleBlockerCount": 0
+    },
+    {
       "family": "GO_SOLO",
       "status": "PARTIAL",
       "summary": "[Go Solo]: play a Legend as a ready Unit that can attack this turn and is removed when it leaves the field.",
@@ -163,15 +163,6 @@
       "soleBlockerCount": 1
     },
     {
-      "family": "SCALED_AMOUNT",
-      "status": "PARTIAL",
-      "summary": "Amounts computed from the board: 'for each', 'equal to'.",
-      "notes": "Only Royce's per-equipped-Gear modifier counts anything.",
-      "cardCount": 18,
-      "notAdmittedCount": 1,
-      "soleBlockerCount": 0
-    },
-    {
       "family": "STEAL_CONTROL",
       "status": "MISSING",
       "summary": "Gig control outside the ordinary attack steal: swap, extra steal, steal fewer, steal prevention.",
@@ -181,29 +172,11 @@
       "soleBlockerCount": 0
     },
     {
-      "family": "TEMPORARY_BUFF",
-      "status": "PARTIAL",
-      "summary": "Power or keyword changes 'this turn' on a chosen Unit.",
-      "notes": "Fixed amounts on RIVAL_UNIT, SOURCE_SUBJECT or FRIENDLY_UNIT. Keyword grants, all-Unit and filtered targets are missing.",
-      "cardCount": 19,
-      "notAdmittedCount": 1,
-      "soleBlockerCount": 0
-    },
-    {
       "family": "TRASH_RECURSION",
       "status": "MISSING",
       "summary": "Return a card from the trash (or from cards just trashed) to hand.",
       "notes": "",
       "cardCount": 7,
-      "notAdmittedCount": 1,
-      "soleBlockerCount": 0
-    },
-    {
-      "family": "TRIGGER_ATTACK",
-      "status": "PARTIAL",
-      "summary": "[Attack] abilities and 'when a Unit attacks' triggers.",
-      "notes": "Triggers WHEN_ATTACKING and WHEN_UNIT_ATTACKS.",
-      "cardCount": 14,
       "notAdmittedCount": 1,
       "soleBlockerCount": 0
     },
@@ -361,6 +334,15 @@
       "soleBlockerCount": 0
     },
     {
+      "family": "SCALED_AMOUNT",
+      "status": "PARTIAL",
+      "summary": "Amounts computed from the board: 'for each', 'equal to'.",
+      "notes": "Only Royce's per-equipped-Gear modifier counts anything.",
+      "cardCount": 18,
+      "notAdmittedCount": 0,
+      "soleBlockerCount": 0
+    },
+    {
       "family": "SPEND_OR_READY",
       "status": "PARTIAL",
       "summary": "Spend or ready Units and Legends by an effect, and 'can't ready' locks.",
@@ -375,6 +357,24 @@
       "summary": "Continuous modifiers: auras, while-attacking power, conditional keywords.",
       "notes": "Each admitted modifier is a bespoke shape.",
       "cardCount": 4,
+      "notAdmittedCount": 0,
+      "soleBlockerCount": 0
+    },
+    {
+      "family": "TEMPORARY_BUFF",
+      "status": "PARTIAL",
+      "summary": "Power or keyword changes 'this turn' on a chosen Unit.",
+      "notes": "Fixed amounts on RIVAL_UNIT, SOURCE_SUBJECT or FRIENDLY_UNIT. Keyword grants, all-Unit and filtered targets are missing.",
+      "cardCount": 19,
+      "notAdmittedCount": 0,
+      "soleBlockerCount": 0
+    },
+    {
+      "family": "TRIGGER_ATTACK",
+      "status": "PARTIAL",
+      "summary": "[Attack] abilities and 'when a Unit attacks' triggers.",
+      "notes": "Triggers WHEN_ATTACKING and WHEN_UNIT_ATTACKS.",
+      "cardCount": 14,
       "notAdmittedCount": 0,
       "soleBlockerCount": 0
     },
@@ -1020,8 +1020,8 @@
       "colors": [
         "RED"
       ],
-      "admission": "NOT_ADMITTED",
-      "revision": null,
+      "admission": "SOURCE_MATCH",
+      "revision": 1,
       "families": [
         "CONDITION_GIG",
         "EDDIE_ECONOMY",
@@ -1029,13 +1029,7 @@
         "TEMPORARY_BUFF",
         "TRIGGER_ATTACK"
       ],
-      "blockingFamilies": [
-        "CONDITION_GIG",
-        "EDDIE_ECONOMY",
-        "SCALED_AMOUNT",
-        "TEMPORARY_BUFF",
-        "TRIGGER_ATTACK"
-      ],
+      "blockingFamilies": [],
       "note": null
     },
     {

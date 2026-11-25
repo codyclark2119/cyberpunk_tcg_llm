@@ -269,6 +269,8 @@ export const EffectSchema = z.discriminatedUnion("kind", [
     z.strictObject({ kind: z.literal("PROGRAM_PLAY_FRIENDLY_POWER_THIS_TURN"), amount: z.literal(1) }),
     // Batch V75: "You may defeat a friendly Gear. If you do, draw 2. Otherwise, draw 1."
     z.strictObject({ kind: z.literal("MAY_DEFEAT_FRIENDLY_GEAR_THEN_DRAW"), ifDefeated: z.literal(2), otherwise: z.literal(1) }),
+    // Batch V91: "You may pay 2 €$. If you do, this Unit gains power equal to a friendly max Gig this turn." (6.3.2: a die at its top face.)
+    z.strictObject({ kind: z.literal("MAY_PAY_FOR_POWER_EQUAL_TO_FRIENDLY_MAX_GIG"), cost: z.literal(2) }),
     // Batch V90: "Give an equipped Unit +3 power this turn for each of its equipped Gears. If that Unit steals or fights, defeat it at
     // the end of this turn." Any player's equipped Unit; the Gear counted as it resolves; the defeat is registered on that Unit.
     z.strictObject({ kind: z.literal("EQUIPPED_UNIT_POWER_PER_GEAR_THIS_TURN"), amount: z.literal(3),
