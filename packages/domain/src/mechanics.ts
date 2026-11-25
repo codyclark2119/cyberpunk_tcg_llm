@@ -144,7 +144,9 @@ export const DefeatGearTargetSchema = z.strictObject({ kind: z.literal("GEAR"), 
 export type DefeatGearTarget = z.infer<typeof DefeatGearTargetSchema>;
 // Batch V46: "the opposing rival Unit" of the fight that fired a next-fight-outcome effect; no target choice.
 export const DefeatOpposingTargetSchema = z.strictObject({ kind: z.literal("OPPOSING_UNIT") });
-export const DefeatTargetSchema = z.discriminatedUnion("kind", [DefeatUnitTargetSchema, DefeatGearTargetSchema, DefeatOpposingTargetSchema]);
+// Batch V90: "defeat it" of a delayed end-of-turn defeat: the Unit its binding names; no target choice.
+export const DefeatSubjectTargetSchema = z.strictObject({ kind: z.literal("TRIGGER_SUBJECT") });
+export const DefeatTargetSchema = z.discriminatedUnion("kind", [DefeatUnitTargetSchema, DefeatGearTargetSchema, DefeatOpposingTargetSchema, DefeatSubjectTargetSchema]);
 export type DefeatTarget = z.infer<typeof DefeatTargetSchema>;
 export const DefeatUnitEffectSchema = z.strictObject({ kind: z.literal("DEFEAT_UNIT"), target: DefeatTargetSchema,
     when: z.strictObject({ timing: z.literal("RESOLUTION"), condition: z.strictObject({ kind: z.literal("STREET_CRED_GREATER_THAN_RIVAL") }) }).optional(),
@@ -267,6 +269,10 @@ export const EffectSchema = z.discriminatedUnion("kind", [
     z.strictObject({ kind: z.literal("PROGRAM_PLAY_FRIENDLY_POWER_THIS_TURN"), amount: z.literal(1) }),
     // Batch V75: "You may defeat a friendly Gear. If you do, draw 2. Otherwise, draw 1."
     z.strictObject({ kind: z.literal("MAY_DEFEAT_FRIENDLY_GEAR_THEN_DRAW"), ifDefeated: z.literal(2), otherwise: z.literal(1) }),
+    // Batch V90: "Give an equipped Unit +3 power this turn for each of its equipped Gears. If that Unit steals or fights, defeat it at
+    // the end of this turn." Any player's equipped Unit; the Gear counted as it resolves; the defeat is registered on that Unit.
+    z.strictObject({ kind: z.literal("EQUIPPED_UNIT_POWER_PER_GEAR_THIS_TURN"), amount: z.literal(3),
+        ifStealsOrFights: z.strictObject({ timing: z.literal("END_OF_TURN"), effect: DefeatUnitEffectSchema }) }),
     // Batch V75: "Give a friendly Unit +1 power this turn for each of its equipped Gear." (counted as it resolves).
     z.strictObject({ kind: z.literal("POWER_PER_EQUIPPED_GEAR_THIS_TURN"), target: z.strictObject({ kind: z.literal("FRIENDLY_UNIT") }), amount: z.literal(1) }),
     z.strictObject({ kind: z.literal("GRANT_BLOCKER_THIS_TURN"), target: z.strictObject({ kind: z.literal("FRIENDLY_UNIT"), costAtMost: z.literal(4) }),

@@ -1,3 +1,4 @@
+import { validateEndTurnDefeats } from "./end-turn-defeat";
 import { effectiveCallCost } from "./free-call-support";
 import { otherPlayerMayChoose } from "./rival-reveal";
 import { validateReadyUnitAttackGrants } from "./ready-attack-grant";
@@ -206,6 +207,7 @@ export function validateState(input: unknown, context: EngineContext): Result<Ga
     const reroll = validateGigReroll(s, context); if (!reroll.ok) return reroll; // Batch V81.
     const gearMove = validateGearMove(s, context); if (!gearMove.ok) return gearMove; // Batch V82.
     const attackLocks = validateAttackLocks(s, context); if (!attackLocks.ok) return attackLocks; // Batch V83.
+    const endTurnDefeats = validateEndTurnDefeats(s, context); if (!endTurnDefeats.ok) return endTurnDefeats; // Batch V90.
     const queuedCall = validateQueuedCall(s, context); if (!queuedCall.ok) return queuedCall; // Batch V84.
     const discounts = validateGoSoloDiscounts(s, context); if (!discounts.ok) return discounts; // Batch V83.
     const forced = validateMustAttack(s, context);

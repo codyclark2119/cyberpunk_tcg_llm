@@ -1,3 +1,4 @@
+import { armedEndTurnDefeatBindings } from "./end-turn-defeat";
 import { isFirstHostSteal } from "./gear-steal-support";
 import { fightWinGuardAllows } from "./fight-win-support";
 import { belowPowerStealFires } from "./below-power-steal";
@@ -44,7 +45,7 @@ export function effectiveTriggeredAbilities(state: GameState, subjectId: CardIns
     }).sort((a, b) => a.sourceId < b.sourceId ? -1 : a.sourceId > b.sourceId ? 1 : a.abilityId < b.abilityId ? -1 : a.abilityId > b.abilityId ? 1 : 0);
 }
 export function discoverTriggers(state: GameState, origin: TriggerOrigin, context: EngineContext): TriggerBinding[] {
-    if (origin.kind === "END_TURN") return [...(origin.delayedEffects ?? []).map(delayedBinding), ...[...state.players[origin.playerId].zones.BATTLEFIELD, ...state.players[origin.playerId].zones.LEGENDS].flatMap(id => effectiveTriggeredAbilities(state, id, context).filter(b => {
+    if (origin.kind === "END_TURN") return [...(origin.delayedEffects ?? []).map(delayedBinding), ...armedEndTurnDefeatBindings(state) /* Batch V90 */, ...[...state.players[origin.playerId].zones.BATTLEFIELD, ...state.players[origin.playerId].zones.LEGENDS].flatMap(id => effectiveTriggeredAbilities(state, id, context).filter(b => {
         const a = cardRevision(state, b.sourceId, context)!.mechanics.abilities.find(a => a.id === b.abilityId)!;
         return b.kind === "WHEN_OWN_TURN_ENDS" && b.controllerId === origin.playerId && a.conditions.every(c => testCondition(state, b.controllerId, c, context, b.subjectId));
     }))];
@@ -116,7 +117,8 @@ export function pendingTrigger(state: GameState, binding: TriggerBinding, ordina
     const a = context.content.cards.find(c => c.id === binding.source.cardId && c.revision === binding.source.revision)!.mechanics.abilities.find(a => a.id === binding.abilityId)!;
     const registered = a.effects[1];
     // Batch V46: a fired next-fight-outcome binding resolves the registered effect, never the registration itself.
-    const effect = binding.kind === "DELAYED_FIGHT_OUTCOME" && a.effects[0]?.kind === "REGISTER_NEXT_FIGHT_OUTCOME" ? a.effects[0].effect : binding.delayedId && registered?.kind === "REGISTER_END_TURN_EFFECT" ? registered.effect : a.effects[primitiveIndex];
+    // Batch V90: an armed end-of-turn defeat resolves its registered defeat.
+    const effect = binding.kind === "DELAYED_FIGHT_OUTCOME" && a.effects[0]?.kind === "REGISTER_NEXT_FIGHT_OUTCOME" ? a.effects[0].effect : binding.kind === "DELAYED_END_TURN_DEFEAT" && a.effects[0]?.kind === "EQUIPPED_UNIT_POWER_PER_GEAR_THIS_TURN" ? a.effects[0].ifStealsOrFights.effect : binding.delayedId && registered?.kind === "REGISTER_END_TURN_EFFECT" ? registered.effect : a.effects[primitiveIndex];
     const { sourceId, controllerId, ...trigger } = binding;
     return { id: triggerId(state, binding, ordinal), sourceId, controllerId, causedBySequence: sequence, effect, ...(primitiveIndex === 1 ? { primitiveIndex } : {}), trigger: { ...trigger, ordinal, turn: state.timing.turn } };
 }

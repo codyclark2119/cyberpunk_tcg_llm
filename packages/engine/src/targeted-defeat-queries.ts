@@ -1,3 +1,4 @@
+import { endTurnDefeatTargets } from "./end-turn-defeat";
 import { hashCanonical, type DefeatGearTarget, type DefeatTarget, type GameState, type PendingChoice, type PlayerId } from "@tcg/domain";
 import type { EngineContext } from "./state";
 import { effectiveCardTypes, effectivePower } from "./characteristics";
@@ -54,6 +55,8 @@ export function listDefeatableUnits(state: GameState, actor: PlayerId, target: D
 export function allOtherDefeatTargets(state: GameState, e: NonNullable<GameState["resolution"]["current"]>, context: EngineContext) {
     // Batch V46: the opposing Unit of the fight that fired the effect; never a choice.
     if (e.effect.kind === "DEFEAT_UNIT" && e.effect.target.kind === "OPPOSING_UNIT") return opposingDefeatTargets(state, e, id => targetedDefeatEnabled(context) && defeatSupport(state, id, context).ok && effectiveCardTypes(state, id, context).includes("UNIT"));
+    // Batch V90: the Unit an armed end-of-turn defeat names; never a choice.
+    if (e.effect.kind === "DEFEAT_UNIT" && e.effect.target.kind === "TRIGGER_SUBJECT") return endTurnDefeatTargets(state, e, id => targetedDefeatEnabled(context) && defeatSupport(state, id, context).ok && effectiveCardTypes(state, id, context).includes("UNIT"));
     if (e.effect.kind !== "DEFEAT_UNIT" || e.effect.target.kind !== "UNITS" || e.effect.target.all !== "OTHER_THAN_SOURCE") return null;
     return listDefeatTargets(state, e.controllerId, e.effect.target, context).filter(id => id !== e.sourceId);
 }

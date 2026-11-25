@@ -137,6 +137,7 @@ were recorded in their pull requests (#4, #7, #8); later batches have documents 
 | V87 (2026-11-25) | Arasaka Emergency Radioport | [When spent: look at a face-down Legend, Call it free if ARASAKA or Go Solo](api-admission-batch-v87.md); coverage 137/151 |
 | V88 (2026-11-25) | Meredith Stout: Stone Cold Corpo | [+2 power fighting a Legend; a trash card back when a Rival adjusts or swaps your Gigs](api-admission-batch-v88.md); coverage 138/151 |
 | V89 (2026-11-25) | Deadman Transmitter | [Defeat replacement: the Gear is defeated instead of its host](api-admission-batch-v89.md); coverage 139/151 |
+| V90 (2026-11-25) | Cyberpsychosis | [End-of-turn defeat of an equipped Unit that steals or fights](api-admission-batch-v90.md); coverage 140/151 |
 | V7 (2026-11-15) | Royce: Don't Call Me Simon, Wild in the Streets, Delamain: Rideshare AI | [shared defeat filter and exact pin table](api-admission-batch-v7.md); coverage 42/151 |
 | V6 (2026-09-22) | Trust No One | [contract and executable slice](api-admission-batch-v6.md), [baseline verification](api-admission-batch-v6-verification.md) |
 

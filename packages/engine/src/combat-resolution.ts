@@ -1,3 +1,4 @@
+import { armEndTurnDefeats } from "./end-turn-defeat";
 import { endReadyUnitAttack } from "./ready-attack-grant";
 import { recordFightWin } from "./fight-win-support";
 import { endTurnEnabled } from "./end-turn-support";
@@ -87,6 +88,7 @@ function advanceGigSteal(m: TurnMutation) {
             const g = m.state.objects.gigs[id];
             if (g.roll.kind !== "ROLLED") throw new Error("Validated transfer must contain rolled Gigs");
             m.emit({ kind: "GIG_STOLEN", gigInstanceId: id, fromPlayer: defendingPlayer, toPlayer: c.attackingPlayerId, currentValue: g.roll.currentValue, attackerId: c.attackerId });
+            armEndTurnDefeats(m, [c.attackerId], "STEAL"); // Batch V90.
             if (endTurnEnabled(m.context)) {
                 const steals = m.state.turnHistory!.gigsStolenByUnit ??= {};
                 steals[c.attackerId] = (steals[c.attackerId] ?? 0) + 1;
@@ -121,6 +123,7 @@ export function resolveCombat(m: TurnMutation) {
             if (view.getEffectivePower(id) === null) return failure("UNSUPPORTED_NULL_FIGHT_POWER", "Null is not a numeric power");
         }
         m.emit({ kind: "FIGHT_STARTED", attackerId: c.attackerId, defenderId: c.target.cardInstanceId });
+        armEndTurnDefeats(m, [c.attackerId, c.target.cardInstanceId], "FIGHT"); // Batch V90.
         const result = evaluateFight(m.state, m.context, id => view.getEffectivePower(id));
         m.emit(result.event);
         recordFightWin(m, result.event.winnerId); // Batch V52.

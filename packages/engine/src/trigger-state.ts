@@ -1,3 +1,4 @@
+import { validEndTurnDefeatBinding } from "./end-turn-defeat";
 import { supportsGigChangeTriggerCard } from "./gig-change-trigger-support";
 import { validGigChangeBinding } from "./gig-change-triggers";
 import { supportsSpendTriggerCard } from "./spend-trigger-support";
@@ -67,6 +68,8 @@ function validBinding(state: GameState, b: TriggerBinding, context: EngineContex
     const ability = r?.mechanics.abilities.find(a => a.id === b.abilityId);
     // Batch V46: a fired next-fight-outcome binding is exactly one outcome its DEFEAT origin's fight carries (checked there).
     if (b.kind === "DELAYED_FIGHT_OUTCOME") return c.origin.kind === "DEFEAT" && Boolean(c.origin.fight?.outcomes.some(o => canonicalSerialize(fightOutcomeBinding(o)) === canonicalSerialize(b)));
+    // Batch V90: an armed end-of-turn defeat binding is exactly its record's, in the END_TURN batch.
+    if (b.kind === "DELAYED_END_TURN_DEFEAT") return c.origin.kind === "END_TURN" && validEndTurnDefeatBinding(state, b, context); // Batch V90.
     // Batch V51: a losing Unit's own "loses a fight" binding names the fight's opposing Unit.
     if (b.kind === "WHEN_FIGHT_LOST") {
         const f = c.origin.kind === "DEFEAT" ? c.origin.fight?.result : undefined, a = r?.mechanics.abilities.find(a => a.id === b.abilityId);
