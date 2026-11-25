@@ -18,6 +18,7 @@ import { friendlyFieldUnits } from "./fight-power-grant";
 import { changeGigValue, gigSetSources } from "./gig-value";
 import { listSpendUnitTargets } from "./targeted-spend-queries";
 import { mustAttackTargets } from "./must-attack";
+import { startedQueuedCall } from "./free-call-effect";
 import { activationPaymentAmount } from "./quick-activation-support";
 import { forcedPaymentSources, paymentValue } from "./payment";
 
@@ -76,7 +77,9 @@ export function validateLegendActivationState(state: GameState, context: EngineC
     // Batch V74: a {Quick} Legend ability is a {Spend} ability also usable in its controller's React Step (11.30.2).
     const modal = ability?.trigger === "WHEN_CALLED" && Boolean(ability.choose), called = modal || trashCall, quick = ability?.activation?.timing === "QUICK" && !ability.trigger, spend = (ability?.activation?.timing === "MAIN" || quick) && !ability?.trigger;
     const main = r.returnTo?.kind === "MAIN" && state.timing.combat.stage === "NONE" && c.actorId === state.timing.activePlayer;
-    const window = called || quick ? main || r.returnTo?.kind === "RIVAL_REACT" && state.timing.combat.stage === "RIVAL_REACT" && c.actorId !== state.timing.combat.attackingPlayerId : main;
+    // Batch V86: a queued free Call's {Call} ability resolves in the Main Phase for its controller, who may be the non-active player.
+    const queued = startedQueuedCall(state), queuedWindow = called && queued?.legendId === c.sourceId && queued.playerId === c.actorId && r.returnTo?.kind === "MAIN" && state.timing.combat.stage === "NONE";
+    const window = queuedWindow || (called || quick ? main || r.returnTo?.kind === "RIVAL_REACT" && state.timing.combat.stage === "RIVAL_REACT" && c.actorId !== state.timing.combat.attackingPlayerId : main);
     const amount = activationPaymentAmount(ability, state, c.actorId);
     if (!(supportsLegendSpendCard(revision, context).ok || trashCall) || !source || !ability || !(called || spend) || !window || called && amount || c.actorId !== state.timing.actingPlayer
         || new Set(c.selectedSources.map(p => p.cardInstanceId)).size !== c.selectedSources.length || c.selectedSources.reduce((n, p) => n + paymentValue(state, context, p), 0) + c.remainingCost !== amount

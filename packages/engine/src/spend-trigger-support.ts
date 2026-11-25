@@ -21,7 +21,13 @@ const SPEND_TRIGGER_SHAPES = [
             then: { kind: "DRAW_IF_DISTINCT_FRIENDLY_GIG_VALUES", minimum: 3, count: 1 } }] })] },
     // Batch V72: Rita Wheeler: No Stupid Questions. "{Blocker} The first time this Unit is spent each turn, draw 1, then discard 1."
     { type: "UNIT", sell: false, power: 4, equip: null, modifiers: [], keywords: ["BLOCKER"], colors: ["BLUE"], ram: { BLUE: 2 }, tags: ["Ganger", "Mox"], cost: 4,
-        abilities: [ability({ trigger: "WHEN_SPENT", guard: "FIRST_SPEND_PER_TURN", effects: [{ kind: "DISCARD_CARDS", player: "CONTROLLER", count: 1, selection: "CHOSEN_BY_AFFECTED_PLAYER", drawFirst: 1 }] })] }
+        abilities: [ability({ trigger: "WHEN_SPENT", guard: "FIRST_SPEND_PER_TURN", effects: [{ kind: "DISCARD_CARDS", player: "CONTROLLER", count: 1, selection: "CHOSEN_BY_AFFECTED_PLAYER", drawFirst: 1 }] })] },
+    // Batch V87: Arasaka Emergency Radioport. "(Equip to a friendly Unit or face-up Legend.) When this Unit or Legend is spent, you may
+    // look at a friendly face-down Legend. If that Legend is ARASAKA or has {Go Solo}, you may Call it for free. (You may only Call a
+    // Legend once per turn.)"
+    { type: "GEAR", sell: true, power: 2, equip: { kind: "FRIENDLY_UNIT_OR_FACE_UP_LEGEND" }, modifiers: [{ kind: "GRANT_PRINTED_POWER_TO_HOST" }],
+        colors: ["RED"], ram: { RED: 2 }, tags: ["Arasaka", "Cyberware"], cost: 2,
+        abilities: [ability({ trigger: "WHEN_SPENT", inherited: "EQUIPPED_HOST", effects: [{ kind: "MAY_CALL_LEGEND_FREE", lookAtOne: { tag: "Arasaka", keyword: "GO_SOLO" } }] })] }
 ].map(shape => canonicalSerialize({ keywords: [], restrictions: [], ...shape }));
 /** Any "when spent" trigger routes here first, so no other gate can admit what it does not read. */
 export function hasSpendTrigger(card: DeepReadonly<CardRevisionSnapshot> | undefined) {

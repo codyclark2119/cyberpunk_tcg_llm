@@ -22,6 +22,7 @@ import { chooseHandResetDraw } from "./hand-reset";
 import { chooseGrantMode, selectGrantUnit } from "./ready-attack-grant";
 import { triggersEnabled } from "./trigger-support";
 import { actionReturnContext, finishAction } from "./action-return";
+import { chooseFreeCall } from "./free-call-effect";
 import { applyTemporaryPower } from "./temporary-power";
 import { attachPlayedGear, moveCardLocation } from "./card-movement";
 import { EffectSchema, failure, success, type CardInstanceId, type GameState, type GigInstanceId, type PlayerId, type PaymentSource, type Result } from "@tcg/domain";
@@ -276,6 +277,10 @@ export function continuePlay(m: TurnMutation, index: number): Result<null> {
         s.resolution.choice = null;
         const applied = applyGearPower(m, option.cardInstanceId, false);
         return applied.ok ? completePlayEffect(m) : applied;
+    }
+    if (s.resolution.current?.effect.kind === "MAY_CALL_LEGEND_FREE") { // Batch V85.
+        const called = chooseFreeCall(m, option);
+        return called.ok ? completePlayEffect(m) : called;
     }
     if (s.resolution.current?.effect.kind === "UNIT_CANNOT_ATTACK_UNTIL_YOUR_NEXT_TURN") { // Batch V83.
         if (option.kind !== "CARD") return failure("INVALID_ATTACK_LOCK", "Choose a face-up field Unit");

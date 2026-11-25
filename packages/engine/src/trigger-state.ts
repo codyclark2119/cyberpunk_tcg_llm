@@ -7,6 +7,8 @@ import { attachedGear } from "./attachments";
 import { isFirstHostSteal, supportsGearStealCard } from "./gear-steal-support";
 import { getDiscardableCards } from "./discard";
 import { supportsFreeCallUnit } from "./free-call-support";
+import { freeCallSlots, lookedLegendCallable } from "./free-call-effect";
+import { privateLookTargets } from "./private-knowledge";
 import { fightWinGuardAllows } from "./fight-win-support";
 import { belowPowerStealFires } from "./below-power-steal";
 import { isSearchEffect } from "./search-state";
@@ -235,7 +237,7 @@ export function validateTriggerState(state: GameState, context: EngineContext) {
     const rivalHasResolved = c.resolvedIds.some(id => !activeIds.includes(id));
     if ((r.current && r.current.controllerId !== state.timing.activePlayer || rivalHasResolved) && activeIds.some(id => !c.resolvedIds.includes(id))) return failure("INVALID_TRIGGER_PRIORITY", "Turn player's pending effects precede the rival's");
     if (c.phase === "SELECT" ? Boolean(r.current) || nextTriggerGroup(state).length < 2 : !r.current) return failure("INVALID_TRIGGER_PHASE", "Ordering is strategic only with multiple eligible effects; effect choices require a current effect");
-    if (c.phase !== "SELECT" && (!r.current || !["DEFEAT_UNIT", "READY_EDDIES", "DISCARD_CARDS", "DECREASE_GIG_UP_TO", "ADJUST_GIG_UP_TO", "OPTIONAL_DECREASE_FRIENDLY_GIG_THEN_DRAW_IF_MIN", "LOOK_AT_FRIENDLY_FACE_DOWN_LEGEND", "POWER_UNTIL_END_OF_TURN", "SPEND_UNIT", "READY_UNIT", "RETURN_TRASH_UNIT_TO_HAND", "PLAY_UNIT_FREE", "SEARCH_GEAR", "SEARCH_COST_MATCHING_GIGS", "SEARCH_TOP_MAY_TRASH", "TRASH_THEN_RETURN_PROGRAM", "GRANT_KEYWORD_UNTIL_END_OF_TURN", "PREVENT_UNIT_READY", "SWAP_GIGS", "READY_LEGENDS_UP_TO", "READY_UNITS_UP_TO", "SPEND_UNITS_PER_VALUE_PAIR", "DISCARD_PROGRAMS_THEN_BOTTOM_DECK", "STOLEN_GIG_PARITY_DRAW_OR_RIVAL_DISCARD", "CHOOSE_TYPE_REVEAL_TOP_ADD_AND_READY_EDDIE", "FORCE_RIVAL_UNIT_ATTACK", "STEAL_GIG", "PLAY_GEAR_FREE", "PROGRAM_PLAY_FRIENDLY_POWER_THIS_TURN"].includes(r.current.effect.kind))) return failure("INVALID_TRIGGER_PHASE", "Only reviewed adjustment/look/discard/ready/power/spend/trash-return primitives pause for choices");
+    if (c.phase !== "SELECT" && (!r.current || !["DEFEAT_UNIT", "READY_EDDIES", "DISCARD_CARDS", "DECREASE_GIG_UP_TO", "ADJUST_GIG_UP_TO", "OPTIONAL_DECREASE_FRIENDLY_GIG_THEN_DRAW_IF_MIN", "LOOK_AT_FRIENDLY_FACE_DOWN_LEGEND", "POWER_UNTIL_END_OF_TURN", "SPEND_UNIT", "READY_UNIT", "RETURN_TRASH_UNIT_TO_HAND", "PLAY_UNIT_FREE", "SEARCH_GEAR", "SEARCH_COST_MATCHING_GIGS", "SEARCH_TOP_MAY_TRASH", "TRASH_THEN_RETURN_PROGRAM", "GRANT_KEYWORD_UNTIL_END_OF_TURN", "PREVENT_UNIT_READY", "SWAP_GIGS", "READY_LEGENDS_UP_TO", "READY_UNITS_UP_TO", "SPEND_UNITS_PER_VALUE_PAIR", "DISCARD_PROGRAMS_THEN_BOTTOM_DECK", "STOLEN_GIG_PARITY_DRAW_OR_RIVAL_DISCARD", "CHOOSE_TYPE_REVEAL_TOP_ADD_AND_READY_EDDIE", "FORCE_RIVAL_UNIT_ATTACK", "STEAL_GIG", "PLAY_GEAR_FREE", "PROGRAM_PLAY_FRIENDLY_POWER_THIS_TURN", "MAY_CALL_LEGEND_FREE"].includes(r.current.effect.kind))) return failure("INVALID_TRIGGER_PHASE", "Only reviewed adjustment/look/discard/ready/power/spend/trash-return primitives pause for choices");
     // Batch V47: an effect steal pauses only for a Gig choice between at least two rival Gigs its fired subject may steal (Batch V67: or its first-steal Gear host).
     if (r.current?.effect.kind === "STEAL_GIG" && (c.phase !== "TARGET" || !(r.current.trigger?.kind === "DELAYED_FIGHT_OUTCOME" || r.current.trigger?.kind === "WHEN_GIG_STOLEN" && r.current.effect.valueNotSharedByFriendly) || effectStealTargets(state, context).length < 2)) return failure("INVALID_EFFECT_STEAL", "An effect steal pauses only to choose among two or more stealable rival Gigs");
     // Batch V19: the reviewed [Attack] Gear search pauses only for its own looked-at cards (search-state owns the details).
@@ -395,8 +397,22 @@ export function validateTriggerState(state: GameState, context: EngineContext) {
         // true must agree; advancing an index cannot manufacture a false-condition discard.
         if (c.phase !== "DISCARD" || e?.effect.kind !== "DISCARD_CARDS" || e.primitiveIndex !== 1 || c.conditionMet !== true || !e.effect.when || !testCondition(state, e.controllerId, e.effect.when.condition, context, e.sourceId)) return failure("INVALID_DISCARD_CONTINUATION", "Post-draw true condition and exact current second primitive required");
     }
+    // Batch V84: a free Call pauses only for its Legend slot (or declining), with a face-down Legend it may Call, from its pinned Unit's {Play}
+    // (Batch V86: or, after its look, {Defeated}).
+    // Batch V87: a look-then-Call from a pinned "when spent" Gear pauses for the look (a face-down Legend to look at), then, holding the
+    // looked-at Legend, for its Call while that Legend qualifies and may be Called.
+    if (r.current?.effect.kind === "MAY_CALL_LEGEND_FREE" && r.current.effect.lookAtOne) {
+        const e = r.current, held = c.lookedLegendId;
+        if (e.trigger?.kind !== "WHEN_SPENT" || e.primitiveIndex !== undefined || !supportsSpendTriggerCard(cardRevision(state, e.sourceId!, context), context).ok
+            || (held ? c.phase !== "OPTIONAL" || !lookedLegendCallable(state, e.controllerId, held, context) || !state.privateKnowledge?.some(k => k.viewerId === e.controllerId && k.cardInstanceId === held)
+                : c.phase !== "TARGET" || !privateLookTargets(state, e.controllerId, context).length))
+            return failure("INVALID_FREE_CALL", "A look-then-Call pauses for the look, then for a qualifying looked-at Legend's Call");
+    } else if (r.current?.effect.kind === "MAY_CALL_LEGEND_FREE" && (c.phase !== "TARGET" || r.current.trigger?.kind !== (r.current.effect.lookAtAll ? "WHEN_DEFEATED" : "WHEN_PLAYED") || r.current.primitiveIndex !== undefined
+        || !supportsFreeCallUnit(cardRevision(state, r.current.sourceId!, context), context).ok || !freeCallSlots(state, r.current.controllerId, context).length))
+        return failure("INVALID_FREE_CALL", "A free Call pauses only for a Legend its pinned {Play} may Call");
+    if (c.lookedLegendId && !(r.current?.effect.kind === "MAY_CALL_LEGEND_FREE" && r.current.effect.lookAtOne)) return failure("INVALID_FREE_CALL", "A held looked-at Legend belongs to its look-then-Call");
     if (r.current?.effect.kind === "LOOK_AT_FRIENDLY_FACE_DOWN_LEGEND" && c.phase !== "TARGET") return failure("INVALID_TRIGGER_PHASE", "Private look pauses only for a target");
-    if (c.phase === "OPTIONAL" && r.current?.effect.kind !== "OPTIONAL_DECREASE_FRIENDLY_GIG_THEN_DRAW_IF_MIN" && r.current?.effect.kind !== "SWAP_GIGS") return failure("INVALID_OPTIONAL_TRIGGER", "Only the printed may effect offers acceptance");
+    if (c.phase === "OPTIONAL" && r.current?.effect.kind !== "OPTIONAL_DECREASE_FRIENDLY_GIG_THEN_DRAW_IF_MIN" && r.current?.effect.kind !== "SWAP_GIGS" && r.current?.effect.kind !== "MAY_CALL_LEGEND_FREE") return failure("INVALID_OPTIONAL_TRIGGER", "Only the printed may effect offers acceptance");
     // Batch V23: the pinned {Play} swap pauses to accept, then for its friendly Gig, then (holding that Gig) for the rival Gig.
     if (r.current?.effect.kind === "SWAP_GIGS") {
         const source = r.current.sourceId ? state.objects.cards[r.current.sourceId] : undefined, held = c.targetGigId ? state.objects.gigs[c.targetGigId] : undefined;

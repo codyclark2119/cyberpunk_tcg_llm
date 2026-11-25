@@ -90,6 +90,8 @@ export const TriggerContinuationSchema = z.strictObject({
     // Batch V48: every effect defeat of this batch, in order (several sources may defeat inside one batch).
     effectDefeats: z.array(z.strictObject({ targetId: CardInstanceIdSchema, defeatedBy: CardInstanceIdSchema })).min(1).optional(), origin: TriggerOriginSchema, ordinal: z.number().int().positive(), bindings: z.array(TriggerBindingSchema).min(1),
     selectedEddieSlots: z.array(z.number().int().nonnegative()).length(1).optional(), resolvedIds: z.array(HashSchema), phase: z.enum(["SELECT", "OPTIONAL", "TARGET", "AMOUNT", "DISCARD", "READY"]), trashedIds: z.array(CardInstanceIdSchema).min(1).max(3).optional(), conditionMet: z.literal(true).optional(), targetGigId: GigInstanceIdSchema.optional(),
+    // Batch V87: the face-down Legend just looked at, while its free Call is offered.
+    lookedLegendId: CardInstanceIdSchema.optional(),
     // Batch V29: the Legend already readied by a current "ready up to 2" choice.
     readiedLegends: z.array(CardInstanceIdSchema).length(1).optional(),
     // Batch V38: the Units already readied by a current "ready up to 3 friendly Units" choice.
@@ -126,6 +128,9 @@ export const TurnHistorySchema = z.strictObject({
     spendTriggers: z.array(TriggerBindingSchema).min(1).optional(),
     // Batch V72: cards with a "the first time this Unit is spent each turn" trigger already spent this turn.
     firstSpends: z.array(CardInstanceIdSchema).min(1).optional(),
+    // Batch V84: a Legend Called for free by an effect, whose {Call} ability resolves once the action's trigger batches are done (Batch
+    // V86: or its attack has ended); `started` while that ability resolves, which may be the non-active player's.
+    queuedCall: z.strictObject({ playerId: PlayerIdSchema, legendId: CardInstanceIdSchema, started: z.literal(true).optional() }).optional(),
     // Batch V83: unused "a friendly Legend may use {Go Solo} for -2 €$ this turn" grants, by resolved effect, in grant order.
     goSoloDiscounts: z.array(HashSchema).min(1).optional(),
     // Batch V79: Units whose next attack this turn may target ready Units, by id; `inAttack` once that attack is declared, until it ends.

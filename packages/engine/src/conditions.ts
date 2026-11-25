@@ -59,7 +59,7 @@ export function testCondition(state: GameState, actor: PlayerId, condition: Cond
         // Batch V44, 6.3.1: a min Gig is a die at 1; only the actor's own rolled d4 in its Gig area counts.
         // Batch V45: one friendly rolled Gig with an even value and another with an odd value.
         case "FRIENDLY_GIGS_EVEN_AND_ODD": return values.some(v => v % 2 === 0) && values.some(v => v % 2 !== 0);
-        case "FRIENDLY_GIG_IS_MIN": return gigs.some(g => g.dieType === condition.dieType && g.roll.kind === "ROLLED" && g.roll.currentValue === 1);
+        case "FRIENDLY_GIG_IS_MIN": return gigs.some(g => (!condition.dieType || g.dieType === condition.dieType) && g.roll.kind === "ROLLED" && g.roll.currentValue === 1);
     }
 }
 /** Batch V30, 6.6 and 6.6.1: friendly value-pairs, each own rolled Gig counting towards at most one pair. */

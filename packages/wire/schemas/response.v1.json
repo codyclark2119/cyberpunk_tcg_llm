@@ -1423,6 +1423,31 @@
                             "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$"
                           }
                         },
+                        "queuedCall": {
+                          "type": "object",
+                          "properties": {
+                            "playerId": {
+                              "type": "string",
+                              "format": "uuid",
+                              "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+                            },
+                            "legendId": {
+                              "type": "string",
+                              "minLength": 1,
+                              "maxLength": 200,
+                              "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$"
+                            },
+                            "started": {
+                              "type": "boolean",
+                              "const": true
+                            }
+                          },
+                          "required": [
+                            "playerId",
+                            "legendId"
+                          ],
+                          "additionalProperties": false
+                        },
                         "goSoloDiscounts": {
                           "minItems": 1,
                           "type": "array",
@@ -4242,6 +4267,12 @@
                               "maxLength": 200,
                               "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$"
                             },
+                            "lookedLegendId": {
+                              "type": "string",
+                              "minLength": 1,
+                              "maxLength": 200,
+                              "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$"
+                            },
                             "readiedLegends": {
                               "minItems": 1,
                               "maxItems": 1,
@@ -6617,8 +6648,7 @@
                                                     }
                                                   },
                                                   "required": [
-                                                    "kind",
-                                                    "dieType"
+                                                    "kind"
                                                   ],
                                                   "additionalProperties": false
                                                 },
@@ -7388,8 +7418,7 @@
                                                 }
                                               },
                                               "required": [
-                                                "kind",
-                                                "dieType"
+                                                "kind"
                                               ],
                                               "additionalProperties": false
                                             },
@@ -7675,7 +7704,63 @@
                                       "properties": {
                                         "kind": {
                                           "type": "string",
+                                          "const": "MAY_CALL_LEGEND_FREE"
+                                        },
+                                        "condition": {
+                                          "type": "object",
+                                          "properties": {
+                                            "kind": {
+                                              "type": "string",
+                                              "const": "FRIENDLY_GIG_IS_MIN"
+                                            },
+                                            "dieType": {
+                                              "type": "string",
+                                              "const": "D4"
+                                            }
+                                          },
+                                          "required": [
+                                            "kind"
+                                          ],
+                                          "additionalProperties": false
+                                        },
+                                        "lookAtAll": {
+                                          "type": "boolean",
+                                          "const": true
+                                        },
+                                        "lookAtOne": {
+                                          "type": "object",
+                                          "properties": {
+                                            "tag": {
+                                              "type": "string",
+                                              "const": "Arasaka"
+                                            },
+                                            "keyword": {
+                                              "type": "string",
+                                              "const": "GO_SOLO"
+                                            }
+                                          },
+                                          "required": [
+                                            "tag",
+                                            "keyword"
+                                          ],
+                                          "additionalProperties": false
+                                        }
+                                      },
+                                      "required": [
+                                        "kind"
+                                      ],
+                                      "additionalProperties": false
+                                    },
+                                    {
+                                      "type": "object",
+                                      "properties": {
+                                        "kind": {
+                                          "type": "string",
                                           "const": "UNIT_CANNOT_ATTACK_UNTIL_YOUR_NEXT_TURN"
+                                        },
+                                        "target": {
+                                          "type": "string",
+                                          "const": "RIVAL_UNIT"
                                         }
                                       },
                                       "required": [
@@ -10893,8 +10978,7 @@
                                                   }
                                                 },
                                                 "required": [
-                                                  "kind",
-                                                  "dieType"
+                                                  "kind"
                                                 ],
                                                 "additionalProperties": false
                                               },
@@ -11664,8 +11748,7 @@
                                               }
                                             },
                                             "required": [
-                                              "kind",
-                                              "dieType"
+                                              "kind"
                                             ],
                                             "additionalProperties": false
                                           },
@@ -11951,7 +12034,63 @@
                                     "properties": {
                                       "kind": {
                                         "type": "string",
+                                        "const": "MAY_CALL_LEGEND_FREE"
+                                      },
+                                      "condition": {
+                                        "type": "object",
+                                        "properties": {
+                                          "kind": {
+                                            "type": "string",
+                                            "const": "FRIENDLY_GIG_IS_MIN"
+                                          },
+                                          "dieType": {
+                                            "type": "string",
+                                            "const": "D4"
+                                          }
+                                        },
+                                        "required": [
+                                          "kind"
+                                        ],
+                                        "additionalProperties": false
+                                      },
+                                      "lookAtAll": {
+                                        "type": "boolean",
+                                        "const": true
+                                      },
+                                      "lookAtOne": {
+                                        "type": "object",
+                                        "properties": {
+                                          "tag": {
+                                            "type": "string",
+                                            "const": "Arasaka"
+                                          },
+                                          "keyword": {
+                                            "type": "string",
+                                            "const": "GO_SOLO"
+                                          }
+                                        },
+                                        "required": [
+                                          "tag",
+                                          "keyword"
+                                        ],
+                                        "additionalProperties": false
+                                      }
+                                    },
+                                    "required": [
+                                      "kind"
+                                    ],
+                                    "additionalProperties": false
+                                  },
+                                  {
+                                    "type": "object",
+                                    "properties": {
+                                      "kind": {
+                                        "type": "string",
                                         "const": "UNIT_CANNOT_ATTACK_UNTIL_YOUR_NEXT_TURN"
+                                      },
+                                      "target": {
+                                        "type": "string",
+                                        "const": "RIVAL_UNIT"
                                       }
                                     },
                                     "required": [
@@ -15165,8 +15304,7 @@
                                                   }
                                                 },
                                                 "required": [
-                                                  "kind",
-                                                  "dieType"
+                                                  "kind"
                                                 ],
                                                 "additionalProperties": false
                                               },
@@ -15936,8 +16074,7 @@
                                               }
                                             },
                                             "required": [
-                                              "kind",
-                                              "dieType"
+                                              "kind"
                                             ],
                                             "additionalProperties": false
                                           },
@@ -16223,7 +16360,63 @@
                                     "properties": {
                                       "kind": {
                                         "type": "string",
+                                        "const": "MAY_CALL_LEGEND_FREE"
+                                      },
+                                      "condition": {
+                                        "type": "object",
+                                        "properties": {
+                                          "kind": {
+                                            "type": "string",
+                                            "const": "FRIENDLY_GIG_IS_MIN"
+                                          },
+                                          "dieType": {
+                                            "type": "string",
+                                            "const": "D4"
+                                          }
+                                        },
+                                        "required": [
+                                          "kind"
+                                        ],
+                                        "additionalProperties": false
+                                      },
+                                      "lookAtAll": {
+                                        "type": "boolean",
+                                        "const": true
+                                      },
+                                      "lookAtOne": {
+                                        "type": "object",
+                                        "properties": {
+                                          "tag": {
+                                            "type": "string",
+                                            "const": "Arasaka"
+                                          },
+                                          "keyword": {
+                                            "type": "string",
+                                            "const": "GO_SOLO"
+                                          }
+                                        },
+                                        "required": [
+                                          "tag",
+                                          "keyword"
+                                        ],
+                                        "additionalProperties": false
+                                      }
+                                    },
+                                    "required": [
+                                      "kind"
+                                    ],
+                                    "additionalProperties": false
+                                  },
+                                  {
+                                    "type": "object",
+                                    "properties": {
+                                      "kind": {
+                                        "type": "string",
                                         "const": "UNIT_CANNOT_ATTACK_UNTIL_YOUR_NEXT_TURN"
+                                      },
+                                      "target": {
+                                        "type": "string",
+                                        "const": "RIVAL_UNIT"
                                       }
                                     },
                                     "required": [
@@ -19979,6 +20172,31 @@
                             "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$"
                           }
                         },
+                        "queuedCall": {
+                          "type": "object",
+                          "properties": {
+                            "playerId": {
+                              "type": "string",
+                              "format": "uuid",
+                              "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+                            },
+                            "legendId": {
+                              "type": "string",
+                              "minLength": 1,
+                              "maxLength": 200,
+                              "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$"
+                            },
+                            "started": {
+                              "type": "boolean",
+                              "const": true
+                            }
+                          },
+                          "required": [
+                            "playerId",
+                            "legendId"
+                          ],
+                          "additionalProperties": false
+                        },
                         "goSoloDiscounts": {
                           "minItems": 1,
                           "type": "array",
@@ -22798,6 +23016,12 @@
                               "maxLength": 200,
                               "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$"
                             },
+                            "lookedLegendId": {
+                              "type": "string",
+                              "minLength": 1,
+                              "maxLength": 200,
+                              "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$"
+                            },
                             "readiedLegends": {
                               "minItems": 1,
                               "maxItems": 1,
@@ -25173,8 +25397,7 @@
                                                     }
                                                   },
                                                   "required": [
-                                                    "kind",
-                                                    "dieType"
+                                                    "kind"
                                                   ],
                                                   "additionalProperties": false
                                                 },
@@ -25944,8 +26167,7 @@
                                                 }
                                               },
                                               "required": [
-                                                "kind",
-                                                "dieType"
+                                                "kind"
                                               ],
                                               "additionalProperties": false
                                             },
@@ -26231,7 +26453,63 @@
                                       "properties": {
                                         "kind": {
                                           "type": "string",
+                                          "const": "MAY_CALL_LEGEND_FREE"
+                                        },
+                                        "condition": {
+                                          "type": "object",
+                                          "properties": {
+                                            "kind": {
+                                              "type": "string",
+                                              "const": "FRIENDLY_GIG_IS_MIN"
+                                            },
+                                            "dieType": {
+                                              "type": "string",
+                                              "const": "D4"
+                                            }
+                                          },
+                                          "required": [
+                                            "kind"
+                                          ],
+                                          "additionalProperties": false
+                                        },
+                                        "lookAtAll": {
+                                          "type": "boolean",
+                                          "const": true
+                                        },
+                                        "lookAtOne": {
+                                          "type": "object",
+                                          "properties": {
+                                            "tag": {
+                                              "type": "string",
+                                              "const": "Arasaka"
+                                            },
+                                            "keyword": {
+                                              "type": "string",
+                                              "const": "GO_SOLO"
+                                            }
+                                          },
+                                          "required": [
+                                            "tag",
+                                            "keyword"
+                                          ],
+                                          "additionalProperties": false
+                                        }
+                                      },
+                                      "required": [
+                                        "kind"
+                                      ],
+                                      "additionalProperties": false
+                                    },
+                                    {
+                                      "type": "object",
+                                      "properties": {
+                                        "kind": {
+                                          "type": "string",
                                           "const": "UNIT_CANNOT_ATTACK_UNTIL_YOUR_NEXT_TURN"
+                                        },
+                                        "target": {
+                                          "type": "string",
+                                          "const": "RIVAL_UNIT"
                                         }
                                       },
                                       "required": [
@@ -29449,8 +29727,7 @@
                                                   }
                                                 },
                                                 "required": [
-                                                  "kind",
-                                                  "dieType"
+                                                  "kind"
                                                 ],
                                                 "additionalProperties": false
                                               },
@@ -30220,8 +30497,7 @@
                                               }
                                             },
                                             "required": [
-                                              "kind",
-                                              "dieType"
+                                              "kind"
                                             ],
                                             "additionalProperties": false
                                           },
@@ -30507,7 +30783,63 @@
                                     "properties": {
                                       "kind": {
                                         "type": "string",
+                                        "const": "MAY_CALL_LEGEND_FREE"
+                                      },
+                                      "condition": {
+                                        "type": "object",
+                                        "properties": {
+                                          "kind": {
+                                            "type": "string",
+                                            "const": "FRIENDLY_GIG_IS_MIN"
+                                          },
+                                          "dieType": {
+                                            "type": "string",
+                                            "const": "D4"
+                                          }
+                                        },
+                                        "required": [
+                                          "kind"
+                                        ],
+                                        "additionalProperties": false
+                                      },
+                                      "lookAtAll": {
+                                        "type": "boolean",
+                                        "const": true
+                                      },
+                                      "lookAtOne": {
+                                        "type": "object",
+                                        "properties": {
+                                          "tag": {
+                                            "type": "string",
+                                            "const": "Arasaka"
+                                          },
+                                          "keyword": {
+                                            "type": "string",
+                                            "const": "GO_SOLO"
+                                          }
+                                        },
+                                        "required": [
+                                          "tag",
+                                          "keyword"
+                                        ],
+                                        "additionalProperties": false
+                                      }
+                                    },
+                                    "required": [
+                                      "kind"
+                                    ],
+                                    "additionalProperties": false
+                                  },
+                                  {
+                                    "type": "object",
+                                    "properties": {
+                                      "kind": {
+                                        "type": "string",
                                         "const": "UNIT_CANNOT_ATTACK_UNTIL_YOUR_NEXT_TURN"
+                                      },
+                                      "target": {
+                                        "type": "string",
+                                        "const": "RIVAL_UNIT"
                                       }
                                     },
                                     "required": [
@@ -33721,8 +34053,7 @@
                                                   }
                                                 },
                                                 "required": [
-                                                  "kind",
-                                                  "dieType"
+                                                  "kind"
                                                 ],
                                                 "additionalProperties": false
                                               },
@@ -34492,8 +34823,7 @@
                                               }
                                             },
                                             "required": [
-                                              "kind",
-                                              "dieType"
+                                              "kind"
                                             ],
                                             "additionalProperties": false
                                           },
@@ -34779,7 +35109,63 @@
                                     "properties": {
                                       "kind": {
                                         "type": "string",
+                                        "const": "MAY_CALL_LEGEND_FREE"
+                                      },
+                                      "condition": {
+                                        "type": "object",
+                                        "properties": {
+                                          "kind": {
+                                            "type": "string",
+                                            "const": "FRIENDLY_GIG_IS_MIN"
+                                          },
+                                          "dieType": {
+                                            "type": "string",
+                                            "const": "D4"
+                                          }
+                                        },
+                                        "required": [
+                                          "kind"
+                                        ],
+                                        "additionalProperties": false
+                                      },
+                                      "lookAtAll": {
+                                        "type": "boolean",
+                                        "const": true
+                                      },
+                                      "lookAtOne": {
+                                        "type": "object",
+                                        "properties": {
+                                          "tag": {
+                                            "type": "string",
+                                            "const": "Arasaka"
+                                          },
+                                          "keyword": {
+                                            "type": "string",
+                                            "const": "GO_SOLO"
+                                          }
+                                        },
+                                        "required": [
+                                          "tag",
+                                          "keyword"
+                                        ],
+                                        "additionalProperties": false
+                                      }
+                                    },
+                                    "required": [
+                                      "kind"
+                                    ],
+                                    "additionalProperties": false
+                                  },
+                                  {
+                                    "type": "object",
+                                    "properties": {
+                                      "kind": {
+                                        "type": "string",
                                         "const": "UNIT_CANNOT_ATTACK_UNTIL_YOUR_NEXT_TURN"
+                                      },
+                                      "target": {
+                                        "type": "string",
+                                        "const": "RIVAL_UNIT"
                                       }
                                     },
                                     "required": [

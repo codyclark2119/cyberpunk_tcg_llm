@@ -8,6 +8,7 @@ import { programPlayHistoryEnabled } from "./restriction-support";
 import { expireMustAttack } from "./must-attack";
 import { checkOvertimeVictory, recordOvertimeTurnStart } from "./overtime";
 import { forgetLegendKnowledge } from "./private-knowledge";
+import { cardRevision } from "./characteristics";
 import { firstAttackHistoryEnabled } from "./first-attack-support";
 import { initialFirstAttackHistory } from "./first-attack-history";
 import { triggersEnabled } from "./trigger-support";
@@ -122,18 +123,26 @@ export class TurnMutation {
         for (const source of sources)
         { s.objects.cards[source.cardInstanceId].readiness = "SPENT"; noteSpent(this, source.cardInstanceId); } // Batch V69.
         this.emit({ kind: "PAYMENT_MADE", sources });
-        const legend = s.objects.cards[legendId];
-        legend.face = "UP";
-        forgetLegendKnowledge(this, legendId);
-        s.players[actor].economy.callsThisTurn!++;
         s.resolution.choice = null;
         delete s.resolution.callContinuation;
+        this.revealCalledLegend(actor, legendId);
+        return this.startCallAbility(actor, legendId);
+    }
+    /** The Call itself: the Legend turns face up and counts against the turn's Call limit. */
+    revealCalledLegend(actor: PlayerId, legendId: CardInstanceId) {
+        this.state.objects.cards[legendId].face = "UP";
+        forgetLegendKnowledge(this, legendId);
+        this.state.players[actor].economy.callsThisTurn!++;
         this.emit({ kind: "LEGEND_CALLED", cardInstanceId: legendId });
-        const ability = view.getRevision(legendId)!.mechanics.abilities.find(a => a.trigger === "WHEN_CALLED");
+    }
+    /** The Called Legend's {Call} ability, if any, then the end of the action (Batch V84: also for a Call an effect made). */
+    startCallAbility(actor: PlayerId, legendId: CardInstanceId): Result<null> {
+        const s = this.state, revision = cardRevision(s, legendId, this.context);
+        const ability = revision!.mechanics.abilities.find(a => a.trigger === "WHEN_CALLED");
         // Batch V60: "{Call} Choose one effect." pauses for its mode through the activation continuation.
-        if (ability?.choose && supportsLegendSpendCard(view.getRevision(legendId), this.context).ok) return beginLegendCallChoice(this, legendId, actor, ability.id);
-        if (ability && supportsCallTrashProgram(view.getRevision(legendId), this.context).ok) return beginLegendCallEffects(this, legendId, actor, ability.id); // Batch V73.
-        if (ability && supportsLegendSpendCard(view.getRevision(legendId), this.context).ok) return beginLegendCallEffects(this, legendId, actor, ability.id); // Batch V75: a pinned non-modal {Call}.
+        if (ability?.choose && supportsLegendSpendCard(revision, this.context).ok) return beginLegendCallChoice(this, legendId, actor, ability.id);
+        if (ability && supportsCallTrashProgram(revision, this.context).ok) return beginLegendCallEffects(this, legendId, actor, ability.id); // Batch V73.
+        if (ability && supportsLegendSpendCard(revision, this.context).ok) return beginLegendCallEffects(this, legendId, actor, ability.id); // Batch V75: a pinned non-modal {Call}.
         if (ability) {
             this.phase("CALL_EFFECT");
             const effect = ability.effects[0];
