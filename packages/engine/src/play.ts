@@ -10,8 +10,10 @@ import { applyFightPowerGrant } from "./fight-power-grant";
 import { applyStealReduction } from "./steal-reduction";
 import { recordCyberwareGearPlay } from "./play-cost-support";
 import { resolveSpendTarget } from "./targeted-spend";
-import { activateTriggerBatch, type PreparedTriggerBatch } from "./trigger-resolution";
+import { activateTriggerBatch, beginTriggers, joinProgramPlayBindings, type PreparedTriggerBatch } from "./trigger-resolution";
 import { recordPlayedCard } from "./trigger-resolution";
+import { discoverTriggers } from "./trigger-queries";
+import { chooseTrashedTopProgram, isBraindanceProgram } from "./braindance-legend";
 import { triggersEnabled } from "./trigger-support";
 import { actionReturnContext, finishAction } from "./action-return";
 import { applyTemporaryPower } from "./temporary-power";
@@ -44,7 +46,12 @@ export function offerPlayChoice(m: TurnMutation) {
 }
 function finishPlay(m: TurnMutation, sourceId: CardInstanceId, aftermath?: PreparedTriggerBatch | null) {
     if (m.state.objects.cards[sourceId].zone.zone === "RESOLVING_PROGRAM") moveCardLocation(m, sourceId, "TRASH");
+    // Batch V76: "When you play a BRAINDANCE Program" bindings, pending since the play, wait for the Program to resolve.
+    const programPlay = !m.state.match.outcome && triggersEnabled(m.context) && m.state.resolution.playContinuation?.kind === "PLAY" && isBraindanceProgram(m.state, sourceId, m.context)
+        ? discoverTriggers(m.state, { kind: "PLAY", subjectId: sourceId }, m.context) : [];
+    if (aftermath && programPlay.length) joinProgramPlayBindings(m, aftermath, sourceId, programPlay);
     if (!m.state.match.outcome && aftermath) return activateTriggerBatch(m, aftermath, true);
+    if (programPlay.length) return beginTriggers(m, { kind: "PLAY", subjectId: sourceId }, programPlay);
     if (!m.state.match.outcome && triggersEnabled(m.context) && m.state.resolution.playContinuation?.kind === "PLAY" && ["UNIT", "GEAR"].includes(revisionOf(m.state, sourceId, m.context)!.type)) return recordPlayedCard(m, sourceId);
     if (!m.state.match.outcome) return finishAction(m);
     return success(null);
@@ -228,6 +235,11 @@ export function continuePlay(m: TurnMutation, index: number): Result<null> {
         }
         delete c.targetGigId;
         return completePlayEffect(m);
+    }
+    if (s.resolution.current?.effect.kind === "TRASH_TOP_MAY_ADD_PROGRAM") { // Batch V76.
+        if (option.kind !== "CARD" && !(option.kind === "CONFIRM" && !option.confirmed)) return failure("INVALID_TRASH_TARGET", "Add the trashed Program, or leave it");
+        const chosen = chooseTrashedTopProgram(m, option.kind === "CARD" ? option.cardInstanceId : undefined);
+        return chosen.ok ? completePlayEffect(m) : chosen;
     }
     if (s.resolution.current?.effect.kind === "MAY_DEFEAT_FRIENDLY_GEAR_THEN_DRAW") { // Batch V75.
         if (option.kind !== "CARD" && !(option.kind === "CONFIRM" && !option.confirmed)) return failure("INVALID_DEFEAT_TARGET", "Choose an enumerated friendly Gear, or decline");

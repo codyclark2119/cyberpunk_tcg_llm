@@ -1,5 +1,7 @@
 import { supportsSpendTriggerCard } from "./spend-trigger-support";
 import { supportsLegendSpendCard } from "./legend-spend-support";
+import { isBraindanceProgram, programPlayAbility } from "./braindance-legend";
+import { friendlyFieldUnits } from "./fight-power-grant";
 import { freeGearHosts, freeGearTargets } from "./free-play";
 import { attachedGear } from "./attachments";
 import { isFirstHostSteal, supportsGearStealCard } from "./gear-steal-support";
@@ -86,6 +88,10 @@ function validBinding(state: GameState, b: TriggerBinding, context: EngineContex
     if (b.kind === "WHEN_PLAYED" && c.effectPlays?.some(p => p.subjectId === b.subjectId)) return true;
     if (b.kind === "WHEN_CARD_PLAYED" && c.effectPlays?.some(p => p.qualifyingOrdinal === 1 && state.objects.cards[p.subjectId]?.ownerId === b.controllerId))
         return ability.guard === "FIRST_BLUE_UNIT_OR_GEAR_PLAY_PER_TURN" && r?.type === "LEGEND" && b.sourceId === b.subjectId;
+    // Batch V76: a played BRAINDANCE Program's bindings that joined the DEFEAT batch its own effect prepared.
+    if (b.kind === "WHEN_CARD_PLAYED" && c.programPlay) return c.origin.kind === "DEFEAT" && c.origin.effectSource === c.programPlay && isBraindanceProgram(state, c.programPlay, context)
+        && ability.guard === "FRIENDLY_BRAINDANCE_PROGRAM_PLAYED" && b.sourceId === b.subjectId && source.face === "UP" && source.zone.zone === "LEGENDS"
+        && state.objects.cards[c.programPlay]?.controllerId === b.controllerId && supportsLegendSpendCard(r, context).ok;
     if (b.kind === "WHEN_DEFEATED" && c.effectDefeats?.some(d => d.targetId === b.subjectId)) return !["BATTLEFIELD", "LEGENDS"].includes(subject.zone.zone);
     // Batch V46: an effect defeat inside a post-fight batch keeps the fight's own DEFEATED bindings valid.
     // Batch V48: so does any later effect defeat inside a DEFEAT batch; the origin's own defeats are checked below.
@@ -126,6 +132,9 @@ function validBinding(state: GameState, b: TriggerBinding, context: EngineContex
     }
     if (b.kind === "WHEN_PLAYED") return b.subjectId === origin.subjectId;
     const played = state.objects.cards[origin.subjectId], revision = cardRevision(state, origin.subjectId, context);
+    // Batch V76: a face-up Legend of a played BRAINDANCE Program's controller.
+    if (isBraindanceProgram(state, origin.subjectId, context)) return b.kind === "WHEN_CARD_PLAYED" && ability.guard === "FRIENDLY_BRAINDANCE_PROGRAM_PLAYED" && b.sourceId === b.subjectId
+        && source.face === "UP" && source.zone.zone === "LEGENDS" && played?.controllerId === b.controllerId && supportsLegendSpendCard(r, context).ok;
     return b.kind === "WHEN_CARD_PLAYED" && ability.guard === "FIRST_BLUE_UNIT_OR_GEAR_PLAY_PER_TURN" && r?.type === "LEGEND" && played?.controllerId === b.controllerId && revision?.colors.includes("BLUE") && effectiveCardTypes(state, played.id, context).some(t => t === "UNIT" || t === "GEAR") && state.turnHistory!.blueUnitOrGearPlays[b.controllerId] === 1;
 }
 export function validateTriggerState(state: GameState, context: EngineContext) {
@@ -226,7 +235,7 @@ export function validateTriggerState(state: GameState, context: EngineContext) {
     const rivalHasResolved = c.resolvedIds.some(id => !activeIds.includes(id));
     if ((r.current && r.current.controllerId !== state.timing.activePlayer || rivalHasResolved) && activeIds.some(id => !c.resolvedIds.includes(id))) return failure("INVALID_TRIGGER_PRIORITY", "Turn player's pending effects precede the rival's");
     if (c.phase === "SELECT" ? Boolean(r.current) || nextTriggerGroup(state).length < 2 : !r.current) return failure("INVALID_TRIGGER_PHASE", "Ordering is strategic only with multiple eligible effects; effect choices require a current effect");
-    if (c.phase !== "SELECT" && (!r.current || !["DEFEAT_UNIT", "READY_EDDIES", "DISCARD_CARDS", "DECREASE_GIG_UP_TO", "ADJUST_GIG_UP_TO", "OPTIONAL_DECREASE_FRIENDLY_GIG_THEN_DRAW_IF_MIN", "LOOK_AT_FRIENDLY_FACE_DOWN_LEGEND", "POWER_UNTIL_END_OF_TURN", "SPEND_UNIT", "READY_UNIT", "RETURN_TRASH_UNIT_TO_HAND", "PLAY_UNIT_FREE", "SEARCH_GEAR", "SEARCH_COST_MATCHING_GIGS", "SEARCH_TOP_MAY_TRASH", "TRASH_THEN_RETURN_PROGRAM", "GRANT_KEYWORD_UNTIL_END_OF_TURN", "PREVENT_UNIT_READY", "SWAP_GIGS", "READY_LEGENDS_UP_TO", "READY_UNITS_UP_TO", "SPEND_UNITS_PER_VALUE_PAIR", "DISCARD_PROGRAMS_THEN_BOTTOM_DECK", "STOLEN_GIG_PARITY_DRAW_OR_RIVAL_DISCARD", "CHOOSE_TYPE_REVEAL_TOP_ADD_AND_READY_EDDIE", "FORCE_RIVAL_UNIT_ATTACK", "STEAL_GIG", "PLAY_GEAR_FREE"].includes(r.current.effect.kind))) return failure("INVALID_TRIGGER_PHASE", "Only reviewed adjustment/look/discard/ready/power/spend/trash-return primitives pause for choices");
+    if (c.phase !== "SELECT" && (!r.current || !["DEFEAT_UNIT", "READY_EDDIES", "DISCARD_CARDS", "DECREASE_GIG_UP_TO", "ADJUST_GIG_UP_TO", "OPTIONAL_DECREASE_FRIENDLY_GIG_THEN_DRAW_IF_MIN", "LOOK_AT_FRIENDLY_FACE_DOWN_LEGEND", "POWER_UNTIL_END_OF_TURN", "SPEND_UNIT", "READY_UNIT", "RETURN_TRASH_UNIT_TO_HAND", "PLAY_UNIT_FREE", "SEARCH_GEAR", "SEARCH_COST_MATCHING_GIGS", "SEARCH_TOP_MAY_TRASH", "TRASH_THEN_RETURN_PROGRAM", "GRANT_KEYWORD_UNTIL_END_OF_TURN", "PREVENT_UNIT_READY", "SWAP_GIGS", "READY_LEGENDS_UP_TO", "READY_UNITS_UP_TO", "SPEND_UNITS_PER_VALUE_PAIR", "DISCARD_PROGRAMS_THEN_BOTTOM_DECK", "STOLEN_GIG_PARITY_DRAW_OR_RIVAL_DISCARD", "CHOOSE_TYPE_REVEAL_TOP_ADD_AND_READY_EDDIE", "FORCE_RIVAL_UNIT_ATTACK", "STEAL_GIG", "PLAY_GEAR_FREE", "PROGRAM_PLAY_FRIENDLY_POWER_THIS_TURN"].includes(r.current.effect.kind))) return failure("INVALID_TRIGGER_PHASE", "Only reviewed adjustment/look/discard/ready/power/spend/trash-return primitives pause for choices");
     // Batch V47: an effect steal pauses only for a Gig choice between at least two rival Gigs its fired subject may steal (Batch V67: or its first-steal Gear host).
     if (r.current?.effect.kind === "STEAL_GIG" && (c.phase !== "TARGET" || !(r.current.trigger?.kind === "DELAYED_FIGHT_OUTCOME" || r.current.trigger?.kind === "WHEN_GIG_STOLEN" && r.current.effect.valueNotSharedByFriendly) || effectStealTargets(state, context).length < 2)) return failure("INVALID_EFFECT_STEAL", "An effect steal pauses only to choose among two or more stealable rival Gigs");
     // Batch V19: the reviewed [Attack] Gear search pauses only for its own looked-at cards (search-state owns the details).
@@ -305,6 +314,10 @@ export function validateTriggerState(state: GameState, context: EngineContext) {
     if (r.current?.effect.kind === "READY_UNIT" && (c.phase !== "TARGET" || (r.current.effect.target.kind === "ANOTHER_FRIENDLY_UNIT"
         ? c.origin.kind !== "STEAL" || r.current.trigger?.kind !== "WHEN_GIG_STOLEN" || !r.current.trigger.gigInstanceId || !stolenGigReadyTargets(state, r.current, context).length || !supportsTriggerCard(cardRevision(state, r.current.sourceId!, context), context).ok
         : c.origin.kind !== "END_TURN" || r.current.effect.target.kind !== "FRIENDLY_FACE_UP_LEGEND"))) return failure("INVALID_READY_UNIT_CONTINUATION", "Only the reviewed own-turn end Legend ready and steal-trigger Unit ready may pause for a target");
+    // Batch V76: the BRAINDANCE play power pauses only for a strategic friendly-Unit choice in its PLAY batch.
+    if (r.current?.effect.kind === "PROGRAM_PLAY_FRIENDLY_POWER_THIS_TURN" && (c.phase !== "TARGET" || r.current.trigger?.kind !== "WHEN_CARD_PLAYED" || !((c.origin.kind === "PLAY" ? c.origin.subjectId : c.programPlay) && isBraindanceProgram(state, (c.origin.kind === "PLAY" ? c.origin.subjectId : c.programPlay)!, context))
+        || !r.current.sourceId || !programPlayAbility(state, r.current.sourceId, r.current.trigger.abilityId, context) || friendlyFieldUnits(state, r.current.controllerId, context).length < 2))
+        return failure("INVALID_POWER_CONTINUATION", "A BRAINDANCE play power pauses only for a strategic friendly-Unit choice");
     if (r.current?.effect.kind === "POWER_UNTIL_END_OF_TURN") {
         const source = r.current.sourceId && state.objects.cards[r.current.sourceId];
         if (c.phase !== "TARGET" || r.current.effect.target.kind !== "FRIENDLY_UNIT" || r.current.effect.amount !== 2

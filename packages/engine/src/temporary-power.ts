@@ -1,5 +1,6 @@
 import { isLegendCallPower, playPowerTargets } from "./legend-spend";
 import { validateGearPower } from "./gear-legend";
+import { validateProgramPlayPower } from "./braindance-legend";
 import { supportsLegendSpendCard } from "./legend-spend-support";
 import { supportsAttackConditionPowerCard } from "./attack-condition-power-support";
 import { isPlayedInBatch } from "./effect-play";
@@ -151,8 +152,8 @@ export function validateTemporaryPower(state: GameState, context: EngineContext)
             continue;
         }
         // Batch V74: the +1 a Legend's Blocker grant also gave, with a friendly value-pair of Gigs as it resolved.
-        if ("scaled" in x && (x.scaled === "BLOCKER_GRANT_BONUS" || x.scaled === "PER_EQUIPPED_GEAR")) { // Batch V75: and a Legend's per-Gear power.
-            const valid = (x.scaled === "BLOCKER_GRANT_BONUS" ? validateBlockerBonus : validateGearPower)(state, x as never, context, id => { const t = state.objects.cards[id]; return t?.face === "UP" && (["BATTLEFIELD", "TRASH", "REMOVED"].includes(t.zone.zone) && effectiveCardTypes(state, id, context).includes("UNIT") || removedFieldLegend(state, id, context)); });
+        if ("scaled" in x && (x.scaled === "BLOCKER_GRANT_BONUS" || x.scaled === "PER_EQUIPPED_GEAR" || x.scaled === "PROGRAM_PLAY_TRIGGER")) { // Batch V75: and a Legend's per-Gear power. Batch V76: and its BRAINDANCE play power.
+            const valid = (x.scaled === "BLOCKER_GRANT_BONUS" ? validateBlockerBonus : x.scaled === "PER_EQUIPPED_GEAR" ? validateGearPower : validateProgramPlayPower)(state, x as never, context, id => { const t = state.objects.cards[id]; return t?.face === "UP" && (["BATTLEFIELD", "TRASH", "REMOVED"].includes(t.zone.zone) && effectiveCardTypes(state, id, context).includes("UNIT") || removedFieldLegend(state, id, context)); });
             if (!valid.ok) return valid;
             continue;
         }

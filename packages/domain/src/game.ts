@@ -102,6 +102,8 @@ export const TriggerContinuationSchema = z.strictObject({
     selectedGearId: CardInstanceIdSchema.optional(),
     // Batch V69: cards spent before or during this batch whose "when spent" bindings it holds, in order.
     effectSpends: z.array(CardInstanceIdSchema).min(1).optional(),
+    // Batch V76: a played BRAINDANCE Program whose "When you play" bindings joined its own effect's DEFEAT batch.
+    programPlay: CardInstanceIdSchema.optional(),
     // Batch V32: the Programs a current "you may discard N Programs" has discarded; complete before its bottom-deck pauses.
     discardedPrograms: z.array(CardInstanceIdSchema).min(1).max(2).optional() });
 export const QualifyingAttackSummarySchema = z.strictObject({
@@ -156,7 +158,9 @@ export const TemporaryPowerModifierSchema = z.discriminatedUnion("amount", [
     TemporaryPowerBaseSchema.extend({ amount: z.literal(1), scaled: z.literal("BLOCKER_GRANT_BONUS"), origin: z.strictObject({ effectId: HashSchema, sequence: z.number().int().nonnegative() }) })
 ).or(
     // Batch V75: "+1 power this turn for each of its equipped Gear", fixed at the count as it resolved.
-    TemporaryPowerBaseSchema.extend({ amount: z.number().int().positive(), scaled: z.literal("PER_EQUIPPED_GEAR"), origin: z.strictObject({ effectId: HashSchema, sequence: z.number().int().nonnegative() }) })
+    TemporaryPowerBaseSchema.extend({ amount: z.number().int().positive(), scaled: z.literal("PER_EQUIPPED_GEAR"), origin: z.strictObject({ effectId: HashSchema, sequence: z.number().int().nonnegative() }) })).or(
+    // Batch V76: a Legend's "When you play a BRAINDANCE Program, give a friendly Unit +1 power this turn", one per trigger occurrence.
+    TemporaryPowerBaseSchema.extend({ amount: z.literal(1), scaled: z.literal("PROGRAM_PLAY_TRIGGER"), origin: z.strictObject({ effectId: HashSchema, abilityId: z.string().min(1), ordinal: z.number().int().positive() }) })
 );
 export type TemporaryPowerModifier = z.infer<typeof TemporaryPowerModifierSchema>;
 /** Batch V20: a keyword granted "this turn" by a resolved PLAY occurrence; it tracks the target only while it stays on the field. */

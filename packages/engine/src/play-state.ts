@@ -1,5 +1,6 @@
 import { trashProgramTargets } from "./trash-program";
 import { friendlyGearTargets } from "./gear-legend";
+import { trashedTopProgram } from "./braindance-legend";
 import { blockerGrantTargets } from "./blocker-grant";
 import { mustAttackTargets } from "./must-attack";
 import { crossSetSources, crossSetTargets, legendContinuationAbility, playPowerTargets, swapChoiceGigs, validateLegendActivationState } from "./legend-spend";
@@ -75,6 +76,10 @@ export function playChoice(state: GameState, context: EngineContext): PendingCho
     } else if (state.resolution.current?.effect.kind === "FIGHT_POWER_PER_FRIENDLY_LEGEND_THIS_TURN" || state.resolution.current?.effect.kind === "FIGHT_DEFEAT_IMMUNITY_THIS_TURN") { // Batch V58, V61.
         kind = "TARGET";
         options = friendlyFieldUnits(state, c.actorId, context).map(cardInstanceId => ({ kind: "CARD", cardInstanceId }));
+    } else if (state.resolution.current?.effect.kind === "TRASH_TOP_MAY_ADD_PROGRAM") { // Batch V76: leave it, or add the trashed Program.
+        kind = "TARGET";
+        const program = trashedTopProgram(state, c.actorId, context);
+        options = [{ kind: "CONFIRM", confirmed: false }, ...(program ? [{ kind: "CARD" as const, cardInstanceId: program }] : [])];
     } else if (state.resolution.current?.effect.kind === "MAY_DEFEAT_FRIENDLY_GEAR_THEN_DRAW") { // Batch V75: the decline, then each friendly Gear.
         kind = "TARGET";
         options = [{ kind: "CONFIRM", confirmed: false }, ...friendlyGearTargets(state, c.actorId, context).map(cardInstanceId => ({ kind: "CARD" as const, cardInstanceId }))];

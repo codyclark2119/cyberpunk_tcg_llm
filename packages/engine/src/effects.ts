@@ -1,5 +1,6 @@
 import { applyMustAttack, mustAttackTargets } from "./must-attack";
 import { applyGearPower, friendlyGearTargets, resolveGearDefeatDraw } from "./gear-legend";
+import { resolveTrashTop } from "./braindance-legend";
 import { applyBlockerGrant, blockerGrantTargets } from "./blocker-grant";
 import { applyFightDefeatImmunity } from "./fight-immunity";
 import { advanceCrossSet, advanceMandatorySwap, isLegendCallPower, mandatorySwapAvailable, playPowerTargets } from "./legend-spend";
@@ -89,6 +90,7 @@ export class HandlerRegistry {
             const targets = friendlyFieldUnits(m.state, m.state.resolution.current!.controllerId, m.context);
             return targets.length > 1 ? offerPlayChoice(m) : targets.length === 1 ? applyFightDefeatImmunity(m, targets[0], true) : success(null);
         }
+        if (effect.kind === "TRASH_TOP_MAY_ADD_PROGRAM") return resolveTrashTop(m, offerPlayChoice); // Batch V76: a trashed Program pauses for the take-or-leave.
         if (effect.kind === "MAY_DEFEAT_FRIENDLY_GEAR_THEN_DRAW") // Batch V75: with a friendly Gear, a defeat or the decline; with none, draw 1.
             return friendlyGearTargets(m.state, m.state.resolution.current!.controllerId, m.context).length ? offerPlayChoice(m) : resolveGearDefeatDraw(m, undefined, true);
         if (effect.kind === "POWER_PER_EQUIPPED_GEAR_THIS_TURN") { // Batch V75: one friendly Unit; a lone Unit is forced and none does nothing.
