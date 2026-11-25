@@ -1,3 +1,4 @@
+import { handGearOptions } from "./hand-gear-play";
 import { trashProgramTargets } from "./trash-program";
 import { friendlyGearTargets } from "./gear-legend";
 import { trashedTopProgram } from "./braindance-legend";
@@ -116,6 +117,9 @@ export function playChoice(state: GameState, context: EngineContext): PendingCho
     } else if (state.resolution.current?.effect.kind === "MOVE_SOURCE_GEAR_TO_UNEQUIPPED_UNIT_THEN_READY") { // Batch V82: the Gear, then its Unit.
         kind = "TARGET";
         options = (c.movedGearId ? unequippedUnits(state, c.actorId, context) : sourceGear(state, c.sourceId, context)).map(cardInstanceId => ({ kind: "CARD", cardInstanceId }));
+    } else if (state.resolution.current?.effect.kind === "PLAY_GEAR_FROM_HAND_FREE") { // Batch V92: the hand Gear, then its host.
+        kind = "TARGET";
+        options = handGearOptions(state, context).map(cardInstanceId => ({ kind: "CARD", cardInstanceId }));
     } else if (state.resolution.current?.effect.kind === "FRIENDLY_UNIT_ATTACK_RIVAL_UNITS_THE_TURN_PLAYED") { // Batch V80.
         kind = "TARGET";
         options = rockerGrantTargets(state, c.actorId, context).map(cardInstanceId => ({ kind: "CARD", cardInstanceId }));
@@ -134,7 +138,7 @@ export function playChoice(state: GameState, context: EngineContext): PendingCho
         const effect = state.resolution.current!.effect;
         options = effect.kind === "ADJUST_GIG_UP_TO" ? gigAdjustmentOptions(gig, effect) : [];
     }
-    return { id: hashCanonical({ continuation: playIdentity(state), phase: c.phase, index: c.effectIndex, selected: c.selectedSources, target: c.targetGigId ?? null, ...(c.bottomDecked ? { bottomDecked: c.bottomDecked } : {}), ...(c.discardedIds ? { discardedIds: c.discardedIds, chooser: state.timing.actingPlayer } : {}), ...(c.grantTargetId ? { grantTargetId: c.grantTargetId } : {}) }),
+    return { id: hashCanonical({ continuation: playIdentity(state), phase: c.phase, index: c.effectIndex, selected: c.selectedSources, target: c.targetGigId ?? null, ...(c.bottomDecked ? { bottomDecked: c.bottomDecked } : {}), ...(c.discardedIds ? { discardedIds: c.discardedIds, chooser: state.timing.actingPlayer } : {}), ...(c.grantTargetId ? { grantTargetId: c.grantTargetId } : {}), ...(c.handGearId ? { handGearId: c.handGearId } : {}) }),
         actorId: state.resolution.current?.effect.kind === "REVEAL_TOP_RIVAL_CHOOSES_HAND_OR_TRASH" ? rivalOf(state, c.actorId) : state.resolution.current?.effect.kind === "EACH_PLAYER_DISCARDS_HAND_MAY_DRAW" || c.grantTargetId ? state.timing.actingPlayer : c.actorId, kind, options, min: 1, max: 1, ordered: false, continuationId: "noncombat-play@1" };
 }
 export function validatePlayState(state: GameState, context: EngineContext) {

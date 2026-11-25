@@ -9,12 +9,12 @@
   },
   "totals": {
     "cards": 151,
-    "admitted": 141,
-    "notAdmitted": 10,
+    "admitted": 142,
+    "notAdmitted": 9,
     "notAdmittedOnlyCoveredFamilies": 0,
     "byAdmission": {
-      "NOT_ADMITTED": 10,
-      "SOURCE_MATCH": 141
+      "NOT_ADMITTED": 9,
+      "SOURCE_MATCH": 142
     }
   },
   "families": [
@@ -24,25 +24,7 @@
       "summary": "Play a card by an effect: from hand, trash or deck top, for free or for its cost, with after-play riders.",
       "notes": "",
       "cardCount": 9,
-      "notAdmittedCount": 6,
-      "soleBlockerCount": 0
-    },
-    {
-      "family": "SPEND_ABILITY",
-      "status": "PARTIAL",
-      "summary": "Activated abilities with a [Spend] cost (and optional Eddie cost) on Legends, Units or Gear.",
-      "notes": "Admitted only for Kerry: The Last Rockerboy (a Unit). Face-up Legend [Spend] abilities and Gear [Spend] abilities are not.",
-      "cardCount": 17,
-      "notAdmittedCount": 4,
-      "soleBlockerCount": 0
-    },
-    {
-      "family": "CONDITION_BOARD",
-      "status": "PARTIAL",
-      "summary": "Generic target filters and board conditions: classification, cost, power, ready/spent, equipped, face-up, named, lowest power.",
-      "notes": "Documented as unsupported: generic condition/filter language. Each admitted filter is a literal.",
-      "cardCount": 34,
-      "notAdmittedCount": 3,
+      "notAdmittedCount": 5,
       "soleBlockerCount": 0
     },
     {
@@ -55,21 +37,30 @@
       "soleBlockerCount": 0
     },
     {
+      "family": "SPEND_ABILITY",
+      "status": "PARTIAL",
+      "summary": "Activated abilities with a [Spend] cost (and optional Eddie cost) on Legends, Units or Gear.",
+      "notes": "Admitted only for Kerry: The Last Rockerboy (a Unit). Face-up Legend [Spend] abilities and Gear [Spend] abilities are not.",
+      "cardCount": 17,
+      "notAdmittedCount": 3,
+      "soleBlockerCount": 0
+    },
+    {
+      "family": "CONDITION_BOARD",
+      "status": "PARTIAL",
+      "summary": "Generic target filters and board conditions: classification, cost, power, ready/spent, equipped, face-up, named, lowest power.",
+      "notes": "Documented as unsupported: generic condition/filter language. Each admitted filter is a literal.",
+      "cardCount": 34,
+      "notAdmittedCount": 2,
+      "soleBlockerCount": 0
+    },
+    {
       "family": "DECK_SEARCH_REVEAL",
       "status": "PARTIAL",
       "summary": "Top-of-deck manipulation: search/look/reveal top N, trash from the top (Trash N), bottom-deck the rest.",
       "notes": "SEARCH_GEAR (count<=5, Gear with max cost, take<=2) only.",
       "cardCount": 15,
-      "notAdmittedCount": 3,
-      "soleBlockerCount": 0
-    },
-    {
-      "family": "GEAR_EQUIP",
-      "status": "PARTIAL",
-      "summary": "Equip a Gear to a friendly Unit or face-up Legend; Gear power adds to its host.",
-      "notes": "Equip onto Units is supported for the admitted Gear. Gear on a Legend host in combat (a Go Solo Legend) is unsupported.",
-      "cardCount": 22,
-      "notAdmittedCount": 3,
+      "notAdmittedCount": 2,
       "soleBlockerCount": 0
     },
     {
@@ -82,11 +73,11 @@
       "soleBlockerCount": 0
     },
     {
-      "family": "KEYWORD_QUICK",
+      "family": "GEAR_EQUIP",
       "status": "PARTIAL",
-      "summary": "[Quick] timing: Programs and activated abilities usable in the react window.",
-      "notes": "Quick Programs are supported for Floor It, Reboot Optics and Detonate. Quick activated [Spend] abilities on Legends, Units and Gear are not offered in any react window yet.",
-      "cardCount": 12,
+      "summary": "Equip a Gear to a friendly Unit or face-up Legend; Gear power adds to its host.",
+      "notes": "Equip onto Units is supported for the admitted Gear. Gear on a Legend host in combat (a Go Solo Legend) is unsupported.",
+      "cardCount": 22,
       "notAdmittedCount": 2,
       "soleBlockerCount": 0
     },
@@ -154,6 +145,15 @@
       "soleBlockerCount": 0
     },
     {
+      "family": "KEYWORD_QUICK",
+      "status": "PARTIAL",
+      "summary": "[Quick] timing: Programs and activated abilities usable in the react window.",
+      "notes": "Quick Programs are supported for Floor It, Reboot Optics and Detonate. Quick activated [Spend] abilities on Legends, Units and Gear are not offered in any react window yet.",
+      "cardCount": 12,
+      "notAdmittedCount": 1,
+      "soleBlockerCount": 0
+    },
+    {
       "family": "PROMO_NO_TEXT",
       "status": "OUT_OF_SCOPE",
       "summary": "Source record with no rules text, cost or RAM: not a playable card in this snapshot.",
@@ -177,15 +177,6 @@
       "summary": "Return a card from the trash (or from cards just trashed) to hand.",
       "notes": "",
       "cardCount": 7,
-      "notAdmittedCount": 1,
-      "soleBlockerCount": 0
-    },
-    {
-      "family": "TRIGGER_OTHER_EVENT",
-      "status": "MISSING",
-      "summary": "Other event triggers: another friendly Unit defeated, a Rival adjusting or swapping friendly Gigs.",
-      "notes": "",
-      "cardCount": 3,
       "notAdmittedCount": 1,
       "soleBlockerCount": 0
     },
@@ -429,6 +420,15 @@
       "summary": "Triggers on winning or losing a fight, or winning by a margin.",
       "notes": "Trigger WHEN_FIGHT_WON (Satori). Losing a fight and win margins are missing.",
       "cardCount": 5,
+      "notAdmittedCount": 0,
+      "soleBlockerCount": 0
+    },
+    {
+      "family": "TRIGGER_OTHER_EVENT",
+      "status": "MISSING",
+      "summary": "Other event triggers: another friendly Unit defeated, a Rival adjusting or swapping friendly Gigs.",
+      "notes": "",
+      "cardCount": 3,
       "notAdmittedCount": 0,
       "soleBlockerCount": 0
     },
@@ -2323,8 +2323,8 @@
       "colors": [
         "YELLOW"
       ],
-      "admission": "NOT_ADMITTED",
-      "revision": null,
+      "admission": "SOURCE_MATCH",
+      "revision": 1,
       "families": [
         "CONDITION_BOARD",
         "DECK_SEARCH_REVEAL",
@@ -2334,15 +2334,7 @@
         "SPEND_ABILITY",
         "TRIGGER_OTHER_EVENT"
       ],
-      "blockingFamilies": [
-        "CONDITION_BOARD",
-        "DECK_SEARCH_REVEAL",
-        "GEAR_EQUIP",
-        "KEYWORD_QUICK",
-        "PLAY_BY_EFFECT",
-        "SPEND_ABILITY",
-        "TRIGGER_OTHER_EVENT"
-      ],
+      "blockingFamilies": [],
       "note": null
     },
     {

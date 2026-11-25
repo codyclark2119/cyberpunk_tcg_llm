@@ -1,3 +1,4 @@
+import { playHandGear, selectHandGear } from "./hand-gear-play";
 import { chooseTrashProgram } from "./trash-program";
 import { applyGearPower, resolveGearDefeatDraw } from "./gear-legend";
 import { applyBlockerGrant } from "./blocker-grant";
@@ -55,6 +56,9 @@ export function offerPlayChoice(m: TurnMutation) {
 }
 function finishPlay(m: TurnMutation, sourceId: CardInstanceId, aftermath?: PreparedTriggerBatch | null) {
     if (m.state.objects.cards[sourceId].zone.zone === "RESOLVING_PROGRAM") moveCardLocation(m, sourceId, "TRASH");
+    // Batch V92: a Gear a Legend's ability played from hand starts its own play batch once the ability has resolved.
+    const handGear = m.state.resolution.playContinuation?.kind === "ACTIVATE" ? m.state.resolution.playContinuation.playedGearId : undefined;
+    if (handGear && !m.state.match.outcome) return recordPlayedCard(m, handGear);
     // Batch V76: "When you play a BRAINDANCE Program" bindings, pending since the play, wait for the Program to resolve.
     const programPlay = !m.state.match.outcome && triggersEnabled(m.context) && m.state.resolution.playContinuation?.kind === "PLAY" && isBraindanceProgram(m.state, sourceId, m.context)
         ? discoverTriggers(m.state, { kind: "PLAY", subjectId: sourceId }, m.context) : [];
@@ -300,6 +304,11 @@ export function continuePlay(m: TurnMutation, index: number): Result<null> {
         const held = c.movedGearId, moved = held ? moveGearAndReady(m, held, option.cardInstanceId) : selectMovedGear(m, option.cardInstanceId, offerPlayChoice);
         return !moved.ok || s.resolution.playContinuation?.movedGearId ? moved : completePlayEffect(m);
     }
+    if (s.resolution.current?.effect.kind === "PLAY_GEAR_FROM_HAND_FREE") { // Batch V92: the hand Gear, then its host.
+        if (option.kind !== "CARD") return failure("INVALID_FREE_GEAR_PLAY", "Choose a hand Gear or its host");
+        const held = c.handGearId, played = held ? playHandGear(m, held, option.cardInstanceId) : selectHandGear(m, option.cardInstanceId, offerPlayChoice);
+        return !played.ok || s.resolution.playContinuation?.handGearId ? played : completePlayEffect(m);
+    }
     if (s.resolution.current?.effect.kind === "FRIENDLY_UNIT_ATTACK_RIVAL_UNITS_THE_TURN_PLAYED") { // Batch V80.
         if (option.kind !== "CARD") return failure("INVALID_GRANT_TARGET", "Choose a current friendly field Unit");
         const applied = applyRockerGrant(m, option.cardInstanceId, false);
@@ -394,7 +403,7 @@ export function activateAbility(m: TurnMutation, actorId: PlayerId, sourceId: Ca
         const forced = forcedPaymentSources(s, actorId, m.context, amount, []);
         return forced ? completePayment(m, forced) : offerPlayChoice(m);
     }
-    s.resolution.returnTo = { kind: "MAIN" };
+    s.resolution.returnTo = ability.activation?.timing === "QUICK" ? actionReturnContext(s) : { kind: "MAIN" }; // Batch V92: an unpaid {Quick} ability may be a reaction.
     s.resolution.playContinuation = { kind: "ACTIVATE", sourceId, actorId, abilityId, phase: "EFFECT", remainingCost: 0, selectedSources: [], effectIndex: 0 };
     // 11.15.3.1: distinct activation and resolution checks, even though no reaction window intervenes here.
     if (!ability.conditions.every(condition => testCondition(s, actorId, condition))) return finishPlay(m, sourceId);

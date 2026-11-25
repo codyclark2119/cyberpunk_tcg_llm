@@ -145,6 +145,8 @@ export const TurnHistorySchema = z.strictObject({
     endTurnDefeats: z.array(EndTurnDefeatSchema).min(1).optional(),
     // Batch V72: cards with a "the first time this Unit is spent each turn" trigger already spent this turn.
     firstSpends: z.array(CardInstanceIdSchema).min(1).optional(),
+    // Batch V92: the Units defeated this turn while equipped, recorded before they moved.
+    equippedDefeats: z.array(CardInstanceIdSchema).min(1).optional(),
     // Batch V84: a Legend Called for free by an effect, whose {Call} ability resolves once the action's trigger batches are done (Batch
     // V86: or its attack has ended); `started` while that ability resolves, which may be the non-active player's.
     queuedCall: z.strictObject({ playerId: PlayerIdSchema, legendId: CardInstanceIdSchema, started: z.literal(true).optional() }).optional(),
@@ -265,7 +267,10 @@ export const ResolutionStateSchema = z.strictObject({
         // Batch V79: the friendly Unit chosen for both effects, while a Rival chooses which one it gets.
         grantTargetId: CardInstanceIdSchema.optional(),
         // Batch V82: the Gear chosen to move off its Legend, while the unequipped friendly Unit is chosen.
-        movedGearId: CardInstanceIdSchema.optional() }).optional(),
+        movedGearId: CardInstanceIdSchema.optional(),
+        // Batch V92: the hand Gear chosen to play for free, while its host is chosen; then, once it is equipped, the played Gear whose
+        // play batch follows the ability.
+        handGearId: CardInstanceIdSchema.optional(), playedGearId: CardInstanceIdSchema.optional() }).optional(),
     searchContinuation: z.strictObject({ looked: z.array(CardInstanceIdSchema), selected: z.array(CardInstanceIdSchema) }).optional(),
     callContinuation: z.strictObject({ actorId: PlayerIdSchema, legendId: CardInstanceIdSchema, remainingCost: z.number().int().nonnegative(), selectedSources: z.array(PaymentSourceSchema) }).optional(),
     current: PendingEffectSchema.nullable(), pending: z.array(PendingEffectSchema), discovered: z.array(PendingEffectSchema), choice: PendingChoiceSchema.nullable()
