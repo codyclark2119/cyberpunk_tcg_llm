@@ -53,11 +53,17 @@ const LEGEND_SPEND_SHAPES = [
     { colors: ["YELLOW"], ram: { YELLOW: 2 }, tags: ["Ganger", "Maelstrom"], sell: true,
         abilities: [{ ...CALL_CHOOSE_ONE, choose: null, effects: [{ kind: "MAY_DEFEAT_FRIENDLY_GEAR_THEN_DRAW", ifDefeated: 2, otherwise: 1 }] },
             { ...SPEND, activation: { timing: "QUICK", conditionTiming: "ACTIVATION_AND_RESOLUTION", costs: [{ kind: "PAYMENT_COST", cost: { kind: "EDDIES", amount: 1 } }, { kind: "SPEND_SOURCE" }] },
-                effects: [{ kind: "POWER_PER_EQUIPPED_GEAR_THIS_TURN", target: { kind: "FRIENDLY_UNIT" }, amount: 1 }] }] }
+                effects: [{ kind: "POWER_PER_EQUIPPED_GEAR_THIS_TURN", target: { kind: "FRIENDLY_UNIT" }, amount: 1 }] }] },
+    // Batch V76: Judy Álvarez: Braindance Maestro. "When you play a BRAINDANCE Program, give a friendly Unit +1 power this turn.
+    // {Spend} Trash the top card of your deck. If it's a Program, you may add it to your hand."
+    { colors: ["BLUE"], ram: { BLUE: 2 }, tags: ["Ganger", "Mox", "Techie"], sell: true,
+        abilities: [{ trigger: "WHEN_CARD_PLAYED", inherited: null, guard: "FRIENDLY_BRAINDANCE_PROGRAM_PLAYED", activation: null, conditions: [], abilityCost: { kind: "NONE" }, choose: null,
+            effects: [{ kind: "PROGRAM_PLAY_FRIENDLY_POWER_THIS_TURN", amount: 1 }] },
+            { ...SPEND, effects: [{ kind: "TRASH_TOP_MAY_ADD_PROGRAM" }] }] }
 ].map(shape => canonicalSerialize({ type: "LEGEND", power: null, cost: "DASH", keywords: [], equip: null, modifiers: [], restrictions: [], ...shape }));
 /** Any Legend activation, start-of-turn trigger, value-pair draw, mandatory swap, Blocker grant or friendly Blocker-used trigger routes here first. */
 export function hasLegendSpendMetadata(card: DeepReadonly<CardRevisionSnapshot> | undefined) {
-    return Boolean(card?.mechanics.abilities.some(a => card.type === "LEGEND" && (a.activation || a.choose) || a.guard === "FRIENDLY_CORPO_OR_GANGER_UNIT_STEALS" || a.trigger === "WHEN_OWN_TURN_STARTS" || a.trigger === "WHEN_FRIENDLY_UNIT_USES_BLOCKER" || a.effects.some(e => e.kind === "GRANT_BLOCKER_THIS_TURN" || e.kind === "MAY_DEFEAT_FRIENDLY_GEAR_THEN_DRAW" || e.kind === "POWER_PER_EQUIPPED_GEAR_THIS_TURN" || e.kind === "DISCARD_CARDS" && (e.optional || e.thenDrawOne)) || a.effects.some(e => e.kind === "DRAW_PER_FRIENDLY_VALUE_PAIR" || e.kind === "FIGHT_DEFEAT_IMMUNITY_THIS_TURN" || e.kind === "SET_GIG_TO_ANOTHER_PLAYERS_GIG_VALUE" || e.kind === "SWAP_GIGS" && !e.optional)));
+    return Boolean(card?.mechanics.abilities.some(a => card.type === "LEGEND" && (a.activation || a.choose) || a.guard === "FRIENDLY_CORPO_OR_GANGER_UNIT_STEALS" || a.trigger === "WHEN_OWN_TURN_STARTS" || a.trigger === "WHEN_FRIENDLY_UNIT_USES_BLOCKER" || a.guard === "FRIENDLY_BRAINDANCE_PROGRAM_PLAYED" || a.effects.some(e => e.kind === "GRANT_BLOCKER_THIS_TURN" || e.kind === "TRASH_TOP_MAY_ADD_PROGRAM" || e.kind === "PROGRAM_PLAY_FRIENDLY_POWER_THIS_TURN" || e.kind === "MAY_DEFEAT_FRIENDLY_GEAR_THEN_DRAW" || e.kind === "POWER_PER_EQUIPPED_GEAR_THIS_TURN" || e.kind === "DISCARD_CARDS" && (e.optional || e.thenDrawOne)) || a.effects.some(e => e.kind === "DRAW_PER_FRIENDLY_VALUE_PAIR" || e.kind === "FIGHT_DEFEAT_IMMUNITY_THIS_TURN" || e.kind === "SET_GIG_TO_ANOTHER_PLAYERS_GIG_VALUE" || e.kind === "SWAP_GIGS" && !e.optional)));
 }
 export function supportsLegendSpendCard(card: DeepReadonly<CardRevisionSnapshot> | undefined, context: EngineContext) {
     const g = context.content.ruleset.gameplay, m = card?.mechanics;

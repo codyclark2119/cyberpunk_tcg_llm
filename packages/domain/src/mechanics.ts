@@ -232,6 +232,19 @@ export const EffectSchema = z.discriminatedUnion("kind", [
     z.strictObject({ kind: z.literal("TRASH_THEN_ADD_TRASH_PROGRAM"), count: z.literal(3), tag: z.literal("Braindance") }),
     // Batch V74: "Give a friendly Unit with cost 4 or less {Blocker} this turn. If you control a value-pair of Gigs, also give it +1 power
     // this turn." (6.6: the value pair is checked as the effect resolves).
+    // Batch V77: "Reveal the top 2 cards of your deck. A Rival chooses whether you add them to your hand or trash them. If you trash
+    // them, draw 2."
+    z.strictObject({ kind: z.literal("REVEAL_TOP_RIVAL_CHOOSES_HAND_OR_TRASH"), count: z.literal(2), drawIfTrashed: z.literal(2) }),
+    // Batch V78: "Each player discards their hand and may draw 5. If the total number of discarded cards equals the value of a friendly
+    // Gig, draw 2."
+    z.strictObject({ kind: z.literal("EACH_PLAYER_DISCARDS_HAND_MAY_DRAW"), draw: z.literal(5), drawIfTotalMatchesFriendlyGig: z.literal(2) }),
+    // Batch V79: "Give a friendly Unit these effects. If you have less Street Cred than a Rival, they instead choose one effect for you.
+    // The next time this Unit attacks this turn, it may attack ready Units. // Give this Unit +3 power this turn."
+    z.strictObject({ kind: z.literal("FRIENDLY_UNIT_READY_ATTACK_AND_POWER"), power: z.literal(3), rivalChoosesOneIf: z.literal("STREET_CRED_LESS_THAN_RIVAL") }),
+    // Batch V76: "Trash the top card of your deck. If it's a Program, you may add it to your hand."
+    z.strictObject({ kind: z.literal("TRASH_TOP_MAY_ADD_PROGRAM") }),
+    // Batch V76: "Give a friendly Unit +1 power this turn" from a Legend's "When you play a BRAINDANCE Program" trigger.
+    z.strictObject({ kind: z.literal("PROGRAM_PLAY_FRIENDLY_POWER_THIS_TURN"), amount: z.literal(1) }),
     // Batch V75: "You may defeat a friendly Gear. If you do, draw 2. Otherwise, draw 1."
     z.strictObject({ kind: z.literal("MAY_DEFEAT_FRIENDLY_GEAR_THEN_DRAW"), ifDefeated: z.literal(2), otherwise: z.literal(1) }),
     // Batch V75: "Give a friendly Unit +1 power this turn for each of its equipped Gear." (counted as it resolves).
@@ -295,7 +308,7 @@ export const AbilitySchema = z.strictObject({ id: z.string().min(1), trigger: Tr
     // Batch V40: STEALER_IS_LEGEND limits it to a stealing friendly Legend ("When a friendly Legend steals a Gig").
     // Batch V49: FIRST_OTHER_FRIENDLY_STEAL_BELOW_POWER_PER_TURN is "The first time another friendly Unit steals a Gig with value less
     // than its power each turn".
-    guard: z.enum(["FIRST_BLUE_UNIT_OR_GEAR_PLAY_PER_TURN", "FIRST_FRIENDLY_ARASAKA_UNIT_ATTACK_PER_TURN", "STOLEN_GIG_IS_D6", "STEALER_IS_LEGEND", "FIRST_OTHER_FRIENDLY_STEAL_BELOW_POWER_PER_TURN", "FIRST_ARASAKA_UNIT_DEFEAT_PER_TURN", "FIRST_FIGHT_WIN_PER_TURN", "FRIENDLY_CORPO_OR_GANGER_UNIT_STEALS", "FIRST_HOST_STEAL_PER_TURN", "FIRST_SPEND_PER_TURN"]).optional(),
+    guard: z.enum(["FIRST_BLUE_UNIT_OR_GEAR_PLAY_PER_TURN", "FIRST_FRIENDLY_ARASAKA_UNIT_ATTACK_PER_TURN", "STOLEN_GIG_IS_D6", "STEALER_IS_LEGEND", "FIRST_OTHER_FRIENDLY_STEAL_BELOW_POWER_PER_TURN", "FIRST_ARASAKA_UNIT_DEFEAT_PER_TURN", "FIRST_FIGHT_WIN_PER_TURN", "FRIENDLY_CORPO_OR_GANGER_UNIT_STEALS", "FIRST_HOST_STEAL_PER_TURN", "FIRST_SPEND_PER_TURN", "FRIENDLY_BRAINDANCE_PROGRAM_PLAYED"]).optional(),
     // Batch V63: FRIENDLY_CORPO_OR_GANGER_UNIT_STEALS is "When a friendly CORPO or GANGER Unit steals 1 or more Gigs": once per steal, not per Gig.
     // Batch V50: FIRST_ARASAKA_UNIT_DEFEAT_PER_TURN with WHEN_UNIT_DEFEATED is "The first time an ARASAKA Unit is defeated each turn".
     // Batch V49: QUICK is "[Quick] cost: effect" (11.30.2): also activatable as a reaction to a rival Unit's attack.

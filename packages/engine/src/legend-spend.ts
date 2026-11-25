@@ -1,5 +1,6 @@
 import { canonicalSerialize, failure, hashCanonical, success, type CardInstanceId, type GameState, type GigInstanceId, type PlayerId, type Result } from "@tcg/domain";
 import { friendlyGearTargets } from "./gear-legend";
+import { trashedTopProgram } from "./braindance-legend";
 import { blockerGrantTargets } from "./blocker-grant";
 import type { EngineContext } from "./state";
 import type { TurnMutation } from "./turn";
@@ -111,6 +112,8 @@ export function validateLegendActivationState(state: GameState, context: EngineC
                 return failure("INVALID_LEGEND_ACTIVATION", "A cross-player Gig set pauses only for a strategic Gig choice");
         } else if (e.kind === "ADJUST_GIG_UP_TO") {
             if (state.timing.step !== (c.targetGigId ? "AMOUNT_SELECTION" : "TARGET_SELECTION") || c.targetGigId && (!held || held.location.zone !== "GIGS" || held.roll.kind !== "ROLLED")) return failure("INVALID_LEGEND_ACTIVATION", "A Gig adjustment pauses for its Gig, then its amount");
+        } else if (e.kind === "TRASH_TOP_MAY_ADD_PROGRAM") { // Batch V76.
+            if (!spend || quick || c.targetGigId || state.timing.step !== "TARGET_SELECTION" || !trashedTopProgram(state, c.actorId, context)) return failure("INVALID_LEGEND_ACTIVATION", "A trash-top pauses only to add or leave the Program it trashed");
         } else if (e.kind === "MAY_DEFEAT_FRIENDLY_GEAR_THEN_DRAW") { // Batch V75.
             if (!trashCall || c.targetGigId || state.timing.step !== "TARGET_SELECTION" || !friendlyGearTargets(state, c.actorId, context).length) return failure("INVALID_LEGEND_ACTIVATION", "A Gear defeat pauses only for a defeat or decline with a friendly Gear");
         } else if (e.kind === "POWER_PER_EQUIPPED_GEAR_THIS_TURN") { // Batch V75.

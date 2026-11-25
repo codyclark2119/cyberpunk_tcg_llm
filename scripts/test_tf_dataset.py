@@ -37,6 +37,19 @@ from games.cyberpunk.assistant.loop import split_thinking, system_prompt  # noqa
 from games.cyberpunk.assistant.preload import preload  # noqa: E402
 from games.cyberpunk.assistant.tools import tool_specs  # noqa: E402
 from harness.core.io import read_jsonl, write_jsonl_atomic  # noqa: E402
+from games.cyberpunk.assistant import tools as assistant_tools  # noqa: E402
+
+
+
+def _no_rules_index():
+    """The committed sets were built without the git-ignored rules index (scripts/build_rules_index.py, built on the
+    Mac). With it present, search_rules ranks hybrid and the preload changes, so these checks always see it as absent,
+    with the same reason text the tools report when the file is missing."""
+    label = assistant_tools._index_label(assistant_tools.RULES_INDEX_PATH)
+    return None, f"no rules index at {label} (build it on the Mac with scripts/build_rules_index.py)"
+
+
+assistant_tools.embedding_index = _no_rules_index
 
 COMMITTED = tf.OUT_DIR
 STRICT_ANSWER_RE = re.compile(r"\nAnswer: ([AB])\Z")

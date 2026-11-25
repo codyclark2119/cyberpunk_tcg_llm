@@ -1,3 +1,4 @@
+import { endReadyUnitAttack } from "./ready-attack-grant";
 import { recordFightWin } from "./fight-win-support";
 import { endTurnEnabled } from "./end-turn-support";
 import { beginTriggers } from "./trigger-resolution";
@@ -18,6 +19,7 @@ export function finishCombat(m: TurnMutation) {
     const c = m.state.timing.combat;
     if (c.stage === "NONE") return failure("INVALID_COMBAT_CLEANUP", "A current attack is required");
     m.emit({ kind: "ATTACK_ENDED", attackerId: c.attackerId, reason: "COMPLETED" });
+    endReadyUnitAttack(m); // Batch V79.
     m.state.timing.combat = { stage: "NONE" };
     m.state.timing.actingPlayer = m.state.timing.activePlayer;
     m.state.resolution = { stage: "DECISION", current: null, pending: [], discovered: [], choice: null };

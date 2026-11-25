@@ -1,4 +1,6 @@
 import { effectiveCallCost } from "./free-call-support";
+import { otherPlayerMayChoose } from "./rival-reveal";
+import { validateReadyUnitAttackGrants } from "./ready-attack-grant";
 import { validateFightDefeatImmunities } from "./fight-immunity";
 import { validateLegendSpendMetadata } from "./legend-spend-support";
 import { validateFightPowerGrants } from "./fight-power-grant";
@@ -129,6 +131,7 @@ export function validateState(input: unknown, context: EngineContext): Result<Ga
     const firstHistory = validateFirstAttackHistory(s, context); if (!firstHistory.ok) return firstHistory;
     const belowPower = validateBelowPowerHistory(s, context); if (!belowPower.ok) return belowPower; // Batch V49.
     const arasakaDefeat = validateArasakaDefeatHistory(s, context); if (!arasakaDefeat.ok) return arasakaDefeat; // Batch V50.
+    const readyAttack = validateReadyUnitAttackGrants(s, context); if (!readyAttack.ok) return readyAttack; // Batch V79.
     const fightWins = validateFightWinHistory(s, context); if (!fightWins.ok) return fightWins; // Batch V52.
     const firstGear = validateFirstGearHistory(s, context); if (!firstGear.ok) return firstGear; // Batch V53.
     const fieldMetadata = validateFieldLegendMetadata(s, context); if (!fieldMetadata.ok) return fieldMetadata;
@@ -209,7 +212,7 @@ export function validateState(input: unknown, context: EngineContext): Result<Ga
     }
     if (slice && !s.setup) {
         const step = s.timing.step;
-        if (ids.length !== 2 || !s.timing.firstPlayer || !ids.includes(s.timing.firstPlayer) || !step || (!["RIVAL_REACT", "COMBAT_RESOLUTION_PENDING", "DEFEAT_ORDER_SELECTION", "TRIGGER_RESOLUTION"].includes(s.timing.combat.stage) && !s.resolution.targetedDefeatContinuation && !s.resolution.triggerContinuation?.effectDefeats && !(s.resolution.triggerContinuation?.origin.kind === "DEFEAT" && s.resolution.triggerContinuation.origin.effectSource) && s.timing.actingPlayer !== s.timing.activePlayer))
+        if (ids.length !== 2 || !s.timing.firstPlayer || !ids.includes(s.timing.firstPlayer) || !step || (!["RIVAL_REACT", "COMBAT_RESOLUTION_PENDING", "DEFEAT_ORDER_SELECTION", "TRIGGER_RESOLUTION"].includes(s.timing.combat.stage) && !s.resolution.targetedDefeatContinuation && !s.resolution.triggerContinuation?.effectDefeats && !(s.resolution.triggerContinuation?.origin.kind === "DEFEAT" && s.resolution.triggerContinuation.origin.effectSource) && !otherPlayerMayChoose(s) && s.timing.actingPlayer !== s.timing.activePlayer))
             return failure("INVALID_TURN_STATE", "Turn slice requires two players, first player and an active decision actor");
         if (s.timing.turn < 1 || s.timing.activePlayer !== ids[(s.players[s.timing.firstPlayer].seat + s.timing.turn - 1) % ids.length])
             return failure("INVALID_TURN_ORDER", "Active player must follow first-player and turn order");

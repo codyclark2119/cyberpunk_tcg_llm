@@ -1,5 +1,5 @@
 import { spentSubjects, takeQueuedSpends } from "./spend-triggers";
-import { friendlyFaceUpLegends } from "./fight-power-grant";
+import { friendlyFaceUpLegends, friendlyFieldUnits } from "./fight-power-grant";
 import { processDeparture } from "./card-movement";
 import { isPlayedInBatch } from "./effect-play";
 import { applyMustAttack, mustAttackTargets } from "./must-attack";
@@ -28,6 +28,7 @@ import type { TurnMutation } from "./turn";
 import { cardRevision } from "./characteristics";
 import { finishAction } from "./action-return";
 import { finishAttackEffects } from "./combat";
+import { applyProgramPlayPower } from "./braindance-legend";
 import { finishCombat, completeFightResult } from "./combat-resolution";
 import { HandlerRegistry, finishSearch } from "./effects";
 import { isSearchEffect, searchMaxTake, searchTargets } from "./search-state";
@@ -66,7 +67,7 @@ function resume(m: TurnMutation, origin: TriggerOrigin): Result<null> {
     }
     return failure("INVALID_TRIGGER_RETURN", "Trigger batch must return to its original reviewed stage");
 }
-export type PreparedTriggerBatch = { origin: TriggerOrigin; ordinal: number; bindings: TriggerBinding[]; pending: PendingEffect[]; effectSpends?: CardInstanceId[] };
+export type PreparedTriggerBatch = { origin: TriggerOrigin; ordinal: number; bindings: TriggerBinding[]; pending: PendingEffect[]; effectSpends?: CardInstanceId[]; programPlay?: CardInstanceId };
 /** Creation of pending work is separate from resolution, so a Program can finish before it starts. */
 export function prepareTriggerBatch(m: TurnMutation, origin: TriggerOrigin, captured?: readonly TriggerBinding[]): PreparedTriggerBatch | null {
     // Batch V69: "when spent" bindings waiting from a spend earlier in this action join this batch, after its own.
@@ -79,12 +80,23 @@ export function prepareTriggerBatch(m: TurnMutation, origin: TriggerOrigin, capt
     return { origin, ordinal, bindings, pending, ...(queued.length ? { effectSpends: spentSubjects(queued) } : {}) };
 }
 export function activateTriggerBatch(m: TurnMutation, batch: PreparedTriggerBatch, alreadyAnnounced = false): Result<null> {
-    const { origin, ordinal, bindings, pending, effectSpends } = batch;
-    m.state.resolution = { stage: "DISCOVER_TRIGGERS", current: null, pending: pending.map(e => PendingEffectSchema.parse(e)), discovered: [], choice: null, triggerContinuation: { origin: TriggerOriginSchema.parse(origin), ordinal, bindings: bindings.map(b => TriggerBindingSchema.parse(b)), resolvedIds: [], phase: "SELECT", ...(effectSpends ? { effectSpends } : {}) } };
+    const { origin, ordinal, bindings, pending, effectSpends, programPlay } = batch;
+    m.state.resolution = { stage: "DISCOVER_TRIGGERS", current: null, pending: pending.map(e => PendingEffectSchema.parse(e)), discovered: [], choice: null, triggerContinuation: { origin: TriggerOriginSchema.parse(origin), ordinal, bindings: bindings.map(b => TriggerBindingSchema.parse(b)), resolvedIds: [], phase: "SELECT", ...(effectSpends ? { effectSpends } : {}), ...(programPlay ? { programPlay } : {}) } };
     const combat = m.state.timing.combat;
     if (origin.kind !== "PLAY" && origin.kind !== "END_TURN" && "target" in combat && combat.target) m.state.timing.combat = { ...combat, stage: "TRIGGER_RESOLUTION" };
     if (!alreadyAnnounced) for (const e of pending) m.emit({ kind: "EFFECT_PENDING", effectId: e.id, sourceId: e.sourceId! });
     return advanceTriggers(m);
+}
+/** Batch V76: a played BRAINDANCE Program's "When you play" bindings join the DEFEAT batch its own effect prepared, so they wait
+ * together and resolve in one ordered batch (they were pending since the Program was played). */
+export function joinProgramPlayBindings(m: TurnMutation, batch: PreparedTriggerBatch, programId: CardInstanceId, bindings: readonly TriggerBinding[]) {
+    const sequence = m.state.match.eventSequence;
+    for (const b of bindings) {
+        const e = PendingEffectSchema.parse(pendingTrigger(m.state, b, batch.ordinal, sequence, m.context));
+        batch.bindings.push(TriggerBindingSchema.parse(b)); batch.pending.push(e);
+        m.emit({ kind: "EFFECT_PENDING", effectId: e.id, sourceId: e.sourceId! });
+    }
+    batch.programPlay = programId;
 }
 export function beginTriggers(m: TurnMutation, origin: TriggerOrigin, captured?: readonly TriggerBinding[]): Result<null> {
     if (!triggersEnabled(m.context)) return failure("UNSUPPORTED_TRIGGERS", "Trigger policy required");
@@ -158,6 +170,10 @@ export function advanceTriggers(m: TurnMutation): Result<null> {
             || !isPlayedInBatch(c, r.current.trigger?.subjectId) || !supportsFriendlyPlayPowerUnit(cardRevision(m.state, r.current.sourceId, m.context), m.context).ok)
             return failure("INVALID_POWER_SOURCE", "Friendly power requires its reviewed PLAY trigger");
         if (!friendlyPowerTargets(m.state, r.current.controllerId, m.context).length) return completed(m);
+        c.phase = "TARGET"; return offer(m);
+    }
+    if (e.kind === "PROGRAM_PLAY_FRIENDLY_POWER_THIS_TURN") { // Batch V76: a lone friendly Unit is forced; none does nothing.
+        if (!friendlyFieldUnits(m.state, r.current.controllerId, m.context).length) return completed(m);
         c.phase = "TARGET"; return offer(m);
     }
     if (e.kind === "DEFEAT_UNIT") { c.phase = "TARGET"; return beginTargetedDefeat(m); }
@@ -442,6 +458,11 @@ export function continueTrigger(m: TurnMutation, index: number, forced = false):
         return revealChosenType(m, option.mode as typeof REVEAL_TYPES[number]);
     }
     if (c.phase === "TARGET") {
+        if (current.effect.kind === "PROGRAM_PLAY_FRIENDLY_POWER_THIS_TURN") { // Batch V76.
+            if (option.kind !== "CARD") return failure("INVALID_POWER_TARGET", "Choose a current friendly field Unit");
+            const applied = applyProgramPlayPower(m, option.cardInstanceId, forced);
+            return applied.ok ? completed(m) : applied;
+        }
         if (current.effect.kind === "POWER_UNTIL_END_OF_TURN") {
             if (current.effect.target.kind !== "FRIENDLY_UNIT" || current.effect.amount !== 2 || option.kind !== "CARD")
                 return failure("INVALID_POWER_TARGET", "Choose a friendly Unit for the reviewed PLAY power effect");

@@ -1,7 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import { CardRevisionSnapshotSchema, createContentBundle, validateDeck, DeckSchema, type CardInstanceId, type GameState } from "@tcg/domain";
-import { composeScenario, validateState, listLegalActions, applyAction, hashReplayState, SCENARIO_PLAYERS, type Scenario } from "@tcg/engine";
+import { composeScenario, validateState, listLegalActions, applyAction, hashReplayState, observe, SCENARIO_PLAYERS, type Scenario } from "@tcg/engine";
 import { handleRequest } from "@tcg/wire";
 import { reviewedUnionContext } from "./reviewed-union-fixture";
 
@@ -128,4 +128,16 @@ test("the worker op returns the state, or the engine's errors with their paths",
     const bad = handleRequest({ schemaVersion: 1, requestId: "s2", op: "composeScenario", content: context.content, scenario: scenario(x => { x.players[1].trash.push("no-such-card"); }) });
     assert.equal(bad.ok, false);
     if (!bad.ok) assert.deepEqual(bad.errors.map(e => [e.code, e.path]), [["UNKNOWN_CARD", "players[1].trash[0]"]]);
+});
+
+// A composed MaxTac on the field (its live "Rival Units can't attack the turn they're played") observes for both seats; RulesView's
+// keyword gate once missed that reviewed modifier and threw UNSUPPORTED_CONTINUOUS_MODIFIERS from observe.
+test("a field MaxTac: Suppression Team observes for both seats", () => {
+    const s = compose({ seed: "scenario-maxtac", activeSeat: 0, players: [
+        { field: [], legends: [{ card: "adam-smasher-ender-of-legends", face: "UP", readiness: "READY" }, { card: "yorinobu-arasaka-embracing-destruction", face: "DOWN", readiness: "READY" }, { card: "dexter-deshawn-off-the-grid", face: "DOWN", readiness: "READY" }],
+            hand: [], trash: [], deck: [], gigs: [], eddies: { ready: 9, spent: 0 } },
+        { field: [{ card: "maxtac-suppression-team", readiness: "READY" }], legends: ["viktor-vektor-sit-down-and-relax", "muamar-reyes-el-capita-n", "dum-dum-maelstrom-triggerman"].map(card => ({ card, face: "DOWN" as const, readiness: "READY" as const })),
+            hand: [], trash: [], deck: [], gigs: [{ die: "D6", value: 3 }], eddies: { ready: 0, spent: 0 } }
+    ] });
+    for (const player of s.match.playerOrder) assert.ok(observe(s, player, context).ok);
 });

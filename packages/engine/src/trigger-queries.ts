@@ -18,6 +18,8 @@ import { friendlyPowerTargets } from "./friendly-play-power-queries";
 import { listSpendUnitTargets } from "./targeted-spend-queries";
 import { friendlyUnitReadyTargets, readyLegendTargets, stolenGigReadyTargets, taggedLegendReadyTargets } from "./ready-unit";
 import { hashCanonical, type GameState, type CardInstanceId, type PlayerId, type TriggerBinding, type TriggerOrigin, type PendingChoice, type PendingEffect } from "@tcg/domain";
+import { isBraindanceProgram } from "./braindance-legend";
+import { friendlyFieldUnits } from "./fight-power-grant";
 import type { EngineContext } from "./state";
 import { cardRevision } from "./characteristics";
 import { attachedGear } from "./attachments";
@@ -88,8 +90,12 @@ export function discoverTriggers(state: GameState, origin: TriggerOrigin, contex
         return [...own, ...state.players[actor].zones.LEGENDS.flatMap(id => effectiveTriggeredAbilities(state, id, context).filter(b => b.kind === "WHEN_UNIT_ATTACKS" && b.controllerId === actor))];
     }
     const played = state.objects.cards[origin.subjectId], revision = cardRevision(state, origin.subjectId, context)!;
+    const guard = (b: TriggerBinding) => cardRevision(state, b.sourceId, context)!.mechanics.abilities.find(a => a.id === b.abilityId)!.guard;
+    // Batch V76: "When you play a BRAINDANCE Program": each face-up Legend of the Program's controller, after the Program resolves.
+    if (isBraindanceProgram(state, played.id, context))
+        return [...own, ...state.players[played.controllerId].zones.LEGENDS.flatMap(id => effectiveTriggeredAbilities(state, id, context).filter(b => b.kind === "WHEN_CARD_PLAYED" && guard(b) === "FRIENDLY_BRAINDANCE_PROGRAM_PLAYED"))];
     if (!effectiveCardTypes(state, played.id, context).some(t => t === "UNIT" || t === "GEAR") || !revision.colors.includes("BLUE") || state.turnHistory?.blueUnitOrGearPlays[played.controllerId] !== 1) return own;
-    return [...own, ...state.players[played.controllerId].zones.LEGENDS.flatMap(id => effectiveTriggeredAbilities(state, id, context).filter(b => b.kind === "WHEN_CARD_PLAYED"))];
+    return [...own, ...state.players[played.controllerId].zones.LEGENDS.flatMap(id => effectiveTriggeredAbilities(state, id, context).filter(b => b.kind === "WHEN_CARD_PLAYED" && guard(b) === "FIRST_BLUE_UNIT_OR_GEAR_PLAY_PER_TURN"))];
 }
 /** Batch V40: a stealing Legend is a printed Legend on the field (a Go Solo Legend), never a Legend-area card. */
 /** Batch V63: the stealing card is a CORPO or GANGER Unit (a field Legend counts as a Unit there). */
@@ -192,6 +198,8 @@ export function triggerChoice(state: GameState, context: EngineContext): Pending
             ? trashUnitTargets(state, current, context).map(cardInstanceId => ({ kind: "CARD", cardInstanceId }))
             : current?.effect.kind === "LOOK_AT_FRIENDLY_FACE_DOWN_LEGEND"
             ? privateLookTargets(state, actorId, context).map(slot => ({ kind: "LEGEND_SLOT", slot }))
+            : current?.effect.kind === "PROGRAM_PLAY_FRIENDLY_POWER_THIS_TURN" // Batch V76.
+            ? friendlyFieldUnits(state, actorId, context).map(cardInstanceId => ({ kind: "CARD", cardInstanceId }))
             : current?.effect.kind === "POWER_UNTIL_END_OF_TURN" && current.effect.target.kind === "FRIENDLY_UNIT"
                 ? friendlyPowerTargets(state, actorId, context).map(cardInstanceId => ({ kind: "CARD", cardInstanceId }))
                 : triggerGigTargets(state, context).map(gigInstanceId => ({ kind: "GIG", gigInstanceId }));

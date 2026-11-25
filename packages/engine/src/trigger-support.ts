@@ -34,6 +34,9 @@ import { turnSliceAllows, canonicalSerialize, failure, success, type CardRevisio
 import type { EngineContext } from "./state";
 import { hasModalChoice } from "./modal-program-support";
 import { hasSellTopEffect } from "./program-sell-support";
+import { hasRivalRevealEffect } from "./rival-reveal";
+import { hasHandResetEffect } from "./hand-reset";
+import { hasUnitGrantEffect } from "./ready-attack-grant";
 import { hasFightStealEffect } from "./fight-steal-support";
 import { hasFreePlayEffect, supportsFreePlayCard } from "./free-play-support";
 import { hasQuickActivation, supportsQuickActivationCard } from "./quick-activation-support";
@@ -49,6 +52,9 @@ export function supportsTriggerCard(card: DeepReadonly<CardRevisionSnapshot> | u
     // Batch V44: modal abilities are read only by the modal Program gate.
     if (hasModalChoice(card)) return failure("UNSUPPORTED_MODAL_CHOICE", "A modal ability is admitted only by its exact Program pin");
     // Batch V45: effect sells are read only by the sell Program gate.
+    if (hasRivalRevealEffect(card)) return failure("UNSUPPORTED_RIVAL_REVEAL", "A Rival-choice reveal is admitted only by its exact Program pin"); // Batch V77.
+    if (hasHandResetEffect(card)) return failure("UNSUPPORTED_HAND_RESET", "A hand reset is admitted only by its exact Program pin"); // Batch V78.
+    if (hasUnitGrantEffect(card)) return failure("UNSUPPORTED_UNIT_GRANT", "A friendly-Unit grant is admitted only by its exact Program pin"); // Batch V79.
     if (hasSellTopEffect(card)) return failure("UNSUPPORTED_EFFECT_SELL", "An effect sell is admitted only by its exact Program pin");
     if (hasFightStealEffect(card)) return failure("UNSUPPORTED_FIGHT_STEAL", "A next-fight steal is admitted only by its exact Program pin"); // Batch V47.
     if (hasFreePlayEffect(card)) return supportsFreePlayCard(card, context); // Batch V48.

@@ -10,8 +10,13 @@ import { applyFightPowerGrant } from "./fight-power-grant";
 import { applyStealReduction } from "./steal-reduction";
 import { recordCyberwareGearPlay } from "./play-cost-support";
 import { resolveSpendTarget } from "./targeted-spend";
-import { activateTriggerBatch, type PreparedTriggerBatch } from "./trigger-resolution";
+import { activateTriggerBatch, beginTriggers, joinProgramPlayBindings, type PreparedTriggerBatch } from "./trigger-resolution";
 import { recordPlayedCard } from "./trigger-resolution";
+import { discoverTriggers } from "./trigger-queries";
+import { chooseTrashedTopProgram, isBraindanceProgram } from "./braindance-legend";
+import { chooseRivalReveal } from "./rival-reveal";
+import { chooseHandResetDraw } from "./hand-reset";
+import { chooseGrantMode, selectGrantUnit } from "./ready-attack-grant";
 import { triggersEnabled } from "./trigger-support";
 import { actionReturnContext, finishAction } from "./action-return";
 import { applyTemporaryPower } from "./temporary-power";
@@ -44,7 +49,12 @@ export function offerPlayChoice(m: TurnMutation) {
 }
 function finishPlay(m: TurnMutation, sourceId: CardInstanceId, aftermath?: PreparedTriggerBatch | null) {
     if (m.state.objects.cards[sourceId].zone.zone === "RESOLVING_PROGRAM") moveCardLocation(m, sourceId, "TRASH");
+    // Batch V76: "When you play a BRAINDANCE Program" bindings, pending since the play, wait for the Program to resolve.
+    const programPlay = !m.state.match.outcome && triggersEnabled(m.context) && m.state.resolution.playContinuation?.kind === "PLAY" && isBraindanceProgram(m.state, sourceId, m.context)
+        ? discoverTriggers(m.state, { kind: "PLAY", subjectId: sourceId }, m.context) : [];
+    if (aftermath && programPlay.length) joinProgramPlayBindings(m, aftermath, sourceId, programPlay);
     if (!m.state.match.outcome && aftermath) return activateTriggerBatch(m, aftermath, true);
+    if (programPlay.length) return beginTriggers(m, { kind: "PLAY", subjectId: sourceId }, programPlay);
     if (!m.state.match.outcome && triggersEnabled(m.context) && m.state.resolution.playContinuation?.kind === "PLAY" && ["UNIT", "GEAR"].includes(revisionOf(m.state, sourceId, m.context)!.type)) return recordPlayedCard(m, sourceId);
     if (!m.state.match.outcome) return finishAction(m);
     return success(null);
@@ -228,6 +238,30 @@ export function continuePlay(m: TurnMutation, index: number): Result<null> {
         }
         delete c.targetGigId;
         return completePlayEffect(m);
+    }
+    if (s.resolution.current?.effect.kind === "FRIENDLY_UNIT_READY_ATTACK_AND_POWER") { // Batch V79: the Unit, then (with less Street Cred) the Rival's effect.
+        const chosen = c.grantTargetId ? option.kind === "MODE" ? chooseGrantMode(m, option.mode) : failure("INVALID_GRANT_MODE", "Choose one effect for the Unit")
+            : option.kind === "CARD" ? selectGrantUnit(m, option.cardInstanceId, false, offerPlayChoice) : failure("INVALID_GRANT_TARGET", "Choose a current friendly field Unit");
+        if (!chosen.ok || s.resolution.choice) return chosen;
+        return completePlayEffect(m);
+    }
+    if (s.resolution.current?.effect.kind === "EACH_PLAYER_DISCARDS_HAND_MAY_DRAW") { // Batch V78: the controller, then the Rival.
+        if (option.kind !== "MODE") return failure("INVALID_OPTIONAL_DRAW", "Choose whether to draw");
+        const sourceId = c.sourceId, chosen = chooseHandResetDraw(m, option.mode === "DRAW");
+        if (!chosen.ok) return chosen;
+        if (m.state.match.outcome) return finishPlay(m, sourceId);
+        return chosen.value.done ? completePlayEffect(m) : offerPlayChoice(m);
+    }
+    if (s.resolution.current?.effect.kind === "REVEAL_TOP_RIVAL_CHOOSES_HAND_OR_TRASH") { // Batch V77.
+        if (option.kind !== "MODE") return failure("INVALID_DESTINATION", "Choose hand or trash for the revealed cards");
+        const sourceId = c.sourceId, chosen = chooseRivalReveal(m, option.mode);
+        if (!chosen.ok) return chosen;
+        return m.state.match.outcome ? finishPlay(m, sourceId) : completePlayEffect(m); // Drawing from an empty deck ends the game, as in resolveChain.
+    }
+    if (s.resolution.current?.effect.kind === "TRASH_TOP_MAY_ADD_PROGRAM") { // Batch V76.
+        if (option.kind !== "CARD" && !(option.kind === "CONFIRM" && !option.confirmed)) return failure("INVALID_TRASH_TARGET", "Add the trashed Program, or leave it");
+        const chosen = chooseTrashedTopProgram(m, option.kind === "CARD" ? option.cardInstanceId : undefined);
+        return chosen.ok ? completePlayEffect(m) : chosen;
     }
     if (s.resolution.current?.effect.kind === "MAY_DEFEAT_FRIENDLY_GEAR_THEN_DRAW") { // Batch V75.
         if (option.kind !== "CARD" && !(option.kind === "CONFIRM" && !option.confirmed)) return failure("INVALID_DEFEAT_TARGET", "Choose an enumerated friendly Gear, or decline");
