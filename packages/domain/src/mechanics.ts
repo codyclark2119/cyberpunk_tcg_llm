@@ -243,6 +243,8 @@ export const EffectSchema = z.discriminatedUnion("kind", [
     z.strictObject({ kind: z.literal("FRIENDLY_UNIT_READY_ATTACK_AND_POWER"), power: z.literal(3), rivalChoosesOneIf: z.literal("STREET_CRED_LESS_THAN_RIVAL") }),
     // Batch V80: "A friendly Unit can attack spent rival Units the turn it's played. If it's a ROCKER Unit, also give it +2 power this turn."
     z.strictObject({ kind: z.literal("FRIENDLY_UNIT_ATTACK_RIVAL_UNITS_THE_TURN_PLAYED"), alsoPowerIfTag: z.literal("Rocker"), amount: z.literal(2) }),
+    // Batch V84: "You may Call a Legend for free. (You can only Call a Legend once per turn.)" Its {Call} ability waits for the action's end.
+    z.strictObject({ kind: z.literal("MAY_CALL_LEGEND_FREE") }),
     // Batch V83: "A Unit can't attack until your next turn." Any face-up field Unit, either player's.
     z.strictObject({ kind: z.literal("UNIT_CANNOT_ATTACK_UNTIL_YOUR_NEXT_TURN") }),
     // Batch V83: "A friendly Legend may use {Go Solo} for -2 €$ this turn, to a minimum of 1 €$."

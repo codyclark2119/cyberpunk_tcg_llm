@@ -6,6 +6,7 @@ import { finishAttackEffects } from "./combat";
 import { reactEnabled } from "./react-support";
 import { beginTriggers } from "./trigger-resolution";
 import { spentSubjects } from "./spend-triggers";
+import { startQueuedCall } from "./free-call-effect";
 
 export function actionReturnContext(state: GameState): ActionReturnContext {
     return state.resolution.returnTo ?? { kind: state.timing.combat.stage === "RIVAL_REACT" ? "RIVAL_REACT" : "MAIN" };
@@ -32,6 +33,9 @@ export function finishAction(m: TurnMutation) {
         return beginTriggers(m, { kind: "SPEND", spentIds: spentSubjects(queued) });
     }
     if (destination.kind === "RIVAL_REACT") return finishAttackEffects(m);
+    // Batch V84: a Legend an effect Called for free resolves its {Call} ability once the action's batches are done.
+    const call = startQueuedCall(m);
+    if (call) return call;
     m.phase("MAIN");
     return success(null);
 }

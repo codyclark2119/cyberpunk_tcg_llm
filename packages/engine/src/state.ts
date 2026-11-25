@@ -5,6 +5,7 @@ import { validateFightDefeatImmunities } from "./fight-immunity";
 import { validateGigReroll } from "./gig-reroll";
 import { validateGearMove } from "./gear-move";
 import { validateAttackLocks } from "./attack-lock";
+import { validateQueuedCall } from "./free-call-effect";
 import { validateGoSoloDiscounts } from "./go-solo-discount";
 import { validateLegendSpendMetadata } from "./legend-spend-support";
 import { validateFightPowerGrants } from "./fight-power-grant";
@@ -204,6 +205,7 @@ export function validateState(input: unknown, context: EngineContext): Result<Ga
     const reroll = validateGigReroll(s, context); if (!reroll.ok) return reroll; // Batch V81.
     const gearMove = validateGearMove(s, context); if (!gearMove.ok) return gearMove; // Batch V82.
     const attackLocks = validateAttackLocks(s, context); if (!attackLocks.ok) return attackLocks; // Batch V83.
+    const queuedCall = validateQueuedCall(s, context); if (!queuedCall.ok) return queuedCall; // Batch V84.
     const discounts = validateGoSoloDiscounts(s, context); if (!discounts.ok) return discounts; // Batch V83.
     const forced = validateMustAttack(s, context);
     if (!forced.ok) return forced;

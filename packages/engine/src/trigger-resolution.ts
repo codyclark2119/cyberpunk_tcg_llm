@@ -28,6 +28,7 @@ import { PendingEffectSchema, TriggerBindingSchema, TriggerOriginSchema, failure
 import type { TurnMutation } from "./turn";
 import { cardRevision } from "./characteristics";
 import { finishAction } from "./action-return";
+import { callLegendFree, freeCallSlots } from "./free-call-effect";
 import { finishAttackEffects } from "./combat";
 import { applyProgramPlayPower } from "./braindance-legend";
 import { finishCombat, completeFightResult } from "./combat-resolution";
@@ -343,6 +344,11 @@ export function advanceTriggers(m: TurnMutation): Result<null> {
         c.phase = "OPTIONAL"; return offer(m);
     }
     if (e.kind === "RESTRICT_RIVAL_GIG_STEAL") { const restricted = applyStealRestriction(m); return restricted.ok ? completed(m) : restricted; }
+    // Batch V84: "You may Call a Legend for free": a choice only while a face-down Legend may be Called this turn.
+    if (e.kind === "MAY_CALL_LEGEND_FREE") {
+        if (!freeCallSlots(m.state, r.current.controllerId, m.context).length) return completed(m);
+        c.phase = "TARGET"; return offer(m);
+    }
     if (e.kind === "LOOK_AT_FRIENDLY_FACE_DOWN_LEGEND") {
         if (!privateLookTargets(m.state, r.current.controllerId, m.context).length) return completed(m);
         c.phase = "TARGET"; return offer(m);
@@ -568,6 +574,11 @@ export function continueTrigger(m: TurnMutation, index: number, forced = false):
             } else if (option.kind !== "MODE" || option.mode !== "DONE") return failure("INVALID_SEARCH_TARGET", "Choose a looked-at Gear or take none");
             if (option.kind === "CARD" && search.selected.length < searchMaxTake(current.effect) && searchTargets(m.state, m.context).some(id => !search.selected.includes(id))) return offer(m);
             const done = finishSearch(m); return done.ok ? completed(m) : done;
+        }
+        if (current.effect.kind === "MAY_CALL_LEGEND_FREE") {
+            if (option.kind === "CONFIRM" && !option.confirmed) { m.emit({ kind: "OPTIONAL_TRIGGER_DECLINED", effectId: current.id, controllerId: current.controllerId }); return completed(m); }
+            if (option.kind !== "LEGEND_SLOT") return failure("INVALID_FREE_CALL", "Choose a public Legend slot or decline");
+            const called = callLegendFree(m, option.slot); return called.ok ? completed(m) : called;
         }
         if (current.effect.kind === "LOOK_AT_FRIENDLY_FACE_DOWN_LEGEND") {
             if (option.kind !== "LEGEND_SLOT") return failure("INVALID_LOOK_TARGET", "Choose a public Legend slot");

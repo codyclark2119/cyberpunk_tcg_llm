@@ -9,12 +9,12 @@
   },
   "totals": {
     "cards": 151,
-    "admitted": 133,
-    "notAdmitted": 18,
+    "admitted": 134,
+    "notAdmitted": 17,
     "notAdmittedOnlyCoveredFamilies": 0,
     "byAdmission": {
-      "NOT_ADMITTED": 18,
-      "SOURCE_MATCH": 133
+      "NOT_ADMITTED": 17,
+      "SOURCE_MATCH": 134
     }
   },
   "families": [
@@ -55,15 +55,6 @@
       "soleBlockerCount": 0
     },
     {
-      "family": "FREE_CALL",
-      "status": "MISSING",
-      "summary": "Call a Legend by an effect or for free outside the normal Call.",
-      "notes": "",
-      "cardCount": 5,
-      "notAdmittedCount": 4,
-      "soleBlockerCount": 0
-    },
-    {
       "family": "SPEND_ABILITY",
       "status": "PARTIAL",
       "summary": "Activated abilities with a [Spend] cost (and optional Eddie cost) on Legends, Units or Gear.",
@@ -78,6 +69,15 @@
       "summary": "Top-of-deck manipulation: search/look/reveal top N, trash from the top (Trash N), bottom-deck the rest.",
       "notes": "SEARCH_GEAR (count<=5, Gear with max cost, take<=2) only.",
       "cardCount": 15,
+      "notAdmittedCount": 3,
+      "soleBlockerCount": 0
+    },
+    {
+      "family": "FREE_CALL",
+      "status": "MISSING",
+      "summary": "Call a Legend by an effect or for free outside the normal Call.",
+      "notes": "",
+      "cardCount": 5,
       "notAdmittedCount": 3,
       "soleBlockerCount": 0
     },
@@ -177,15 +177,6 @@
       "summary": "Other event triggers: another friendly Unit defeated, a Rival adjusting or swapping friendly Gigs.",
       "notes": "",
       "cardCount": 3,
-      "notAdmittedCount": 2,
-      "soleBlockerCount": 0
-    },
-    {
-      "family": "TRIGGER_PLAY",
-      "status": "PARTIAL",
-      "summary": "[Play] abilities and Program bodies resolving when played.",
-      "notes": "Trigger WHEN_PLAYED.",
-      "cardCount": 27,
       "notAdmittedCount": 2,
       "soleBlockerCount": 0
     },
@@ -294,6 +285,15 @@
       "summary": "[Defeated] abilities.",
       "notes": "Trigger WHEN_DEFEATED, admitted only for Dexter: One Last Chance.",
       "cardCount": 7,
+      "notAdmittedCount": 1,
+      "soleBlockerCount": 0
+    },
+    {
+      "family": "TRIGGER_PLAY",
+      "status": "PARTIAL",
+      "summary": "[Play] abilities and Program bodies resolving when played.",
+      "notes": "Trigger WHEN_PLAYED.",
+      "cardCount": 27,
       "notAdmittedCount": 1,
       "soleBlockerCount": 0
     },
@@ -2883,16 +2883,13 @@
       "colors": [
         "GREEN"
       ],
-      "admission": "NOT_ADMITTED",
-      "revision": null,
+      "admission": "SOURCE_MATCH",
+      "revision": 1,
       "families": [
         "FREE_CALL",
         "TRIGGER_PLAY"
       ],
-      "blockingFamilies": [
-        "FREE_CALL",
-        "TRIGGER_PLAY"
-      ],
+      "blockingFamilies": [],
       "note": null
     },
     {

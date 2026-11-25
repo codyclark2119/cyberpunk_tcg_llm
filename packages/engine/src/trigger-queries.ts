@@ -14,6 +14,7 @@ import { readyableEddieSlots } from "./eddie-ready";
 import { testCondition } from "./conditions";
 import { getDiscardableCards } from "./discard";
 import { privateLookTargets } from "./private-knowledge";
+import { freeCallSlots } from "./free-call-effect";
 import { friendlyPowerTargets } from "./friendly-play-power-queries";
 import { listSpendUnitTargets } from "./targeted-spend-queries";
 import { friendlyUnitReadyTargets, readyLegendTargets, stolenGigReadyTargets, taggedLegendReadyTargets } from "./ready-unit";
@@ -196,6 +197,8 @@ export function triggerChoice(state: GameState, context: EngineContext): Pending
             ? [...(current.effect.optional ? [{ kind: "CONFIRM" as const, confirmed: false }] : []), ...freePlayTargets(state, context).map(cardInstanceId => ({ kind: "CARD" as const, cardInstanceId }))]
             : current?.effect.kind === "RETURN_TRASH_UNIT_TO_HAND"
             ? trashUnitTargets(state, current, context).map(cardInstanceId => ({ kind: "CARD", cardInstanceId }))
+            : current?.effect.kind === "MAY_CALL_LEGEND_FREE" // Batch V84: decline, or a public Legend slot.
+            ? [{ kind: "CONFIRM" as const, confirmed: false }, ...freeCallSlots(state, actorId, context).map(slot => ({ kind: "LEGEND_SLOT" as const, slot }))]
             : current?.effect.kind === "LOOK_AT_FRIENDLY_FACE_DOWN_LEGEND"
             ? privateLookTargets(state, actorId, context).map(slot => ({ kind: "LEGEND_SLOT", slot }))
             : current?.effect.kind === "PROGRAM_PLAY_FRIENDLY_POWER_THIS_TURN" // Batch V76.
