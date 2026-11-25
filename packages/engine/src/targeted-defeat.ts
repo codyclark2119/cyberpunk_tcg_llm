@@ -59,13 +59,13 @@ function advanceEach(m: TurnMutation): Result<null> {
 }
 function advanceOwnerOrder(m: TurnMutation): Result<null> {
     const r = m.state.resolution;
-    while (unfinishedDefeatOrder(m.state)) {
-        const choice = defeatOrderChoice(m.state);
+    while (unfinishedDefeatOrder(m.state, m.context)) {
+        const choice = defeatOrderChoice(m.state, m.context);
         r.choice = choice;
         if (choice.options.length > 1) { r.stage = "CHOICE"; m.state.timing.actingPlayer = choice.actorId; m.state.timing.step = "DEFEAT_ORDER_SELECTION"; m.state.timing.window = "DEFEAT_ORDER_SELECTION"; m.emit({ kind: "PHASE_CHANGED", step: "DEFEAT_ORDER_SELECTION" }); return success(null); }
         const option = choice.options[0];
         if (option.kind !== "CARD") return failure("INVALID_DEFEAT_ORDER", "Expected owner card order");
-        const order = unfinishedDefeatOrder(m.state)!;
+        const order = unfinishedDefeatOrder(m.state, m.context)!;
         r.defeatContinuation!.orders.find(o => o.targetId === order.targetId)!.cardIds.push(option.cardInstanceId);
         m.emit({ kind: "DEFEAT_TRASH_ORDER_SELECTED", targetId: order.targetId, cardInstanceId: option.cardInstanceId, ownerId: choice.actorId, forced: true });
     }
@@ -75,7 +75,7 @@ function advanceOwnerOrder(m: TurnMutation): Result<null> {
     delete r.defeatContinuation; delete r.targetedDefeatContinuation; r.choice = null;
     m.state.timing.actingPlayer = current.controllerId;
     if (r.triggerContinuation) {
-        appendDefeatedTriggers(m, defeats, result.value);
+        appendDefeatedTriggers(m, result.value.defeated, result.value.triggered); // Batch V89: what was actually defeated.
         // Batch V34: "If its cost equals the value of a friendly Gig, draw 1": the defeated card's printed cost, after it has moved.
         if (current.effect.kind === "DEFEAT_UNIT" && current.effect.draw) {
             const met = discardedCostMatchesFriendlyGig(m.state, current.controllerId, defeats[0].targetId, m.context);
@@ -87,7 +87,7 @@ function advanceOwnerOrder(m: TurnMutation): Result<null> {
         if (current.effect.kind === "DEFEAT_UNIT" && current.effect.then && !wasThen && !m.state.match.outcome) return beginThenDefeat(m);
         return completed(m);
     }
-    const batch = prepareTriggerBatch(m, { kind: "DEFEAT", effectSource: current.sourceId!, defeated: defeats }, result.value);
+    const batch = prepareTriggerBatch(m, { kind: "DEFEAT", effectSource: current.sourceId!, defeated: result.value.defeated }, result.value.triggered);
     if (batch) for (const e of batch.pending) m.emit({ kind: "EFFECT_PENDING", effectId: e.id, sourceId: e.sourceId! });
     return completePlayEffect(m, batch);
 }
@@ -137,7 +137,7 @@ export function continueTargetedDefeat(m: TurnMutation, index: number, forced = 
         if (secondDefeatTargets(m.state, current, option.cardInstanceId, m.context).length) { c.phase = "SECOND"; return pauseForTarget(m, secondDefeatChoice(m.state, m.context, option.cardInstanceId)); }
         c.phase = "ORDER";
     } else {
-        const order = unfinishedDefeatOrder(m.state);
+        const order = unfinishedDefeatOrder(m.state, m.context);
         if (!order) return failure("INVALID_DEFEAT_ORDER", "Unfinished owner order required");
         r.defeatContinuation!.orders.find(o => o.targetId === order.targetId)!.cardIds.push(option.cardInstanceId);
         m.emit({ kind: "DEFEAT_TRASH_ORDER_SELECTED", targetId: order.targetId, cardInstanceId: option.cardInstanceId, ownerId: choice.actorId, forced });

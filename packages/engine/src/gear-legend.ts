@@ -28,7 +28,7 @@ export function resolveGearDefeatDraw(m: TurnMutation, gearId: CardInstanceId | 
     m.emit({ kind: "DEFEAT_TARGET_SELECTED", effectId: current.id, sourceId: current.sourceId, targetId: gearId, controllerId: current.controllerId, forced });
     const defeated = defeatCards(m, [{ targetId: gearId, defeatedBy: current.sourceId }], [{ targetId: gearId, cardIds: [gearId] }], true);
     if (!defeated.ok) return defeated;
-    if (defeated.value.length) return failure("UNSUPPORTED_DEFEAT_TRIGGERS", "A defeated Gear's triggers need a reviewed batch");
+    if (defeated.value.triggered.length) return failure("UNSUPPORTED_DEFEAT_TRIGGERS", "A defeated Gear's triggers need a reviewed batch");
     return m.draw(current.controllerId, current.effect.ifDefeated);
 }
 /** The pinned Legend's Quick ability whose printed effect is the per-Gear power. */

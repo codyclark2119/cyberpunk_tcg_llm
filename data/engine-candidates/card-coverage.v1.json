@@ -9,12 +9,12 @@
   },
   "totals": {
     "cards": 151,
-    "admitted": 138,
-    "notAdmitted": 13,
+    "admitted": 139,
+    "notAdmitted": 12,
     "notAdmittedOnlyCoveredFamilies": 0,
     "byAdmission": {
-      "NOT_ADMITTED": 13,
-      "SOURCE_MATCH": 138
+      "NOT_ADMITTED": 12,
+      "SOURCE_MATCH": 139
     }
   },
   "families": [
@@ -46,15 +46,6 @@
       "soleBlockerCount": 0
     },
     {
-      "family": "GEAR_EQUIP",
-      "status": "PARTIAL",
-      "summary": "Equip a Gear to a friendly Unit or face-up Legend; Gear power adds to its host.",
-      "notes": "Equip onto Units is supported for the admitted Gear. Gear on a Legend host in combat (a Go Solo Legend) is unsupported.",
-      "cardCount": 22,
-      "notAdmittedCount": 4,
-      "soleBlockerCount": 0
-    },
-    {
       "family": "SPEND_ABILITY",
       "status": "PARTIAL",
       "summary": "Activated abilities with a [Spend] cost (and optional Eddie cost) on Legends, Units or Gear.",
@@ -73,20 +64,20 @@
       "soleBlockerCount": 0
     },
     {
+      "family": "GEAR_EQUIP",
+      "status": "PARTIAL",
+      "summary": "Equip a Gear to a friendly Unit or face-up Legend; Gear power adds to its host.",
+      "notes": "Equip onto Units is supported for the admitted Gear. Gear on a Legend host in combat (a Go Solo Legend) is unsupported.",
+      "cardCount": 22,
+      "notAdmittedCount": 3,
+      "soleBlockerCount": 0
+    },
+    {
       "family": "KEYWORD_QUICK",
       "status": "PARTIAL",
       "summary": "[Quick] timing: Programs and activated abilities usable in the react window.",
       "notes": "Quick Programs are supported for Floor It, Reboot Optics and Detonate. Quick activated [Spend] abilities on Legends, Units and Gear are not offered in any react window yet.",
       "cardCount": 12,
-      "notAdmittedCount": 3,
-      "soleBlockerCount": 0
-    },
-    {
-      "family": "REPLACEMENT_EFFECT",
-      "status": "MISSING",
-      "summary": "'If X would ..., instead ...' replacement effects.",
-      "notes": "",
-      "cardCount": 3,
       "notAdmittedCount": 3,
       "soleBlockerCount": 0
     },
@@ -105,6 +96,15 @@
       "summary": "Ready Eddies, sell cards from unusual zones, pay Eddies during resolution.",
       "notes": "READY_EDDIES (controller, 1 or 2) only.",
       "cardCount": 8,
+      "notAdmittedCount": 2,
+      "soleBlockerCount": 0
+    },
+    {
+      "family": "REPLACEMENT_EFFECT",
+      "status": "MISSING",
+      "summary": "'If X would ..., instead ...' replacement effects.",
+      "notes": "",
+      "cardCount": 3,
       "notAdmittedCount": 2,
       "soleBlockerCount": 0
     },
@@ -864,16 +864,13 @@
       "colors": [
         "RED"
       ],
-      "admission": "NOT_ADMITTED",
-      "revision": null,
+      "admission": "SOURCE_MATCH",
+      "revision": 1,
       "families": [
         "GEAR_EQUIP",
         "REPLACEMENT_EFFECT"
       ],
-      "blockingFamilies": [
-        "GEAR_EQUIP",
-        "REPLACEMENT_EFFECT"
-      ],
+      "blockingFamilies": [],
       "note": null
     },
     {

@@ -33,8 +33,8 @@ export function finishCombat(m: TurnMutation) {
 }
 function advanceDefeats(m: TurnMutation) {
     const continuation = m.state.resolution.defeatContinuation!;
-    while (unfinishedDefeatOrder(m.state)) {
-        const choice = defeatOrderChoice(m.state), order = unfinishedDefeatOrder(m.state)!;
+    while (unfinishedDefeatOrder(m.state, m.context)) {
+        const choice = defeatOrderChoice(m.state, m.context), order = unfinishedDefeatOrder(m.state, m.context)!;
         if (choice.options.length > 1) {
             const c = m.state.timing.combat;
             if (!("target" in c) || !c.target) return failure("INVALID_FIGHT", "Locked target required");
@@ -55,11 +55,11 @@ function advanceDefeats(m: TurnMutation) {
     const result = defeatCards(m, continuation.defeats, continuation.orders), outcomes = continuation.fightOutcomes;
     if (!result.ok) return result;
     // Batch V46: fired next-fight-outcome effects resolve after the fight ends, together with its DEFEATED triggers.
-    if ((outcomes || lost.length) && continuation.fightResult) return beginTriggers(m, { kind: "DEFEAT", defeated: continuation.defeats, fight: { result: continuation.fightResult, outcomes: outcomes ?? [] } }, [...result.value, ...(outcomes ?? []).map(fightOutcomeBinding), ...lost]);
-    return triggersEnabled(m.context) ? beginTriggers(m, { kind: "DEFEAT", defeated: continuation.defeats }, result.value) : finishCombat(m);
+    if ((outcomes || lost.length) && continuation.fightResult) return beginTriggers(m, { kind: "DEFEAT", defeated: result.value.defeated, fight: { result: continuation.fightResult, outcomes: outcomes ?? [] } }, [...result.value.triggered, ...(outcomes ?? []).map(fightOutcomeBinding), ...lost]);
+    return triggersEnabled(m.context) ? beginTriggers(m, { kind: "DEFEAT", defeated: result.value.defeated }, result.value.triggered) : finishCombat(m);
 }
 export function continueDefeatOrder(m: TurnMutation, index: number) {
-    const choice = m.state.resolution.choice, option = choice?.options[index], order = unfinishedDefeatOrder(m.state);
+    const choice = m.state.resolution.choice, option = choice?.options[index], order = unfinishedDefeatOrder(m.state, m.context);
     if (!order || option?.kind !== "CARD") return failure("INVALID_DEFEAT_ORDER", "Choose the next card in its owner's Trash order");
     m.state.resolution.defeatContinuation!.orders.find(o => o.targetId === order.targetId)!.cardIds.push(option.cardInstanceId);
     m.emit({ kind: "DEFEAT_TRASH_ORDER_SELECTED", targetId: order.targetId, cardInstanceId: option.cardInstanceId, ownerId: choice!.actorId, forced: false });

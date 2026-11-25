@@ -187,7 +187,7 @@ test("READY→SPENT invalidates old action IDs yet a refreshed spent-target choi
     const refreshed=pick(s,context,o=>o.kind === "CARD"&&o.cardInstanceId===trace.target);assert.equal(payloads(refreshed).some(e=>e.kind === "CARD_SPENT"),false);assert.equal(refreshed.state.timing.step,"MAIN");
 });
 test("proper target departure invalidates old choice without auto-retarget or partial mutation",()=>{
-    const m=new TurnMutation(trace.pendingTarget,context);unwrap(processDeparture(m,trace.target,"TRASH",defeatBatch(m.state,trace.target)));assert.equal(validateState(m.state,context).ok,false);assert.equal(resolveActionId(m.state,actor,actions(trace.pendingTarget,context)[0].actionId,context).ok,false);
+    const m=new TurnMutation(trace.pendingTarget,context);unwrap(processDeparture(m,trace.target,"TRASH",defeatBatch(m.state,trace.target,context)));assert.equal(validateState(m.state,context).ok,false);assert.equal(resolveActionId(m.state,actor,actions(trace.pendingTarget,context)[0].actionId,context).ok,false);
 });
 test("transport counters do not affect IDs; public readiness changes both viewers, private rival deck does not",()=>{
     const s=GameStateSchema.parse(trace.pendingTarget);s.match.id=MatchIdSchema.parse(randomUUID());s.match.version=GameStateVersionSchema.parse(s.match.version+12);s.match.eventSequence=GameEventSequenceSchema.parse(s.match.eventSequence+30);

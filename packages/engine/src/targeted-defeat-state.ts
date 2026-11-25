@@ -113,8 +113,8 @@ export function validateTargetedDefeatState(state: GameState, context: EngineCon
         // The declared set must match its reviewed form against the current state (all, each, optional second, single).
         if (!d || d.fightResult || d.appliedPrevention || d.appliedPreventions || !validDefeatSet(state, e, d.defeats, context, Boolean(c.then)) || d.orders.length !== d.defeats.length || d.defeats.some((x, i) => x.defeatedBy !== source.id || d.orders[i].targetId !== x.targetId)) return failure("INVALID_EFFECT_DEFEAT", "Exact still-eligible selected Unit(s) and effect source required; no fight/prevention metadata");
         // Orders finish in sequence: complete orders, then the one paused order, then untouched orders.
-        const current = d.orders.findIndex(o => o.cardIds.length < defeatBatch(state, o.targetId).length);
-        if (current < 0 || d.orders.some((o, i) => { const batch = defeatBatch(state, o.targetId); return new Set(o.cardIds).size !== o.cardIds.length || o.cardIds.some(id => !batch.includes(id)) || (i < current ? o.cardIds.length !== batch.length : i > current ? o.cardIds.length !== 0 : batch.length - o.cardIds.length < 2); }) || state.timing.step !== "DEFEAT_ORDER_SELECTION" || canonicalSerialize(defeatOrderChoice(state)) !== canonicalSerialize(r.choice)) return failure("INVALID_DEFEAT_ORDER", "Exact owner prefix and strategic shared Trash-order choice required");
+        const current = d.orders.findIndex(o => o.cardIds.length < defeatBatch(state, o.targetId, context).length);
+        if (current < 0 || d.orders.some((o, i) => { const batch = defeatBatch(state, o.targetId, context); return new Set(o.cardIds).size !== o.cardIds.length || o.cardIds.some(id => !batch.includes(id)) || (i < current ? o.cardIds.length !== batch.length : i > current ? o.cardIds.length !== 0 : batch.length - o.cardIds.length < 2); }) || state.timing.step !== "DEFEAT_ORDER_SELECTION" || canonicalSerialize(defeatOrderChoice(state, context)) !== canonicalSerialize(r.choice)) return failure("INVALID_DEFEAT_ORDER", "Exact owner prefix and strategic shared Trash-order choice required");
     }
     return success(null);
 }

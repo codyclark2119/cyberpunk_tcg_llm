@@ -42,11 +42,11 @@ export function validateCombatOutcome(state: GameState, context: EngineContext) 
         if (canonicalSerialize(continuation.defeats) !== canonicalSerialize(expected) || canonicalSerialize(continuation.orders.map(o => o.targetId)) !== canonicalSerialize(expected.map(d => d.targetId))) return failure("INVALID_DEFEAT_CONTINUATION", "Defeats and orders must match the current authoritative fight result");
         let unfinished = false;
         for (const order of continuation.orders) {
-            const batch = defeatBatch(state, order.targetId);
+            const batch = defeatBatch(state, order.targetId, context);
             if ((unfinished && order.cardIds.length) || new Set(order.cardIds).size !== order.cardIds.length || order.cardIds.some(id => !batch.includes(id))) return failure("INVALID_DEFEAT_ORDER", "Sequential distinct owner order prefixes required");
             unfinished ||= order.cardIds.length < batch.length;
         }
-        if (!unfinishedDefeatOrder(state) || defeatOrderChoice(state).options.length < 2 || canonicalSerialize(r.choice) !== canonicalSerialize(defeatOrderChoice(state)) || state.timing.actingPlayer !== r.choice.actorId)
+        if (!unfinishedDefeatOrder(state, context) || defeatOrderChoice(state, context).options.length < 2 || canonicalSerialize(r.choice) !== canonicalSerialize(defeatOrderChoice(state, context)) || state.timing.actingPlayer !== r.choice.actorId)
             return failure("INVALID_DEFEAT_ORDER", "Exact strategic next owner-order choice required");
     }
     return success(null);

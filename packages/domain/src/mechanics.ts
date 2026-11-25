@@ -354,6 +354,9 @@ export const ContinuousModifierSchema = z.discriminatedUnion("kind", [
     z.strictObject({ kind: z.literal("WINS_FIGHTS_AGAINST_CLASSIFICATION"), classification: z.literal("Corpo") }),
     // Batch V88: "This Unit has +2 power while fighting a Legend" (11.4.2.1), against a Legend on the field in either player's fight.
     z.strictObject({ kind: z.literal("POWER_WHILE_FIGHTING_LEGEND"), amount: z.literal(2) }),
+    // Batch V89 (10.24-10.29): "If this Unit would be defeated, defeat its DEADMAN TRANSMITTER instead." A Gear's mandatory replacement of
+    // its host's defeat by its own.
+    z.strictObject({ kind: z.literal("DEFEAT_THIS_GEAR_INSTEAD_OF_HOST") }),
     z.strictObject({ kind: z.literal("FRIENDLY_ARASAKA_ATTACKING_UNIT_POWER"), amount: z.literal(1) }),
     // Batch V38: "Other friendly Units have +2 power while attacking." A field Unit's live contribution, never to itself.
     z.strictObject({ kind: z.literal("OTHER_FRIENDLY_ATTACKING_UNIT_POWER"), amount: z.literal(2) }),

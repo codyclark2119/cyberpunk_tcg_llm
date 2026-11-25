@@ -1,3 +1,4 @@
+import { hasDefeatReplacement, supportsDefeatReplacementGear } from "./defeat-replacement-support";
 import { hasGigChangeTriggerMetadata, supportsGigChangeTriggerCard } from "./gig-change-trigger-support";
 import { hasSpendTrigger, supportsSpendTriggerCard } from "./spend-trigger-support";
 import { hasGearStealMetadata, supportsGearStealCard } from "./gear-steal-support";
@@ -64,6 +65,7 @@ export function supportsPlay(card: DeepReadonly<CardRevisionSnapshot> | undefine
     if (card && hasGearStealMetadata(card)) return supportsGearStealCard(card, context); // Batch V67.
     if (card && hasSpendTrigger(card)) return supportsSpendTriggerCard(card, context); // Batch V69.
     if (card && hasGigChangeTriggerMetadata(card)) return supportsGigChangeTriggerCard(card, context); // Batch V88.
+    if (card && hasDefeatReplacement(card)) return supportsDefeatReplacementGear(card, context); // Batch V89.
     if (card && hasFightStealEffect(card)) return supportsFightStealProgram(card, context);
     // Batch V48: a free Unit play is admitted only by its exact pin.
     if (card && hasFreePlayEffect(card)) return supportsFreePlayCard(card, context);

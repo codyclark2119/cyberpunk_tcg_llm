@@ -133,7 +133,7 @@ test("targets include both rolled Gig areas, exclude Fixer, and amounts never cr
 for (const departure of ["gear", "host"] as const) test(`registered benefit survives ${departure} Trash departure and attachment loss`, () => {
     const m = new TurnMutation(stockEddies(main, p.context, 2), p.context), d = m.state.delayedEffects![0];
     if (departure === "gear") unwrap(processDeparture(m, d.sourceId, "TRASH"));
-    else { unwrap(defeatCards(m, [{ targetId: p.host, defeatedBy: d.sourceId }], [{ targetId: p.host, cardIds: defeatBatch(m.state, p.host) }])); m.state.resolution.stage = "DECISION"; }
+    else { unwrap(defeatCards(m, [{ targetId: p.host, defeatedBy: d.sourceId }], [{ targetId: p.host, cardIds: defeatBatch(m.state, p.host, context) }])); m.state.resolution.stage = "DECISION"; }
     assert.equal(m.state.objects.cards[p.host].attachments.length, 0); assert.equal(m.state.objects.cards[d.sourceId].zone.zone, "TRASH");
     const next = end(unwrap(validateState(m.state, p.context)), p.context); assert.equal(readyCount(next.state), 2); assert.equal(next.state.delayedEffects, undefined);
 });

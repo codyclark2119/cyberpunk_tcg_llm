@@ -335,6 +335,8 @@ export const EventPayloadSchema = z.discriminatedUnion("kind", [
     z.strictObject({ kind: z.literal("QUALIFYING_PLAY_RECORDED"), playerId: PlayerIdSchema, cardInstanceId: CardInstanceIdSchema, ordinal: z.number().int().positive() }),
     z.strictObject({ kind: z.literal("FIGHT_PREVENTION_CREATED"), effect: FightPreventionSchema }),
     z.strictObject({ kind: z.literal("FIGHT_PREVENTION_CONSUMED"), effectId: HashSchema, sourceId: CardInstanceIdSchema, controllerId: PlayerIdSchema, attackerId: CardInstanceIdSchema, defenderId: CardInstanceIdSchema }),
+    // Batch V89 (10.25): a mandatory replacement: `replacementId` (its Gear) is defeated instead of `cardInstanceId`.
+    z.strictObject({ kind: z.literal("DEFEAT_REPLACED"), cardInstanceId: CardInstanceIdSchema, replacementId: CardInstanceIdSchema, defeatedBy: CardInstanceIdSchema }),
     z.strictObject({ kind: z.literal("FIGHT_DEFEAT_PREVENTED"), effectId: HashSchema, sourceId: CardInstanceIdSchema, cardInstanceId: CardInstanceIdSchema, defeatedBy: CardInstanceIdSchema }),
     z.strictObject({ kind: z.literal("FIGHT_PREVENTION_EXPIRED"), effectId: HashSchema, sourceId: CardInstanceIdSchema, reason: z.literal("TURN_END") }),
     z.strictObject({ kind: z.literal("FIGHT_OUTCOME_EFFECT_CREATED"), effect: FightOutcomeEffectSchema }),

@@ -36,12 +36,12 @@ export function gigStealChoice(state: GameState, context: EngineContext): Pendin
     if (!("target" in c) || c.target?.kind !== "GIG_AREA") throw new Error("Expected Gig attack");
     return { id: hashCanonical({ protocol: "gig-steal@1", turn: state.timing.turn, attackerId: c.attackerId, selected: continuation.selected }), actorId: c.attackingPlayerId, kind: "STEAL_GIGS", min: 1, max: 1, ordered: false, continuationId: "gig-steal@1", options: stealableGigsFor(state, context, c.target.playerId, c.attackerId).filter(g => !continuation.selected.includes(g.id)).map(g => ({ kind: "GIG", gigInstanceId: g.id })) };
 }
-export function unfinishedDefeatOrder(state: GameState) {
-    return state.resolution.defeatContinuation?.orders.find(o => o.cardIds.length < defeatBatch(state, o.targetId).length);
+export function unfinishedDefeatOrder(state: GameState, context: EngineContext) {
+    return state.resolution.defeatContinuation?.orders.find(o => o.cardIds.length < defeatBatch(state, o.targetId, context).length);
 }
-export function defeatOrderChoice(state: GameState): PendingChoice {
-    const order = unfinishedDefeatOrder(state)!;
-    return { id: hashCanonical({ protocol: "defeat-order@1", turn: state.timing.turn, targetId: order.targetId, selected: order.cardIds }), actorId: state.objects.cards[order.targetId].ownerId, kind: "ORDER", min: 1, max: 1, ordered: true, continuationId: "defeat-order@1", options: defeatBatch(state, order.targetId).filter(id => !order.cardIds.includes(id)).map(id => ({ kind: "CARD", cardInstanceId: id })) };
+export function defeatOrderChoice(state: GameState, context: EngineContext): PendingChoice {
+    const order = unfinishedDefeatOrder(state, context)!;
+    return { id: hashCanonical({ protocol: "defeat-order@1", turn: state.timing.turn, targetId: order.targetId, selected: order.cardIds }), actorId: state.objects.cards[order.targetId].ownerId, kind: "ORDER", min: 1, max: 1, ordered: true, continuationId: "defeat-order@1", options: defeatBatch(state, order.targetId, context).filter(id => !order.cardIds.includes(id)).map(id => ({ kind: "CARD", cardInstanceId: id })) };
 }
 
 /** Winners/losers are historical facts; zero-power defeat permission uses the current post-trigger characteristic. */

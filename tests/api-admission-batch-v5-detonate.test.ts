@@ -170,7 +170,7 @@ test("V5 a one-Gear React defeat cannot persist a strategic owner-order phase", 
     const forged = GameStateSchema.parse(paused);
     forged.resolution.targetedDefeatContinuation = { phase: "ORDER" };
     forged.resolution.defeatContinuation = { defeats: [{ targetId: a.gearIds[0], defeatedBy: a.sourceId }], orders: [{ targetId: a.gearIds[0], cardIds: [] }] };
-    forged.resolution.choice = structuredClone(defeatOrderChoice(forged));
+    forged.resolution.choice = structuredClone(defeatOrderChoice(forged, context));
     forged.timing.step = "DEFEAT_ORDER_SELECTION"; forged.timing.window = "DEFEAT_ORDER_SELECTION";
     const direct = validateTargetedDefeatState(forged, context);
     assert.equal(direct.ok, false, "V5_REACT_FORGED_ORDER_REJECTED");
