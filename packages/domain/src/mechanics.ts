@@ -338,6 +338,10 @@ export const ContinuousModifierSchema = z.discriminatedUnion("kind", [
     // Batch V38: "Other friendly Units have +2 power while attacking." A field Unit's live contribution, never to itself.
     z.strictObject({ kind: z.literal("OTHER_FRIENDLY_ATTACKING_UNIT_POWER"), amount: z.literal(2) }),
     z.strictObject({ kind: z.literal("GRANT_KEYWORD_TO_HOST"), keyword: z.literal("BLOCKER") }),
+    // Batch V81: "When you roll in a Gig from your fixer area, you may ignore the result and reroll it once. When you roll a min or max
+    // value on a Gig, draw 1. If it's a d20, draw 3 instead." A face-up Legend's start-of-turn roll rider; never power or keywords.
+    z.strictObject({ kind: z.literal("MAY_REROLL_FIXER_GIG_ONCE") }),
+    z.strictObject({ kind: z.literal("DRAW_ON_EXTREME_GIG_ROLL"), count: z.literal(1), d20Count: z.literal(3) }),
     // Batch V56: "Rivals must pay +2 €$ to use {Go Solo}."
     z.strictObject({ kind: z.literal("RIVAL_GO_SOLO_COST_INCREASE"), amount: z.literal(2) }),
     // Batch V39: "If a Rival controls at least 2 more Gigs than you, this Unit has [Adrenaline]": a Gear's live conditional grant.

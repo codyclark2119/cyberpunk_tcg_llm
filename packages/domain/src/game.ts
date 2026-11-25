@@ -215,6 +215,8 @@ export const ResolutionStateSchema = z.strictObject({
     targetedDefeatContinuation: z.strictObject({ phase: z.enum(["TARGET", "SECOND", "EACH", "ORDER", "THEN"]), then: z.literal(true).optional() }).optional(),
     triggerContinuation: TriggerContinuationSchema.optional(),
     returnTo: ActionReturnContextSchema.optional(),
+    // Batch V81: the Gig just rolled in from the fixer area, while its controller chooses whether to ignore the result and reroll it once.
+    gigRerollContinuation: z.strictObject({ gigInstanceId: GigInstanceIdSchema }).optional(),
     gigStealContinuation: z.strictObject({ selected: z.array(GigInstanceIdSchema), remaining: z.number().int().positive() }).optional(),
     defeatContinuation: z.strictObject({ fightResult: FightResultSchema.optional(), fightOutcomes: z.array(FightOutcomeSchema).min(1).optional(), appliedPrevention: FightPreventionSchema.optional(), appliedPreventions: z.array(FightPreventionSchema).min(2).optional(), defeats: z.array(DefeatInstructionSchema).min(1), orders: z.array(z.strictObject({ targetId: CardInstanceIdSchema, cardIds: z.array(CardInstanceIdSchema) })) }).optional(),
     legendEntryContinuation: z.strictObject({ mode: z.enum(["GO_SOLO", "PLAY"]), actorId: PlayerIdSchema, sourceId: CardInstanceIdSchema, remainingCost: z.number().int().positive(), selectedSources: z.array(PaymentSourceSchema) }).optional(),
@@ -304,6 +306,7 @@ export const EventPayloadSchema = z.discriminatedUnion("kind", [
     // Batch V78: a player's choice whether to take an effect's optional draw.
     z.strictObject({ kind: z.literal("OPTIONAL_DRAW_CHOSEN"), effectId: HashSchema, playerId: PlayerIdSchema, draw: z.boolean() }),
     // Batch V79: "The next time this Unit attacks this turn, it may attack ready Units."
+    z.strictObject({ kind: z.literal("GIG_REROLL_CHOSEN"), gigInstanceId: GigInstanceIdSchema, reroll: z.boolean() }),
     z.strictObject({ kind: z.literal("READY_UNIT_ATTACK_GRANTED"), effectId: HashSchema, targetId: CardInstanceIdSchema }),
     z.strictObject({ kind: z.literal("QUALIFYING_PLAY_RECORDED"), playerId: PlayerIdSchema, cardInstanceId: CardInstanceIdSchema, ordinal: z.number().int().positive() }),
     z.strictObject({ kind: z.literal("FIGHT_PREVENTION_CREATED"), effect: FightPreventionSchema }),

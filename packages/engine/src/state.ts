@@ -2,6 +2,7 @@ import { effectiveCallCost } from "./free-call-support";
 import { otherPlayerMayChoose } from "./rival-reveal";
 import { validateReadyUnitAttackGrants } from "./ready-attack-grant";
 import { validateFightDefeatImmunities } from "./fight-immunity";
+import { validateGigReroll } from "./gig-reroll";
 import { validateLegendSpendMetadata } from "./legend-spend-support";
 import { validateFightPowerGrants } from "./fight-power-grant";
 import { validateStealReductions } from "./steal-reduction";
@@ -197,6 +198,7 @@ export function validateState(input: unknown, context: EngineContext): Result<Ga
     const grants = validateFightPowerGrants(s, context); if (!grants.ok) return grants; // Batch V58.
     const immunities = validateFightDefeatImmunities(s, context); if (!immunities.ok) return immunities; // Batch V61.
     const legendSpend = validateLegendSpendMetadata(s, context); if (!legendSpend.ok) return legendSpend; // Batch V59.
+    const reroll = validateGigReroll(s, context); if (!reroll.ok) return reroll; // Batch V81.
     const forced = validateMustAttack(s, context);
     if (!forced.ok) return forced;
     const prevention = validateFightPreventions(s, context);

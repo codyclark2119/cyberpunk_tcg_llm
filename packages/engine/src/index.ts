@@ -32,6 +32,7 @@ import { continueSetup } from "./setup";
 import { setupChoiceLabel } from "./setup-state";
 import { TurnMutation } from "./turn";
 import { drawDeterministicInteger } from "./rng";
+import { continueGigReroll, finishGigRoll, offerGigReroll } from "./gig-reroll";
 import { GameActionSchema, GameCommandSchema, GameStateSchema, GameEventSchema, hashCanonical, canonicalSerialize, failure, success, type Result, type GameState, type GameAction, type GameEvent, type PlayerId, type LegalAction, type GigInstanceId, type CardInstanceId } from "@tcg/domain";
 import { validateState, hashPosition, type EngineContext } from "./state";
 import { RulesView } from "./view";
@@ -46,7 +47,7 @@ export type ActionResult = {
 function supportedContent(context: EngineContext) { return context.content.cards.every(c => !c.mechanics.abilities.length && !c.mechanics.modifiers.length); }
 /** Continuations whose pending choice the turn slice enumerates as CHOOSE options. */
 function hasContinuationChoice(state: GameState) {
-    return Boolean(state.resolution.triggerContinuation || state.setup || state.resolution.legendEntryContinuation || state.resolution.searchContinuation || state.resolution.playContinuation || state.resolution.gigStealContinuation || state.resolution.defeatContinuation || state.timing.combat.stage === "ATTACK_TARGET_SELECTION");
+    return Boolean(state.resolution.gigRerollContinuation || state.resolution.triggerContinuation || state.setup || state.resolution.legendEntryContinuation || state.resolution.searchContinuation || state.resolution.playContinuation || state.resolution.gigStealContinuation || state.resolution.defeatContinuation || state.timing.combat.stage === "ATTACK_TARGET_SELECTION");
 }
 /** Outside DECISION, only a turn-slice CHOICE with a registered continuation (or CALL payment) can be enumerated. */
 function hasEnumerableResolution(state: GameState, context: EngineContext) {
@@ -129,6 +130,10 @@ function describeAction(a: GameAction, state: GameState, actor: PlayerId, view: 
         case "CHOOSE": {
             if (state.setup) return setupChoiceLabel(state, a.action.optionIndices[0]);
             const option = state.resolution.choice!.options[a.action.optionIndices[0]];
+            if (state.resolution.gigRerollContinuation && option.kind === "CONFIRM") { // Batch V81.
+                const gig = view.getGig(state.resolution.gigRerollContinuation.gigInstanceId), value = gig.roll.kind === "ROLLED" ? gig.roll.currentValue : 0;
+                return option.confirmed ? `Ignore the ${gig.dieType} result (${value}) and reroll it` : `Keep the ${gig.dieType} result (${value})`;
+            }
             if (option.kind === "ATTACK_TARGET") return option.target.kind === "CARD" ? `Attack ${view.getRevision(option.target.cardInstanceId)?.displayName} (${option.target.cardInstanceId})` : "Attack rival Gig area";
             if (state.resolution.gigStealContinuation && option.kind === "GIG") {
                 const gig = view.getGig(option.gigInstanceId);
@@ -246,7 +251,7 @@ export function validateAction(state: GameState, input: GameAction, context: Eng
     }
     return success(action.data);
 }
-function rollGig(mutation: TurnMutation, actor: PlayerId, gigInstanceId: GigInstanceId) {
+function rollGig(mutation: TurnMutation, actor: PlayerId, gigInstanceId: GigInstanceId): Result<null> {
     const s = mutation.state, gig = s.objects.gigs[gigInstanceId];
     mutation.phase("ROLL_GIG");
     const rolled = drawDeterministicInteger(s.rng, Number(gig.dieType.slice(1))), counter = s.rng.counter;
@@ -256,7 +261,9 @@ function rollGig(mutation: TurnMutation, actor: PlayerId, gigInstanceId: GigInst
     s.players[actor].gigs.GIGS.push(gig.id);
     gig.location = { playerId: actor, zone: "GIGS" };
     mutation.emit({ kind: "GIG_DIE_ROLLED", gigInstanceId: gig.id, dieType: gig.dieType, rawValue: rolled.rawValue, rngCounter: counter });
-    if (!checkOvertimeVictory(mutation)) mutation.phase("MAIN");
+    if (checkOvertimeVictory(mutation)) return success(null);
+    // Batch V81: a face-up roll-rider Legend may offer the reroll, then draws on a kept min or max value.
+    return offerGigReroll(mutation, actor, gig.id) ? success(null) : finishGigRoll(mutation, actor, gig.id);
 }
 function callLegend(mutation: TurnMutation, view: RulesView, actor: PlayerId, cardInstanceId: CardInstanceId, cost: number) {
     const candidates = view.paymentCandidates(actor, cost, []);
@@ -273,6 +280,7 @@ function continuePayment(mutation: TurnMutation, view: RulesView, actor: PlayerI
 /** Routes a CHOOSE to the continuation that owns the pending choice; the precedence order is significant. */
 function continueChoice(mutation: TurnMutation, view: RulesView, actor: PlayerId, optionIndex: number): Result<unknown> {
     const s = mutation.state;
+    if (s.resolution.gigRerollContinuation) return continueGigReroll(mutation, optionIndex); // Batch V81.
     if (s.resolution.targetedDefeatContinuation) return continueTargetedDefeat(mutation, optionIndex);
     if (s.resolution.triggerContinuation) return continueTrigger(mutation, optionIndex);
     if (s.resolution.gigStealContinuation || s.resolution.defeatContinuation)
@@ -302,7 +310,7 @@ function sellCard(mutation: TurnMutation, view: RulesView, actor: PlayerId, id: 
 function dispatchTurnSliceAction(mutation: TurnMutation, view: RulesView, action: GameAction, context: EngineContext): Result<unknown> {
     const s = mutation.state, actor = action.actorId;
     switch (action.action.kind) {
-        case "ROLL_GIG": rollGig(mutation, actor, action.action.gigInstanceId); return success(undefined);
+        case "ROLL_GIG": return rollGig(mutation, actor, action.action.gigInstanceId);
         case "PASS_REACT": return passReact(mutation, actor);
         case "DECLARE_BLOCKER": return declareBlocker(mutation, actor, action.action.cardInstanceId);
         case "DECLARE_ATTACK": return startAttack(mutation, actor, action.action.cardInstanceId);
