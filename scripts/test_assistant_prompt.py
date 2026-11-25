@@ -32,7 +32,7 @@ from games.cyberpunk.assistant import golden_rules
 from games.cyberpunk.assistant import preload as preload_module
 from games.cyberpunk.assistant import tools
 from games.cyberpunk.assistant.loop import (ANSWERING_GUIDANCE, ASSISTANT_PROMPT_VERSION, DEFAULT_MAX_TOKENS,
-                                            ENGINE_GUIDANCE,
+                                            ENGINE_GUIDANCE, SCENARIO_GUIDANCE,
                                             DEFAULT_THINKING_MAX_TOKENS, SYSTEM_PROMPT, run_turn,
                                             tool_specs_sha256)
 from games.cyberpunk.assistant.preload import DEFAULT_PRELOAD_CHARS, fit_result, link_cards
@@ -54,6 +54,8 @@ GOLDEN_RULES_MAX_CHARS = 1600   # ~400 tokens
 
 V8_ADDITION_MAX_CHARS = 280     # ~70 tokens: one guidance line for engine_check
 ENGINE_CHECK_SPEC_MAX_CHARS = 1300  # ~325 tokens: the v8 tool's spec, in every model step (1,240 on 2026-11-15)
+V9_ADDITION_MAX_CHARS = 280     # ~70 tokens: one guidance line for engine_scenario (238 on 2026-11-24)
+ENGINE_SCENARIO_SPEC_MAX_CHARS = 1100  # ~275 tokens: the v9 tool's spec, in every model step (978 on 2026-11-24)
 
 
 def v7_addition() -> str:
@@ -64,10 +66,14 @@ def v8_addition() -> str:
     return f"\n{ENGINE_GUIDANCE}"
 
 
+def v9_addition() -> str:
+    return f"\n{SCENARIO_GUIDANCE}"
+
+
 def base_prompt() -> str:
-    """The system prompt without v7's and v8's additions: the v5 wording, which the older budgets measure."""
-    assert v7_addition() + v8_addition() in SYSTEM_PROMPT
-    return SYSTEM_PROMPT.replace(v7_addition() + v8_addition(), "")
+    """The system prompt without v7's, v8's and v9's additions: the v5 wording, which the older budgets measure."""
+    assert v7_addition() + v8_addition() + v9_addition() in SYSTEM_PROMPT
+    return SYSTEM_PROMPT.replace(v7_addition() + v8_addition() + v9_addition(), "")
 
 
 def call(name: str, **arguments) -> str:
@@ -153,6 +159,11 @@ def test_lean_specs_keep_every_name_and_schema():
     # And two filters since (2026-11-15, still v8, before any v8 quiz run): affordable and sold_this_turn, after the
     # held-out eval (scripts/eval_engine_check.py) left most hand plays at "depends" without them.
     before["engine_check"]["properties"].update({"affordable": yes_no, "sold_this_turn": yes_no})
+    # And a new tool (2026-11-24, prompt v9): engine_scenario. Its setup and steps are free-form JSON that
+    # engine_scenario.py checks (and the engine judges), so only their top-level types are pinned.
+    before["engine_scenario"] = {
+        "type": "object", "additionalProperties": False, "required": ["setup"],
+        "properties": {"setup": {"type": "object"}, "steps": {"type": "array"}}}
     for rule_id in ("9", "9.3.2", "11.24.", "3.18.1.2.2.1"):
         assert re.search(old_pattern, rule_id) and re.search(tools.RULE_NUMBER_PATTERN, rule_id), rule_id
     specs = tools.tool_specs()
@@ -166,12 +177,15 @@ def test_lean_specs_keep_every_name_and_schema():
         assert 1 <= len(sentences) <= 3 and len(description) <= 160, (spec["function"]["name"], description)
     # The lean specs' saving is measured against the v5-wording prompt; v7's deliberate addition has its own
     # budget (test_v7_addition_stays_under_its_budget).
-    # engine_check (v8) is a new tool with its own budget below, so the saving is measured without it.
-    lean = [s for s in specs if s["function"]["name"] != "engine_check"]
+    # engine_check (v8) and engine_scenario (v9) are new tools with their own budgets below, so the saving is
+    # measured without them.
+    lean = [s for s in specs if s["function"]["name"] not in ("engine_check", "engine_scenario")]
     total = sum(len(json.dumps(s, ensure_ascii=False)) for s in lean) + len(base_prompt())
     assert total < BEFORE_TOTAL_CHARS * 0.85, total
     engine_spec = next(s for s in specs if s["function"]["name"] == "engine_check")
     assert len(json.dumps(engine_spec, ensure_ascii=False)) <= ENGINE_CHECK_SPEC_MAX_CHARS
+    scenario_spec = next(s for s in specs if s["function"]["name"] == "engine_scenario")
+    assert len(json.dumps(scenario_spec, ensure_ascii=False)) <= ENGINE_SCENARIO_SPEC_MAX_CHARS
 
 
 def test_prompt_budget_reports_chars_and_tokens_when_it_can():
@@ -182,7 +196,7 @@ def test_prompt_budget_reports_chars_and_tokens_when_it_can():
     assert set(report) == {"prompt_version", "tool_specs_sha256", "tools", "tool_count", "tool_chars",
                            "system_prompt_chars", "total_chars", "tool_tokens", "system_prompt_tokens",
                            "rendered_prefix_tokens", "tokenizer_note"}
-    assert [r["tool"] for r in report["tools"]] == list(tools.TOOLS) and report["tool_count"] == 13
+    assert [r["tool"] for r in report["tools"]] == list(tools.TOOLS) and report["tool_count"] == 14
     assert all(set(r) == {"tool", "chars", "description_chars", "tokens"} and r["tokens"] is None
                for r in report["tools"])
     by_name = {r["tool"]: r for r in report["tools"]}
@@ -235,7 +249,7 @@ def test_system_prompt_v4_warns_from_the_snapshot_wording():
                    # v4: policy is answered from the Tournament Rules and cited; what neither covers is not covered.
                    "Tournament procedure, penalties, deck registration, event policy: use the Tournament Rules "
                    "(TR 3.4.2), cite them. Anything in neither is not covered.",
-                   "Snapshot 2026-10-29, TR 2026-10-28. Prompt assistant-chat-v8."):
+                   "Snapshot 2026-10-29, TR 2026-10-28. Prompt assistant-chat-v9."):
         assert needle in SYSTEM_PROMPT, needle
     assert "not in the snapshot" not in SYSTEM_PROMPT, "v3's 'policy is not in the snapshot' is gone"
     assert "rule:TR 3.4.2" in {d["doc_id"] for d in tools.rule_docs()}, "the prompt's example id exists"
@@ -291,8 +305,8 @@ def test_golden_rules_fail_closed():
 def test_v7_addition_stays_under_its_budget():
     added = v7_addition()
     assert len(added) <= V7_ADDITION_MAX_CHARS, len(added)
-    assert len(SYSTEM_PROMPT) == len(base_prompt()) + len(added) + len(v8_addition())
-    assert ASSISTANT_PROMPT_VERSION == "assistant-chat-v8" and "Prompt assistant-chat-v8." in SYSTEM_PROMPT
+    assert len(SYSTEM_PROMPT) == len(base_prompt()) + len(added) + len(v8_addition()) + len(v9_addition())
+    assert ASSISTANT_PROMPT_VERSION == "assistant-chat-v9" and "Prompt assistant-chat-v9." in SYSTEM_PROMPT
 
 
 def test_v8_engine_guidance_is_one_short_general_line():
@@ -306,6 +320,19 @@ def test_v8_engine_guidance_is_one_short_general_line():
     for card in read_jsonl(CARDS_JSONL):
         for name in {card["name"], card["display_name"], card["id"]}:
             assert not re.search(rf"(?<!\w){re.escape(name)}(?!\w)", added, re.I), f"v8's line names a card: {name}"
+
+
+def test_v9_scenario_guidance_is_one_short_general_line():
+    added = v9_addition()
+    assert len(added) <= V9_ADDITION_MAX_CHARS, len(added)
+    assert added.count("\n") == 1 and SCENARIO_GUIDANCE.startswith("- ")
+    for needle in ("engine_scenario", "answer from its changes and offers", "say the engine showed it",
+                   "If it stops, fix the setup or steps"):
+        assert needle in SCENARIO_GUIDANCE, needle
+    assert "engine_scenario" in tools.TOOLS
+    for card in read_jsonl(CARDS_JSONL):
+        for name in {card["name"], card["display_name"], card["id"]}:
+            assert not re.search(rf"(?<!\w){re.escape(name)}(?!\w)", added, re.I), f"v9's line names a card: {name}"
 
 
 def test_answering_guidance_says_each_point_and_names_no_card():
@@ -470,7 +497,7 @@ def test_no_code_path_reads_the_question_beyond_the_linker():
     uses = [line.strip() for line in loop_source.splitlines() if re.search(r"\buser_message\b", line)
             and not line.strip().startswith(("async def", "def", "#"))]
     assert uses == ['return [{"role": "system", "content": system}, *history, {"role": "user", "content": user_message}]',
-                    "messages = build_messages(history, user_message, deck, max_tool_calls=max_tool_calls, engine_check=engine_check)",
+                    "messages = build_messages(history, user_message, deck, max_tool_calls=max_tool_calls, engine_check=engine_check,",
                     "auto = run_preload(user_message if preload_text is None else preload_text, k=preload_k,"], uses
     preload_source = (REPO_ROOT / "games/cyberpunk/assistant/preload.py").read_text(encoding="utf-8")
     body = preload_source[preload_source.index("def preload("):]

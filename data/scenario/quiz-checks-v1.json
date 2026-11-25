@@ -1,0 +1,2586 @@
+{
+ "version": "engine-scenario-checks-v1",
+ "note": "Hand-written engine scenarios for the keyed card questions in Cody's quizzes and the official test (plan section 7, stage 1). Derived from eval questions: never used in prompts, retrieval or training. Measures the engine only.",
+ "checks": [
+  {
+   "id": "cody-quiz-03",
+   "what": "Mox Inciters (seat 1) targets Misty, the only rival Unit; on seat 0's next turn, is Misty offered an attack?",
+   "setup": {
+    "activeSeat": 1,
+    "players": [
+     {
+      "field": [
+       {
+        "card": "misty-olszewski-mender-of-broken-spirits",
+        "readiness": "READY"
+       }
+      ],
+      "legends": [
+       {
+        "card": "jackie-welles-pour-one-out-for-me",
+        "face": "DOWN",
+        "readiness": "READY"
+       },
+       {
+        "card": "wakako-okada-peace-and-harmony",
+        "face": "DOWN",
+        "readiness": "READY"
+       },
+       {
+        "card": "evelyn-parker-beautiful-enigma",
+        "face": "DOWN",
+        "readiness": "READY"
+       }
+      ],
+      "hand": [],
+      "trash": [],
+      "deck": [
+       "psycho-squad"
+      ],
+      "gigs": [],
+      "eddies": {
+       "ready": 0,
+       "spent": 0
+      }
+     },
+     {
+      "field": [],
+      "legends": [
+       {
+        "card": "jackie-welles-pour-one-out-for-me",
+        "face": "DOWN",
+        "readiness": "READY"
+       },
+       {
+        "card": "wakako-okada-peace-and-harmony",
+        "face": "DOWN",
+        "readiness": "READY"
+       },
+       {
+        "card": "evelyn-parker-beautiful-enigma",
+        "face": "DOWN",
+        "readiness": "READY"
+       }
+      ],
+      "hand": [
+       "mox-inciters"
+      ],
+      "trash": [],
+      "deck": [],
+      "gigs": [],
+      "eddies": {
+       "ready": 3,
+       "spent": 0
+      }
+     }
+    ]
+   },
+   "steps": [
+    {
+     "kind": "PLAY_CARD",
+     "card": "mox-inciters"
+    },
+    {
+     "kind": "END_TURN"
+    },
+    {
+     "kind": "ROLL_GIG",
+     "card": "D4"
+    }
+   ],
+   "preconditions": [
+    {
+     "kind": "offered",
+     "after": 2,
+     "action": "END_TURN"
+    }
+   ],
+   "reading": {
+    "kind": "offered",
+    "after": 2,
+    "action": "DECLARE_ATTACK",
+    "card": "misty-olszewski-mender-of-broken-spirits"
+   },
+   "answers": {
+    "true": "A",
+    "false": "B"
+   }
+  },
+  {
+   "id": "cody-quiz-05",
+   "what": "Afterparty adjusts the D4 by KEEP (no change) with Gigs 2 and 5: is a card drawn?",
+   "setup": {
+    "activeSeat": 0,
+    "players": [
+     {
+      "field": [],
+      "legends": [
+       {
+        "card": "viktor-vektor-sit-down-and-relax",
+        "face": "DOWN",
+        "readiness": "READY"
+       },
+       {
+        "card": "muamar-reyes-el-capita-n",
+        "face": "DOWN",
+        "readiness": "READY"
+       },
+       {
+        "card": "dum-dum-maelstrom-triggerman",
+        "face": "DOWN",
+        "readiness": "READY"
+       }
+      ],
+      "hand": [
+       "afterparty-at-lizzie-s"
+      ],
+      "trash": [],
+      "deck": [
+       "sketchy-ripper"
+      ],
+      "gigs": [
+       {
+        "die": "D4",
+        "value": 2
+       },
+       {
+        "die": "D6",
+        "value": 5
+       }
+      ],
+      "eddies": {
+       "ready": 1,
+       "spent": 0
+      }
+     },
+     {
+      "field": [],
+      "legends": [
+       {
+        "card": "saburo-arasaka-stubborn-patriarch",
+        "face": "DOWN",
+        "readiness": "READY"
+       },
+       {
+        "card": "padre-man-of-the-cross",
+        "face": "DOWN",
+        "readiness": "READY"
+       },
+       {
+        "card": "hanako-arasaka-daughter-of-the-emperor",
+        "face": "DOWN",
+        "readiness": "READY"
+       }
+      ],
+      "hand": [],
+      "trash": [],
+      "deck": [],
+      "gigs": [],
+      "eddies": {
+       "ready": 0,
+       "spent": 0
+      }
+     }
+    ]
+   },
+   "steps": [
+    {
+     "kind": "PLAY_CARD",
+     "card": "afterparty-at-lizzie-s"
+    },
+    {
+     "kind": "CHOOSE",
+     "choice": "D4"
+    },
+    {
+     "kind": "CHOOSE",
+     "choice": "KEEP"
+    }
+   ],
+   "reading": {
+    "kind": "diff",
+    "step": 2,
+    "patterns": [
+     "\\(not visible\\) -> HAND"
+    ]
+   },
+   "answers": {
+    "true": "A",
+    "false": "B"
+   }
+  },
+  {
+   "id": "cody-quiz-06",
+   "also": [
+    "official-43f712c9"
+   ],
+   "what": "Carnage with two 8+ Gigs: what is paid.",
+   "setup": {
+    "activeSeat": 0,
+    "players": [
+     {
+      "field": [
+       {
+        "card": "swordwise-huscle",
+        "readiness": "READY"
+       }
+      ],
+      "legends": [
+       {
+        "card": "yorinobu-arasaka-embracing-destruction",
+        "face": "DOWN",
+        "readiness": "READY"
+       },
+       {
+        "card": "dexter-deshawn-off-the-grid",
+        "face": "DOWN",
+        "readiness": "READY"
+       },
+       {
+        "card": "jackie-welles-pour-one-out-for-me",
+        "face": "DOWN",
+        "readiness": "READY"
+       }
+      ],
+      "hand": [
+       "carnage-at-the-colosseum"
+      ],
+      "trash": [],
+      "deck": [],
+      "gigs": [
+       {
+        "die": "D8",
+        "value": 8
+       },
+       {
+        "die": "D10",
+        "value": 9
+       }
+      ],
+      "eddies": {
+       "ready": 6,
+       "spent": 0
+      }
+     },
+     {
+      "field": [
+       {
+        "card": "corpo-security",
+        "readiness": "SPENT"
+       }
+      ],
+      "legends": [
+       {
+        "card": "saburo-arasaka-stubborn-patriarch",
+        "face": "DOWN",
+        "readiness": "READY"
+       },
+       {
+        "card": "padre-man-of-the-cross",
+        "face": "DOWN",
+        "readiness": "READY"
+       },
+       {
+        "card": "hanako-arasaka-daughter-of-the-emperor",
+        "face": "DOWN",
+        "readiness": "READY"
+       }
+      ],
+      "hand": [],
+      "trash": [],
+      "deck": [],
+      "gigs": [],
+      "eddies": {
+       "ready": 0,
+       "spent": 0
+      }
+     }
+    ]
+   },
+   "steps": [
+    {
+     "kind": "PLAY_CARD",
+     "card": "carnage-at-the-colosseum"
+    }
+   ],
+   "reading": {
+    "kind": "out_of_reach",
+    "why": "The key is about the card's cost as a characteristic. The engine shows only what was paid (6 printed, 4 paid with two 8+ Gigs); no admitted effect reads a Program's cost while it is played, so no scenario can separate the two."
+   }
+  },
+  {
+   "id": "cody-quiz-08",
+   "also": [
+    "official-561546f5"
+   ],
+   "what": "Sasha (power 0) goes solo and declares an attack with no rival Units: does the attack go at the Gig area?",
+   "setup": {
+    "activeSeat": 0,
+    "players": [
+     {
+      "field": [],
+      "legends": [
+       {
+        "card": "sasha-yakovleva-won-t-let-you-down",
+        "face": "UP",
+        "readiness": "READY"
+       },
+       {
+        "card": "jackie-welles-pour-one-out-for-me",
+        "face": "DOWN",
+        "readiness": "READY"
+       },
+       {
+        "card": "wakako-okada-peace-and-harmony",
+        "face": "DOWN",
+        "readiness": "READY"
+       }
+      ],
+      "hand": [],
+      "trash": [],
+      "deck": [
+       "psycho-squad"
+      ],
+      "gigs": [],
+      "eddies": {
+       "ready": 5,
+       "spent": 0
+      }
+     },
+     {
+      "field": [],
+      "legends": [
+       {
+        "card": "saburo-arasaka-stubborn-patriarch",
+        "face": "DOWN",
+        "readiness": "READY"
+       },
+       {
+        "card": "padre-man-of-the-cross",
+        "face": "DOWN",
+        "readiness": "READY"
+       },
+       {
+        "card": "hanako-arasaka-daughter-of-the-emperor",
+        "face": "DOWN",
+        "readiness": "READY"
+       }
+      ],
+      "hand": [],
+      "trash": [],
+      "deck": [],
+      "gigs": [
+       {
+        "die": "D6",
+        "value": 3
+       }
+      ],
+      "eddies": {
+       "ready": 0,
+       "spent": 0
+      }
+     }
+    ]
+   },
+   "steps": [
+    {
+     "kind": "GO_SOLO",
+     "card": "sasha-yakovleva-won-t-let-you-down"
+    },
+    {
+     "kind": "DECLARE_ATTACK",
+     "card": "sasha-yakovleva-won-t-let-you-down",
+     "target": "gig"
+    }
+   ],
+   "preconditions": [
+    {
+     "kind": "diff",
+     "step": 0,
+     "patterns": [
+      "^sasha-yakovleva-won-t-let-you-down \\[p0-c0\\] seat 0: zone LEGENDS -> BATTLEFIELD$"
+     ]
+    }
+   ],
+   "reading": {
+    "kind": "diff",
+    "step": 1,
+    "patterns": [
+     "attacks the gig area of seat 1"
+    ]
+   },
+   "answers": {
+    "true": "A",
+    "false": "B"
+   }
+  },
+  {
+   "id": "cody-quiz-09",
+   "also": [
+    "official-205786f8"
+   ],
+   "what": "Voodoo Boy is played, then Pyramid Song: is Voodoo Boy offered an attack?",
+   "setup": {
+    "activeSeat": 0,
+    "players": [
+     {
+      "field": [],
+      "legends": [
+       {
+        "card": "jackie-welles-pour-one-out-for-me",
+        "face": "DOWN",
+        "readiness": "READY"
+       },
+       {
+        "card": "wakako-okada-peace-and-harmony",
+        "face": "DOWN",
+        "readiness": "READY"
+       },
+       {
+        "card": "evelyn-parker-beautiful-enigma",
+        "face": "DOWN",
+        "readiness": "READY"
+       }
+      ],
+      "hand": [
+       "jacked-in-voodoo-boy",
+       "pyramid-song"
+      ],
+      "trash": [],
+      "deck": [],
+      "gigs": [],
+      "eddies": {
+       "ready": 5,
+       "spent": 0
+      }
+     },
+     {
+      "field": [
+       {
+        "card": "corpo-security",
+        "readiness": "SPENT"
+       }
+      ],
+      "legends": [
+       {
+        "card": "saburo-arasaka-stubborn-patriarch",
+        "face": "DOWN",
+        "readiness": "READY"
+       },
+       {
+        "card": "padre-man-of-the-cross",
+        "face": "DOWN",
+        "readiness": "READY"
+       },
+       {
+        "card": "hanako-arasaka-daughter-of-the-emperor",
+        "face": "DOWN",
+        "readiness": "READY"
+       }
+      ],
+      "hand": [],
+      "trash": [],
+      "deck": [],
+      "gigs": [
+       {
+        "die": "D6",
+        "value": 3
+       }
+      ],
+      "eddies": {
+       "ready": 0,
+       "spent": 0
+      }
+     }
+    ]
+   },
+   "steps": [
+    {
+     "kind": "PLAY_CARD",
+     "card": "jacked-in-voodoo-boy"
+    },
+    {
+     "kind": "PLAY_CARD",
+     "card": "pyramid-song"
+    },
+    {
+     "kind": "CHOOSE",
+     "choice": "POWER_UNTIL_END_OF_TURN"
+    }
+   ],
+   "reading": {
+    "kind": "offered",
+    "after": 2,
+    "action": "DECLARE_ATTACK",
+    "card": "jacked-in-voodoo-boy"
+   },
+   "answers": {
+    "true": "A",
+    "false": "B"
+   }
+  },
+  {
+   "id": "cody-quiz-11",
+   "what": "On the rival's turn, a Unit with The Relic is defeated in a fight and The Relic plays Rogue from the trash: is Rogue's Quick ability offered to seat 0 afterwards? The React step has already closed when Rogue arrives; the sealed-event part of the question is not modelled.",
+   "setup": {
+    "activeSeat": 1,
+    "players": [
+     {
+      "field": [
+       {
+        "card": "dexter-deshawn-one-last-chance",
+        "readiness": "SPENT",
+        "gear": [
+         "the-relic-experimental-biochip"
+        ]
+       }
+      ],
+      "legends": [
+       {
+        "card": "viktor-vektor-sit-down-and-relax",
+        "face": "DOWN",
+        "readiness": "READY"
+       },
+       {
+        "card": "muamar-reyes-el-capita-n",
+        "face": "DOWN",
+        "readiness": "READY"
+       },
+       {
+        "card": "jackie-welles-pour-one-out-for-me",
+        "face": "DOWN",
+        "readiness": "READY"
+       }
+      ],
+      "hand": [],
+      "trash": [
+       "rogue-amendiares-queen-of-the-afterlife"
+      ],
+      "deck": [],
+      "gigs": [],
+      "eddies": {
+       "ready": 4,
+       "spent": 0
+      }
+     },
+     {
+      "field": [
+       {
+        "card": "modded-kusanagi",
+        "readiness": "READY"
+       }
+      ],
+      "legends": [
+       {
+        "card": "jackie-welles-pour-one-out-for-me",
+        "face": "DOWN",
+        "readiness": "READY"
+       },
+       {
+        "card": "wakako-okada-peace-and-harmony",
+        "face": "DOWN",
+        "readiness": "READY"
+       },
+       {
+        "card": "evelyn-parker-beautiful-enigma",
+        "face": "DOWN",
+        "readiness": "READY"
+       }
+      ],
+      "hand": [],
+      "trash": [],
+      "deck": [],
+      "gigs": [],
+      "eddies": {
+       "ready": 0,
+       "spent": 0
+      }
+     }
+    ]
+   },
+   "steps": [
+    {
+     "kind": "DECLARE_ATTACK",
+     "card": "modded-kusanagi",
+     "target": "dexter-deshawn-one-last-chance"
+    },
+    {
+     "kind": "PASS_REACT"
+    },
+    {
+     "kind": "CHOOSE",
+     "choice": "the-relic-experimental-biochip"
+    },
+    {
+     "kind": "CHOOSE",
+     "choice": "the-relic-experimental-biochip"
+    }
+   ],
+   "preconditions": [
+    {
+     "kind": "diff",
+     "step": 3,
+     "patterns": [
+      "^rogue-amendiares-queen-of-the-afterlife \\[.*\\] seat 0: zone TRASH -> BATTLEFIELD$"
+     ]
+    }
+   ],
+   "reading": {
+    "kind": "offered_any",
+    "from": 3,
+    "seat": 0,
+    "action": "ACTIVATE_ABILITY",
+    "card": "rogue-amendiares-queen-of-the-afterlife"
+   },
+   "answers": {
+    "true": "A",
+    "false": "B"
+   }
+  },
+  {
+   "id": "cody-quiz-12",
+   "what": "Sketchy Ripper attacks with a Gear among the top 3: may the search finish without taking a card?",
+   "setup": {
+    "activeSeat": 0,
+    "players": [
+     {
+      "field": [
+       {
+        "card": "sketchy-ripper",
+        "readiness": "READY"
+       }
+      ],
+      "legends": [
+       {
+        "card": "viktor-vektor-sit-down-and-relax",
+        "face": "DOWN",
+        "readiness": "READY"
+       },
+       {
+        "card": "muamar-reyes-el-capita-n",
+        "face": "DOWN",
+        "readiness": "READY"
+       },
+       {
+        "card": "dum-dum-maelstrom-triggerman",
+        "face": "DOWN",
+        "readiness": "READY"
+       }
+      ],
+      "hand": [],
+      "trash": [],
+      "deck": [
+       "adrenaline-converter",
+       "rockn-rockerboy",
+       "secondhand-bombus"
+      ],
+      "gigs": [],
+      "eddies": {
+       "ready": 0,
+       "spent": 0
+      }
+     },
+     {
+      "field": [],
+      "legends": [
+       {
+        "card": "saburo-arasaka-stubborn-patriarch",
+        "face": "DOWN",
+        "readiness": "READY"
+       },
+       {
+        "card": "padre-man-of-the-cross",
+        "face": "DOWN",
+        "readiness": "READY"
+       },
+       {
+        "card": "hanako-arasaka-daughter-of-the-emperor",
+        "face": "DOWN",
+        "readiness": "READY"
+       }
+      ],
+      "hand": [],
+      "trash": [],
+      "deck": [],
+      "gigs": [
+       {
+        "die": "D6",
+        "value": 3
+       }
+      ],
+      "eddies": {
+       "ready": 0,
+       "spent": 0
+      }
+     }
+    ]
+   },
+   "steps": [
+    {
+     "kind": "DECLARE_ATTACK",
+     "card": "sketchy-ripper",
+     "target": "gig"
+    }
+   ],
+   "preconditions": [
+    {
+     "kind": "pending",
+     "step": 0,
+     "choice_kind": "TARGET",
+     "option": "^p0-c\\d+$"
+    }
+   ],
+   "reading": {
+    "kind": "pending",
+    "step": 0,
+    "choice_kind": "TARGET",
+    "option": "^DONE$"
+   },
+   "answers": {
+    "true": "A",
+    "false": "B"
+   }
+  },
+  {
+   "id": "cody-quiz-19",
+   "also": [
+    "official-8ef00678"
+   ],
+   "what": "Unlikely Bond with no rival Units: is the friendly Unit bottom-decked anyway?",
+   "setup": {
+    "activeSeat": 0,
+    "players": [
+     {
+      "field": [
+       {
+        "card": "psycho-squad",
+        "readiness": "READY"
+       }
+      ],
+      "legends": [
+       {
+        "card": "jackie-welles-pour-one-out-for-me",
+        "face": "DOWN",
+        "readiness": "READY"
+       },
+       {
+        "card": "wakako-okada-peace-and-harmony",
+        "face": "DOWN",
+        "readiness": "READY"
+       },
+       {
+        "card": "evelyn-parker-beautiful-enigma",
+        "face": "DOWN",
+        "readiness": "READY"
+       }
+      ],
+      "hand": [
+       "unlikely-bond"
+      ],
+      "trash": [],
+      "deck": [],
+      "gigs": [],
+      "eddies": {
+       "ready": 4,
+       "spent": 0
+      }
+     },
+     {
+      "field": [],
+      "legends": [
+       {
+        "card": "saburo-arasaka-stubborn-patriarch",
+        "face": "DOWN",
+        "readiness": "READY"
+       },
+       {
+        "card": "padre-man-of-the-cross",
+        "face": "DOWN",
+        "readiness": "READY"
+       },
+       {
+        "card": "hanako-arasaka-daughter-of-the-emperor",
+        "face": "DOWN",
+        "readiness": "READY"
+       }
+      ],
+      "hand": [],
+      "trash": [],
+      "deck": [],
+      "gigs": [],
+      "eddies": {
+       "ready": 0,
+       "spent": 0
+      }
+     }
+    ]
+   },
+   "steps": [
+    {
+     "kind": "PLAY_CARD",
+     "card": "unlikely-bond"
+    }
+   ],
+   "reading": {
+    "kind": "diff",
+    "step": 0,
+    "patterns": [
+     "^psycho-squad \\[p0-c\\d+\\] seat 0: BATTLEFIELD -> \\(not visible\\)$",
+     "^seat 0 DECK count: \\d+ -> \\d+$"
+    ]
+   },
+   "answers": {
+    "true": "A",
+    "false": "B"
+   }
+  },
+  {
+   "id": "cody-quiz-26",
+   "what": "A Unit played this turn has Adrenaline from Adrenaline Converter while the rival has 2 more Gigs; after a steal evens the Gigs, is it still offered an attack? Animals Wrecker is replaced by Rockn' Rockerboy (also vanilla): Wrecker needs RED 3 and the Converter YELLOW 4, more RAM than 3 Legends give, so the quiz's pair is not a legal deck.",
+   "setup": {
+    "activeSeat": 0,
+    "players": [
+     {
+      "field": [
+       {
+        "card": "maelstrom-goons",
+        "readiness": "READY"
+       }
+      ],
+      "legends": [
+       {
+        "card": "viktor-vektor-sit-down-and-relax",
+        "face": "DOWN",
+        "readiness": "READY"
+       },
+       {
+        "card": "muamar-reyes-el-capita-n",
+        "face": "DOWN",
+        "readiness": "READY"
+       },
+       {
+        "card": "dum-dum-maelstrom-triggerman",
+        "face": "DOWN",
+        "readiness": "READY"
+       }
+      ],
+      "hand": [
+       "rockn-rockerboy",
+       "adrenaline-converter"
+      ],
+      "trash": [],
+      "deck": [],
+      "gigs": [
+       {
+        "die": "D4",
+        "value": 2
+       }
+      ],
+      "eddies": {
+       "ready": 7,
+       "spent": 0
+      }
+     },
+     {
+      "field": [],
+      "legends": [
+       {
+        "card": "saburo-arasaka-stubborn-patriarch",
+        "face": "DOWN",
+        "readiness": "READY"
+       },
+       {
+        "card": "padre-man-of-the-cross",
+        "face": "DOWN",
+        "readiness": "READY"
+       },
+       {
+        "card": "hanako-arasaka-daughter-of-the-emperor",
+        "face": "DOWN",
+        "readiness": "READY"
+       }
+      ],
+      "hand": [],
+      "trash": [],
+      "deck": [],
+      "gigs": [
+       {
+        "die": "D4",
+        "value": 1
+       },
+       {
+        "die": "D6",
+        "value": 3
+       },
+       {
+        "die": "D8",
+        "value": 3
+       }
+      ],
+      "eddies": {
+       "ready": 0,
+       "spent": 0
+      }
+     }
+    ]
+   },
+   "steps": [
+    {
+     "kind": "PLAY_CARD",
+     "card": "rockn-rockerboy"
+    },
+    {
+     "kind": "PLAY_CARD",
+     "card": "adrenaline-converter",
+     "target": "rockn-rockerboy"
+    },
+    {
+     "kind": "DECLARE_ATTACK",
+     "card": "maelstrom-goons",
+     "target": "gig"
+    },
+    {
+     "kind": "PASS_REACT"
+    },
+    {
+     "kind": "CHOOSE",
+     "choice": "p1-D8"
+    }
+   ],
+   "preconditions": [
+    {
+     "kind": "offered",
+     "after": 1,
+     "action": "DECLARE_ATTACK",
+     "card": "rockn-rockerboy"
+    }
+   ],
+   "reading": {
+    "kind": "offered",
+    "after": 4,
+    "action": "DECLARE_ATTACK",
+    "card": "rockn-rockerboy"
+   },
+   "answers": {
+    "true": "A",
+    "false": "B"
+   }
+  },
+  {
+   "id": "cody-quiz-30",
+   "also": [
+    "official-732de81d"
+   ],
+   "what": "Les Elemens on a gone-solo V wearing Dying Night: does V leave the game while the Gear goes to the deck?",
+   "setup": {
+    "activeSeat": 0,
+    "players": [
+     {
+      "field": [],
+      "legends": [
+       {
+        "card": "v-corporate-exile",
+        "face": "UP",
+        "readiness": "READY"
+       },
+       {
+        "card": "jackie-welles-pour-one-out-for-me",
+        "face": "DOWN",
+        "readiness": "READY"
+       },
+       {
+        "card": "wakako-okada-peace-and-harmony",
+        "face": "DOWN",
+        "readiness": "READY"
+       }
+      ],
+      "hand": [
+       "dying-night-v-s-pistol"
+      ],
+      "trash": [],
+      "deck": [],
+      "gigs": [],
+      "eddies": {
+       "ready": 7,
+       "spent": 0
+      }
+     },
+     {
+      "field": [],
+      "legends": [
+       {
+        "card": "jackie-welles-pour-one-out-for-me",
+        "face": "DOWN",
+        "readiness": "READY"
+       },
+       {
+        "card": "wakako-okada-peace-and-harmony",
+        "face": "DOWN",
+        "readiness": "READY"
+       },
+       {
+        "card": "evelyn-parker-beautiful-enigma",
+        "face": "DOWN",
+        "readiness": "READY"
+       }
+      ],
+      "hand": [
+       "les-e-le-mens"
+      ],
+      "trash": [],
+      "deck": [
+       "psycho-squad"
+      ],
+      "gigs": [],
+      "eddies": {
+       "ready": 5,
+       "spent": 0
+      }
+     }
+    ]
+   },
+   "steps": [
+    {
+     "kind": "GO_SOLO",
+     "card": "v-corporate-exile"
+    },
+    {
+     "kind": "PLAY_CARD",
+     "card": "dying-night-v-s-pistol",
+     "target": "v-corporate-exile"
+    },
+    {
+     "kind": "END_TURN"
+    },
+    {
+     "kind": "ROLL_GIG",
+     "card": "D4"
+    },
+    {
+     "kind": "PLAY_CARD",
+     "card": "les-e-le-mens"
+    }
+   ],
+   "reading": {
+    "kind": "diff",
+    "step": 4,
+    "patterns": [
+     "^v-corporate-exile \\[p0-c\\d+\\] seat 0: zone BATTLEFIELD -> REMOVED",
+     "^dying-night-v-s-pistol \\[p0-c\\d+\\] seat 0: BATTLEFIELD -> \\(not visible\\)$",
+     "^seat 0 DECK count: \\d+ -> \\d+$"
+    ]
+   },
+   "answers": {
+    "true": "C",
+    "false": "D"
+   }
+  },
+  {
+   "id": "cody-quiz-32",
+   "what": "Calling a face-down Adam Smasher, Ender of Legends: is the rival Unit defeated (his Play effect)?",
+   "setup": {
+    "activeSeat": 0,
+    "players": [
+     {
+      "field": [],
+      "legends": [
+       {
+        "card": "adam-smasher-ender-of-legends",
+        "face": "DOWN",
+        "readiness": "READY"
+       },
+       {
+        "card": "yorinobu-arasaka-embracing-destruction",
+        "face": "DOWN",
+        "readiness": "READY"
+       },
+       {
+        "card": "dexter-deshawn-off-the-grid",
+        "face": "DOWN",
+        "readiness": "READY"
+       }
+      ],
+      "hand": [],
+      "trash": [],
+      "deck": [],
+      "gigs": [],
+      "eddies": {
+       "ready": 9,
+       "spent": 0
+      }
+     },
+     {
+      "field": [
+       {
+        "card": "corpo-security",
+        "readiness": "SPENT"
+       }
+      ],
+      "legends": [
+       {
+        "card": "saburo-arasaka-stubborn-patriarch",
+        "face": "DOWN",
+        "readiness": "READY"
+       },
+       {
+        "card": "padre-man-of-the-cross",
+        "face": "DOWN",
+        "readiness": "READY"
+       },
+       {
+        "card": "hanako-arasaka-daughter-of-the-emperor",
+        "face": "DOWN",
+        "readiness": "READY"
+       }
+      ],
+      "hand": [],
+      "trash": [],
+      "deck": [],
+      "gigs": [],
+      "eddies": {
+       "ready": 0,
+       "spent": 0
+      }
+     }
+    ]
+   },
+   "steps": [
+    {
+     "kind": "CALL_LEGEND",
+     "card": "adam-smasher-ender-of-legends"
+    }
+   ],
+   "preconditions": [
+    {
+     "kind": "diff",
+     "step": 0,
+     "patterns": [
+      "^adam-smasher-ender-of-legends \\[p0-c\\d+\\] seat 0: face-down Legend -> face up in LEGENDS"
+     ]
+    }
+   ],
+   "reading": {
+    "kind": "diff",
+    "step": 0,
+    "patterns": [
+     "^corpo-security \\[p1-c\\d+\\] seat 1: zone BATTLEFIELD"
+    ]
+   },
+   "answers": {
+    "true": "A",
+    "false": "B"
+   }
+  },
+  {
+   "id": "cody-quiz-34",
+   "what": "Wild in the Streets with no spent Unit anywhere: is it offered?",
+   "setup": {
+    "activeSeat": 0,
+    "players": [
+     {
+      "field": [
+       {
+        "card": "corpo-security",
+        "readiness": "READY"
+       }
+      ],
+      "legends": [
+       {
+        "card": "saburo-arasaka-stubborn-patriarch",
+        "face": "DOWN",
+        "readiness": "READY"
+       },
+       {
+        "card": "padre-man-of-the-cross",
+        "face": "DOWN",
+        "readiness": "READY"
+       },
+       {
+        "card": "hanako-arasaka-daughter-of-the-emperor",
+        "face": "DOWN",
+        "readiness": "READY"
+       }
+      ],
+      "hand": [
+       "wild-in-the-streets"
+      ],
+      "trash": [],
+      "deck": [],
+      "gigs": [],
+      "eddies": {
+       "ready": 5,
+       "spent": 0
+      }
+     },
+     {
+      "field": [
+       {
+        "card": "corpo-security",
+        "readiness": "READY"
+       }
+      ],
+      "legends": [
+       {
+        "card": "saburo-arasaka-stubborn-patriarch",
+        "face": "DOWN",
+        "readiness": "READY"
+       },
+       {
+        "card": "padre-man-of-the-cross",
+        "face": "DOWN",
+        "readiness": "READY"
+       },
+       {
+        "card": "hanako-arasaka-daughter-of-the-emperor",
+        "face": "DOWN",
+        "readiness": "READY"
+       }
+      ],
+      "hand": [],
+      "trash": [],
+      "deck": [],
+      "gigs": [],
+      "eddies": {
+       "ready": 0,
+       "spent": 0
+      }
+     }
+    ]
+   },
+   "steps": [
+    {
+     "kind": "PLAY_CARD",
+     "card": "wild-in-the-streets"
+    }
+   ],
+   "reading": {
+    "kind": "offered",
+    "after": -1,
+    "action": "PLAY_CARD",
+    "card": "wild-in-the-streets"
+   },
+   "answers": {
+    "true": "A",
+    "false": "B"
+   }
+  },
+  {
+   "id": "cody-quiz-35",
+   "also": [
+    "official-26b32781"
+   ],
+   "what": "A Ganger Unit wins by 3+ after Appetite for Destruction and steals: does Evelyn Parker (face up; when a friendly CORPO or GANGER Unit steals) ready an Eddie?",
+   "setup": {
+    "activeSeat": 0,
+    "players": [
+     {
+      "field": [
+       {
+        "card": "animals-wrecker",
+        "readiness": "READY"
+       }
+      ],
+      "legends": [
+       {
+        "card": "evelyn-parker-beautiful-enigma",
+        "face": "UP",
+        "readiness": "READY"
+       },
+       {
+        "card": "dexter-deshawn-off-the-grid",
+        "face": "DOWN",
+        "readiness": "READY"
+       },
+       {
+        "card": "v-streetkid",
+        "face": "DOWN",
+        "readiness": "READY"
+       }
+      ],
+      "hand": [
+       "appetite-for-destruction"
+      ],
+      "trash": [],
+      "deck": [],
+      "gigs": [],
+      "eddies": {
+       "ready": 3,
+       "spent": 0
+      }
+     },
+     {
+      "field": [
+       {
+        "card": "corpo-security",
+        "readiness": "SPENT"
+       }
+      ],
+      "legends": [
+       {
+        "card": "saburo-arasaka-stubborn-patriarch",
+        "face": "DOWN",
+        "readiness": "READY"
+       },
+       {
+        "card": "padre-man-of-the-cross",
+        "face": "DOWN",
+        "readiness": "READY"
+       },
+       {
+        "card": "hanako-arasaka-daughter-of-the-emperor",
+        "face": "DOWN",
+        "readiness": "READY"
+       }
+      ],
+      "hand": [],
+      "trash": [],
+      "deck": [],
+      "gigs": [
+       {
+        "die": "D6",
+        "value": 3
+       }
+      ],
+      "eddies": {
+       "ready": 0,
+       "spent": 0
+      }
+     }
+    ]
+   },
+   "steps": [
+    {
+     "kind": "PLAY_CARD",
+     "card": "appetite-for-destruction"
+    },
+    {
+     "kind": "DECLARE_ATTACK",
+     "card": "animals-wrecker",
+     "target": "corpo-security"
+    },
+    {
+     "kind": "PASS_REACT"
+    }
+   ],
+   "preconditions": [
+    {
+     "kind": "diff",
+     "step": 2,
+     "patterns": [
+      "^seat 0 gig p1-D6: none -> D6=3 in GIGS$"
+     ]
+    }
+   ],
+   "reading": {
+    "kind": "pending",
+    "step": 2,
+    "choice_kind": "READY_EDDIE",
+    "option": "."
+   },
+   "answers": {
+    "true": "A",
+    "false": "B"
+   }
+  },
+  {
+   "id": "cody-quiz-36",
+   "what": "A non-Arasaka Unit wearing Satori attacks with Yorinobu, Embracing Destruction face up (the first ARASAKA Unit attack each turn draws 1): is a card drawn? The control check runs the same with an Arasaka Unit.",
+   "setup": {
+    "activeSeat": 0,
+    "players": [
+     {
+      "field": [
+       {
+        "card": "la-llorona-ghost-of-the-past",
+        "readiness": "READY",
+        "gear": [
+         "satori-sword-of-saburo"
+        ]
+       }
+      ],
+      "legends": [
+       {
+        "card": "yorinobu-arasaka-embracing-destruction",
+        "face": "UP",
+        "readiness": "READY"
+       },
+       {
+        "card": "dexter-deshawn-off-the-grid",
+        "face": "DOWN",
+        "readiness": "READY"
+       },
+       {
+        "card": "v-streetkid",
+        "face": "DOWN",
+        "readiness": "READY"
+       }
+      ],
+      "hand": [],
+      "trash": [],
+      "deck": [
+       "ruthless-lowlife"
+      ],
+      "gigs": [],
+      "eddies": {
+       "ready": 0,
+       "spent": 0
+      }
+     },
+     {
+      "field": [],
+      "legends": [
+       {
+        "card": "saburo-arasaka-stubborn-patriarch",
+        "face": "DOWN",
+        "readiness": "READY"
+       },
+       {
+        "card": "padre-man-of-the-cross",
+        "face": "DOWN",
+        "readiness": "READY"
+       },
+       {
+        "card": "hanako-arasaka-daughter-of-the-emperor",
+        "face": "DOWN",
+        "readiness": "READY"
+       }
+      ],
+      "hand": [],
+      "trash": [],
+      "deck": [],
+      "gigs": [
+       {
+        "die": "D6",
+        "value": 3
+       }
+      ],
+      "eddies": {
+       "ready": 0,
+       "spent": 0
+      }
+     }
+    ]
+   },
+   "steps": [
+    {
+     "kind": "DECLARE_ATTACK",
+     "card": "la-llorona-ghost-of-the-past",
+     "target": "gig"
+    }
+   ],
+   "reading": {
+    "kind": "diff",
+    "step": 0,
+    "patterns": [
+     "^seat 0 DECK count: \\d+ -> \\d+$"
+    ]
+   },
+   "answers": {
+    "true": "A",
+    "false": "B"
+   }
+  },
+  {
+   "id": "cody-quiz-36-control",
+   "control_for": "cody-quiz-36",
+   "what": "Control for cody-quiz-36: an Arasaka Unit (Minotaur) attacks with the same Legend; the draw must happen.",
+   "setup": {
+    "activeSeat": 0,
+    "players": [
+     {
+      "field": [
+       {
+        "card": "minotaur",
+        "readiness": "READY"
+       }
+      ],
+      "legends": [
+       {
+        "card": "yorinobu-arasaka-embracing-destruction",
+        "face": "UP",
+        "readiness": "READY"
+       },
+       {
+        "card": "dexter-deshawn-off-the-grid",
+        "face": "DOWN",
+        "readiness": "READY"
+       },
+       {
+        "card": "v-streetkid",
+        "face": "DOWN",
+        "readiness": "READY"
+       }
+      ],
+      "hand": [],
+      "trash": [],
+      "deck": [
+       "ruthless-lowlife"
+      ],
+      "gigs": [],
+      "eddies": {
+       "ready": 0,
+       "spent": 0
+      }
+     },
+     {
+      "field": [],
+      "legends": [
+       {
+        "card": "saburo-arasaka-stubborn-patriarch",
+        "face": "DOWN",
+        "readiness": "READY"
+       },
+       {
+        "card": "padre-man-of-the-cross",
+        "face": "DOWN",
+        "readiness": "READY"
+       },
+       {
+        "card": "hanako-arasaka-daughter-of-the-emperor",
+        "face": "DOWN",
+        "readiness": "READY"
+       }
+      ],
+      "hand": [],
+      "trash": [],
+      "deck": [],
+      "gigs": [
+       {
+        "die": "D6",
+        "value": 3
+       }
+      ],
+      "eddies": {
+       "ready": 0,
+       "spent": 0
+      }
+     }
+    ]
+   },
+   "steps": [
+    {
+     "kind": "DECLARE_ATTACK",
+     "card": "minotaur",
+     "target": "gig"
+    }
+   ],
+   "reading": {
+    "kind": "diff",
+    "step": 0,
+    "patterns": [
+     "^seat 0 DECK count: \\d+ -> \\d+$"
+    ]
+   },
+   "answers": {
+    "true": true,
+    "false": false
+   }
+  },
+  {
+   "id": "cody-quiz-37",
+   "also": [
+    "official-5fc12824"
+   ],
+   "what": "Goro, Hands Unclean face up and spent with 5 Eddies: is Go Solo offered?",
+   "setup": {
+    "activeSeat": 0,
+    "players": [
+     {
+      "field": [],
+      "legends": [
+       {
+        "card": "goro-takemura-hands-unclean",
+        "face": "UP",
+        "readiness": "SPENT"
+       },
+       {
+        "card": "saburo-arasaka-stubborn-patriarch",
+        "face": "DOWN",
+        "readiness": "READY"
+       },
+       {
+        "card": "padre-man-of-the-cross",
+        "face": "DOWN",
+        "readiness": "READY"
+       }
+      ],
+      "hand": [],
+      "trash": [],
+      "deck": [],
+      "gigs": [],
+      "eddies": {
+       "ready": 5,
+       "spent": 0
+      }
+     },
+     {
+      "field": [],
+      "legends": [
+       {
+        "card": "saburo-arasaka-stubborn-patriarch",
+        "face": "DOWN",
+        "readiness": "READY"
+       },
+       {
+        "card": "padre-man-of-the-cross",
+        "face": "DOWN",
+        "readiness": "READY"
+       },
+       {
+        "card": "hanako-arasaka-daughter-of-the-emperor",
+        "face": "DOWN",
+        "readiness": "READY"
+       }
+      ],
+      "hand": [],
+      "trash": [],
+      "deck": [],
+      "gigs": [],
+      "eddies": {
+       "ready": 0,
+       "spent": 0
+      }
+     }
+    ]
+   },
+   "steps": [
+    {
+     "kind": "GO_SOLO",
+     "card": "goro-takemura-hands-unclean"
+    }
+   ],
+   "reading": {
+    "kind": "offered",
+    "after": -1,
+    "action": "GO_SOLO",
+    "card": "goro-takemura-hands-unclean"
+   },
+   "answers": {
+    "true": "A",
+    "false": "B"
+   }
+  },
+  {
+   "id": "cody-quiz-39",
+   "what": "The rival's Live with the Aftermath defeats Yorinobu, Steel Dragon (an Arasaka Unit): does its owner draw 1?",
+   "setup": {
+    "activeSeat": 1,
+    "players": [
+     {
+      "field": [
+       {
+        "card": "yorinobu-arasaka-steel-dragon",
+        "readiness": "READY"
+       }
+      ],
+      "legends": [
+       {
+        "card": "yorinobu-arasaka-embracing-destruction",
+        "face": "DOWN",
+        "readiness": "READY"
+       },
+       {
+        "card": "dexter-deshawn-off-the-grid",
+        "face": "DOWN",
+        "readiness": "READY"
+       },
+       {
+        "card": "v-streetkid",
+        "face": "DOWN",
+        "readiness": "READY"
+       }
+      ],
+      "hand": [],
+      "trash": [],
+      "deck": [
+       "ruthless-lowlife"
+      ],
+      "gigs": [],
+      "eddies": {
+       "ready": 0,
+       "spent": 0
+      }
+     },
+     {
+      "field": [],
+      "legends": [
+       {
+        "card": "viktor-vektor-sit-down-and-relax",
+        "face": "DOWN",
+        "readiness": "READY"
+       },
+       {
+        "card": "muamar-reyes-el-capita-n",
+        "face": "DOWN",
+        "readiness": "READY"
+       },
+       {
+        "card": "dum-dum-maelstrom-triggerman",
+        "face": "DOWN",
+        "readiness": "READY"
+       }
+      ],
+      "hand": [
+       "live-with-the-aftermath"
+      ],
+      "trash": [],
+      "deck": [],
+      "gigs": [],
+      "eddies": {
+       "ready": 3,
+       "spent": 0
+      }
+     }
+    ]
+   },
+   "steps": [
+    {
+     "kind": "PLAY_CARD",
+     "card": "live-with-the-aftermath"
+    }
+   ],
+   "preconditions": [
+    {
+     "kind": "diff",
+     "step": 0,
+     "patterns": [
+      "^yorinobu-arasaka-steel-dragon \\[p0-c\\d+\\] seat 0: zone BATTLEFIELD -> TRASH$"
+     ]
+    }
+   ],
+   "reading": {
+    "kind": "diff",
+    "step": 0,
+    "patterns": [
+     "^seat 0 HAND count: 0 -> 1$"
+    ]
+   },
+   "answers": {
+    "true": "A",
+    "false": "B"
+   }
+  },
+  {
+   "id": "cody-quiz2-05",
+   "also": [
+    "official-39880a7d"
+   ],
+   "what": "The rival attacks with an empty hand: is Augmented Negotiators offered as a Blocker?",
+   "setup": {
+    "activeSeat": 1,
+    "players": [
+     {
+      "field": [
+       {
+        "card": "augmented-negotiators",
+        "readiness": "READY"
+       },
+       {
+        "card": "dexter-deshawn-one-last-chance",
+        "readiness": "SPENT"
+       }
+      ],
+      "legends": [
+       {
+        "card": "viktor-vektor-sit-down-and-relax",
+        "face": "DOWN",
+        "readiness": "READY"
+       },
+       {
+        "card": "muamar-reyes-el-capita-n",
+        "face": "DOWN",
+        "readiness": "READY"
+       },
+       {
+        "card": "dum-dum-maelstrom-triggerman",
+        "face": "DOWN",
+        "readiness": "READY"
+       }
+      ],
+      "hand": [],
+      "trash": [],
+      "deck": [],
+      "gigs": [],
+      "eddies": {
+       "ready": 0,
+       "spent": 0
+      }
+     },
+     {
+      "field": [
+       {
+        "card": "modded-kusanagi",
+        "readiness": "READY"
+       }
+      ],
+      "legends": [
+       {
+        "card": "jackie-welles-pour-one-out-for-me",
+        "face": "DOWN",
+        "readiness": "READY"
+       },
+       {
+        "card": "wakako-okada-peace-and-harmony",
+        "face": "DOWN",
+        "readiness": "READY"
+       },
+       {
+        "card": "evelyn-parker-beautiful-enigma",
+        "face": "DOWN",
+        "readiness": "READY"
+       }
+      ],
+      "hand": [],
+      "trash": [],
+      "deck": [],
+      "gigs": [],
+      "eddies": {
+       "ready": 0,
+       "spent": 0
+      }
+     }
+    ]
+   },
+   "steps": [
+    {
+     "kind": "DECLARE_ATTACK",
+     "card": "modded-kusanagi",
+     "target": "dexter-deshawn-one-last-chance"
+    }
+   ],
+   "reading": {
+    "kind": "offered",
+    "after": 0,
+    "action": "DECLARE_BLOCKER",
+    "card": "augmented-negotiators"
+   },
+   "answers": {
+    "true": "A",
+    "false": "B"
+   }
+  },
+  {
+   "id": "cody-quiz2-12",
+   "also": [
+    "official-b99cdb18"
+   ],
+   "what": "Safety Override, then a friendly Unit already on the field loses a fight: is the opposing rival Unit defeated? Read as: the effect applies to Units already on the field. Playing it opens no target choice.",
+   "setup": {
+    "activeSeat": 0,
+    "players": [
+     {
+      "field": [
+       {
+        "card": "augmented-negotiators",
+        "readiness": "READY"
+       }
+      ],
+      "legends": [
+       {
+        "card": "viktor-vektor-sit-down-and-relax",
+        "face": "DOWN",
+        "readiness": "READY"
+       },
+       {
+        "card": "muamar-reyes-el-capita-n",
+        "face": "DOWN",
+        "readiness": "READY"
+       },
+       {
+        "card": "dum-dum-maelstrom-triggerman",
+        "face": "DOWN",
+        "readiness": "READY"
+       }
+      ],
+      "hand": [
+       "safety-override"
+      ],
+      "trash": [],
+      "deck": [],
+      "gigs": [],
+      "eddies": {
+       "ready": 2,
+       "spent": 0
+      }
+     },
+     {
+      "field": [
+       {
+        "card": "psycho-squad",
+        "readiness": "SPENT"
+       }
+      ],
+      "legends": [
+       {
+        "card": "jackie-welles-pour-one-out-for-me",
+        "face": "DOWN",
+        "readiness": "READY"
+       },
+       {
+        "card": "wakako-okada-peace-and-harmony",
+        "face": "DOWN",
+        "readiness": "READY"
+       },
+       {
+        "card": "evelyn-parker-beautiful-enigma",
+        "face": "DOWN",
+        "readiness": "READY"
+       }
+      ],
+      "hand": [],
+      "trash": [],
+      "deck": [],
+      "gigs": [],
+      "eddies": {
+       "ready": 0,
+       "spent": 0
+      }
+     }
+    ]
+   },
+   "steps": [
+    {
+     "kind": "PLAY_CARD",
+     "card": "safety-override"
+    },
+    {
+     "kind": "DECLARE_ATTACK",
+     "card": "augmented-negotiators",
+     "target": "psycho-squad"
+    },
+    {
+     "kind": "PASS_REACT"
+    }
+   ],
+   "preconditions": [
+    {
+     "kind": "diff",
+     "step": 2,
+     "patterns": [
+      "^augmented-negotiators \\[p0-c\\d+\\] seat 0: zone BATTLEFIELD -> TRASH"
+     ]
+    }
+   ],
+   "reading": {
+    "kind": "diff",
+    "step": 2,
+    "patterns": [
+     "^psycho-squad \\[p1-c\\d+\\] seat 1: zone BATTLEFIELD -> TRASH$"
+    ]
+   },
+   "answers": {
+    "true": "A",
+    "false": "B"
+   }
+  },
+  {
+   "id": "cody-quiz2-16",
+   "also": [
+    "official-0c648b1b"
+   ],
+   "what": "Zetatech Berserk with two face-up Legends: what is paid.",
+   "setup": {
+    "activeSeat": 0,
+    "players": [
+     {
+      "field": [
+       {
+        "card": "corpo-security",
+        "readiness": "READY"
+       }
+      ],
+      "legends": [
+       {
+        "card": "saburo-arasaka-stubborn-patriarch",
+        "face": "UP",
+        "readiness": "READY"
+       },
+       {
+        "card": "padre-man-of-the-cross",
+        "face": "UP",
+        "readiness": "READY"
+       },
+       {
+        "card": "hanako-arasaka-daughter-of-the-emperor",
+        "face": "DOWN",
+        "readiness": "READY"
+       }
+      ],
+      "hand": [
+       "zetatech-berserk"
+      ],
+      "trash": [],
+      "deck": [],
+      "gigs": [],
+      "eddies": {
+       "ready": 6,
+       "spent": 0
+      }
+     },
+     {
+      "field": [],
+      "legends": [
+       {
+        "card": "saburo-arasaka-stubborn-patriarch",
+        "face": "DOWN",
+        "readiness": "READY"
+       },
+       {
+        "card": "padre-man-of-the-cross",
+        "face": "DOWN",
+        "readiness": "READY"
+       },
+       {
+        "card": "hanako-arasaka-daughter-of-the-emperor",
+        "face": "DOWN",
+        "readiness": "READY"
+       }
+      ],
+      "hand": [],
+      "trash": [],
+      "deck": [],
+      "gigs": [],
+      "eddies": {
+       "ready": 0,
+       "spent": 0
+      }
+     }
+    ]
+   },
+   "steps": [
+    {
+     "kind": "PLAY_CARD",
+     "card": "zetatech-berserk",
+     "target": "corpo-security"
+    }
+   ],
+   "reading": {
+    "kind": "out_of_reach",
+    "why": "Same as cody-quiz-06: the key is about the Gear's cost as a characteristic; the engine shows only what was paid (6 printed, 4 paid with two face-up Legends)."
+   }
+  },
+  {
+   "id": "cody-quiz2-24",
+   "also": [
+    "official-1505f3f1"
+   ],
+   "what": "Over the Edge with the d20 still in the Fixer area: is a rival Unit with power 0 defeated?",
+   "setup": {
+    "activeSeat": 0,
+    "players": [
+     {
+      "field": [],
+      "legends": [
+       {
+        "card": "yorinobu-arasaka-embracing-destruction",
+        "face": "DOWN",
+        "readiness": "READY"
+       },
+       {
+        "card": "dexter-deshawn-off-the-grid",
+        "face": "DOWN",
+        "readiness": "READY"
+       },
+       {
+        "card": "v-streetkid",
+        "face": "DOWN",
+        "readiness": "READY"
+       }
+      ],
+      "hand": [
+       "over-the-edge"
+      ],
+      "trash": [],
+      "deck": [],
+      "gigs": [
+       {
+        "die": "D6",
+        "value": 3
+       }
+      ],
+      "eddies": {
+       "ready": 3,
+       "spent": 0
+      }
+     },
+     {
+      "field": [
+       {
+        "card": "sketchy-ripper",
+        "readiness": "SPENT"
+       }
+      ],
+      "legends": [
+       {
+        "card": "viktor-vektor-sit-down-and-relax",
+        "face": "DOWN",
+        "readiness": "READY"
+       },
+       {
+        "card": "muamar-reyes-el-capita-n",
+        "face": "DOWN",
+        "readiness": "READY"
+       },
+       {
+        "card": "dum-dum-maelstrom-triggerman",
+        "face": "DOWN",
+        "readiness": "READY"
+       }
+      ],
+      "hand": [],
+      "trash": [],
+      "deck": [],
+      "gigs": [],
+      "eddies": {
+       "ready": 0,
+       "spent": 0
+      }
+     }
+    ]
+   },
+   "steps": [
+    {
+     "kind": "PLAY_CARD",
+     "card": "over-the-edge"
+    }
+   ],
+   "preconditions": [
+    {
+     "kind": "offered",
+     "after": -1,
+     "action": "PLAY_CARD",
+     "card": "over-the-edge"
+    }
+   ],
+   "reading": {
+    "kind": "diff",
+    "step": 0,
+    "patterns": [
+     "^sketchy-ripper \\[p1-c\\d+\\] seat 1: zone BATTLEFIELD -> TRASH$"
+    ]
+   },
+   "answers": {
+    "true": "A",
+    "false": "B"
+   }
+  },
+  {
+   "id": "cody-quiz2-25",
+   "also": [
+    "official-00fb46ac"
+   ],
+   "what": "Pacifica Netrunner with even Street Cred (2): is a rival Unit offered as the choice? (The statement says you may not choose one.)",
+   "setup": {
+    "activeSeat": 0,
+    "players": [
+     {
+      "field": [],
+      "legends": [
+       {
+        "card": "saburo-arasaka-stubborn-patriarch",
+        "face": "DOWN",
+        "readiness": "READY"
+       },
+       {
+        "card": "padre-man-of-the-cross",
+        "face": "DOWN",
+        "readiness": "READY"
+       },
+       {
+        "card": "hanako-arasaka-daughter-of-the-emperor",
+        "face": "DOWN",
+        "readiness": "READY"
+       }
+      ],
+      "hand": [
+       "pacifica-netrunner"
+      ],
+      "trash": [],
+      "deck": [],
+      "gigs": [
+       {
+        "die": "D6",
+        "value": 2
+       }
+      ],
+      "eddies": {
+       "ready": 4,
+       "spent": 0
+      }
+     },
+     {
+      "field": [
+       {
+        "card": "corpo-security",
+        "readiness": "SPENT"
+       },
+       {
+        "card": "field-operator",
+        "readiness": "SPENT"
+       }
+      ],
+      "legends": [
+       {
+        "card": "saburo-arasaka-stubborn-patriarch",
+        "face": "DOWN",
+        "readiness": "READY"
+       },
+       {
+        "card": "padre-man-of-the-cross",
+        "face": "DOWN",
+        "readiness": "READY"
+       },
+       {
+        "card": "hanako-arasaka-daughter-of-the-emperor",
+        "face": "DOWN",
+        "readiness": "READY"
+       }
+      ],
+      "hand": [],
+      "trash": [],
+      "deck": [],
+      "gigs": [],
+      "eddies": {
+       "ready": 0,
+       "spent": 0
+      }
+     }
+    ]
+   },
+   "steps": [
+    {
+     "kind": "PLAY_CARD",
+     "card": "pacifica-netrunner"
+    }
+   ],
+   "reading": {
+    "kind": "pending",
+    "step": 0,
+    "choice_kind": "TARGET",
+    "option": "^corpo-security"
+   },
+   "answers": {
+    "true": "B",
+    "false": "A"
+   }
+  },
+  {
+   "id": "cody-quiz2-29",
+   "also": [
+    "official-8ce0c702"
+   ],
+   "what": "Adam Smasher, Ender of Legends goes solo and his Play effect defeats MaxTac Suppression Team: is Adam offered an attack?",
+   "setup": {
+    "activeSeat": 0,
+    "players": [
+     {
+      "field": [],
+      "legends": [
+       {
+        "card": "adam-smasher-ender-of-legends",
+        "face": "UP",
+        "readiness": "READY"
+       },
+       {
+        "card": "yorinobu-arasaka-embracing-destruction",
+        "face": "DOWN",
+        "readiness": "READY"
+       },
+       {
+        "card": "dexter-deshawn-off-the-grid",
+        "face": "DOWN",
+        "readiness": "READY"
+       }
+      ],
+      "hand": [],
+      "trash": [],
+      "deck": [],
+      "gigs": [],
+      "eddies": {
+       "ready": 9,
+       "spent": 0
+      }
+     },
+     {
+      "field": [
+       {
+        "card": "maxtac-suppression-team",
+        "readiness": "READY"
+       }
+      ],
+      "legends": [
+       {
+        "card": "viktor-vektor-sit-down-and-relax",
+        "face": "DOWN",
+        "readiness": "READY"
+       },
+       {
+        "card": "muamar-reyes-el-capita-n",
+        "face": "DOWN",
+        "readiness": "READY"
+       },
+       {
+        "card": "dum-dum-maelstrom-triggerman",
+        "face": "DOWN",
+        "readiness": "READY"
+       }
+      ],
+      "hand": [],
+      "trash": [],
+      "deck": [],
+      "gigs": [
+       {
+        "die": "D6",
+        "value": 3
+       }
+      ],
+      "eddies": {
+       "ready": 0,
+       "spent": 0
+      }
+     }
+    ]
+   },
+   "steps": [
+    {
+     "kind": "GO_SOLO",
+     "card": "adam-smasher-ender-of-legends"
+    }
+   ],
+   "reading": {
+    "kind": "offered",
+    "after": 0,
+    "action": "DECLARE_ATTACK",
+    "card": "adam-smasher-ender-of-legends"
+   },
+   "answers": {
+    "true": "A",
+    "false": "B"
+   }
+  },
+  {
+   "id": "cody-quiz2-35",
+   "also": [
+    "official-d67f61fe"
+   ],
+   "what": "Bootleg sells the top card of the deck: does the rival's view show that card at any point?",
+   "setup": {
+    "activeSeat": 0,
+    "players": [
+     {
+      "field": [],
+      "legends": [
+       {
+        "card": "viktor-vektor-sit-down-and-relax",
+        "face": "DOWN",
+        "readiness": "READY"
+       },
+       {
+        "card": "muamar-reyes-el-capita-n",
+        "face": "DOWN",
+        "readiness": "READY"
+       },
+       {
+        "card": "dum-dum-maelstrom-triggerman",
+        "face": "DOWN",
+        "readiness": "READY"
+       }
+      ],
+      "hand": [
+       "bootleg-black-sapphire-show"
+      ],
+      "trash": [],
+      "deck": [
+       "rockn-rockerboy"
+      ],
+      "gigs": [],
+      "eddies": {
+       "ready": 5,
+       "spent": 0
+      }
+     },
+     {
+      "field": [],
+      "legends": [
+       {
+        "card": "saburo-arasaka-stubborn-patriarch",
+        "face": "DOWN",
+        "readiness": "READY"
+       },
+       {
+        "card": "padre-man-of-the-cross",
+        "face": "DOWN",
+        "readiness": "READY"
+       },
+       {
+        "card": "hanako-arasaka-daughter-of-the-emperor",
+        "face": "DOWN",
+        "readiness": "READY"
+       }
+      ],
+      "hand": [],
+      "trash": [],
+      "deck": [],
+      "gigs": [],
+      "eddies": {
+       "ready": 0,
+       "spent": 0
+      }
+     }
+    ]
+   },
+   "steps": [
+    {
+     "kind": "PLAY_CARD",
+     "card": "bootleg-black-sapphire-show"
+    }
+   ],
+   "preconditions": [
+    {
+     "kind": "diff",
+     "step": 0,
+     "patterns": [
+      "^seat 0 EDDIES count: \\d+ -> \\d+$",
+      "^seat 0 DECK count: \\d+ -> \\d+$"
+     ]
+    }
+   ],
+   "reading": {
+    "kind": "diff",
+    "step": 0,
+    "patterns": [
+     "now sees its rival's"
+    ]
+   },
+   "answers": {
+    "true": "A",
+    "false": "B"
+   }
+  },
+  {
+   "id": "cody-quiz2-36",
+   "also": [
+    "official-70586605"
+   ],
+   "what": "On the rival's turn, The Relic plays Adam Smasher, Metal Over Meat from the trash: does his Play effect defeat the rival's Unit?",
+   "setup": {
+    "activeSeat": 1,
+    "players": [
+     {
+      "field": [
+       {
+        "card": "dexter-deshawn-one-last-chance",
+        "readiness": "SPENT",
+        "gear": [
+         "the-relic-experimental-biochip"
+        ]
+       }
+      ],
+      "legends": [
+       {
+        "card": "viktor-vektor-sit-down-and-relax",
+        "face": "DOWN",
+        "readiness": "READY"
+       },
+       {
+        "card": "muamar-reyes-el-capita-n",
+        "face": "DOWN",
+        "readiness": "READY"
+       },
+       {
+        "card": "dum-dum-maelstrom-triggerman",
+        "face": "DOWN",
+        "readiness": "READY"
+       }
+      ],
+      "hand": [],
+      "trash": [
+       "adam-smasher-metal-over-meat"
+      ],
+      "deck": [],
+      "gigs": [],
+      "eddies": {
+       "ready": 0,
+       "spent": 0
+      }
+     },
+     {
+      "field": [
+       {
+        "card": "modded-kusanagi",
+        "readiness": "READY"
+       }
+      ],
+      "legends": [
+       {
+        "card": "jackie-welles-pour-one-out-for-me",
+        "face": "DOWN",
+        "readiness": "READY"
+       },
+       {
+        "card": "wakako-okada-peace-and-harmony",
+        "face": "DOWN",
+        "readiness": "READY"
+       },
+       {
+        "card": "evelyn-parker-beautiful-enigma",
+        "face": "DOWN",
+        "readiness": "READY"
+       }
+      ],
+      "hand": [],
+      "trash": [],
+      "deck": [],
+      "gigs": [],
+      "eddies": {
+       "ready": 0,
+       "spent": 0
+      }
+     }
+    ]
+   },
+   "steps": [
+    {
+     "kind": "DECLARE_ATTACK",
+     "card": "modded-kusanagi",
+     "target": "dexter-deshawn-one-last-chance"
+    },
+    {
+     "kind": "PASS_REACT"
+    },
+    {
+     "kind": "CHOOSE",
+     "choice": "the-relic-experimental-biochip"
+    },
+    {
+     "kind": "CHOOSE",
+     "choice": "the-relic-experimental-biochip"
+    },
+    {
+     "kind": "CHOOSE",
+     "choice": "adam-smasher-metal-over-meat"
+    }
+   ],
+   "preconditions": [
+    {
+     "kind": "diff",
+     "step": 3,
+     "patterns": [
+      "^adam-smasher-metal-over-meat \\[p0-c\\d+\\] seat 0: zone TRASH -> BATTLEFIELD$"
+     ]
+    }
+   ],
+   "reading": {
+    "kind": "diff",
+    "step": 4,
+    "patterns": [
+     "^modded-kusanagi \\[p1-c\\d+\\] seat 1: zone BATTLEFIELD -> TRASH"
+    ]
+   },
+   "answers": {
+    "true": "A",
+    "false": "B"
+   }
+  }
+ ]
+}

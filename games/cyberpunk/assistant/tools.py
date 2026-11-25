@@ -806,6 +806,39 @@ def _engine_check_tool() -> Tool:
 
 TOOLS["engine_check"] = _engine_check_tool()
 
+
+def _engine_scenario(args: dict) -> tuple[dict, dict]:
+    """``engine_scenario`` (``engine_scenario.py``): the engine builds the board and plays the steps; Python only
+    matches each step to one action the engine offered and formats what the engine reports."""
+    from games.cyberpunk.assistant import engine_scenario as es
+
+    try:
+        result = es.run_for_tool(args["setup"], args.get("steps", []))
+    except es.ScenarioError as exc:
+        extra = {k: v for k, v in exc.extra.items() if k == "engine_errors"}
+        raise ToolError(exc.kind, str(exc), **extra) from exc
+    named = []
+    for player in args["setup"].get("players") or []:
+        if isinstance(player, dict):
+            named += es._player_cards(player)
+    for step in args.get("steps") or []:
+        if isinstance(step, dict):
+            named += [step.get(k) for k in ("card", "target", "choice")]
+    return result, _sources(card_slugs=[s for s in named if isinstance(s, str) and s in cards_by_slug()])
+
+
+def _engine_scenario_tool() -> Tool:
+    from games.cyberpunk.assistant import engine_scenario as es
+
+    return Tool("engine_scenario", es.DESCRIPTION,
+                _object({"setup": {"type": "object", "description": es.SETUP_HELP},
+                         "steps": {"type": "array", "description": es.STEPS_HELP}},
+                        ["setup"]),
+                _engine_scenario)
+
+
+TOOLS["engine_scenario"] = _engine_scenario_tool()
+
 _JSON_TYPES = {"string": str, "integer": int, "boolean": bool, "object": dict, "array": list}
 
 

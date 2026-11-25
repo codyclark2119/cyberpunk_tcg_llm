@@ -349,7 +349,7 @@ def test_deck_context_is_structured_and_absent_without_a_deck():
     messages = build_messages([{"role": "user", "content": "earlier"}], "q", deck)
     assert [m["role"] for m in messages] == ["system", "user", "user"] and messages[-1]["content"] == "q"
     assert loaded_deck_from(messages) == deck and "deck argument" in messages[0]["content"]
-    assert ASSISTANT_PROMPT_VERSION == "assistant-chat-v8"
+    assert ASSISTANT_PROMPT_VERSION == "assistant-chat-v9"
 
 
 # Trace and sources -------------------------------------------------------------------------
@@ -1007,6 +1007,77 @@ def test_engine_check_turns_get_a_badge_and_a_positions_viewer():
     assert "engineBadgeText(checks)" in turn and "engineButtons(checks)" in turn
     for name in ("engineButtons", "showEngineCheck"):
         assert "innerHTML" not in js_function(script, name)
+
+
+SCENARIO_SETUP = {"activeSeat": 0, "players": [
+    {"field": [{"card": "field-operator", "readiness": "READY"}], "hand": ["corpo-security"], "deck": ["corpo-security"]},
+    {"field": [{"card": "corpo-security", "readiness": "SPENT"}], "deck": ["corpo-security"]}]}
+
+
+def test_engine_scenario_turns_get_a_badge_and_a_steps_viewer():
+    # A turn that ran engine_scenario twice: once refused (a step kind the tool does not know), once played.
+    steps = [{"kind": "DECLARE_ATTACK", "card": "field-operator", "target": "corpo-security"}]
+    model = ScriptedModel([call("engine_scenario", setup=SCENARIO_SETUP, steps=[{"kind": "DANCE"}]),
+                           call("engine_scenario", setup=SCENARIO_SETUP, steps=steps), "The engine showed it."])
+    with client_for(model) as client:
+        data = client.post("/api/chat", json={"session": "s", "message": "Can Field Operator attack?"}, headers=LOCAL).json()
+    runs = run_pure("engineScenarios(input)", data["trace"])
+    expected = tools.call_tool("engine_scenario", {"setup": SCENARIO_SETUP, "steps": steps})["result"]
+    assert runs == [expected], "only the played call is a scenario, with the tool's own result"
+    assert run_pure("scenarioBadgeText(input)", runs) == "engine scenario: 1 step played"
+    assert run_pure("scenarioBadgeText(input)", []) == "" and run_pure("engineScenarios(input)", [{"kind": "tool"}, None]) == []
+    assert run_pure("scenarioBadgeText(input)", [{"steps": []}, {"steps": [{}], "stopped": {"at": 0}},
+                                                 {"steps": [{}, {}]}]) == \
+        "engine scenario: board only, stopped at step 1, 2 steps played"
+    applied = expected["steps"][0]["applied"]
+    assert run_pure("scenarioChipText(input)", expected) == "scenario: " + applied
+    # The button opens the side panel with every step's action and changes and both boards, as text.
+    out = run_chat(["el", "factsList", "scenarioButtons", "scenarioBoard", "scenarioView", "showEngineScenario"], [], """
+      const box = scenarioButtons(input);
+      const chips = box.children.filter((c) => c.attrs && c.attrs.class === "enginechip");
+      chips[0].listeners.click[0]();
+      out = {chips: chips.map((c) => c.textContent), title: $("sideTitle").textContent, side: tree($("sideBody")),
+             none: scenarioButtons([])};
+    """, runs)
+    assert out["chips"] == [f"scenario: {applied} (1 step played)"] and out["none"] is None
+    assert out["title"] == "engine_scenario: 1 step played"
+    side = _text(out["side"])
+    assert f"step 1 · seat 0 · {applied}" in side, side[:600]
+    assert expected["engine"]["version"] in side
+    for line in expected["steps"][0]["changes"]:
+        assert line in side, line
+    for seat in expected["final"]["seats"]:
+        for card in seat["battlefield"]:
+            assert card in side, card
+    assert f"{expected['steps'][0]['offers']['count']} action(s) offered next" in side
+    for seat, slugs in expected.get("legends_added", {}).items():
+        assert f"{seat}: {', '.join(slugs)}" in side
+    # A stopped run says where and why.
+    out = run_chat(["el", "factsList", "scenarioBoard", "scenarioView", "showEngineScenario"], [], """
+      showEngineScenario(input);
+      out = {title: $("sideTitle").textContent, side: tree($("sideBody"))};
+    """, {**expected, "steps": [], "stopped": {"at": 0, "reason": "no_match", "message": "nothing offered matches"}})
+    assert out["title"] == "engine_scenario: stopped at step 1"
+    assert "stopped at step 1: no_match · nothing offered matches" in _text(out["side"])
+    script = page_script()
+    turn = js_function(script, "showTurn")
+    assert "scenarioBadgeText(runs)" in turn and "scenarioButtons(runs)" in turn
+    for name in ("scenarioButtons", "scenarioBoard", "scenarioView", "showEngineScenario"):
+        assert "innerHTML" not in js_function(script, name)
+    # The Tools tab takes the setup and steps as JSON (an array field too) and shows the same view.
+    assert 'input.dataset.type === "object" || input.dataset.type === "array"' in js_function(script, "collectArgs")
+    assert 'tool.name === "engine_scenario"' in js_function(script, "run") and "scenarioView(data.result)" in js_function(script, "run")
+    placeholders = {f: run_pure(f"jsonPlaceholder('engine_scenario', '{f}')", None) for f in ("setup", "steps")}
+    fill = {"<your-unit>": "field-operator", "<rival-unit>": "corpo-security", "<card-in-hand>": "corpo-security",
+            "<top-card>": "corpo-security"}
+    filled = {}
+    for field, text in placeholders.items():
+        for hole, slug in fill.items():
+            text = text.replace(hole, slug)
+        assert "<" not in text, text
+        filled[field] = json.loads(text)
+    result = tools.call_tool("engine_scenario", filled)
+    assert result["ok"] and result["result"]["steps"][0]["applied"], "the form's example runs once slugs fill it"
 
 
 def test_cited_slugs_show_the_card_name_from_the_same_batch():
