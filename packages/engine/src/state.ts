@@ -1,3 +1,4 @@
+import { validateTrashProgramPlay } from "./trash-program-play";
 import { validateEquippedDefeats, validateHandGearPlay } from "./hand-gear-play";
 import { validateEndTurnDefeats } from "./end-turn-defeat";
 import { effectiveCallCost } from "./free-call-support";
@@ -211,6 +212,7 @@ export function validateState(input: unknown, context: EngineContext): Result<Ga
     const endTurnDefeats = validateEndTurnDefeats(s, context); if (!endTurnDefeats.ok) return endTurnDefeats; // Batch V90.
     const handGear = validateHandGearPlay(s, context); if (!handGear.ok) return handGear; // Batch V92.
     const equippedDefeats = validateEquippedDefeats(s, context); if (!equippedDefeats.ok) return equippedDefeats; // Batch V92.
+    const trashPlay = validateTrashProgramPlay(s, context); if (!trashPlay.ok) return trashPlay; // Batch V94.
     const queuedCall = validateQueuedCall(s, context); if (!queuedCall.ok) return queuedCall; // Batch V84.
     const discounts = validateGoSoloDiscounts(s, context); if (!discounts.ok) return discounts; // Batch V83.
     const forced = validateMustAttack(s, context);

@@ -272,7 +272,10 @@ export const ResolutionStateSchema = z.strictObject({
         // play batch follows the ability.
         handGearId: CardInstanceIdSchema.optional(), playedGearId: CardInstanceIdSchema.optional(),
         // Batch V93: the trashed Gear chosen, while its controller adds it to hand or chooses a host to play it on.
-        trashedGearId: CardInstanceIdSchema.optional() }).optional(),
+        trashedGearId: CardInstanceIdSchema.optional(),
+        // Batch V94: the trash Program a Legend's ability chose to play (never at a decision), and a Program played from the trash, which
+        // is bottom-decked after it resolves instead of going to the trash.
+        trashProgramId: CardInstanceIdSchema.optional(), fromTrash: z.literal(true).optional() }).optional(),
     searchContinuation: z.strictObject({ looked: z.array(CardInstanceIdSchema), selected: z.array(CardInstanceIdSchema) }).optional(),
     callContinuation: z.strictObject({ actorId: PlayerIdSchema, legendId: CardInstanceIdSchema, remainingCost: z.number().int().nonnegative(), selectedSources: z.array(PaymentSourceSchema) }).optional(),
     current: PendingEffectSchema.nullable(), pending: z.array(PendingEffectSchema), discovered: z.array(PendingEffectSchema), choice: PendingChoiceSchema.nullable()

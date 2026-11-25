@@ -1,3 +1,4 @@
+import { currentTrashPlayTargets } from "./trash-program-play";
 import { trashGearOptions, validateTrashGear } from "./trash-gear";
 import { handGearOptions } from "./hand-gear-play";
 import { trashProgramTargets } from "./trash-program";
@@ -121,6 +122,9 @@ export function playChoice(state: GameState, context: EngineContext): PendingCho
     } else if (state.resolution.current?.effect.kind === "TRASH_THEN_ADD_GEAR_MAY_PLAY_IF_GIG_COST") { // Batch V93: the Gear, then hand or its host.
         kind = "TARGET";
         options = trashGearOptions(state, context);
+    } else if (state.resolution.current?.effect.kind === "PLAY_TRASH_PROGRAM_THEN_BOTTOM_DECK") { // Batch V94.
+        kind = "TARGET";
+        options = currentTrashPlayTargets(state, context).map(cardInstanceId => ({ kind: "CARD", cardInstanceId }));
     } else if (state.resolution.current?.effect.kind === "PLAY_GEAR_FROM_HAND_FREE") { // Batch V92: the hand Gear, then its host.
         kind = "TARGET";
         options = handGearOptions(state, context).map(cardInstanceId => ({ kind: "CARD", cardInstanceId }));
@@ -158,7 +162,7 @@ export function validatePlayState(state: GameState, context: EngineContext) {
         return failure("INVALID_PLAY_PAYMENT", "Exact cost and unique selected sources must match the printed cost");
     if (c.phase === "PAYMENT") {
         const available = paymentSources(state, c.actorId, context).map(canonicalSerialize);
-        if (state.timing.step !== "PAYMENT_SELECTION" || source.zone.zone !== "HAND" || c.remainingCost <= 0 || c.effectIndex !== 0 || c.targetGigId || resolving.length || current || state.resolution.pending.length || forcedPaymentSources(state, c.actorId, context, c.remainingCost, c.selectedSources) || c.selectedSources.some(p => !available.includes(canonicalSerialize(p))))
+        if (state.timing.step !== "PAYMENT_SELECTION" || source.zone.zone !== (c.fromTrash ? "TRASH" : "HAND") || c.remainingCost <= 0 || c.effectIndex !== 0 || c.targetGigId || resolving.length || current || state.resolution.pending.length || forcedPaymentSources(state, c.actorId, context, c.remainingCost, c.selectedSources) || c.selectedSources.some(p => !available.includes(canonicalSerialize(p))))
             return failure("INVALID_PLAY_PAYMENT", "Payment must retain the revealed hand source and eligible unspent payment selections");
     } else if (c.phase === "EQUIP") {
         if (revision!.type !== "GEAR" || source.readiness !== "READY" || source.zone.zone !== "HAND" || c.remainingCost !== 0 || c.effectIndex !== 0 || c.abilityId || c.targetGigId || current || state.resolution.pending.length || resolving.length || state.timing.step !== "TARGET_SELECTION" || !legalEquipHosts(state, c.sourceId, context).length)

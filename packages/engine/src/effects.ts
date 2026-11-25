@@ -1,3 +1,4 @@
+import { beginTrashProgramPlay } from "./trash-program-play";
 import { resolveTrashGear } from "./trash-gear";
 import { applyMustAttack, mustAttackTargets } from "./must-attack";
 import { beginHandGearPlay } from "./hand-gear-play";
@@ -117,6 +118,7 @@ export class HandlerRegistry {
         }
         if (effect.kind === "MOVE_SOURCE_GEAR_TO_UNEQUIPPED_UNIT_THEN_READY") return beginGearMove(m, offerPlayChoice); // Batch V82.
         if (effect.kind === "PLAY_GEAR_FROM_HAND_FREE") return beginHandGearPlay(m, offerPlayChoice); // Batch V92.
+        if (effect.kind === "PLAY_TRASH_PROGRAM_THEN_BOTTOM_DECK") return beginTrashProgramPlay(m, offerPlayChoice); // Batch V94.
         if (effect.kind === "UNIT_CANNOT_ATTACK_UNTIL_YOUR_NEXT_TURN") { // Batch V83: any face-up field Unit; a lone Unit is forced and none does nothing.
             const targets = currentLockTargets(m.state, m.context);
             return targets.length > 1 ? offerPlayChoice(m) : targets.length === 1 ? applyAttackLock(m, targets[0], true) : success(null);
