@@ -92,8 +92,8 @@ engine_scenario tool and its prompt line; the header records ``engine_scenario: 
 and the matching hashes. Either flag, or both, may be off.
 
 Card demos (2026-11-25). With the preload on, it also plays each linked card once on a fixed engine board
-(``preload.card_demos``). ``--no-preload-demos`` leaves them out; the header then records
-``preload_demos: false``. A default run records nothing new.
+(``preload.card_demos``). Since prompt v11 they are off by default (they cost about 3 points per quiz seed);
+``--preload-demos`` turns them on and the header then records ``preload_demos: true``.
 
 The set is eval-only: never train on it.
 
@@ -274,8 +274,8 @@ def header_row(args, set_path: Path, items: list[dict], selected: list[dict]) ->
         header["pass_mark"] = pass_mark
     if args.preload and any("cards" in i for i in items):
         header["linked_cards"] = True  # absent otherwise, so other sets' headers are unchanged
-    if args.preload and not getattr(args, "preload_demos", True):
-        header["preload_demos"] = False  # absent by default, so a default run's header is unchanged
+    if args.preload and getattr(args, "preload_demos", False):
+        header["preload_demos"] = True  # absent by default, so a default run's header is unchanged
     engine_check, engine_scenario = getattr(args, "engine_check", True), getattr(args, "engine_scenario", True)
     if not (engine_check and engine_scenario):
         # Absent with the tools on (the default), so a default run's header is unchanged.
@@ -329,7 +329,7 @@ async def run_items(model, selected: list[dict], *, thinking: bool, max_tokens: 
                     preload_k: int = DEFAULT_PRELOAD_K, preload_chars: int = DEFAULT_PRELOAD_CHARS,
                     max_tool_calls: int = MAX_TOOL_CALLS, on_record=None, done: int = 0,
                     total: int | None = None, engine_check: bool = True,
-                    engine_scenario: bool = True, preload_demos: bool = True) -> list[dict]:
+                    engine_scenario: bool = True, preload_demos: bool = False) -> list[dict]:
     """Records for ``selected``, in order; ``on_record(record)`` runs as each one finishes.
 
     ``done`` and ``total`` only number the progress lines, so a resumed run counts on from where it stopped.
@@ -416,8 +416,8 @@ def main(argv: list[str] | None = None) -> int:
                         help="offer the engine_check tool and its prompt line (default on)")
     parser.add_argument("--engine-scenario", action=argparse.BooleanOptionalAction, default=True,
                         help="offer the engine_scenario tool and its prompt line (default on)")
-    parser.add_argument("--preload-demos", action=argparse.BooleanOptionalAction, default=True,
-                        help="with the preload, play each linked card once on a fixed engine board (default on)")
+    parser.add_argument("--preload-demos", action=argparse.BooleanOptionalAction, default=False,
+                        help="with the preload, play each linked card once on a fixed engine board (default off)")
     parser.add_argument("--preload", action=argparse.BooleanOptionalAction, default=DEFAULT_PRELOAD,
                         help="run search_rules and card linking before the model speaks (default on)")
     parser.add_argument("--preload-k", type=int, default=DEFAULT_PRELOAD_K, help="rules passages preloaded (1..20)")

@@ -1009,12 +1009,12 @@ def eval_item(statement: str) -> dict:
     return {"question": statement, "choices": copy.deepcopy(CHOICES)}
 
 
-def scorer_prompt(statement: str, cards: list[str] | None = None, demos: bool = True) -> Prompt:
+def scorer_prompt(statement: str, cards: list[str] | None = None, demos: bool = False) -> Prompt:
     """The messages and tool specs the scorer's first model step sends for ``statement`` (preload on, thinking on).
 
     ``cards`` are the item's linked card slugs: the scorer preloads exactly those with ``get_card`` (as it does
-    for a gold item with ``cards``); None keeps its usual card-name linking. ``demos`` False leaves out the
-    preload's card demos, as a set built before prompt v10 had none.
+    for a gold item with ``cards``); None keeps its usual card-name linking. ``demos`` True adds the
+    preload's card demos (off in the scorer by default since prompt v11).
     """
     item = eval_item(statement)
     model = _CaptureModel()

@@ -382,7 +382,7 @@ def card_demos(slugs: list[str], limit: int = MAX_DEMOS) -> list[AutoStep]:
 
 def preload(text: str, *, k: int = DEFAULT_PRELOAD_K, budget: int = DEFAULT_PRELOAD_CHARS,
             implied: tuple[str, ...] = IMPLIED_KINDS, cards: list[str] | None = None,
-            demos: bool = True, demo_budget: int = DEFAULT_DEMO_CHARS) -> list[AutoStep]:
+            demos: bool = False, demo_budget: int = DEFAULT_DEMO_CHARS) -> list[AutoStep]:
     """Run the automatic steps for ``text`` and fit their results into ``budget`` characters, in order.
 
     ``cards`` (slugs), when given, replaces the card-name linker: ``get_card`` runs on exactly those
@@ -395,7 +395,7 @@ def preload(text: str, *, k: int = DEFAULT_PRELOAD_K, budget: int = DEFAULT_PREL
     ``card_type``, to the sent cards' types), in that order, in what is left
     of the budget. ``implied=()`` turns the expansion off.
 
-    Last, with ``demos`` (the default), ``card_demos`` on the cards whose ``get_card`` was sent, in that order,
+    Last, with ``demos`` (off by default since prompt v11: they lowered quiz scores), ``card_demos`` on the cards whose ``get_card`` was sent, in that order,
     fitted into ``demo_budget`` characters of their own.
     """
     steps = [_run("search_rules", {"query": text.strip()[:SEARCH_QUERY_MAX], "k": k})]
