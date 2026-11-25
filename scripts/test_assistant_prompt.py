@@ -249,7 +249,7 @@ def test_system_prompt_v4_warns_from_the_snapshot_wording():
                    # v4: policy is answered from the Tournament Rules and cited; what neither covers is not covered.
                    "Tournament procedure, penalties, deck registration, event policy: use the Tournament Rules "
                    "(TR 3.4.2), cite them. Anything in neither is not covered.",
-                   "Snapshot 2026-10-29, TR 2026-10-28. Prompt assistant-chat-v10."):
+                   "Snapshot 2026-10-29, TR 2026-10-28. Prompt assistant-chat-v11."):
         assert needle in SYSTEM_PROMPT, needle
     assert "not in the snapshot" not in SYSTEM_PROMPT, "v3's 'policy is not in the snapshot' is gone"
     assert "rule:TR 3.4.2" in {d["doc_id"] for d in tools.rule_docs()}, "the prompt's example id exists"
@@ -306,7 +306,7 @@ def test_v7_addition_stays_under_its_budget():
     added = v7_addition()
     assert len(added) <= V7_ADDITION_MAX_CHARS, len(added)
     assert len(SYSTEM_PROMPT) == len(base_prompt()) + len(added) + len(v8_addition()) + len(v9_addition())
-    assert ASSISTANT_PROMPT_VERSION == "assistant-chat-v10" and "Prompt assistant-chat-v10." in SYSTEM_PROMPT
+    assert ASSISTANT_PROMPT_VERSION == "assistant-chat-v11" and "Prompt assistant-chat-v11." in SYSTEM_PROMPT
 
 
 def test_v8_engine_guidance_is_one_short_general_line():
@@ -374,17 +374,17 @@ def test_preload_searches_rules_and_links_named_cards():
     steps = linked_steps(result)
     implied = [s for s in auto_steps(result) if "implied" in s]
     demos = [s for s in auto_steps(result) if "demo" in s]
-    assert auto_steps(result) == steps + implied + demos, "implied rules, then card demos, after the search and cards"
+    assert auto_steps(result) == steps + implied, "implied rules after the search and cards"
     assert all(s["tool"] == "get_rule" for s in implied)
-    # Sketchy Ripper (a Unit) gets a demo; V, Corporate Exile is a Legend, which has none.
-    assert [(s["tool"], s["demo"]["card"]) for s in demos] == [("engine_scenario", "sketchy-ripper")], demos
+    # Card demos are off by default since v11 (test_card_demos_* turns them on).
+    assert demos == [], demos
     assert [(s["tool"], s["arguments"]) for s in steps] == [
         ("search_rules", {"query": "What happens when Sketchy Ripper attacks V, Corporate Exile?", "k": 5}),
         ("get_card", {"slug": "sketchy-ripper"}), ("get_card", {"slug": "v-corporate-exile"})]
     plain = 3 + len(implied)
     assert counter.runs[:plain] == ["search_rules", "get_card", "get_card"] + ["get_rule"] * len(implied), \
         "the links resolved without find_card"
-    assert set(counter.runs[plain:]) <= {"engine_scenario"}, "a demo reruns only its own scenario (a choice)"
+    assert counter.runs[plain:] == [], "no demo runs by default"
     assert steps[1]["link"] == {"span": "Sketchy Ripper", "slugs": ["sketchy-ripper"], "ambiguous": False}
     assert steps[2]["link"]["span"] == "V, Corporate Exile", "longest match first: not the bare V"
     assert all(s["sent"] and s["ok"] for s in steps + demos) and result.tool_calls == 0
@@ -394,7 +394,7 @@ def test_preload_searches_rules_and_links_named_cards():
     sent_implied = sum(1 for s in implied if s["sent"])
     assert [m["role"] for m in first] == ["system", "user", "assistant"] + ["tool"] * (3 + sent_implied + len(demos))
     assert [c["function"]["name"] for c in first[2]["tool_calls"]] == ["search_rules", "get_card", "get_card"] + \
-        ["get_rule"] * sent_implied + ["engine_scenario"]
+        ["get_rule"] * sent_implied
     sent = [json.loads(m["content"]) for m in first[3:]]
     assert sent[1]["result"]["card"]["slug"] == "sketchy-ripper" and "printings" not in sent[1]["result"]["card"]
     assert sent[1]["result"]["text_with_errata"] == tools.get_card("sketchy-ripper")["result"]["text_with_errata"]
@@ -425,7 +425,7 @@ def test_preload_off_runs_and_adds_nothing():
 
 def test_auto_steps_come_first_and_respect_the_budget():
     question = "Sketchy Ripper, V: Streetkid, Jackie Welles and Take Control: how does Blocker work?"
-    full, _ = turn(question)
+    full, _ = turn(question, preload_demos=True)
     steps = auto_steps(full)
     assert full.trace[:len(steps)] == steps and [s["step"] for s in steps] == list(range(1, len(steps) + 1))
     # Card demos have a budget of their own (preload.DEFAULT_DEMO_CHARS); every other step shares preload_chars.
@@ -659,18 +659,18 @@ def test_card_demos_play_each_linked_card_on_a_board_built_from_its_slug_alone()
 
 
 def test_card_demos_depend_on_the_linked_cards_not_the_question():
-    a = preload_module.preload("Does Corpo Security have Blocker?")
-    b = preload_module.preload("corpo security!!! what happens when I play it, explain")
+    a = preload_module.preload("Does Corpo Security have Blocker?", demos=True)
+    b = preload_module.preload("corpo security!!! what happens when I play it, explain", demos=True)
     da = [s for s in a if s.demo is not None]
     db = [s for s in b if s.demo is not None]
     assert [d.demo for d in da] == [d.demo for d in db] == [d.demo for d in da][:1] and da[0].sent
     assert da[0].content == db[0].content
     assert "Blocker" not in json.dumps(da[0].arguments), "the setup never carries the question's words"
-    off = preload_module.preload("Does Corpo Security have Blocker?", demos=False)
+    off = preload_module.preload("Does Corpo Security have Blocker?")  # off by default since v11
     assert not [s for s in off if s.demo is not None]
     assert [s.content for s in off] == [s.content for s in a if s.demo is None], "demos change nothing else"
     # The demo's own budget: a tiny one sends nothing but still traces the step.
-    tight = preload_module.preload("Does Corpo Security have Blocker?", demo_budget=100)
+    tight = preload_module.preload("Does Corpo Security have Blocker?", demos=True, demo_budget=100)
     (step,) = [s for s in tight if s.demo is not None]
     assert not step.sent and "not sent" in step.note
 

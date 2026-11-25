@@ -56,4 +56,11 @@ model on the wrong case.
 Generic per-card demos are a net loss for the 8B. Engine evidence would need to come from the question's own
 situation (what `engine_scenario` builds when called), and the model still never calls it on its own.
 
+## Decision
+
+Cody chose to turn demos off by default (2026-11-25). The code stays: `run_turn(preload_demos=True)` and
+`eval_assistant.py --preload-demos` turn them on, and the run header then records `preload_demos: true`. The prompt
+version moves to `assistant-chat-v11` (no prompt text change), so v10 records, which all ran with demos on by
+default, stay distinguishable. The retrieval score and the true/false training set never included demos.
+
 `data/gold/` and `eval/runs/` are unchanged.
