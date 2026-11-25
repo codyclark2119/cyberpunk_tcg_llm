@@ -624,6 +624,7 @@ def complete_setup(worker: EngineWorker, content: Mapping, setup: Any, *, seed: 
     open_seats = [i for i, p in enumerate(full["players"]) if not p.get("legends")]
     tries = {seat: legend_candidates(full["players"][seat], colours) for seat in open_seats}
     pick = {seat: 0 for seat in open_seats}
+    last: list = []
     for _ in range(MAX_LEGEND_TRIES):
         for seat in open_seats:
             full["players"][seat]["legends"] = [{"card": slug, "face": "DOWN", "readiness": "READY"}
@@ -640,6 +641,7 @@ def complete_setup(worker: EngineWorker, content: Mapping, setup: Any, *, seed: 
             if not deck or len(deck) != len(exc.errors):
                 raise ScenarioError("invalid_setup", f"the engine rejected the setup: {exc}",
                                     engine_errors=exc.errors) from exc
+            last = exc.errors
             for seat in open_seats:
                 if any(str(e.get("path")) == f"players[{seat}]" for e in deck):
                     pick[seat] += 1
@@ -648,9 +650,11 @@ def complete_setup(worker: EngineWorker, content: Mapping, setup: Any, *, seed: 
                                             f"deck (each Legend gives 2 RAM of its colour); use fewer colours or "
                                             f"cheaper cards for seat {seat}: {exc}",
                                             engine_errors=exc.errors) from exc
+    said = "; ".join(sorted({str(e.get("message")) for e in last if e.get("message")}))
     raise ScenarioError("invalid_setup", f"no filler Legends found in {MAX_LEGEND_TRIES} tries. Each Legend gives 2 RAM "
                         "of its colour and a seat has 3, so the cards may need more RAM than that; use fewer colours "
-                        "or cheaper cards, or list three Legends")
+                        "or cheaper cards, or list three Legends" + (f". The engine said: {said}" if said else ""),
+                        engine_errors=last)
 
 
 def run_scenario(worker: EngineWorker, content: Mapping, setup: Mapping, steps: Any,
@@ -765,7 +769,11 @@ def for_model(report: Mapping, filled: Mapping[int, list[str]]) -> dict:
     for st in report["steps"]:
         entry: dict[str, Any] = {"step": st["step"], "seat": st["seat"]}
         if st.get("applied"):
-            entry["applied"] = st["applied"]["label"]
+            # A choice is named by its option: the engine's label for some MODE options is generic ("Decrease by 1"
+            # for every mode of a modal Program, a known engine quirk), which would tell the model the wrong effect.
+            applied = st["applied"]
+            entry["applied"] = (f"chose {applied['option']}" if applied.get("choice_kind") and applied.get("option")
+                                else applied["label"])
         if isinstance(st.get("target"), Mapping):
             entry["target"] = st["target"].get("label") or st["target"].get("locked") or st["target"].get("note")
         if st.get("auto"):
@@ -803,3 +811,66 @@ def run_for_tool(setup: Any, steps: Any = (), *, app_root=REPO_ROOT, node: str =
         full, filled = complete_setup(worker, content, setup)
         report = run_scenario(worker, content, full, steps, engine=engine)
         return for_model(report, filled)
+
+
+# Card demos for the preload ------------------------------------------------------------------
+# Why: in the v8 and v9 quiz runs the 8B never called engine_check or engine_scenario on its own (0 calls in 477
+# items), so no answer ever rested on the engine. A demo is the preload's own scenario: for a card the question
+# names, the engine plays it once on a small fixed board, and the model reads what happened before it answers.
+# The board depends only on the card's slug (its type and colour), never on the question.
+
+# One vanilla Unit per colour (no keywords, abilities, restrictions or modifiers in the reviewed content); it
+# fills the board so that targeted effects have something to target.
+VANILLA_UNITS = {"BLUE": "psycho-squad", "GREEN": "emergency-atlus", "RED": "animals-wrecker",
+                 "YELLOW": "rockn-rockerboy"}
+DEMO_TYPES = ("UNIT", "PROGRAM", "GEAR")  # played from hand; Legends are Called, which needs its own board
+DEMO_OFFERS = 6
+DEMO_EDDIES = 10
+
+
+def demo_setup(card: Mapping) -> tuple[dict, list[dict], str] | None:
+    """(setup, steps, one-line description) for ``card`` (a reviewed content card), or None when it has no demo.
+
+    Seat 0 holds the card with 10 ready Eddies, a ready vanilla Unit, a vanilla card on top of its deck and one in
+    its trash (three copies, the Constructed limit), and a Gig; seat 1 has a spent vanilla Unit (a valid attack target), the same deck and trash, and a
+    Gig. The one step plays the card; a choice it opens is left open and reported.
+    """
+    if card.get("type") not in DEMO_TYPES or not card.get("colors"):
+        return None
+    filler = VANILLA_UNITS.get(card["colors"][0])
+    if filler is None:
+        return None
+    slug = card["id"]
+    if filler == slug:  # a filler's own demo: three more copies would break the Constructed limit
+        filler = next(v for c, v in sorted(VANILLA_UNITS.items()) if v != slug)
+    setup = {"activeSeat": 0, "players": [
+        {"field": [{"card": filler, "readiness": "READY"}], "hand": [slug], "deck": [filler],
+         "trash": [filler], "gigs": [{"die": "D4", "value": 2}], "eddies": {"ready": DEMO_EDDIES, "spent": 0}},
+        {"field": [{"card": filler, "readiness": "SPENT"}], "deck": [filler], "trash": [filler],
+         "gigs": [{"die": "D6", "value": 3}], "eddies": {"ready": 2, "spent": 0}}]}
+    text = (f"seat 0 to act: {slug} in hand, {DEMO_EDDIES} Eddies, ready {filler} in play, {filler} atop deck and in "
+            f"trash, D4 Gig 2; seat 1: spent {filler} in play, {filler} atop deck and in trash, D6 Gig 3; "
+            "face-down filler Legends")
+    return setup, [{"kind": "PLAY_CARD", "card": slug}], text
+
+
+def demo_brief(result: Mapping, card: str, text: str) -> dict:
+    """A tool result of ``run_for_tool`` cut to what a demo shows: the step, its changes and what comes next."""
+    out: dict[str, Any] = {"demo": card, "board": text,
+                           "note": "The game engine played this card on a fixed board: what it did there, not in the "
+                                   "question's situation (engine_scenario builds that)."}
+    steps = []
+    for st in result.get("steps") or []:
+        entry = {k: st[k] for k in ("seat", "applied", "target", "changes", "open_choice", "next_seat") if k in st}
+        auto = list(st.get("auto") or [])
+        paid = [a for a in auto if a.startswith("Pay with eddie")]
+        rest = [a for a in auto if not a.startswith("Pay with eddie")]
+        if paid or rest:
+            entry["auto"] = ([f"paid {len(paid)} Eddie(s)"] if paid else []) + rest
+        offers = st.get("offers") or {}
+        entry["offers"] = {"count": offers.get("count", 0), "actions": list(offers.get("actions") or [])[:DEMO_OFFERS]}
+        steps.append(entry)
+    out["steps"] = steps
+    if result.get("stopped"):
+        out["stopped"] = {k: result["stopped"][k] for k in ("at", "reason", "message") if k in result["stopped"]}
+    return out

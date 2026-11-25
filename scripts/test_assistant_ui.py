@@ -274,7 +274,11 @@ def test_preload_toggle_reaches_the_route_and_auto_steps_show_distinctly():
     auto = [s for s in on["trace"] if s.get("auto")]
     implied = [s for s in auto if "implied" in s]
     assert on["preload"] is True and on["autoToolCalls"] == len(auto) and [s["tool"] for s in auto] == [
-        "search_rules", "get_card"] + ["get_rule"] * len(implied)
+        "search_rules", "get_card"] + ["get_rule"] * len(implied) + ["engine_scenario"]
+    demo = auto[-1]
+    assert demo["demo"]["card"] == "sketchy-ripper" and demo["sent"] and demo["result"]["demo"] == "sketchy-ripper"
+    assert run_pure("stepLine(input)", demo).startswith("engine_scenario · ok · demo of sketchy-ripper · sent ")
+    assert run_pure("scenarioChipText(input)", demo["result"]).startswith("demo: Play Sketchy Ripper")
     assert implied and on["trace"][:len(auto)] == auto and [m["role"] for m in model.seen[0]][:4] == ["system", "user", "assistant",
                                                                                    "tool"]
     assert off["preload"] is False and off["autoToolCalls"] == 0 and [m["role"] for m in model.seen[1]] == [
@@ -349,7 +353,7 @@ def test_deck_context_is_structured_and_absent_without_a_deck():
     messages = build_messages([{"role": "user", "content": "earlier"}], "q", deck)
     assert [m["role"] for m in messages] == ["system", "user", "user"] and messages[-1]["content"] == "q"
     assert loaded_deck_from(messages) == deck and "deck argument" in messages[0]["content"]
-    assert ASSISTANT_PROMPT_VERSION == "assistant-chat-v9"
+    assert ASSISTANT_PROMPT_VERSION == "assistant-chat-v10"
 
 
 # Trace and sources -------------------------------------------------------------------------

@@ -671,7 +671,9 @@ def _check_lookup(row: dict, rows_by_id: dict, prompt_version: str | None = None
     assert target["tool_calls"] == messages[-3]["tool_calls"] and "Answer:" not in target["content"]
     assert target["content"].startswith("<think>\n") and target["content"].endswith("\n</think>\n\n")
     # the preload part is exactly the scorer's prompt for this statement
-    prompt = tf.scorer_prompt(row["statement"], row.get("cards") if row["kind"] != tf.TEMPLATE_KIND else None)
+    # a frozen set predates the preload's card demos (prompt v10), so its preload is the scorer's without them
+    prompt = tf.scorer_prompt(row["statement"], row.get("cards") if row["kind"] != tf.TEMPLATE_KIND else None,
+                              demos=not frozen)
     assert messages[1:-3] == prompt.messages[1:] if frozen else messages[:-3] == prompt.messages
 
 

@@ -92,6 +92,7 @@ function stepLine(step) {
   }
   const auto = step.auto ? (step.link ? "linked \u201c" + step.link.span + "\u201d · " : "") +
     (step.implied ? "implied (" + step.implied.via + " of " + step.implied.of + ") · " : "") +
+    (step.demo ? "demo of " + step.demo.card + " · " : "") +
     (step.sent ? "sent " + (step.contextChars || 0) + " chars · " : "not sent · ") : "";
   return (step.tool || "(no tool)") + " · " + (step.ok ? "ok" : (step.errorKind || "error")) + " · " + auto +
     (step.summary || "") + " · " + ms(step.elapsedMs);
@@ -236,7 +237,7 @@ function scenarioBadgeText(runs) {
 // A chip's label: the first step the engine applied, or what the run came to.
 function scenarioChipText(run) {
   const first = ((run && run.steps) || []).find((st) => st && st.applied);
-  return "scenario: " + (first ? first.applied : scenarioOutcomeText(run));
+  return (run && run.demo ? "demo: " : "scenario: ") + (first ? first.applied : scenarioOutcomeText(run));
 }
 // Example JSON for the tools form's object and array fields.
 // The page names no card (scripts/test_assistant_ui.py checks), so the slugs are placeholders.
@@ -600,11 +601,15 @@ function showEngineScenario(run) {
 function scenarioView(run) {
   const body = el("div", {class: "scenario"});
   const engine = run.engine || {};
-  body.appendChild(factsList({engine: (engine.version || "?") + " · " + String(engine.artifactHash || "?").slice(0, 12),
+  // A preload card demo (run.demo) carries its fixed board as one line and no start or final board.
+  body.appendChild(factsList({demo: run.demo, board: run.board,
+    engine: run.engine ? (engine.version || "?") + " · " + String(engine.artifactHash || "?").slice(0, 12) : null,
     "legends added": run.legends_added ? Object.entries(run.legends_added).map(([seat, slugs]) => seat + ": " + slugs.join(", ")) : null,
-    note: run.legends_note}));
-  body.appendChild(el("h3", {}, "Start"));
-  body.appendChild(scenarioBoard(run.start && run.start.board));
+    note: run.legends_note || run.note}));
+  if (run.start && run.start.board) {
+    body.appendChild(el("h3", {}, "Start"));
+    body.appendChild(scenarioBoard(run.start.board));
+  }
   const steps = Array.isArray(run.steps) ? run.steps : [];
   steps.forEach((st, i) => {
     const box = el("div", {class: "position yes"});
@@ -633,8 +638,10 @@ function scenarioView(run) {
     box.appendChild(factsList({offered: run.stopped.offers, matches: run.stopped.matches}));
     body.appendChild(box);
   }
-  body.appendChild(el("h3", {}, "Final"));
-  body.appendChild(scenarioBoard(run.final));
+  if (run.final) {
+    body.appendChild(el("h3", {}, "Final"));
+    body.appendChild(scenarioBoard(run.final));
+  }
   return body;
 }
 

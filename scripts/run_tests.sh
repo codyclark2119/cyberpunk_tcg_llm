@@ -74,7 +74,7 @@ py-assistant-loop    | quick | "$PY" scripts/test_assistant_loop.py            |
 py-assistant-ui      | quick | "$PY" scripts/test_assistant_ui.py              | line:PASS assistant UI: 31/31
 py-assistant-eval    | quick | "$PY" scripts/test_assistant_eval.py            | line:PASS assistant eval: 34/34
 py-assistant-retrieval | quick | "$PY" scripts/test_assistant_retrieval.py    | line:PASS assistant retrieval: 15/15
-py-assistant-prompt  | quick | "$PY" scripts/test_assistant_prompt.py          | line:PASS assistant prompt: 18/18
+py-assistant-prompt  | quick | "$PY" scripts/test_assistant_prompt.py          | line:PASS assistant prompt: 20/20
 py-tf-dataset        | quick | "$PY" scripts/test_tf_dataset.py               | line:PASS tf dataset: 40/40
 py-engine-tf-items   | quick | "$PY" scripts/test_engine_tf_items.py          | line:PASS engine tf items: 14/14
 py-engine-positions  | quick | "$PY" scripts/test_engine_positions.py         | line:PASS engine positions: 10/10

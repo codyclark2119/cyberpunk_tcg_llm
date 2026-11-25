@@ -98,7 +98,9 @@ from games.cyberpunk.prompts import RULES_VERSION, TOURNAMENT_RULES_VERSION
 # Demo positions) and ``ENGINE_GUIDANCE``, one line on reporting its verdict; v7's wording is unchanged.
 # v9 (2026-11-24): adds the ``engine_scenario`` tool (``engine_scenario.py``: the engine builds a described board and
 # plays the steps) and ``SCENARIO_GUIDANCE``, one line on when to use it; v8's wording is unchanged.
-ASSISTANT_PROMPT_VERSION = "assistant-chat-v9"
+# v10 (2026-11-25): no prompt text change; the preload adds card demos (``preload.card_demos``): the engine plays
+# each linked card once on a fixed board. The model made 0 engine tool calls in the v8 and v9 quiz runs.
+ASSISTANT_PROMPT_VERSION = "assistant-chat-v10"
 MAX_TOOL_CALLS = 6
 MAX_TOOL_CALLS_LIMIT = 16           # the most a run may allow (scripts/eval_assistant.py --max-tool-calls)
 MAX_TOKENS_LIMIT = 16384            # per model step; same as scripts/mlx_chat_worker.py (see the docstring)
@@ -555,7 +557,8 @@ async def run_turn(history: list[dict], user_message: str, model: ChatModel, *,
                    preload: bool = DEFAULT_PRELOAD, preload_text: str | None = None,
                    preload_k: int = DEFAULT_PRELOAD_K, preload_chars: int = DEFAULT_PRELOAD_CHARS,
                    preload_cards: list[str] | None = None, max_prompt_tokens: int | None = None,
-                   engine_check: bool = True, engine_scenario: bool = True) -> TurnResult:
+                   engine_check: bool = True, engine_scenario: bool = True,
+                   preload_demos: bool = True) -> TurnResult:
     """Run one user turn to an answer, an error or the tool-call cap. ``history`` is not modified.
 
     ``deck`` is the session's loaded deck (see ``deck_context``), or None.
@@ -567,7 +570,8 @@ async def run_turn(history: list[dict], user_message: str, model: ChatModel, *,
     model's ``prompt_token_limit(max_tokens)`` when it has one; see ``PromptGuard``).
     ``engine_check=False`` offers every tool but engine_check, drops its prompt line, and refuses a call
     to it as an unknown tool (the eval's ``--no-engine-check`` arm); ``engine_scenario=False`` does the same for
-    engine_scenario (``--no-engine-scenario``).
+    engine_scenario (``--no-engine-scenario``). ``preload_demos=False`` leaves the preload's card demos out
+    (``--no-preload-demos``).
     """
     started = time.monotonic()
     max_tokens = default_max_tokens(enable_thinking) if max_tokens is None else max_tokens
@@ -591,7 +595,7 @@ async def run_turn(history: list[dict], user_message: str, model: ChatModel, *,
 
     if preload:
         auto = run_preload(user_message if preload_text is None else preload_text, k=preload_k,
-                           budget=preload_chars, cards=preload_cards)
+                           budget=preload_chars, cards=preload_cards, demos=preload_demos)
         sent = [a for a in auto if a.sent]
         if sent:
             messages.append({"role": "assistant", "content": "", "tool_calls": [
@@ -608,6 +612,8 @@ async def run_turn(history: list[dict], user_message: str, model: ChatModel, *,
                      "result": result.get("result") if result.get("ok") else None, "elapsedMs": a.elapsed_ms}
             if a.implied is not None:  # an implied-rule step: what in the data connects it
                 entry["implied"] = a.implied
+            if a.demo is not None:  # a card demo: the card and the fixed board it was played on
+                entry["demo"] = a.demo
             add(entry)
 
     if max_prompt_tokens is None:

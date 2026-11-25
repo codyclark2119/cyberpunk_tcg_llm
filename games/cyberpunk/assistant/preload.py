@@ -27,6 +27,13 @@ search finds 9.3.1, whose sub-rule 9.3.1.1 says "Lagging Units can't attack.
 See Lag." and links to the Lag entry 11.3. These steps come last, in what is
 left of the budget, and are traced with ``implied``.
 
+Then, since 2026-11-25, a card demo (``engine_scenario.demo_setup``) for each card step that was sent, up to
+``MAX_DEMOS``: the engine plays that card once on a small fixed board and the step's changes, open choice and
+next offers go in as an ``engine_scenario`` result (``demo_brief``). The board depends only on the card's slug.
+In the v8 and v9 quiz runs the model never called an engine tool itself, so this is the only way an answer can
+rest on the engine. Demos come last, in their own budget (``DEFAULT_DEMO_CHARS``), so they never displace a
+rule or a card the preload sent before them, and are traced with ``demo``.
+
 Results are added in order (rules first, then cards in the order they appear)
 while they fit a character budget. A result first loses fields that carry no
 rules content (``printings``, ``text_markup``, image URLs) and, when still too
@@ -52,6 +59,9 @@ from games.cyberpunk.assistant.tools import _is_numbered, call_tool, cards, rule
 DEFAULT_PRELOAD_K = 5
 DEFAULT_PRELOAD_CHARS = 8000
 MAX_CARD_LINKS = 6
+MAX_DEMOS = 2            # engine_scenario card demos the preload may add
+MAX_DEMO_CHOICES = 3     # open choices a demo resolves by taking the first option the engine lists
+DEFAULT_DEMO_CHARS = 3500  # their own budget, on top of ``budget``, so the rules and cards sent are unchanged
 SEARCH_QUERY_MAX = 500  # search_rules' own maxLength
 DROP_KEYS = ("printings", "text_markup", "image_url")
 NEVER_TRIM = ("errata",)
@@ -282,6 +292,7 @@ class AutoStep:
     elapsed_ms: float
     link: dict | None = None
     implied: dict | None = None  # for an implied-rule step: why the data connects it (``implied_rules``)
+    demo: dict | None = None     # for a card demo: the card and the board (``card_demos``)
     content: str | None = None   # the tool message, when sent
     note: str | None = None      # what fitting changed, or why it was not sent
     sources: dict = field(default_factory=lambda: {k: [] for k in SOURCE_KEYS})
@@ -310,8 +321,68 @@ def _fit(steps: list[AutoStep], remaining: int) -> int:
     return remaining
 
 
+_DEMO_CACHE: dict[tuple[str, str], AutoStep | None] = {}
+
+
+def card_demos(slugs: list[str], limit: int = MAX_DEMOS) -> list[AutoStep]:
+    """An ``engine_scenario`` demo for each of ``slugs`` the engine admits and can play from hand, up to ``limit``.
+
+    The setup comes from ``engine_scenario.demo_setup`` (the card's type and colour only). A card outside the
+    reviewed content, a Legend, or a demo the tool refuses adds nothing; an engine fault is kept as a failed step
+    (traced, never sent). A demo depends only on the card and the engine, so each is computed once per engine
+    identity and reused (a fresh copy per call).
+    """
+    from games.cyberpunk.assistant import engine_scenario as es
+
+    try:
+        content, engine = es.reviewed_content()
+    except Exception:  # no engine here (node missing): the preload still runs without demos
+        return []
+    by_slug = {c["id"]: c for c in content["cards"]}
+    out = []
+    for slug in dict.fromkeys(slugs):
+        if len(out) >= limit:
+            break
+        key = (slug, str(engine.get("artifactHash")))
+        if key in _DEMO_CACHE:
+            if _DEMO_CACHE[key] is not None:
+                out.append(copy.deepcopy(_DEMO_CACHE[key]))
+            continue
+        planned = es.demo_setup(by_slug[slug]) if slug in by_slug else None
+        if planned is None:
+            _DEMO_CACHE[key] = None
+            continue
+        setup, steps, text = planned
+        step = _run("engine_scenario", {"setup": setup, "steps": steps})
+        # An open choice is resolved by its first listed option, so the demo shows the effect through to its end;
+        # the step names the option taken and the brief keeps the others.
+        for _ in range(MAX_DEMO_CHOICES):
+            body = step.result.get("result") if step.result.get("ok") else None
+            last = (body or {}).get("steps") or []
+            choice = last[-1].get("open_choice") if last and not body.get("stopped") else None
+            if not choice or not choice.get("options"):
+                break
+            more = _run("engine_scenario", {"setup": setup, "steps": [*step.arguments["steps"],
+                                                                     {"kind": "CHOOSE", "choice": choice["options"][0]}]})
+            if not more.result.get("ok") or more.result["result"].get("stopped"):
+                break
+            more.elapsed_ms += step.elapsed_ms
+            step = more
+        step.demo = {"card": slug, "board": text}
+        if step.result.get("ok"):
+            step.result = {**step.result, "result": es.demo_brief(step.result["result"], slug, text)}
+        elif step.result.get("error_kind") in ("invalid_setup", "invalid_steps"):
+            _DEMO_CACHE[key] = None
+            continue
+        if step.result.get("ok"):  # an engine fault is not cached: the next turn tries again
+            _DEMO_CACHE[key] = copy.deepcopy(step)
+        out.append(step)
+    return out
+
+
 def preload(text: str, *, k: int = DEFAULT_PRELOAD_K, budget: int = DEFAULT_PRELOAD_CHARS,
-            implied: tuple[str, ...] = IMPLIED_KINDS, cards: list[str] | None = None) -> list[AutoStep]:
+            implied: tuple[str, ...] = IMPLIED_KINDS, cards: list[str] | None = None,
+            demos: bool = True, demo_budget: int = DEFAULT_DEMO_CHARS) -> list[AutoStep]:
     """Run the automatic steps for ``text`` and fit their results into ``budget`` characters, in order.
 
     ``cards`` (slugs), when given, replaces the card-name linker: ``get_card`` runs on exactly those
@@ -323,6 +394,9 @@ def preload(text: str, *, k: int = DEFAULT_PRELOAD_K, budget: int = DEFAULT_PREL
     ``implied_rules`` connects to the search hits that were sent (and, with
     ``card_type``, to the sent cards' types), in that order, in what is left
     of the budget. ``implied=()`` turns the expansion off.
+
+    Last, with ``demos`` (the default), ``card_demos`` on the cards whose ``get_card`` was sent, in that order,
+    fitted into ``demo_budget`` characters of their own.
     """
     steps = [_run("search_rules", {"query": text.strip()[:SEARCH_QUERY_MAX], "k": k})]
     if cards is not None:  # the cards the item links, instead of the name linker
@@ -336,11 +410,16 @@ def preload(text: str, *, k: int = DEFAULT_PRELOAD_K, budget: int = DEFAULT_PREL
             else:
                 steps.append(_run("get_card", {"slug": link.slugs[0]}, info))
     remaining = _fit(steps, budget)
-    if not implied:
-        return steps
-    hits = [i for s in steps if s.tool == "search_rules" and s.sent for i in s.sources["rule_ids"]]
-    types = [s.result["result"]["card"]["card_type"] for s in steps if s.tool == "get_card" and s.sent]
-    extra = [_run("get_rule", {"rule_id": rule_id}, implied=why)
-             for rule_id, why in implied_rules(hits, types, kinds=implied)]
-    _fit(extra, remaining)
-    return steps + extra
+    extra: list[AutoStep] = []
+    if implied:
+        hits = [i for s in steps if s.tool == "search_rules" and s.sent for i in s.sources["rule_ids"]]
+        types = [s.result["result"]["card"]["card_type"] for s in steps if s.tool == "get_card" and s.sent]
+        extra = [_run("get_rule", {"rule_id": rule_id}, implied=why)
+                 for rule_id, why in implied_rules(hits, types, kinds=implied)]
+        _fit(extra, remaining)
+    if not demos:
+        return steps + extra
+    shown = [s.arguments["slug"] for s in steps if s.tool == "get_card" and s.sent]
+    shown_demos = card_demos(shown)
+    _fit(shown_demos, demo_budget)
+    return steps + extra + shown_demos
