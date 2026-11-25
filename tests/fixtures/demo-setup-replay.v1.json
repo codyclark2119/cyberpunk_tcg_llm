@@ -6,8 +6,8 @@
     "manifest": {
       "schemaVersion": 1,
       "engine": {
-        "version": "0.4.77-ready-attack-grant-v79",
-        "artifactHash": "7b7fcd37735fb0cbdbc9082758010d547900e905b78463c3845638d0309938ec"
+        "version": "0.4.81-attack-lock-v83",
+        "artifactHash": "055db1aedd79bd354b2277dd67be002a0a39cf51fe421fafb8279b991572e94e"
       },
       "ruleset": {
         "id": "beta",
@@ -162,7 +162,7 @@
         }
       ]
     },
-    "manifestHash": "f549e4614d1eb263ed6be543104d8851f36c672cdf6207f1e3809645d6cbb95a",
+    "manifestHash": "d8466126b1998b857ec12428c8d72d82e22f64d1a28e26d3c58631ab09de87c7",
     "ruleset": {
       "id": "beta",
       "version": "demo-overtime-1",
@@ -3326,9 +3326,9 @@
         "rulesetId": "beta",
         "rulesetVersion": "demo-overtime-1",
         "rulesetHash": "0cf3dcd40766cd4b699e16842a0b6a66d3b1ecdf9b678986bf7686139dc800ab",
-        "contentManifestHash": "f549e4614d1eb263ed6be543104d8851f36c672cdf6207f1e3809645d6cbb95a",
-        "engineVersion": "0.4.77-ready-attack-grant-v79",
-        "engineArtifactHash": "7b7fcd37735fb0cbdbc9082758010d547900e905b78463c3845638d0309938ec",
+        "contentManifestHash": "d8466126b1998b857ec12428c8d72d82e22f64d1a28e26d3c58631ab09de87c7",
+        "engineVersion": "0.4.81-attack-lock-v83",
+        "engineArtifactHash": "055db1aedd79bd354b2277dd67be002a0a39cf51fe421fafb8279b991572e94e",
         "cards": [
           {
             "cardId": "afterparty-at-lizzie-s",
@@ -4840,13 +4840,13 @@
     {
       "schemaVersion": 2,
       "positionId": "demo-setup-first-second",
-      "engineVersion": "0.4.77-ready-attack-grant-v79",
-      "engineArtifactHash": "7b7fcd37735fb0cbdbc9082758010d547900e905b78463c3845638d0309938ec",
+      "engineVersion": "0.4.81-attack-lock-v83",
+      "engineArtifactHash": "055db1aedd79bd354b2277dd67be002a0a39cf51fe421fafb8279b991572e94e",
       "manifest": {
         "schemaVersion": 1,
         "engine": {
-          "version": "0.4.77-ready-attack-grant-v79",
-          "artifactHash": "7b7fcd37735fb0cbdbc9082758010d547900e905b78463c3845638d0309938ec"
+          "version": "0.4.81-attack-lock-v83",
+          "artifactHash": "055db1aedd79bd354b2277dd67be002a0a39cf51fe421fafb8279b991572e94e"
         },
         "ruleset": {
           "id": "beta",
@@ -5001,7 +5001,7 @@
           }
         ]
       },
-      "contentManifestHash": "f549e4614d1eb263ed6be543104d8851f36c672cdf6207f1e3809645d6cbb95a",
+      "contentManifestHash": "d8466126b1998b857ec12428c8d72d82e22f64d1a28e26d3c58631ab09de87c7",
       "state": {
         "setup": {
           "stage": "FIRST_PLAYER",
@@ -5027,9 +5027,9 @@
           "rulesetId": "beta",
           "rulesetVersion": "demo-overtime-1",
           "rulesetHash": "0cf3dcd40766cd4b699e16842a0b6a66d3b1ecdf9b678986bf7686139dc800ab",
-          "contentManifestHash": "f549e4614d1eb263ed6be543104d8851f36c672cdf6207f1e3809645d6cbb95a",
-          "engineVersion": "0.4.77-ready-attack-grant-v79",
-          "engineArtifactHash": "7b7fcd37735fb0cbdbc9082758010d547900e905b78463c3845638d0309938ec",
+          "contentManifestHash": "d8466126b1998b857ec12428c8d72d82e22f64d1a28e26d3c58631ab09de87c7",
+          "engineVersion": "0.4.81-attack-lock-v83",
+          "engineArtifactHash": "055db1aedd79bd354b2277dd67be002a0a39cf51fe421fafb8279b991572e94e",
           "cards": [
             {
               "cardId": "afterparty-at-lizzie-s",
@@ -6502,7 +6502,7 @@
           "counter": 4
         }
       },
-      "stateHash": "35c4158812e708256b8c5c77b956090fbcc1a3803d1578d7818bfd13773f63ba",
+      "stateHash": "f9823190d12240a4e72d58352b0fddce3f8a03fb6df51013b4c9c1f0ccb06f1d",
       "observation": {
         "format": "DEMO_STARTER_V1",
         "firstPlayerRolls": [
@@ -6660,7 +6660,7 @@
           }
         }
       ],
-      "positionHash": "cef366622d0903bbc849f0ece4c5b288370adeb29bd30a32da497243075202d4",
+      "positionHash": "fbed3076c7c06328882e9510c6050a40667eaa08cb874d4456a11f9cfd2bd6d5",
       "provenance": {
         "generator": "manual-fixture",
         "revision": "1",
@@ -6923,8 +6923,8 @@
           }
         }
       ],
-      "stateHash": "c2270da8be0e3e42b55b0e3c143055dbd264a210251c0b0ffc0324a2c08ff957",
-      "positionHash": "18f0b64d870972c6a4f5e5acaa423f96c2861b5b9d2ece166046aa17dc17abb9",
+      "stateHash": "1f5c26e212ebd45b20565dca0174e82f394a7be0669009dead6a999cde4bc8e3",
+      "positionHash": "6ca0004faa0ee389f38366c351e78f763fb6237215f02858f9cec4972f7412b4",
       "observationHash": "43313a9211898ec9b90ee6ae098169b5e8bf73aa64ad666f1685af9fa62759c3",
       "step": "CUT_DECISION"
     },
@@ -7483,8 +7483,8 @@
           }
         }
       ],
-      "stateHash": "0d8f4297fd79c07453adec0dcb8c14326eb2134130dd2a26440d08ccf1943768",
-      "positionHash": "ec305e6c0bd6c4144351dd8c3a3d1ee365cadeb7e5ac754b1a1fc4e84fe62b44",
+      "stateHash": "5b03981cef4c98155fa7631b48dc72c6c501cde2c2316e891200f1a9fc149e32",
+      "positionHash": "688f7b8765653022bcc3862e3eeb7b5bb9f33ab89bc5859d6f090afe35514d6f",
       "observationHash": "15ef40c00f01bd6dd63371565dbf1c0d679b902ce6ddd17a260e82e89cf6111a",
       "step": "CUT_DECISION"
     },
@@ -8071,8 +8071,8 @@
           }
         }
       ],
-      "stateHash": "1684f5b5d1847646bcbebb288297417f0932b8e9c762d66f0532573f713d6074",
-      "positionHash": "6ddad506d7f94a60b30f8cd9bde58cde8cd1b9181dbf226bd8fa6281f31bcb72",
+      "stateHash": "858fafd846573015538273125a96aba34ba5e286507387f07edc1b3c50bbf8db",
+      "positionHash": "ed6f122e90bd93a46e43c390e1e0891c750ff24646c4b9859a4eca6fbe8d8829",
       "observationHash": "4d8953afed14c65b0e43f559f4f50604db621f4da31c621599436133e9df9b69",
       "step": "CUT_DECISION"
     },
@@ -8271,8 +8271,8 @@
           }
         }
       ],
-      "stateHash": "da7e0a7562cacf0a1e16ff6a7bc1be836db2dd0f3959751f62012868f279f019",
-      "positionHash": "2a4fac96524b4c6279209e0797ede87177543945b7d50a36172c1e858561b9f9",
+      "stateHash": "60ff4b4d43fd59400df436c5c9f93788f8c430cb49016a6f6d638a82bcfc1729",
+      "positionHash": "f36e79ece06d98a19f25b50ed91befde284b30a903471be5604cdb39e762caef",
       "observationHash": "0a7a78ff74152b15d88f68d9a7e9b9cdb9d699732af31655220773fd9885ccea",
       "step": "CUT_DECISION"
     },
@@ -8679,8 +8679,8 @@
           }
         }
       ],
-      "stateHash": "b0200c1eb54067b0aac57223962e39b6fd5f9906b1707c0246356ef47451844e",
-      "positionHash": "b1888c2454f6361fe662d3f233dc62603f6e81e941dfc1ffb771978a731b0426",
+      "stateHash": "f83309f503c9a751eb244d586e7db25da80753a4408a89ada9230631b695762e",
+      "positionHash": "5da1e856ec3c7561d9c1b36f102a0daf357a63bb75833913a8ab8ae4b810dfda",
       "observationHash": "b184c4c72106d6939aeaf883e3e91e8adbe078a1aa2601406dbb71d67793329d",
       "step": "MULLIGAN_DECISION"
     },
@@ -9293,8 +9293,8 @@
           }
         }
       ],
-      "stateHash": "aff67f1c6a60230fbfa090ad5c943c8145976c430085d8edb3694523a265180c",
-      "positionHash": "7932cc45bfc3a37c77f374810eae4b1b81a4599ee596bc0221738fcb282fd8cd",
+      "stateHash": "494615bebadb2fdcc03f1d99dec98d8d0ae1ae0ca10f35eeda2963fa38e27e4c",
+      "positionHash": "4950d0a9192dedd86431e0efb0a6806b26aed06b4a033c412e6099662457afe8",
       "observationHash": "03d2738c1341e07b35564c3760cbee360e129ae4f8f89ec8cad9fb6bc6de6e0d",
       "step": "MULLIGAN_DECISION"
     }
@@ -9324,9 +9324,9 @@
       "rulesetId": "beta",
       "rulesetVersion": "demo-overtime-1",
       "rulesetHash": "0cf3dcd40766cd4b699e16842a0b6a66d3b1ecdf9b678986bf7686139dc800ab",
-      "contentManifestHash": "f549e4614d1eb263ed6be543104d8851f36c672cdf6207f1e3809645d6cbb95a",
-      "engineVersion": "0.4.77-ready-attack-grant-v79",
-      "engineArtifactHash": "7b7fcd37735fb0cbdbc9082758010d547900e905b78463c3845638d0309938ec",
+      "contentManifestHash": "d8466126b1998b857ec12428c8d72d82e22f64d1a28e26d3c58631ab09de87c7",
+      "engineVersion": "0.4.81-attack-lock-v83",
+      "engineArtifactHash": "055db1aedd79bd354b2277dd67be002a0a39cf51fe421fafb8279b991572e94e",
       "cards": [
         {
           "cardId": "afterparty-at-lizzie-s",
@@ -10802,5 +10802,5 @@
       "counter": 86
     }
   },
-  "finalStateHash": "aff67f1c6a60230fbfa090ad5c943c8145976c430085d8edb3694523a265180c"
+  "finalStateHash": "494615bebadb2fdcc03f1d99dec98d8d0ae1ae0ca10f35eeda2963fa38e27e4c"
 }
