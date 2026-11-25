@@ -1,8 +1,8 @@
 {
  "report_version": "engine-scenario-checks-report-v1",
  "engine": {
-  "version": "0.4.72-gear-legend-v75",
-  "artifactHash": "8f909fe69962b5d423484a2d89f686917ac46fd0480ecf8426577b6e1514894c"
+  "version": "0.4.77-ready-attack-grant-v79",
+  "artifactHash": "7b7fcd37735fb0cbdbc9082758010d547900e905b78463c3845638d0309938ec"
  },
  "checks": {
   "path": "data/scenario/quiz-checks-v1.json",
@@ -17,11 +17,11 @@
  "summary": {
   "questions": 24,
   "question_ids_covered": 39,
-  "agrees": 21,
+  "agrees": 22,
   "disagrees": 0,
   "setup_failed": 0,
   "stopped": 0,
-  "engine_error": 1,
+  "engine_error": 0,
   "out_of_reach": 2
  },
  "results": [
@@ -285,8 +285,12 @@
    "also": [
     "official-8ce0c702"
    ],
-   "outcome": "engine_error",
-   "detail": "engine_error: the engine failed to observe or list actions for this position (the worker gave no structured error); this is an engine fault, not an answer"
+   "reading": true,
+   "engine_answer": "A",
+   "outcome": "agrees",
+   "evidence": [
+    "Attack with Adam Smasher: Ender of Legends"
+   ]
   },
   {
    "id": "cody-quiz2-35",
