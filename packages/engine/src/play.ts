@@ -2,6 +2,7 @@ import { chooseTrashProgram } from "./trash-program";
 import { applyGearPower, resolveGearDefeatDraw } from "./gear-legend";
 import { applyBlockerGrant } from "./blocker-grant";
 import { applyRockerGrant } from "./rocker-grant";
+import { moveGearAndReady, selectMovedGear } from "./gear-move";
 import { noteSpent } from "./spend-triggers";
 import { applyMustAttack } from "./must-attack";
 import { applyFightDefeatImmunity } from "./fight-immunity";
@@ -274,6 +275,11 @@ export function continuePlay(m: TurnMutation, index: number): Result<null> {
         s.resolution.choice = null;
         const applied = applyGearPower(m, option.cardInstanceId, false);
         return applied.ok ? completePlayEffect(m) : applied;
+    }
+    if (s.resolution.current?.effect.kind === "MOVE_SOURCE_GEAR_TO_UNEQUIPPED_UNIT_THEN_READY") { // Batch V82: the Gear, then its Unit.
+        if (option.kind !== "CARD") return failure("INVALID_GEAR_MOVE", "Choose a Gear on this Legend or an unequipped friendly Unit");
+        const held = c.movedGearId, moved = held ? moveGearAndReady(m, held, option.cardInstanceId) : selectMovedGear(m, option.cardInstanceId, offerPlayChoice);
+        return !moved.ok || s.resolution.playContinuation?.movedGearId ? moved : completePlayEffect(m);
     }
     if (s.resolution.current?.effect.kind === "FRIENDLY_UNIT_ATTACK_RIVAL_UNITS_THE_TURN_PLAYED") { // Batch V80.
         if (option.kind !== "CARD") return failure("INVALID_GRANT_TARGET", "Choose a current friendly field Unit");

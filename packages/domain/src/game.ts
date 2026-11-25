@@ -231,7 +231,9 @@ export const ResolutionStateSchema = z.strictObject({
         // in turn chooses whether to draw.
         discardedIds: z.array(CardInstanceIdSchema).optional(),
         // Batch V79: the friendly Unit chosen for both effects, while a Rival chooses which one it gets.
-        grantTargetId: CardInstanceIdSchema.optional() }).optional(),
+        grantTargetId: CardInstanceIdSchema.optional(),
+        // Batch V82: the Gear chosen to move off its Legend, while the unequipped friendly Unit is chosen.
+        movedGearId: CardInstanceIdSchema.optional() }).optional(),
     searchContinuation: z.strictObject({ looked: z.array(CardInstanceIdSchema), selected: z.array(CardInstanceIdSchema) }).optional(),
     callContinuation: z.strictObject({ actorId: PlayerIdSchema, legendId: CardInstanceIdSchema, remainingCost: z.number().int().nonnegative(), selectedSources: z.array(PaymentSourceSchema) }).optional(),
     current: PendingEffectSchema.nullable(), pending: z.array(PendingEffectSchema), discovered: z.array(PendingEffectSchema), choice: PendingChoiceSchema.nullable()
@@ -306,6 +308,7 @@ export const EventPayloadSchema = z.discriminatedUnion("kind", [
     // Batch V78: a player's choice whether to take an effect's optional draw.
     z.strictObject({ kind: z.literal("OPTIONAL_DRAW_CHOSEN"), effectId: HashSchema, playerId: PlayerIdSchema, draw: z.boolean() }),
     // Batch V79: "The next time this Unit attacks this turn, it may attack ready Units."
+    z.strictObject({ kind: z.literal("GEAR_MOVED"), effectId: HashSchema, gearInstanceId: CardInstanceIdSchema, fromHostId: CardInstanceIdSchema, toHostId: CardInstanceIdSchema }),
     z.strictObject({ kind: z.literal("GIG_REROLL_CHOSEN"), gigInstanceId: GigInstanceIdSchema, reroll: z.boolean() }),
     z.strictObject({ kind: z.literal("READY_UNIT_ATTACK_GRANTED"), effectId: HashSchema, targetId: CardInstanceIdSchema }),
     z.strictObject({ kind: z.literal("QUALIFYING_PLAY_RECORDED"), playerId: PlayerIdSchema, cardInstanceId: CardInstanceIdSchema, ordinal: z.number().int().positive() }),

@@ -243,6 +243,10 @@ export const EffectSchema = z.discriminatedUnion("kind", [
     z.strictObject({ kind: z.literal("FRIENDLY_UNIT_READY_ATTACK_AND_POWER"), power: z.literal(3), rivalChoosesOneIf: z.literal("STREET_CRED_LESS_THAN_RIVAL") }),
     // Batch V80: "A friendly Unit can attack spent rival Units the turn it's played. If it's a ROCKER Unit, also give it +2 power this turn."
     z.strictObject({ kind: z.literal("FRIENDLY_UNIT_ATTACK_RIVAL_UNITS_THE_TURN_PLAYED"), alsoPowerIfTag: z.literal("Rocker"), amount: z.literal(2) }),
+    // Batch V82: "Move a Gear from this Legend to an unequipped friendly Unit. If you do, ready that Unit."
+    z.strictObject({ kind: z.literal("MOVE_SOURCE_GEAR_TO_UNEQUIPPED_UNIT_THEN_READY") }),
+    // Batch V82: "if 5 or more friendly Units and/or Legends are equipped, ready them", checked as it resolves.
+    z.strictObject({ kind: z.literal("READY_EQUIPPED_FRIENDLY_IF_AT_LEAST"), minimum: z.literal(5) }),
     // Batch V76: "Trash the top card of your deck. If it's a Program, you may add it to your hand."
     z.strictObject({ kind: z.literal("TRASH_TOP_MAY_ADD_PROGRAM") }),
     // Batch V76: "Give a friendly Unit +1 power this turn" from a Legend's "When you play a BRAINDANCE Program" trigger.

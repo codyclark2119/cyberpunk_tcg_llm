@@ -1,4 +1,5 @@
 import { spentSubjects, takeQueuedSpends } from "./spend-triggers";
+import { readyEquippedFriendly } from "./gear-move";
 import { friendlyFaceUpLegends, friendlyFieldUnits } from "./fight-power-grant";
 import { processDeparture } from "./card-movement";
 import { isPlayedInBatch } from "./effect-play";
@@ -203,6 +204,8 @@ export function advanceTriggers(m: TurnMutation): Result<null> {
         if (!met || !taggedLegendReadyTargets(m.state, r.current.controllerId, e.tag, m.context).length) return completed(m);
         c.phase = "TARGET"; return offer(m);
     }
+    // Batch V82: "if 5 or more friendly Units and/or Legends are equipped, ready them", checked and applied here, with no choice.
+    if (e.kind === "READY_EQUIPPED_FRIENDLY_IF_AT_LEAST") { readyEquippedFriendly(m, e.minimum); return completed(m); }
     // Batch V38: "ready up to 3 friendly Units": each pick readies one Unit until 3 are chosen, none remain, or the controller is done.
     if (e.kind === "READY_UNITS_UP_TO") {
         if (!friendlyUnitReadyTargets(m.state, r.current.controllerId, m.context).length) return completed(m);

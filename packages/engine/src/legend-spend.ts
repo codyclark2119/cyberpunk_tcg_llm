@@ -3,6 +3,7 @@ import { friendlyGearTargets } from "./gear-legend";
 import { trashedTopProgram } from "./braindance-legend";
 import { blockerGrantTargets } from "./blocker-grant";
 import { rockerGrantTargets } from "./rocker-grant";
+import { sourceGear, unequippedUnits } from "./gear-move";
 import type { EngineContext } from "./state";
 import type { TurnMutation } from "./turn";
 import { cardRevision } from "./characteristics";
@@ -119,6 +120,10 @@ export function validateLegendActivationState(state: GameState, context: EngineC
             if (!trashCall || c.targetGigId || state.timing.step !== "TARGET_SELECTION" || !friendlyGearTargets(state, c.actorId, context).length) return failure("INVALID_LEGEND_ACTIVATION", "A Gear defeat pauses only for a defeat or decline with a friendly Gear");
         } else if (e.kind === "POWER_PER_EQUIPPED_GEAR_THIS_TURN") { // Batch V75.
             if (!quick || c.targetGigId || state.timing.step !== "TARGET_SELECTION" || friendlyFieldUnits(state, c.actorId, context).length < 2) return failure("INVALID_LEGEND_ACTIVATION", "A per-Gear power pauses only for a strategic friendly-Unit choice");
+        } else if (e.kind === "MOVE_SOURCE_GEAR_TO_UNEQUIPPED_UNIT_THEN_READY") { // Batch V82.
+            const gears = sourceGear(state, c.sourceId, context), units = unequippedUnits(state, c.actorId, context);
+            if (!spend || quick || c.targetGigId || state.timing.step !== "TARGET_SELECTION" || !units.length || (c.movedGearId ? !gears.includes(c.movedGearId) || units.length < 2 : gears.length < 2))
+                return failure("INVALID_LEGEND_ACTIVATION", "A Gear move pauses only for a strategic Gear or unequipped-Unit choice");
         } else if (e.kind === "FRIENDLY_UNIT_ATTACK_RIVAL_UNITS_THE_TURN_PLAYED") { // Batch V80.
             if (!spend || quick || c.targetGigId || state.timing.step !== "TARGET_SELECTION" || rockerGrantTargets(state, c.actorId, context).length < 2) return failure("INVALID_LEGEND_ACTIVATION", "A rival-Unit attack grant pauses only for a strategic friendly-Unit choice");
         } else if (e.kind === "GRANT_BLOCKER_THIS_TURN") { // Batch V74.
