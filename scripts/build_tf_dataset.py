@@ -1009,18 +1009,20 @@ def eval_item(statement: str) -> dict:
     return {"question": statement, "choices": copy.deepcopy(CHOICES)}
 
 
-def scorer_prompt(statement: str, cards: list[str] | None = None) -> Prompt:
+def scorer_prompt(statement: str, cards: list[str] | None = None, demos: bool = True) -> Prompt:
     """The messages and tool specs the scorer's first model step sends for ``statement`` (preload on, thinking on).
 
     ``cards`` are the item's linked card slugs: the scorer preloads exactly those with ``get_card`` (as it does
-    for a gold item with ``cards``); None keeps its usual card-name linking.
+    for a gold item with ``cards``); None keeps its usual card-name linking. ``demos`` False leaves out the
+    preload's card demos, as a set built before prompt v10 had none.
     """
     item = eval_item(statement)
     model = _CaptureModel()
     turn = asyncio.run(run_turn([], eval_assistant.question_message(item), model, max_tokens=EVAL_MAX_TOKENS,
                                 enable_thinking=True, preload=True, preload_text=eval_assistant.preload_text(item),
                                 preload_k=DEFAULT_PRELOAD_K, preload_chars=DEFAULT_PRELOAD_CHARS,
-                                max_tool_calls=MAX_TOOL_CALLS, preload_cards=cards))
+                                max_tool_calls=MAX_TOOL_CALLS, preload_cards=cards,
+                                preload_demos=demos))
     if model.messages is None or model.enable_thinking is not True:
         raise BuildError(f"the loop never reached the model for {statement!r}")
     sent = [s for s in turn.trace if s.get("auto") and s.get("sent")]

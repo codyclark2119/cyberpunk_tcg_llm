@@ -202,7 +202,8 @@ def score_preload(scored: list[tuple[dict, dict]], form: str) -> dict:
     for kinds in dict.fromkeys(PRELOAD_VARIANTS):
         per_item, hits, coverage, chars = [], 0, 0.0, 0
         for row, item in scored:
-            steps = preload_module.preload(query_for(item, form), implied=kinds)
+            # Card demos are engine evidence, not retrieval: this scores only the rules the search and expansion send.
+            steps = preload_module.preload(query_for(item, form), implied=kinds, demos=False)
             sent = [s for s in steps if s.sent]
             ids = list(dict.fromkeys(i for s in sent for i in s.sources["rule_ids"]))
             expected = row["expected_rule_ids"]
