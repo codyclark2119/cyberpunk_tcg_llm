@@ -1060,7 +1060,8 @@
                                 "FRIENDLY_CORPO_OR_GANGER_UNIT_STEALS",
                                 "FIRST_HOST_STEAL_PER_TURN",
                                 "FIRST_SPEND_PER_TURN",
-                                "FRIENDLY_BRAINDANCE_PROGRAM_PLAYED"
+                                "FRIENDLY_BRAINDANCE_PROGRAM_PLAYED",
+                                "FRIENDLY_EQUIPPED_UNIT_DEFEATED"
                               ]
                             },
                             "activation": {
@@ -4822,6 +4823,86 @@
                                     "required": [
                                       "kind",
                                       "cost"
+                                    ],
+                                    "additionalProperties": false
+                                  },
+                                  {
+                                    "type": "object",
+                                    "properties": {
+                                      "kind": {
+                                        "type": "string",
+                                        "const": "PLAY_GEAR_FROM_HAND_FREE"
+                                      },
+                                      "maxCost": {
+                                        "type": "number",
+                                        "const": 2
+                                      }
+                                    },
+                                    "required": [
+                                      "kind",
+                                      "maxCost"
+                                    ],
+                                    "additionalProperties": false
+                                  },
+                                  {
+                                    "type": "object",
+                                    "properties": {
+                                      "kind": {
+                                        "type": "string",
+                                        "const": "SEARCH_TOP_TRASH_ONE"
+                                      },
+                                      "count": {
+                                        "type": "number",
+                                        "const": 2
+                                      }
+                                    },
+                                    "required": [
+                                      "kind",
+                                      "count"
+                                    ],
+                                    "additionalProperties": false
+                                  },
+                                  {
+                                    "type": "object",
+                                    "properties": {
+                                      "kind": {
+                                        "type": "string",
+                                        "const": "TRASH_THEN_ADD_GEAR_MAY_PLAY_IF_GIG_COST"
+                                      },
+                                      "count": {
+                                        "type": "number",
+                                        "const": 4
+                                      }
+                                    },
+                                    "required": [
+                                      "kind",
+                                      "count"
+                                    ],
+                                    "additionalProperties": false
+                                  },
+                                  {
+                                    "type": "object",
+                                    "properties": {
+                                      "kind": {
+                                        "type": "string",
+                                        "const": "PLAY_TRASH_PROGRAM_THEN_BOTTOM_DECK"
+                                      }
+                                    },
+                                    "required": [
+                                      "kind"
+                                    ],
+                                    "additionalProperties": false
+                                  },
+                                  {
+                                    "type": "object",
+                                    "properties": {
+                                      "kind": {
+                                        "type": "string",
+                                        "const": "REVEAL_TOP_MAY_PLAY_FREE_ELSE_HAND"
+                                      }
+                                    },
+                                    "required": [
+                                      "kind"
                                     ],
                                     "additionalProperties": false
                                   },
@@ -9119,6 +9200,16 @@
                     "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$"
                   }
                 },
+                "equippedDefeats": {
+                  "minItems": 1,
+                  "type": "array",
+                  "items": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 200,
+                    "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$"
+                  }
+                },
                 "queuedCall": {
                   "type": "object",
                   "properties": {
@@ -12876,7 +12967,7 @@
                     },
                     "trashedIds": {
                       "minItems": 1,
-                      "maxItems": 3,
+                      "maxItems": 4,
                       "type": "array",
                       "items": {
                         "type": "string",
@@ -12916,6 +13007,44 @@
                       "minLength": 1,
                       "maxLength": 200,
                       "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$"
+                    },
+                    "handGearId": {
+                      "type": "string",
+                      "minLength": 1,
+                      "maxLength": 200,
+                      "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$"
+                    },
+                    "playedGearId": {
+                      "type": "string",
+                      "minLength": 1,
+                      "maxLength": 200,
+                      "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$"
+                    },
+                    "trashedGearId": {
+                      "type": "string",
+                      "minLength": 1,
+                      "maxLength": 200,
+                      "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$"
+                    },
+                    "trashProgramId": {
+                      "type": "string",
+                      "minLength": 1,
+                      "maxLength": 200,
+                      "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$"
+                    },
+                    "fromTrash": {
+                      "type": "boolean",
+                      "const": true
+                    },
+                    "deckPlayId": {
+                      "type": "string",
+                      "minLength": 1,
+                      "maxLength": 200,
+                      "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$"
+                    },
+                    "freeFromDeck": {
+                      "type": "boolean",
+                      "const": true
                     }
                   },
                   "required": [
@@ -15861,6 +15990,86 @@
                               "required": [
                                 "kind",
                                 "cost"
+                              ],
+                              "additionalProperties": false
+                            },
+                            {
+                              "type": "object",
+                              "properties": {
+                                "kind": {
+                                  "type": "string",
+                                  "const": "PLAY_GEAR_FROM_HAND_FREE"
+                                },
+                                "maxCost": {
+                                  "type": "number",
+                                  "const": 2
+                                }
+                              },
+                              "required": [
+                                "kind",
+                                "maxCost"
+                              ],
+                              "additionalProperties": false
+                            },
+                            {
+                              "type": "object",
+                              "properties": {
+                                "kind": {
+                                  "type": "string",
+                                  "const": "SEARCH_TOP_TRASH_ONE"
+                                },
+                                "count": {
+                                  "type": "number",
+                                  "const": 2
+                                }
+                              },
+                              "required": [
+                                "kind",
+                                "count"
+                              ],
+                              "additionalProperties": false
+                            },
+                            {
+                              "type": "object",
+                              "properties": {
+                                "kind": {
+                                  "type": "string",
+                                  "const": "TRASH_THEN_ADD_GEAR_MAY_PLAY_IF_GIG_COST"
+                                },
+                                "count": {
+                                  "type": "number",
+                                  "const": 4
+                                }
+                              },
+                              "required": [
+                                "kind",
+                                "count"
+                              ],
+                              "additionalProperties": false
+                            },
+                            {
+                              "type": "object",
+                              "properties": {
+                                "kind": {
+                                  "type": "string",
+                                  "const": "PLAY_TRASH_PROGRAM_THEN_BOTTOM_DECK"
+                                }
+                              },
+                              "required": [
+                                "kind"
+                              ],
+                              "additionalProperties": false
+                            },
+                            {
+                              "type": "object",
+                              "properties": {
+                                "kind": {
+                                  "type": "string",
+                                  "const": "REVEAL_TOP_MAY_PLAY_FREE_ELSE_HAND"
+                                }
+                              },
+                              "required": [
+                                "kind"
                               ],
                               "additionalProperties": false
                             },
@@ -20818,6 +21027,86 @@
                             "properties": {
                               "kind": {
                                 "type": "string",
+                                "const": "PLAY_GEAR_FROM_HAND_FREE"
+                              },
+                              "maxCost": {
+                                "type": "number",
+                                "const": 2
+                              }
+                            },
+                            "required": [
+                              "kind",
+                              "maxCost"
+                            ],
+                            "additionalProperties": false
+                          },
+                          {
+                            "type": "object",
+                            "properties": {
+                              "kind": {
+                                "type": "string",
+                                "const": "SEARCH_TOP_TRASH_ONE"
+                              },
+                              "count": {
+                                "type": "number",
+                                "const": 2
+                              }
+                            },
+                            "required": [
+                              "kind",
+                              "count"
+                            ],
+                            "additionalProperties": false
+                          },
+                          {
+                            "type": "object",
+                            "properties": {
+                              "kind": {
+                                "type": "string",
+                                "const": "TRASH_THEN_ADD_GEAR_MAY_PLAY_IF_GIG_COST"
+                              },
+                              "count": {
+                                "type": "number",
+                                "const": 4
+                              }
+                            },
+                            "required": [
+                              "kind",
+                              "count"
+                            ],
+                            "additionalProperties": false
+                          },
+                          {
+                            "type": "object",
+                            "properties": {
+                              "kind": {
+                                "type": "string",
+                                "const": "PLAY_TRASH_PROGRAM_THEN_BOTTOM_DECK"
+                              }
+                            },
+                            "required": [
+                              "kind"
+                            ],
+                            "additionalProperties": false
+                          },
+                          {
+                            "type": "object",
+                            "properties": {
+                              "kind": {
+                                "type": "string",
+                                "const": "REVEAL_TOP_MAY_PLAY_FREE_ELSE_HAND"
+                              }
+                            },
+                            "required": [
+                              "kind"
+                            ],
+                            "additionalProperties": false
+                          },
+                          {
+                            "type": "object",
+                            "properties": {
+                              "kind": {
+                                "type": "string",
                                 "const": "EQUIPPED_UNIT_POWER_PER_GEAR_THIS_TURN"
                               },
                               "amount": {
@@ -25763,6 +26052,86 @@
                             "properties": {
                               "kind": {
                                 "type": "string",
+                                "const": "PLAY_GEAR_FROM_HAND_FREE"
+                              },
+                              "maxCost": {
+                                "type": "number",
+                                "const": 2
+                              }
+                            },
+                            "required": [
+                              "kind",
+                              "maxCost"
+                            ],
+                            "additionalProperties": false
+                          },
+                          {
+                            "type": "object",
+                            "properties": {
+                              "kind": {
+                                "type": "string",
+                                "const": "SEARCH_TOP_TRASH_ONE"
+                              },
+                              "count": {
+                                "type": "number",
+                                "const": 2
+                              }
+                            },
+                            "required": [
+                              "kind",
+                              "count"
+                            ],
+                            "additionalProperties": false
+                          },
+                          {
+                            "type": "object",
+                            "properties": {
+                              "kind": {
+                                "type": "string",
+                                "const": "TRASH_THEN_ADD_GEAR_MAY_PLAY_IF_GIG_COST"
+                              },
+                              "count": {
+                                "type": "number",
+                                "const": 4
+                              }
+                            },
+                            "required": [
+                              "kind",
+                              "count"
+                            ],
+                            "additionalProperties": false
+                          },
+                          {
+                            "type": "object",
+                            "properties": {
+                              "kind": {
+                                "type": "string",
+                                "const": "PLAY_TRASH_PROGRAM_THEN_BOTTOM_DECK"
+                              }
+                            },
+                            "required": [
+                              "kind"
+                            ],
+                            "additionalProperties": false
+                          },
+                          {
+                            "type": "object",
+                            "properties": {
+                              "kind": {
+                                "type": "string",
+                                "const": "REVEAL_TOP_MAY_PLAY_FREE_ELSE_HAND"
+                              }
+                            },
+                            "required": [
+                              "kind"
+                            ],
+                            "additionalProperties": false
+                          },
+                          {
+                            "type": "object",
+                            "properties": {
+                              "kind": {
+                                "type": "string",
                                 "const": "EQUIPPED_UNIT_POWER_PER_GEAR_THIS_TURN"
                               },
                               "amount": {
@@ -29284,7 +29653,8 @@
                                 "FRIENDLY_CORPO_OR_GANGER_UNIT_STEALS",
                                 "FIRST_HOST_STEAL_PER_TURN",
                                 "FIRST_SPEND_PER_TURN",
-                                "FRIENDLY_BRAINDANCE_PROGRAM_PLAYED"
+                                "FRIENDLY_BRAINDANCE_PROGRAM_PLAYED",
+                                "FRIENDLY_EQUIPPED_UNIT_DEFEATED"
                               ]
                             },
                             "activation": {
@@ -33046,6 +33416,86 @@
                                     "required": [
                                       "kind",
                                       "cost"
+                                    ],
+                                    "additionalProperties": false
+                                  },
+                                  {
+                                    "type": "object",
+                                    "properties": {
+                                      "kind": {
+                                        "type": "string",
+                                        "const": "PLAY_GEAR_FROM_HAND_FREE"
+                                      },
+                                      "maxCost": {
+                                        "type": "number",
+                                        "const": 2
+                                      }
+                                    },
+                                    "required": [
+                                      "kind",
+                                      "maxCost"
+                                    ],
+                                    "additionalProperties": false
+                                  },
+                                  {
+                                    "type": "object",
+                                    "properties": {
+                                      "kind": {
+                                        "type": "string",
+                                        "const": "SEARCH_TOP_TRASH_ONE"
+                                      },
+                                      "count": {
+                                        "type": "number",
+                                        "const": 2
+                                      }
+                                    },
+                                    "required": [
+                                      "kind",
+                                      "count"
+                                    ],
+                                    "additionalProperties": false
+                                  },
+                                  {
+                                    "type": "object",
+                                    "properties": {
+                                      "kind": {
+                                        "type": "string",
+                                        "const": "TRASH_THEN_ADD_GEAR_MAY_PLAY_IF_GIG_COST"
+                                      },
+                                      "count": {
+                                        "type": "number",
+                                        "const": 4
+                                      }
+                                    },
+                                    "required": [
+                                      "kind",
+                                      "count"
+                                    ],
+                                    "additionalProperties": false
+                                  },
+                                  {
+                                    "type": "object",
+                                    "properties": {
+                                      "kind": {
+                                        "type": "string",
+                                        "const": "PLAY_TRASH_PROGRAM_THEN_BOTTOM_DECK"
+                                      }
+                                    },
+                                    "required": [
+                                      "kind"
+                                    ],
+                                    "additionalProperties": false
+                                  },
+                                  {
+                                    "type": "object",
+                                    "properties": {
+                                      "kind": {
+                                        "type": "string",
+                                        "const": "REVEAL_TOP_MAY_PLAY_FREE_ELSE_HAND"
+                                      }
+                                    },
+                                    "required": [
+                                      "kind"
                                     ],
                                     "additionalProperties": false
                                   },
@@ -36955,7 +37405,8 @@
                                 "FRIENDLY_CORPO_OR_GANGER_UNIT_STEALS",
                                 "FIRST_HOST_STEAL_PER_TURN",
                                 "FIRST_SPEND_PER_TURN",
-                                "FRIENDLY_BRAINDANCE_PROGRAM_PLAYED"
+                                "FRIENDLY_BRAINDANCE_PROGRAM_PLAYED",
+                                "FRIENDLY_EQUIPPED_UNIT_DEFEATED"
                               ]
                             },
                             "activation": {
@@ -40717,6 +41168,86 @@
                                     "required": [
                                       "kind",
                                       "cost"
+                                    ],
+                                    "additionalProperties": false
+                                  },
+                                  {
+                                    "type": "object",
+                                    "properties": {
+                                      "kind": {
+                                        "type": "string",
+                                        "const": "PLAY_GEAR_FROM_HAND_FREE"
+                                      },
+                                      "maxCost": {
+                                        "type": "number",
+                                        "const": 2
+                                      }
+                                    },
+                                    "required": [
+                                      "kind",
+                                      "maxCost"
+                                    ],
+                                    "additionalProperties": false
+                                  },
+                                  {
+                                    "type": "object",
+                                    "properties": {
+                                      "kind": {
+                                        "type": "string",
+                                        "const": "SEARCH_TOP_TRASH_ONE"
+                                      },
+                                      "count": {
+                                        "type": "number",
+                                        "const": 2
+                                      }
+                                    },
+                                    "required": [
+                                      "kind",
+                                      "count"
+                                    ],
+                                    "additionalProperties": false
+                                  },
+                                  {
+                                    "type": "object",
+                                    "properties": {
+                                      "kind": {
+                                        "type": "string",
+                                        "const": "TRASH_THEN_ADD_GEAR_MAY_PLAY_IF_GIG_COST"
+                                      },
+                                      "count": {
+                                        "type": "number",
+                                        "const": 4
+                                      }
+                                    },
+                                    "required": [
+                                      "kind",
+                                      "count"
+                                    ],
+                                    "additionalProperties": false
+                                  },
+                                  {
+                                    "type": "object",
+                                    "properties": {
+                                      "kind": {
+                                        "type": "string",
+                                        "const": "PLAY_TRASH_PROGRAM_THEN_BOTTOM_DECK"
+                                      }
+                                    },
+                                    "required": [
+                                      "kind"
+                                    ],
+                                    "additionalProperties": false
+                                  },
+                                  {
+                                    "type": "object",
+                                    "properties": {
+                                      "kind": {
+                                        "type": "string",
+                                        "const": "REVEAL_TOP_MAY_PLAY_FREE_ELSE_HAND"
+                                      }
+                                    },
+                                    "required": [
+                                      "kind"
                                     ],
                                     "additionalProperties": false
                                   },

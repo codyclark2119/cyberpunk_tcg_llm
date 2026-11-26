@@ -1,4 +1,5 @@
 import { revealedTop } from "./rival-reveal";
+import { revealedDeckTop } from "./deck-top-play";
 import { fieldLegendsEnabled } from "./field-legend-support";
 import { capabilitiesEnabled } from "./capability-support";
 import { currentCombatRestrictions } from "./combat-permissions";
@@ -73,8 +74,9 @@ export function observe(state: GameState, actor: PlayerId, context: EngineContex
     });
     const c = state.resolution.choice, combat = state.timing.combat;
     const combatObservation = combat.stage === "TRIGGER_RESOLUTION" || combat.stage === "ATTACK_TARGET_SELECTION" || combat.stage === "RIVAL_REACT" || combat.stage === "COMBAT_RESOLUTION_PENDING" || combat.stage === "GIG_STEAL_SELECTION" || combat.stage === "DEFEAT_ORDER_SELECTION" ? { combat: { stage: combat.stage, attackerId: combat.attackerId, attackingSeat: seat(combat.attackingPlayerId), defendingSeat: seat(state.match.playerOrder.find(id => id !== combat.attackingPlayerId)!), target: combat.target?.kind === "GIG_AREA" ? { kind: "GIG_AREA", playerSeat: seat(combat.target.playerId) } : combat.target }, ...(combat.stage === "COMBAT_RESOLUTION_PENDING" && !combatResolutionEnabled(context) ? { unsupportedCapabilities: ["UNSUPPORTED_COMBAT_RESOLUTION"] } : combat.stage === "RIVAL_REACT" && !reactEnabled(context) ? { unsupportedCapabilities: ["UNSUPPORTED_RIVAL_REACT"] } : {}) } : {};
-    // Batch V77: cards an effect revealed for a Rival's choice are public to every player while the choice is pending.
-    const revealed = state.resolution.current && state.resolution.choice ? revealedTop(state, state.resolution.current.controllerId) : [];
+    // Batch V77: cards an effect revealed for a Rival's choice are public to every player while the choice is pending (Batch V95: or a
+    // revealed top card, for its controller's choice).
+    const revealed = state.resolution.current && state.resolution.choice ? [...revealedTop(state, state.resolution.current.controllerId), ...revealedDeckTop(state)] : [];
     const inspectedCards = state.resolution.searchContinuation && state.timing.actingPlayer === actor ? state.resolution.searchContinuation.looked.map(id => ({ instanceId: id, content: { cardId: state.objects.cards[id].cardId, revision: state.objects.cards[id].revision } }))
         : revealed.length ? revealed.map(id => ({ instanceId: id, content: { cardId: state.objects.cards[id].cardId, revision: state.objects.cards[id].revision } })) : undefined;
     const triggerObservation = state.resolution.triggerContinuation ? {

@@ -1,4 +1,8 @@
+import { beginTrashProgramPlay } from "./trash-program-play";
+import { resolveDeckTop } from "./deck-top-play";
+import { resolveTrashGear } from "./trash-gear";
 import { applyMustAttack, mustAttackTargets } from "./must-attack";
+import { beginHandGearPlay } from "./hand-gear-play";
 import { applyGearPower, friendlyGearTargets, resolveGearDefeatDraw } from "./gear-legend";
 import { resolveTrashTop } from "./braindance-legend";
 import { resolveRivalReveal } from "./rival-reveal";
@@ -114,6 +118,9 @@ export class HandlerRegistry {
             return targets.length > 1 ? offerPlayChoice(m) : targets.length === 1 ? applyEquippedGearPower(m, targets[0], true) : success(null);
         }
         if (effect.kind === "MOVE_SOURCE_GEAR_TO_UNEQUIPPED_UNIT_THEN_READY") return beginGearMove(m, offerPlayChoice); // Batch V82.
+        if (effect.kind === "PLAY_GEAR_FROM_HAND_FREE") return beginHandGearPlay(m, offerPlayChoice); // Batch V92.
+        if (effect.kind === "PLAY_TRASH_PROGRAM_THEN_BOTTOM_DECK") return beginTrashProgramPlay(m, offerPlayChoice); // Batch V94.
+        if (effect.kind === "REVEAL_TOP_MAY_PLAY_FREE_ELSE_HAND") return resolveDeckTop(m, offerPlayChoice); // Batch V95.
         if (effect.kind === "UNIT_CANNOT_ATTACK_UNTIL_YOUR_NEXT_TURN") { // Batch V83: any face-up field Unit; a lone Unit is forced and none does nothing.
             const targets = currentLockTargets(m.state, m.context);
             return targets.length > 1 ? offerPlayChoice(m) : targets.length === 1 ? applyAttackLock(m, targets[0], true) : success(null);
@@ -153,6 +160,7 @@ export class HandlerRegistry {
         if (effect.kind === "SET_GIG_TO_ANOTHER_GIG_VALUE") return gigSetTargets(m.state).length ? offerPlayChoice(m) : success(null);
         if (effect.kind === "SEARCH_TAKE_ONE_PLUS_PER_MIN_GIG") return this.primitives.SEARCH_TAKE_ONE_PLUS_PER_MIN_GIG(m, effect);
         if (effect.kind === "TRASH_THEN_RETURN_UNIT") return resolveTrashThenReturn(m, effect, offerPlayChoice);
+        if (effect.kind === "TRASH_THEN_ADD_GEAR_MAY_PLAY_IF_GIG_COST") return resolveTrashGear(m, effect, offerPlayChoice); // Batch V93.
         if (effect.kind === "TRASH_THEN_ADD_TRASH_PROGRAM") return resolveTrashThenAddProgram(m, effect, offerPlayChoice); // Batch V73.
         if (effect.kind === "BOTTOM_DECK_UNIT") return resolveBottomDeck(m, offerPlayChoice);
         if (effect.kind === "SELL_TOP_OF_DECK") return resolveSellTopOfDeck(m); // Batch V45.

@@ -1,3 +1,4 @@
+import { equippedDefeatBindings } from "./hand-gear-play";
 import { paidPowerOptions } from "./paid-attack-power";
 import { armedEndTurnDefeatBindings } from "./end-turn-defeat";
 import { isFirstHostSteal } from "./gear-steal-support";
@@ -53,7 +54,8 @@ export function discoverTriggers(state: GameState, origin: TriggerOrigin, contex
     if (origin.kind === "FIGHT") return origin.result.winnerId ? effectiveTriggeredAbilities(state, origin.result.winnerId, context).filter(b => b.kind === "WHEN_FIGHT_WON" && fightWinGuardAllows(state, b.sourceId, b.subjectId, b.abilityId, context)) : []; // Batch V52: first win only.
     if (origin.kind === "DEFEAT") return [...origin.defeated.flatMap(d => effectiveTriggeredAbilities(state, d.targetId, context).filter(b => b.kind === "WHEN_DEFEATED")), ...(origin.fight?.outcomes ?? []).map(fightOutcomeBinding),
         // Batch V50: "The first time an ARASAKA Unit is defeated each turn": each field observer of either player, the defeated included.
-        ...(origin.defeated.some(d => d.targetId === state.turnHistory?.firstArasakaDefeat) ? state.match.playerOrder.flatMap(p => [...state.players[p].zones.BATTLEFIELD].sort()).flatMap(id => effectiveTriggeredAbilities(state, id, context).filter(b => b.kind === "WHEN_UNIT_DEFEATED" && b.sourceId === b.subjectId)) : [])]; // Capture before movement; enqueue after.
+        ...(origin.defeated.some(d => d.targetId === state.turnHistory?.firstArasakaDefeat) ? state.match.playerOrder.flatMap(p => [...state.players[p].zones.BATTLEFIELD].sort()).flatMap(id => effectiveTriggeredAbilities(state, id, context).filter(b => b.kind === "WHEN_UNIT_DEFEATED" && b.sourceId === b.subjectId)) : []),
+        ...equippedDefeatBindings(state, origin.defeated, context)]; // Capture before movement; enqueue after. Batch V92: each friendly equipped defeat's Legend observers.
     // Batch V17: "When this Unit uses [Blocker]" belongs to the blocking Unit only (9.11).
     // Batch V74: "When a friendly Unit uses {Blocker}" belongs to each face-up friendly source of the blocking Unit's controller.
     if (origin.kind === "BLOCK") {
@@ -180,7 +182,9 @@ export function triggerChoice(state: GameState, context: EngineContext): Pending
     else if (c.phase === "TARGET" && current?.effect.kind === "CHOOSE_TYPE_REVEAL_TOP_ADD_AND_READY_EDDIE") { kind = "MODE"; options = REVEAL_TYPES.map(mode => ({ kind: "MODE", mode })); }
     else if (c.phase === "TARGET") {
         kind = "TARGET";
-        options = current?.effect.kind === "SEARCH_TOP_MAY_TRASH" // Batch V70: keep it on top, or trash it.
+        options = current?.effect.kind === "SEARCH_TOP_TRASH_ONE" // Batch V92: trash one of the searched cards.
+            ? (state.resolution.searchContinuation?.looked ?? []).map(cardInstanceId => ({ kind: "CARD" as const, cardInstanceId }))
+            : current?.effect.kind === "SEARCH_TOP_MAY_TRASH" // Batch V70: keep it on top, or trash it.
             ? [{ kind: "MODE", mode: "DONE" }, ...(state.resolution.searchContinuation?.looked ?? []).map(cardInstanceId => ({ kind: "CARD" as const, cardInstanceId }))]
             : current?.effect.kind === "SEARCH_GEAR" || current?.effect.kind === "SEARCH_COST_MATCHING_GIGS"
             ? [{ kind: "MODE", mode: "DONE" }, ...searchTargets(state, context).filter(id => !state.resolution.searchContinuation?.selected.includes(id)).map(cardInstanceId => ({ kind: "CARD" as const, cardInstanceId }))]

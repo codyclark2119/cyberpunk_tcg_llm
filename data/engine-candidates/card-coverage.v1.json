@@ -9,40 +9,22 @@
   },
   "totals": {
     "cards": 151,
-    "admitted": 141,
-    "notAdmitted": 10,
+    "admitted": 145,
+    "notAdmitted": 6,
     "notAdmittedOnlyCoveredFamilies": 0,
     "byAdmission": {
-      "NOT_ADMITTED": 10,
-      "SOURCE_MATCH": 141
+      "NOT_ADMITTED": 6,
+      "SOURCE_MATCH": 145
     }
   },
   "families": [
-    {
-      "family": "PLAY_BY_EFFECT",
-      "status": "MISSING",
-      "summary": "Play a card by an effect: from hand, trash or deck top, for free or for its cost, with after-play riders.",
-      "notes": "",
-      "cardCount": 9,
-      "notAdmittedCount": 6,
-      "soleBlockerCount": 0
-    },
-    {
-      "family": "SPEND_ABILITY",
-      "status": "PARTIAL",
-      "summary": "Activated abilities with a [Spend] cost (and optional Eddie cost) on Legends, Units or Gear.",
-      "notes": "Admitted only for Kerry: The Last Rockerboy (a Unit). Face-up Legend [Spend] abilities and Gear [Spend] abilities are not.",
-      "cardCount": 17,
-      "notAdmittedCount": 4,
-      "soleBlockerCount": 0
-    },
     {
       "family": "CONDITION_BOARD",
       "status": "PARTIAL",
       "summary": "Generic target filters and board conditions: classification, cost, power, ready/spent, equipped, face-up, named, lowest power.",
       "notes": "Documented as unsupported: generic condition/filter language. Each admitted filter is a literal.",
       "cardCount": 34,
-      "notAdmittedCount": 3,
+      "notAdmittedCount": 2,
       "soleBlockerCount": 0
     },
     {
@@ -51,25 +33,7 @@
       "summary": "Conditions and filters on Gig values: min/max, value-pairs, even/odd, 8+, die type, counts compared with a Rival.",
       "notes": "Conditions only, each a fixed shape.",
       "cardCount": 40,
-      "notAdmittedCount": 3,
-      "soleBlockerCount": 0
-    },
-    {
-      "family": "DECK_SEARCH_REVEAL",
-      "status": "PARTIAL",
-      "summary": "Top-of-deck manipulation: search/look/reveal top N, trash from the top (Trash N), bottom-deck the rest.",
-      "notes": "SEARCH_GEAR (count<=5, Gear with max cost, take<=2) only.",
-      "cardCount": 15,
-      "notAdmittedCount": 3,
-      "soleBlockerCount": 0
-    },
-    {
-      "family": "GEAR_EQUIP",
-      "status": "PARTIAL",
-      "summary": "Equip a Gear to a friendly Unit or face-up Legend; Gear power adds to its host.",
-      "notes": "Equip onto Units is supported for the admitted Gear. Gear on a Legend host in combat (a Go Solo Legend) is unsupported.",
-      "cardCount": 22,
-      "notAdmittedCount": 3,
+      "notAdmittedCount": 2,
       "soleBlockerCount": 0
     },
     {
@@ -82,11 +46,11 @@
       "soleBlockerCount": 0
     },
     {
-      "family": "KEYWORD_QUICK",
-      "status": "PARTIAL",
-      "summary": "[Quick] timing: Programs and activated abilities usable in the react window.",
-      "notes": "Quick Programs are supported for Floor It, Reboot Optics and Detonate. Quick activated [Spend] abilities on Legends, Units and Gear are not offered in any react window yet.",
-      "cardCount": 12,
+      "family": "PLAY_BY_EFFECT",
+      "status": "MISSING",
+      "summary": "Play a card by an effect: from hand, trash or deck top, for free or for its cost, with after-play riders.",
+      "notes": "",
+      "cardCount": 9,
       "notAdmittedCount": 2,
       "soleBlockerCount": 0
     },
@@ -96,15 +60,6 @@
       "summary": "'If X would ..., instead ...' replacement effects.",
       "notes": "",
       "cardCount": 3,
-      "notAdmittedCount": 2,
-      "soleBlockerCount": 0
-    },
-    {
-      "family": "UNIT_ZONE_MOVE",
-      "status": "MISSING",
-      "summary": "Move a Unit off the field other than defeat: bottom-deck it or return it to hand.",
-      "notes": "MOVE_CARD is schema-only with no handler.",
-      "cardCount": 10,
       "notAdmittedCount": 2,
       "soleBlockerCount": 0
     },
@@ -136,6 +91,15 @@
       "soleBlockerCount": 0
     },
     {
+      "family": "GEAR_EQUIP",
+      "status": "PARTIAL",
+      "summary": "Equip a Gear to a friendly Unit or face-up Legend; Gear power adds to its host.",
+      "notes": "Equip onto Units is supported for the admitted Gear. Gear on a Legend host in combat (a Go Solo Legend) is unsupported.",
+      "cardCount": 22,
+      "notAdmittedCount": 1,
+      "soleBlockerCount": 0
+    },
+    {
       "family": "GO_SOLO",
       "status": "PARTIAL",
       "summary": "[Go Solo]: play a Legend as a ready Unit that can attack this turn and is removed when it leaves the field.",
@@ -154,6 +118,15 @@
       "soleBlockerCount": 0
     },
     {
+      "family": "KEYWORD_QUICK",
+      "status": "PARTIAL",
+      "summary": "[Quick] timing: Programs and activated abilities usable in the react window.",
+      "notes": "Quick Programs are supported for Floor It, Reboot Optics and Detonate. Quick activated [Spend] abilities on Legends, Units and Gear are not offered in any react window yet.",
+      "cardCount": 12,
+      "notAdmittedCount": 1,
+      "soleBlockerCount": 0
+    },
+    {
       "family": "PROMO_NO_TEXT",
       "status": "OUT_OF_SCOPE",
       "summary": "Source record with no rules text, cost or RAM: not a playable card in this snapshot.",
@@ -163,29 +136,20 @@
       "soleBlockerCount": 1
     },
     {
+      "family": "SPEND_ABILITY",
+      "status": "PARTIAL",
+      "summary": "Activated abilities with a [Spend] cost (and optional Eddie cost) on Legends, Units or Gear.",
+      "notes": "Admitted only for Kerry: The Last Rockerboy (a Unit). Face-up Legend [Spend] abilities and Gear [Spend] abilities are not.",
+      "cardCount": 17,
+      "notAdmittedCount": 1,
+      "soleBlockerCount": 0
+    },
+    {
       "family": "STEAL_CONTROL",
       "status": "MISSING",
       "summary": "Gig control outside the ordinary attack steal: swap, extra steal, steal fewer, steal prevention.",
       "notes": "Documented as unsupported (control transfer / steal).",
       "cardCount": 8,
-      "notAdmittedCount": 1,
-      "soleBlockerCount": 0
-    },
-    {
-      "family": "TRASH_RECURSION",
-      "status": "MISSING",
-      "summary": "Return a card from the trash (or from cards just trashed) to hand.",
-      "notes": "",
-      "cardCount": 7,
-      "notAdmittedCount": 1,
-      "soleBlockerCount": 0
-    },
-    {
-      "family": "TRIGGER_OTHER_EVENT",
-      "status": "MISSING",
-      "summary": "Other event triggers: another friendly Unit defeated, a Rival adjusting or swapping friendly Gigs.",
-      "notes": "",
-      "cardCount": 3,
       "notAdmittedCount": 1,
       "soleBlockerCount": 0
     },
@@ -217,6 +181,15 @@
       "soleBlockerCount": 0
     },
     {
+      "family": "UNIT_ZONE_MOVE",
+      "status": "MISSING",
+      "summary": "Move a Unit off the field other than defeat: bottom-deck it or return it to hand.",
+      "notes": "MOVE_CARD is schema-only with no handler.",
+      "cardCount": 10,
+      "notAdmittedCount": 1,
+      "soleBlockerCount": 0
+    },
+    {
       "family": "ATTACK_PERMISSION",
       "status": "PARTIAL",
       "summary": "Who may attack what and when: can't attack, may attack ready/spent Units, must attack, can't be blocked.",
@@ -231,6 +204,15 @@
       "summary": "Conditions on Street Cred.",
       "notes": "Nearly complete as conditions; gating an effect mode on them is not.",
       "cardCount": 13,
+      "notAdmittedCount": 0,
+      "soleBlockerCount": 0
+    },
+    {
+      "family": "DECK_SEARCH_REVEAL",
+      "status": "PARTIAL",
+      "summary": "Top-of-deck manipulation: search/look/reveal top N, trash from the top (Trash N), bottom-deck the rest.",
+      "notes": "SEARCH_GEAR (count<=5, Gear with max cost, take<=2) only.",
+      "cardCount": 15,
       "notAdmittedCount": 0,
       "soleBlockerCount": 0
     },
@@ -370,6 +352,15 @@
       "soleBlockerCount": 0
     },
     {
+      "family": "TRASH_RECURSION",
+      "status": "MISSING",
+      "summary": "Return a card from the trash (or from cards just trashed) to hand.",
+      "notes": "",
+      "cardCount": 7,
+      "notAdmittedCount": 0,
+      "soleBlockerCount": 0
+    },
+    {
       "family": "TRIGGER_ATTACK",
       "status": "PARTIAL",
       "summary": "[Attack] abilities and 'when a Unit attacks' triggers.",
@@ -429,6 +420,15 @@
       "summary": "Triggers on winning or losing a fight, or winning by a margin.",
       "notes": "Trigger WHEN_FIGHT_WON (Satori). Losing a fight and win margins are missing.",
       "cardCount": 5,
+      "notAdmittedCount": 0,
+      "soleBlockerCount": 0
+    },
+    {
+      "family": "TRIGGER_OTHER_EVENT",
+      "status": "MISSING",
+      "summary": "Other event triggers: another friendly Unit defeated, a Rival adjusting or swapping friendly Gigs.",
+      "notes": "",
+      "cardCount": 3,
       "notAdmittedCount": 0,
       "soleBlockerCount": 0
     },
@@ -608,18 +608,14 @@
       "colors": [
         "BLUE"
       ],
-      "admission": "NOT_ADMITTED",
-      "revision": null,
+      "admission": "SOURCE_MATCH",
+      "revision": 1,
       "families": [
         "PLAY_BY_EFFECT",
         "SPEND_ABILITY",
         "UNIT_ZONE_MOVE"
       ],
-      "blockingFamilies": [
-        "PLAY_BY_EFFECT",
-        "SPEND_ABILITY",
-        "UNIT_ZONE_MOVE"
-      ],
+      "blockingFamilies": [],
       "note": "Plays a Program from trash at its cost, then bottom-decks it."
     },
     {
@@ -1495,18 +1491,14 @@
       "colors": [
         "BLUE"
       ],
-      "admission": "NOT_ADMITTED",
-      "revision": null,
+      "admission": "SOURCE_MATCH",
+      "revision": 1,
       "families": [
         "DECK_SEARCH_REVEAL",
         "PLAY_BY_EFFECT",
         "SPEND_ABILITY"
       ],
-      "blockingFamilies": [
-        "DECK_SEARCH_REVEAL",
-        "PLAY_BY_EFFECT",
-        "SPEND_ABILITY"
-      ],
+      "blockingFamilies": [],
       "note": "Erratum 04 changes the artist credit only."
     },
     {
@@ -2323,8 +2315,8 @@
       "colors": [
         "YELLOW"
       ],
-      "admission": "NOT_ADMITTED",
-      "revision": null,
+      "admission": "SOURCE_MATCH",
+      "revision": 1,
       "families": [
         "CONDITION_BOARD",
         "DECK_SEARCH_REVEAL",
@@ -2334,15 +2326,7 @@
         "SPEND_ABILITY",
         "TRIGGER_OTHER_EVENT"
       ],
-      "blockingFamilies": [
-        "CONDITION_BOARD",
-        "DECK_SEARCH_REVEAL",
-        "GEAR_EQUIP",
-        "KEYWORD_QUICK",
-        "PLAY_BY_EFFECT",
-        "SPEND_ABILITY",
-        "TRIGGER_OTHER_EVENT"
-      ],
+      "blockingFamilies": [],
       "note": null
     },
     {
@@ -2734,8 +2718,8 @@
       "colors": [
         "YELLOW"
       ],
-      "admission": "NOT_ADMITTED",
-      "revision": null,
+      "admission": "SOURCE_MATCH",
+      "revision": 1,
       "families": [
         "CONDITION_GIG",
         "DECK_SEARCH_REVEAL",
@@ -2743,13 +2727,7 @@
         "PLAY_BY_EFFECT",
         "TRASH_RECURSION"
       ],
-      "blockingFamilies": [
-        "CONDITION_GIG",
-        "DECK_SEARCH_REVEAL",
-        "GEAR_EQUIP",
-        "PLAY_BY_EFFECT",
-        "TRASH_RECURSION"
-      ],
+      "blockingFamilies": [],
       "note": null
     },
     {

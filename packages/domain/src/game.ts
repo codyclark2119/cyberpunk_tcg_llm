@@ -145,6 +145,8 @@ export const TurnHistorySchema = z.strictObject({
     endTurnDefeats: z.array(EndTurnDefeatSchema).min(1).optional(),
     // Batch V72: cards with a "the first time this Unit is spent each turn" trigger already spent this turn.
     firstSpends: z.array(CardInstanceIdSchema).min(1).optional(),
+    // Batch V92: the Units defeated this turn while equipped, recorded before they moved.
+    equippedDefeats: z.array(CardInstanceIdSchema).min(1).optional(),
     // Batch V84: a Legend Called for free by an effect, whose {Call} ability resolves once the action's trigger batches are done (Batch
     // V86: or its attack has ended); `started` while that ability resolves, which may be the non-active player's.
     queuedCall: z.strictObject({ playerId: PlayerIdSchema, legendId: CardInstanceIdSchema, started: z.literal(true).optional() }).optional(),
@@ -254,7 +256,7 @@ export const ResolutionStateSchema = z.strictObject({
     legendEntryContinuation: z.strictObject({ mode: z.enum(["GO_SOLO", "PLAY"]), actorId: PlayerIdSchema, sourceId: CardInstanceIdSchema, remainingCost: z.number().int().positive(), selectedSources: z.array(PaymentSourceSchema) }).optional(),
     playContinuation: z.strictObject({ kind: z.enum(["PLAY", "ACTIVATE"]), actorId: PlayerIdSchema, sourceId: CardInstanceIdSchema, abilityId: z.string().min(1).optional(), phase: z.enum(["PAYMENT", "EFFECT", "EQUIP", "MODE"]), remainingCost: z.number().int().nonnegative(), selectedSources: z.array(PaymentSourceSchema), effectIndex: z.number().int().nonnegative(), targetGigId: GigInstanceIdSchema.optional(),
         // Batch V14: the cards the current Program primitive trashed from the deck, in trash order.
-        trashedIds: z.array(CardInstanceIdSchema).min(1).max(3).optional(),
+        trashedIds: z.array(CardInstanceIdSchema).min(1).max(4).optional(), // Batch V93: up to 4.
         // Batch V15: the Unit the first clause bottom-decked, while its "if you do" clause awaits a choice.
         bottomDecked: CardInstanceIdSchema.optional(),
         // Batch V44: the one printed mode a modal Program's controller chose; absent while every mode resolves.
@@ -265,7 +267,18 @@ export const ResolutionStateSchema = z.strictObject({
         // Batch V79: the friendly Unit chosen for both effects, while a Rival chooses which one it gets.
         grantTargetId: CardInstanceIdSchema.optional(),
         // Batch V82: the Gear chosen to move off its Legend, while the unequipped friendly Unit is chosen.
-        movedGearId: CardInstanceIdSchema.optional() }).optional(),
+        movedGearId: CardInstanceIdSchema.optional(),
+        // Batch V92: the hand Gear chosen to play for free, while its host is chosen; then, once it is equipped, the played Gear whose
+        // play batch follows the ability.
+        handGearId: CardInstanceIdSchema.optional(), playedGearId: CardInstanceIdSchema.optional(),
+        // Batch V93: the trashed Gear chosen, while its controller adds it to hand or chooses a host to play it on.
+        trashedGearId: CardInstanceIdSchema.optional(),
+        // Batch V94: the trash Program a Legend's ability chose to play (never at a decision), and a Program played from the trash, which
+        // is bottom-decked after it resolves instead of going to the trash.
+        trashProgramId: CardInstanceIdSchema.optional(), fromTrash: z.literal(true).optional(),
+        // Batch V95: the revealed top card of the deck chosen to play for free, a Unit or Program (never at a decision; a Gear is equipped
+        // at once), and a card played that way, which pays nothing.
+        deckPlayId: CardInstanceIdSchema.optional(), freeFromDeck: z.literal(true).optional() }).optional(),
     searchContinuation: z.strictObject({ looked: z.array(CardInstanceIdSchema), selected: z.array(CardInstanceIdSchema) }).optional(),
     callContinuation: z.strictObject({ actorId: PlayerIdSchema, legendId: CardInstanceIdSchema, remainingCost: z.number().int().nonnegative(), selectedSources: z.array(PaymentSourceSchema) }).optional(),
     current: PendingEffectSchema.nullable(), pending: z.array(PendingEffectSchema), discovered: z.array(PendingEffectSchema), choice: PendingChoiceSchema.nullable()

@@ -1,3 +1,4 @@
+import { recordEquippedDefeats } from "./hand-gear-play";
 import { recordArasakaDefeat } from "./arasaka-defeat";
 import { effectiveCardTypes } from "./characteristics";
 import { discoverTriggers } from "./trigger-queries";
@@ -67,6 +68,7 @@ export function defeatCards(m: TurnMutation, defeats: readonly DefeatInstruction
     const actual = defeats.map(d => { const gear = defeatReplacement(m.state, d.targetId, m.context); return { instruction: gear ? { targetId: gear, defeatedBy: d.defeatedBy } : d, replaced: gear ? d.targetId : undefined, order: orders.find(o => o.targetId === d.targetId)!.cardIds }; });
     const defeated = actual.map(a => a.instruction);
     if (triggersEnabled(m.context)) recordArasakaDefeat(m, defeated.map(d => d.targetId)); // Batch V50: before discovery and movement.
+    if (triggersEnabled(m.context)) recordEquippedDefeats(m, defeated.map(d => d.targetId)); // Batch V92: likewise.
     const triggered = triggersEnabled(m.context) ? discoverTriggers(m.state, { kind: "DEFEAT", defeated: [...defeated] }, m.context) : [];
     for (const a of actual) if (a.replaced) m.emit({ kind: "DEFEAT_REPLACED", cardInstanceId: a.replaced, replacementId: a.instruction.targetId, defeatedBy: a.instruction.defeatedBy });
     for (const d of defeated) m.emit({ kind: "CARD_DEFEATED", cardInstanceId: d.targetId, defeatedBy: d.defeatedBy });

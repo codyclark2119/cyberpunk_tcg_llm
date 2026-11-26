@@ -56,7 +56,10 @@ function resume(m: TurnMutation, origin: TriggerOrigin): Result<null> {
     m.state.timing.actingPlayer = m.state.timing.activePlayer;
     const combat = m.state.timing.combat;
     if (origin.kind === "END_TURN") return finishEndTurn(m);
-    if (origin.kind === "PLAY") return finishAction(m);
+    if (origin.kind === "PLAY") { // Batch V92: a hand Gear a {Quick} Legend ability played in the React Step returns to it.
+        if ("target" in combat && combat.target) { m.state.timing.combat = { ...combat, stage: "RIVAL_REACT" }; return finishAttackEffects(m); }
+        return finishAction(m);
+    }
     if (origin.kind === "ATTACK" && "target" in combat && combat.target) { m.state.timing.combat = { ...combat, stage: "ATTACK_EFFECTS" }; return finishAttackEffects(m); }
     // Batch V17 (9.11): Blocker-used effects resolve, then the defending player's React Step reopens.
     if (origin.kind === "BLOCK" && "target" in combat && combat.target) { m.state.timing.combat = { ...combat, stage: "RIVAL_REACT" }; return finishAttackEffects(m); }
@@ -87,7 +90,7 @@ export function activateTriggerBatch(m: TurnMutation, batch: PreparedTriggerBatc
     const { origin, ordinal, bindings, pending, effectSpends, effectGigChanges, programPlay } = batch;
     m.state.resolution = { stage: "DISCOVER_TRIGGERS", current: null, pending: pending.map(e => PendingEffectSchema.parse(e)), discovered: [], choice: null, triggerContinuation: { origin: TriggerOriginSchema.parse(origin), ordinal, bindings: bindings.map(b => TriggerBindingSchema.parse(b)), resolvedIds: [], phase: "SELECT", ...(effectSpends ? { effectSpends } : {}), ...(effectGigChanges ? { effectGigChanges } : {}), ...(programPlay ? { programPlay } : {}) } };
     const combat = m.state.timing.combat;
-    if (origin.kind !== "PLAY" && origin.kind !== "END_TURN" && "target" in combat && combat.target) m.state.timing.combat = { ...combat, stage: "TRIGGER_RESOLUTION" };
+    if (origin.kind !== "END_TURN" && "target" in combat && combat.target) m.state.timing.combat = { ...combat, stage: "TRIGGER_RESOLUTION" }; // Batch V92: a PLAY batch too.
     if (!alreadyAnnounced) for (const e of pending) m.emit({ kind: "EFFECT_PENDING", effectId: e.id, sourceId: e.sourceId! });
     return advanceTriggers(m);
 }
@@ -315,6 +318,13 @@ export function advanceTriggers(m: TurnMutation): Result<null> {
     }
     // Batch V70: the controller privately looks at the top card, then trashes it or keeps it on top; an empty deck does nothing.
     if (e.kind === "SEARCH_TOP_MAY_TRASH") {
+        const deck = m.state.players[r.current.controllerId].zones.DECK;
+        if (!deck.length) return completed(m);
+        r.searchContinuation = { looked: deck.slice(0, e.count), selected: [] };
+        c.phase = "TARGET"; return offer(m);
+    }
+    // Batch V92: the controller privately looks at the top 2 cards and trashes 1; a lone card is trashed without a choice; an empty deck does nothing.
+    if (e.kind === "SEARCH_TOP_TRASH_ONE") {
         const deck = m.state.players[r.current.controllerId].zones.DECK;
         if (!deck.length) return completed(m);
         r.searchContinuation = { looked: deck.slice(0, e.count), selected: [] };
@@ -576,6 +586,12 @@ export function continueTrigger(m: TurnMutation, index: number, forced = false):
             if (option.kind !== "CARD" || !listSpendUnitTargets(m.state, current.controllerId, current.effect.target, m.context).includes(option.cardInstanceId)) return failure("INVALID_READY_LOCK_TARGET", "Choose a current rival Unit");
             m.emit({ kind: "CARD_TARGET_SELECTED", effectId: current.id, sourceId: current.sourceId!, targetId: option.cardInstanceId, controllerId: current.controllerId, forced });
             const locked = applyReadyLock(m, option.cardInstanceId); return locked.ok ? completed(m) : locked;
+        }
+        if (current.effect.kind === "SEARCH_TOP_TRASH_ONE") { // Batch V92: the other card stays on top (11.17.2).
+            const looked = r.searchContinuation?.looked ?? [];
+            if (option.kind !== "CARD" || !looked.includes(option.cardInstanceId) || !m.state.players[current.controllerId].zones.DECK.slice(0, looked.length).includes(option.cardInstanceId)) return failure("INVALID_SEARCH_TARGET", "Trash one of the searched cards");
+            moveCardLocation(m, option.cardInstanceId, "TRASH");
+            delete r.searchContinuation; return completed(m);
         }
         if (current.effect.kind === "SEARCH_TOP_MAY_TRASH") { // Batch V70.
             const looked = r.searchContinuation?.looked ?? [];

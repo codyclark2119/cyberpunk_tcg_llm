@@ -1,3 +1,6 @@
+import { trashPlayTargets } from "./trash-program-play";
+import { handGearTargets } from "./hand-gear-play";
+import { legalEquipHosts } from "./attachments";
 import { canonicalSerialize, failure, hashCanonical, success, type CardInstanceId, type GameState, type GigInstanceId, type PlayerId, type Result } from "@tcg/domain";
 import { friendlyGearTargets } from "./gear-legend";
 import { trashedTopProgram } from "./braindance-legend";
@@ -127,6 +130,13 @@ export function validateLegendActivationState(state: GameState, context: EngineC
             const gears = sourceGear(state, c.sourceId, context), units = unequippedUnits(state, c.actorId, context);
             if (!spend || quick || c.targetGigId || state.timing.step !== "TARGET_SELECTION" || !units.length || (c.movedGearId ? !gears.includes(c.movedGearId) || units.length < 2 : gears.length < 2))
                 return failure("INVALID_LEGEND_ACTIVATION", "A Gear move pauses only for a strategic Gear or unequipped-Unit choice");
+        } else if (e.kind === "PLAY_TRASH_PROGRAM_THEN_BOTTOM_DECK") { // Batch V94.
+            if (!spend || quick || c.targetGigId || state.timing.step !== "TARGET_SELECTION" || trashPlayTargets(state, c.actorId, context).length < 2)
+                return failure("INVALID_LEGEND_ACTIVATION", "A trash Program play pauses only for a strategic Program choice");
+        } else if (e.kind === "PLAY_GEAR_FROM_HAND_FREE") { // Batch V92.
+            const gears = handGearTargets(state, c.actorId, e.maxCost, context);
+            if (!quick || c.targetGigId || c.playedGearId || state.timing.step !== "TARGET_SELECTION" || (c.handGearId ? !gears.includes(c.handGearId) || legalEquipHosts(state, c.handGearId, context).length < 2 : gears.length < 2))
+                return failure("INVALID_LEGEND_ACTIVATION", "A free hand-Gear play pauses only for a strategic Gear or host choice");
         } else if (e.kind === "FRIENDLY_UNIT_ATTACK_RIVAL_UNITS_THE_TURN_PLAYED") { // Batch V80.
             if (!spend || quick || c.targetGigId || state.timing.step !== "TARGET_SELECTION" || rockerGrantTargets(state, c.actorId, context).length < 2) return failure("INVALID_LEGEND_ACTIVATION", "A rival-Unit attack grant pauses only for a strategic friendly-Unit choice");
         } else if (e.kind === "GRANT_BLOCKER_THIS_TURN") { // Batch V74.

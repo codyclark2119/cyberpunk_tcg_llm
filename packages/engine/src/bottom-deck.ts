@@ -46,7 +46,8 @@ export function bottomDeck(m: TurnMutation, id: CardInstanceId, forced: boolean)
     if (cardRevision(s, id, m.context)?.type === "LEGEND") moveCardLocation(m, id, "REMOVED");
     return success(null);
 }
-function moveToBottom(m: TurnMutation, owner: PlayerId, batch: readonly CardInstanceId[]) {
+/** Batch V94: also a resolving Program, which leaves its RESOLVING_PROGRAM area. */
+export function moveToBottom(m: TurnMutation, owner: PlayerId, batch: readonly CardInstanceId[]) {
     const s = m.state, order = [...batch];
     for (let i = order.length - 1; i > 0; i--) {
         const r = drawDeterministicInteger(s.rng, i + 1);
@@ -64,6 +65,7 @@ function moveToBottom(m: TurnMutation, owner: PlayerId, batch: readonly CardInst
         forgetLegendKnowledge(m, cid);
         const card = s.objects.cards[cid], from = { ...card.zone }, refs = s.players[from.playerId].zones[from.zone]!;
         refs.splice(refs.indexOf(cid), 1);
+        if (from.zone === "RESOLVING_PROGRAM" && !refs.length) delete s.players[from.playerId].zones.RESOLVING_PROGRAM;
         card.controllerId = owner;
         card.zone = { playerId: owner, zone: "DECK" };
         card.face = "DOWN";

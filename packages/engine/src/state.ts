@@ -1,3 +1,6 @@
+import { validateTrashProgramPlay } from "./trash-program-play";
+import { validateDeckTopPlay } from "./deck-top-play";
+import { validateEquippedDefeats, validateHandGearPlay } from "./hand-gear-play";
 import { validateEndTurnDefeats } from "./end-turn-defeat";
 import { effectiveCallCost } from "./free-call-support";
 import { otherPlayerMayChoose } from "./rival-reveal";
@@ -208,6 +211,10 @@ export function validateState(input: unknown, context: EngineContext): Result<Ga
     const gearMove = validateGearMove(s, context); if (!gearMove.ok) return gearMove; // Batch V82.
     const attackLocks = validateAttackLocks(s, context); if (!attackLocks.ok) return attackLocks; // Batch V83.
     const endTurnDefeats = validateEndTurnDefeats(s, context); if (!endTurnDefeats.ok) return endTurnDefeats; // Batch V90.
+    const handGear = validateHandGearPlay(s, context); if (!handGear.ok) return handGear; // Batch V92.
+    const equippedDefeats = validateEquippedDefeats(s, context); if (!equippedDefeats.ok) return equippedDefeats; // Batch V92.
+    const trashPlay = validateTrashProgramPlay(s, context); if (!trashPlay.ok) return trashPlay; // Batch V94.
+    const deckPlay = validateDeckTopPlay(s, context); if (!deckPlay.ok) return deckPlay; // Batch V95.
     const queuedCall = validateQueuedCall(s, context); if (!queuedCall.ok) return queuedCall; // Batch V84.
     const discounts = validateGoSoloDiscounts(s, context); if (!discounts.ok) return discounts; // Batch V83.
     const forced = validateMustAttack(s, context);
