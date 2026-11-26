@@ -9,33 +9,15 @@
   },
   "totals": {
     "cards": 151,
-    "admitted": 147,
-    "notAdmitted": 4,
+    "admitted": 148,
+    "notAdmitted": 3,
     "notAdmittedOnlyCoveredFamilies": 0,
     "byAdmission": {
-      "NOT_ADMITTED": 4,
-      "SOURCE_MATCH": 147
+      "NOT_ADMITTED": 3,
+      "SOURCE_MATCH": 148
     }
   },
   "families": [
-    {
-      "family": "CONDITION_BOARD",
-      "status": "PARTIAL",
-      "summary": "Generic target filters and board conditions: classification, cost, power, ready/spent, equipped, face-up, named, lowest power.",
-      "notes": "Documented as unsupported: generic condition/filter language. Each admitted filter is a literal.",
-      "cardCount": 34,
-      "notAdmittedCount": 2,
-      "soleBlockerCount": 0
-    },
-    {
-      "family": "DISCARD",
-      "status": "PARTIAL",
-      "summary": "Discard: self discard, a Rival discards, discard as a cost, discard a hand.",
-      "notes": "DISCARD_CARDS supports only the controller discarding exactly 1.",
-      "cardCount": 15,
-      "notAdmittedCount": 2,
-      "soleBlockerCount": 0
-    },
     {
       "family": "REPLACEMENT_EFFECT",
       "status": "MISSING",
@@ -46,11 +28,29 @@
       "soleBlockerCount": 0
     },
     {
+      "family": "CONDITION_BOARD",
+      "status": "PARTIAL",
+      "summary": "Generic target filters and board conditions: classification, cost, power, ready/spent, equipped, face-up, named, lowest power.",
+      "notes": "Documented as unsupported: generic condition/filter language. Each admitted filter is a literal.",
+      "cardCount": 34,
+      "notAdmittedCount": 1,
+      "soleBlockerCount": 0
+    },
+    {
       "family": "CONDITION_GIG",
       "status": "PARTIAL",
       "summary": "Conditions and filters on Gig values: min/max, value-pairs, even/odd, 8+, die type, counts compared with a Rival.",
       "notes": "Conditions only, each a fixed shape.",
       "cardCount": 40,
+      "notAdmittedCount": 1,
+      "soleBlockerCount": 0
+    },
+    {
+      "family": "DISCARD",
+      "status": "PARTIAL",
+      "summary": "Discard: self discard, a Rival discards, discard as a cost, discard a hand.",
+      "notes": "DISCARD_CARDS supports only the controller discarding exactly 1.",
+      "cardCount": 15,
       "notAdmittedCount": 1,
       "soleBlockerCount": 0
     },
@@ -73,29 +73,11 @@
       "soleBlockerCount": 0
     },
     {
-      "family": "GEAR_EQUIP",
-      "status": "PARTIAL",
-      "summary": "Equip a Gear to a friendly Unit or face-up Legend; Gear power adds to its host.",
-      "notes": "Equip onto Units is supported for the admitted Gear. Gear on a Legend host in combat (a Go Solo Legend) is unsupported.",
-      "cardCount": 22,
-      "notAdmittedCount": 1,
-      "soleBlockerCount": 0
-    },
-    {
       "family": "GO_SOLO",
       "status": "PARTIAL",
       "summary": "[Go Solo]: play a Legend as a ready Unit that can attack this turn and is removed when it leaves the field.",
       "notes": "Supported only for Go Solo Legends with no other text or with Blocker (V: Corporate Exile, Goro: Hands Unclean). Go Solo Legends with Play/Attack/Defeated triggers, Go Solo cost changes and Gear on Legend hosts in combat are not.",
       "cardCount": 10,
-      "notAdmittedCount": 1,
-      "soleBlockerCount": 0
-    },
-    {
-      "family": "KEYWORD_QUICK",
-      "status": "PARTIAL",
-      "summary": "[Quick] timing: Programs and activated abilities usable in the react window.",
-      "notes": "Quick Programs are supported for Floor It, Reboot Optics and Detonate. Quick activated [Spend] abilities on Legends, Units and Gear are not offered in any react window yet.",
-      "cardCount": 12,
       "notAdmittedCount": 1,
       "soleBlockerCount": 0
     },
@@ -107,15 +89,6 @@
       "cardCount": 1,
       "notAdmittedCount": 1,
       "soleBlockerCount": 1
-    },
-    {
-      "family": "SPEND_ABILITY",
-      "status": "PARTIAL",
-      "summary": "Activated abilities with a [Spend] cost (and optional Eddie cost) on Legends, Units or Gear.",
-      "notes": "Admitted only for Kerry: The Last Rockerboy (a Unit). Face-up Legend [Spend] abilities and Gear [Spend] abilities are not.",
-      "cardCount": 17,
-      "notAdmittedCount": 1,
-      "soleBlockerCount": 0
     },
     {
       "family": "STEAL_CONTROL",
@@ -132,15 +105,6 @@
       "summary": "WHEN_SPENT: 'when this Unit or Legend is spent' (includes Zetatech Faceplate).",
       "notes": "Documented as unsupported; needs every spending path (attack, Blocker, [Spend] costs, effects) to emit one event.",
       "cardCount": 6,
-      "notAdmittedCount": 1,
-      "soleBlockerCount": 0
-    },
-    {
-      "family": "UNIT_DEFEAT",
-      "status": "PARTIAL",
-      "summary": "Defeat a Unit or Gear chosen with a filter.",
-      "notes": "Filters are fixed literals (power at most 5, power at most a friendly d20, Gear power at most 2).",
-      "cardCount": 18,
       "notAdmittedCount": 1,
       "soleBlockerCount": 0
     },
@@ -208,6 +172,15 @@
       "soleBlockerCount": 0
     },
     {
+      "family": "GEAR_EQUIP",
+      "status": "PARTIAL",
+      "summary": "Equip a Gear to a friendly Unit or face-up Legend; Gear power adds to its host.",
+      "notes": "Equip onto Units is supported for the admitted Gear. Gear on a Legend host in combat (a Go Solo Legend) is unsupported.",
+      "cardCount": 22,
+      "notAdmittedCount": 0,
+      "soleBlockerCount": 0
+    },
+    {
       "family": "GEAR_MOVE_OR_SACRIFICE",
       "status": "MISSING",
       "summary": "Move Gear between hosts, or defeat a friendly Gear as a cost or choice.",
@@ -249,6 +222,15 @@
       "summary": "Printed [Blocker] on a Unit, or granted to a Gear's host.",
       "notes": "Keyword BLOCKER. Temporary grants by an effect are TEMPORARY_BUFF.",
       "cardCount": 11,
+      "notAdmittedCount": 0,
+      "soleBlockerCount": 0
+    },
+    {
+      "family": "KEYWORD_QUICK",
+      "status": "PARTIAL",
+      "summary": "[Quick] timing: Programs and activated abilities usable in the react window.",
+      "notes": "Quick Programs are supported for Floor It, Reboot Optics and Detonate. Quick activated [Spend] abilities on Legends, Units and Gear are not offered in any react window yet.",
+      "cardCount": 12,
       "notAdmittedCount": 0,
       "soleBlockerCount": 0
     },
@@ -303,6 +285,15 @@
       "summary": "Amounts computed from the board: 'for each', 'equal to'.",
       "notes": "Only Royce's per-equipped-Gear modifier counts anything.",
       "cardCount": 18,
+      "notAdmittedCount": 0,
+      "soleBlockerCount": 0
+    },
+    {
+      "family": "SPEND_ABILITY",
+      "status": "PARTIAL",
+      "summary": "Activated abilities with a [Spend] cost (and optional Eddie cost) on Legends, Units or Gear.",
+      "notes": "Admitted only for Kerry: The Last Rockerboy (a Unit). Face-up Legend [Spend] abilities and Gear [Spend] abilities are not.",
+      "cardCount": 17,
       "notAdmittedCount": 0,
       "soleBlockerCount": 0
     },
@@ -447,6 +438,15 @@
       "summary": "'First time each turn', 'this turn you played', 'if it stole or fought this turn'.",
       "notes": "Guards FIRST_BLUE_UNIT_OR_GEAR_PLAY_PER_TURN and FIRST_FRIENDLY_ARASAKA_UNIT_ATTACK_PER_TURN.",
       "cardCount": 11,
+      "notAdmittedCount": 0,
+      "soleBlockerCount": 0
+    },
+    {
+      "family": "UNIT_DEFEAT",
+      "status": "PARTIAL",
+      "summary": "Defeat a Unit or Gear chosen with a filter.",
+      "notes": "Filters are fixed literals (power at most 5, power at most a friendly d20, Gear power at most 2).",
+      "cardCount": 18,
       "notAdmittedCount": 0,
       "soleBlockerCount": 0
     },
@@ -2034,8 +2034,8 @@
       "colors": [
         "GREEN"
       ],
-      "admission": "NOT_ADMITTED",
-      "revision": null,
+      "admission": "SOURCE_MATCH",
+      "revision": 1,
       "families": [
         "CONDITION_BOARD",
         "DISCARD",
@@ -2044,14 +2044,7 @@
         "SPEND_ABILITY",
         "UNIT_DEFEAT"
       ],
-      "blockingFamilies": [
-        "CONDITION_BOARD",
-        "DISCARD",
-        "GEAR_EQUIP",
-        "KEYWORD_QUICK",
-        "SPEND_ABILITY",
-        "UNIT_DEFEAT"
-      ],
+      "blockingFamilies": [],
       "note": "No equip reminder text; [Spend] on a Gear. See rules question Q1."
     },
     {

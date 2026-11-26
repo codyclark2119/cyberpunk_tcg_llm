@@ -124,7 +124,9 @@ export const DefeatUnitTargetSchema = z.strictObject({ kind: z.literal("UNITS"),
     readiness: z.literal("SPENT").optional(),
     // "with cost 2 or less" (batch V31): the Unit's referenced cost, alongside the power bound.
     // Batch V55: "with cost 3 or less".
-    cost: z.strictObject({ kind: z.literal("AT_MOST"), value: z.union([z.literal(2), z.literal(3)]) }).optional(),
+    // Batch V98: "with cost equal to or less than the discarded card's cost": the printed cost of the card the activation's own
+    // discard put in the trash (no discard, no bound and so no target).
+    cost: z.union([z.strictObject({ kind: z.literal("AT_MOST"), value: z.union([z.literal(2), z.literal(3)]) }), z.strictObject({ kind: z.literal("AT_MOST_DISCARDED") })]).optional(),
     // "If <condition>, defeat ... with power N or less instead": replaces the AT_MOST bound while the condition holds.
     instead: z.strictObject({ condition: z.strictObject({ kind: z.literal("STREET_CRED_GREATER_THAN_RIVAL") }), power: DefeatPowerAtMostSchema }).optional(),
     // "Defeat all other Units" (batch V10): every eligible Unit except the effect source, with no target choice.
@@ -286,6 +288,9 @@ export const EffectSchema = z.discriminatedUnion("kind", [
     z.strictObject({ kind: z.literal("PLAY_TRASH_UNITS_FREE"), count: z.literal(2), maxCost: z.literal(3) }),
     // Batch V97: "You may play a Program with cost 3 or less from your hand or trash for free. Bottom-deck it after you play it."
     z.strictObject({ kind: z.literal("MAY_PLAY_PROGRAM_FREE_FROM_HAND_OR_TRASH_THEN_BOTTOM_DECK"), maxCost: z.literal(3) }),
+    // Batch V98: "Discard 1." The controller discards a card of their choice from hand (a lone card is forced; an empty hand does
+    // nothing); a later defeat in the same ability reads that card's printed cost.
+    z.strictObject({ kind: z.literal("DISCARD_ONE_FOR_DEFEAT_COST") }),
     // Batch V90: "Give an equipped Unit +3 power this turn for each of its equipped Gears. If that Unit steals or fights, defeat it at
     // the end of this turn." Any player's equipped Unit; the Gear counted as it resolves; the defeat is registered on that Unit.
     z.strictObject({ kind: z.literal("EQUIPPED_UNIT_POWER_PER_GEAR_THIS_TURN"), amount: z.literal(3),

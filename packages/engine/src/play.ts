@@ -40,6 +40,7 @@ import { playChoice, playEffectId, adjustmentTargets } from "./play-state";
 import { forcedPaymentSources, paymentValue, validatePayment } from "./payment";
 import { playPaymentAmount } from "./play-cost-support";
 import { activationPaymentAmount } from "./quick-activation-support";
+import { discardForDefeatCost, inheritedActivationHost } from "./gear-activation";
 import { HandlerRegistry, continueSearch } from "./effects";
 import { chooseTrashedUnit } from "./trash-return";
 import { chooseBottomDeck } from "./bottom-deck";
@@ -347,6 +348,11 @@ export function continuePlay(m: TurnMutation, index: number): Result<null> {
         const applied = applyRockerGrant(m, option.cardInstanceId, false);
         return applied.ok ? completePlayEffect(m) : applied;
     }
+    if (s.resolution.current?.effect.kind === "DISCARD_ONE_FOR_DEFEAT_COST") { // Batch V98.
+        if (option.kind !== "CARD") return failure("INVALID_DISCARD", "Choose a card in your own hand");
+        const discarded = discardForDefeatCost(m, option.cardInstanceId, false);
+        return discarded.ok ? completePlayEffect(m) : discarded;
+    }
     if (s.resolution.current?.effect.kind === "GRANT_BLOCKER_THIS_TURN") { // Batch V74.
         if (option.kind !== "CARD") return failure("INVALID_KEYWORD_TARGET", "Choose an enumerated friendly Unit");
         s.resolution.choice = null;
@@ -425,8 +431,9 @@ function setGig(m: TurnMutation, sourceGigId: GigInstanceId): Result<null> {
 }
 export function activateAbility(m: TurnMutation, actorId: PlayerId, sourceId: CardInstanceId, abilityId: string): Result<null> {
     const s = m.state, ability = revisionOf(s, sourceId, m.context)!.mechanics.abilities.find(a => a.id === abilityId)!;
-    s.objects.cards[sourceId].readiness = "SPENT"; noteSpent(m, sourceId); // Batch V69.
-    m.emit({ kind: "CARD_SPENT", cardInstanceId: sourceId });
+    const spent = inheritedActivationHost(s, sourceId, abilityId, m.context)?.id ?? sourceId; // Batch V98: a Gear's inherited {Spend} spends its host.
+    s.objects.cards[spent].readiness = "SPENT"; noteSpent(m, spent); // Batch V69.
+    m.emit({ kind: "CARD_SPENT", cardInstanceId: spent });
     m.emit({ kind: "ABILITY_ACTIVATED", sourceInstanceId: sourceId, abilityId });
     const amount = activationPaymentAmount(ability, s, actorId);
     if (amount) {

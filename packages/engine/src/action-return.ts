@@ -19,7 +19,8 @@ export function validateActionReturn(state: GameState, context: EngineContext) {
     const continuation = r.legendEntryContinuation || r.playContinuation || r.callContinuation || (!r.triggerContinuation && r.searchContinuation);
     if (!continuation) return destination ? failure("INVALID_RETURN_CONTEXT", "Return context requires an unfinished action") : success(null);
     if (state.timing.combat.stage === "RIVAL_REACT") {
-        if (!reactEnabled(context) || destination?.kind !== "RIVAL_REACT" || state.timing.actingPlayer === state.timing.activePlayer) return failure("INVALID_RETURN_CONTEXT", "Defender continuation must explicitly return to React");
+        // Batch V98: a defender's activation that defeats an attacking Unit hands only its owner-order choice to the attacking player.
+        if (!reactEnabled(context) || destination?.kind !== "RIVAL_REACT" || state.timing.actingPlayer === state.timing.activePlayer && r.targetedDefeatContinuation?.phase !== "ORDER") return failure("INVALID_RETURN_CONTEXT", "Defender continuation must explicitly return to React");
     // Batch V77: a Rival-choice reveal hands only its choice to the Rival (play-state checks the exact pause).
     } else if (state.timing.combat.stage !== "NONE" || (destination && destination.kind !== "MAIN") || (state.timing.actingPlayer !== state.timing.activePlayer && !otherPlayerMayChoose(state) && startedQueuedCall(state)?.playerId !== state.timing.actingPlayer /* Batch V86 */ && state.resolution.targetedDefeatContinuation?.phase !== "ORDER" && state.resolution.targetedDefeatContinuation?.phase !== "EACH")) return failure("INVALID_RETURN_CONTEXT", "Noncombat continuation must return to active-player MAIN");
     return success(null);

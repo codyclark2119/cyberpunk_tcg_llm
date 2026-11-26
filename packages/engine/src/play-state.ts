@@ -32,6 +32,7 @@ import { trashedUnitTargets, validateTrashReturn } from "./trash-return";
 import { currentBottomDeckTargets, validateBottomDeck } from "./bottom-deck";
 import { testCondition } from "./conditions";
 import { validateActivationState } from "./quick-activation";
+import { discardCostTargets, validateGearActivationState } from "./gear-activation";
 
 function playIdentity(state: GameState) {
     const c = state.resolution.playContinuation!;
@@ -139,6 +140,9 @@ export function playChoice(state: GameState, context: EngineContext): PendingCho
     } else if (state.resolution.current?.effect.kind === "FRIENDLY_UNIT_ATTACK_RIVAL_UNITS_THE_TURN_PLAYED") { // Batch V80.
         kind = "TARGET";
         options = rockerGrantTargets(state, c.actorId, context).map(cardInstanceId => ({ kind: "CARD", cardInstanceId }));
+    } else if (state.resolution.current?.effect.kind === "DISCARD_ONE_FOR_DEFEAT_COST") { // Batch V98: any card in the controller's hand.
+        kind = "TARGET";
+        options = discardCostTargets(state, c.actorId).map(cardInstanceId => ({ kind: "CARD", cardInstanceId }));
     } else if (state.resolution.current?.effect.kind === "GRANT_BLOCKER_THIS_TURN") { // Batch V74.
         kind = "TARGET";
         options = blockerGrantTargets(state, c.actorId, context).map(cardInstanceId => ({ kind: "CARD", cardInstanceId }));
@@ -161,7 +165,7 @@ export function validatePlayState(state: GameState, context: EngineContext) {
     const c = state.resolution.playContinuation, current = state.resolution.current;
     const resolving = Object.values(state.objects.cards).filter(c => c.zone.zone === "RESOLVING_PROGRAM");
     if (!c) return resolving.length || (state.timing.step === "AMOUNT_SELECTION" && !state.resolution.triggerContinuation) ? failure("INVALID_PLAY_CONTINUATION", "Resolving Programs and amount choices require a continuation") : success(null);
-    if (c.kind === "ACTIVATE") return revisionOf(state, c.sourceId, context)?.type === "LEGEND" ? validateLegendActivationState(state, context) : validateActivationState(state, context); // Batch V49, V59.
+    if (c.kind === "ACTIVATE") { const type = revisionOf(state, c.sourceId, context)?.type; return type === "LEGEND" ? validateLegendActivationState(state, context) : type === "GEAR" ? validateGearActivationState(state, context) : validateActivationState(state, context); } // Batch V49, V59, V98.
     const source = state.objects.cards[c.sourceId], revision = revisionOf(state, c.sourceId, context), ability = revision?.mechanics.abilities[0];
     if (!supportsPlay(revision, context).ok || !source || c.kind !== "PLAY" || c.actorId !== (state.resolution.targetedDefeatContinuation?.phase === "ORDER" || state.resolution.targetedDefeatContinuation?.phase === "EACH" || otherPlayerMayChoose(state) ? state.timing.activePlayer : state.timing.actingPlayer) || source.controllerId !== c.actorId || source.zone.playerId !== c.actorId || source.face !== "UP" || (revision?.type === "GEAR" ? undefined : ability?.id) !== c.abilityId || state.setup || (state.timing.combat.stage !== "NONE" && (state.timing.combat.stage !== "RIVAL_REACT" || revision?.type !== "PROGRAM" || !revision.mechanics.keywords.includes("QUICK"))) || state.match.outcome || (state.resolution.searchContinuation && current?.effect.kind !== "SEARCH_TAKE_ONE_PLUS_PER_MIN_GIG") || state.resolution.callContinuation || state.resolution.discovered.length || state.resolution.stage !== "CHOICE")
         return failure("INVALID_PLAY_CONTINUATION", "Play source, scope, actor or exclusive decision state invalid");

@@ -43,6 +43,7 @@ import { hasFightStealEffect, supportsFightStealProgram } from "./fight-steal-su
 import { hasFreePlayEffect, supportsFreePlayCard } from "./free-play-support";
 import { paymentCandidates } from "./payment";
 import { activationPaymentAmount, hasQuickActivation, supportsQuickActivationCard } from "./quick-activation-support";
+import { inheritedActivationHost } from "./gear-activation";
 import { testCondition } from "./conditions";
 export function playEnabled(context: EngineContext) { return turnSliceAllows(context.content.ruleset.gameplay?.turnSlice, "cardPlay") && context.content.ruleset.gameplay?.gigValueBounds === "DIE_FACES_V1"; }
 export function revisionOf(state: GameState, id: CardInstanceId, context: EngineContext) {
@@ -149,6 +150,9 @@ export function canActivate(state: GameState, actor: PlayerId, id: CardInstanceI
     const amount = activationPaymentAmount(a, state, actor);
     // Batch V59: a face-up Legend's {Spend} ability is used from the Legends area (Legends never Lag).
     const legend = r?.type === "LEGEND" && c?.zone.zone === "LEGENDS" && supportsLegendSpendCard(r, context).ok;
-    return Boolean((main(state, actor) || a?.activation?.timing === "QUICK" && isReactDecision(state, actor, context)) && (legend || supportsPlay(r, context).ok && r?.type === "UNIT" && c?.zone.zone === "BATTLEFIELD") && c.zone.playerId === actor && c.controllerId === actor && c.face === "UP" && c.readiness === "READY" && !c.statuses.includes("LAG") && a?.activation && a.conditions.every(condition => testCondition(state, actor, condition))
-        && (!amount || paymentCandidates(legend ? spentCopy(state, id) : state, actor, context, amount, []).length));
+    // Batch V98: an equipped Gear's inherited ability is used by its host (11.23.3), which must be ready and is the card spent.
+    const host = r?.type === "GEAR" && a ? inheritedActivationHost(state, id, a.id, context) : null, spender = host ?? c;
+    if (host && (c.face !== "UP" || c.zone.playerId !== actor || c.controllerId !== actor || !["BATTLEFIELD", "LEGENDS"].includes(host.zone.zone))) return false;
+    return Boolean((main(state, actor) || a?.activation?.timing === "QUICK" && isReactDecision(state, actor, context)) && (legend || host || supportsPlay(r, context).ok && r?.type === "UNIT" && c?.zone.zone === "BATTLEFIELD") && spender.zone.playerId === actor && spender.controllerId === actor && spender.face === "UP" && spender.readiness === "READY" && !spender.statuses.includes("LAG") && a?.activation && a.conditions.every(condition => testCondition(state, actor, condition))
+        && (!amount || paymentCandidates(legend || host ? spentCopy(state, spender.id) : state, actor, context, amount, []).length));
 }

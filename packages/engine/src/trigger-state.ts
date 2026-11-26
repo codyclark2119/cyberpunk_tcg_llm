@@ -1,4 +1,5 @@
 import { freeProgramTargets } from "./queued-program-play";
+import { supportsQuickActivationCard } from "./quick-activation-support";
 import { validFreePlaySource } from "./trash-units-play";
 import { handGearPlayEnabled, isEquippedDefeatBinding, validEquippedDefeatBinding } from "./hand-gear-play";
 import { validatePaidPowerContinuation } from "./paid-attack-power";
@@ -190,7 +191,9 @@ export function validateTriggerState(state: GameState, context: EngineContext) {
         return failure("INVALID_SPEND_BATCH", "Each recorded spend names a distinct card with its captured bindings");
     // Batch V92: a hand Gear's PLAY batch may also pause a React Step's attack, as a SPEND batch does.
     const reactGearPlay = c.origin.kind === "PLAY" && combat.stage === "TRIGGER_RESOLUTION" && handGearPlayEnabled(context) && cardRevision(state, c.origin.subjectId, context)?.type === "GEAR";
-    if (c.origin.kind === "SPEND" || c.origin.kind === "GIG_CHANGE" || reactGearPlay ? combat.stage !== "NONE" && (combat.stage !== "TRIGGER_RESOLUTION" || combat.attackingPlayerId !== state.timing.activePlayer) : c.origin.kind === "PLAY" || c.origin.kind === "END_TURN" || c.origin.kind === "DEFEAT" && c.origin.effectSource ? combat.stage !== "NONE" : combat.stage !== "TRIGGER_RESOLUTION" || combat.attackingPlayerId !== state.timing.activePlayer) return failure("INVALID_TRIGGER_COMBAT", "Trigger batch must pause its original combat stage");
+    // Batch V98: so may the DEFEAT batch of an inherited Gear activation used in the React Step.
+    const reactGearDefeat = c.origin.kind === "DEFEAT" && c.origin.effectSource !== undefined && combat.stage === "TRIGGER_RESOLUTION" && cardRevision(state, c.origin.effectSource, context)?.type === "GEAR" && supportsQuickActivationCard(cardRevision(state, c.origin.effectSource, context), context).ok;
+    if (c.origin.kind === "SPEND" || c.origin.kind === "GIG_CHANGE" || reactGearPlay || reactGearDefeat ? combat.stage !== "NONE" && (combat.stage !== "TRIGGER_RESOLUTION" || combat.attackingPlayerId !== state.timing.activePlayer) : c.origin.kind === "PLAY" || c.origin.kind === "END_TURN" || c.origin.kind === "DEFEAT" && c.origin.effectSource ? combat.stage !== "NONE" : combat.stage !== "TRIGGER_RESOLUTION" || combat.attackingPlayerId !== state.timing.activePlayer) return failure("INVALID_TRIGGER_COMBAT", "Trigger batch must pause its original combat stage");
     if (combat.stage === "TRIGGER_RESOLUTION") {
         const attacker = state.objects.cards[combat.attackerId];
         const targetValid = combat.target.kind === "CARD" ? state.objects.cards[combat.target.cardInstanceId]?.controllerId !== combat.attackingPlayerId && Boolean(state.objects.cards[combat.target.cardInstanceId]) : Boolean(state.players[combat.target.playerId]) && combat.target.playerId !== combat.attackingPlayerId;

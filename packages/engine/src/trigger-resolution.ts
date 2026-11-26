@@ -65,7 +65,10 @@ function resume(m: TurnMutation, origin: TriggerOrigin): Result<null> {
     // Batch V17 (9.11): Blocker-used effects resolve, then the defending player's React Step reopens.
     if (origin.kind === "BLOCK" && "target" in combat && combat.target) { m.state.timing.combat = { ...combat, stage: "RIVAL_REACT" }; return finishAttackEffects(m); }
     if (origin.kind === "FIGHT") return completeFightResult(m, origin.result);
-    if (origin.kind === "DEFEAT") return origin.effectSource ? finishAction(m) : finishCombat(m);
+    if (origin.kind === "DEFEAT") { // Batch V98: an effect DEFEAT batch inside an attack (a React Step activation) returns to that React Step.
+        if (origin.effectSource && "target" in combat && combat.target) { m.state.timing.combat = { ...combat, stage: "RIVAL_REACT" }; return finishAttackEffects(m); }
+        return origin.effectSource ? finishAction(m) : finishCombat(m);
+    }
     // Batch V24 (9.20.2): after the steal triggers resolve, the Steal Step and the attack end.
     if (origin.kind === "STEAL") return finishCombat(m);
     // Batch V69: a SPEND batch returns where its action would have: to an open React Step, or to the Main Phase.

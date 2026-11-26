@@ -1,4 +1,5 @@
 import { resolveTrashUnits } from "./trash-units-play";
+import { resolveDiscardForDefeatCost } from "./gear-activation";
 import { beginTrashProgramPlay } from "./trash-program-play";
 import { resolveDeckTop } from "./deck-top-play";
 import { resolveTrashGear } from "./trash-gear";
@@ -123,6 +124,7 @@ export class HandlerRegistry {
         if (effect.kind === "PLAY_TRASH_PROGRAM_THEN_BOTTOM_DECK") return beginTrashProgramPlay(m, offerPlayChoice); // Batch V94.
         if (effect.kind === "REVEAL_TOP_MAY_PLAY_FREE_ELSE_HAND") return resolveDeckTop(m, offerPlayChoice); // Batch V95.
         if (effect.kind === "PLAY_TRASH_UNITS_FREE") return resolveTrashUnits(m, offerPlayChoice); // Batch V96.
+        if (effect.kind === "DISCARD_ONE_FOR_DEFEAT_COST") return resolveDiscardForDefeatCost(m, offerPlayChoice); // Batch V98.
         if (effect.kind === "UNIT_CANNOT_ATTACK_UNTIL_YOUR_NEXT_TURN") { // Batch V83: any face-up field Unit; a lone Unit is forced and none does nothing.
             const targets = currentLockTargets(m.state, m.context);
             return targets.length > 1 ? offerPlayChoice(m) : targets.length === 1 ? applyAttackLock(m, targets[0], true) : success(null);

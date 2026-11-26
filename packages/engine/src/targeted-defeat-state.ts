@@ -10,6 +10,8 @@ import { allOtherDefeatTargets, eachDefeatChoice, eachDefeatPlayers, listDefeatT
 import { supportsTargetedGearDefeatCard } from "./targeted-gear-defeat-support";
 import { reactEnabled } from "./react-support";
 import { attackSourceValid, listAttackTargets } from "./combat-queries";
+import { supportsQuickActivationCard } from "./quick-activation-support";
+import { attachmentHost } from "./attachments";
 
 type CurrentEffect = NonNullable<GameState["resolution"]["current"]>;
 /** Only the reviewed Gear capability may use the defender-React origin. */
@@ -29,6 +31,18 @@ function validGearReactOrigin(state: GameState, controllerId: PlayerId, context:
         && listAttackTargets(state, c.attackerId, c.attackingPlayerId, context)
             .some(target => canonicalSerialize(target) === canonicalSerialize(c.target));
 }
+/** Batch V98: the defender's committed React Step, as for the Gear-defeat capability, whoever now chooses. */
+function validReactActivation(state: GameState, controllerId: PlayerId, context: EngineContext) {
+    const c = state.timing.combat;
+    return reactEnabled(context) && !state.setup && !state.match.outcome && c.stage === "RIVAL_REACT" && c.attackingPlayerId === state.timing.activePlayer
+        && controllerId === state.match.playerOrder.find(id => id !== c.attackingPlayerId) && attackSourceValid(state, c.attackingPlayerId, c.attackerId, context)
+        && state.objects.cards[c.attackerId].readiness === "SPENT" && listAttackTargets(state, c.attackerId, c.attackingPlayerId, context).some(target => canonicalSerialize(target) === canonicalSerialize(c.target));
+}
+/** Batch V98: the source is an equipped Gear whose host inherits its pinned paid {Quick} defeat. */
+function gearActivation(state: GameState, sourceId: CardInstanceId, context: EngineContext) {
+    const r = cardRevision(state, sourceId, context), host = attachmentHost(state, sourceId);
+    return r?.type === "GEAR" && supportsQuickActivationCard(r, context).ok && Boolean(host) && ["BATTLEFIELD", "LEGENDS"].includes(state.objects.cards[sourceId].zone.zone);
+}
 /** Batch V90: the registered defeat an armed end-of-turn binding resolves, compared in place of the printed effect list. */
 function registeredDefeat(e: CurrentEffect, revision: NonNullable<ReturnType<typeof cardRevision>>) {
     const first = revision.mechanics.abilities[0].effects[0];
@@ -47,12 +61,23 @@ function validDefeatOrigin(state: GameState, effect: CurrentEffect, revision: Re
     if (effect.trigger?.kind === "DELAYED_END_TURN_DEFEAT") return c.stage === "NONE" && r.triggerContinuation?.origin.kind === "END_TURN";
     // Batch V48: the {Play} defeat of a Unit an effect played inside this batch, whichever player controls it and whenever.
     if (effect.trigger?.kind === "WHEN_PLAYED" && r.triggerContinuation?.effectPlays?.some(p => p.subjectId === effect.trigger!.subjectId)) return true;
+    // Batch V98: an inherited Gear activation, in its controller's Main Phase or React Step (the owner-order pause hands the choice
+    // to the defeated Unit's owner).
+    if (revision?.type === "GEAR" && effect.sourceId && gearActivation(state, effect.sourceId, context))
+        return c.stage === "NONE" ? effect.controllerId === state.timing.activePlayer && r.returnTo?.kind === "MAIN"
+            : validReactActivation(state, effect.controllerId, context) && r.returnTo?.kind === "RIVAL_REACT" && r.playContinuation?.actorId === effect.controllerId
+                && (r.targetedDefeatContinuation?.phase === "ORDER" || state.timing.actingPlayer === effect.controllerId);
     if (effect.controllerId === state.timing.activePlayer && c.stage === "NONE") return true;
     return gearCapability(effect, revision, context) && validGearReactOrigin(state, effect.controllerId, context)
         && r.returnTo?.kind === "RIVAL_REACT" && r.playContinuation?.actorId === effect.controllerId;
 }
 /** Post-movement aftermath keeps the same origin rule, evaluated from the effect source. */
 function validAftermathOrigin(state: GameState, controllerId: PlayerId, revision: ReturnType<typeof cardRevision> | null, context: EngineContext) {
+    // Batch V98: an inherited Gear activation's DEFEAT batch, in the Main Phase or pausing the attack its React Step interrupted.
+    if (revision?.type === "GEAR" && supportsQuickActivationCard(revision, context).ok) {
+        const c = state.timing.combat;
+        return c.stage === "NONE" ? controllerId === state.timing.activePlayer : c.stage === "TRIGGER_RESOLUTION" && c.attackingPlayerId === state.timing.activePlayer && controllerId !== c.attackingPlayerId;
+    }
     if (supportsTargetedGearDefeatCard(revision ?? undefined, context).ok) {
         return state.timing.combat.stage === "NONE"
             ? controllerId === state.timing.activePlayer
@@ -89,10 +114,10 @@ export function validateTargetedDefeatState(state: GameState, context: EngineCon
     const r = state.resolution, c = r.targetedDefeatContinuation, e = r.current;
     if (!c) return e?.effect.kind === "DEFEAT_UNIT" ? failure("ORPHAN_TARGETED_DEFEAT", "Current defeat primitive needs its exact target/order continuation") : success(null);
     const source = e?.sourceId && state.objects.cards[e.sourceId], revision = source && cardRevision(state, source.id, context);
-    if (!targetedDefeatEnabled(context) || !e || e.effect.kind !== "DEFEAT_UNIT" || !source || !(supportsTargetedDefeatCard(revision || undefined, context).ok || supportsTargetedGearDefeatCard(revision || undefined, context).ok) || source.controllerId !== e.controllerId || !validDefeatOrigin(state, e, revision, context) || state.setup || state.match.outcome || r.stage !== "CHOICE" || !r.choice || r.callContinuation || r.searchContinuation || r.legendEntryContinuation || r.gigStealContinuation || r.discovered.length || canonicalSerialize(e.effect) !== canonicalSerialize(registeredDefeat(e, revision!) ?? revision!.mechanics.abilities[0].effects[revision!.type === "PROGRAM" ? r.playContinuation?.effectIndex ?? -1 : 0]))
+    if (!targetedDefeatEnabled(context) || !e || e.effect.kind !== "DEFEAT_UNIT" || !source || !(supportsTargetedDefeatCard(revision || undefined, context).ok || supportsTargetedGearDefeatCard(revision || undefined, context).ok) || source.controllerId !== e.controllerId || !validDefeatOrigin(state, e, revision, context) || state.setup || state.match.outcome || r.stage !== "CHOICE" || !r.choice || r.callContinuation || r.searchContinuation || r.legendEntryContinuation || r.gigStealContinuation || r.discovered.length || canonicalSerialize(e.effect) !== canonicalSerialize(registeredDefeat(e, revision!) ?? revision!.mechanics.abilities[0].effects[revision!.type === "PROGRAM" || revision!.type === "GEAR" ? r.playContinuation?.effectIndex ?? -1 : 0]))
         return failure("INVALID_TARGETED_DEFEAT", "Exact current reviewed source/effect and exclusive noncombat decision required");
     // Batch V46: a fired next-fight-outcome defeat resolves in its post-fight batch, away from its trashed Program.
-    if (e.trigger?.kind === "DELAYED_FIGHT_OUTCOME" || e.trigger?.kind === "WHEN_FIGHT_LOST" || e.trigger?.kind === "DELAYED_END_TURN_DEFEAT" ? r.playContinuation || !r.triggerContinuation || r.triggerContinuation.phase !== "TARGET" : revision!.type === "PROGRAM" ? !r.playContinuation || r.playContinuation.phase !== "EFFECT" || r.triggerContinuation || e.trigger || source.zone.zone !== "RESOLVING_PROGRAM" : r.playContinuation || !r.triggerContinuation || !isPlayedInBatch(r.triggerContinuation, source.id) || r.triggerContinuation.phase !== "TARGET" || e.trigger?.kind !== "WHEN_PLAYED" || source.zone.zone !== "BATTLEFIELD")
+    if (e.trigger?.kind === "DELAYED_FIGHT_OUTCOME" || e.trigger?.kind === "WHEN_FIGHT_LOST" || e.trigger?.kind === "DELAYED_END_TURN_DEFEAT" ? r.playContinuation || !r.triggerContinuation || r.triggerContinuation.phase !== "TARGET" : revision!.type === "GEAR" ? r.playContinuation?.kind !== "ACTIVATE" || r.playContinuation.phase !== "EFFECT" || r.playContinuation.sourceId !== source.id || r.triggerContinuation || e.trigger || !gearActivation(state, source.id, context) : revision!.type === "PROGRAM" ? !r.playContinuation || r.playContinuation.phase !== "EFFECT" || r.triggerContinuation || e.trigger || source.zone.zone !== "RESOLVING_PROGRAM" : r.playContinuation || !r.triggerContinuation || !isPlayedInBatch(r.triggerContinuation, source.id) || r.triggerContinuation.phase !== "TARGET" || e.trigger?.kind !== "WHEN_PLAYED" || source.zone.zone !== "BATTLEFIELD")
         return failure("INVALID_TARGETED_DEFEAT_SOURCE", "Program and Unit PLAY retain their own original continuations");
     if (e.effect.when && !testCondition(state, e.controllerId, e.effect.when.condition, context, e.sourceId)) return failure("INVALID_DEFEAT_CONDITION", "A false condition cannot retain a target or owner-order choice");
     // Batch V55: the "if you do" clause exists only after its first defeat: a Gear this source defeated in this batch.
@@ -150,7 +175,7 @@ export function validateEffectDefeatFacts(state: GameState, context: EngineConte
             || (defeats.length !== 1 && !revision?.mechanics.abilities[0].effects.some(e => e.kind === "DEFEAT_UNIT" && (e.target.kind === "UNITS" && (revision.type === "UNIT" && e.target.all === "OTHER_THAN_SOURCE" || revision.type === "PROGRAM" && (e.target.each || e.target.second && defeats.length === 2))
                 // Batch V55: a {Play} Gear defeat and its "if you do" Unit defeat.
                 || revision.type === "UNIT" && e.then && defeats.length === 2)))
-            || (lost ? revision!.type !== "UNIT" : isOrigin || fired ? revision!.type !== "PROGRAM" || source.zone.zone !== "TRASH" : revision!.type !== "UNIT" || (ownPlay && source.zone.zone !== "BATTLEFIELD"))
+            || (lost ? revision!.type !== "UNIT" : isOrigin && revision!.type === "GEAR" ? !gearActivation(state, source.id, context) : isOrigin || fired ? revision!.type !== "PROGRAM" || source.zone.zone !== "TRASH" : revision!.type !== "UNIT" || (ownPlay && source.zone.zone !== "BATTLEFIELD"))
             || (!fired && !played && !validAftermathOrigin(state, source.controllerId, revision, context))
             || defeats.some(d => d.defeatedBy !== source.id || !state.objects.cards[d.targetId] || !["TRASH", "REMOVED"].includes(state.objects.cards[d.targetId].zone.zone)))
             return failure("INVALID_EFFECT_DEFEAT_FACT", "Bounded source and declared post-movement target identities required");

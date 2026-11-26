@@ -146,6 +146,7 @@ were recorded in their pull requests (#4, #7, #8); later batches have documents 
 | V95 (2026-11-25) | Judy Álvarez: Nothing to Doubt | [A paid {Spend} that reveals the top card to play for free or add to hand](api-admission-batch-v95.md); coverage 145/151 |
 | V96 (2026-11-26) | We Gotta Live Together | [A conditional 3 €$ cost, then up to 2 Units with cost 3 or less played free from the trash](api-admission-batch-v96.md); coverage 146/151 |
 | V97 (2026-11-26) | Lizzy Wizzy: Delicate Weapon | [A {Play} that queues a cheap hand or trash Program, played free after the batch and bottom-decked](api-admission-batch-v97.md); coverage 147/151 |
+| V98 (2026-11-26) | Overwatch: Panam's Gift | [A Gear whose host inherits a paid {Quick} discard, then a defeat bounded by the discarded card's cost](api-admission-batch-v98.md); coverage 148/151 |
 | V7 (2026-11-15) | Royce: Don't Call Me Simon, Wild in the Streets, Delamain: Rideshare AI | [shared defeat filter and exact pin table](api-admission-batch-v7.md); coverage 42/151 |
 | V6 (2026-09-22) | Trust No One | [contract and executable slice](api-admission-batch-v6.md), [baseline verification](api-admission-batch-v6-verification.md) |
 
