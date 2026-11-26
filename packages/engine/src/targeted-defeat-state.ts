@@ -1,3 +1,4 @@
+import { validateLegendReplacement } from "./legend-defeat-replacement";
 import { canonicalSerialize, failure, success, type CardInstanceId, type GameState, type DefeatInstruction, type PlayerId } from "@tcg/domain";
 import { isPlayedInBatch } from "./effect-play";
 import type { EngineContext } from "./state";
@@ -129,7 +130,7 @@ export function validateTargetedDefeatState(state: GameState, context: EngineCon
         const expected = targetedDefeatChoice(state, context);
         if (r.defeatContinuation || state.timing.step !== "TARGET_SELECTION" || expected.options.length < 2 || canonicalSerialize(expected) !== canonicalSerialize(r.choice)) return failure("INVALID_DEFEAT_TARGET", "Only exact current strategic targets may pause");
     } else if (c.phase === "SECOND" || c.phase === "EACH") {
-        const d = r.defeatContinuation ?? (c.phase === "EACH" ? { defeats: [], orders: [] } : undefined), unordered = d && !("fightResult" in d && d.fightResult) && !d.appliedPrevention && !d.appliedPreventions && d.orders.length === d.defeats.length && d.defeats.every((x, i) => x.defeatedBy === source.id && d.orders[i].targetId === x.targetId && !d.orders[i].cardIds.length);
+        const d = r.defeatContinuation ?? (c.phase === "EACH" ? { defeats: [], orders: [] } : undefined), unordered = d && !("fightResult" in d && d.fightResult) && !d.appliedPrevention && !d.appliedPreventions && !("legendReplacement" in d && d.legendReplacement) && d.orders.length === d.defeats.length && d.defeats.every((x, i) => x.defeatedBy === source.id && d.orders[i].targetId === x.targetId && !d.orders[i].cardIds.length);
         if (!d || !unordered || state.timing.step !== "TARGET_SELECTION") return failure("INVALID_DEFEAT_TARGET", "Selected targets carry no order or fight metadata while a target choice is open");
         if (c.phase === "SECOND") {
             const target = e.effect.target, first = d.defeats[0]?.targetId;
@@ -144,6 +145,10 @@ export function validateTargetedDefeatState(state: GameState, context: EngineCon
         const d = r.defeatContinuation;
         // The declared set must match its reviewed form against the current state (all, each, optional second, single).
         if (!d || d.fightResult || d.appliedPrevention || d.appliedPreventions || !validDefeatSet(state, e, d.defeats, context, Boolean(c.then)) || d.orders.length !== d.defeats.length || d.defeats.some((x, i) => x.defeatedBy !== source.id || d.orders[i].targetId !== x.targetId)) return failure("INVALID_EFFECT_DEFEAT", "Exact still-eligible selected Unit(s) and effect source required; no fight/prevention metadata");
+        // Batch V100: a Legend replacement offer comes before any owner order.
+        const replacement = validateLegendReplacement(state, context);
+        if (!replacement.ok) return replacement;
+        if (replacement.value === "OFFER") return d.orders.some(o => o.cardIds.length) ? failure("INVALID_DEFEAT_REPLACEMENT", "Offers precede owner orders") : success(null);
         // Orders finish in sequence: complete orders, then the one paused order, then untouched orders.
         const current = d.orders.findIndex(o => o.cardIds.length < defeatBatch(state, o.targetId, context).length);
         if (current < 0 || d.orders.some((o, i) => { const batch = defeatBatch(state, o.targetId, context); return new Set(o.cardIds).size !== o.cardIds.length || o.cardIds.some(id => !batch.includes(id)) || (i < current ? o.cardIds.length !== batch.length : i > current ? o.cardIds.length !== 0 : batch.length - o.cardIds.length < 2); }) || state.timing.step !== "DEFEAT_ORDER_SELECTION" || canonicalSerialize(defeatOrderChoice(state, context)) !== canonicalSerialize(r.choice)) return failure("INVALID_DEFEAT_ORDER", "Exact owner prefix and strategic shared Trash-order choice required");

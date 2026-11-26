@@ -391,6 +391,9 @@ export const ContinuousModifierSchema = z.discriminatedUnion("kind", [
     // Batch V99 (10.24-10.29): "When a rival Unit would steal a Gig, you may discard 1 with cost equal to that Gig's value. If you do, the
     // Gig isn't stolen." An optional replacement, offered to this card's controller once per Gig a rival Unit would steal from them.
     z.strictObject({ kind: z.literal("MAY_DISCARD_GIG_VALUE_COST_TO_PREVENT_RIVAL_STEAL") }),
+    // Batch V100 (10.24-10.29): "If a friendly Unit would be defeated, you may spend 1 €$ to defeat this Legend instead. (Remove it from
+    // the game.)" An optional, paid replacement of one friendly Unit's defeat by this face-up Legend's own.
+    z.strictObject({ kind: z.literal("MAY_SPEND_TO_DEFEAT_THIS_LEGEND_INSTEAD_OF_FRIENDLY_UNIT"), cost: z.literal(1) }),
     z.strictObject({ kind: z.literal("FRIENDLY_ARASAKA_ATTACKING_UNIT_POWER"), amount: z.literal(1) }),
     // Batch V38: "Other friendly Units have +2 power while attacking." A field Unit's live contribution, never to itself.
     z.strictObject({ kind: z.literal("OTHER_FRIENDLY_ATTACKING_UNIT_POWER"), amount: z.literal(2) }),

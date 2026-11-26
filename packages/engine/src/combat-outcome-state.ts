@@ -1,5 +1,6 @@
 import { reducedAllowance } from "./steal-reduction";
 import { nextPreventableGig, stealPreventionChoice } from "./steal-prevention";
+import { validateLegendReplacement } from "./legend-defeat-replacement";
 import { validFightOutcomes } from "./fight-outcome";
 import { validFightFact } from "./trigger-state";
 import { triggersEnabled } from "./trigger-support";
@@ -51,6 +52,10 @@ export function validateCombatOutcome(state: GameState, context: EngineContext) 
         const raw = continuation.fightResult ? defeatsFromFightResult(state, context, continuation.fightResult) : evaluateFight(state, context).defeats, expected = preventFightDefeats(state, raw, appliedFightPreventions(state));
         if (appliedFightPreventions(state).length && canonicalSerialize(raw) === canonicalSerialize(expected)) return failure("INVALID_APPLIED_PREVENTION", "Consumed proof is retained only for an actually prevented defeat during owner ordering");
         if (canonicalSerialize(continuation.defeats) !== canonicalSerialize(expected) || canonicalSerialize(continuation.orders.map(o => o.targetId)) !== canonicalSerialize(expected.map(d => d.targetId))) return failure("INVALID_DEFEAT_CONTINUATION", "Defeats and orders must match the current authoritative fight result");
+        // Batch V100: a Legend replacement offer comes before any owner order.
+        const replacement = validateLegendReplacement(state, context);
+        if (!replacement.ok) return replacement;
+        if (replacement.value === "OFFER") return continuation.orders.some(o => o.cardIds.length) ? failure("INVALID_DEFEAT_REPLACEMENT", "Offers precede owner orders") : success(null);
         let unfinished = false;
         for (const order of continuation.orders) {
             const batch = defeatBatch(state, order.targetId, context);

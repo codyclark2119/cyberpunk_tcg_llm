@@ -5,6 +5,7 @@ import { unmetMustAttack } from "./must-attack";
 import { attackConditionPowerEnabled } from "./attack-condition-power-support";
 import { targetedSpendEnabled } from "./targeted-spend-support";
 import { continueTargetedDefeat } from "./targeted-defeat";
+import { nextLegendReplacement } from "./legend-defeat-replacement";
 import { targetedDefeatEnabled } from "./targeted-defeat-support";
 import { valueConditionsEnabled } from "./value-conditions-support";
 import { attackingAuraEnabled } from "./attacking-aura-support";
@@ -144,6 +145,12 @@ function describeAction(a: GameAction, state: GameState, actor: PlayerId, view: 
                 return option.confirmed ? `Ignore the ${gig.dieType} result (${value}) and reroll it` : `Keep the ${gig.dieType} result (${value})`;
             }
             if (option.kind === "ATTACK_TARGET") return option.target.kind === "CARD" ? `Attack ${view.getRevision(option.target.cardInstanceId)?.displayName} (${option.target.cardInstanceId})` : "Attack rival Gig area";
+            if (state.resolution.choice!.continuationId === "legend-defeat-replacement@1") { // Batch V100.
+                const offer = nextLegendReplacement(state, view.context), unit = offer ? `${view.getRevision(offer.targetId)?.displayName} (${offer.targetId})` : "the Unit";
+                if (option.kind !== "PAYMENT") return `Let ${unit} be defeated`;
+                const zone = option.source.kind === "EDDIE" ? "EDDIES" : "LEGENDS";
+                return `Pay 1 with ${option.source.kind.toLowerCase()} ${state.players[actor].zones[zone].indexOf(option.source.cardInstanceId) + 1} to defeat ${offer ? view.getRevision(offer.legendId)?.displayName : "your Legend"} instead of ${unit}`;
+            }
             if (state.resolution.choice!.continuationId === "steal-prevention@1") { // Batch V99.
                 return option.kind === "CARD" ? `Discard ${view.getRevision(option.cardInstanceId)?.displayName} (${option.cardInstanceId}) so the Gig isn't stolen` : "Let the Gig be stolen";
             }

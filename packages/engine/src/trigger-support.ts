@@ -1,6 +1,6 @@
 import { hasTrashGearEffect } from "./trash-gear";
 import { hasPaidAttackPower, supportsPaidAttackPowerUnit } from "./paid-attack-power-support";
-import { hasDefeatReplacement, supportsDefeatReplacementGear } from "./defeat-replacement-support";
+import { hasDefeatReplacement, hasLegendDefeatReplacement, supportsDefeatReplacementGear, supportsDefeatReplacementLegend } from "./defeat-replacement-support";
 import { hasGigChangeTriggerMetadata, supportsGigChangeTriggerCard } from "./gig-change-trigger-support";
 import { hasSpendTrigger, supportsSpendTriggerCard } from "./spend-trigger-support";
 import { hasGearStealMetadata, supportsGearStealCard } from "./gear-steal-support";
@@ -52,6 +52,7 @@ export function supportsTriggerCard(card: DeepReadonly<CardRevisionSnapshot> | u
     if (hasSpendTrigger(card)) return supportsSpendTriggerCard(card, context); // Batch V69.
     if (hasGigChangeTriggerMetadata(card)) return supportsGigChangeTriggerCard(card, context); // Batch V88.
     if (hasDefeatReplacement(card)) return supportsDefeatReplacementGear(card, context); // Batch V89.
+    if (hasLegendDefeatReplacement(card)) return supportsDefeatReplacementLegend(card, context); // Batch V100.
     if (hasPaidAttackPower(card)) return supportsPaidAttackPowerUnit(card, context); // Batch V91.
     // Batch V59, V63: a pinned Legend's scheduled trigger (not its Call or start-of-turn effect) is admitted by its Legend pin, and nothing else of it.
     if (hasLegendSpendMetadata(card)) return card!.mechanics.abilities.some(a => a.trigger && a.trigger !== "WHEN_CALLED" && a.trigger !== "WHEN_OWN_TURN_STARTS") ? supportsLegendSpendCard(card, context)

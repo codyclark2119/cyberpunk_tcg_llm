@@ -13,6 +13,7 @@ import { hasQuickActivation } from "./quick-activation-support";
 import { supportsTargetedDefeatCard } from "./targeted-defeat-support";
 import { hasLegendStealTrigger, supportsLegendStealTrigger } from "./legend-steal-support";
 import { hasLegendRevealEffect, supportsLegendReveal } from "./legend-reveal-support";
+import { hasLegendDefeatReplacement, supportsDefeatReplacementLegend } from "./defeat-replacement-support";
 export function fieldLegendsEnabled(context: EngineContext) { return turnSliceAllows(context.content.ruleset.gameplay?.turnSlice, "fieldLegends"); }
 /** Complete reviewed variants share one lifecycle. A keyword alone never admits additional Legend text.
  * Shape matching is admission metadata; movement/payment/combat do not branch on a card identity. */
@@ -23,6 +24,7 @@ const reviewedShapes = [
 export function supportsFieldLegend(card: DeepReadonly<CardRevisionSnapshot> | undefined, context: EngineContext) {
     const m = card?.mechanics, policy = context.content.ruleset.gameplay?.turnSlice;
     if (hasCallTrashProgram(card)) return supportsCallTrashProgram(card, context); // Batch V73: its {Go Solo} shares the field-Legend lifecycle.
+    if (hasLegendDefeatReplacement(card)) return supportsDefeatReplacementLegend(card, context); // Batch V100: likewise.
     if (hasModalChoice(card)) return failure("UNSUPPORTED_MODAL_CHOICE", "A modal ability is admitted only by its exact Program pin"); // Batch V44.
     if (hasRivalRevealEffect(card)) return failure("UNSUPPORTED_RIVAL_REVEAL", "A Rival-choice reveal is admitted only by its exact Program pin"); // Batch V77.
     if (hasHandResetEffect(card)) return failure("UNSUPPORTED_HAND_RESET", "A hand reset is admitted only by its exact Program pin"); // Batch V78.

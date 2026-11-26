@@ -14,6 +14,7 @@ import { RulesView } from "./view";
 import { defeatCards, defeatSupport } from "./defeat";
 import { transferGigs } from "./gig-transfer";
 import { answerStealPrevention, nextPreventableGig, offerStealPrevention } from "./steal-prevention";
+import { answerLegendReplacement, LEGEND_REPLACEMENT_PROTOCOL, nextLegendReplacement, offerLegendReplacement } from "./legend-defeat-replacement";
 import { defeatOrderChoice, defeatsFromFightResult, evaluateFight, gigStealChoice, stealableGigsFor, unfinishedDefeatOrder } from "./combat-outcome-queries";
 import { fightLostBindings, fightOutcomeBinding, fireFightOutcomes } from "./fight-outcome";
 import { belowPowerStealerPower, recordBelowPowerSteal } from "./below-power-steal";
@@ -39,6 +40,15 @@ export function finishCombat(m: TurnMutation) {
 }
 function advanceDefeats(m: TurnMutation) {
     const continuation = m.state.resolution.defeatContinuation!;
+    // Batch V100: each replaceable friendly defeat is offered to its controller before any owner order.
+    const offer = nextLegendReplacement(m.state, m.context);
+    if (offer) {
+        const c = m.state.timing.combat;
+        if (!("target" in c) || !c.target) return failure("INVALID_FIGHT", "Locked target required");
+        m.state.timing.combat = { ...c, stage: "DEFEAT_ORDER_SELECTION" };
+        offerLegendReplacement(m, offer);
+        return success(null);
+    }
     while (unfinishedDefeatOrder(m.state, m.context)) {
         const choice = defeatOrderChoice(m.state, m.context), order = unfinishedDefeatOrder(m.state, m.context)!;
         if (choice.options.length > 1) {
@@ -66,6 +76,10 @@ function advanceDefeats(m: TurnMutation) {
 }
 export function continueDefeatOrder(m: TurnMutation, index: number) {
     const choice = m.state.resolution.choice, option = choice?.options[index], order = unfinishedDefeatOrder(m.state, m.context);
+    if (choice?.continuationId === LEGEND_REPLACEMENT_PROTOCOL) { // Batch V100.
+        const answered = answerLegendReplacement(m, option);
+        return answered.ok ? advanceDefeats(m) : answered;
+    }
     if (!order || option?.kind !== "CARD") return failure("INVALID_DEFEAT_ORDER", "Choose the next card in its owner's Trash order");
     m.state.resolution.defeatContinuation!.orders.find(o => o.targetId === order.targetId)!.cardIds.push(option.cardInstanceId);
     m.emit({ kind: "DEFEAT_TRASH_ORDER_SELECTED", targetId: order.targetId, cardInstanceId: option.cardInstanceId, ownerId: choice!.actorId, forced: false });
