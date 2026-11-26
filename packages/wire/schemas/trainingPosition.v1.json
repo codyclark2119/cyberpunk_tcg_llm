@@ -1643,6 +1643,16 @@
                 "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$"
               }
             },
+            "equippedSpends": {
+              "minItems": 1,
+              "type": "array",
+              "items": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 200,
+                "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$"
+              }
+            },
             "equippedDefeats": {
               "minItems": 1,
               "type": "array",
@@ -1675,6 +1685,31 @@
               "required": [
                 "playerId",
                 "legendId"
+              ],
+              "additionalProperties": false
+            },
+            "queuedProgramPlay": {
+              "type": "object",
+              "properties": {
+                "playerId": {
+                  "type": "string",
+                  "format": "uuid",
+                  "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+                },
+                "cardInstanceId": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 200,
+                  "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$"
+                },
+                "started": {
+                  "type": "boolean",
+                  "const": true
+                }
+              },
+              "required": [
+                "playerId",
+                "cardInstanceId"
               ],
               "additionalProperties": false
             },
@@ -3900,6 +3935,27 @@
                     "additionalProperties": false
                   }
                 },
+                "freePlaySource": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 200,
+                  "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$"
+                },
+                "stealPrevention": {
+                  "type": "object",
+                  "properties": {
+                    "gigInstanceId": {
+                      "type": "string",
+                      "minLength": 1,
+                      "maxLength": 200,
+                      "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$"
+                    }
+                  },
+                  "required": [
+                    "gigInstanceId"
+                  ],
+                  "additionalProperties": false
+                },
                 "effectDefeats": {
                   "minItems": 1,
                   "type": "array",
@@ -4886,8 +4942,36 @@
                 },
                 "remaining": {
                   "type": "integer",
-                  "exclusiveMinimum": 0,
+                  "minimum": 0,
                   "maximum": 9007199254740991
+                },
+                "prevention": {
+                  "type": "object",
+                  "properties": {
+                    "answered": {
+                      "type": "array",
+                      "items": {
+                        "type": "string",
+                        "minLength": 1,
+                        "maxLength": 200,
+                        "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$"
+                      }
+                    },
+                    "prevented": {
+                      "type": "array",
+                      "items": {
+                        "type": "string",
+                        "minLength": 1,
+                        "maxLength": 200,
+                        "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$"
+                      }
+                    }
+                  },
+                  "required": [
+                    "answered",
+                    "prevented"
+                  ],
+                  "additionalProperties": false
                 }
               },
               "required": [
@@ -5209,6 +5293,51 @@
                     "additionalProperties": false
                   }
                 },
+                "legendReplacement": {
+                  "type": "object",
+                  "properties": {
+                    "answered": {
+                      "minItems": 1,
+                      "type": "array",
+                      "items": {
+                        "type": "string",
+                        "minLength": 1,
+                        "maxLength": 200,
+                        "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$"
+                      }
+                    },
+                    "replaced": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "targetId": {
+                            "type": "string",
+                            "minLength": 1,
+                            "maxLength": 200,
+                            "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$"
+                          },
+                          "legendId": {
+                            "type": "string",
+                            "minLength": 1,
+                            "maxLength": 200,
+                            "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$"
+                          }
+                        },
+                        "required": [
+                          "targetId",
+                          "legendId"
+                        ],
+                        "additionalProperties": false
+                      }
+                    }
+                  },
+                  "required": [
+                    "answered",
+                    "replaced"
+                  ],
+                  "additionalProperties": false
+                },
                 "defeats": {
                   "minItems": 1,
                   "type": "array",
@@ -5488,6 +5617,27 @@
                 "freeFromDeck": {
                   "type": "boolean",
                   "const": true
+                },
+                "trashPlayedIds": {
+                  "minItems": 1,
+                  "maxItems": 2,
+                  "type": "array",
+                  "items": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 200,
+                    "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$"
+                  }
+                },
+                "freeBottomDeck": {
+                  "type": "boolean",
+                  "const": true
+                },
+                "discardedCostId": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 200,
+                  "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$"
                 }
               },
               "required": [
@@ -6009,30 +6159,47 @@
                                       "const": "SPENT"
                                     },
                                     "cost": {
-                                      "type": "object",
-                                      "properties": {
-                                        "kind": {
-                                          "type": "string",
-                                          "const": "AT_MOST"
-                                        },
-                                        "value": {
-                                          "anyOf": [
-                                            {
-                                              "type": "number",
-                                              "const": 2
+                                      "anyOf": [
+                                        {
+                                          "type": "object",
+                                          "properties": {
+                                            "kind": {
+                                              "type": "string",
+                                              "const": "AT_MOST"
                                             },
-                                            {
-                                              "type": "number",
-                                              "const": 3
+                                            "value": {
+                                              "anyOf": [
+                                                {
+                                                  "type": "number",
+                                                  "const": 2
+                                                },
+                                                {
+                                                  "type": "number",
+                                                  "const": 3
+                                                }
+                                              ]
                                             }
-                                          ]
+                                          },
+                                          "required": [
+                                            "kind",
+                                            "value"
+                                          ],
+                                          "additionalProperties": false
+                                        },
+                                        {
+                                          "type": "object",
+                                          "properties": {
+                                            "kind": {
+                                              "type": "string",
+                                              "const": "AT_MOST_DISCARDED"
+                                            }
+                                          },
+                                          "required": [
+                                            "kind"
+                                          ],
+                                          "additionalProperties": false
                                         }
-                                      },
-                                      "required": [
-                                        "kind",
-                                        "value"
-                                      ],
-                                      "additionalProperties": false
+                                      ]
                                     },
                                     "instead": {
                                       "type": "object",
@@ -6332,30 +6499,47 @@
                                   "const": "SPENT"
                                 },
                                 "cost": {
-                                  "type": "object",
-                                  "properties": {
-                                    "kind": {
-                                      "type": "string",
-                                      "const": "AT_MOST"
-                                    },
-                                    "value": {
-                                      "anyOf": [
-                                        {
-                                          "type": "number",
-                                          "const": 2
+                                  "anyOf": [
+                                    {
+                                      "type": "object",
+                                      "properties": {
+                                        "kind": {
+                                          "type": "string",
+                                          "const": "AT_MOST"
                                         },
-                                        {
-                                          "type": "number",
-                                          "const": 3
+                                        "value": {
+                                          "anyOf": [
+                                            {
+                                              "type": "number",
+                                              "const": 2
+                                            },
+                                            {
+                                              "type": "number",
+                                              "const": 3
+                                            }
+                                          ]
                                         }
-                                      ]
+                                      },
+                                      "required": [
+                                        "kind",
+                                        "value"
+                                      ],
+                                      "additionalProperties": false
+                                    },
+                                    {
+                                      "type": "object",
+                                      "properties": {
+                                        "kind": {
+                                          "type": "string",
+                                          "const": "AT_MOST_DISCARDED"
+                                        }
+                                      },
+                                      "required": [
+                                        "kind"
+                                      ],
+                                      "additionalProperties": false
                                     }
-                                  },
-                                  "required": [
-                                    "kind",
-                                    "value"
-                                  ],
-                                  "additionalProperties": false
+                                  ]
                                 },
                                 "instead": {
                                   "type": "object",
@@ -8521,6 +8705,60 @@
                           "properties": {
                             "kind": {
                               "type": "string",
+                              "const": "PLAY_TRASH_UNITS_FREE"
+                            },
+                            "count": {
+                              "type": "number",
+                              "const": 2
+                            },
+                            "maxCost": {
+                              "type": "number",
+                              "const": 3
+                            }
+                          },
+                          "required": [
+                            "kind",
+                            "count",
+                            "maxCost"
+                          ],
+                          "additionalProperties": false
+                        },
+                        {
+                          "type": "object",
+                          "properties": {
+                            "kind": {
+                              "type": "string",
+                              "const": "MAY_PLAY_PROGRAM_FREE_FROM_HAND_OR_TRASH_THEN_BOTTOM_DECK"
+                            },
+                            "maxCost": {
+                              "type": "number",
+                              "const": 3
+                            }
+                          },
+                          "required": [
+                            "kind",
+                            "maxCost"
+                          ],
+                          "additionalProperties": false
+                        },
+                        {
+                          "type": "object",
+                          "properties": {
+                            "kind": {
+                              "type": "string",
+                              "const": "DISCARD_ONE_FOR_DEFEAT_COST"
+                            }
+                          },
+                          "required": [
+                            "kind"
+                          ],
+                          "additionalProperties": false
+                        },
+                        {
+                          "type": "object",
+                          "properties": {
+                            "kind": {
+                              "type": "string",
                               "const": "EQUIPPED_UNIT_POWER_PER_GEAR_THIS_TURN"
                             },
                             "amount": {
@@ -8630,30 +8868,47 @@
                                               "const": "SPENT"
                                             },
                                             "cost": {
-                                              "type": "object",
-                                              "properties": {
-                                                "kind": {
-                                                  "type": "string",
-                                                  "const": "AT_MOST"
-                                                },
-                                                "value": {
-                                                  "anyOf": [
-                                                    {
-                                                      "type": "number",
-                                                      "const": 2
+                                              "anyOf": [
+                                                {
+                                                  "type": "object",
+                                                  "properties": {
+                                                    "kind": {
+                                                      "type": "string",
+                                                      "const": "AT_MOST"
                                                     },
-                                                    {
-                                                      "type": "number",
-                                                      "const": 3
+                                                    "value": {
+                                                      "anyOf": [
+                                                        {
+                                                          "type": "number",
+                                                          "const": 2
+                                                        },
+                                                        {
+                                                          "type": "number",
+                                                          "const": 3
+                                                        }
+                                                      ]
                                                     }
-                                                  ]
+                                                  },
+                                                  "required": [
+                                                    "kind",
+                                                    "value"
+                                                  ],
+                                                  "additionalProperties": false
+                                                },
+                                                {
+                                                  "type": "object",
+                                                  "properties": {
+                                                    "kind": {
+                                                      "type": "string",
+                                                      "const": "AT_MOST_DISCARDED"
+                                                    }
+                                                  },
+                                                  "required": [
+                                                    "kind"
+                                                  ],
+                                                  "additionalProperties": false
                                                 }
-                                              },
-                                              "required": [
-                                                "kind",
-                                                "value"
-                                              ],
-                                              "additionalProperties": false
+                                              ]
                                             },
                                             "instead": {
                                               "type": "object",
@@ -8953,30 +9208,47 @@
                                           "const": "SPENT"
                                         },
                                         "cost": {
-                                          "type": "object",
-                                          "properties": {
-                                            "kind": {
-                                              "type": "string",
-                                              "const": "AT_MOST"
-                                            },
-                                            "value": {
-                                              "anyOf": [
-                                                {
-                                                  "type": "number",
-                                                  "const": 2
+                                          "anyOf": [
+                                            {
+                                              "type": "object",
+                                              "properties": {
+                                                "kind": {
+                                                  "type": "string",
+                                                  "const": "AT_MOST"
                                                 },
-                                                {
-                                                  "type": "number",
-                                                  "const": 3
+                                                "value": {
+                                                  "anyOf": [
+                                                    {
+                                                      "type": "number",
+                                                      "const": 2
+                                                    },
+                                                    {
+                                                      "type": "number",
+                                                      "const": 3
+                                                    }
+                                                  ]
                                                 }
-                                              ]
+                                              },
+                                              "required": [
+                                                "kind",
+                                                "value"
+                                              ],
+                                              "additionalProperties": false
+                                            },
+                                            {
+                                              "type": "object",
+                                              "properties": {
+                                                "kind": {
+                                                  "type": "string",
+                                                  "const": "AT_MOST_DISCARDED"
+                                                }
+                                              },
+                                              "required": [
+                                                "kind"
+                                              ],
+                                              "additionalProperties": false
                                             }
-                                          },
-                                          "required": [
-                                            "kind",
-                                            "value"
-                                          ],
-                                          "additionalProperties": false
+                                          ]
                                         },
                                         "instead": {
                                           "type": "object",
@@ -11038,30 +11310,47 @@
                                     "const": "SPENT"
                                   },
                                   "cost": {
-                                    "type": "object",
-                                    "properties": {
-                                      "kind": {
-                                        "type": "string",
-                                        "const": "AT_MOST"
-                                      },
-                                      "value": {
-                                        "anyOf": [
-                                          {
-                                            "type": "number",
-                                            "const": 2
+                                    "anyOf": [
+                                      {
+                                        "type": "object",
+                                        "properties": {
+                                          "kind": {
+                                            "type": "string",
+                                            "const": "AT_MOST"
                                           },
-                                          {
-                                            "type": "number",
-                                            "const": 3
+                                          "value": {
+                                            "anyOf": [
+                                              {
+                                                "type": "number",
+                                                "const": 2
+                                              },
+                                              {
+                                                "type": "number",
+                                                "const": 3
+                                              }
+                                            ]
                                           }
-                                        ]
+                                        },
+                                        "required": [
+                                          "kind",
+                                          "value"
+                                        ],
+                                        "additionalProperties": false
+                                      },
+                                      {
+                                        "type": "object",
+                                        "properties": {
+                                          "kind": {
+                                            "type": "string",
+                                            "const": "AT_MOST_DISCARDED"
+                                          }
+                                        },
+                                        "required": [
+                                          "kind"
+                                        ],
+                                        "additionalProperties": false
                                       }
-                                    },
-                                    "required": [
-                                      "kind",
-                                      "value"
-                                    ],
-                                    "additionalProperties": false
+                                    ]
                                   },
                                   "instead": {
                                     "type": "object",
@@ -11361,30 +11650,47 @@
                                 "const": "SPENT"
                               },
                               "cost": {
-                                "type": "object",
-                                "properties": {
-                                  "kind": {
-                                    "type": "string",
-                                    "const": "AT_MOST"
-                                  },
-                                  "value": {
-                                    "anyOf": [
-                                      {
-                                        "type": "number",
-                                        "const": 2
+                                "anyOf": [
+                                  {
+                                    "type": "object",
+                                    "properties": {
+                                      "kind": {
+                                        "type": "string",
+                                        "const": "AT_MOST"
                                       },
-                                      {
-                                        "type": "number",
-                                        "const": 3
+                                      "value": {
+                                        "anyOf": [
+                                          {
+                                            "type": "number",
+                                            "const": 2
+                                          },
+                                          {
+                                            "type": "number",
+                                            "const": 3
+                                          }
+                                        ]
                                       }
-                                    ]
+                                    },
+                                    "required": [
+                                      "kind",
+                                      "value"
+                                    ],
+                                    "additionalProperties": false
+                                  },
+                                  {
+                                    "type": "object",
+                                    "properties": {
+                                      "kind": {
+                                        "type": "string",
+                                        "const": "AT_MOST_DISCARDED"
+                                      }
+                                    },
+                                    "required": [
+                                      "kind"
+                                    ],
+                                    "additionalProperties": false
                                   }
-                                },
-                                "required": [
-                                  "kind",
-                                  "value"
-                                ],
-                                "additionalProperties": false
+                                ]
                               },
                               "instead": {
                                 "type": "object",
@@ -13550,6 +13856,60 @@
                         "properties": {
                           "kind": {
                             "type": "string",
+                            "const": "PLAY_TRASH_UNITS_FREE"
+                          },
+                          "count": {
+                            "type": "number",
+                            "const": 2
+                          },
+                          "maxCost": {
+                            "type": "number",
+                            "const": 3
+                          }
+                        },
+                        "required": [
+                          "kind",
+                          "count",
+                          "maxCost"
+                        ],
+                        "additionalProperties": false
+                      },
+                      {
+                        "type": "object",
+                        "properties": {
+                          "kind": {
+                            "type": "string",
+                            "const": "MAY_PLAY_PROGRAM_FREE_FROM_HAND_OR_TRASH_THEN_BOTTOM_DECK"
+                          },
+                          "maxCost": {
+                            "type": "number",
+                            "const": 3
+                          }
+                        },
+                        "required": [
+                          "kind",
+                          "maxCost"
+                        ],
+                        "additionalProperties": false
+                      },
+                      {
+                        "type": "object",
+                        "properties": {
+                          "kind": {
+                            "type": "string",
+                            "const": "DISCARD_ONE_FOR_DEFEAT_COST"
+                          }
+                        },
+                        "required": [
+                          "kind"
+                        ],
+                        "additionalProperties": false
+                      },
+                      {
+                        "type": "object",
+                        "properties": {
+                          "kind": {
+                            "type": "string",
                             "const": "EQUIPPED_UNIT_POWER_PER_GEAR_THIS_TURN"
                           },
                           "amount": {
@@ -13659,30 +14019,47 @@
                                             "const": "SPENT"
                                           },
                                           "cost": {
-                                            "type": "object",
-                                            "properties": {
-                                              "kind": {
-                                                "type": "string",
-                                                "const": "AT_MOST"
-                                              },
-                                              "value": {
-                                                "anyOf": [
-                                                  {
-                                                    "type": "number",
-                                                    "const": 2
+                                            "anyOf": [
+                                              {
+                                                "type": "object",
+                                                "properties": {
+                                                  "kind": {
+                                                    "type": "string",
+                                                    "const": "AT_MOST"
                                                   },
-                                                  {
-                                                    "type": "number",
-                                                    "const": 3
+                                                  "value": {
+                                                    "anyOf": [
+                                                      {
+                                                        "type": "number",
+                                                        "const": 2
+                                                      },
+                                                      {
+                                                        "type": "number",
+                                                        "const": 3
+                                                      }
+                                                    ]
                                                   }
-                                                ]
+                                                },
+                                                "required": [
+                                                  "kind",
+                                                  "value"
+                                                ],
+                                                "additionalProperties": false
+                                              },
+                                              {
+                                                "type": "object",
+                                                "properties": {
+                                                  "kind": {
+                                                    "type": "string",
+                                                    "const": "AT_MOST_DISCARDED"
+                                                  }
+                                                },
+                                                "required": [
+                                                  "kind"
+                                                ],
+                                                "additionalProperties": false
                                               }
-                                            },
-                                            "required": [
-                                              "kind",
-                                              "value"
-                                            ],
-                                            "additionalProperties": false
+                                            ]
                                           },
                                           "instead": {
                                             "type": "object",
@@ -13982,30 +14359,47 @@
                                         "const": "SPENT"
                                       },
                                       "cost": {
-                                        "type": "object",
-                                        "properties": {
-                                          "kind": {
-                                            "type": "string",
-                                            "const": "AT_MOST"
-                                          },
-                                          "value": {
-                                            "anyOf": [
-                                              {
-                                                "type": "number",
-                                                "const": 2
+                                        "anyOf": [
+                                          {
+                                            "type": "object",
+                                            "properties": {
+                                              "kind": {
+                                                "type": "string",
+                                                "const": "AT_MOST"
                                               },
-                                              {
-                                                "type": "number",
-                                                "const": 3
+                                              "value": {
+                                                "anyOf": [
+                                                  {
+                                                    "type": "number",
+                                                    "const": 2
+                                                  },
+                                                  {
+                                                    "type": "number",
+                                                    "const": 3
+                                                  }
+                                                ]
                                               }
-                                            ]
+                                            },
+                                            "required": [
+                                              "kind",
+                                              "value"
+                                            ],
+                                            "additionalProperties": false
+                                          },
+                                          {
+                                            "type": "object",
+                                            "properties": {
+                                              "kind": {
+                                                "type": "string",
+                                                "const": "AT_MOST_DISCARDED"
+                                              }
+                                            },
+                                            "required": [
+                                              "kind"
+                                            ],
+                                            "additionalProperties": false
                                           }
-                                        },
-                                        "required": [
-                                          "kind",
-                                          "value"
-                                        ],
-                                        "additionalProperties": false
+                                        ]
                                       },
                                       "instead": {
                                         "type": "object",
@@ -16063,30 +16457,47 @@
                                     "const": "SPENT"
                                   },
                                   "cost": {
-                                    "type": "object",
-                                    "properties": {
-                                      "kind": {
-                                        "type": "string",
-                                        "const": "AT_MOST"
-                                      },
-                                      "value": {
-                                        "anyOf": [
-                                          {
-                                            "type": "number",
-                                            "const": 2
+                                    "anyOf": [
+                                      {
+                                        "type": "object",
+                                        "properties": {
+                                          "kind": {
+                                            "type": "string",
+                                            "const": "AT_MOST"
                                           },
-                                          {
-                                            "type": "number",
-                                            "const": 3
+                                          "value": {
+                                            "anyOf": [
+                                              {
+                                                "type": "number",
+                                                "const": 2
+                                              },
+                                              {
+                                                "type": "number",
+                                                "const": 3
+                                              }
+                                            ]
                                           }
-                                        ]
+                                        },
+                                        "required": [
+                                          "kind",
+                                          "value"
+                                        ],
+                                        "additionalProperties": false
+                                      },
+                                      {
+                                        "type": "object",
+                                        "properties": {
+                                          "kind": {
+                                            "type": "string",
+                                            "const": "AT_MOST_DISCARDED"
+                                          }
+                                        },
+                                        "required": [
+                                          "kind"
+                                        ],
+                                        "additionalProperties": false
                                       }
-                                    },
-                                    "required": [
-                                      "kind",
-                                      "value"
-                                    ],
-                                    "additionalProperties": false
+                                    ]
                                   },
                                   "instead": {
                                     "type": "object",
@@ -16386,30 +16797,47 @@
                                 "const": "SPENT"
                               },
                               "cost": {
-                                "type": "object",
-                                "properties": {
-                                  "kind": {
-                                    "type": "string",
-                                    "const": "AT_MOST"
-                                  },
-                                  "value": {
-                                    "anyOf": [
-                                      {
-                                        "type": "number",
-                                        "const": 2
+                                "anyOf": [
+                                  {
+                                    "type": "object",
+                                    "properties": {
+                                      "kind": {
+                                        "type": "string",
+                                        "const": "AT_MOST"
                                       },
-                                      {
-                                        "type": "number",
-                                        "const": 3
+                                      "value": {
+                                        "anyOf": [
+                                          {
+                                            "type": "number",
+                                            "const": 2
+                                          },
+                                          {
+                                            "type": "number",
+                                            "const": 3
+                                          }
+                                        ]
                                       }
-                                    ]
+                                    },
+                                    "required": [
+                                      "kind",
+                                      "value"
+                                    ],
+                                    "additionalProperties": false
+                                  },
+                                  {
+                                    "type": "object",
+                                    "properties": {
+                                      "kind": {
+                                        "type": "string",
+                                        "const": "AT_MOST_DISCARDED"
+                                      }
+                                    },
+                                    "required": [
+                                      "kind"
+                                    ],
+                                    "additionalProperties": false
                                   }
-                                },
-                                "required": [
-                                  "kind",
-                                  "value"
-                                ],
-                                "additionalProperties": false
+                                ]
                               },
                               "instead": {
                                 "type": "object",
@@ -18575,6 +19003,60 @@
                         "properties": {
                           "kind": {
                             "type": "string",
+                            "const": "PLAY_TRASH_UNITS_FREE"
+                          },
+                          "count": {
+                            "type": "number",
+                            "const": 2
+                          },
+                          "maxCost": {
+                            "type": "number",
+                            "const": 3
+                          }
+                        },
+                        "required": [
+                          "kind",
+                          "count",
+                          "maxCost"
+                        ],
+                        "additionalProperties": false
+                      },
+                      {
+                        "type": "object",
+                        "properties": {
+                          "kind": {
+                            "type": "string",
+                            "const": "MAY_PLAY_PROGRAM_FREE_FROM_HAND_OR_TRASH_THEN_BOTTOM_DECK"
+                          },
+                          "maxCost": {
+                            "type": "number",
+                            "const": 3
+                          }
+                        },
+                        "required": [
+                          "kind",
+                          "maxCost"
+                        ],
+                        "additionalProperties": false
+                      },
+                      {
+                        "type": "object",
+                        "properties": {
+                          "kind": {
+                            "type": "string",
+                            "const": "DISCARD_ONE_FOR_DEFEAT_COST"
+                          }
+                        },
+                        "required": [
+                          "kind"
+                        ],
+                        "additionalProperties": false
+                      },
+                      {
+                        "type": "object",
+                        "properties": {
+                          "kind": {
+                            "type": "string",
                             "const": "EQUIPPED_UNIT_POWER_PER_GEAR_THIS_TURN"
                           },
                           "amount": {
@@ -18684,30 +19166,47 @@
                                             "const": "SPENT"
                                           },
                                           "cost": {
-                                            "type": "object",
-                                            "properties": {
-                                              "kind": {
-                                                "type": "string",
-                                                "const": "AT_MOST"
-                                              },
-                                              "value": {
-                                                "anyOf": [
-                                                  {
-                                                    "type": "number",
-                                                    "const": 2
+                                            "anyOf": [
+                                              {
+                                                "type": "object",
+                                                "properties": {
+                                                  "kind": {
+                                                    "type": "string",
+                                                    "const": "AT_MOST"
                                                   },
-                                                  {
-                                                    "type": "number",
-                                                    "const": 3
+                                                  "value": {
+                                                    "anyOf": [
+                                                      {
+                                                        "type": "number",
+                                                        "const": 2
+                                                      },
+                                                      {
+                                                        "type": "number",
+                                                        "const": 3
+                                                      }
+                                                    ]
                                                   }
-                                                ]
+                                                },
+                                                "required": [
+                                                  "kind",
+                                                  "value"
+                                                ],
+                                                "additionalProperties": false
+                                              },
+                                              {
+                                                "type": "object",
+                                                "properties": {
+                                                  "kind": {
+                                                    "type": "string",
+                                                    "const": "AT_MOST_DISCARDED"
+                                                  }
+                                                },
+                                                "required": [
+                                                  "kind"
+                                                ],
+                                                "additionalProperties": false
                                               }
-                                            },
-                                            "required": [
-                                              "kind",
-                                              "value"
-                                            ],
-                                            "additionalProperties": false
+                                            ]
                                           },
                                           "instead": {
                                             "type": "object",
@@ -19007,30 +19506,47 @@
                                         "const": "SPENT"
                                       },
                                       "cost": {
-                                        "type": "object",
-                                        "properties": {
-                                          "kind": {
-                                            "type": "string",
-                                            "const": "AT_MOST"
-                                          },
-                                          "value": {
-                                            "anyOf": [
-                                              {
-                                                "type": "number",
-                                                "const": 2
+                                        "anyOf": [
+                                          {
+                                            "type": "object",
+                                            "properties": {
+                                              "kind": {
+                                                "type": "string",
+                                                "const": "AT_MOST"
                                               },
-                                              {
-                                                "type": "number",
-                                                "const": 3
+                                              "value": {
+                                                "anyOf": [
+                                                  {
+                                                    "type": "number",
+                                                    "const": 2
+                                                  },
+                                                  {
+                                                    "type": "number",
+                                                    "const": 3
+                                                  }
+                                                ]
                                               }
-                                            ]
+                                            },
+                                            "required": [
+                                              "kind",
+                                              "value"
+                                            ],
+                                            "additionalProperties": false
+                                          },
+                                          {
+                                            "type": "object",
+                                            "properties": {
+                                              "kind": {
+                                                "type": "string",
+                                                "const": "AT_MOST_DISCARDED"
+                                              }
+                                            },
+                                            "required": [
+                                              "kind"
+                                            ],
+                                            "additionalProperties": false
                                           }
-                                        },
-                                        "required": [
-                                          "kind",
-                                          "value"
-                                        ],
-                                        "additionalProperties": false
+                                        ]
                                       },
                                       "instead": {
                                         "type": "object",
@@ -21307,7 +21823,7 @@
             },
             "remaining": {
               "type": "integer",
-              "exclusiveMinimum": 0,
+              "minimum": 0,
               "maximum": 9007199254740991
             }
           },
