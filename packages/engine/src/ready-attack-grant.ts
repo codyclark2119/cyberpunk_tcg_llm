@@ -1,3 +1,4 @@
+import { playedProgramFaceOk, playedProgramZone } from "./played-program";
 import { turnSliceAllows, canonicalSerialize, failure, success, type CardInstanceId, type CardRevisionSnapshot, type DeepReadonly, type GameState, type PlayerId, type Result, type TemporaryPowerModifier } from "@tcg/domain";
 import type { EngineContext } from "./state";
 import type { TurnMutation } from "./turn";
@@ -128,7 +129,7 @@ export function validateReadyUnitAttackGrants(state: GameState, context: EngineC
 /** The +3 on a friendly public Unit from the pinned Program, this turn. */
 export function validateUnitGrantPower(state: GameState, x: UnitGrantPower, context: EngineContext, publicUnit: (id: CardInstanceId) => boolean) {
     const source = state.objects.cards[x.sourceId], target = state.objects.cards[x.targetId];
-    if (!source || !target || !supportsUnitGrantProgram(cardRevision(state, x.sourceId, context), context).ok || !["TRASH", "RESOLVING_PROGRAM"].includes(source.zone.zone) || source.face !== "UP"
+    if (!source || !target || !supportsUnitGrantProgram(cardRevision(state, x.sourceId, context), context).ok || !playedProgramZone(source) || !playedProgramFaceOk(source)
         || x.expires.turn !== state.timing.turn || target.controllerId !== source.controllerId || !publicUnit(x.targetId))
         return failure("INVALID_TEMPORARY_POWER", "A Unit grant's power needs its reviewed played Program, a friendly public Unit and the current turn");
     return success(null);

@@ -44,9 +44,12 @@ function gearActivation(state: GameState, sourceId: CardInstanceId, context: Eng
     const r = cardRevision(state, sourceId, context), host = attachmentHost(state, sourceId);
     return r?.type === "GEAR" && supportsQuickActivationCard(r, context).ok && Boolean(host) && ["BATTLEFIELD", "LEGENDS"].includes(state.objects.cards[sourceId].zone.zone);
 }
-/** Batch V90: the registered defeat an armed end-of-turn binding resolves, compared in place of the printed effect list. */
+/** Batch V90: the registered defeat an armed end-of-turn binding resolves, compared in place of the printed effect list.
+ * Audit fix: likewise the defeat a fired next-fight-outcome binding resolves (Safety Override), which otherwise has no play
+ * continuation to index once an owner-order choice (an equipped Gear) pauses it. */
 function registeredDefeat(e: CurrentEffect, revision: NonNullable<ReturnType<typeof cardRevision>>) {
     const first = revision.mechanics.abilities[0].effects[0];
+    if (e.trigger?.kind === "DELAYED_FIGHT_OUTCOME" && first?.kind === "REGISTER_NEXT_FIGHT_OUTCOME") return first.effect;
     return e.trigger?.kind === "DELAYED_END_TURN_DEFEAT" && first?.kind === "EQUIPPED_UNIT_POWER_PER_GEAR_THIS_TURN" ? first.ifStealsOrFights.effect : undefined;
 }
 /** Main keeps the historical active-player noncombat origin. The Gear capability adds exactly one

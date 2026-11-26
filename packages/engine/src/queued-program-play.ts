@@ -51,14 +51,16 @@ export function startQueuedProgramPlay(m: TurnMutation): Result<null> | null {
     return startPlay(m, q.playerId, q.cardInstanceId, m.state.objects.cards[q.cardInstanceId].zone.zone === "TRASH" ? "TRASH" : "HAND", true);
 }
 /** A queued play waits for its action's trigger batches (or its attack) to end, with its Program still eligible; once started, its free
- * Program resolves in the Main Phase. A free bottom-decked play is exactly the started queued Program. */
+ * Program resolves in the Main Phase, with any trigger batch its play starts. A free bottom-decked play is exactly the started queued Program. */
 export function validateQueuedProgramPlay(state: GameState, context: EngineContext) {
     const q = state.turnHistory?.queuedProgramPlay, r = state.resolution, c = r.playContinuation;
     if (c?.freeBottomDeck && (c.kind !== "PLAY" || !q?.started || q.cardInstanceId !== c.sourceId || c.actorId !== q.playerId || cardRevision(state, c.sourceId, context)?.type !== "PROGRAM"))
         return failure("INVALID_QUEUED_PROGRAM_PLAY", "A free bottom-decked Program is the started queued play");
     if (!q) return success(null);
     const waiting = !q.started && (r.triggerContinuation || state.timing.combat.stage !== "NONE") && eligibleProgram(state, q.playerId, q.cardInstanceId, context);
-    const resolving = q.started && state.timing.combat.stage === "NONE" && r.returnTo?.kind === "MAIN";
+    // Audit fix (2026-11-26): the started Program's own play may start a trigger batch (Judy Alvarez: Braindance Maestro), as a queued
+    // {Call} may (validateQueuedCall).
+    const resolving = q.started && state.timing.combat.stage === "NONE" && (r.returnTo?.kind === "MAIN" || Boolean(r.triggerContinuation));
     if (!queuedProgramPlayEnabled(context) || !state.players[q.playerId] || !(waiting || resolving))
         return failure("INVALID_QUEUED_PROGRAM_PLAY", "A queued Program play waits for its action or attack with an eligible Program, or resolves in the Main Phase");
     return success(null);

@@ -156,6 +156,8 @@ export const TurnHistorySchema = z.strictObject({
     // Batch V84: a Legend Called for free by an effect, whose {Call} ability resolves once the action's trigger batches are done (Batch
     // V86: or its attack has ended); `started` while that ability resolves, which may be the non-active player's.
     queuedCall: z.strictObject({ playerId: PlayerIdSchema, legendId: CardInstanceIdSchema, started: z.literal(true).optional() }).optional(),
+    // Audit fix (2026-11-26): further free Calls in the same window, queued in Call order behind `queuedCall` instead of replacing it.
+    queuedCallsNext: z.array(z.strictObject({ playerId: PlayerIdSchema, legendId: CardInstanceIdSchema })).min(1).optional(),
     // Batch V97: a Program a {Play} trigger chose to play for free from hand or trash, played once the action's trigger batches are done
     // (or its attack has ended); `started` while it resolves.
     queuedProgramPlay: z.strictObject({ playerId: PlayerIdSchema, cardInstanceId: CardInstanceIdSchema, started: z.literal(true).optional() }).optional(),

@@ -1,3 +1,4 @@
+import { playedProgramFaceOk, playedProgramZone } from "./played-program";
 import { canonicalSerialize, failure, hashCanonical, success, type CardInstanceId, type CardRevisionSnapshot, type DeepReadonly, type EndTurnDefeat, type GameState, type Result, type TemporaryPowerModifier, type TriggerBinding } from "@tcg/domain";
 import type { EngineContext } from "./state";
 import type { TurnMutation } from "./turn";
@@ -95,7 +96,7 @@ export function validateEndTurnDefeats(state: GameState, context: EngineContext)
 export function validateEquippedGearPower(state: GameState, x: GearPower, context: EngineContext, publicUnit: (id: CardInstanceId) => boolean) {
     const source = state.objects.cards[x.sourceId], a = registeringAbility(cardRevision(state, x.sourceId, context), context);
     const gear = Object.values(state.objects.cards).filter(c => cardRevision(state, c.id, context)?.type === "GEAR").length;
-    if (!source || !a || !["TRASH", "RESOLVING_PROGRAM"].includes(source.zone.zone) || source.face !== "UP" || x.expires.turn !== state.timing.turn || !publicUnit(x.targetId) || x.amount > 3 * gear)
+    if (!source || !a || !playedProgramZone(source) || !playedProgramFaceOk(source) || x.expires.turn !== state.timing.turn || !publicUnit(x.targetId) || x.amount > 3 * gear)
         return failure("INVALID_TEMPORARY_POWER", "Per-Gear power needs its reviewed played Program, a public Unit and the current turn");
     return success(null);
 }

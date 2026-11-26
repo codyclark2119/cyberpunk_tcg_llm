@@ -1,3 +1,4 @@
+import { playedProgramZone } from "./played-program";
 import { canonicalSerialize, failure, success, type CardInstanceId, type GameState, type StealReduction } from "@tcg/domain";
 import type { EngineContext } from "./state";
 import type { TurnMutation } from "./turn";
@@ -38,7 +39,7 @@ export function validateStealReductions(state: GameState, context: EngineContext
     if (new Set(all.map(x => x.origin.effectId)).size !== all.length || canonicalSerialize(all) !== canonicalSerialize([...all].sort(compare))) return failure("INVALID_STEAL_REDUCTION", "Unique, ordered reduction occurrences required");
     for (const x of all) {
         const source = state.objects.cards[x.sourceId], target = state.objects.cards[x.targetId], r = cardRevision(state, x.sourceId, context);
-        if (!source || !target || x.createdTurn !== state.timing.turn || !supportsStealReductionProgram(r, context).ok || source.ownerId !== x.controllerId || !["TRASH", "RESOLVING_PROGRAM"].includes(source.zone.zone)
+        if (!source || !target || x.createdTurn !== state.timing.turn || !supportsStealReductionProgram(r, context).ok || source.ownerId !== x.controllerId || !playedProgramZone(source)
             || !isUnitSpendSubject(state, x.targetId, context) || target.controllerId === x.controllerId || state.resolution.current?.id === x.origin.effectId && source.zone.zone !== "RESOLVING_PROGRAM")
             return failure("INVALID_STEAL_REDUCTION", "A reduction needs its reviewed played Program, the current turn and a rival field Unit target");
     }

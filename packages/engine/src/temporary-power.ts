@@ -1,3 +1,4 @@
+import { playedProgramZone } from "./played-program";
 import { validatePaidPower } from "./paid-attack-power";
 import { validateEquippedGearPower } from "./end-turn-defeat";
 import { isLegendCallPower, playPowerTargets } from "./legend-spend";
@@ -164,7 +165,7 @@ export function validateTemporaryPower(state: GameState, context: EngineContext)
         // Batch V54: Towerfall's "-5 power this turn" to each rival Unit there as it resolved.
         if ("scaled" in x && x.scaled === "ALL_RIVAL_UNITS") {
             const effect = r?.mechanics.abilities[0]?.effects.find(e => e.kind === "POWER_UNTIL_END_OF_TURN");
-            if (x.expires.turn !== state.timing.turn || !source || !target || !supportsModalProgram(r, context).ok || effect?.kind !== "POWER_UNTIL_END_OF_TURN" || effect.target.kind !== "ALL_RIVAL_UNITS" || !["TRASH", "RESOLVING_PROGRAM"].includes(source.zone.zone)
+            if (x.expires.turn !== state.timing.turn || !source || !target || !supportsModalProgram(r, context).ok || effect?.kind !== "POWER_UNTIL_END_OF_TURN" || effect.target.kind !== "ALL_RIVAL_UNITS" || !playedProgramZone(source)
                 || target.controllerId === source.controllerId || !["BATTLEFIELD", "TRASH", "REMOVED"].includes(target.zone.zone) || target.face !== "UP" || !(effectiveCardTypes(state, x.targetId, context).includes("UNIT") || removedFieldLegend(state, x.targetId, context)))
                 return failure("INVALID_TEMPORARY_POWER", "All-rival power needs its reviewed played Program, a public rival Unit target and the current turn");
             continue;
@@ -202,7 +203,7 @@ export function validateTemporaryPower(state: GameState, context: EngineContext)
                 return failure("INVALID_TEMPORARY_POWER", "Friendly+2 requires a resolved current-turn PLAY occurrence and a public friendly target");
             continue;
         }
-        if (x.expires.turn !== state.timing.turn || !source || !(x.amount === -5 ? supportsModalProgram(r, context) : supportsReactPlay(r, context)).ok || r?.type !== "PROGRAM" || !["TRASH", "RESOLVING_PROGRAM"].includes(source.zone.zone) || !target || !(combatResolutionEnabled(context) ? ["BATTLEFIELD", "TRASH", "REMOVED"] : ["BATTLEFIELD"]).includes(target.zone.zone) || !(effectiveCardTypes(state, x.targetId, context).includes("UNIT") || removed)) return failure("INVALID_TEMPORARY_POWER", "Modifier must reference a played reviewed Program, current public Unit under the reviewed zone lifecycle and current turn");
+        if (x.expires.turn !== state.timing.turn || !source || !(x.amount === -5 ? supportsModalProgram(r, context) : supportsReactPlay(r, context)).ok || r?.type !== "PROGRAM" || !playedProgramZone(source) || !target || !(combatResolutionEnabled(context) ? ["BATTLEFIELD", "TRASH", "REMOVED"] : ["BATTLEFIELD"]).includes(target.zone.zone) || !(effectiveCardTypes(state, x.targetId, context).includes("UNIT") || removed)) return failure("INVALID_TEMPORARY_POWER", "Modifier must reference a played reviewed Program, current public Unit under the reviewed zone lifecycle and current turn");
     }
     return success(null);
 }

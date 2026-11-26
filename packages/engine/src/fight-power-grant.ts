@@ -1,3 +1,4 @@
+import { playedProgramZone } from "./played-program";
 import { canonicalSerialize, failure, success, type CardInstanceId, type FightPowerGrant, type GameState, type PlayerId } from "@tcg/domain";
 import type { EngineContext } from "./state";
 import type { TurnMutation } from "./turn";
@@ -45,7 +46,7 @@ export function validateFightPowerGrants(state: GameState, context: EngineContex
     if (new Set(all.map(x => x.origin.effectId)).size !== all.length || canonicalSerialize(all) !== canonicalSerialize([...all].sort(compare))) return failure("INVALID_FIGHT_POWER", "Unique, ordered grant occurrences required");
     for (const x of all) {
         const source = state.objects.cards[x.sourceId], target = state.objects.cards[x.targetId], r = cardRevision(state, x.sourceId, context);
-        if (!source || !target || x.createdTurn !== state.timing.turn || !supportsFightPowerProgram(r, context).ok || source.ownerId !== x.controllerId || !["TRASH", "RESOLVING_PROGRAM"].includes(source.zone.zone)
+        if (!source || !target || x.createdTurn !== state.timing.turn || !supportsFightPowerProgram(r, context).ok || source.ownerId !== x.controllerId || !playedProgramZone(source)
             || !isUnitSpendSubject(state, x.targetId, context) || target.controllerId !== x.controllerId)
             return failure("INVALID_FIGHT_POWER", "A grant needs its reviewed played Program, the current turn and a friendly field Unit target");
     }

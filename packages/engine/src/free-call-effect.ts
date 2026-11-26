@@ -73,7 +73,12 @@ export function callLegendFree(m: TurnMutation, slot: number): Result<null> {
     if (current?.effect.kind !== "MAY_CALL_LEGEND_FREE" || !actor || !freeCallSlots(m.state, actor, m.context).includes(slot)) return failure("INVALID_FREE_CALL", "Choose a friendly face-down Legend you may Call");
     const legendId = m.state.players[actor].zones.LEGENDS[slot];
     m.revealCalledLegend(actor, legendId);
-    if (cardRevision(m.state, legendId, m.context)?.mechanics.abilities.some(a => a.trigger === "WHEN_CALLED")) m.state.turnHistory!.queuedCall = { playerId: actor, legendId };
+    if (cardRevision(m.state, legendId, m.context)?.mechanics.abilities.some(a => a.trigger === "WHEN_CALLED")) {
+        // Audit fix (2026-11-26): a second free Call in the same window queues behind the first instead of replacing it.
+        const h = m.state.turnHistory!;
+        if (h.queuedCall) h.queuedCallsNext = [...(h.queuedCallsNext ?? []), { playerId: actor, legendId }];
+        else h.queuedCall = { playerId: actor, legendId };
+    }
     return success(null);
 }
 /** Run by the action's end (Batch V86: or the attack's end): the queued {Call} ability starts as an ordinary Call's would, returning to
@@ -82,7 +87,13 @@ export function callLegendFree(m: TurnMutation, slot: number): Result<null> {
 export function startQueuedCall(m: TurnMutation): Result<null> | null {
     const h = m.state.turnHistory, queued = h?.queuedCall;
     if (!queued) return null;
-    if (queued.started || m.state.match.outcome) { delete h.queuedCall; m.state.timing.actingPlayer = m.state.timing.activePlayer; return null; }
+    if (queued.started || m.state.match.outcome) {
+        delete h.queuedCall;
+        const next = m.state.match.outcome ? undefined : h.queuedCallsNext?.[0];
+        if (next) { h.queuedCall = { playerId: next.playerId, legendId: next.legendId }; if (h.queuedCallsNext!.length > 1) h.queuedCallsNext = h.queuedCallsNext!.slice(1); else delete h.queuedCallsNext; return startQueuedCall(m); }
+        delete h.queuedCallsNext;
+        m.state.timing.actingPlayer = m.state.timing.activePlayer; return null;
+    }
     queued.started = true;
     m.state.resolution.returnTo = { kind: "MAIN" };
     m.state.timing.actingPlayer = queued.playerId;
@@ -98,12 +109,17 @@ export function startedQueuedCall(state: GameState) {
 export function validateQueuedCall(state: GameState, context: EngineContext) {
     const q = state.turnHistory?.queuedCall, r = state.resolution;
     if (!q) return success(null);
-    const legend = state.objects.cards[q.legendId], revision = cardRevision(state, q.legendId, context);
     const waiting = !q.started && (r.triggerContinuation || state.timing.combat.stage !== "NONE");
     const resolving = q.started && state.timing.combat.stage === "NONE" && r.returnTo?.kind === "MAIN" && (r.playContinuation?.sourceId === q.legendId || r.searchContinuation || r.triggerContinuation);
-    if (!state.players[q.playerId] || !(waiting || resolving) || !legend || legend.face !== "UP" || legend.zone.zone !== "LEGENDS"
-        || legend.zone.playerId !== q.playerId || legend.controllerId !== q.playerId || !(state.players[q.playerId].economy.callsThisTurn! >= 1)
-        || !revision?.mechanics.abilities.some(a => a.trigger === "WHEN_CALLED") || !supportsCall(revision, context).ok)
+    if (!(waiting || resolving) || ![q, ...(state.turnHistory?.queuedCallsNext ?? [])].every(x => queuedCallLegend(state, x.playerId, x.legendId, context))
+        || new Set([q.legendId, ...(state.turnHistory?.queuedCallsNext ?? []).map(x => x.legendId)]).size !== 1 + (state.turnHistory?.queuedCallsNext?.length ?? 0))
         return failure("INVALID_QUEUED_CALL", "A queued {Call} needs its face-up Called Legend and its {Call} ability, waiting for its action or attack to end, or resolving in the Main Phase");
     return success(null);
+}
+/** A queued Call's Legend: face up in its Caller's Legends area, Called this turn, with a supported {Call} ability. */
+function queuedCallLegend(state: GameState, playerId: PlayerId, legendId: CardInstanceId, context: EngineContext) {
+    const legend = state.objects.cards[legendId], revision = cardRevision(state, legendId, context);
+    return Boolean(state.players[playerId]) && Boolean(legend) && legend.face === "UP" && legend.zone.zone === "LEGENDS" && legend.zone.playerId === playerId
+        && legend.controllerId === playerId && state.players[playerId].economy.callsThisTurn! >= 1
+        && Boolean(revision?.mechanics.abilities.some(a => a.trigger === "WHEN_CALLED")) && supportsCall(revision!, context).ok;
 }
