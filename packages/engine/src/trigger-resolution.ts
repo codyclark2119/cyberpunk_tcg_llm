@@ -74,7 +74,8 @@ function resume(m: TurnMutation, origin: TriggerOrigin): Result<null> {
     }
     return failure("INVALID_TRIGGER_RETURN", "Trigger batch must return to its original reviewed stage");
 }
-export type PreparedTriggerBatch = { origin: TriggerOrigin; ordinal: number; bindings: TriggerBinding[]; pending: PendingEffect[]; effectSpends?: CardInstanceId[]; effectGigChanges?: CardInstanceId[]; programPlay?: CardInstanceId };
+export type PreparedTriggerBatch = { origin: TriggerOrigin; ordinal: number; bindings: TriggerBinding[]; pending: PendingEffect[]; effectSpends?: CardInstanceId[]; effectGigChanges?: CardInstanceId[]; programPlay?: CardInstanceId;
+    effectPlays?: { subjectId: CardInstanceId; qualifyingOrdinal?: number }[]; freePlaySource?: CardInstanceId }; // Batch V96: a trash-Unit Program's two plays.
 /** Creation of pending work is separate from resolution, so a Program can finish before it starts. */
 export function prepareTriggerBatch(m: TurnMutation, origin: TriggerOrigin, captured?: readonly TriggerBinding[]): PreparedTriggerBatch | null {
     // Batch V69: "when spent" bindings waiting from a spend earlier in this action join this batch, after its own.
@@ -87,8 +88,8 @@ export function prepareTriggerBatch(m: TurnMutation, origin: TriggerOrigin, capt
     return { origin, ordinal, bindings, pending, ...(queued.length ? { effectSpends: spentSubjects(queued) } : {}), ...(gigChanges.length ? { effectGigChanges: gigChangeSubjects(gigChanges) } : {}) };
 }
 export function activateTriggerBatch(m: TurnMutation, batch: PreparedTriggerBatch, alreadyAnnounced = false): Result<null> {
-    const { origin, ordinal, bindings, pending, effectSpends, effectGigChanges, programPlay } = batch;
-    m.state.resolution = { stage: "DISCOVER_TRIGGERS", current: null, pending: pending.map(e => PendingEffectSchema.parse(e)), discovered: [], choice: null, triggerContinuation: { origin: TriggerOriginSchema.parse(origin), ordinal, bindings: bindings.map(b => TriggerBindingSchema.parse(b)), resolvedIds: [], phase: "SELECT", ...(effectSpends ? { effectSpends } : {}), ...(effectGigChanges ? { effectGigChanges } : {}), ...(programPlay ? { programPlay } : {}) } };
+    const { origin, ordinal, bindings, pending, effectSpends, effectGigChanges, programPlay, effectPlays, freePlaySource } = batch;
+    m.state.resolution = { stage: "DISCOVER_TRIGGERS", current: null, pending: pending.map(e => PendingEffectSchema.parse(e)), discovered: [], choice: null, triggerContinuation: { origin: TriggerOriginSchema.parse(origin), ordinal, bindings: bindings.map(b => TriggerBindingSchema.parse(b)), resolvedIds: [], phase: "SELECT", ...(effectSpends ? { effectSpends } : {}), ...(effectGigChanges ? { effectGigChanges } : {}), ...(programPlay ? { programPlay } : {}), ...(effectPlays ? { effectPlays } : {}), ...(freePlaySource ? { freePlaySource } : {}) } };
     const combat = m.state.timing.combat;
     if (origin.kind !== "END_TURN" && "target" in combat && combat.target) m.state.timing.combat = { ...combat, stage: "TRIGGER_RESOLUTION" }; // Batch V92: a PLAY batch too.
     if (!alreadyAnnounced) for (const e of pending) m.emit({ kind: "EFFECT_PENDING", effectId: e.id, sourceId: e.sourceId! });

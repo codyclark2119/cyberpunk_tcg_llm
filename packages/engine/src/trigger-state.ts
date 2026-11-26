@@ -1,3 +1,4 @@
+import { validFreePlaySource } from "./trash-units-play";
 import { handGearPlayEnabled, isEquippedDefeatBinding, validEquippedDefeatBinding } from "./hand-gear-play";
 import { validatePaidPowerContinuation } from "./paid-attack-power";
 import { validEndTurnDefeatBinding } from "./end-turn-defeat";
@@ -233,12 +234,14 @@ export function validateTriggerState(state: GameState, context: EngineContext) {
             || origin.kind === "DEFEAT" && canonicalSerialize(steals.flatMap(e => discoverTriggers(state, { kind: "STEAL", subjectId: e.subjectId, gigInstanceIds: [...e.gigInstanceIds] }, context)).map(b => canonicalSerialize(b)).sort()) !== canonicalSerialize(c.bindings.filter(b => b.gigInstanceId !== undefined).map(b => canonicalSerialize(b)).sort()))
             return failure("INVALID_EFFECT_STEAL", "Each effect steal needs its fired registration, a distinct Gig its subject's controller now controls and every steal binding once");
     }
+    // Batch V96: a trash-Unit Program's batch names exactly its origin Unit and its one effect play.
+    if (c?.freePlaySource && !validFreePlaySource(state, context)) return failure("INVALID_EFFECT_PLAY", "A free-play source needs its resolved trash-Unit Program and its two played Units");
     // Batch V48: each effect play names a distinct Unit, played by an admitted free-play ability of this batch; a recorded
     // first-blue-play ordinal is within its controller's count.
     if (c.effectPlays) {
         const ids = c.effectPlays.map(p => p.subjectId), plays = c.bindings.filter(b => cardRevision(state, b.sourceId, context)?.mechanics.abilities.find(a => a.id === b.abilityId)?.effects.some(e => e.kind === "PLAY_UNIT_FREE" || e.kind === "PLAY_GEAR_FREE") && supportsFreePlayCard(cardRevision(state, b.sourceId, context), context).ok);
         // Batch V68: a free Gear play is recorded too.
-        if (new Set(ids).size !== ids.length || ids.length > plays.length || ids.some(id => !["UNIT", "GEAR"].includes(cardRevision(state, id, context)?.type ?? ""))
+        if (new Set(ids).size !== ids.length || ids.length > plays.length + (c.freePlaySource ? 1 : 0) || ids.some(id => !["UNIT", "GEAR"].includes(cardRevision(state, id, context)?.type ?? ""))
             || c.effectPlays.some(p => p.qualifyingOrdinal !== undefined && (!cardRevision(state, p.subjectId, context)?.colors.includes("BLUE") || p.qualifyingOrdinal > (history?.blueUnitOrGearPlays[state.objects.cards[p.subjectId].ownerId] ?? 0))))
             return failure("INVALID_EFFECT_PLAY", "Each effect play needs a distinct Unit and an admitted free-play ability in this batch");
     }

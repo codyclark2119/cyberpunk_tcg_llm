@@ -1,3 +1,4 @@
+import { hasTrashUnitsPlay, supportsTrashUnitsProgram } from "./trash-units-play";
 import { hasTrashGearEffect, supportsTrashGearProgram } from "./trash-gear";
 import { hasPaidAttackPower, supportsPaidAttackPowerUnit } from "./paid-attack-power-support";
 import { hasDefeatReplacement, supportsDefeatReplacementGear } from "./defeat-replacement-support";
@@ -62,6 +63,7 @@ export function supportsPlay(card: DeepReadonly<CardRevisionSnapshot> | undefine
     if (card && hasSellTopEffect(card)) return supportsSellTopProgram(card, context);
     if (card && hasRivalRevealEffect(card)) return supportsRivalRevealProgram(card, context); // Batch V77.
     if (card && hasTrashGearEffect(card)) return supportsTrashGearProgram(card, context); // Batch V93.
+    if (card && hasTrashUnitsPlay(card)) return supportsTrashUnitsProgram(card, context); // Batch V96.
     if (card && hasHandResetEffect(card)) return supportsHandResetProgram(card, context); // Batch V78.
     if (card && hasUnitGrantEffect(card)) return supportsUnitGrantProgram(card, context); // Batch V79.
     // Batch V47: a next-fight steal is admitted only by its exact Program pin.

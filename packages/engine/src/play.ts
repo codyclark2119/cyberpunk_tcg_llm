@@ -1,5 +1,6 @@
 import { selectTrashProgram } from "./trash-program-play";
 import { chooseDeckTop } from "./deck-top-play";
+import { beginTrashUnitsBatch, chooseTrashUnit } from "./trash-units-play";
 import { moveToBottom } from "./bottom-deck";
 import { chooseTrashedGearDestination, selectTrashedGear } from "./trash-gear";
 import { playHandGear, selectHandGear } from "./hand-gear-play";
@@ -71,6 +72,9 @@ function finishPlay(m: TurnMutation, sourceId: CardInstanceId, aftermath?: Prepa
     // Gear a Program played from the trash, once the Program has resolved).
     const handGear = m.state.resolution.playContinuation?.playedGearId;
     if (handGear && !m.state.match.outcome) return recordPlayedCard(m, handGear);
+    // Batch V96: Units a Program played from the trash start their play batch once the Program has resolved.
+    const trashPlayed = m.state.resolution.playContinuation?.trashPlayedIds;
+    if (trashPlayed && !m.state.match.outcome) return beginTrashUnitsBatch(m, sourceId, trashPlayed);
     // Batch V76: "When you play a BRAINDANCE Program" bindings, pending since the play, wait for the Program to resolve.
     const programPlay = !m.state.match.outcome && triggersEnabled(m.context) && m.state.resolution.playContinuation?.kind === "PLAY" && isBraindanceProgram(m.state, sourceId, m.context)
         ? discoverTriggers(m.state, { kind: "PLAY", subjectId: sourceId }, m.context) : [];
@@ -324,6 +328,10 @@ export function continuePlay(m: TurnMutation, index: number): Result<null> {
         if (option.kind !== "CARD") return failure("INVALID_TRASH_PLAY", "Choose a Program in your trash");
         const chosen = selectTrashProgram(m, option.cardInstanceId, false);
         return chosen.ok ? completePlayEffect(m) : chosen;
+    }
+    if (s.resolution.current?.effect.kind === "PLAY_TRASH_UNITS_FREE") { // Batch V96: up to 2 Units, one at a time.
+        const chosen = chooseTrashUnit(m, option);
+        return !chosen.ok ? chosen : chosen.value ? offerPlayChoice(m) : completePlayEffect(m);
     }
     if (s.resolution.current?.effect.kind === "REVEAL_TOP_MAY_PLAY_FREE_ELSE_HAND") { // Batch V95: hand, play, or a Gear's host.
         const chosen = chooseDeckTop(m, option);

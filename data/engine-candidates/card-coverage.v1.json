@@ -9,12 +9,12 @@
   },
   "totals": {
     "cards": 151,
-    "admitted": 145,
-    "notAdmitted": 6,
+    "admitted": 146,
+    "notAdmitted": 5,
     "notAdmittedOnlyCoveredFamilies": 0,
     "byAdmission": {
-      "NOT_ADMITTED": 6,
-      "SOURCE_MATCH": 145
+      "NOT_ADMITTED": 5,
+      "SOURCE_MATCH": 146
     }
   },
   "families": [
@@ -28,29 +28,11 @@
       "soleBlockerCount": 0
     },
     {
-      "family": "CONDITION_GIG",
-      "status": "PARTIAL",
-      "summary": "Conditions and filters on Gig values: min/max, value-pairs, even/odd, 8+, die type, counts compared with a Rival.",
-      "notes": "Conditions only, each a fixed shape.",
-      "cardCount": 40,
-      "notAdmittedCount": 2,
-      "soleBlockerCount": 0
-    },
-    {
       "family": "DISCARD",
       "status": "PARTIAL",
       "summary": "Discard: self discard, a Rival discards, discard as a cost, discard a hand.",
       "notes": "DISCARD_CARDS supports only the controller discarding exactly 1.",
       "cardCount": 15,
-      "notAdmittedCount": 2,
-      "soleBlockerCount": 0
-    },
-    {
-      "family": "PLAY_BY_EFFECT",
-      "status": "MISSING",
-      "summary": "Play a card by an effect: from hand, trash or deck top, for free or for its cost, with after-play riders.",
-      "notes": "",
-      "cardCount": 9,
       "notAdmittedCount": 2,
       "soleBlockerCount": 0
     },
@@ -64,11 +46,11 @@
       "soleBlockerCount": 0
     },
     {
-      "family": "COST_MODIFIER",
-      "status": "MISSING",
-      "summary": "Play-cost reductions, alternative costs, ability-cost and Go Solo cost changes.",
-      "notes": "",
-      "cardCount": 10,
+      "family": "CONDITION_GIG",
+      "status": "PARTIAL",
+      "summary": "Conditions and filters on Gig values: min/max, value-pairs, even/odd, 8+, die type, counts compared with a Rival.",
+      "notes": "Conditions only, each a fixed shape.",
+      "cardCount": 40,
       "notAdmittedCount": 1,
       "soleBlockerCount": 0
     },
@@ -123,6 +105,15 @@
       "summary": "[Quick] timing: Programs and activated abilities usable in the react window.",
       "notes": "Quick Programs are supported for Floor It, Reboot Optics and Detonate. Quick activated [Spend] abilities on Legends, Units and Gear are not offered in any react window yet.",
       "cardCount": 12,
+      "notAdmittedCount": 1,
+      "soleBlockerCount": 0
+    },
+    {
+      "family": "PLAY_BY_EFFECT",
+      "status": "MISSING",
+      "summary": "Play a card by an effect: from hand, trash or deck top, for free or for its cost, with after-play riders.",
+      "notes": "",
+      "cardCount": 9,
       "notAdmittedCount": 1,
       "soleBlockerCount": 0
     },
@@ -204,6 +195,15 @@
       "summary": "Conditions on Street Cred.",
       "notes": "Nearly complete as conditions; gating an effect mode on them is not.",
       "cardCount": 13,
+      "notAdmittedCount": 0,
+      "soleBlockerCount": 0
+    },
+    {
+      "family": "COST_MODIFIER",
+      "status": "MISSING",
+      "summary": "Play-cost reductions, alternative costs, ability-cost and Go Solo cost changes.",
+      "notes": "",
+      "cardCount": 10,
       "notAdmittedCount": 0,
       "soleBlockerCount": 0
     },
@@ -3015,18 +3015,14 @@
       "colors": [
         "GREEN"
       ],
-      "admission": "NOT_ADMITTED",
-      "revision": null,
+      "admission": "SOURCE_MATCH",
+      "revision": 1,
       "families": [
         "CONDITION_GIG",
         "COST_MODIFIER",
         "PLAY_BY_EFFECT"
       ],
-      "blockingFamilies": [
-        "CONDITION_GIG",
-        "COST_MODIFIER",
-        "PLAY_BY_EFFECT"
-      ],
+      "blockingFamilies": [],
       "note": null
     },
     {

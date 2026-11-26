@@ -92,6 +92,8 @@ export const TriggerContinuationSchema = z.strictObject({
     // Batch V48: each Unit an effect played in this batch; its {Play} triggers join the batch. `qualifyingOrdinal` is the
     // first-blue-play ordinal the play recorded, when it recorded one.
     effectPlays: z.array(z.strictObject({ subjectId: CardInstanceIdSchema, qualifyingOrdinal: z.number().int().positive().optional() })).min(1).optional(),
+    // Batch V96: the resolved Program that played this batch's origin Unit and its one effect play from the trash.
+    freePlaySource: CardInstanceIdSchema.optional(),
     // Batch V48: every effect defeat of this batch, in order (several sources may defeat inside one batch).
     effectDefeats: z.array(z.strictObject({ targetId: CardInstanceIdSchema, defeatedBy: CardInstanceIdSchema })).min(1).optional(), origin: TriggerOriginSchema, ordinal: z.number().int().positive(), bindings: z.array(TriggerBindingSchema).min(1),
     selectedEddieSlots: z.array(z.number().int().nonnegative()).length(1).optional(), resolvedIds: z.array(HashSchema), phase: z.enum(["SELECT", "OPTIONAL", "TARGET", "AMOUNT", "DISCARD", "READY", "PAYMENT"]), trashedIds: z.array(CardInstanceIdSchema).min(1).max(3).optional(), conditionMet: z.literal(true).optional(), targetGigId: GigInstanceIdSchema.optional(),
@@ -278,7 +280,9 @@ export const ResolutionStateSchema = z.strictObject({
         trashProgramId: CardInstanceIdSchema.optional(), fromTrash: z.literal(true).optional(),
         // Batch V95: the revealed top card of the deck chosen to play for free, a Unit or Program (never at a decision; a Gear is equipped
         // at once), and a card played that way, which pays nothing.
-        deckPlayId: CardInstanceIdSchema.optional(), freeFromDeck: z.literal(true).optional() }).optional(),
+        deckPlayId: CardInstanceIdSchema.optional(), freeFromDeck: z.literal(true).optional(),
+        // Batch V96: the trash Units a Program played for free so far, in play order; their play batch follows the Program.
+        trashPlayedIds: z.array(CardInstanceIdSchema).min(1).max(2).optional() }).optional(),
     searchContinuation: z.strictObject({ looked: z.array(CardInstanceIdSchema), selected: z.array(CardInstanceIdSchema) }).optional(),
     callContinuation: z.strictObject({ actorId: PlayerIdSchema, legendId: CardInstanceIdSchema, remainingCost: z.number().int().nonnegative(), selectedSources: z.array(PaymentSourceSchema) }).optional(),
     current: PendingEffectSchema.nullable(), pending: z.array(PendingEffectSchema), discovered: z.array(PendingEffectSchema), choice: PendingChoiceSchema.nullable()

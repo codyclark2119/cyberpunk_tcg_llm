@@ -282,6 +282,8 @@ export const EffectSchema = z.discriminatedUnion("kind", [
     z.strictObject({ kind: z.literal("PLAY_TRASH_PROGRAM_THEN_BOTTOM_DECK") }),
     // Batch V95: "Reveal the top card of your deck. You may play it for free. Otherwise, add it to your hand."
     z.strictObject({ kind: z.literal("REVEAL_TOP_MAY_PLAY_FREE_ELSE_HAND") }),
+    // Batch V96: "Play up to 2 Units with cost 3 or less from your trash for free."
+    z.strictObject({ kind: z.literal("PLAY_TRASH_UNITS_FREE"), count: z.literal(2), maxCost: z.literal(3) }),
     // Batch V90: "Give an equipped Unit +3 power this turn for each of its equipped Gears. If that Unit steals or fights, defeat it at
     // the end of this turn." Any player's equipped Unit; the Gear counted as it resolves; the defeat is registered on that Unit.
     z.strictObject({ kind: z.literal("EQUIPPED_UNIT_POWER_PER_GEAR_THIS_TURN"), amount: z.literal(3),
@@ -387,6 +389,8 @@ export const ContinuousModifierSchema = z.discriminatedUnion("kind", [
     z.strictObject({ kind: z.literal("DRAW_ON_EXTREME_GIG_ROLL"), count: z.literal(1), d20Count: z.literal(3) }),
     // Batch V83: "If your fixer area is empty, play this Program for 1 €$." The amount paid, never the cost value (3.11.1.2).
     z.strictObject({ kind: z.literal("ALTERNATIVE_PLAY_COST_IF_FIXER_EMPTY"), amount: z.literal(1) }),
+    // Batch V96: "If a Rival controls at least 2 more Gigs than you, play this Program for 3 €$."
+    z.strictObject({ kind: z.literal("ALTERNATIVE_PLAY_COST_IF_RIVAL_GIG_LEAD"), minimum: z.literal(2), amount: z.literal(3) }),
     // Batch V56: "Rivals must pay +2 €$ to use {Go Solo}."
     z.strictObject({ kind: z.literal("RIVAL_GO_SOLO_COST_INCREASE"), amount: z.literal(2) }),
     // Batch V39: "If a Rival controls at least 2 more Gigs than you, this Unit has [Adrenaline]": a Gear's live conditional grant.

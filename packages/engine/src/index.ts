@@ -189,6 +189,8 @@ function describeAction(a: GameAction, state: GameState, actor: PlayerId, view: 
             if (state.resolution.current?.effect.kind === "TRASH_TOP_MAY_ADD_PROGRAM") return option.kind === "CARD" ? `Add ${view.getRevision(option.cardInstanceId)?.displayName} (${option.cardInstanceId}) from your trash to your hand` : "Leave it in your trash"; // Batch V76.
             if (state.resolution.current?.effect.kind === "MAY_DEFEAT_FRIENDLY_GEAR_THEN_DRAW") return option.kind === "CARD" ? `Defeat ${view.getRevision(option.cardInstanceId)?.displayName} (${option.cardInstanceId}) and draw 2` : "Defeat no Gear and draw 1"; // Batch V75.
             if (option.kind === "CARD" && state.resolution.current?.effect.kind === "POWER_PER_EQUIPPED_GEAR_THIS_TURN") return `Give ${view.getRevision(option.cardInstanceId)?.displayName} (${option.cardInstanceId}) +1 power this turn for each of its equipped Gear`; // Batch V75.
+            if (state.resolution.current?.effect.kind === "PLAY_TRASH_UNITS_FREE") // Batch V96.
+                return option.kind === "CARD" ? `Play ${view.getRevision(option.cardInstanceId)?.displayName} (${option.cardInstanceId}) from your trash for free` : "Play no more Units";
             if (state.resolution.current?.effect.kind === "REVEAL_TOP_MAY_PLAY_FREE_ELSE_HAND") { // Batch V95.
                 const top = revealedDeckTop(state)[0], card = top ? `${view.getRevision(top)?.displayName} (${top})` : "the revealed card";
                 return option.kind === "CARD" ? `Play ${card} for free, equipped to ${view.getRevision(option.cardInstanceId)?.displayName} (${option.cardInstanceId})` : option.kind === "CONFIRM" && option.confirmed ? `Play ${card} for free` : `Add ${card} to your hand`;
