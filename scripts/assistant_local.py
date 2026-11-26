@@ -17,6 +17,8 @@ model ran. Without ``--model`` the chat box answers "no model configured".
 Thinking and the automatic context step (search_rules and card-name linking
 before the model speaks) are on by default; ``--no-thinking`` and
 ``--no-preload`` set the page's defaults off, and the page has a toggle for each.
+``--no-engine-probe`` turns off the engine probe (the model builds the question's
+board with engine_scenario before answering a card question; on by default).
 ``--max-prompt-tokens`` (default 32,768) and ``--worker-timeout`` (default:
 scaled with the step's max tokens) set the chat worker's limits.
 
@@ -57,6 +59,9 @@ def main():
                         help="let Qwen3 think before answering (default on; slower)")
     parser.add_argument("--preload", action=argparse.BooleanOptionalAction, default=True,
                         help="run search_rules and card linking before the model speaks (default on)")
+    parser.add_argument("--engine-probe", action=argparse.BooleanOptionalAction, default=True,
+                        help="before answering a card question, have the model build its board with "
+                             "engine_scenario (default on)")
     parser.add_argument("--max-tokens", type=int, default=None,
                         help="generation limit per model step (default 2048 with thinking, 1024 without)")
     parser.add_argument("--max-prompt-tokens", type=int, default=DEFAULT_MAX_PROMPT_TOKENS,
@@ -90,7 +95,7 @@ def main():
             parser.error(str(exc))
         print(f"Chat model: {model.label} (the worker starts on the first question)", flush=True)
     chat = ChatService(model, enable_thinking=args.thinking, max_tokens=args.max_tokens, preload=args.preload,
-                       model_path=args.model, adapter_path=args.adapter)
+                       model_path=args.model, adapter_path=args.adapter, engine_probe=args.engine_probe)
     serve_assistant(args.host, args.port, lan=args.lan, no_auth=args.no_auth, chat=chat)
     return 0
 

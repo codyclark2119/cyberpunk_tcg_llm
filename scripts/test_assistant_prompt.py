@@ -33,7 +33,7 @@ from games.cyberpunk.assistant import preload as preload_module
 from games.cyberpunk.assistant import tools
 from games.cyberpunk.assistant.loop import (ANSWERING_GUIDANCE, ASSISTANT_PROMPT_VERSION, DEFAULT_MAX_TOKENS,
                                             ENGINE_GUIDANCE, SCENARIO_GUIDANCE,
-                                            DEFAULT_THINKING_MAX_TOKENS, SYSTEM_PROMPT, run_turn,
+                                            DEFAULT_THINKING_MAX_TOKENS, PROBE_PROMPT, SYSTEM_PROMPT, run_turn,
                                             tool_specs_sha256)
 from games.cyberpunk.assistant.preload import DEFAULT_PRELOAD_CHARS, fit_result, link_cards
 from games.cyberpunk.assistant_app import ChatService
@@ -87,6 +87,8 @@ class ScriptedModel:
         self.kwargs: list[dict] = []
 
     async def generate(self, messages, tools_, *, max_tokens, enable_thinking):
+        if messages and messages[-1] == {"role": "user", "content": PROBE_PROMPT}:
+            return {"ok": True, "text": "NONE", "finishReason": "stop"}  # the engine probe: not scripted here
         self.seen.append(copy.deepcopy(messages))
         self.kwargs.append({"max_tokens": max_tokens, "enable_thinking": enable_thinking})
         return {"ok": True, "text": self.texts.pop(0), "finishReason": "stop", "promptTokens": 1,
@@ -249,7 +251,7 @@ def test_system_prompt_v4_warns_from_the_snapshot_wording():
                    # v4: policy is answered from the Tournament Rules and cited; what neither covers is not covered.
                    "Tournament procedure, penalties, deck registration, event policy: use the Tournament Rules "
                    "(TR 3.4.2), cite them. Anything in neither is not covered.",
-                   "Snapshot 2026-10-29, TR 2026-10-28. Prompt assistant-chat-v11."):
+                   "Snapshot 2026-10-29, TR 2026-10-28. Prompt assistant-chat-v12."):
         assert needle in SYSTEM_PROMPT, needle
     assert "not in the snapshot" not in SYSTEM_PROMPT, "v3's 'policy is not in the snapshot' is gone"
     assert "rule:TR 3.4.2" in {d["doc_id"] for d in tools.rule_docs()}, "the prompt's example id exists"
@@ -306,7 +308,7 @@ def test_v7_addition_stays_under_its_budget():
     added = v7_addition()
     assert len(added) <= V7_ADDITION_MAX_CHARS, len(added)
     assert len(SYSTEM_PROMPT) == len(base_prompt()) + len(added) + len(v8_addition()) + len(v9_addition())
-    assert ASSISTANT_PROMPT_VERSION == "assistant-chat-v11" and "Prompt assistant-chat-v11." in SYSTEM_PROMPT
+    assert ASSISTANT_PROMPT_VERSION == "assistant-chat-v12" and "Prompt assistant-chat-v12." in SYSTEM_PROMPT
 
 
 def test_v8_engine_guidance_is_one_short_general_line():

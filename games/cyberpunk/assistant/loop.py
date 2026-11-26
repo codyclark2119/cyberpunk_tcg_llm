@@ -45,6 +45,19 @@ search query and the card-name linker); ``preload_text`` replaces it there, so
 the scorer can link and search the question and its choices without its
 answer-format instructions.
 
+Then, when ``engine_probe`` is on (the default), engine_scenario is offered and
+the preload looked up at least one card, the loop runs the engine probe
+(``_engine_probe``): one extra model step with thinking off, only
+engine_scenario offered and ``PROBE_PROMPT`` appended, asking the model to build
+the board the question describes or reply NONE. A call it writes runs like any
+tool call (a rejected one goes back once with its error); a successful report
+joins the conversation as that model's own call and result, so the answering
+step sees it. The probe prompt itself never joins the conversation. Probe steps
+are marked ``probe: true`` in the trace and do not count against
+``MAX_TOOL_CALLS``. In every v8-v11 quiz run the model never called an engine
+tool on its own: the preload reads as a finished lookup phase and greedy
+decoding goes straight to the answer.
+
 Thinking is on by default (``DEFAULT_THINKING``) with a larger generation limit
 (``DEFAULT_THINKING_MAX_TOKENS``, 2048) than without (1024). A step cut off
 inside ``<think>`` has no answer at all, and a thought over several retrieved
@@ -102,7 +115,9 @@ from games.cyberpunk.prompts import RULES_VERSION, TOURNAMENT_RULES_VERSION
 # each linked card once on a fixed board. The model made 0 engine tool calls in the v8 and v9 quiz runs.
 # v11 (2026-11-25): no prompt text change; card demos are off by default (``preload_demos=False``). On the Mac they
 # cost about 3 points per quiz seed (docs/preload-card-demos-quiz-2026-11-25.md).
-ASSISTANT_PROMPT_VERSION = "assistant-chat-v11"
+# v12 (2026-11-26): no prompt text change beyond this stamp; adds the engine probe (``_engine_probe``, on by
+# default, ``engine_probe=False`` / ``--no-engine-probe`` turns it off) for questions whose preload looked up a card.
+ASSISTANT_PROMPT_VERSION = "assistant-chat-v12"
 MAX_TOOL_CALLS = 6
 MAX_TOOL_CALLS_LIMIT = 16           # the most a run may allow (scripts/eval_assistant.py --max-tool-calls)
 MAX_TOKENS_LIMIT = 16384            # per model step; same as scripts/mlx_chat_worker.py (see the docstring)
@@ -110,6 +125,14 @@ DEFAULT_MAX_TOKENS = 1024           # per model step, thinking off
 DEFAULT_THINKING_MAX_TOKENS = 2048  # per model step, thinking on (see the module docstring)
 DEFAULT_THINKING = True
 DEFAULT_PRELOAD = True
+DEFAULT_ENGINE_PROBE = True
+PROBE_MAX_TOKENS = 1024  # the probe step runs with thinking off
+PROBE_ATTEMPTS = 2       # a rejected scenario goes back to the model once with its error
+PROBE_PROMPT = ("Before you answer, test this on the game engine. Call engine_scenario once: set up the exact "
+                "situation the question describes (the cards it names, which area each card is in, ready or spent, "
+                "whose turn it is) and the steps to try, so the engine shows what happens. Use the card slugs from "
+                "the card lookups above. If the question is not about what a card or a play does in a situation, "
+                "reply with the single word NONE.")
 SOURCE_KEYS = ("card_slugs", "rule_ids", "errata_ids", "deck_ids", "chunk_ids")
 
 
@@ -232,11 +255,13 @@ class TurnResult:
     error: str | None = None
     preload: bool = False
     auto_calls: int = 0
+    probe_calls: int = 0
     max_tokens: int = DEFAULT_MAX_TOKENS
 
     def to_dict(self) -> dict:
         return {"ok": self.ok, "answer": self.answer, "stopReason": self.stop_reason, "error": self.error,
-                "toolCalls": self.tool_calls, "autoToolCalls": self.auto_calls, "preload": self.preload,
+                "toolCalls": self.tool_calls, "autoToolCalls": self.auto_calls, "probeCalls": self.probe_calls,
+                "preload": self.preload,
                 "maxTokens": self.max_tokens, "sources": self.sources, "trace": self.trace,
                 "elapsedMs": self.elapsed_ms, "promptVersion": ASSISTANT_PROMPT_VERSION,
                 "rulesVersion": RULES_VERSION, "tournamentRulesVersion": TOURNAMENT_RULES_VERSION}
@@ -553,6 +578,49 @@ def build_messages(history: list[dict], user_message: str, deck: dict | None = N
     return [{"role": "system", "content": system}, *history, {"role": "user", "content": user_message}]
 
 
+async def _engine_probe(messages: list[dict], model: ChatModel, add, collect, turn: TurnResult) -> None:
+    """The engine probe (see the module docstring); appends to ``messages`` only a successful report."""
+    specs = [s for s in active_tool_specs() if s["function"]["name"] == "engine_scenario"]
+    probe = list(messages) + [{"role": "user", "content": PROBE_PROMPT}]
+    for _ in range(PROBE_ATTEMPTS):
+        reply = await model.generate(probe, specs, max_tokens=PROBE_MAX_TOKENS, enable_thinking=False)
+        if not isinstance(reply, dict) or reply.get("ok") is not True or not isinstance(reply.get("text"), str):
+            error = reply.get("error", "model_error") if isinstance(reply, dict) else "model_error"
+            add({"kind": "model", "probe": True, "ok": False, "error": error})
+            return
+        _, body = split_thinking(reply["text"])
+        calls, content = parse_tool_calls(body)
+        add({"kind": "model", "probe": True, "ok": True, "toolCallsRequested": len(calls),
+             "finishReason": reply.get("finishReason"), "promptTokens": reply.get("promptTokens"),
+             "generationTokens": reply.get("generationTokens"), "elapsedMs": reply.get("elapsedMs")})
+        call = next((c for c in calls if c.error is not None or c.name == "engine_scenario"), None)
+        if call is None:  # NONE, prose or another tool: nothing joins the conversation
+            return
+        turn.probe_calls += 1
+        tool_started = time.monotonic()
+        if call.error is not None:
+            hint = XML_CALL_HINT if call.format == "xml" else JSON_CALL_HINT
+            result = _tool_error(call.name, "malformed_tool_call", f"{call.error}. Write {hint} with engine_scenario.")
+        else:
+            result = call_tool(call.name, call.arguments)  # validates; bad args never run
+        sources = result.get("sources") or {}
+        entry = {"kind": "tool", "probe": True, "tool": call.name, "arguments": call.arguments,
+                 "ok": bool(result.get("ok")), "errorKind": result.get("error_kind"), "error": result.get("error"),
+                 "summary": summarize_result(result),
+                 "sources": {k: list(sources.get(k) or []) for k in SOURCE_KEYS},
+                 "result": result.get("result") if result.get("ok") else None,
+                 "elapsedMs": round((time.monotonic() - tool_started) * 1000, 2)}
+        if call.format != "json":
+            entry["callFormat"] = call.format
+        add(entry)
+        payload = {"role": "tool", "content": json.dumps(result, ensure_ascii=False, separators=(",", ":"))}
+        if result.get("ok"):
+            collect(sources)
+            messages.extend([_assistant_message("", [call]), payload])
+            return
+        probe = probe + [_assistant_message(content, [call]), payload]
+
+
 async def run_turn(history: list[dict], user_message: str, model: ChatModel, *,
                    max_tool_calls: int = MAX_TOOL_CALLS, max_tokens: int | None = None,
                    enable_thinking: bool = DEFAULT_THINKING, deck: dict | None = None,
@@ -560,7 +628,7 @@ async def run_turn(history: list[dict], user_message: str, model: ChatModel, *,
                    preload_k: int = DEFAULT_PRELOAD_K, preload_chars: int = DEFAULT_PRELOAD_CHARS,
                    preload_cards: list[str] | None = None, max_prompt_tokens: int | None = None,
                    engine_check: bool = True, engine_scenario: bool = True,
-                   preload_demos: bool = False) -> TurnResult:
+                   preload_demos: bool = False, engine_probe: bool = DEFAULT_ENGINE_PROBE) -> TurnResult:
     """Run one user turn to an answer, an error or the tool-call cap. ``history`` is not modified.
 
     ``deck`` is the session's loaded deck (see ``deck_context``), or None.
@@ -573,7 +641,8 @@ async def run_turn(history: list[dict], user_message: str, model: ChatModel, *,
     ``engine_check=False`` offers every tool but engine_check, drops its prompt line, and refuses a call
     to it as an unknown tool (the eval's ``--no-engine-check`` arm); ``engine_scenario=False`` does the same for
     engine_scenario (``--no-engine-scenario``). ``preload_demos=True`` adds the preload's card demos
-    (``--preload-demos``; off by default since v11).
+    (``--preload-demos``; off by default since v11). ``engine_probe=False`` skips the engine probe
+    (``--no-engine-probe``); it runs only with engine_scenario offered and a card looked up by the preload.
     """
     started = time.monotonic()
     max_tokens = default_max_tokens(enable_thinking) if max_tokens is None else max_tokens
@@ -617,6 +686,11 @@ async def run_turn(history: list[dict], user_message: str, model: ChatModel, *,
             if a.demo is not None:  # a card demo: the card and the fixed board it was played on
                 entry["demo"] = a.demo
             add(entry)
+
+    if engine_probe and engine_scenario and any(
+            s.get("kind") == "tool" and s.get("auto") and s.get("tool") == "get_card" and s.get("ok")
+            for s in turn.trace):
+        await _engine_probe(messages, model, add, collect, turn)
 
     if max_prompt_tokens is None:
         limit_of = getattr(model, "prompt_token_limit", None)

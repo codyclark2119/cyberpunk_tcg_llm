@@ -95,6 +95,11 @@ Card demos (2026-11-25). With the preload on, it also plays each linked card onc
 (``preload.card_demos``). Since prompt v11 they are off by default (they cost about 3 points per quiz seed);
 ``--preload-demos`` turns them on and the header then records ``preload_demos: true``.
 
+Engine probe (2026-11-26, prompt v12). For an item whose preload looked up a card, the loop asks the model once,
+thinking off, to build the question's board with engine_scenario (``loop._engine_probe``). Its call is a model
+call, so it is listed in ``tools_called``. ``--no-engine-probe`` skips it and the header records
+``engine_probe: false``; a default run records nothing new.
+
 The set is eval-only: never train on it.
 
 Usage:
@@ -130,7 +135,8 @@ from games.cyberpunk.assistant.eval_store import (PARTIAL_SUFFIX, RUN_NAME_RE, R
                                                   summarize)
 from games.cyberpunk.assistant.loop import (ASSISTANT_PROMPT_VERSION, DEFAULT_PRELOAD,  # noqa: E402
                                             DEFAULT_THINKING, MAX_TOKENS_LIMIT, MAX_TOOL_CALLS,
-                                            MAX_TOOL_CALLS_LIMIT, default_max_tokens, run_turn, system_prompt,
+                                            MAX_TOOL_CALLS_LIMIT, DEFAULT_ENGINE_PROBE, PROBE_PROMPT,
+                                            default_max_tokens, run_turn, system_prompt,
                                             tool_specs_sha256)
 from games.cyberpunk.assistant.preload import DEFAULT_PRELOAD_CHARS, DEFAULT_PRELOAD_K  # noqa: E402
 from games.cyberpunk.prompts import RULES_VERSION, TOURNAMENT_RULES_VERSION  # noqa: E402
@@ -222,12 +228,16 @@ class FakeModel:
     question line, and every fifth hash bucket answers with no Answer line, so
     a run exercises correct, wrong and unanswered outcomes without a model.
     It makes its own call once whether or not the preload ran: it answers once
-    it sees its own call (arguments ``{"query": <question>, "k": 3}``).
+    it sees its own call (arguments ``{"query": <question>, "k": 3}``). It
+    answers the engine probe (``loop.PROBE_PROMPT``) with NONE.
     """
 
     label = "fake"
 
     async def generate(self, messages, tools, *, max_tokens, enable_thinking):
+        if messages and messages[-1] == {"role": "user", "content": PROBE_PROMPT}:
+            return {"ok": True, "finishReason": "stop", "promptTokens": 0, "generationTokens": 0, "elapsedMs": 0,
+                    "text": "NONE"}
         user = next(m["content"] for m in reversed(messages) if m["role"] == "user")
         question = user.split("Question: ", 1)[1].split("\n", 1)[0]
         letters = re.findall(r"^([A-Z])\. ", user, re.M)
@@ -276,6 +286,8 @@ def header_row(args, set_path: Path, items: list[dict], selected: list[dict]) ->
         header["linked_cards"] = True  # absent otherwise, so other sets' headers are unchanged
     if args.preload and getattr(args, "preload_demos", False):
         header["preload_demos"] = True  # absent by default, so a default run's header is unchanged
+    if not getattr(args, "engine_probe", DEFAULT_ENGINE_PROBE):
+        header["engine_probe"] = False  # absent by default, so a default run's header is unchanged
     engine_check, engine_scenario = getattr(args, "engine_check", True), getattr(args, "engine_scenario", True)
     if not (engine_check and engine_scenario):
         # Absent with the tools on (the default), so a default run's header is unchanged.
@@ -329,7 +341,8 @@ async def run_items(model, selected: list[dict], *, thinking: bool, max_tokens: 
                     preload_k: int = DEFAULT_PRELOAD_K, preload_chars: int = DEFAULT_PRELOAD_CHARS,
                     max_tool_calls: int = MAX_TOOL_CALLS, on_record=None, done: int = 0,
                     total: int | None = None, engine_check: bool = True,
-                    engine_scenario: bool = True, preload_demos: bool = False) -> list[dict]:
+                    engine_scenario: bool = True, preload_demos: bool = False,
+                    engine_probe: bool = DEFAULT_ENGINE_PROBE) -> list[dict]:
     """Records for ``selected``, in order; ``on_record(record)`` runs as each one finishes.
 
     ``done`` and ``total`` only number the progress lines, so a resumed run counts on from where it stopped.
@@ -341,7 +354,8 @@ async def run_items(model, selected: list[dict], *, thinking: bool, max_tokens: 
                               preload=preload, preload_text=preload_text(item), preload_k=preload_k,
                               preload_chars=preload_chars, max_tool_calls=max_tool_calls,
                               preload_cards=item.get("cards"), engine_check=engine_check,
-                              engine_scenario=engine_scenario, preload_demos=preload_demos)
+                              engine_scenario=engine_scenario, preload_demos=preload_demos,
+                              engine_probe=engine_probe)
         record = item_record(item, turn)
         records.append(record)
         if on_record is not None:
@@ -418,6 +432,9 @@ def main(argv: list[str] | None = None) -> int:
                         help="offer the engine_scenario tool and its prompt line (default on)")
     parser.add_argument("--preload-demos", action=argparse.BooleanOptionalAction, default=False,
                         help="with the preload, play each linked card once on a fixed engine board (default off)")
+    parser.add_argument("--engine-probe", action=argparse.BooleanOptionalAction, default=DEFAULT_ENGINE_PROBE,
+                        help="for items whose preload looked up a card, ask the model once (thinking off) to build "
+                             "the question's board with engine_scenario (default on)")
     parser.add_argument("--preload", action=argparse.BooleanOptionalAction, default=DEFAULT_PRELOAD,
                         help="run search_rules and card linking before the model speaks (default on)")
     parser.add_argument("--preload-k", type=int, default=DEFAULT_PRELOAD_K, help="rules passages preloaded (1..20)")
@@ -545,7 +562,8 @@ def main(argv: list[str] | None = None) -> int:
                                        preload_chars=args.preload_chars, max_tool_calls=args.max_tool_calls,
                                        on_record=lambda record: append_row(handle, record), done=len(done),
                                        total=len(selected), engine_check=args.engine_check,
-                                       engine_scenario=args.engine_scenario, preload_demos=args.preload_demos)
+                                       engine_scenario=args.engine_scenario, preload_demos=args.preload_demos,
+                                       engine_probe=args.engine_probe)
         finally:
             close = getattr(model, "close", None)
             if close is not None:

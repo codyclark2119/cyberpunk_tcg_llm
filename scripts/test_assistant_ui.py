@@ -30,7 +30,8 @@ from fastapi.testclient import TestClient
 from games.cyberpunk.assistant import tools
 from games.cyberpunk.assistant.decks import public_deck_index
 from games.cyberpunk.assistant.loop import (ASSISTANT_PROMPT_VERSION, DECK_CONTEXT_CLOSE, DECK_CONTEXT_OPEN,
-                                            MAX_TOOL_CALLS, SYSTEM_PROMPT, build_messages, run_turn)
+                                            MAX_TOOL_CALLS, PROBE_PROMPT, SYSTEM_PROMPT, build_messages,
+                                            run_turn)
 from games.cyberpunk.assistant_app import (ASSISTANT_HTML, EXAMPLE_QUESTIONS, SESSION_RE, ChatService,
                                            build_assistant_app)
 from games.cyberpunk.assistant_ui import UI_DIR, assemble_page
@@ -60,6 +61,8 @@ class ScriptedModel:
         self.thinking: list[bool] = []
 
     async def generate(self, messages, tools_, *, max_tokens, enable_thinking):
+        if messages and messages[-1] == {"role": "user", "content": PROBE_PROMPT}:
+            return {"ok": True, "text": "NONE", "finishReason": "stop"}  # the engine probe: not scripted here
         self.seen.append(copy.deepcopy(messages))
         self.thinking.append(enable_thinking)
         if not self.texts:
@@ -356,7 +359,7 @@ def test_deck_context_is_structured_and_absent_without_a_deck():
     messages = build_messages([{"role": "user", "content": "earlier"}], "q", deck)
     assert [m["role"] for m in messages] == ["system", "user", "user"] and messages[-1]["content"] == "q"
     assert loaded_deck_from(messages) == deck and "deck argument" in messages[0]["content"]
-    assert ASSISTANT_PROMPT_VERSION == "assistant-chat-v11"
+    assert ASSISTANT_PROMPT_VERSION == "assistant-chat-v12"
 
 
 # Trace and sources -------------------------------------------------------------------------
@@ -435,8 +438,9 @@ def test_example_chips_are_suggestions_only():
     for _, question in EXAMPLE_QUESTIONS:
         result = asyncio.run(run_turn([], question, ScriptedModel([call("find_card", query="V"), "Done."])))
         # The automatic steps search and link the question's own text; everything after them must not depend on it.
+        # The engine probe runs only when the preload looked up a card, so it is left out like the automatic steps.
         traces.append([{k: v for k, v in s.items() if k not in ("elapsedMs", "step")} for s in result.trace
-                       if not s.get("auto")])
+                       if not s.get("auto") and not s.get("probe")])
     assert all(t == traces[0] for t in traces)
 
 
