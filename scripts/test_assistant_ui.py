@@ -30,7 +30,8 @@ from fastapi.testclient import TestClient
 from games.cyberpunk.assistant import tools
 from games.cyberpunk.assistant.decks import public_deck_index
 from games.cyberpunk.assistant.loop import (ASSISTANT_PROMPT_VERSION, DECK_CONTEXT_CLOSE, DECK_CONTEXT_OPEN,
-                                            MAX_TOOL_CALLS, PROBE_PROMPT, SYSTEM_PROMPT, build_messages,
+                                            MAX_TOOL_CALLS, PROBE_PROMPT, SYSTEM_PROMPT, VERIFY_PROMPT,
+                                            build_messages,
                                             run_turn)
 from games.cyberpunk.assistant_app import (ASSISTANT_HTML, EXAMPLE_QUESTIONS, SESSION_RE, ChatService,
                                            build_assistant_app)
@@ -63,6 +64,9 @@ class ScriptedModel:
     async def generate(self, messages, tools_, *, max_tokens, enable_thinking):
         if messages and messages[-1] == {"role": "user", "content": PROBE_PROMPT}:
             return {"ok": True, "text": "NONE", "finishReason": "stop"}  # the engine probe: not scripted here
+        if messages and messages[-1] == {"role": "user", "content": VERIFY_PROMPT}:
+            # The restriction check: not scripted here, so it repeats the draft unchanged.
+            return {"ok": True, "text": messages[-2]["content"], "finishReason": "stop"}
         self.seen.append(copy.deepcopy(messages))
         self.thinking.append(enable_thinking)
         if not self.texts:
@@ -359,7 +363,7 @@ def test_deck_context_is_structured_and_absent_without_a_deck():
     messages = build_messages([{"role": "user", "content": "earlier"}], "q", deck)
     assert [m["role"] for m in messages] == ["system", "user", "user"] and messages[-1]["content"] == "q"
     assert loaded_deck_from(messages) == deck and "deck argument" in messages[0]["content"]
-    assert ASSISTANT_PROMPT_VERSION == "assistant-chat-v12"
+    assert ASSISTANT_PROMPT_VERSION == "assistant-chat-v13"
 
 
 # Trace and sources -------------------------------------------------------------------------

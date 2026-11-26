@@ -302,7 +302,7 @@ def test_fake_run_writes_header_records_and_summary_deterministically():
     from games.cyberpunk.assistant.loop import ASSISTANT_PROMPT_VERSION
     from games.cyberpunk.prompts import RULES_VERSION, TOURNAMENT_RULES_VERSION
     assert header["assistant_prompt_version"] == ASSISTANT_PROMPT_VERSION and header["rules_version"] == RULES_VERSION
-    assert header["assistant_prompt_version"] == "assistant-chat-v12", "the default fake run names the v12 prompt"
+    assert header["assistant_prompt_version"] == "assistant-chat-v13", "the default fake run names the v13 prompt"
     assert header["tournament_rules_version"] == TOURNAMENT_RULES_VERSION
     assert len(items) == 40 and summary["kind"] == "summary"
     keys = {"kind", "id", "chosen", "correct", "outcome", "parse", "known_incorrect", "known_incorrect_hit",

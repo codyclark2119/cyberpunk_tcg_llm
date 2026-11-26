@@ -99,8 +99,9 @@ class LoopingModel:
 
 
 def turn(history, message, model, **kwargs):
-    """One turn; the preload is off unless a test asks for it, so loop mechanics are tested alone."""
+    """One turn; the preload and the restriction check are off unless a test asks, so loop mechanics are alone."""
     kwargs.setdefault("preload", False)
+    kwargs.setdefault("verify_restrictions", False)
     return asyncio.run(run_turn(history, message, model, **kwargs))
 
 
@@ -927,6 +928,46 @@ def test_engine_probe_runs_only_with_a_card_lookup_and_engine_scenario_offered()
     model = ScriptedModel(["Answer."])
     result = turn([], "When is the Gig area checked?", model, preload=True, preload_cards=[], engine_probe=True)
     assert result.ok and len(model.seen) == 1 and not any(s.get("probe") for s in result.trace)
+
+
+def test_restriction_check_replaces_a_restrictive_answer_with_its_revision():
+    model = ThinkingScriptedModel(["No, Blocker cannot be used there.\n\nAnswer: B",
+                                   "<think>11.28.1 covers any attack.</think>Rule 11.28.1 applies.\n\nAnswer: A"])
+    result = turn([], "Can Blocker be used?", model, verify_restrictions=True)
+    assert result.ok and result.stop_reason == "answer" and result.answer == "Rule 11.28.1 applies.\n\nAnswer: A"
+    assert result.revised and result.to_dict()["revised"] is True and len(model.seen) == 2
+    # The check sees the draft as the model's own reply and the check prompt; it is offered no tools.
+    assert model.seen[1][-2] == {"role": "assistant", "content": "No, Blocker cannot be used there.\n\nAnswer: B"}
+    assert model.seen[1][-1] == {"role": "user", "content": loop_module.VERIFY_PROMPT}
+    assert model.tools_seen[1] == [] and model.thinking == [True, True]
+    step = result.trace[-1]
+    assert step["verify"] and step["kept"] == "revision" and step["draft"].startswith("No, Blocker")
+    assert step["thinking"] == "11.28.1 covers any attack."
+
+
+def test_restriction_check_runs_only_on_restrictive_answers_and_when_on():
+    for answer, on, asked in (("Yes, it can.\n\nAnswer: A", True, 1), ("It may not attack.", False, 1),
+                              ("It may not attack.", True, 2), ("**No.** Not that turn.", True, 2)):
+        model = ScriptedModel([answer, answer])
+        result = turn([], "Q?", model, verify_restrictions=on)
+        assert len(model.seen) == asked and result.answer == answer and not result.revised, (answer, on)
+
+
+def test_restriction_check_keeps_the_draft_when_the_check_fails_or_is_unusable():
+    draft = "It cannot attack."
+    for reply in ({"ok": True, "text": "", "finishReason": "stop"},
+                  {"ok": True, "text": "Half an answ", "finishReason": "length"},
+                  {"ok": True, "text": call("get_rule", rule_id="11.28.1"), "finishReason": "stop"},
+                  {"ok": False, "error": "worker_died"}):
+        class Once(ScriptedModel):
+            async def generate(self, messages, tools_, *, max_tokens, enable_thinking):
+                if messages[-1].get("content") == loop_module.VERIFY_PROMPT:
+                    return reply
+                return await super().generate(messages, tools_, max_tokens=max_tokens,
+                                              enable_thinking=enable_thinking)
+        result = turn([], "Q?", Once([draft]), verify_restrictions=True)
+        assert result.ok and result.answer == draft and not result.revised, reply
+        assert result.trace[-1]["verify"] and result.trace[-1]["kept"] == "draft", reply
 
 
 def run() -> None:
