@@ -16,16 +16,25 @@ import { hasDefeatReplacement, supportsDefeatReplacementGear } from "./defeat-re
 /** Batch V89 (10.24-10.29): the Gear whose mandatory replacement applies if this field Unit would be defeated: a face-up attached Gear
  * of the Unit's controller with the pinned replacement. With several (10.28.1 lets the controller choose), they are identical copies,
  * so the lowest id is taken. The replacing Gear's own defeat is a new process this replacement cannot apply to again (10.29.1). */
-export function defeatReplacement(state: GameState, id: CardInstanceId, context: EngineContext): CardInstanceId | undefined {
+export function gearDefeatReplacement(state: GameState, id: CardInstanceId, context: EngineContext): CardInstanceId | undefined {
     const c = state.objects.cards[id];
     if (!c || c.zone.zone !== "BATTLEFIELD" || c.face !== "UP" || !effectiveCardTypes(state, id, context).includes("UNIT")) return undefined;
     return [...c.attachments].sort().find(g => { const gear = state.objects.cards[g], r = cardRevision(state, g, context);
         return gear?.face === "UP" && gear.controllerId === c.controllerId && hasDefeatReplacement(r) && supportsDefeatReplacementGear(r, context).ok; });
 }
-/** The cards one defeat moves to the trash, in an owner-chosen order: the Unit and its Gear, or (Batch V89) its replacing Gear alone. */
+/** Batch V100: the Legend whose paid replacement its controller chose for this defeat, while the defeat is being declared. */
+export function chosenLegendReplacement(state: GameState, id: CardInstanceId): CardInstanceId | undefined {
+    return state.resolution.defeatContinuation?.legendReplacement?.replaced.find(x => x.targetId === id)?.legendId;
+}
+/** The card defeated instead of this one: a mandatory Gear replacement (Batch V89) first (10.26), else a chosen Legend's (Batch V100). */
+export function defeatReplacement(state: GameState, id: CardInstanceId, context: EngineContext): CardInstanceId | undefined {
+    return gearDefeatReplacement(state, id, context) ?? chosenLegendReplacement(state, id);
+}
+/** The cards one defeat moves, in an owner-chosen order: the Unit and its Gear, or its replacement with that card's own Gear (Batch V89:
+ * the replacing Gear alone; Batch V100: the Legend and its Gear). */
 export function defeatBatch(state: GameState, id: CardInstanceId, context: EngineContext): CardInstanceId[] {
     const replaced = defeatReplacement(state, id, context);
-    return replaced ? [replaced] : [id, ...state.objects.cards[id].attachments].sort();
+    return replaced ? [replaced, ...state.objects.cards[replaced].attachments].sort() : [id, ...state.objects.cards[id].attachments].sort();
 }
 export function defeatSupport(state: GameState, id: CardInstanceId, context: EngineContext) {
     const c = state.objects.cards[id], revision = cardRevision(state, id, context);
@@ -64,8 +73,9 @@ export function defeatCards(m: TurnMutation, defeats: readonly DefeatInstruction
         if (!m.state.objects.cards[d.defeatedBy] || !order || order.length !== batch.length || new Set(order).size !== batch.length || order.some(id => !batch.includes(id)))
             return failure("INVALID_DEFEAT_ORDER", "Exact owner order and existing defeat source required");
     }
-    // Batch V89 (10.25): a replaced defeat does not occur at all; its replacing Gear is defeated instead, by the same source.
-    const actual = defeats.map(d => { const gear = defeatReplacement(m.state, d.targetId, m.context); return { instruction: gear ? { targetId: gear, defeatedBy: d.defeatedBy } : d, replaced: gear ? d.targetId : undefined, order: orders.find(o => o.targetId === d.targetId)!.cardIds }; });
+    // Batch V89 (10.25): a replaced defeat does not occur at all; its replacing Gear (or, Batch V100, Legend) is defeated instead, by
+    // the same source.
+    const actual = defeats.map(d => { const by = defeatReplacement(m.state, d.targetId, m.context); return { instruction: by ? { targetId: by, defeatedBy: d.defeatedBy } : d, replaced: by ? d.targetId : undefined, order: orders.find(o => o.targetId === d.targetId)!.cardIds }; });
     const defeated = actual.map(a => a.instruction);
     if (triggersEnabled(m.context)) recordArasakaDefeat(m, defeated.map(d => d.targetId)); // Batch V50: before discovery and movement.
     if (triggersEnabled(m.context)) recordEquippedDefeats(m, defeated.map(d => d.targetId)); // Batch V92: likewise.

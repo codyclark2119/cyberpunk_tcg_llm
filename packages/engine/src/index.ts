@@ -5,6 +5,7 @@ import { unmetMustAttack } from "./must-attack";
 import { attackConditionPowerEnabled } from "./attack-condition-power-support";
 import { targetedSpendEnabled } from "./targeted-spend-support";
 import { continueTargetedDefeat } from "./targeted-defeat";
+import { nextLegendReplacement } from "./legend-defeat-replacement";
 import { targetedDefeatEnabled } from "./targeted-defeat-support";
 import { valueConditionsEnabled } from "./value-conditions-support";
 import { attackingAuraEnabled } from "./attacking-aura-support";
@@ -119,6 +120,10 @@ function describeAction(a: GameAction, state: GameState, actor: PlayerId, view: 
         case "ACTIVATE_ABILITY": {
             const r = view.getRevision(a.action.sourceInstanceId), ability = r?.mechanics.abilities.find(x => x.id === (a.action.kind === "ACTIVATE_ABILITY" ? a.action.abilityId : ""));
             // Batch V49: the paid Quick activation; Kerry's label is unchanged.
+            if (ability?.effects[0]?.kind === "DISCARD_ONE_FOR_DEFEAT_COST") { // Batch V98: the host is spent.
+                const host = Object.values(state.objects.cards).find(c => a.action.kind === "ACTIVATE_ABILITY" && c.attachments.includes(a.action.sourceInstanceId));
+                return `Activate ${r?.displayName}: Pay ${activationPaymentAmount(ability)} and spend ${host ? view.getRevision(host.id)?.displayName : "its host"} to discard 1, then defeat a spent rival Unit with cost up to the discarded card's`;
+            }
             if (ability?.effects[0]?.kind === "REVEAL_TOP_MAY_PLAY_FREE_ELSE_HAND") return `Activate ${r?.displayName}: Pay ${activationPaymentAmount(ability)} and spend to reveal the top card of your deck, then play it for free or add it to your hand`; // Batch V95.
             if (ability?.effects[0]?.kind === "PLAY_TRASH_PROGRAM_THEN_BOTTOM_DECK") return `Activate ${r?.displayName}: Pay ${activationPaymentAmount(ability)} and spend to play a Program from your trash, then bottom-deck it`; // Batch V94.
             if (ability?.effects[0]?.kind === "PLAY_GEAR_FROM_HAND_FREE") return `Activate ${r?.displayName}: Spend to play a Gear with cost 2 or less from your hand for free`; // Batch V92.
@@ -140,6 +145,15 @@ function describeAction(a: GameAction, state: GameState, actor: PlayerId, view: 
                 return option.confirmed ? `Ignore the ${gig.dieType} result (${value}) and reroll it` : `Keep the ${gig.dieType} result (${value})`;
             }
             if (option.kind === "ATTACK_TARGET") return option.target.kind === "CARD" ? `Attack ${view.getRevision(option.target.cardInstanceId)?.displayName} (${option.target.cardInstanceId})` : "Attack rival Gig area";
+            if (state.resolution.choice!.continuationId === "legend-defeat-replacement@1") { // Batch V100.
+                const offer = nextLegendReplacement(state, view.context), unit = offer ? `${view.getRevision(offer.targetId)?.displayName} (${offer.targetId})` : "the Unit";
+                if (option.kind !== "PAYMENT") return `Let ${unit} be defeated`;
+                const zone = option.source.kind === "EDDIE" ? "EDDIES" : "LEGENDS";
+                return `Pay 1 with ${option.source.kind.toLowerCase()} ${state.players[actor].zones[zone].indexOf(option.source.cardInstanceId) + 1} to defeat ${offer ? view.getRevision(offer.legendId)?.displayName : "your Legend"} instead of ${unit}`;
+            }
+            if (state.resolution.choice!.continuationId === "steal-prevention@1") { // Batch V99.
+                return option.kind === "CARD" ? `Discard ${view.getRevision(option.cardInstanceId)?.displayName} (${option.cardInstanceId}) so the Gig isn't stolen` : "Let the Gig be stolen";
+            }
             if (state.resolution.gigStealContinuation && option.kind === "GIG") {
                 const gig = view.getGig(option.gigInstanceId);
                 return `Steal ${gig.dieType} (${gig.id}, current ${gig.roll.kind === "ROLLED" ? gig.roll.currentValue : "unrolled"})`;
@@ -153,6 +167,8 @@ function describeAction(a: GameAction, state: GameState, actor: PlayerId, view: 
             if (state.resolution.current?.effect.kind === "MAY_CALL_LEGEND_FREE" && state.resolution.current.effect.lookAtOne && (option.kind === "LEGEND_SLOT" || option.kind === "CONFIRM")) // Batch V87.
                 return option.kind === "LEGEND_SLOT" ? `Look at friendly face-down Legend ${option.slot + 1}` : !state.resolution.triggerContinuation?.lookedLegendId ? "Look at no Legend"
                     : option.confirmed ? `Call face-down Legend ${state.players[actor].zones.LEGENDS.indexOf(state.resolution.triggerContinuation.lookedLegendId) + 1} for free` : "Don't Call it";
+            if (state.resolution.current?.effect.kind === "MAY_PLAY_PROGRAM_FREE_FROM_HAND_OR_TRASH_THEN_BOTTOM_DECK") // Batch V97.
+                return option.kind === "CARD" ? `Play ${view.getRevision(option.cardInstanceId)?.displayName} (${option.cardInstanceId}) from your ${state.objects.cards[option.cardInstanceId].zone.zone === "HAND" ? "hand" : "trash"} for free, then bottom-deck it` : "Play no Program";
             if (state.resolution.current?.effect.kind === "MAY_CALL_LEGEND_FREE" && (option.kind === "LEGEND_SLOT" || option.kind === "CONFIRM")) return option.kind === "LEGEND_SLOT" ? `Call face-down Legend ${option.slot + 1} for free` : "Call no Legend";
             if (state.resolution.triggerContinuation) {
                 if (state.resolution.searchContinuation && state.resolution.current?.effect.kind === "SEARCH_TOP_TRASH_ONE" && option.kind === "CARD") return `Trash ${view.getRevision(option.cardInstanceId)?.displayName} (${option.cardInstanceId}) from the top of your deck`; // Batch V92.
@@ -189,6 +205,8 @@ function describeAction(a: GameAction, state: GameState, actor: PlayerId, view: 
             if (state.resolution.current?.effect.kind === "TRASH_TOP_MAY_ADD_PROGRAM") return option.kind === "CARD" ? `Add ${view.getRevision(option.cardInstanceId)?.displayName} (${option.cardInstanceId}) from your trash to your hand` : "Leave it in your trash"; // Batch V76.
             if (state.resolution.current?.effect.kind === "MAY_DEFEAT_FRIENDLY_GEAR_THEN_DRAW") return option.kind === "CARD" ? `Defeat ${view.getRevision(option.cardInstanceId)?.displayName} (${option.cardInstanceId}) and draw 2` : "Defeat no Gear and draw 1"; // Batch V75.
             if (option.kind === "CARD" && state.resolution.current?.effect.kind === "POWER_PER_EQUIPPED_GEAR_THIS_TURN") return `Give ${view.getRevision(option.cardInstanceId)?.displayName} (${option.cardInstanceId}) +1 power this turn for each of its equipped Gear`; // Batch V75.
+            if (state.resolution.current?.effect.kind === "PLAY_TRASH_UNITS_FREE") // Batch V96.
+                return option.kind === "CARD" ? `Play ${view.getRevision(option.cardInstanceId)?.displayName} (${option.cardInstanceId}) from your trash for free` : "Play no more Units";
             if (state.resolution.current?.effect.kind === "REVEAL_TOP_MAY_PLAY_FREE_ELSE_HAND") { // Batch V95.
                 const top = revealedDeckTop(state)[0], card = top ? `${view.getRevision(top)?.displayName} (${top})` : "the revealed card";
                 return option.kind === "CARD" ? `Play ${card} for free, equipped to ${view.getRevision(option.cardInstanceId)?.displayName} (${option.cardInstanceId})` : option.kind === "CONFIRM" && option.confirmed ? `Play ${card} for free` : `Add ${card} to your hand`;
@@ -208,6 +226,7 @@ function describeAction(a: GameAction, state: GameState, actor: PlayerId, view: 
                 return held ? `Move ${view.getRevision(held)?.displayName} to ${view.getRevision(option.cardInstanceId)?.displayName} (${option.cardInstanceId}) and ready it` : `Move ${view.getRevision(option.cardInstanceId)?.displayName} (${option.cardInstanceId}) off ${view.getRevision(state.resolution.playContinuation!.sourceId)?.displayName}`;
             }
             if (option.kind === "CARD" && state.resolution.current?.effect.kind === "FRIENDLY_UNIT_ATTACK_RIVAL_UNITS_THE_TURN_PLAYED") return `Let ${view.getRevision(option.cardInstanceId)?.displayName} (${option.cardInstanceId}) attack spent rival Units the turn it's played`; // Batch V80.
+            if (option.kind === "CARD" && state.resolution.current?.effect.kind === "DISCARD_ONE_FOR_DEFEAT_COST") return `Discard ${view.getRevision(option.cardInstanceId)?.displayName} (${option.cardInstanceId})`; // Batch V98.
             if (option.kind === "CARD" && state.resolution.current?.effect.kind === "GRANT_BLOCKER_THIS_TURN") return `Give ${view.getRevision(option.cardInstanceId)?.displayName} (${option.cardInstanceId}) Blocker this turn`; // Batch V74.
             if (state.resolution.playContinuation?.phase === "EQUIP" && option.kind === "CARD") return `Equip to ${view.getRevision(option.cardInstanceId)?.displayName}`;
             if (state.resolution.playContinuation && option.kind === "CARD") return `Give ${view.getRevision(option.cardInstanceId)?.displayName} (${option.cardInstanceId}) -1 power this turn`;

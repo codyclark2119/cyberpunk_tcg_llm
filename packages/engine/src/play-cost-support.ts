@@ -1,3 +1,4 @@
+import { trashUnitsAlternativeCost } from "./trash-units-play";
 import type { TurnMutation } from "./turn";
 import { supportsModalProgram } from "./modal-program-support";
 import { triggersEnabled } from "./trigger-support";
@@ -74,7 +75,10 @@ export function playPaymentAmount(state: GameState, actor: PlayerId, id: CardIns
     const paid = firstGearReductions(state, actor, id, context).reduce((amount, m) => Math.max(Math.min(amount, m.minimum), amount - m.amount), own);
     // Batch V83: "If your fixer area is empty, play this Program for 1 €$": the lower amount, read whenever the amount is computed.
     const alternative = r.mechanics.modifiers.find(m => m.kind === "ALTERNATIVE_PLAY_COST_IF_FIXER_EMPTY");
-    return alternative?.kind === "ALTERNATIVE_PLAY_COST_IF_FIXER_EMPTY" && supportsModalProgram(r, context).ok && !state.players[actor]?.gigs.FIXER.length ? Math.min(paid, alternative.amount) : paid;
+    if (alternative?.kind === "ALTERNATIVE_PLAY_COST_IF_FIXER_EMPTY" && supportsModalProgram(r, context).ok && !state.players[actor]?.gigs.FIXER.length) return Math.min(paid, alternative.amount);
+    // Batch V96: "If a Rival controls at least 2 more Gigs than you, play this Program for 3 €$", likewise the lower amount.
+    const lead = trashUnitsAlternativeCost(state, actor, r, context);
+    return lead === null ? paid : Math.min(paid, lead);
 }
 type FirstGearReduction = Extract<ContinuousModifier, { kind: "FIRST_GEAR_PLAY_COST_REDUCTION" }>;
 /** Batch V53: each face-up friendly field Unit's pinned reduction applies to the actor's first CYBERWARE Gear play this turn. The

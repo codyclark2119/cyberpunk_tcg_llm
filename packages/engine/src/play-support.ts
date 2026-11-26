@@ -1,6 +1,7 @@
+import { hasTrashUnitsPlay, supportsTrashUnitsProgram } from "./trash-units-play";
 import { hasTrashGearEffect, supportsTrashGearProgram } from "./trash-gear";
 import { hasPaidAttackPower, supportsPaidAttackPowerUnit } from "./paid-attack-power-support";
-import { hasDefeatReplacement, supportsDefeatReplacementGear } from "./defeat-replacement-support";
+import { hasDefeatReplacement, hasLegendDefeatReplacement, supportsDefeatReplacementGear, supportsDefeatReplacementLegend } from "./defeat-replacement-support";
 import { hasGigChangeTriggerMetadata, supportsGigChangeTriggerCard } from "./gig-change-trigger-support";
 import { hasSpendTrigger, supportsSpendTriggerCard } from "./spend-trigger-support";
 import { hasGearStealMetadata, supportsGearStealCard } from "./gear-steal-support";
@@ -42,6 +43,7 @@ import { hasFightStealEffect, supportsFightStealProgram } from "./fight-steal-su
 import { hasFreePlayEffect, supportsFreePlayCard } from "./free-play-support";
 import { paymentCandidates } from "./payment";
 import { activationPaymentAmount, hasQuickActivation, supportsQuickActivationCard } from "./quick-activation-support";
+import { inheritedActivationHost } from "./gear-activation";
 import { testCondition } from "./conditions";
 export function playEnabled(context: EngineContext) { return turnSliceAllows(context.content.ruleset.gameplay?.turnSlice, "cardPlay") && context.content.ruleset.gameplay?.gigValueBounds === "DIE_FACES_V1"; }
 export function revisionOf(state: GameState, id: CardInstanceId, context: EngineContext) {
@@ -62,6 +64,7 @@ export function supportsPlay(card: DeepReadonly<CardRevisionSnapshot> | undefine
     if (card && hasSellTopEffect(card)) return supportsSellTopProgram(card, context);
     if (card && hasRivalRevealEffect(card)) return supportsRivalRevealProgram(card, context); // Batch V77.
     if (card && hasTrashGearEffect(card)) return supportsTrashGearProgram(card, context); // Batch V93.
+    if (card && hasTrashUnitsPlay(card)) return supportsTrashUnitsProgram(card, context); // Batch V96.
     if (card && hasHandResetEffect(card)) return supportsHandResetProgram(card, context); // Batch V78.
     if (card && hasUnitGrantEffect(card)) return supportsUnitGrantProgram(card, context); // Batch V79.
     // Batch V47: a next-fight steal is admitted only by its exact Program pin.
@@ -69,6 +72,7 @@ export function supportsPlay(card: DeepReadonly<CardRevisionSnapshot> | undefine
     if (card && hasSpendTrigger(card)) return supportsSpendTriggerCard(card, context); // Batch V69.
     if (card && hasGigChangeTriggerMetadata(card)) return supportsGigChangeTriggerCard(card, context); // Batch V88.
     if (card && hasDefeatReplacement(card)) return supportsDefeatReplacementGear(card, context); // Batch V89.
+    if (card && hasLegendDefeatReplacement(card)) return supportsDefeatReplacementLegend(card, context); // Batch V100.
     if (card && hasPaidAttackPower(card)) return supportsPaidAttackPowerUnit(card, context); // Batch V91.
     if (card && hasFightStealEffect(card)) return supportsFightStealProgram(card, context);
     // Batch V48: a free Unit play is admitted only by its exact pin.
@@ -147,6 +151,9 @@ export function canActivate(state: GameState, actor: PlayerId, id: CardInstanceI
     const amount = activationPaymentAmount(a, state, actor);
     // Batch V59: a face-up Legend's {Spend} ability is used from the Legends area (Legends never Lag).
     const legend = r?.type === "LEGEND" && c?.zone.zone === "LEGENDS" && supportsLegendSpendCard(r, context).ok;
-    return Boolean((main(state, actor) || a?.activation?.timing === "QUICK" && isReactDecision(state, actor, context)) && (legend || supportsPlay(r, context).ok && r?.type === "UNIT" && c?.zone.zone === "BATTLEFIELD") && c.zone.playerId === actor && c.controllerId === actor && c.face === "UP" && c.readiness === "READY" && !c.statuses.includes("LAG") && a?.activation && a.conditions.every(condition => testCondition(state, actor, condition))
-        && (!amount || paymentCandidates(legend ? spentCopy(state, id) : state, actor, context, amount, []).length));
+    // Batch V98: an equipped Gear's inherited ability is used by its host (11.23.3), which must be ready and is the card spent.
+    const host = r?.type === "GEAR" && a ? inheritedActivationHost(state, id, a.id, context) : null, spender = host ?? c;
+    if (host && (c.face !== "UP" || c.zone.playerId !== actor || c.controllerId !== actor || !["BATTLEFIELD", "LEGENDS"].includes(host.zone.zone))) return false;
+    return Boolean((main(state, actor) || a?.activation?.timing === "QUICK" && isReactDecision(state, actor, context)) && (legend || host || supportsPlay(r, context).ok && r?.type === "UNIT" && c?.zone.zone === "BATTLEFIELD") && spender.zone.playerId === actor && spender.controllerId === actor && spender.face === "UP" && spender.readiness === "READY" && !spender.statuses.includes("LAG") && a?.activation && a.conditions.every(condition => testCondition(state, actor, condition))
+        && (!amount || paymentCandidates(legend || host ? spentCopy(state, spender.id) : state, actor, context, amount, []).length));
 }

@@ -144,6 +144,11 @@ were recorded in their pull requests (#4, #7, #8); later batches have documents 
 | V93 (2026-11-25) | The Heist | [Trash 4, add a Gear, or play it free from the trash when its cost matches a Gig](api-admission-batch-v93.md); coverage 143/151 |
 | V94 (2026-11-25) | Alt Cunningham: Soulkiller Architect | [A paid {Spend} that plays a Program from the trash, then bottom-decks it](api-admission-batch-v94.md); coverage 144/151 |
 | V95 (2026-11-25) | Judy Álvarez: Nothing to Doubt | [A paid {Spend} that reveals the top card to play for free or add to hand](api-admission-batch-v95.md); coverage 145/151 |
+| V96 (2026-11-26) | We Gotta Live Together | [A conditional 3 €$ cost, then up to 2 Units with cost 3 or less played free from the trash](api-admission-batch-v96.md); coverage 146/151 |
+| V97 (2026-11-26) | Lizzy Wizzy: Delicate Weapon | [A {Play} that queues a cheap hand or trash Program, played free after the batch and bottom-decked](api-admission-batch-v97.md); coverage 147/151 |
+| V98 (2026-11-26) | Overwatch: Panam's Gift | [A Gear whose host inherits a paid {Quick} discard, then a defeat bounded by the discarded card's cost](api-admission-batch-v98.md); coverage 148/151 |
+| V99 (2026-11-26) | Alt Cunningham: Mother of Daemons | [A draw when a friendly equipped Unit or Legend is spent, and a discard that stops a rival Unit's steal](api-admission-batch-v99.md); coverage 149/151 |
+| V100 (2026-11-26) | Jackie Welles: Mama's Favorite | [An optional paid replacement of a friendly Unit's defeat by a Legend's](api-admission-batch-v100.md); coverage 150/151 |
 | V7 (2026-11-15) | Royce: Don't Call Me Simon, Wild in the Streets, Delamain: Rideshare AI | [shared defeat filter and exact pin table](api-admission-batch-v7.md); coverage 42/151 |
 | V6 (2026-09-22) | Trust No One | [contract and executable slice](api-admission-batch-v6.md), [baseline verification](api-admission-batch-v6-verification.md) |
 

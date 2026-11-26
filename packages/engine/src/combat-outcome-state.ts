@@ -1,4 +1,6 @@
 import { reducedAllowance } from "./steal-reduction";
+import { nextPreventableGig, stealPreventionChoice } from "./steal-prevention";
+import { validateLegendReplacement } from "./legend-defeat-replacement";
 import { validFightOutcomes } from "./fight-outcome";
 import { validFightFact } from "./trigger-state";
 import { triggersEnabled } from "./trigger-support";
@@ -22,8 +24,18 @@ export function validateCombatOutcome(state: GameState, context: EngineContext) 
     if (!listAttackTargets(state, c.attackerId, c.attackingPlayerId, context).some(t => canonicalSerialize(t) === canonicalSerialize(c.target))) return failure("INVALID_COMBAT_TARGET", "Current locked target is no longer valid");
     if (c.stage === "GIG_STEAL_SELECTION") {
         const continuation = r.gigStealContinuation, power = effectivePower(state, c.attackerId, context);
-        if (c.target.kind !== "GIG_AREA" || !continuation || r.defeatContinuation || power === null || state.timing.actingPlayer !== c.attackingPlayerId) return failure("INVALID_GIG_STEAL", "Gig target, attacker choice and exclusive continuation required");
+        if (c.target.kind !== "GIG_AREA" || !continuation || r.defeatContinuation || power === null || state.timing.actingPlayer !== (continuation.prevention ? c.target.playerId : c.attackingPlayerId)) return failure("INVALID_GIG_STEAL", "Gig target, attacker choice and exclusive continuation required");
         const all = stealableGigsFor(state, context, c.target.playerId, c.attackerId), selected = continuation.selected;
+        // Batch V99: every Gig is selected; the answered Gigs are a prefix of the preventable ones, and the defending player answers the next.
+        if (continuation.prevention) {
+            const p = continuation.prevention, next = nextPreventableGig(state, c.attackerId, selected, p.answered, context);
+            if (continuation.remaining !== 0 || new Set(selected).size !== selected.length || selected.some(id => !all.some(g => g.id === id)) || selected.length !== Math.min(all.length, reducedAllowance(state, c.attackerId, getGigStealAllowance(power, context)))
+                || new Set(p.answered).size !== p.answered.length || p.answered.some(id => !selected.includes(id)) || p.prevented.some(id => !p.answered.includes(id)) || new Set(p.prevented).size !== p.prevented.length
+                || !next || p.answered.some(id => id > next) || canonicalSerialize(r.choice) !== canonicalSerialize(stealPreventionChoice(state, next, c.attackerId, context)))
+                return failure("INVALID_STEAL_PREVENTION", "A complete selection, answered Gigs in order and the exact offer for the next preventable Gig required");
+            return success(null);
+        }
+        if (continuation.remaining <= 0) return failure("INVALID_GIG_STEAL", "A selection pause has Gigs left to choose");
         if (new Set(selected).size !== selected.length || selected.some(id => !all.some(g => g.id === id)) || selected.length + continuation.remaining !== Math.min(all.length, reducedAllowance(state, c.attackerId, getGigStealAllowance(power, context))) || continuation.remaining >= all.length - selected.length || canonicalSerialize(r.choice) !== canonicalSerialize(gigStealChoice(state, context)))
             return failure("INVALID_GIG_STEAL", "Exact remaining count, distinct still-rival selected Gigs and strategic current choices required");
     } else {
@@ -40,6 +52,10 @@ export function validateCombatOutcome(state: GameState, context: EngineContext) 
         const raw = continuation.fightResult ? defeatsFromFightResult(state, context, continuation.fightResult) : evaluateFight(state, context).defeats, expected = preventFightDefeats(state, raw, appliedFightPreventions(state));
         if (appliedFightPreventions(state).length && canonicalSerialize(raw) === canonicalSerialize(expected)) return failure("INVALID_APPLIED_PREVENTION", "Consumed proof is retained only for an actually prevented defeat during owner ordering");
         if (canonicalSerialize(continuation.defeats) !== canonicalSerialize(expected) || canonicalSerialize(continuation.orders.map(o => o.targetId)) !== canonicalSerialize(expected.map(d => d.targetId))) return failure("INVALID_DEFEAT_CONTINUATION", "Defeats and orders must match the current authoritative fight result");
+        // Batch V100: a Legend replacement offer comes before any owner order.
+        const replacement = validateLegendReplacement(state, context);
+        if (!replacement.ok) return replacement;
+        if (replacement.value === "OFFER") return continuation.orders.some(o => o.cardIds.length) ? failure("INVALID_DEFEAT_REPLACEMENT", "Offers precede owner orders") : success(null);
         let unfinished = false;
         for (const order of continuation.orders) {
             const batch = defeatBatch(state, order.targetId, context);

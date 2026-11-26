@@ -92,6 +92,10 @@ export const TriggerContinuationSchema = z.strictObject({
     // Batch V48: each Unit an effect played in this batch; its {Play} triggers join the batch. `qualifyingOrdinal` is the
     // first-blue-play ordinal the play recorded, when it recorded one.
     effectPlays: z.array(z.strictObject({ subjectId: CardInstanceIdSchema, qualifyingOrdinal: z.number().int().positive().optional() })).min(1).optional(),
+    // Batch V96: the resolved Program that played this batch's origin Unit and its one effect play from the trash.
+    freePlaySource: CardInstanceIdSchema.optional(),
+    // Batch V99: the Gig the current effect steal would take, while its defending player may discard to prevent it.
+    stealPrevention: z.strictObject({ gigInstanceId: GigInstanceIdSchema }).optional(),
     // Batch V48: every effect defeat of this batch, in order (several sources may defeat inside one batch).
     effectDefeats: z.array(z.strictObject({ targetId: CardInstanceIdSchema, defeatedBy: CardInstanceIdSchema })).min(1).optional(), origin: TriggerOriginSchema, ordinal: z.number().int().positive(), bindings: z.array(TriggerBindingSchema).min(1),
     selectedEddieSlots: z.array(z.number().int().nonnegative()).length(1).optional(), resolvedIds: z.array(HashSchema), phase: z.enum(["SELECT", "OPTIONAL", "TARGET", "AMOUNT", "DISCARD", "READY", "PAYMENT"]), trashedIds: z.array(CardInstanceIdSchema).min(1).max(3).optional(), conditionMet: z.literal(true).optional(), targetGigId: GigInstanceIdSchema.optional(),
@@ -145,11 +149,16 @@ export const TurnHistorySchema = z.strictObject({
     endTurnDefeats: z.array(EndTurnDefeatSchema).min(1).optional(),
     // Batch V72: cards with a "the first time this Unit is spent each turn" trigger already spent this turn.
     firstSpends: z.array(CardInstanceIdSchema).min(1).optional(),
+    // Batch V99: each card spent this turn while it was a face-up equipped Unit or Legend with a friendly observer of that.
+    equippedSpends: z.array(CardInstanceIdSchema).min(1).optional(),
     // Batch V92: the Units defeated this turn while equipped, recorded before they moved.
     equippedDefeats: z.array(CardInstanceIdSchema).min(1).optional(),
     // Batch V84: a Legend Called for free by an effect, whose {Call} ability resolves once the action's trigger batches are done (Batch
     // V86: or its attack has ended); `started` while that ability resolves, which may be the non-active player's.
     queuedCall: z.strictObject({ playerId: PlayerIdSchema, legendId: CardInstanceIdSchema, started: z.literal(true).optional() }).optional(),
+    // Batch V97: a Program a {Play} trigger chose to play for free from hand or trash, played once the action's trigger batches are done
+    // (or its attack has ended); `started` while it resolves.
+    queuedProgramPlay: z.strictObject({ playerId: PlayerIdSchema, cardInstanceId: CardInstanceIdSchema, started: z.literal(true).optional() }).optional(),
     // Batch V83: unused "a friendly Legend may use {Go Solo} for -2 €$ this turn" grants, by resolved effect, in grant order.
     goSoloDiscounts: z.array(HashSchema).min(1).optional(),
     // Batch V79: Units whose next attack this turn may target ready Units, by id; `inAttack` once that attack is declared, until it ends.
@@ -251,8 +260,11 @@ export const ResolutionStateSchema = z.strictObject({
     returnTo: ActionReturnContextSchema.optional(),
     // Batch V81: the Gig just rolled in from the fixer area, while its controller chooses whether to ignore the result and reroll it once.
     gigRerollContinuation: z.strictObject({ gigInstanceId: GigInstanceIdSchema }).optional(),
-    gigStealContinuation: z.strictObject({ selected: z.array(GigInstanceIdSchema), remaining: z.number().int().positive() }).optional(),
-    defeatContinuation: z.strictObject({ fightResult: FightResultSchema.optional(), fightOutcomes: z.array(FightOutcomeSchema).min(1).optional(), appliedPrevention: FightPreventionSchema.optional(), appliedPreventions: z.array(FightPreventionSchema).min(2).optional(), defeats: z.array(DefeatInstructionSchema).min(1), orders: z.array(z.strictObject({ targetId: CardInstanceIdSchema, cardIds: z.array(CardInstanceIdSchema) })) }).optional(),
+    // Batch V99: with every Gig selected (remaining 0), `prevention` holds the Gigs whose optional steal prevention was answered, in
+    // order, and those a discard prevented, while the defending player answers the next.
+    gigStealContinuation: z.strictObject({ selected: z.array(GigInstanceIdSchema), remaining: z.number().int().nonnegative(),
+        prevention: z.strictObject({ answered: z.array(GigInstanceIdSchema), prevented: z.array(GigInstanceIdSchema) }).optional() }).optional(),
+    defeatContinuation: z.strictObject({ fightResult: FightResultSchema.optional(), fightOutcomes: z.array(FightOutcomeSchema).min(1).optional(), appliedPrevention: FightPreventionSchema.optional(), appliedPreventions: z.array(FightPreventionSchema).min(2).optional(), legendReplacement: z.strictObject({ answered: z.array(CardInstanceIdSchema).min(1), replaced: z.array(z.strictObject({ targetId: CardInstanceIdSchema, legendId: CardInstanceIdSchema })) }).optional(), defeats: z.array(DefeatInstructionSchema).min(1), orders: z.array(z.strictObject({ targetId: CardInstanceIdSchema, cardIds: z.array(CardInstanceIdSchema) })) }).optional(),
     legendEntryContinuation: z.strictObject({ mode: z.enum(["GO_SOLO", "PLAY"]), actorId: PlayerIdSchema, sourceId: CardInstanceIdSchema, remainingCost: z.number().int().positive(), selectedSources: z.array(PaymentSourceSchema) }).optional(),
     playContinuation: z.strictObject({ kind: z.enum(["PLAY", "ACTIVATE"]), actorId: PlayerIdSchema, sourceId: CardInstanceIdSchema, abilityId: z.string().min(1).optional(), phase: z.enum(["PAYMENT", "EFFECT", "EQUIP", "MODE"]), remainingCost: z.number().int().nonnegative(), selectedSources: z.array(PaymentSourceSchema), effectIndex: z.number().int().nonnegative(), targetGigId: GigInstanceIdSchema.optional(),
         // Batch V14: the cards the current Program primitive trashed from the deck, in trash order.
@@ -278,7 +290,13 @@ export const ResolutionStateSchema = z.strictObject({
         trashProgramId: CardInstanceIdSchema.optional(), fromTrash: z.literal(true).optional(),
         // Batch V95: the revealed top card of the deck chosen to play for free, a Unit or Program (never at a decision; a Gear is equipped
         // at once), and a card played that way, which pays nothing.
-        deckPlayId: CardInstanceIdSchema.optional(), freeFromDeck: z.literal(true).optional() }).optional(),
+        deckPlayId: CardInstanceIdSchema.optional(), freeFromDeck: z.literal(true).optional(),
+        // Batch V96: the trash Units a Program played for free so far, in play order; their play batch follows the Program.
+        trashPlayedIds: z.array(CardInstanceIdSchema).min(1).max(2).optional(),
+        // Batch V97: a queued Program played for free, which is bottom-decked after it resolves.
+        freeBottomDeck: z.literal(true).optional(),
+        // Batch V98: the card an activation's "Discard 1" put in the trash, whose printed cost bounds its defeat.
+        discardedCostId: CardInstanceIdSchema.optional() }).optional(),
     searchContinuation: z.strictObject({ looked: z.array(CardInstanceIdSchema), selected: z.array(CardInstanceIdSchema) }).optional(),
     callContinuation: z.strictObject({ actorId: PlayerIdSchema, legendId: CardInstanceIdSchema, remainingCost: z.number().int().nonnegative(), selectedSources: z.array(PaymentSourceSchema) }).optional(),
     current: PendingEffectSchema.nullable(), pending: z.array(PendingEffectSchema), discovered: z.array(PendingEffectSchema), choice: PendingChoiceSchema.nullable()
@@ -442,6 +460,10 @@ export const EventPayloadSchema = z.discriminatedUnion("kind", [
     z.strictObject({ kind: z.literal("OVERTIME_STARTED"), turn: z.number().int().min(2) }),
     z.strictObject({ kind: z.literal("GAME_ENDED"), winnerId: PlayerIdSchema, loserId: PlayerIdSchema, reason: z.enum(["EMPTY_DRAW", "START_TURN_GIGS", "OVERTIME_GIGS"]) }),
     z.strictObject({ kind: z.literal("CARD_DISCARDED"), cardInstanceId: CardInstanceIdSchema, playerId: PlayerIdSchema, sourceId: CardInstanceIdSchema, effectId: HashSchema, forced: z.boolean() }),
+    // Batch V99: a defending player discarded a card with cost equal to the Gig's value, so a rival Unit did not steal it.
+    z.strictObject({ kind: z.literal("GIG_STEAL_PREVENTED"), gigInstanceId: GigInstanceIdSchema, stealerId: CardInstanceIdSchema, playerId: PlayerIdSchema, sourceId: CardInstanceIdSchema, discardedId: CardInstanceIdSchema }),
+    z.strictObject({ kind: z.literal("GIG_STEAL_PREVENTION_DECLINED"), gigInstanceId: GigInstanceIdSchema, stealerId: CardInstanceIdSchema, playerId: PlayerIdSchema }),
+    z.strictObject({ kind: z.literal("DEFEAT_REPLACEMENT_DECLINED"), cardInstanceId: CardInstanceIdSchema, legendId: CardInstanceIdSchema, playerId: PlayerIdSchema }),
     z.strictObject({ kind: z.literal("CARD_MOVED"), cardInstanceId: CardInstanceIdSchema, from: ZoneRefSchema, to: ZoneRefSchema }),
     z.strictObject({ kind: z.literal("CARD_SOLD"), cardInstanceId: CardInstanceIdSchema, value: z.number().int().nonnegative() }),
     z.strictObject({ kind: z.literal("PAYMENT_MADE"), sources: z.array(PaymentSourceSchema) }),

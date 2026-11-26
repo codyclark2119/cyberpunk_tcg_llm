@@ -124,7 +124,9 @@ export const DefeatUnitTargetSchema = z.strictObject({ kind: z.literal("UNITS"),
     readiness: z.literal("SPENT").optional(),
     // "with cost 2 or less" (batch V31): the Unit's referenced cost, alongside the power bound.
     // Batch V55: "with cost 3 or less".
-    cost: z.strictObject({ kind: z.literal("AT_MOST"), value: z.union([z.literal(2), z.literal(3)]) }).optional(),
+    // Batch V98: "with cost equal to or less than the discarded card's cost": the printed cost of the card the activation's own
+    // discard put in the trash (no discard, no bound and so no target).
+    cost: z.union([z.strictObject({ kind: z.literal("AT_MOST"), value: z.union([z.literal(2), z.literal(3)]) }), z.strictObject({ kind: z.literal("AT_MOST_DISCARDED") })]).optional(),
     // "If <condition>, defeat ... with power N or less instead": replaces the AT_MOST bound while the condition holds.
     instead: z.strictObject({ condition: z.strictObject({ kind: z.literal("STREET_CRED_GREATER_THAN_RIVAL") }), power: DefeatPowerAtMostSchema }).optional(),
     // "Defeat all other Units" (batch V10): every eligible Unit except the effect source, with no target choice.
@@ -282,6 +284,13 @@ export const EffectSchema = z.discriminatedUnion("kind", [
     z.strictObject({ kind: z.literal("PLAY_TRASH_PROGRAM_THEN_BOTTOM_DECK") }),
     // Batch V95: "Reveal the top card of your deck. You may play it for free. Otherwise, add it to your hand."
     z.strictObject({ kind: z.literal("REVEAL_TOP_MAY_PLAY_FREE_ELSE_HAND") }),
+    // Batch V96: "Play up to 2 Units with cost 3 or less from your trash for free."
+    z.strictObject({ kind: z.literal("PLAY_TRASH_UNITS_FREE"), count: z.literal(2), maxCost: z.literal(3) }),
+    // Batch V97: "You may play a Program with cost 3 or less from your hand or trash for free. Bottom-deck it after you play it."
+    z.strictObject({ kind: z.literal("MAY_PLAY_PROGRAM_FREE_FROM_HAND_OR_TRASH_THEN_BOTTOM_DECK"), maxCost: z.literal(3) }),
+    // Batch V98: "Discard 1." The controller discards a card of their choice from hand (a lone card is forced; an empty hand does
+    // nothing); a later defeat in the same ability reads that card's printed cost.
+    z.strictObject({ kind: z.literal("DISCARD_ONE_FOR_DEFEAT_COST") }),
     // Batch V90: "Give an equipped Unit +3 power this turn for each of its equipped Gears. If that Unit steals or fights, defeat it at
     // the end of this turn." Any player's equipped Unit; the Gear counted as it resolves; the defeat is registered on that Unit.
     z.strictObject({ kind: z.literal("EQUIPPED_UNIT_POWER_PER_GEAR_THIS_TURN"), amount: z.literal(3),
@@ -347,7 +356,9 @@ export const AbilitySchema = z.strictObject({ id: z.string().min(1), trigger: Tr
     // Batch V40: STEALER_IS_LEGEND limits it to a stealing friendly Legend ("When a friendly Legend steals a Gig").
     // Batch V49: FIRST_OTHER_FRIENDLY_STEAL_BELOW_POWER_PER_TURN is "The first time another friendly Unit steals a Gig with value less
     // than its power each turn".
-    guard: z.enum(["FIRST_BLUE_UNIT_OR_GEAR_PLAY_PER_TURN", "FIRST_FRIENDLY_ARASAKA_UNIT_ATTACK_PER_TURN", "STOLEN_GIG_IS_D6", "STEALER_IS_LEGEND", "FIRST_OTHER_FRIENDLY_STEAL_BELOW_POWER_PER_TURN", "FIRST_ARASAKA_UNIT_DEFEAT_PER_TURN", "FIRST_FIGHT_WIN_PER_TURN", "FRIENDLY_CORPO_OR_GANGER_UNIT_STEALS", "FIRST_HOST_STEAL_PER_TURN", "FIRST_SPEND_PER_TURN", "FRIENDLY_BRAINDANCE_PROGRAM_PLAYED", "FRIENDLY_EQUIPPED_UNIT_DEFEATED"]).optional(),
+    guard: z.enum(["FIRST_BLUE_UNIT_OR_GEAR_PLAY_PER_TURN", "FIRST_FRIENDLY_ARASAKA_UNIT_ATTACK_PER_TURN", "STOLEN_GIG_IS_D6", "STEALER_IS_LEGEND", "FIRST_OTHER_FRIENDLY_STEAL_BELOW_POWER_PER_TURN", "FIRST_ARASAKA_UNIT_DEFEAT_PER_TURN", "FIRST_FIGHT_WIN_PER_TURN", "FRIENDLY_CORPO_OR_GANGER_UNIT_STEALS", "FIRST_HOST_STEAL_PER_TURN", "FIRST_SPEND_PER_TURN", "FRIENDLY_BRAINDANCE_PROGRAM_PLAYED", "FRIENDLY_EQUIPPED_UNIT_DEFEATED", "FRIENDLY_EQUIPPED_UNIT_OR_LEGEND_SPENT"]).optional(),
+    // Batch V99: FRIENDLY_EQUIPPED_UNIT_OR_LEGEND_SPENT with WHEN_SPENT is "When a friendly equipped Unit or Legend is spent": the
+    // binding's subject is the spent card, its source the observer.
     // Batch V92: FRIENDLY_EQUIPPED_UNIT_DEFEATED with WHEN_UNIT_DEFEATED is "When a friendly equipped Unit is defeated", once per Unit.
     // Batch V63: FRIENDLY_CORPO_OR_GANGER_UNIT_STEALS is "When a friendly CORPO or GANGER Unit steals 1 or more Gigs": once per steal, not per Gig.
     // Batch V50: FIRST_ARASAKA_UNIT_DEFEAT_PER_TURN with WHEN_UNIT_DEFEATED is "The first time an ARASAKA Unit is defeated each turn".
@@ -377,6 +388,12 @@ export const ContinuousModifierSchema = z.discriminatedUnion("kind", [
     // Batch V89 (10.24-10.29): "If this Unit would be defeated, defeat its DEADMAN TRANSMITTER instead." A Gear's mandatory replacement of
     // its host's defeat by its own.
     z.strictObject({ kind: z.literal("DEFEAT_THIS_GEAR_INSTEAD_OF_HOST") }),
+    // Batch V99 (10.24-10.29): "When a rival Unit would steal a Gig, you may discard 1 with cost equal to that Gig's value. If you do, the
+    // Gig isn't stolen." An optional replacement, offered to this card's controller once per Gig a rival Unit would steal from them.
+    z.strictObject({ kind: z.literal("MAY_DISCARD_GIG_VALUE_COST_TO_PREVENT_RIVAL_STEAL") }),
+    // Batch V100 (10.24-10.29): "If a friendly Unit would be defeated, you may spend 1 €$ to defeat this Legend instead. (Remove it from
+    // the game.)" An optional, paid replacement of one friendly Unit's defeat by this face-up Legend's own.
+    z.strictObject({ kind: z.literal("MAY_SPEND_TO_DEFEAT_THIS_LEGEND_INSTEAD_OF_FRIENDLY_UNIT"), cost: z.literal(1) }),
     z.strictObject({ kind: z.literal("FRIENDLY_ARASAKA_ATTACKING_UNIT_POWER"), amount: z.literal(1) }),
     // Batch V38: "Other friendly Units have +2 power while attacking." A field Unit's live contribution, never to itself.
     z.strictObject({ kind: z.literal("OTHER_FRIENDLY_ATTACKING_UNIT_POWER"), amount: z.literal(2) }),
@@ -387,6 +404,8 @@ export const ContinuousModifierSchema = z.discriminatedUnion("kind", [
     z.strictObject({ kind: z.literal("DRAW_ON_EXTREME_GIG_ROLL"), count: z.literal(1), d20Count: z.literal(3) }),
     // Batch V83: "If your fixer area is empty, play this Program for 1 €$." The amount paid, never the cost value (3.11.1.2).
     z.strictObject({ kind: z.literal("ALTERNATIVE_PLAY_COST_IF_FIXER_EMPTY"), amount: z.literal(1) }),
+    // Batch V96: "If a Rival controls at least 2 more Gigs than you, play this Program for 3 €$."
+    z.strictObject({ kind: z.literal("ALTERNATIVE_PLAY_COST_IF_RIVAL_GIG_LEAD"), minimum: z.literal(2), amount: z.literal(3) }),
     // Batch V56: "Rivals must pay +2 €$ to use {Go Solo}."
     z.strictObject({ kind: z.literal("RIVAL_GO_SOLO_COST_INCREASE"), amount: z.literal(2) }),
     // Batch V39: "If a Rival controls at least 2 more Gigs than you, this Unit has [Adrenaline]": a Gear's live conditional grant.

@@ -1,3 +1,4 @@
+import { chooseFreeProgram, freeProgramTargets } from "./queued-program-play";
 import { beginPaidPower, continuePaidPower } from "./paid-attack-power";
 import { spentSubjects, takeQueuedSpends } from "./spend-triggers";
 import { gigChangeSubjects, noteRivalGigChange, takeQueuedGigChanges } from "./gig-change-triggers";
@@ -45,6 +46,7 @@ import { discardingPlayer, discoverTriggers, pendingTrigger, stolenGigParity, sw
 import { moveCardLocation } from "./card-movement";
 import { discardProgram, handPrograms, programBottomDeckTargets } from "./program-discard";
 import { bottomDeck } from "./bottom-deck";
+import { answerStealPrevention, nextPreventableGig, offerStealPrevention } from "./steal-prevention";
 import { bottomDeckSubject, freeGearHosts, freeGearTargets, freePlayTargets, recordQualifyingPlay, resolveFreeGearPlay, resolveFreePlay } from "./free-play";
 
 export function recordPlayedCard(m: TurnMutation, sourceId: CardInstanceId) {
@@ -64,7 +66,10 @@ function resume(m: TurnMutation, origin: TriggerOrigin): Result<null> {
     // Batch V17 (9.11): Blocker-used effects resolve, then the defending player's React Step reopens.
     if (origin.kind === "BLOCK" && "target" in combat && combat.target) { m.state.timing.combat = { ...combat, stage: "RIVAL_REACT" }; return finishAttackEffects(m); }
     if (origin.kind === "FIGHT") return completeFightResult(m, origin.result);
-    if (origin.kind === "DEFEAT") return origin.effectSource ? finishAction(m) : finishCombat(m);
+    if (origin.kind === "DEFEAT") { // Batch V98: an effect DEFEAT batch inside an attack (a React Step activation) returns to that React Step.
+        if (origin.effectSource && "target" in combat && combat.target) { m.state.timing.combat = { ...combat, stage: "RIVAL_REACT" }; return finishAttackEffects(m); }
+        return origin.effectSource ? finishAction(m) : finishCombat(m);
+    }
     // Batch V24 (9.20.2): after the steal triggers resolve, the Steal Step and the attack end.
     if (origin.kind === "STEAL") return finishCombat(m);
     // Batch V69: a SPEND batch returns where its action would have: to an open React Step, or to the Main Phase.
@@ -74,7 +79,8 @@ function resume(m: TurnMutation, origin: TriggerOrigin): Result<null> {
     }
     return failure("INVALID_TRIGGER_RETURN", "Trigger batch must return to its original reviewed stage");
 }
-export type PreparedTriggerBatch = { origin: TriggerOrigin; ordinal: number; bindings: TriggerBinding[]; pending: PendingEffect[]; effectSpends?: CardInstanceId[]; effectGigChanges?: CardInstanceId[]; programPlay?: CardInstanceId };
+export type PreparedTriggerBatch = { origin: TriggerOrigin; ordinal: number; bindings: TriggerBinding[]; pending: PendingEffect[]; effectSpends?: CardInstanceId[]; effectGigChanges?: CardInstanceId[]; programPlay?: CardInstanceId;
+    effectPlays?: { subjectId: CardInstanceId; qualifyingOrdinal?: number }[]; freePlaySource?: CardInstanceId }; // Batch V96: a trash-Unit Program's two plays.
 /** Creation of pending work is separate from resolution, so a Program can finish before it starts. */
 export function prepareTriggerBatch(m: TurnMutation, origin: TriggerOrigin, captured?: readonly TriggerBinding[]): PreparedTriggerBatch | null {
     // Batch V69: "when spent" bindings waiting from a spend earlier in this action join this batch, after its own.
@@ -87,8 +93,8 @@ export function prepareTriggerBatch(m: TurnMutation, origin: TriggerOrigin, capt
     return { origin, ordinal, bindings, pending, ...(queued.length ? { effectSpends: spentSubjects(queued) } : {}), ...(gigChanges.length ? { effectGigChanges: gigChangeSubjects(gigChanges) } : {}) };
 }
 export function activateTriggerBatch(m: TurnMutation, batch: PreparedTriggerBatch, alreadyAnnounced = false): Result<null> {
-    const { origin, ordinal, bindings, pending, effectSpends, effectGigChanges, programPlay } = batch;
-    m.state.resolution = { stage: "DISCOVER_TRIGGERS", current: null, pending: pending.map(e => PendingEffectSchema.parse(e)), discovered: [], choice: null, triggerContinuation: { origin: TriggerOriginSchema.parse(origin), ordinal, bindings: bindings.map(b => TriggerBindingSchema.parse(b)), resolvedIds: [], phase: "SELECT", ...(effectSpends ? { effectSpends } : {}), ...(effectGigChanges ? { effectGigChanges } : {}), ...(programPlay ? { programPlay } : {}) } };
+    const { origin, ordinal, bindings, pending, effectSpends, effectGigChanges, programPlay, effectPlays, freePlaySource } = batch;
+    m.state.resolution = { stage: "DISCOVER_TRIGGERS", current: null, pending: pending.map(e => PendingEffectSchema.parse(e)), discovered: [], choice: null, triggerContinuation: { origin: TriggerOriginSchema.parse(origin), ordinal, bindings: bindings.map(b => TriggerBindingSchema.parse(b)), resolvedIds: [], phase: "SELECT", ...(effectSpends ? { effectSpends } : {}), ...(effectGigChanges ? { effectGigChanges } : {}), ...(programPlay ? { programPlay } : {}), ...(effectPlays ? { effectPlays } : {}), ...(freePlaySource ? { freePlaySource } : {}) } };
     const combat = m.state.timing.combat;
     if (origin.kind !== "END_TURN" && "target" in combat && combat.target) m.state.timing.combat = { ...combat, stage: "TRIGGER_RESOLUTION" }; // Batch V92: a PLAY batch too.
     if (!alreadyAnnounced) for (const e of pending) m.emit({ kind: "EFFECT_PENDING", effectId: e.id, sourceId: e.sourceId! });
@@ -132,8 +138,15 @@ function offer(m: TurnMutation): Result<null> {
     return success(null);
 }
 /** Batch V47: a steal that ends the game keeps the resolved fact, as a swap does. */
-function finishEffectSteal(m: TurnMutation, gigId: GigInstanceId): Result<null> {
-    const effectId = m.state.resolution.current!.id, stolen = resolveEffectSteal(m, gigId);
+function finishEffectSteal(m: TurnMutation, gigId: GigInstanceId, answered = false): Result<null> {
+    // Batch V99: before the Gig moves, its controller may discard to prevent the steal.
+    const current = m.state.resolution.current!, c = m.state.resolution.triggerContinuation!;
+    if (!answered && effectStealTargets(m.state, m.context).includes(gigId) && nextPreventableGig(m.state, current.trigger!.subjectId, [gigId], [], m.context)) {
+        m.emit({ kind: "GIG_TARGET_SELECTED", effectId: current.id, gigInstanceId: gigId });
+        c.phase = "TARGET"; c.stealPrevention = { gigInstanceId: gigId };
+        return offerStealPrevention(m, gigId, current.trigger!.subjectId, "TARGET_SELECTION");
+    }
+    const effectId = m.state.resolution.current!.id, stolen = resolveEffectSteal(m, gigId, answered);
     if (!stolen.ok) return stolen;
     if (m.state.match.outcome) { m.emit({ kind: "EFFECT_RESOLVED", effectId }); return success(null); }
     return completed(m);
@@ -255,6 +268,8 @@ export function advanceTriggers(m: TurnMutation): Result<null> {
         if (gear.length > 1) { c.phase = "TARGET"; return offer(m); }
         c.selectedGearId = gear[0]; return advanceFreeGear(m, true);
     }
+    // Batch V97: "You may play a Program with cost 3 or less from your hand or trash for free": the decline is always offered.
+    if (e.kind === "MAY_PLAY_PROGRAM_FREE_FROM_HAND_OR_TRASH_THEN_BOTTOM_DECK") { if (!freeProgramTargets(m.state, m.context).length) return completed(m); c.phase = "TARGET"; return offer(m); }
     // Batch V48: "Play another Unit with cost 9 or less from your trash for free. Then, bottom-deck this Unit."
     if (e.kind === "PLAY_UNIT_FREE") {
         if (freePlayTargets(m.state, m.context).length) { c.phase = "TARGET"; return offer(m); } // Batch V50: an optional play always offers its decline.
@@ -568,6 +583,7 @@ export function continueTrigger(m: TurnMutation, index: number, forced = false):
             const gearId = c.selectedGearId; delete c.selectedGearId;
             const played = resolveFreeGearPlay(m, gearId, option.cardInstanceId, forced); return played.ok ? completed(m) : played;
         }
+        if (current.effect.kind === "MAY_PLAY_PROGRAM_FREE_FROM_HAND_OR_TRASH_THEN_BOTTOM_DECK") { const chosen = chooseFreeProgram(m, option); return chosen.ok ? completed(m) : chosen; } // Batch V97.
         if (current.effect.kind === "PLAY_UNIT_FREE") {
             if (option.kind === "CONFIRM" && !option.confirmed && current.effect.optional) { m.emit({ kind: "OPTIONAL_TRIGGER_DECLINED", effectId: current.id, controllerId: current.controllerId }); return completed(m); }
             if (option.kind !== "CARD") return failure("INVALID_FREE_PLAY", "Choose an eligible Unit");
@@ -617,6 +633,12 @@ export function continueTrigger(m: TurnMutation, index: number, forced = false):
             if (option.kind !== "LEGEND_SLOT") return failure("INVALID_LOOK_TARGET", "Choose a public Legend slot");
             const learned = grantLegendKnowledge(m, current.controllerId, option.slot);
             return learned.ok ? completed(m) : learned;
+        }
+        if (current.effect.kind === "STEAL_GIG" && c.stealPrevention) { // Batch V99: the defending player's answer, then the steal unless prevented.
+            const gigId = c.stealPrevention.gigInstanceId, answered = answerStealPrevention(m, gigId, current.trigger!.subjectId, option);
+            if (!answered.ok) return answered;
+            delete c.stealPrevention; m.state.timing.actingPlayer = current.controllerId;
+            return answered.value ? completed(m) : finishEffectSteal(m, gigId, true);
         }
         if (current.effect.kind === "STEAL_GIG") return option.kind === "GIG" ? finishEffectSteal(m, option.gigInstanceId) : failure("INVALID_EFFECT_STEAL", "Choose a rival Gig");
         if (option.kind !== "GIG" || !triggerGigTargets(m.state).includes(option.gigInstanceId)) return failure("INVALID_TRIGGER_TARGET", "Choose a currently valid Gig");

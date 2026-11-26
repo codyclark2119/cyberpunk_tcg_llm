@@ -24,11 +24,11 @@ export function effectStealTargets(state: GameState, context: EngineContext): Gi
     return stealableGigsFor(state, context, rival, subject.id).filter(g => !(current.effect.kind === "STEAL_GIG" && current.effect.valueNotSharedByFriendly) || g.roll.kind === "ROLLED" && !friendly.has(g.roll.currentValue)).map(g => g.id).sort();
 }
 /** Moves the chosen Gig, records the stolen fact, and appends the steal triggers to this batch (11.5.1.7). */
-export function resolveEffectSteal(m: TurnMutation, gigId: GigInstanceId): Result<null> {
+export function resolveEffectSteal(m: TurnMutation, gigId: GigInstanceId, selected = false): Result<null> {
     const s = m.state, current = s.resolution.current!, c = s.resolution.triggerContinuation!, subjectId = current.trigger!.subjectId;
     if (!effectStealTargets(s, m.context).includes(gigId)) return failure("INVALID_EFFECT_STEAL", "Choose a rival Gig the subject may steal");
     const from = s.objects.gigs[gigId].controllerId, power = belowPowerStealerPower(s, subjectId, m.context);
-    m.emit({ kind: "GIG_TARGET_SELECTED", effectId: current.id, gigInstanceId: gigId });
+    if (!selected) m.emit({ kind: "GIG_TARGET_SELECTED", effectId: current.id, gigInstanceId: gigId }); // Batch V99: emitted before a prevention offer.
     const moved = transferGigs(m, [gigId], current.controllerId, () => {
         const g = s.objects.gigs[gigId];
         if (g.roll.kind !== "ROLLED") throw new Error("Validated transfer must contain rolled Gigs");

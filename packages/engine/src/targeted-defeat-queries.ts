@@ -36,6 +36,11 @@ function listDefeatableGear(state: GameState, actor: PlayerId, target: DefeatGea
 export function listDefeatTargets(state: GameState, actor: PlayerId, target: DefeatTarget, context: EngineContext) {
     return target.kind === "GEAR" ? listDefeatableGear(state, actor, target, context) : listDefeatableUnits(state, actor, target, context);
 }
+/** Batch V98: the printed cost of the card the current activation discarded; null with no discard (no bound, so no target). */
+function discardedCost(state: GameState, context: EngineContext) {
+    const c = state.resolution.playContinuation, id = c?.kind === "ACTIVATE" ? c.discardedCostId : undefined;
+    return id ? referencedCost(state, id, context) : null;
+}
 export function listDefeatableUnits(state: GameState, actor: PlayerId, target: DefeatTarget, context: EngineContext) {
     // Unit-only by construction; Gear targets are dispatched to listDefeatableGear.
     if (target.kind !== "UNITS" || !targetedDefeatEnabled(context)) return [];
@@ -46,7 +51,7 @@ export function listDefeatableUnits(state: GameState, actor: PlayerId, target: D
     return Object.values(state.objects.cards).filter(c => {
         if (target.relation === "RIVAL" && c.controllerId === actor || target.relation === "CONTROLLED" && c.controllerId !== actor || !defeatSupport(state, c.id, context).ok) return false;
         if (target.readiness && c.readiness !== target.readiness) return false;
-        if (target.cost) { const cost = referencedCost(state, c.id, context); if (cost === null || cost > target.cost.value) return false; }
+        if (target.cost) { const cost = referencedCost(state, c.id, context), bound = target.cost.kind === "AT_MOST" ? target.cost.value : discardedCost(state, context); if (cost === null || bound === null || cost > bound) return false; }
         const power = effectivePower(state, c.id, context);
         return power !== null && values.some(value => referencedPower(power) <= value);
     }).map(c => c.id).sort();

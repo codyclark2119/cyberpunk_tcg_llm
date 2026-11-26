@@ -3,7 +3,7 @@ import { turnSliceAllows, canonicalSerialize, failure, success, type Ability, ty
 import { activationCostReduction } from "./rocker-grant";
 import type { EngineContext } from "./state";
 /** Batch V49+: Units with a paid "[Quick] cost: effect" activation (11.30) or a below-power first-steal trigger (Batch V95: or a paid
- * Main-timing activation), each pinned whole. */
+ * Main-timing activation; Batch V98: or a Gear whose host inherits a paid {Quick} ability), each pinned whole. */
 const QUICK_ACTIVATION_SHAPES = [
     // Batch V49: Rogue Amendiares: Queen of the Afterlife. "The first time another friendly Unit steals a Gig with value less than its
     // power each turn, ready 2 Eddies. {Quick} 2 €$, {Spend} A rival Unit loses power equal to this Unit's power this turn."
@@ -19,7 +19,15 @@ const QUICK_ACTIVATION_SHAPES = [
     { type: "UNIT", sell: false, power: 6, colors: ["BLUE"], ram: { BLUE: 5 }, tags: ["Ganger", "Mox", "Techie"], cost: 6,
         abilities: [
             { trigger: null, inherited: null, guard: null, activation: { timing: "MAIN", conditionTiming: "ACTIVATION_AND_RESOLUTION", costs: [{ kind: "PAYMENT_COST", cost: { kind: "EDDIES", amount: 1 } }, { kind: "SPEND_SOURCE" }] },
-                conditions: [], abilityCost: { kind: "NONE" }, choose: null, effects: [{ kind: "REVEAL_TOP_MAY_PLAY_FREE_ELSE_HAND" }] }] }
+                conditions: [], abilityCost: { kind: "NONE" }, choose: null, effects: [{ kind: "REVEAL_TOP_MAY_PLAY_FREE_ELSE_HAND" }] }] },
+    // Batch V98: Overwatch: Panam's Gift. "{Quick} 1 €$, {Spend} Discard 1. Defeat a spent rival Unit with cost equal to or less than
+    // the discarded card's cost." A Gear: its host inherits the ability (11.23.3), so {Spend} spends the host.
+    { type: "GEAR", sell: true, power: 4, colors: ["GREEN"], ram: { GREEN: 4 }, tags: ["Weapon"], cost: 4,
+        equip: { kind: "FRIENDLY_UNIT_OR_FACE_UP_LEGEND" }, modifiers: [{ kind: "GRANT_PRINTED_POWER_TO_HOST" }],
+        abilities: [
+            { trigger: null, inherited: "EQUIPPED_HOST", guard: null, activation: { timing: "QUICK", conditionTiming: "ACTIVATION_AND_RESOLUTION", costs: [{ kind: "PAYMENT_COST", cost: { kind: "EDDIES", amount: 1 } }, { kind: "SPEND_SOURCE" }] },
+                conditions: [], abilityCost: { kind: "NONE" }, choose: null,
+                effects: [{ kind: "DISCARD_ONE_FOR_DEFEAT_COST" }, { kind: "DEFEAT_UNIT", target: { kind: "UNITS", relation: "RIVAL", power: { kind: "ANY" }, readiness: "SPENT", cost: { kind: "AT_MOST_DISCARDED" } } }] }] }
 ].map(shape => canonicalSerialize({ keywords: [], restrictions: [], equip: null, modifiers: [], ...shape }));
 /** Any Quick activation, paid activation, source-power scale or below-power steal guard routes here first. */
 export function hasQuickActivation(card: DeepReadonly<CardRevisionSnapshot> | undefined) {

@@ -20,3 +20,23 @@ export function supportsDefeatReplacementGear(card: DeepReadonly<CardRevisionSna
         return failure("UNSUPPORTED_DEFEAT_REPLACEMENT", "Complete reviewed Gear with an exact host-defeat replacement required");
     return success(null);
 }
+/** Batch V100+: Go Solo Legends with an optional, paid replacement of a friendly Unit's defeat by their own, each pinned whole. */
+const DEFEAT_REPLACEMENT_LEGEND_SHAPES = [
+    // Batch V100: Jackie Welles: Mama's Favorite. "[Go Solo] If a friendly Unit would be defeated, you may spend 1 €$ to defeat this
+    // Legend instead. (Remove it from the game.)"
+    { colors: ["GREEN"], ram: { GREEN: 2 }, tags: ["Merc"], cost: 6, power: 8,
+        modifiers: [{ kind: "MAY_SPEND_TO_DEFEAT_THIS_LEGEND_INSTEAD_OF_FRIENDLY_UNIT", cost: 1 }] }
+].map(shape => canonicalSerialize({ type: "LEGEND", sell: true, keywords: ["GO_SOLO"], abilities: [], restrictions: [], equip: null, ...shape }));
+/** Any Legend replacement of a friendly Unit's defeat routes here first. */
+export function hasLegendDefeatReplacement(card: DeepReadonly<CardRevisionSnapshot> | undefined) {
+    return Boolean(card?.mechanics.modifiers.some(m => m.kind === "MAY_SPEND_TO_DEFEAT_THIS_LEGEND_INSTEAD_OF_FRIENDLY_UNIT"));
+}
+export function supportsDefeatReplacementLegend(card: DeepReadonly<CardRevisionSnapshot> | undefined, context: EngineContext) {
+    const p = context.content.ruleset.gameplay?.turnSlice, m = card?.mechanics;
+    if (!turnSliceAllows(p, "cardPlay") || !turnSliceAllows(p, "fieldLegends") || !turnSliceAllows(p, "gear") || !turnSliceAllows(p, "combat") || !turnSliceAllows(p, "react") || !turnSliceAllows(p, "combatResolution") || !turnSliceAllows(p, "combatTriggers") || !turnSliceAllows(p, "targetedDefeat")
+        || !card?.provenance.reviewed || card.execution?.scope !== "COMBAT_TRIGGERS_V1" || card.execution.status !== "SUPPORTED" || card.keywords.length || card.printedCost.kind !== "EDDIES" || !m
+        || !DEFEAT_REPLACEMENT_LEGEND_SHAPES.includes(canonicalSerialize({ type: card.type, sell: card.sellProfile.allowed, keywords: m.keywords, abilities: m.abilities, restrictions: m.restrictions ?? [], equip: m.equip ?? null,
+            colors: card.colors, ram: card.ram, tags: card.tags, cost: card.printedCost.amount, power: card.power ?? null, modifiers: m.modifiers })))
+        return failure("UNSUPPORTED_DEFEAT_REPLACEMENT", "Complete reviewed Go Solo Legend with an exact paid friendly-Unit defeat replacement required");
+    return success(null);
+}

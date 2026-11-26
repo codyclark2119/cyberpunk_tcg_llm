@@ -1,3 +1,4 @@
+import { trashUnitsOptions, validateTrashUnitsPause } from "./trash-units-play";
 import { currentTrashPlayTargets } from "./trash-program-play";
 import { deckTopOptions } from "./deck-top-play";
 import { trashGearOptions, validateTrashGear } from "./trash-gear";
@@ -31,6 +32,7 @@ import { trashedUnitTargets, validateTrashReturn } from "./trash-return";
 import { currentBottomDeckTargets, validateBottomDeck } from "./bottom-deck";
 import { testCondition } from "./conditions";
 import { validateActivationState } from "./quick-activation";
+import { discardCostTargets, validateGearActivationState } from "./gear-activation";
 
 function playIdentity(state: GameState) {
     const c = state.resolution.playContinuation!;
@@ -123,6 +125,9 @@ export function playChoice(state: GameState, context: EngineContext): PendingCho
     } else if (state.resolution.current?.effect.kind === "TRASH_THEN_ADD_GEAR_MAY_PLAY_IF_GIG_COST") { // Batch V93: the Gear, then hand or its host.
         kind = "TARGET";
         options = trashGearOptions(state, context);
+    } else if (state.resolution.current?.effect.kind === "PLAY_TRASH_UNITS_FREE") { // Batch V96.
+        kind = "TARGET";
+        options = trashUnitsOptions(state, context);
     } else if (state.resolution.current?.effect.kind === "REVEAL_TOP_MAY_PLAY_FREE_ELSE_HAND") { // Batch V95.
         kind = "TARGET";
         options = deckTopOptions(state, context);
@@ -135,6 +140,9 @@ export function playChoice(state: GameState, context: EngineContext): PendingCho
     } else if (state.resolution.current?.effect.kind === "FRIENDLY_UNIT_ATTACK_RIVAL_UNITS_THE_TURN_PLAYED") { // Batch V80.
         kind = "TARGET";
         options = rockerGrantTargets(state, c.actorId, context).map(cardInstanceId => ({ kind: "CARD", cardInstanceId }));
+    } else if (state.resolution.current?.effect.kind === "DISCARD_ONE_FOR_DEFEAT_COST") { // Batch V98: any card in the controller's hand.
+        kind = "TARGET";
+        options = discardCostTargets(state, c.actorId).map(cardInstanceId => ({ kind: "CARD", cardInstanceId }));
     } else if (state.resolution.current?.effect.kind === "GRANT_BLOCKER_THIS_TURN") { // Batch V74.
         kind = "TARGET";
         options = blockerGrantTargets(state, c.actorId, context).map(cardInstanceId => ({ kind: "CARD", cardInstanceId }));
@@ -157,11 +165,11 @@ export function validatePlayState(state: GameState, context: EngineContext) {
     const c = state.resolution.playContinuation, current = state.resolution.current;
     const resolving = Object.values(state.objects.cards).filter(c => c.zone.zone === "RESOLVING_PROGRAM");
     if (!c) return resolving.length || (state.timing.step === "AMOUNT_SELECTION" && !state.resolution.triggerContinuation) ? failure("INVALID_PLAY_CONTINUATION", "Resolving Programs and amount choices require a continuation") : success(null);
-    if (c.kind === "ACTIVATE") return revisionOf(state, c.sourceId, context)?.type === "LEGEND" ? validateLegendActivationState(state, context) : validateActivationState(state, context); // Batch V49, V59.
+    if (c.kind === "ACTIVATE") { const type = revisionOf(state, c.sourceId, context)?.type; return type === "LEGEND" ? validateLegendActivationState(state, context) : type === "GEAR" ? validateGearActivationState(state, context) : validateActivationState(state, context); } // Batch V49, V59, V98.
     const source = state.objects.cards[c.sourceId], revision = revisionOf(state, c.sourceId, context), ability = revision?.mechanics.abilities[0];
     if (!supportsPlay(revision, context).ok || !source || c.kind !== "PLAY" || c.actorId !== (state.resolution.targetedDefeatContinuation?.phase === "ORDER" || state.resolution.targetedDefeatContinuation?.phase === "EACH" || otherPlayerMayChoose(state) ? state.timing.activePlayer : state.timing.actingPlayer) || source.controllerId !== c.actorId || source.zone.playerId !== c.actorId || source.face !== "UP" || (revision?.type === "GEAR" ? undefined : ability?.id) !== c.abilityId || state.setup || (state.timing.combat.stage !== "NONE" && (state.timing.combat.stage !== "RIVAL_REACT" || revision?.type !== "PROGRAM" || !revision.mechanics.keywords.includes("QUICK"))) || state.match.outcome || (state.resolution.searchContinuation && current?.effect.kind !== "SEARCH_TAKE_ONE_PLUS_PER_MIN_GIG") || state.resolution.callContinuation || state.resolution.discovered.length || state.resolution.stage !== "CHOICE")
         return failure("INVALID_PLAY_CONTINUATION", "Play source, scope, actor or exclusive decision state invalid");
-    const cost = revision!.printedCost, amount = c.freeFromDeck ? 0 : playPaymentAmount(state, c.actorId, c.sourceId, context); // Batch V95: played for free.
+    const cost = revision!.printedCost, amount = c.freeFromDeck || c.freeBottomDeck ? 0 : playPaymentAmount(state, c.actorId, c.sourceId, context); // Batch V95, V97: played for free.
     if (cost.kind !== "EDDIES" || new Set(c.selectedSources.map(p => p.cardInstanceId)).size !== c.selectedSources.length || c.selectedSources.reduce((n, p) => n + paymentValue(state, context, p), 0) + c.remainingCost !== amount)
         return failure("INVALID_PLAY_PAYMENT", "Exact cost and unique selected sources must match the printed cost");
     if (c.phase === "PAYMENT") {
@@ -181,7 +189,7 @@ export function validatePlayState(state: GameState, context: EngineContext) {
         const order = ability?.choose ? (c.chosenEffect === undefined ? ability.effects.map((_, i) => i) : [c.chosenEffect]) : ability?.effects.map((_, i) => i) ?? [], position = order.indexOf(c.effectIndex);
         if (ability?.choose && (c.chosenEffect === undefined) !== Boolean(ability.choose.allInstead && testCondition(state, c.actorId, ability.choose.allInstead, context, c.sourceId))) return failure("INVALID_MODE", "Every mode resolves exactly while the both-instead condition holds");
         if (!ability?.choose && c.chosenEffect !== undefined) return failure("INVALID_MODE", "Only a modal Program has a chosen mode");
-        if (revision!.type !== "PROGRAM" || source.zone.zone !== "RESOLVING_PROGRAM" || resolving.length !== 1 || c.remainingCost !== 0 || !ability || position < 0 || (position !== 0 && !ability.choose && current?.effect.kind !== "DEFEAT_UNIT" && current?.effect.kind !== "MAY_CALL_LEGEND_FREE") || (current?.effect.kind !== "SPEND_UNIT" && current?.effect.kind !== "DEFEAT_UNIT" && current?.effect.kind !== "ADJUST_GIG_UP_TO" && current?.effect.kind !== "POWER_UNTIL_END_OF_TURN" && current?.effect.kind !== "STEAL_FEWER_THIS_TURN" && current?.effect.kind !== "FIGHT_POWER_PER_FRIENDLY_LEGEND_THIS_TURN" && current?.effect.kind !== "TRASH_THEN_RETURN_UNIT" && current?.effect.kind !== "TRASH_THEN_ADD_GEAR_MAY_PLAY_IF_GIG_COST" && current?.effect.kind !== "BOTTOM_DECK_UNIT" && current?.effect.kind !== "SEARCH_TAKE_ONE_PLUS_PER_MIN_GIG" && current?.effect.kind !== "SET_GIG_TO_ANOTHER_GIG_VALUE" && current?.effect.kind !== "REVEAL_TOP_RIVAL_CHOOSES_HAND_OR_TRASH" && current?.effect.kind !== "EACH_PLAYER_DISCARDS_HAND_MAY_DRAW" && current?.effect.kind !== "FRIENDLY_UNIT_READY_ATTACK_AND_POWER" && current?.effect.kind !== "UNIT_CANNOT_ATTACK_UNTIL_YOUR_NEXT_TURN" && current?.effect.kind !== "EQUIPPED_UNIT_POWER_PER_GEAR_THIS_TURN" && current?.effect.kind !== "MAY_CALL_LEGEND_FREE") || current.id !== playEffectId(state, c.effectIndex) || current.sourceId !== c.sourceId || current.controllerId !== c.actorId || canonicalSerialize(current.effect) !== canonicalSerialize(ability.effects[c.effectIndex]) || state.resolution.pending.length !== order.length - 1 - position)
+        if (revision!.type !== "PROGRAM" || source.zone.zone !== "RESOLVING_PROGRAM" || resolving.length !== 1 || c.remainingCost !== 0 || !ability || position < 0 || (position !== 0 && !ability.choose && current?.effect.kind !== "DEFEAT_UNIT" && current?.effect.kind !== "MAY_CALL_LEGEND_FREE") || (current?.effect.kind !== "SPEND_UNIT" && current?.effect.kind !== "DEFEAT_UNIT" && current?.effect.kind !== "ADJUST_GIG_UP_TO" && current?.effect.kind !== "POWER_UNTIL_END_OF_TURN" && current?.effect.kind !== "STEAL_FEWER_THIS_TURN" && current?.effect.kind !== "FIGHT_POWER_PER_FRIENDLY_LEGEND_THIS_TURN" && current?.effect.kind !== "TRASH_THEN_RETURN_UNIT" && current?.effect.kind !== "TRASH_THEN_ADD_GEAR_MAY_PLAY_IF_GIG_COST" && current?.effect.kind !== "PLAY_TRASH_UNITS_FREE" && current?.effect.kind !== "BOTTOM_DECK_UNIT" && current?.effect.kind !== "SEARCH_TAKE_ONE_PLUS_PER_MIN_GIG" && current?.effect.kind !== "SET_GIG_TO_ANOTHER_GIG_VALUE" && current?.effect.kind !== "REVEAL_TOP_RIVAL_CHOOSES_HAND_OR_TRASH" && current?.effect.kind !== "EACH_PLAYER_DISCARDS_HAND_MAY_DRAW" && current?.effect.kind !== "FRIENDLY_UNIT_READY_ATTACK_AND_POWER" && current?.effect.kind !== "UNIT_CANNOT_ATTACK_UNTIL_YOUR_NEXT_TURN" && current?.effect.kind !== "EQUIPPED_UNIT_POWER_PER_GEAR_THIS_TURN" && current?.effect.kind !== "MAY_CALL_LEGEND_FREE") || current.id !== playEffectId(state, c.effectIndex) || current.sourceId !== c.sourceId || current.controllerId !== c.actorId || canonicalSerialize(current.effect) !== canonicalSerialize(ability.effects[c.effectIndex]) || state.resolution.pending.length !== order.length - 1 - position)
             return failure("INVALID_PROGRAM_EFFECT", "Resolving Program and current primitive must match its pinned ordered ability");
         for (const [index, effect] of state.resolution.pending.entries()) {
             const printed = order[position + index + 1];
@@ -194,6 +202,8 @@ export function validatePlayState(state: GameState, context: EngineContext) {
             if (!state.resolution.targetedDefeatContinuation || c.targetGigId) return failure("INVALID_TARGETED_DEFEAT", "Program defeat needs its bounded continuation");
         } else if (current.effect.kind === "TRASH_THEN_RETURN_UNIT") {
             const trashed = validateTrashReturn(state, context); if (!trashed.ok) return trashed;
+        } else if (current.effect.kind === "PLAY_TRASH_UNITS_FREE") { // Batch V96.
+            const paused = validateTrashUnitsPause(state, context); if (!paused.ok) return paused;
         } else if (current.effect.kind === "TRASH_THEN_ADD_GEAR_MAY_PLAY_IF_GIG_COST") { // Batch V93.
             const trashed = validateTrashGear(state, context); if (!trashed.ok) return trashed;
         } else if (current.effect.kind === "SEARCH_TAKE_ONE_PLUS_PER_MIN_GIG") {
@@ -233,6 +243,7 @@ export function validatePlayState(state: GameState, context: EngineContext) {
         }
     }
     if (c.chosenEffect !== undefined && c.phase !== "EFFECT") return failure("INVALID_MODE", "A chosen mode belongs only to a resolving modal Program");
+    if (c.trashPlayedIds && current?.effect.kind !== "PLAY_TRASH_UNITS_FREE") return failure("INVALID_TRASH_UNIT_PLAY", "Played trash Units belong only to their current effect"); // Batch V96.
     if (c.trashedGearId && current?.effect.kind !== "TRASH_THEN_ADD_GEAR_MAY_PLAY_IF_GIG_COST") return failure("INVALID_TRASH_GEAR", "A held trashed Gear belongs only to its current effect"); // Batch V93.
     if (c.trashedIds && current?.effect.kind !== "TRASH_THEN_RETURN_UNIT" && current?.effect.kind !== "TRASH_THEN_ADD_GEAR_MAY_PLAY_IF_GIG_COST") return failure("INVALID_TRASH_RETURN", "Trashed cards belong only to the current trash-return primitive");
     if (c.grantTargetId && (current?.effect.kind !== "FRIENDLY_UNIT_READY_ATTACK_AND_POWER" || c.phase !== "EFFECT")) return failure("INVALID_UNIT_GRANT", "A held Unit belongs only to the current Unit grant"); // Batch V79.

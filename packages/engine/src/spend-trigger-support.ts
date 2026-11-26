@@ -27,7 +27,11 @@ const SPEND_TRIGGER_SHAPES = [
     // Legend once per turn.)"
     { type: "GEAR", sell: true, power: 2, equip: { kind: "FRIENDLY_UNIT_OR_FACE_UP_LEGEND" }, modifiers: [{ kind: "GRANT_PRINTED_POWER_TO_HOST" }],
         colors: ["RED"], ram: { RED: 2 }, tags: ["Arasaka", "Cyberware"], cost: 2,
-        abilities: [ability({ trigger: "WHEN_SPENT", inherited: "EQUIPPED_HOST", effects: [{ kind: "MAY_CALL_LEGEND_FREE", lookAtOne: { tag: "Arasaka", keyword: "GO_SOLO" } }] })] }
+        abilities: [ability({ trigger: "WHEN_SPENT", inherited: "EQUIPPED_HOST", effects: [{ kind: "MAY_CALL_LEGEND_FREE", lookAtOne: { tag: "Arasaka", keyword: "GO_SOLO" } }] })] },
+    // Batch V99: Alt Cunningham: Mother of Daemons. "When a friendly equipped Unit or Legend is spent, draw 1. When a rival Unit would
+    // steal a Gig, you may discard 1 with cost equal to that Gig's value. If you do, the Gig isn't stolen."
+    { type: "UNIT", sell: false, power: 8, equip: null, modifiers: [{ kind: "MAY_DISCARD_GIG_VALUE_COST_TO_PREVENT_RIVAL_STEAL" }], colors: ["YELLOW"], ram: { YELLOW: 3 }, tags: ["Merc", "Netrunner"], cost: 7,
+        abilities: [ability({ trigger: "WHEN_SPENT", guard: "FRIENDLY_EQUIPPED_UNIT_OR_LEGEND_SPENT", effects: [{ kind: "DRAW", count: 1 }] })] }
 ].map(shape => canonicalSerialize({ keywords: [], restrictions: [], ...shape }));
 /** Any "when spent" trigger routes here first, so no other gate can admit what it does not read. */
 export function hasSpendTrigger(card: DeepReadonly<CardRevisionSnapshot> | undefined) {

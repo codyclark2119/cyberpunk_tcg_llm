@@ -4,6 +4,7 @@ import { testCondition } from "./conditions";
 import { defeatCards } from "./defeat";
 import { discardedCostMatchesFriendlyGig } from "./discard";
 import { defeatOrderChoice, unfinishedDefeatOrder } from "./combat-outcome-queries";
+import { answerLegendReplacement, LEGEND_REPLACEMENT_PROTOCOL, nextLegendReplacement, offerLegendReplacement } from "./legend-defeat-replacement";
 import { completePlayEffect } from "./play";
 import { appendDefeatedTriggers, completed, prepareTriggerBatch } from "./trigger-resolution";
 import { allOtherDefeatTargets, eachDefeatChoice, eachDefeatPlayers, ownDefeatTargets, secondDefeatChoice, secondDefeatTargets, targetedDefeatChoice, thenDefeatChoice, thenDefeatTargets } from "./targeted-defeat-queries";
@@ -59,6 +60,9 @@ function advanceEach(m: TurnMutation): Result<null> {
 }
 function advanceOwnerOrder(m: TurnMutation): Result<null> {
     const r = m.state.resolution;
+    // Batch V100: each replaceable friendly defeat is offered to its controller before any owner order.
+    const offer = nextLegendReplacement(m.state, m.context);
+    if (offer) { offerLegendReplacement(m, offer); m.emit({ kind: "PHASE_CHANGED", step: "DEFEAT_ORDER_SELECTION" }); return success(null); }
     while (unfinishedDefeatOrder(m.state, m.context)) {
         const choice = defeatOrderChoice(m.state, m.context);
         r.choice = choice;
@@ -100,6 +104,10 @@ function beginThenDefeat(m: TurnMutation): Result<null> {
 }
 export function continueTargetedDefeat(m: TurnMutation, index: number, forced = false): Result<null> {
     const r = m.state.resolution, c = r.targetedDefeatContinuation!, current = r.current!, choice = r.choice!, option = choice.options[index];
+    if (c.phase === "ORDER" && choice.continuationId === LEGEND_REPLACEMENT_PROTOCOL) { // Batch V100.
+        const answered = answerLegendReplacement(m, option);
+        return answered.ok ? advanceOwnerOrder(m) : answered;
+    }
     // Batch V34: "You may defeat a Gear": declining defeats nothing, and nothing after it happens.
     if (c.phase === "TARGET" && option?.kind === "CONFIRM" && !option.confirmed && current.effect.kind === "DEFEAT_UNIT" && current.effect.optional) {
         m.emit({ kind: "OPTIONAL_TRIGGER_DECLINED", effectId: current.id, controllerId: current.controllerId });

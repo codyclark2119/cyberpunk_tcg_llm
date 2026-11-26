@@ -1,6 +1,7 @@
 import { turnSliceAllows, canonicalSerialize, failure, success, type CardRevisionSnapshot, type DeepReadonly, type GameState } from "@tcg/domain";
 import type { EngineContext } from "./state";
 import { combatResolutionEnabled } from "./combat-resolution-policy";
+import { hasQuickActivation, supportsQuickActivationCard } from "./quick-activation-support";
 export function targetedDefeatEnabled(context: EngineContext) { return turnSliceAllows(context.content.ruleset.gameplay?.turnSlice, "targetedDefeat"); }
 /** Exact per-card pin table (Cody, 2026-11-15): each admitted card's complete printed shape and
  * effect list, literally. A new card is admitted only by adding its whole entry here. */
@@ -59,6 +60,8 @@ const WHOLE_DEFEAT_SHAPES = [
 /** Complete per-card shapes; no source-name dispatch or arbitrary filter/defeat admission. */
 export function supportsTargetedDefeatCard(card: DeepReadonly<CardRevisionSnapshot> | undefined, context: EngineContext) {
     const m = card?.mechanics, a = m?.abilities[0], p = context.content.ruleset.gameplay?.turnSlice;
+    // Batch V98: a Gear's inherited paid {Quick} defeat is admitted only by its exact Quick activation pin.
+    if (card?.type === "GEAR" && hasQuickActivation(card)) return supportsQuickActivationCard(card, context);
     // Batch V31: a defeat card with more than one ability is admitted only by its whole pinned ability list.
     // Batch V51: so is a printed "loses a fight" defeat.
     if (card && m && (m.abilities.length > 1 || m.abilities.some(a => a.trigger === "WHEN_FIGHT_LOST"))) {

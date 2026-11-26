@@ -1,3 +1,6 @@
+import { freeProgramTargets } from "./queued-program-play";
+import { supportsQuickActivationCard } from "./quick-activation-support";
+import { validFreePlaySource } from "./trash-units-play";
 import { handGearPlayEnabled, isEquippedDefeatBinding, validEquippedDefeatBinding } from "./hand-gear-play";
 import { validatePaidPowerContinuation } from "./paid-attack-power";
 import { validEndTurnDefeatBinding } from "./end-turn-defeat";
@@ -55,6 +58,7 @@ import { discardingPlayer, discoverTriggers, nextTriggerGroup, pendingTrigger, s
 import { discardedCostMatchesFriendlyGig } from "./discard";
 import { fightOutcomeBinding, registration, validFightOutcomes } from "./fight-outcome";
 import { effectStealTargets } from "./fight-steal";
+import { nextPreventableGig } from "./steal-prevention";
 import { supportsTargetedDefeatCard } from "./targeted-defeat-support";
 
 /** Validate the historical comparison, not a new comparison using post-trigger power. */
@@ -85,13 +89,15 @@ function validBinding(state: GameState, b: TriggerBinding, context: EngineContex
     if (b.kind === "WHEN_RIVAL_CHANGES_FRIENDLY_GIGS") return [...(c.origin.kind === "GIG_CHANGE" ? c.origin.subjectIds : []), ...(c.effectGigChanges ?? [])].includes(b.subjectId)
         && Boolean(subject) && b.controllerId === subject.controllerId && state.players[b.controllerId] !== undefined && validGigChangeBinding(state, b, supportsGigChangeTriggerCard(r, context).ok, context);
     if (b.changeEffectId !== undefined) return false;
-    if (!source || !subject || !state.players[b.controllerId] || b.controllerId !== subject.controllerId || b.controllerId !== source.controllerId || !supportsEffectiveTriggerSource(r, context) || source.cardId !== b.source.cardId || source.revision !== b.source.revision || !ability || (b.delayedId ? ability.trigger !== "WHEN_ATTACKING" : ability.trigger !== b.kind) || (b.sourceId !== b.subjectId) !== (ability.inherited === "EQUIPPED_HOST")) return false;
+    if (!source || !subject || !state.players[b.controllerId] || b.controllerId !== subject.controllerId || b.controllerId !== source.controllerId || !supportsEffectiveTriggerSource(r, context) || source.cardId !== b.source.cardId || source.revision !== b.source.revision || !ability || (b.delayedId ? ability.trigger !== "WHEN_ATTACKING" : ability.trigger !== b.kind) || ability.guard !== "FRIENDLY_EQUIPPED_UNIT_OR_LEGEND_SPENT" && (b.sourceId !== b.subjectId) !== (ability.inherited === "EQUIPPED_HOST")) return false;
     const origin = c.origin;
     // Batch V69: a "when spent" binding names a card this batch's origin or an effect in it spent. It is captured as the card is spent,
     // so its source is the spent card or a Gear on it, unless the source has since left the field.
     if (b.kind === "WHEN_SPENT") return [...(origin.kind === "SPEND" ? origin.spentIds : []), ...(c.effectSpends ?? [])].includes(b.subjectId) && b.gigInstanceId === undefined && !b.delayedId && supportsSpendTriggerCard(r, context).ok
         && (ability.guard !== "FIRST_SPEND_PER_TURN" || Boolean(state.turnHistory?.firstSpends?.includes(b.subjectId)))
-        && (b.sourceId === b.subjectId || attachedGear(state, b.subjectId, context).some(g => g.id === b.sourceId) || !["BATTLEFIELD", "LEGENDS"].includes(source.zone.zone));
+        // Batch V99: an equipped-spend observer is any friendly field card, the spent card included, of a recorded equipped spend.
+        && (ability.guard === "FRIENDLY_EQUIPPED_UNIT_OR_LEGEND_SPENT" ? Boolean(state.turnHistory?.equippedSpends?.includes(b.subjectId)) && source.controllerId === subject.controllerId
+            : b.sourceId === b.subjectId || attachedGear(state, b.subjectId, context).some(g => g.id === b.sourceId) || !["BATTLEFIELD", "LEGENDS"].includes(source.zone.zone));
     // Batch V50: an observer of the turn's first ARASAKA Unit defeat, defeated by this batch's origin or an effect in it. The observer
     // is on the field, or was defeated with it (bindings are captured before movement).
     if (b.kind === "WHEN_UNIT_DEFEATED") {
@@ -161,7 +167,7 @@ export function validateTriggerState(state: GameState, context: EngineContext) {
     // Batch V69: queued "when spent" bindings wait only inside an unfinished action, each a valid captured binding of a pinned card.
     if (history?.spendTriggers && (!(r.playContinuation || r.callContinuation || r.legendEntryContinuation || r.searchContinuation || r.current || r.choice) || c
         || history.spendTriggers.some(b => { const source = state.objects.cards[b.sourceId], rev = cardRevision(state, b.sourceId, context), a = rev?.mechanics.abilities.find(a => a.id === b.abilityId);
-            return b.kind !== "WHEN_SPENT" || !source || !state.objects.cards[b.subjectId] || source.cardId !== b.source.cardId || source.revision !== b.source.revision || a?.trigger !== "WHEN_SPENT" || (b.sourceId !== b.subjectId) !== (a.inherited === "EQUIPPED_HOST")
+            return b.kind !== "WHEN_SPENT" || !source || !state.objects.cards[b.subjectId] || source.cardId !== b.source.cardId || source.revision !== b.source.revision || a?.trigger !== "WHEN_SPENT" || (a.guard === "FRIENDLY_EQUIPPED_UNIT_OR_LEGEND_SPENT" ? !state.turnHistory?.equippedSpends?.includes(b.subjectId) : (b.sourceId !== b.subjectId) !== (a.inherited === "EQUIPPED_HOST"))
                 || b.gigInstanceId !== undefined || b.delayedId !== undefined || b.opposingId !== undefined || b.changeEffectId !== undefined || !supportsSpendTriggerCard(rev, context).ok; })))
         return failure("INVALID_SPEND_QUEUE", "Queued spend bindings belong to an unfinished action outside any batch");
     // Batch V88: queued Rival-change bindings likewise, each a valid captured binding of a pinned card, once per observer and effect.
@@ -170,6 +176,7 @@ export function validateTriggerState(state: GameState, context: EngineContext) {
         || history.gigChangeTriggers.some(b => b.kind !== "WHEN_RIVAL_CHANGES_FRIENDLY_GIGS" || b.controllerId !== state.objects.cards[b.subjectId]?.controllerId
             || !validGigChangeBinding(state, b, supportsGigChangeTriggerCard(cardRevision(state, b.sourceId, context), context).ok, context))))
         return failure("INVALID_GIG_CHANGE_QUEUE", "Queued Rival-change bindings belong to an unfinished action outside any batch");
+    if (history?.equippedSpends && (new Set(history.equippedSpends).size !== history.equippedSpends.length || history.equippedSpends.some(id => !state.objects.cards[id]))) return failure("INVALID_TURN_HISTORY", "Recorded equipped spends name distinct cards"); // Batch V99.
     if (history?.firstSpends && (new Set(history.firstSpends).size !== history.firstSpends.length || history.firstSpends.some(id => !state.objects.cards[id])))
         return failure("INVALID_TURN_HISTORY", "First spends name distinct cards");
     if (history && (programPlayHistoryEnabled(context) ? !history.programPlays || canonicalSerialize(Object.keys(history.programPlays).sort()) !== canonicalSerialize([...state.match.playerOrder].sort()) : history.programPlays)) return failure("INVALID_TURN_HISTORY", "Program-play counters exist exactly for each player under the reviewed policy");
@@ -188,7 +195,9 @@ export function validateTriggerState(state: GameState, context: EngineContext) {
         return failure("INVALID_SPEND_BATCH", "Each recorded spend names a distinct card with its captured bindings");
     // Batch V92: a hand Gear's PLAY batch may also pause a React Step's attack, as a SPEND batch does.
     const reactGearPlay = c.origin.kind === "PLAY" && combat.stage === "TRIGGER_RESOLUTION" && handGearPlayEnabled(context) && cardRevision(state, c.origin.subjectId, context)?.type === "GEAR";
-    if (c.origin.kind === "SPEND" || c.origin.kind === "GIG_CHANGE" || reactGearPlay ? combat.stage !== "NONE" && (combat.stage !== "TRIGGER_RESOLUTION" || combat.attackingPlayerId !== state.timing.activePlayer) : c.origin.kind === "PLAY" || c.origin.kind === "END_TURN" || c.origin.kind === "DEFEAT" && c.origin.effectSource ? combat.stage !== "NONE" : combat.stage !== "TRIGGER_RESOLUTION" || combat.attackingPlayerId !== state.timing.activePlayer) return failure("INVALID_TRIGGER_COMBAT", "Trigger batch must pause its original combat stage");
+    // Batch V98: so may the DEFEAT batch of an inherited Gear activation used in the React Step.
+    const reactGearDefeat = c.origin.kind === "DEFEAT" && c.origin.effectSource !== undefined && combat.stage === "TRIGGER_RESOLUTION" && cardRevision(state, c.origin.effectSource, context)?.type === "GEAR" && supportsQuickActivationCard(cardRevision(state, c.origin.effectSource, context), context).ok;
+    if (c.origin.kind === "SPEND" || c.origin.kind === "GIG_CHANGE" || reactGearPlay || reactGearDefeat ? combat.stage !== "NONE" && (combat.stage !== "TRIGGER_RESOLUTION" || combat.attackingPlayerId !== state.timing.activePlayer) : c.origin.kind === "PLAY" || c.origin.kind === "END_TURN" || c.origin.kind === "DEFEAT" && c.origin.effectSource ? combat.stage !== "NONE" : combat.stage !== "TRIGGER_RESOLUTION" || combat.attackingPlayerId !== state.timing.activePlayer) return failure("INVALID_TRIGGER_COMBAT", "Trigger batch must pause its original combat stage");
     if (combat.stage === "TRIGGER_RESOLUTION") {
         const attacker = state.objects.cards[combat.attackerId];
         const targetValid = combat.target.kind === "CARD" ? state.objects.cards[combat.target.cardInstanceId]?.controllerId !== combat.attackingPlayerId && Boolean(state.objects.cards[combat.target.cardInstanceId]) : Boolean(state.players[combat.target.playerId]) && combat.target.playerId !== combat.attackingPlayerId;
@@ -233,12 +242,14 @@ export function validateTriggerState(state: GameState, context: EngineContext) {
             || origin.kind === "DEFEAT" && canonicalSerialize(steals.flatMap(e => discoverTriggers(state, { kind: "STEAL", subjectId: e.subjectId, gigInstanceIds: [...e.gigInstanceIds] }, context)).map(b => canonicalSerialize(b)).sort()) !== canonicalSerialize(c.bindings.filter(b => b.gigInstanceId !== undefined).map(b => canonicalSerialize(b)).sort()))
             return failure("INVALID_EFFECT_STEAL", "Each effect steal needs its fired registration, a distinct Gig its subject's controller now controls and every steal binding once");
     }
+    // Batch V96: a trash-Unit Program's batch names exactly its origin Unit and its one effect play.
+    if (c?.freePlaySource && !validFreePlaySource(state, context)) return failure("INVALID_EFFECT_PLAY", "A free-play source needs its resolved trash-Unit Program and its two played Units");
     // Batch V48: each effect play names a distinct Unit, played by an admitted free-play ability of this batch; a recorded
     // first-blue-play ordinal is within its controller's count.
     if (c.effectPlays) {
         const ids = c.effectPlays.map(p => p.subjectId), plays = c.bindings.filter(b => cardRevision(state, b.sourceId, context)?.mechanics.abilities.find(a => a.id === b.abilityId)?.effects.some(e => e.kind === "PLAY_UNIT_FREE" || e.kind === "PLAY_GEAR_FREE") && supportsFreePlayCard(cardRevision(state, b.sourceId, context), context).ok);
         // Batch V68: a free Gear play is recorded too.
-        if (new Set(ids).size !== ids.length || ids.length > plays.length || ids.some(id => !["UNIT", "GEAR"].includes(cardRevision(state, id, context)?.type ?? ""))
+        if (new Set(ids).size !== ids.length || ids.length > plays.length + (c.freePlaySource ? 1 : 0) || ids.some(id => !["UNIT", "GEAR"].includes(cardRevision(state, id, context)?.type ?? ""))
             || c.effectPlays.some(p => p.qualifyingOrdinal !== undefined && (!cardRevision(state, p.subjectId, context)?.colors.includes("BLUE") || p.qualifyingOrdinal > (history?.blueUnitOrGearPlays[state.objects.cards[p.subjectId].ownerId] ?? 0))))
             return failure("INVALID_EFFECT_PLAY", "Each effect play needs a distinct Unit and an admitted free-play ability in this batch");
     }
@@ -262,9 +273,14 @@ export function validateTriggerState(state: GameState, context: EngineContext) {
     const rivalHasResolved = c.resolvedIds.some(id => !activeIds.includes(id));
     if ((r.current && r.current.controllerId !== state.timing.activePlayer || rivalHasResolved) && activeIds.some(id => !c.resolvedIds.includes(id))) return failure("INVALID_TRIGGER_PRIORITY", "Turn player's pending effects precede the rival's");
     if (c.phase === "SELECT" ? Boolean(r.current) || nextTriggerGroup(state).length < 2 : !r.current) return failure("INVALID_TRIGGER_PHASE", "Ordering is strategic only with multiple eligible effects; effect choices require a current effect");
-    if (c.phase !== "SELECT" && (!r.current || !["DEFEAT_UNIT", "READY_EDDIES", "DISCARD_CARDS", "DECREASE_GIG_UP_TO", "ADJUST_GIG_UP_TO", "OPTIONAL_DECREASE_FRIENDLY_GIG_THEN_DRAW_IF_MIN", "LOOK_AT_FRIENDLY_FACE_DOWN_LEGEND", "POWER_UNTIL_END_OF_TURN", "SPEND_UNIT", "READY_UNIT", "RETURN_TRASH_UNIT_TO_HAND", "PLAY_UNIT_FREE", "SEARCH_GEAR", "SEARCH_COST_MATCHING_GIGS", "SEARCH_TOP_MAY_TRASH", "TRASH_THEN_RETURN_PROGRAM", "GRANT_KEYWORD_UNTIL_END_OF_TURN", "PREVENT_UNIT_READY", "SWAP_GIGS", "READY_LEGENDS_UP_TO", "READY_UNITS_UP_TO", "SPEND_UNITS_PER_VALUE_PAIR", "DISCARD_PROGRAMS_THEN_BOTTOM_DECK", "STOLEN_GIG_PARITY_DRAW_OR_RIVAL_DISCARD", "CHOOSE_TYPE_REVEAL_TOP_ADD_AND_READY_EDDIE", "FORCE_RIVAL_UNIT_ATTACK", "STEAL_GIG", "PLAY_GEAR_FREE", "PROGRAM_PLAY_FRIENDLY_POWER_THIS_TURN", "MAY_CALL_LEGEND_FREE", "MAY_RETURN_TRASH_CARD_TO_HAND", "MAY_PAY_FOR_POWER_EQUAL_TO_FRIENDLY_MAX_GIG", "SEARCH_TOP_TRASH_ONE"].includes(r.current.effect.kind))) return failure("INVALID_TRIGGER_PHASE", "Only reviewed adjustment/look/discard/ready/power/spend/trash-return primitives pause for choices");
+    if (c.phase !== "SELECT" && (!r.current || !["DEFEAT_UNIT", "READY_EDDIES", "DISCARD_CARDS", "DECREASE_GIG_UP_TO", "ADJUST_GIG_UP_TO", "OPTIONAL_DECREASE_FRIENDLY_GIG_THEN_DRAW_IF_MIN", "LOOK_AT_FRIENDLY_FACE_DOWN_LEGEND", "POWER_UNTIL_END_OF_TURN", "SPEND_UNIT", "READY_UNIT", "RETURN_TRASH_UNIT_TO_HAND", "PLAY_UNIT_FREE", "MAY_PLAY_PROGRAM_FREE_FROM_HAND_OR_TRASH_THEN_BOTTOM_DECK", "SEARCH_GEAR", "SEARCH_COST_MATCHING_GIGS", "SEARCH_TOP_MAY_TRASH", "TRASH_THEN_RETURN_PROGRAM", "GRANT_KEYWORD_UNTIL_END_OF_TURN", "PREVENT_UNIT_READY", "SWAP_GIGS", "READY_LEGENDS_UP_TO", "READY_UNITS_UP_TO", "SPEND_UNITS_PER_VALUE_PAIR", "DISCARD_PROGRAMS_THEN_BOTTOM_DECK", "STOLEN_GIG_PARITY_DRAW_OR_RIVAL_DISCARD", "CHOOSE_TYPE_REVEAL_TOP_ADD_AND_READY_EDDIE", "FORCE_RIVAL_UNIT_ATTACK", "STEAL_GIG", "PLAY_GEAR_FREE", "PROGRAM_PLAY_FRIENDLY_POWER_THIS_TURN", "MAY_CALL_LEGEND_FREE", "MAY_RETURN_TRASH_CARD_TO_HAND", "MAY_PAY_FOR_POWER_EQUAL_TO_FRIENDLY_MAX_GIG", "SEARCH_TOP_TRASH_ONE"].includes(r.current.effect.kind))) return failure("INVALID_TRIGGER_PHASE", "Only reviewed adjustment/look/discard/ready/power/spend/trash-return primitives pause for choices");
     // Batch V47: an effect steal pauses only for a Gig choice between at least two rival Gigs its fired subject may steal (Batch V67: or its first-steal Gear host).
-    if (r.current?.effect.kind === "STEAL_GIG" && (c.phase !== "TARGET" || !(r.current.trigger?.kind === "DELAYED_FIGHT_OUTCOME" || r.current.trigger?.kind === "WHEN_GIG_STOLEN" && r.current.effect.valueNotSharedByFriendly) || effectStealTargets(state, context).length < 2)) return failure("INVALID_EFFECT_STEAL", "An effect steal pauses only to choose among two or more stealable rival Gigs");
+    // Batch V99: a chosen or forced effect steal pauses for its Gig's controller to answer the prevention offer.
+    if (c.stealPrevention) {
+        const gigId = c.stealPrevention.gigInstanceId, e = r.current;
+        if (e?.effect.kind !== "STEAL_GIG" || c.phase !== "TARGET" || !e.trigger || !effectStealTargets(state, context).includes(gigId) || nextPreventableGig(state, e.trigger.subjectId, [gigId], [], context) !== gigId || state.timing.actingPlayer !== state.objects.gigs[gigId].controllerId)
+            return failure("INVALID_STEAL_PREVENTION", "A prevention offer needs its current effect steal, its still-stealable Gig and its controller to answer");
+    } else if (r.current?.effect.kind === "STEAL_GIG" && (c.phase !== "TARGET" || !(r.current.trigger?.kind === "DELAYED_FIGHT_OUTCOME" || r.current.trigger?.kind === "WHEN_GIG_STOLEN" && r.current.effect.valueNotSharedByFriendly) || effectStealTargets(state, context).length < 2)) return failure("INVALID_EFFECT_STEAL", "An effect steal pauses only to choose among two or more stealable rival Gigs");
     // Batch V19: the reviewed [Attack] Gear search pauses only for its own looked-at cards (search-state owns the details).
     // Batch V70: the top-card search pauses only on its controller's deck top, a strategic keep-or-trash choice.
     if (r.current?.effect.kind === "SEARCH_TOP_MAY_TRASH" && (c.phase !== "TARGET" || r.current.trigger?.kind !== "WHEN_SPENT" || !r.searchContinuation || r.searchContinuation.selected.length
@@ -301,6 +317,10 @@ export function validateTriggerState(state: GameState, context: EngineContext) {
     if (r.current?.effect.kind === "PLAY_GEAR_FREE" && (c.phase !== "TARGET" || r.current.trigger?.kind !== "WHEN_PLAYED" || r.current.primitiveIndex !== undefined || !supportsFreePlayCard(cardRevision(state, r.current.sourceId!, context), context).ok
         || (c.selectedGearId ? freeGearHosts(state, c.selectedGearId, context).length : freeGearTargets(state, context).length) < 2))
         return failure("INVALID_FREE_GEAR_PLAY", "A free Gear play pauses only for a strategic Gear or host choice");
+    // Batch V97: the optional free Program play pauses in its {Play} trigger whenever it has a Program to play.
+    if (r.current?.effect.kind === "MAY_PLAY_PROGRAM_FREE_FROM_HAND_OR_TRASH_THEN_BOTTOM_DECK" && (c.phase !== "TARGET" || r.current.trigger?.kind !== "WHEN_PLAYED" || r.current.primitiveIndex !== undefined
+        || !supportsFreePlayCard(cardRevision(state, r.current.sourceId!, context), context).ok || !freeProgramTargets(state, context).length))
+        return failure("INVALID_FREE_PROGRAM_PLAY", "A free Program play pauses only in its {Play} trigger, with a Program to play");
     if (r.current?.effect.kind === "PLAY_UNIT_FREE" && (c.phase !== "TARGET" || r.current.trigger?.kind !== (r.current.effect.optional ? "WHEN_PLAYED" : "WHEN_DEFEATED") || r.current.primitiveIndex !== undefined || !supportsFreePlayCard(cardRevision(state, r.current.sourceId!, context), context).ok || freePlayTargets(state, context).length < (r.current.effect.optional ? 1 : 2)))
         return failure("INVALID_FREE_PLAY_CONTINUATION", "Only a reviewed free play may pause, for a real choice among its Units");
     // Batch V88: the Rival-change trash return pauses only in its own trigger, for a non-empty trash.

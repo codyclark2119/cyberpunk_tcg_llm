@@ -1,3 +1,4 @@
+import { validateQueuedProgramPlay } from "./queued-program-play";
 import { validateTrashProgramPlay } from "./trash-program-play";
 import { validateDeckTopPlay } from "./deck-top-play";
 import { validateEquippedDefeats, validateHandGearPlay } from "./hand-gear-play";
@@ -215,6 +216,7 @@ export function validateState(input: unknown, context: EngineContext): Result<Ga
     const equippedDefeats = validateEquippedDefeats(s, context); if (!equippedDefeats.ok) return equippedDefeats; // Batch V92.
     const trashPlay = validateTrashProgramPlay(s, context); if (!trashPlay.ok) return trashPlay; // Batch V94.
     const deckPlay = validateDeckTopPlay(s, context); if (!deckPlay.ok) return deckPlay; // Batch V95.
+    const queuedProgram = validateQueuedProgramPlay(s, context); if (!queuedProgram.ok) return queuedProgram; // Batch V97.
     const queuedCall = validateQueuedCall(s, context); if (!queuedCall.ok) return queuedCall; // Batch V84.
     const discounts = validateGoSoloDiscounts(s, context); if (!discounts.ok) return discounts; // Batch V83.
     const forced = validateMustAttack(s, context);
@@ -232,7 +234,7 @@ export function validateState(input: unknown, context: EngineContext): Result<Ga
     }
     if (slice && !s.setup) {
         const step = s.timing.step;
-        if (ids.length !== 2 || !s.timing.firstPlayer || !ids.includes(s.timing.firstPlayer) || !step || (!["RIVAL_REACT", "COMBAT_RESOLUTION_PENDING", "DEFEAT_ORDER_SELECTION", "TRIGGER_RESOLUTION"].includes(s.timing.combat.stage) && !s.resolution.targetedDefeatContinuation && !s.resolution.triggerContinuation?.effectDefeats && !(s.resolution.triggerContinuation?.origin.kind === "DEFEAT" && s.resolution.triggerContinuation.origin.effectSource) && !otherPlayerMayChoose(s) && startedQueuedCall(s)?.playerId !== s.timing.actingPlayer /* Batch V86 */ && !rivalChangeTriggerActs(s) /* Batch V88 */ && s.timing.actingPlayer !== s.timing.activePlayer))
+        if (ids.length !== 2 || !s.timing.firstPlayer || !ids.includes(s.timing.firstPlayer) || !step || (!["RIVAL_REACT", "COMBAT_RESOLUTION_PENDING", "DEFEAT_ORDER_SELECTION", "TRIGGER_RESOLUTION"].includes(s.timing.combat.stage) && !s.resolution.targetedDefeatContinuation && !s.resolution.triggerContinuation?.effectDefeats && !(s.resolution.triggerContinuation?.origin.kind === "DEFEAT" && s.resolution.triggerContinuation.origin.effectSource) && !otherPlayerMayChoose(s) && startedQueuedCall(s)?.playerId !== s.timing.actingPlayer /* Batch V86 */ && !rivalChangeTriggerActs(s) /* Batch V88 */ && s.resolution.choice?.continuationId !== "steal-prevention@1" /* Batch V99 */ && s.timing.actingPlayer !== s.timing.activePlayer))
             return failure("INVALID_TURN_STATE", "Turn slice requires two players, first player and an active decision actor");
         if (s.timing.turn < 1 || s.timing.activePlayer !== ids[(s.players[s.timing.firstPlayer].seat + s.timing.turn - 1) % ids.length])
             return failure("INVALID_TURN_ORDER", "Active player must follow first-player and turn order");

@@ -1,4 +1,5 @@
 import { supportsFreeCallUnit } from "./free-call-support";
+import { supportsSpendTriggerCard } from "./spend-trigger-support";
 import { supportsModalProgram } from "./modal-program-support";
 import { supportsAttackPermissionUnit } from "./attack-permission-support";
 import { supportsFightWinUnit } from "./fight-win-support";
@@ -14,7 +15,7 @@ import { attachedGear, gearEnabled } from "./attachments";
 import { supportsValuePairUnit } from "./value-pair-support";
 import { supportsAttackingReadyUnit } from "./attacking-ready-support";
 import { supportsGigChangeTriggerCard } from "./gig-change-trigger-support";
-import { supportsDefeatReplacementGear } from "./defeat-replacement-support";
+import { supportsDefeatReplacementGear, supportsDefeatReplacementLegend } from "./defeat-replacement-support";
 export function cardRevision(state: GameState, id: CardInstanceId, context: EngineContext) {
     const c = state.objects.cards[id];
     return context.content.cards.find(r => r.id === c?.cardId && r.revision === c?.revision);
@@ -50,6 +51,8 @@ export function applicablePowerModifiers(state: GameState, id: CardInstanceId, c
         if (modifier.kind === "WINS_FIGHTS_AGAINST_CLASSIFICATION" && supportsFightWinUnit(revision, context).ok) continue; // Batch V52: fight outcome only.
         if (modifier.kind === "POWER_WHILE_FIGHTING_LEGEND" && supportsGigChangeTriggerCard(revision, context).ok) continue; // Batch V88: while fighting only.
         if (modifier.kind === "DEFEAT_THIS_GEAR_INSTEAD_OF_HOST" && supportsDefeatReplacementGear(revision, context).ok) continue; // Batch V89: defeat only.
+        if (modifier.kind === "MAY_DISCARD_GIG_VALUE_COST_TO_PREVENT_RIVAL_STEAL" && supportsSpendTriggerCard(revision, context).ok) continue; // Batch V99: steals only.
+        if (modifier.kind === "MAY_SPEND_TO_DEFEAT_THIS_LEGEND_INSTEAD_OF_FRIENDLY_UNIT" && supportsDefeatReplacementLegend(revision, context).ok) continue; // Batch V100: defeat only.
         if (modifier.kind === "ALTERNATIVE_PLAY_COST_IF_FIXER_EMPTY" && supportsModalProgram(revision, context).ok) continue; // Batch V83: payment only.
         if ((modifier.kind === "MAY_REROLL_FIXER_GIG_ONCE" || modifier.kind === "DRAW_ON_EXTREME_GIG_ROLL") && supportsLegendSpendCard(revision, context).ok) continue; // Batch V81: roll riders only.
         if (modifier.kind !== "POWER_PER_EQUIPPED_GEAR_DURING_OWN_TURN") throw new Error("UNSUPPORTED_CONTINUOUS_MODIFIERS");
