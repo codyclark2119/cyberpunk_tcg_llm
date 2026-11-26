@@ -1014,7 +1014,8 @@ def scorer_prompt(statement: str, cards: list[str] | None = None, demos: bool = 
 
     ``cards`` are the item's linked card slugs: the scorer preloads exactly those with ``get_card`` (as it does
     for a gold item with ``cards``); None keeps its usual card-name linking. ``demos`` True adds the
-    preload's card demos (off in the scorer by default since prompt v11).
+    preload's card demos (off in the scorer by default since prompt v11). The engine probe (prompt v12) is
+    off: a training prompt is the answering step's input, which a NONE probe leaves unchanged.
     """
     item = eval_item(statement)
     model = _CaptureModel()
@@ -1022,7 +1023,7 @@ def scorer_prompt(statement: str, cards: list[str] | None = None, demos: bool = 
                                 enable_thinking=True, preload=True, preload_text=eval_assistant.preload_text(item),
                                 preload_k=DEFAULT_PRELOAD_K, preload_chars=DEFAULT_PRELOAD_CHARS,
                                 max_tool_calls=MAX_TOOL_CALLS, preload_cards=cards,
-                                preload_demos=demos))
+                                preload_demos=demos, engine_probe=False))
     if model.messages is None or model.enable_thinking is not True:
         raise BuildError(f"the loop never reached the model for {statement!r}")
     sent = [s for s in turn.trace if s.get("auto") and s.get("sent")]
@@ -1684,7 +1685,7 @@ def scorer_lookup(statement: str, cards: list[str] | None, query: str, think: st
     turn = asyncio.run(run_turn([], eval_assistant.question_message(item), model, max_tokens=EVAL_MAX_TOKENS,
                                 enable_thinking=True, preload=True, preload_text=eval_assistant.preload_text(item),
                                 preload_k=DEFAULT_PRELOAD_K, preload_chars=DEFAULT_PRELOAD_CHARS,
-                                max_tool_calls=MAX_TOOL_CALLS, preload_cards=cards))
+                                max_tool_calls=MAX_TOOL_CALLS, preload_cards=cards, engine_probe=False))
     searches = [s for s in turn.trace if s.get("kind") == "tool" and not s.get("auto")]
     if len(model.steps) != 2 or not all(s[2] for s in model.steps) or len(searches) != 1 \
             or searches[0]["tool"] != "search_rules" or not searches[0]["ok"] or turn.tool_calls != 1:

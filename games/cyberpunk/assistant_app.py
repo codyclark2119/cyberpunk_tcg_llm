@@ -96,7 +96,8 @@ from urllib.parse import urlsplit
 from games.cyberpunk.assistant import eval_store
 from games.cyberpunk.assistant.decks import public_deck_index
 from games.cyberpunk.assistant.eval_store import EvalSetError
-from games.cyberpunk.assistant.loop import (ASSISTANT_PROMPT_VERSION, DEFAULT_PRELOAD, DEFAULT_THINKING,
+from games.cyberpunk.assistant.loop import (ASSISTANT_PROMPT_VERSION, DEFAULT_ENGINE_PROBE, DEFAULT_PRELOAD,
+                                            DEFAULT_THINKING,
                                             MAX_TOKENS_LIMIT, MAX_TOOL_CALLS, MAX_TOOL_CALLS_LIMIT,
                                             default_max_tokens, run_turn)
 from games.cyberpunk.assistant.tools import TOOLS, call_tool, cards, index_status
@@ -150,7 +151,8 @@ class ChatService:
 
     def __init__(self, model=None, *, max_history_messages: int = 8, max_sessions: int = 32,
                  enable_thinking: bool = DEFAULT_THINKING, max_tokens: int | None = None,
-                 preload: bool = DEFAULT_PRELOAD, model_path: str | None = None, adapter_path: str | None = None):
+                 preload: bool = DEFAULT_PRELOAD, model_path: str | None = None, adapter_path: str | None = None,
+                 engine_probe: bool = DEFAULT_ENGINE_PROBE):
         self.model = model
         # The model and adapter directories as given on the command line, for the Eval tab's runs.
         self.model_path = model_path
@@ -160,6 +162,7 @@ class ChatService:
         self.enable_thinking = enable_thinking
         self.max_tokens = max_tokens  # None: by thinking (loop.default_max_tokens)
         self.preload = preload
+        self.engine_probe = engine_probe  # loop._engine_probe on card questions (default on)
         self.sessions: OrderedDict[str, Session] = OrderedDict()
         self._lock: asyncio.Lock | None = None
         # Model status for the header badge: none, idle (starts on the first question), loading, ready, error.
@@ -196,7 +199,8 @@ class ChatService:
                 self.model_state = "loading"
             try:
                 turn = await run_turn(history, message, self.model, enable_thinking=thinking, preload=preload,
-                                      max_tokens=self.max_tokens or default_max_tokens(thinking), deck=record.deck)
+                                      max_tokens=self.max_tokens or default_max_tokens(thinking), deck=record.deck,
+                                      engine_probe=self.engine_probe)
             finally:
                 self.busy = False
             if turn.stop_reason == "model_error":
@@ -308,6 +312,8 @@ def eval_action(chat: "ChatService", set_paths: list[str], runs_dir) -> dict:
               "label": "Think first (off)"},
              {"name": "--no-preload", "key": "no_preload", "type": "flag", "default": not chat.preload,
               "label": "Preload rules and cards (off)"},
+             {"name": "--no-engine-probe", "key": "no_engine_probe", "type": "flag",
+              "default": not chat.engine_probe, "label": "Engine probe on card questions (off)"},
              {"name": "--max-tokens", "key": "max_tokens", "type": "text",
               "default": "" if chat.max_tokens is None else str(chat.max_tokens), "label": "Max tokens per step"},
              {"name": "--max-tool-calls", "key": "max_tool_calls", "type": "text", "default": "",

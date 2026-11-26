@@ -116,7 +116,8 @@ def main_in_process(*args: str, model_cls=None):
 
 
 def question_of(messages) -> str:
-    user = next(m["content"] for m in reversed(messages) if m["role"] == "user")
+    # The latest question message (the engine probe's own user message, when present, comes after it).
+    user = next(m["content"] for m in reversed(messages) if m["role"] == "user" and "Question: " in m["content"])
     return user.split("Question: ", 1)[1].split("\n", 1)[0]
 
 
@@ -301,7 +302,7 @@ def test_fake_run_writes_header_records_and_summary_deterministically():
     from games.cyberpunk.assistant.loop import ASSISTANT_PROMPT_VERSION
     from games.cyberpunk.prompts import RULES_VERSION, TOURNAMENT_RULES_VERSION
     assert header["assistant_prompt_version"] == ASSISTANT_PROMPT_VERSION and header["rules_version"] == RULES_VERSION
-    assert header["assistant_prompt_version"] == "assistant-chat-v11", "the default fake run names the v10 prompt"
+    assert header["assistant_prompt_version"] == "assistant-chat-v12", "the default fake run names the v12 prompt"
     assert header["tournament_rules_version"] == TOURNAMENT_RULES_VERSION
     assert len(items) == 40 and summary["kind"] == "summary"
     keys = {"kind", "id", "chosen", "correct", "outcome", "parse", "known_incorrect", "known_incorrect_hit",
@@ -320,7 +321,10 @@ def test_fake_run_writes_header_records_and_summary_deterministically():
         assert len(demos) <= min(len(cards), 2), auto
         assert set(cards) <= {"get_card", "find_card"}, auto
         assert all("implied" in s for s in record["trace"][:len(auto)] if s["tool"] == "get_rule")
-        assert [s["kind"] for s in record["trace"]] == ["tool"] * len(auto) + ["model", "tool", "model"]
+        # With a card looked up, the engine probe asks once first; the fake answers NONE, so no probe tool step.
+        probe = ["model"] if "get_card" in cards else []
+        assert [s["kind"] for s in record["trace"]] == ["tool"] * len(auto) + probe + ["model", "tool", "model"]
+        assert [s for s in record["trace"] if s.get("probe")] == record["trace"][len(auto):len(auto) + len(probe)]
         assert all(s.get("auto") for s in record["trace"][:len(auto)])
         assert record["trace"][len(auto) - 1]["step"] == len(auto), "the automatic steps come first"
         assert record["outcome"] == scorer().outcome_of(record["chosen"], record["correct"])
@@ -780,7 +784,7 @@ def keyed_model(right: int):
             if question not in Keyed.asked:
                 Keyed.asked.append(question)
             reply = await base.generate(self, messages, tools, **kwargs)
-            if "<tool_call>" in reply["text"]:
+            if "<tool_call>" in reply["text"] or reply["text"] == "NONE":  # its own call, or the engine probe
                 return reply
             key = keys[question]
             letters = re.findall(r"^([A-Z])\. ", next(m["content"] for m in reversed(messages) if m["role"] == "user"),

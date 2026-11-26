@@ -828,6 +828,107 @@ def test_host_check_applies_to_chat():
         assert guarded.post("/api/chat", json={"session": "s1", "message": "hi"}).status_code == 401
 
 
+class ThinkingScriptedModel(ScriptedModel):
+    """A ScriptedModel that also records each step's thinking switch."""
+
+    def __init__(self, texts, **kwargs):
+        super().__init__(texts, **kwargs)
+        self.thinking: list[bool] = []
+
+    async def generate(self, messages, tools_, *, max_tokens, enable_thinking):
+        self.thinking.append(enable_thinking)
+        return await super().generate(messages, tools_, max_tokens=max_tokens, enable_thinking=enable_thinking)
+
+
+PROBE_CARD = "sketchy-ripper"
+PROBE_SETUP = {"activeSeat": 0, "players": [{"field": [{"card": PROBE_CARD, "readiness": "READY"}]}, {}]}
+
+
+def probe_turn(model, **kwargs):
+    kwargs.setdefault("engine_probe", True)
+    return turn([], "What does Sketchy Ripper do when it attacks?", model, preload=True,
+                preload_cards=[PROBE_CARD], **kwargs)
+
+
+def stub_engine_scenario(ok: bool = True):
+    """Replaces loop.call_tool for engine_scenario only (no engine worker in this suite); returns the restore."""
+    real = loop_module.call_tool
+
+    def fake(name, arguments):
+        if name != "engine_scenario":
+            return real(name, arguments)
+        if not ok:
+            return {"ok": False, "tool": name, "error": "bad setup", "error_kind": "invalid_arguments",
+                    "sources": {}}
+        return {"ok": True, "tool": name, "result": {"outcome": "played", "report": "stub"},
+                "sources": {"card_slugs": [PROBE_CARD]}}
+
+    loop_module.call_tool = fake
+    return lambda: setattr(loop_module, "call_tool", real)
+
+
+def test_engine_probe_report_joins_the_conversation_as_the_models_own_call():
+    restore = stub_engine_scenario()
+    try:
+        model = ThinkingScriptedModel([call("engine_scenario", setup=PROBE_SETUP, steps=[]), "It attacks."])
+        result = probe_turn(model)
+    finally:
+        restore()
+    assert result.ok and result.answer == "It attacks." and len(model.seen) == 2
+    # The probe step: thinking off, only engine_scenario offered, the probe prompt last.
+    assert model.thinking == [False, True]
+    assert [t["function"]["name"] for t in model.tools_seen[0]] == ["engine_scenario"]
+    assert model.seen[0][-1] == {"role": "user", "content": loop_module.PROBE_PROMPT}
+    # The answering step sees the call and its report, never the probe prompt.
+    answering = model.seen[1]
+    assert all(m.get("content") != loop_module.PROBE_PROMPT for m in answering)
+    assert answering[-2]["role"] == "assistant"
+    assert [c["function"]["name"] for c in answering[-2]["tool_calls"]] == ["engine_scenario"]
+    assert answering[-1]["role"] == "tool" and json.loads(answering[-1]["content"])["result"]["report"] == "stub"
+    probe = [s for s in result.trace if s.get("probe")]
+    assert [s["kind"] for s in probe] == ["model", "tool"] and probe[1]["ok"] and not probe[1].get("auto")
+    assert result.probe_calls == 1 and result.tool_calls == 0, "probe calls do not count against the cap"
+    assert result.to_dict()["probeCalls"] == 1
+
+
+def test_engine_probe_none_adds_nothing_to_the_conversation():
+    probed = ThinkingScriptedModel(["NONE", "Answer."])
+    result = probe_turn(probed)
+    plain = ThinkingScriptedModel(["Answer."])
+    probe_turn(plain, engine_probe=False)
+    assert result.ok and result.probe_calls == 0 and len(probed.seen) == 2
+    assert probed.seen[1] == plain.seen[0], "after NONE the answering step sees exactly the probe-off conversation"
+    assert [s["kind"] for s in result.trace if s.get("probe")] == ["model"]
+
+
+def test_engine_probe_retries_a_rejected_call_once_then_gives_up():
+    restore = stub_engine_scenario(ok=False)
+    try:
+        model = ScriptedModel([call("engine_scenario", setup=PROBE_SETUP, steps=[]),
+                               "<tool_call>{not json</tool_call>", "Answer."])
+        result = probe_turn(model)
+    finally:
+        restore()
+    assert result.ok and result.answer == "Answer." and len(model.seen) == 3
+    tools_ = [s for s in result.trace if s.get("probe") and s["kind"] == "tool"]
+    assert [s["ok"] for s in tools_] == [False, False] and tools_[1]["errorKind"] == "malformed_tool_call"
+    assert result.probe_calls == 2 and result.tool_calls == 0
+    # The retry sees its first call and the error; the answering step sees neither.
+    assert model.seen[1][-1]["role"] == "tool" and model.seen[1][-2]["role"] == "assistant"
+    assert not any(m.get("tool_calls") and m["tool_calls"][0]["function"]["name"] == "engine_scenario"
+                   for m in model.seen[2])
+
+
+def test_engine_probe_runs_only_with_a_card_lookup_and_engine_scenario_offered():
+    for kwargs in ({"engine_probe": False}, {"engine_scenario": False}):
+        model = ScriptedModel(["Answer."])
+        result = probe_turn(model, **kwargs)
+        assert result.ok and len(model.seen) == 1 and not any(s.get("probe") for s in result.trace), kwargs
+    model = ScriptedModel(["Answer."])
+    result = turn([], "When is the Gig area checked?", model, preload=True, preload_cards=[], engine_probe=True)
+    assert result.ok and len(model.seen) == 1 and not any(s.get("probe") for s in result.trace)
+
+
 def run() -> None:
     tests = [value for name, value in globals().items() if name.startswith("test_") and callable(value)]
     for test in tests:
