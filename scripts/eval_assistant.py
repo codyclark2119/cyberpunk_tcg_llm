@@ -100,6 +100,11 @@ thinking off, to build the question's board with engine_scenario (``loop._engine
 call, so it is listed in ``tools_called``. ``--no-engine-probe`` skips it and the header records
 ``engine_probe: false``; a default run records nothing new.
 
+Restriction check (2026-11-26, prompt v13). When an answer states a restriction (cannot, may not, a leading No), the
+loop asks the model once more to back it with a rule sentence that applies, then repeat or correct the answer
+(``loop._verify_answer``); the record holds the final answer and the trace the draft. ``--no-verify-restrictions``
+skips it and the header records ``verify_restrictions: false``.
+
 The set is eval-only: never train on it.
 
 Usage:
@@ -135,7 +140,8 @@ from games.cyberpunk.assistant.eval_store import (PARTIAL_SUFFIX, RUN_NAME_RE, R
                                                   summarize)
 from games.cyberpunk.assistant.loop import (ASSISTANT_PROMPT_VERSION, DEFAULT_PRELOAD,  # noqa: E402
                                             DEFAULT_THINKING, MAX_TOKENS_LIMIT, MAX_TOOL_CALLS,
-                                            MAX_TOOL_CALLS_LIMIT, DEFAULT_ENGINE_PROBE, PROBE_PROMPT,
+                                            MAX_TOOL_CALLS_LIMIT, DEFAULT_ENGINE_PROBE,
+                                            DEFAULT_VERIFY_RESTRICTIONS, PROBE_PROMPT,
                                             default_max_tokens, run_turn, system_prompt,
                                             tool_specs_sha256)
 from games.cyberpunk.assistant.preload import DEFAULT_PRELOAD_CHARS, DEFAULT_PRELOAD_K  # noqa: E402
@@ -288,6 +294,8 @@ def header_row(args, set_path: Path, items: list[dict], selected: list[dict]) ->
         header["preload_demos"] = True  # absent by default, so a default run's header is unchanged
     if not getattr(args, "engine_probe", DEFAULT_ENGINE_PROBE):
         header["engine_probe"] = False  # absent by default, so a default run's header is unchanged
+    if not getattr(args, "verify_restrictions", DEFAULT_VERIFY_RESTRICTIONS):
+        header["verify_restrictions"] = False  # absent by default, so a default run's header is unchanged
     engine_check, engine_scenario = getattr(args, "engine_check", True), getattr(args, "engine_scenario", True)
     if not (engine_check and engine_scenario):
         # Absent with the tools on (the default), so a default run's header is unchanged.
@@ -342,7 +350,8 @@ async def run_items(model, selected: list[dict], *, thinking: bool, max_tokens: 
                     max_tool_calls: int = MAX_TOOL_CALLS, on_record=None, done: int = 0,
                     total: int | None = None, engine_check: bool = True,
                     engine_scenario: bool = True, preload_demos: bool = False,
-                    engine_probe: bool = DEFAULT_ENGINE_PROBE) -> list[dict]:
+                    engine_probe: bool = DEFAULT_ENGINE_PROBE,
+                    verify_restrictions: bool = DEFAULT_VERIFY_RESTRICTIONS) -> list[dict]:
     """Records for ``selected``, in order; ``on_record(record)`` runs as each one finishes.
 
     ``done`` and ``total`` only number the progress lines, so a resumed run counts on from where it stopped.
@@ -355,7 +364,7 @@ async def run_items(model, selected: list[dict], *, thinking: bool, max_tokens: 
                               preload_chars=preload_chars, max_tool_calls=max_tool_calls,
                               preload_cards=item.get("cards"), engine_check=engine_check,
                               engine_scenario=engine_scenario, preload_demos=preload_demos,
-                              engine_probe=engine_probe)
+                              engine_probe=engine_probe, verify_restrictions=verify_restrictions)
         record = item_record(item, turn)
         records.append(record)
         if on_record is not None:
@@ -435,6 +444,10 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--engine-probe", action=argparse.BooleanOptionalAction, default=DEFAULT_ENGINE_PROBE,
                         help="for items whose preload looked up a card, ask the model once (thinking off) to build "
                              "the question's board with engine_scenario (default on)")
+    parser.add_argument("--verify-restrictions", action=argparse.BooleanOptionalAction,
+                        default=DEFAULT_VERIFY_RESTRICTIONS,
+                        help="when an answer states a restriction, ask the model once to back it with a rule "
+                             "sentence that applies and repeat or correct the answer (default on)")
     parser.add_argument("--preload", action=argparse.BooleanOptionalAction, default=DEFAULT_PRELOAD,
                         help="run search_rules and card linking before the model speaks (default on)")
     parser.add_argument("--preload-k", type=int, default=DEFAULT_PRELOAD_K, help="rules passages preloaded (1..20)")
@@ -563,7 +576,8 @@ def main(argv: list[str] | None = None) -> int:
                                        on_record=lambda record: append_row(handle, record), done=len(done),
                                        total=len(selected), engine_check=args.engine_check,
                                        engine_scenario=args.engine_scenario, preload_demos=args.preload_demos,
-                                       engine_probe=args.engine_probe)
+                                       engine_probe=args.engine_probe,
+                                       verify_restrictions=args.verify_restrictions)
         finally:
             close = getattr(model, "close", None)
             if close is not None:

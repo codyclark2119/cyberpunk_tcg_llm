@@ -58,6 +58,17 @@ are marked ``probe: true`` in the trace and do not count against
 tool on its own: the preload reads as a finished lookup phase and greedy
 decoding goes straight to the answer.
 
+After an answer, when ``verify_restrictions`` is on (the default) and the answer
+states a restriction (``RESTRICTION_RE``: cannot, may not, must not, never, or a
+line opening with No), the loop runs the restriction check (``_verify_answer``):
+one more model step, no tools offered, with the answer and ``VERIFY_PROMPT``
+appended, asking the model to back each restriction with a sentence from the
+tool results that applies to the exact situation, and to repeat or correct the
+answer. Its reply replaces the answer unless it is empty, cut off or failed; the
+first answer stays in the trace (``draft``). In the v9-v11 quiz runs 9 of 12
+persistent yes/no misses answered No where the key is Yes, each by applying a
+retrieved rule to a case it does not cover.
+
 Thinking is on by default (``DEFAULT_THINKING``) with a larger generation limit
 (``DEFAULT_THINKING_MAX_TOKENS``, 2048) than without (1024). A step cut off
 inside ``<think>`` has no answer at all, and a thought over several retrieved
@@ -117,7 +128,9 @@ from games.cyberpunk.prompts import RULES_VERSION, TOURNAMENT_RULES_VERSION
 # cost about 3 points per quiz seed (docs/preload-card-demos-quiz-2026-11-25.md).
 # v12 (2026-11-26): no prompt text change beyond this stamp; adds the engine probe (``_engine_probe``, on by
 # default, ``engine_probe=False`` / ``--no-engine-probe`` turns it off) for questions whose preload looked up a card.
-ASSISTANT_PROMPT_VERSION = "assistant-chat-v12"
+# v13 (2026-11-26): no prompt text change beyond this stamp; adds the restriction check (``_verify_answer``, on by
+# default, ``verify_restrictions=False`` / ``--no-verify-restrictions`` turns it off).
+ASSISTANT_PROMPT_VERSION = "assistant-chat-v13"
 MAX_TOOL_CALLS = 6
 MAX_TOOL_CALLS_LIMIT = 16           # the most a run may allow (scripts/eval_assistant.py --max-tool-calls)
 MAX_TOKENS_LIMIT = 16384            # per model step; same as scripts/mlx_chat_worker.py (see the docstring)
@@ -133,6 +146,16 @@ PROBE_PROMPT = ("Before you answer, test this on the game engine. Call engine_sc
                 "whose turn it is) and the steps to try, so the engine shows what happens. Use the card slugs from "
                 "the card lookups above. If the question is not about what a card or a play does in a situation, "
                 "reply with the single word NONE.")
+DEFAULT_VERIFY_RESTRICTIONS = True
+RESTRICTION_RE = re.compile(r"\b(?:cannot|can't|can not|may not|must not|not allowed|isn't allowed|is not able|"
+                            r"isn't able|unable|never)\b|^\W*no\b", re.I | re.M)
+VERIFY_PROMPT = ("Check your answer before it is final. It says something cannot or must not happen. For each such "
+                 "restriction, find the exact rule or card sentence in the tool results above that states it, and "
+                 "check that the sentence applies to this exact situation: the same card type, area, player, timing "
+                 "and state the question describes. A rule about a different case does not apply, and a sentence "
+                 "that only says what a card can do is not a restriction. If every restriction is backed by a "
+                 "sentence that applies, repeat your answer. If not, correct it. Reply with your final answer only, "
+                 "in the same format as before.")
 SOURCE_KEYS = ("card_slugs", "rule_ids", "errata_ids", "deck_ids", "chunk_ids")
 
 
@@ -256,11 +279,13 @@ class TurnResult:
     preload: bool = False
     auto_calls: int = 0
     probe_calls: int = 0
+    revised: bool = False  # the restriction check changed the answer text
     max_tokens: int = DEFAULT_MAX_TOKENS
 
     def to_dict(self) -> dict:
         return {"ok": self.ok, "answer": self.answer, "stopReason": self.stop_reason, "error": self.error,
                 "toolCalls": self.tool_calls, "autoToolCalls": self.auto_calls, "probeCalls": self.probe_calls,
+                "revised": self.revised,
                 "preload": self.preload,
                 "maxTokens": self.max_tokens, "sources": self.sources, "trace": self.trace,
                 "elapsedMs": self.elapsed_ms, "promptVersion": ASSISTANT_PROMPT_VERSION,
@@ -621,6 +646,28 @@ async def _engine_probe(messages: list[dict], model: ChatModel, add, collect, tu
         probe = probe + [_assistant_message(content, [call]), payload]
 
 
+async def _verify_answer(messages: list[dict], model: ChatModel, add, turn: TurnResult, *, max_tokens: int,
+                         enable_thinking: bool) -> None:
+    """The restriction check (see the module docstring); replaces ``turn.answer`` only with a usable reply."""
+    draft = turn.answer
+    check = list(messages) + [{"role": "assistant", "content": draft}, {"role": "user", "content": VERIFY_PROMPT}]
+    reply = await model.generate(check, [], max_tokens=max_tokens, enable_thinking=enable_thinking)
+    if not isinstance(reply, dict) or reply.get("ok") is not True or not isinstance(reply.get("text"), str):
+        error = reply.get("error", "model_error") if isinstance(reply, dict) else "model_error"
+        add({"kind": "model", "verify": True, "ok": False, "error": error, "kept": "draft"})
+        return
+    thinking, body = split_thinking(reply["text"])
+    calls, content = parse_tool_calls(body)
+    usable = bool(content) and not calls and reply.get("finishReason") != "length"
+    add({"kind": "model", "verify": True, "ok": True, "thinking": thinking, "draft": draft,
+         "kept": "revision" if usable else "draft", "finishReason": reply.get("finishReason"),
+         "promptTokens": reply.get("promptTokens"), "generationTokens": reply.get("generationTokens"),
+         "elapsedMs": reply.get("elapsedMs")})
+    if usable:
+        turn.revised = content != draft
+        turn.answer = content
+
+
 async def run_turn(history: list[dict], user_message: str, model: ChatModel, *,
                    max_tool_calls: int = MAX_TOOL_CALLS, max_tokens: int | None = None,
                    enable_thinking: bool = DEFAULT_THINKING, deck: dict | None = None,
@@ -628,7 +675,8 @@ async def run_turn(history: list[dict], user_message: str, model: ChatModel, *,
                    preload_k: int = DEFAULT_PRELOAD_K, preload_chars: int = DEFAULT_PRELOAD_CHARS,
                    preload_cards: list[str] | None = None, max_prompt_tokens: int | None = None,
                    engine_check: bool = True, engine_scenario: bool = True,
-                   preload_demos: bool = False, engine_probe: bool = DEFAULT_ENGINE_PROBE) -> TurnResult:
+                   preload_demos: bool = False, engine_probe: bool = DEFAULT_ENGINE_PROBE,
+                   verify_restrictions: bool = DEFAULT_VERIFY_RESTRICTIONS) -> TurnResult:
     """Run one user turn to an answer, an error or the tool-call cap. ``history`` is not modified.
 
     ``deck`` is the session's loaded deck (see ``deck_context``), or None.
@@ -643,6 +691,7 @@ async def run_turn(history: list[dict], user_message: str, model: ChatModel, *,
     engine_scenario (``--no-engine-scenario``). ``preload_demos=True`` adds the preload's card demos
     (``--preload-demos``; off by default since v11). ``engine_probe=False`` skips the engine probe
     (``--no-engine-probe``); it runs only with engine_scenario offered and a card looked up by the preload.
+    ``verify_restrictions=False`` skips the restriction check (``--no-verify-restrictions``).
     """
     started = time.monotonic()
     max_tokens = default_max_tokens(enable_thinking) if max_tokens is None else max_tokens
@@ -780,5 +829,7 @@ async def run_turn(history: list[dict], user_message: str, model: ChatModel, *,
             add(entry)
             messages.append({"role": "tool", "content": json.dumps(result, ensure_ascii=False,
                                                                    separators=(",", ":"))})
+    if verify_restrictions and turn.stop_reason == "answer" and RESTRICTION_RE.search(turn.answer):
+        await _verify_answer(messages, model, add, turn, max_tokens=max_tokens, enable_thinking=enable_thinking)
     turn.elapsed_ms = round((time.monotonic() - started) * 1000, 2)
     return turn
