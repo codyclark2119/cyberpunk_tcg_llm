@@ -14,6 +14,7 @@ import { effectiveCardTypes } from "./characteristics";
 import { delayedBinding } from "./delayed-effects";
 import { fightOutcomeBinding } from "./fight-outcome";
 import { effectStealTargets } from "./fight-steal";
+import { stealPreventionChoice } from "./steal-prevention";
 import { readyableEddieSlots } from "./eddie-ready";
 import { testCondition } from "./conditions";
 import { getDiscardableCards } from "./discard";
@@ -169,6 +170,7 @@ export function stolenGigParity(state: GameState, current: PendingEffect): "EVEN
 }
 export function triggerChoice(state: GameState, context: EngineContext): PendingChoice {
     const c = state.resolution.triggerContinuation!, current = state.resolution.current;
+    if (c.stealPrevention && current?.trigger && context) return stealPreventionChoice(state, c.stealPrevention.gigInstanceId, current.trigger.subjectId, context); // Batch V99.
     let actorId = current?.controllerId ?? nextTriggerGroup(state)[0].controllerId;
     let kind: PendingChoice["kind"], options: PendingChoice["options"];
     if (c.phase === "SELECT") { const group = nextTriggerGroup(state); actorId = group[0].controllerId; kind = "ORDER"; options = group.map(e => ({ kind: "EFFECT", effectId: e.id })); }

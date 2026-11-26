@@ -13,6 +13,7 @@ import type { TurnMutation } from "./turn";
 import { RulesView } from "./view";
 import { defeatCards, defeatSupport } from "./defeat";
 import { transferGigs } from "./gig-transfer";
+import { answerStealPrevention, nextPreventableGig, offerStealPrevention } from "./steal-prevention";
 import { defeatOrderChoice, defeatsFromFightResult, evaluateFight, gigStealChoice, stealableGigsFor, unfinishedDefeatOrder } from "./combat-outcome-queries";
 import { fightLostBindings, fightOutcomeBinding, fireFightOutcomes } from "./fight-outcome";
 import { belowPowerStealerPower, recordBelowPowerSteal } from "./below-power-steal";
@@ -85,10 +86,21 @@ function advanceGigSteal(m: TurnMutation) {
         continuation.selected.push(g.id);
         m.emit({ kind: "GIG_STEAL_SELECTED", gigInstanceId: g.id, attackerId: c.attackerId, forced: true });
     }
+    // Batch V99: before any Gig moves, its controller may discard to prevent each preventable Gig's steal, one Gig at a time.
+    const prevention = continuation.prevention ?? { answered: [], prevented: [] };
+    const preventable = nextPreventableGig(m.state, c.attackerId, continuation.selected, prevention.answered, m.context);
+    if (preventable) {
+        continuation.remaining = 0; continuation.prevention = prevention;
+        m.state.timing.combat = { ...c, target: c.target, stage: "GIG_STEAL_SELECTION" };
+        m.state.timing.step = "GIG_STEAL_SELECTION"; m.state.timing.window = "GIG_STEAL_SELECTION";
+        return offerStealPrevention(m, preventable, c.attackerId, "GIG_STEAL_SELECTION");
+    }
+    const stolenIds = continuation.selected.filter(id => !prevention.prevented.includes(id));
+    if (!stolenIds.length) return finishCombat(m);
     const defendingPlayer = c.target.playerId, power = belowPowerStealerPower(m.state, c.attackerId, m.context);
-    const transferred = transferGigs(m, continuation.selected, c.attackingPlayerId, () => {
+    const transferred = transferGigs(m, stolenIds, c.attackingPlayerId, () => {
         // 9.23.5 all moves precede each stolen fact / future 9.23.6 trigger discovery.
-        for (const id of [...continuation.selected].sort()) {
+        for (const id of [...stolenIds].sort()) {
             const g = m.state.objects.gigs[id];
             if (g.roll.kind !== "ROLLED") throw new Error("Validated transfer must contain rolled Gigs");
             m.emit({ kind: "GIG_STOLEN", gigInstanceId: id, fromPlayer: defendingPlayer, toPlayer: c.attackingPlayerId, currentValue: g.roll.currentValue, attackerId: c.attackerId });
@@ -100,15 +112,25 @@ function advanceGigSteal(m: TurnMutation) {
         }
     });
     if (!transferred.ok) return transferred;
-    recordBelowPowerSteal(m, c.attackerId, continuation.selected, power); // Batch V49.
+    recordBelowPowerSteal(m, c.attackerId, stolenIds, power); // Batch V49.
     if (m.state.match.outcome) return success(null);
     // Batch V24 (11.5.1.7, 9.20.2): "When this Unit steals a Gig" becomes pending after the move, then resolves before the attack ends.
-    const stolen = { kind: "STEAL" as const, subjectId: c.attackerId, gigInstanceIds: [...continuation.selected].sort() };
+    const stolen = { kind: "STEAL" as const, subjectId: c.attackerId, gigInstanceIds: [...stolenIds].sort() };
     if (triggersEnabled(m.context) && discoverTriggers(m.state, stolen, m.context).length) return beginTriggers(m, stolen);
     return finishCombat(m);
 }
 export function continueGigSteal(m: TurnMutation, index: number) {
     const option = m.state.resolution.choice?.options[index], c = m.state.timing.combat, continuation = m.state.resolution.gigStealContinuation;
+    if (continuation?.prevention && c.stage === "GIG_STEAL_SELECTION") { // Batch V99: the defending player's answer for the next Gig.
+        const gigId = nextPreventableGig(m.state, c.attackerId, continuation.selected, continuation.prevention.answered, m.context);
+        if (!gigId) return failure("INVALID_STEAL_PREVENTION", "No Gig awaits its prevention answer");
+        const answered = answerStealPrevention(m, gigId, c.attackerId, option);
+        if (!answered.ok) return answered;
+        continuation.prevention.answered.push(gigId);
+        if (answered.value) continuation.prevention.prevented.push(gigId);
+        m.state.timing.actingPlayer = c.attackingPlayerId;
+        return advanceGigSteal(m);
+    }
     if (c.stage !== "GIG_STEAL_SELECTION" || !continuation || option?.kind !== "GIG" || continuation.selected.includes(option.gigInstanceId)) return failure("INVALID_GIG_SELECTION", "Choose an unselected rival Gig");
     continuation.selected.push(option.gigInstanceId);
     continuation.remaining--;

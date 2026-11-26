@@ -46,6 +46,7 @@ import { discardingPlayer, discoverTriggers, pendingTrigger, stolenGigParity, sw
 import { moveCardLocation } from "./card-movement";
 import { discardProgram, handPrograms, programBottomDeckTargets } from "./program-discard";
 import { bottomDeck } from "./bottom-deck";
+import { answerStealPrevention, nextPreventableGig, offerStealPrevention } from "./steal-prevention";
 import { bottomDeckSubject, freeGearHosts, freeGearTargets, freePlayTargets, recordQualifyingPlay, resolveFreeGearPlay, resolveFreePlay } from "./free-play";
 
 export function recordPlayedCard(m: TurnMutation, sourceId: CardInstanceId) {
@@ -137,8 +138,15 @@ function offer(m: TurnMutation): Result<null> {
     return success(null);
 }
 /** Batch V47: a steal that ends the game keeps the resolved fact, as a swap does. */
-function finishEffectSteal(m: TurnMutation, gigId: GigInstanceId): Result<null> {
-    const effectId = m.state.resolution.current!.id, stolen = resolveEffectSteal(m, gigId);
+function finishEffectSteal(m: TurnMutation, gigId: GigInstanceId, answered = false): Result<null> {
+    // Batch V99: before the Gig moves, its controller may discard to prevent the steal.
+    const current = m.state.resolution.current!, c = m.state.resolution.triggerContinuation!;
+    if (!answered && effectStealTargets(m.state, m.context).includes(gigId) && nextPreventableGig(m.state, current.trigger!.subjectId, [gigId], [], m.context)) {
+        m.emit({ kind: "GIG_TARGET_SELECTED", effectId: current.id, gigInstanceId: gigId });
+        c.phase = "TARGET"; c.stealPrevention = { gigInstanceId: gigId };
+        return offerStealPrevention(m, gigId, current.trigger!.subjectId, "TARGET_SELECTION");
+    }
+    const effectId = m.state.resolution.current!.id, stolen = resolveEffectSteal(m, gigId, answered);
     if (!stolen.ok) return stolen;
     if (m.state.match.outcome) { m.emit({ kind: "EFFECT_RESOLVED", effectId }); return success(null); }
     return completed(m);
@@ -625,6 +633,12 @@ export function continueTrigger(m: TurnMutation, index: number, forced = false):
             if (option.kind !== "LEGEND_SLOT") return failure("INVALID_LOOK_TARGET", "Choose a public Legend slot");
             const learned = grantLegendKnowledge(m, current.controllerId, option.slot);
             return learned.ok ? completed(m) : learned;
+        }
+        if (current.effect.kind === "STEAL_GIG" && c.stealPrevention) { // Batch V99: the defending player's answer, then the steal unless prevented.
+            const gigId = c.stealPrevention.gigInstanceId, answered = answerStealPrevention(m, gigId, current.trigger!.subjectId, option);
+            if (!answered.ok) return answered;
+            delete c.stealPrevention; m.state.timing.actingPlayer = current.controllerId;
+            return answered.value ? completed(m) : finishEffectSteal(m, gigId, true);
         }
         if (current.effect.kind === "STEAL_GIG") return option.kind === "GIG" ? finishEffectSteal(m, option.gigInstanceId) : failure("INVALID_EFFECT_STEAL", "Choose a rival Gig");
         if (option.kind !== "GIG" || !triggerGigTargets(m.state).includes(option.gigInstanceId)) return failure("INVALID_TRIGGER_TARGET", "Choose a currently valid Gig");

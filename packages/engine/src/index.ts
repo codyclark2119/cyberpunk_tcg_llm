@@ -144,6 +144,9 @@ function describeAction(a: GameAction, state: GameState, actor: PlayerId, view: 
                 return option.confirmed ? `Ignore the ${gig.dieType} result (${value}) and reroll it` : `Keep the ${gig.dieType} result (${value})`;
             }
             if (option.kind === "ATTACK_TARGET") return option.target.kind === "CARD" ? `Attack ${view.getRevision(option.target.cardInstanceId)?.displayName} (${option.target.cardInstanceId})` : "Attack rival Gig area";
+            if (state.resolution.choice!.continuationId === "steal-prevention@1") { // Batch V99.
+                return option.kind === "CARD" ? `Discard ${view.getRevision(option.cardInstanceId)?.displayName} (${option.cardInstanceId}) so the Gig isn't stolen` : "Let the Gig be stolen";
+            }
             if (state.resolution.gigStealContinuation && option.kind === "GIG") {
                 const gig = view.getGig(option.gigInstanceId);
                 return `Steal ${gig.dieType} (${gig.id}, current ${gig.roll.kind === "ROLLED" ? gig.roll.currentValue : "unrolled"})`;

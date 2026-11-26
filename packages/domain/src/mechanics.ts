@@ -356,7 +356,9 @@ export const AbilitySchema = z.strictObject({ id: z.string().min(1), trigger: Tr
     // Batch V40: STEALER_IS_LEGEND limits it to a stealing friendly Legend ("When a friendly Legend steals a Gig").
     // Batch V49: FIRST_OTHER_FRIENDLY_STEAL_BELOW_POWER_PER_TURN is "The first time another friendly Unit steals a Gig with value less
     // than its power each turn".
-    guard: z.enum(["FIRST_BLUE_UNIT_OR_GEAR_PLAY_PER_TURN", "FIRST_FRIENDLY_ARASAKA_UNIT_ATTACK_PER_TURN", "STOLEN_GIG_IS_D6", "STEALER_IS_LEGEND", "FIRST_OTHER_FRIENDLY_STEAL_BELOW_POWER_PER_TURN", "FIRST_ARASAKA_UNIT_DEFEAT_PER_TURN", "FIRST_FIGHT_WIN_PER_TURN", "FRIENDLY_CORPO_OR_GANGER_UNIT_STEALS", "FIRST_HOST_STEAL_PER_TURN", "FIRST_SPEND_PER_TURN", "FRIENDLY_BRAINDANCE_PROGRAM_PLAYED", "FRIENDLY_EQUIPPED_UNIT_DEFEATED"]).optional(),
+    guard: z.enum(["FIRST_BLUE_UNIT_OR_GEAR_PLAY_PER_TURN", "FIRST_FRIENDLY_ARASAKA_UNIT_ATTACK_PER_TURN", "STOLEN_GIG_IS_D6", "STEALER_IS_LEGEND", "FIRST_OTHER_FRIENDLY_STEAL_BELOW_POWER_PER_TURN", "FIRST_ARASAKA_UNIT_DEFEAT_PER_TURN", "FIRST_FIGHT_WIN_PER_TURN", "FRIENDLY_CORPO_OR_GANGER_UNIT_STEALS", "FIRST_HOST_STEAL_PER_TURN", "FIRST_SPEND_PER_TURN", "FRIENDLY_BRAINDANCE_PROGRAM_PLAYED", "FRIENDLY_EQUIPPED_UNIT_DEFEATED", "FRIENDLY_EQUIPPED_UNIT_OR_LEGEND_SPENT"]).optional(),
+    // Batch V99: FRIENDLY_EQUIPPED_UNIT_OR_LEGEND_SPENT with WHEN_SPENT is "When a friendly equipped Unit or Legend is spent": the
+    // binding's subject is the spent card, its source the observer.
     // Batch V92: FRIENDLY_EQUIPPED_UNIT_DEFEATED with WHEN_UNIT_DEFEATED is "When a friendly equipped Unit is defeated", once per Unit.
     // Batch V63: FRIENDLY_CORPO_OR_GANGER_UNIT_STEALS is "When a friendly CORPO or GANGER Unit steals 1 or more Gigs": once per steal, not per Gig.
     // Batch V50: FIRST_ARASAKA_UNIT_DEFEAT_PER_TURN with WHEN_UNIT_DEFEATED is "The first time an ARASAKA Unit is defeated each turn".
@@ -386,6 +388,9 @@ export const ContinuousModifierSchema = z.discriminatedUnion("kind", [
     // Batch V89 (10.24-10.29): "If this Unit would be defeated, defeat its DEADMAN TRANSMITTER instead." A Gear's mandatory replacement of
     // its host's defeat by its own.
     z.strictObject({ kind: z.literal("DEFEAT_THIS_GEAR_INSTEAD_OF_HOST") }),
+    // Batch V99 (10.24-10.29): "When a rival Unit would steal a Gig, you may discard 1 with cost equal to that Gig's value. If you do, the
+    // Gig isn't stolen." An optional replacement, offered to this card's controller once per Gig a rival Unit would steal from them.
+    z.strictObject({ kind: z.literal("MAY_DISCARD_GIG_VALUE_COST_TO_PREVENT_RIVAL_STEAL") }),
     z.strictObject({ kind: z.literal("FRIENDLY_ARASAKA_ATTACKING_UNIT_POWER"), amount: z.literal(1) }),
     // Batch V38: "Other friendly Units have +2 power while attacking." A field Unit's live contribution, never to itself.
     z.strictObject({ kind: z.literal("OTHER_FRIENDLY_ATTACKING_UNIT_POWER"), amount: z.literal(2) }),
