@@ -60,8 +60,8 @@ export function offerPlayChoice(m: TurnMutation) {
     return success(null);
 }
 function finishPlay(m: TurnMutation, sourceId: CardInstanceId, aftermath?: PreparedTriggerBatch | null) {
-    // Batch V94: a Program played from the trash is bottom-decked after it resolves.
-    if (m.state.objects.cards[sourceId].zone.zone === "RESOLVING_PROGRAM") { if (m.state.resolution.playContinuation?.fromTrash) moveToBottom(m, m.state.objects.cards[sourceId].ownerId, [sourceId]); else moveCardLocation(m, sourceId, "TRASH"); }
+    // Batch V94: a Program played from the trash is bottom-decked after it resolves (Batch V97: or a queued free Program).
+    if (m.state.objects.cards[sourceId].zone.zone === "RESOLVING_PROGRAM") { if (m.state.resolution.playContinuation?.fromTrash || m.state.resolution.playContinuation?.freeBottomDeck) moveToBottom(m, m.state.objects.cards[sourceId].ownerId, [sourceId]); else moveCardLocation(m, sourceId, "TRASH"); }
     // Batch V94: a trash Program a Legend's ability chose is played (paying its cost) once the ability has resolved.
     const trashProgram = m.state.resolution.playContinuation?.trashProgramId;
     if (trashProgram && !m.state.match.outcome) return startPlay(m, m.state.resolution.playContinuation!.actorId, trashProgram, "TRASH");
@@ -148,18 +148,18 @@ function pendEffects(m: TurnMutation, indexes: number[]): Result<null> {
 }
 function completePayment(m: TurnMutation, sources: PaymentSource[]): Result<null> {
     const s = m.state, c = s.resolution.playContinuation!, r = revisionOf(s, c.sourceId, m.context)!;
-    const amount = c.kind === "ACTIVATE" ? activationPaymentAmount(playAbility(m), s, c.actorId) : c.freeFromDeck ? 0 : playPaymentAmount(s, c.actorId, c.sourceId, m.context)!; // Batch V95: played for free.
+    const amount = c.kind === "ACTIVATE" ? activationPaymentAmount(playAbility(m), s, c.actorId) : c.freeFromDeck || c.freeBottomDeck ? 0 : playPaymentAmount(s, c.actorId, c.sourceId, m.context)!; // Batch V95, V97: played for free.
     const payment = validatePayment(s, c.actorId, m.context, sources, { kind: "EDDIES", amount });
     return payment.ok ? payValidated(m, payment.value) : payment;
 }
 
-export function startPlay(m: TurnMutation, actorId: PlayerId, sourceId: CardInstanceId, origin: "HAND" | "TRASH" | "DECK" = "HAND"): Result<null> {
+export function startPlay(m: TurnMutation, actorId: PlayerId, sourceId: CardInstanceId, origin: "HAND" | "TRASH" | "DECK" = "HAND", freeBottomDeck = false): Result<null> {
     const s = m.state, r = revisionOf(s, sourceId, m.context)!;
     if (r.printedCost.kind !== "EDDIES") return failure("UNSUPPORTED_CARD_PLAY", "Reviewed printed payment required");
     s.resolution.returnTo = actionReturnContext(s);
     // Batch V94: a trash card is public (Batch V95: a deck card was revealed as the ability resolved); either moves face up as it is played.
     if (origin === "HAND") { s.objects.cards[sourceId].face = "UP"; m.emit({ kind: "CARD_REVEALED", cardInstanceId: sourceId }); }
-    s.resolution.playContinuation = { kind: "PLAY", actorId, sourceId, ...(origin === "TRASH" ? { fromTrash: true as const } : origin === "DECK" ? { freeFromDeck: true as const } : {}), ...(r.type !== "GEAR" && r.mechanics.abilities[0] ? { abilityId: r.mechanics.abilities[0].id } : {}), phase: "PAYMENT", remainingCost: origin === "DECK" ? 0 : playPaymentAmount(s, actorId, sourceId, m.context)!, selectedSources: [], effectIndex: 0 };
+    s.resolution.playContinuation = { kind: "PLAY", actorId, sourceId, ...(freeBottomDeck ? { freeBottomDeck: true as const } : origin === "TRASH" ? { fromTrash: true as const } : origin === "DECK" ? { freeFromDeck: true as const } : {}), ...(r.type !== "GEAR" && r.mechanics.abilities[0] ? { abilityId: r.mechanics.abilities[0].id } : {}), phase: "PAYMENT", remainingCost: origin === "DECK" || freeBottomDeck ? 0 : playPaymentAmount(s, actorId, sourceId, m.context)!, selectedSources: [], effectIndex: 0 };
     const forced = forcedPaymentSources(s, actorId, m.context, s.resolution.playContinuation.remainingCost, []);
     if (forced) return completePayment(m, forced);
     return offerPlayChoice(m);

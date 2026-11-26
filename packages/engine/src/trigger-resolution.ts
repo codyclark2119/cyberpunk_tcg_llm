@@ -1,3 +1,4 @@
+import { chooseFreeProgram, freeProgramTargets } from "./queued-program-play";
 import { beginPaidPower, continuePaidPower } from "./paid-attack-power";
 import { spentSubjects, takeQueuedSpends } from "./spend-triggers";
 import { gigChangeSubjects, noteRivalGigChange, takeQueuedGigChanges } from "./gig-change-triggers";
@@ -256,6 +257,8 @@ export function advanceTriggers(m: TurnMutation): Result<null> {
         if (gear.length > 1) { c.phase = "TARGET"; return offer(m); }
         c.selectedGearId = gear[0]; return advanceFreeGear(m, true);
     }
+    // Batch V97: "You may play a Program with cost 3 or less from your hand or trash for free": the decline is always offered.
+    if (e.kind === "MAY_PLAY_PROGRAM_FREE_FROM_HAND_OR_TRASH_THEN_BOTTOM_DECK") { if (!freeProgramTargets(m.state, m.context).length) return completed(m); c.phase = "TARGET"; return offer(m); }
     // Batch V48: "Play another Unit with cost 9 or less from your trash for free. Then, bottom-deck this Unit."
     if (e.kind === "PLAY_UNIT_FREE") {
         if (freePlayTargets(m.state, m.context).length) { c.phase = "TARGET"; return offer(m); } // Batch V50: an optional play always offers its decline.
@@ -569,6 +572,7 @@ export function continueTrigger(m: TurnMutation, index: number, forced = false):
             const gearId = c.selectedGearId; delete c.selectedGearId;
             const played = resolveFreeGearPlay(m, gearId, option.cardInstanceId, forced); return played.ok ? completed(m) : played;
         }
+        if (current.effect.kind === "MAY_PLAY_PROGRAM_FREE_FROM_HAND_OR_TRASH_THEN_BOTTOM_DECK") { const chosen = chooseFreeProgram(m, option); return chosen.ok ? completed(m) : chosen; } // Batch V97.
         if (current.effect.kind === "PLAY_UNIT_FREE") {
             if (option.kind === "CONFIRM" && !option.confirmed && current.effect.optional) { m.emit({ kind: "OPTIONAL_TRIGGER_DECLINED", effectId: current.id, controllerId: current.controllerId }); return completed(m); }
             if (option.kind !== "CARD") return failure("INVALID_FREE_PLAY", "Choose an eligible Unit");

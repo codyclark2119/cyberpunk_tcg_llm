@@ -1,3 +1,4 @@
+import { startQueuedProgramPlay } from "./queued-program-play";
 import { armEndTurnDefeats } from "./end-turn-defeat";
 import { endReadyUnitAttack } from "./ready-attack-grant";
 import { recordFightWin } from "./fight-win-support";
@@ -25,6 +26,9 @@ export function finishCombat(m: TurnMutation) {
     m.state.timing.combat = { stage: "NONE" };
     m.state.timing.actingPlayer = m.state.timing.activePlayer;
     m.state.resolution = { stage: "DECISION", current: null, pending: [], discovered: [], choice: null };
+    // Batch V97: a Program a {Play} trigger chose during the attack is played once the attack has ended.
+    const program = startQueuedProgramPlay(m);
+    if (program) return program;
     // Batch V86: a Legend an effect Called for free during the attack resolves its {Call} ability once the attack has ended.
     const call = startQueuedCall(m);
     if (call) return call;

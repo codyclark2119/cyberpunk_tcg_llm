@@ -9,12 +9,12 @@
   },
   "totals": {
     "cards": 151,
-    "admitted": 146,
-    "notAdmitted": 5,
+    "admitted": 147,
+    "notAdmitted": 4,
     "notAdmittedOnlyCoveredFamilies": 0,
     "byAdmission": {
-      "NOT_ADMITTED": 5,
-      "SOURCE_MATCH": 146
+      "NOT_ADMITTED": 4,
+      "SOURCE_MATCH": 147
     }
   },
   "families": [
@@ -91,29 +91,11 @@
       "soleBlockerCount": 0
     },
     {
-      "family": "KEYWORD_BLOCKER",
-      "status": "COVERED",
-      "summary": "Printed [Blocker] on a Unit, or granted to a Gear's host.",
-      "notes": "Keyword BLOCKER. Temporary grants by an effect are TEMPORARY_BUFF.",
-      "cardCount": 11,
-      "notAdmittedCount": 1,
-      "soleBlockerCount": 0
-    },
-    {
       "family": "KEYWORD_QUICK",
       "status": "PARTIAL",
       "summary": "[Quick] timing: Programs and activated abilities usable in the react window.",
       "notes": "Quick Programs are supported for Floor It, Reboot Optics and Detonate. Quick activated [Spend] abilities on Legends, Units and Gear are not offered in any react window yet.",
       "cardCount": 12,
-      "notAdmittedCount": 1,
-      "soleBlockerCount": 0
-    },
-    {
-      "family": "PLAY_BY_EFFECT",
-      "status": "MISSING",
-      "summary": "Play a card by an effect: from hand, trash or deck top, for free or for its cost, with after-play riders.",
-      "notes": "",
-      "cardCount": 9,
       "notAdmittedCount": 1,
       "soleBlockerCount": 0
     },
@@ -145,15 +127,6 @@
       "soleBlockerCount": 0
     },
     {
-      "family": "TRIGGER_PLAY",
-      "status": "PARTIAL",
-      "summary": "[Play] abilities and Program bodies resolving when played.",
-      "notes": "Trigger WHEN_PLAYED.",
-      "cardCount": 27,
-      "notAdmittedCount": 1,
-      "soleBlockerCount": 0
-    },
-    {
       "family": "TRIGGER_WHEN_SPENT",
       "status": "MISSING",
       "summary": "WHEN_SPENT: 'when this Unit or Legend is spent' (includes Zetatech Faceplate).",
@@ -168,15 +141,6 @@
       "summary": "Defeat a Unit or Gear chosen with a filter.",
       "notes": "Filters are fixed literals (power at most 5, power at most a friendly d20, Gear power at most 2).",
       "cardCount": 18,
-      "notAdmittedCount": 1,
-      "soleBlockerCount": 0
-    },
-    {
-      "family": "UNIT_ZONE_MOVE",
-      "status": "MISSING",
-      "summary": "Move a Unit off the field other than defeat: bottom-deck it or return it to hand.",
-      "notes": "MOVE_CARD is schema-only with no handler.",
-      "cardCount": 10,
       "notAdmittedCount": 1,
       "soleBlockerCount": 0
     },
@@ -280,6 +244,15 @@
       "soleBlockerCount": 0
     },
     {
+      "family": "KEYWORD_BLOCKER",
+      "status": "COVERED",
+      "summary": "Printed [Blocker] on a Unit, or granted to a Gear's host.",
+      "notes": "Keyword BLOCKER. Temporary grants by an effect are TEMPORARY_BUFF.",
+      "cardCount": 11,
+      "notAdmittedCount": 0,
+      "soleBlockerCount": 0
+    },
+    {
       "family": "LEGEND_LOOK",
       "status": "PARTIAL",
       "summary": "Look at friendly face-down Legends.",
@@ -303,6 +276,15 @@
       "summary": "'Choose one effect' (and 'choose both instead' upgrades).",
       "notes": "PendingChoice MODE exists for setup, search and Gig steps, but no ability carries modes.",
       "cardCount": 8,
+      "notAdmittedCount": 0,
+      "soleBlockerCount": 0
+    },
+    {
+      "family": "PLAY_BY_EFFECT",
+      "status": "MISSING",
+      "summary": "Play a card by an effect: from hand, trash or deck top, for free or for its cost, with after-play riders.",
+      "notes": "",
+      "cardCount": 9,
       "notAdmittedCount": 0,
       "soleBlockerCount": 0
     },
@@ -433,6 +415,15 @@
       "soleBlockerCount": 0
     },
     {
+      "family": "TRIGGER_PLAY",
+      "status": "PARTIAL",
+      "summary": "[Play] abilities and Program bodies resolving when played.",
+      "notes": "Trigger WHEN_PLAYED.",
+      "cardCount": 27,
+      "notAdmittedCount": 0,
+      "soleBlockerCount": 0
+    },
+    {
       "family": "TRIGGER_START_OF_TURN",
       "status": "MISSING",
       "summary": "'At the start of your turn' abilities.",
@@ -456,6 +447,15 @@
       "summary": "'First time each turn', 'this turn you played', 'if it stole or fought this turn'.",
       "notes": "Guards FIRST_BLUE_UNIT_OR_GEAR_PLAY_PER_TURN and FIRST_FRIENDLY_ARASAKA_UNIT_ATTACK_PER_TURN.",
       "cardCount": 11,
+      "notAdmittedCount": 0,
+      "soleBlockerCount": 0
+    },
+    {
+      "family": "UNIT_ZONE_MOVE",
+      "status": "MISSING",
+      "summary": "Move a Unit off the field other than defeat: bottom-deck it or return it to hand.",
+      "notes": "MOVE_CARD is schema-only with no handler.",
+      "cardCount": 10,
       "notAdmittedCount": 0,
       "soleBlockerCount": 0
     },
@@ -1608,19 +1608,15 @@
       "colors": [
         "BLUE"
       ],
-      "admission": "NOT_ADMITTED",
-      "revision": null,
+      "admission": "SOURCE_MATCH",
+      "revision": 1,
       "families": [
         "KEYWORD_BLOCKER",
         "PLAY_BY_EFFECT",
         "TRIGGER_PLAY",
         "UNIT_ZONE_MOVE"
       ],
-      "blockingFamilies": [
-        "PLAY_BY_EFFECT",
-        "TRIGGER_PLAY",
-        "UNIT_ZONE_MOVE"
-      ],
+      "blockingFamilies": [],
       "note": null
     },
     {

@@ -152,6 +152,9 @@ export const TurnHistorySchema = z.strictObject({
     // Batch V84: a Legend Called for free by an effect, whose {Call} ability resolves once the action's trigger batches are done (Batch
     // V86: or its attack has ended); `started` while that ability resolves, which may be the non-active player's.
     queuedCall: z.strictObject({ playerId: PlayerIdSchema, legendId: CardInstanceIdSchema, started: z.literal(true).optional() }).optional(),
+    // Batch V97: a Program a {Play} trigger chose to play for free from hand or trash, played once the action's trigger batches are done
+    // (or its attack has ended); `started` while it resolves.
+    queuedProgramPlay: z.strictObject({ playerId: PlayerIdSchema, cardInstanceId: CardInstanceIdSchema, started: z.literal(true).optional() }).optional(),
     // Batch V83: unused "a friendly Legend may use {Go Solo} for -2 €$ this turn" grants, by resolved effect, in grant order.
     goSoloDiscounts: z.array(HashSchema).min(1).optional(),
     // Batch V79: Units whose next attack this turn may target ready Units, by id; `inAttack` once that attack is declared, until it ends.
@@ -282,7 +285,9 @@ export const ResolutionStateSchema = z.strictObject({
         // at once), and a card played that way, which pays nothing.
         deckPlayId: CardInstanceIdSchema.optional(), freeFromDeck: z.literal(true).optional(),
         // Batch V96: the trash Units a Program played for free so far, in play order; their play batch follows the Program.
-        trashPlayedIds: z.array(CardInstanceIdSchema).min(1).max(2).optional() }).optional(),
+        trashPlayedIds: z.array(CardInstanceIdSchema).min(1).max(2).optional(),
+        // Batch V97: a queued Program played for free, which is bottom-decked after it resolves.
+        freeBottomDeck: z.literal(true).optional() }).optional(),
     searchContinuation: z.strictObject({ looked: z.array(CardInstanceIdSchema), selected: z.array(CardInstanceIdSchema) }).optional(),
     callContinuation: z.strictObject({ actorId: PlayerIdSchema, legendId: CardInstanceIdSchema, remainingCost: z.number().int().nonnegative(), selectedSources: z.array(PaymentSourceSchema) }).optional(),
     current: PendingEffectSchema.nullable(), pending: z.array(PendingEffectSchema), discovered: z.array(PendingEffectSchema), choice: PendingChoiceSchema.nullable()

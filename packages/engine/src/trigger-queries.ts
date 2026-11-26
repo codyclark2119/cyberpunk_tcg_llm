@@ -1,3 +1,4 @@
+import { freeProgramOptions } from "./queued-program-play";
 import { equippedDefeatBindings } from "./hand-gear-play";
 import { paidPowerOptions } from "./paid-attack-power";
 import { armedEndTurnDefeatBindings } from "./end-turn-defeat";
@@ -206,6 +207,8 @@ export function triggerChoice(state: GameState, context: EngineContext): Pending
             ? (current.effect.target.kind === "ANOTHER_FRIENDLY_UNIT" ? stolenGigReadyTargets(state, current, context) : readyLegendTargets(state, actorId, context)).map(cardInstanceId => ({ kind: "CARD", cardInstanceId }))
             : current?.effect.kind === "PLAY_GEAR_FREE" // Batch V68: the Gear, then its host.
             ? (c.selectedGearId ? freeGearHosts(state, c.selectedGearId, context) : freeGearTargets(state, context)).map(cardInstanceId => ({ kind: "CARD" as const, cardInstanceId }))
+            : current?.effect.kind === "MAY_PLAY_PROGRAM_FREE_FROM_HAND_OR_TRASH_THEN_BOTTOM_DECK" // Batch V97: decline, or a Program.
+            ? freeProgramOptions(state, context)
             : current?.effect.kind === "PLAY_UNIT_FREE"
             ? [...(current.effect.optional ? [{ kind: "CONFIRM" as const, confirmed: false }] : []), ...freePlayTargets(state, context).map(cardInstanceId => ({ kind: "CARD" as const, cardInstanceId }))]
             : current?.effect.kind === "RETURN_TRASH_UNIT_TO_HAND"

@@ -1,3 +1,4 @@
+import { validateQueuedProgramPlay } from "./queued-program-play";
 import { validateTrashProgramPlay } from "./trash-program-play";
 import { validateDeckTopPlay } from "./deck-top-play";
 import { validateEquippedDefeats, validateHandGearPlay } from "./hand-gear-play";
@@ -215,6 +216,7 @@ export function validateState(input: unknown, context: EngineContext): Result<Ga
     const equippedDefeats = validateEquippedDefeats(s, context); if (!equippedDefeats.ok) return equippedDefeats; // Batch V92.
     const trashPlay = validateTrashProgramPlay(s, context); if (!trashPlay.ok) return trashPlay; // Batch V94.
     const deckPlay = validateDeckTopPlay(s, context); if (!deckPlay.ok) return deckPlay; // Batch V95.
+    const queuedProgram = validateQueuedProgramPlay(s, context); if (!queuedProgram.ok) return queuedProgram; // Batch V97.
     const queuedCall = validateQueuedCall(s, context); if (!queuedCall.ok) return queuedCall; // Batch V84.
     const discounts = validateGoSoloDiscounts(s, context); if (!discounts.ok) return discounts; // Batch V83.
     const forced = validateMustAttack(s, context);

@@ -153,6 +153,8 @@ function describeAction(a: GameAction, state: GameState, actor: PlayerId, view: 
             if (state.resolution.current?.effect.kind === "MAY_CALL_LEGEND_FREE" && state.resolution.current.effect.lookAtOne && (option.kind === "LEGEND_SLOT" || option.kind === "CONFIRM")) // Batch V87.
                 return option.kind === "LEGEND_SLOT" ? `Look at friendly face-down Legend ${option.slot + 1}` : !state.resolution.triggerContinuation?.lookedLegendId ? "Look at no Legend"
                     : option.confirmed ? `Call face-down Legend ${state.players[actor].zones.LEGENDS.indexOf(state.resolution.triggerContinuation.lookedLegendId) + 1} for free` : "Don't Call it";
+            if (state.resolution.current?.effect.kind === "MAY_PLAY_PROGRAM_FREE_FROM_HAND_OR_TRASH_THEN_BOTTOM_DECK") // Batch V97.
+                return option.kind === "CARD" ? `Play ${view.getRevision(option.cardInstanceId)?.displayName} (${option.cardInstanceId}) from your ${state.objects.cards[option.cardInstanceId].zone.zone === "HAND" ? "hand" : "trash"} for free, then bottom-deck it` : "Play no Program";
             if (state.resolution.current?.effect.kind === "MAY_CALL_LEGEND_FREE" && (option.kind === "LEGEND_SLOT" || option.kind === "CONFIRM")) return option.kind === "LEGEND_SLOT" ? `Call face-down Legend ${option.slot + 1} for free` : "Call no Legend";
             if (state.resolution.triggerContinuation) {
                 if (state.resolution.searchContinuation && state.resolution.current?.effect.kind === "SEARCH_TOP_TRASH_ONE" && option.kind === "CARD") return `Trash ${view.getRevision(option.cardInstanceId)?.displayName} (${option.cardInstanceId}) from the top of your deck`; // Batch V92.

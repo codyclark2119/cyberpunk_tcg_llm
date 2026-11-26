@@ -1,3 +1,4 @@
+import { startQueuedProgramPlay } from "./queued-program-play";
 import { otherPlayerMayChoose } from "./rival-reveal";
 import { failure, success, type ActionReturnContext, type GameState } from "@tcg/domain";
 import type { EngineContext } from "./state";
@@ -41,6 +42,9 @@ export function finishAction(m: TurnMutation) {
         return beginTriggers(m, { kind: "GIG_CHANGE", subjectIds: gigChangeSubjects(changes) });
     }
     if (destination.kind === "RIVAL_REACT") return finishAttackEffects(m);
+    // Batch V97: a Program a {Play} trigger chose is played once the action's batches are done.
+    const program = startQueuedProgramPlay(m);
+    if (program) return program;
     // Batch V84: a Legend an effect Called for free resolves its {Call} ability once the action's batches are done.
     const call = startQueuedCall(m);
     if (call) return call;

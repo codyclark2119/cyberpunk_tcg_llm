@@ -1,6 +1,6 @@
 import { turnSliceAllows, canonicalSerialize, failure, success, type CardRevisionSnapshot, type DeepReadonly } from "@tcg/domain";
 import type { EngineContext } from "./state";
-/** Batch V48+: cards whose effect plays a Unit (Batch V68: or a Gear) for free (11.11.4), each pinned whole (Batch V50: with its first-ARASAKA-defeat
+/** Batch V48+: cards whose effect plays a Unit (Batch V68: or a Gear; Batch V97: or a Program) for free (11.11.4), each pinned whole (Batch V50: with its first-ARASAKA-defeat
  * draw). Anything not listed is absent. */
 const FREE_PLAY_SHAPES = [
     // Batch V48: The Relic: Experimental Biochip. "{Defeated} Play another Unit with cost 9 or less from your trash for free.
@@ -21,11 +21,16 @@ const FREE_PLAY_SHAPES = [
     // free. Equip it only to another friendly Unit."
     { type: "UNIT", sell: false, power: 3, equip: null, modifiers: [], colors: ["YELLOW"], ram: { YELLOW: 2 }, tags: ["Ripperdoc"], cost: 3,
         abilities: [{ trigger: "WHEN_PLAYED", inherited: null, guard: null, activation: null, conditions: [], abilityCost: { kind: "NONE" }, choose: null,
-            effects: [{ kind: "PLAY_GEAR_FREE", from: "TRASH", maxCost: 2, tag: "Cyberware", host: "ANOTHER_FRIENDLY_UNIT" }] }] }
+            effects: [{ kind: "PLAY_GEAR_FREE", from: "TRASH", maxCost: 2, tag: "Cyberware", host: "ANOTHER_FRIENDLY_UNIT" }] }] },
+    // Batch V97: Lizzy Wizzy: Delicate Weapon. "{Play} You may play a Program with cost 3 or less from your hand or trash for free.
+    // Bottom-deck it after you play it. {Blocker}"
+    { type: "UNIT", sell: false, power: 2, equip: null, modifiers: [], keywords: ["BLOCKER"], colors: ["BLUE"], ram: { BLUE: 2 }, tags: ["Rocker"], cost: 5,
+        abilities: [{ trigger: "WHEN_PLAYED", inherited: null, guard: null, activation: null, conditions: [], abilityCost: { kind: "NONE" }, choose: null,
+            effects: [{ kind: "MAY_PLAY_PROGRAM_FREE_FROM_HAND_OR_TRASH_THEN_BOTTOM_DECK", maxCost: 3 }] }] }
 ].map(shape => canonicalSerialize({ keywords: [], restrictions: [], ...shape }));
 /** Any free play routes here first, so no other gate can admit what it does not read. */
 export function hasFreePlayEffect(card: DeepReadonly<CardRevisionSnapshot> | undefined) {
-    return Boolean(card?.mechanics.abilities.some(a => a.trigger === "WHEN_UNIT_DEFEATED" || a.guard === "FIRST_ARASAKA_UNIT_DEFEAT_PER_TURN" || a.effects.some(e => e.kind === "PLAY_UNIT_FREE" || e.kind === "PLAY_GEAR_FREE")));
+    return Boolean(card?.mechanics.abilities.some(a => a.trigger === "WHEN_UNIT_DEFEATED" || a.guard === "FIRST_ARASAKA_UNIT_DEFEAT_PER_TURN" || a.effects.some(e => e.kind === "PLAY_UNIT_FREE" || e.kind === "PLAY_GEAR_FREE" || e.kind === "MAY_PLAY_PROGRAM_FREE_FROM_HAND_OR_TRASH_THEN_BOTTOM_DECK")));
 }
 export function supportsFreePlayCard(card: DeepReadonly<CardRevisionSnapshot> | undefined, context: EngineContext) {
     const g = context.content.ruleset.gameplay, m = card?.mechanics;
